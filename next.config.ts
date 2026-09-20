@@ -4,7 +4,7 @@ const isDevelopment = process.env.NODE_ENV !== "production";
 
 const config: NextConfig = {
   poweredByHeader: false,
-  experimental: { typedRoutes: true },
+  typedRoutes: true,
   async headers() {
     const scriptPolicy = isDevelopment
       ? "script-src 'self' 'unsafe-inline' 'unsafe-eval'"

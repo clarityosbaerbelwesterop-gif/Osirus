@@ -19,8 +19,8 @@ export async function GET() {
 
   const provider = Boolean(
     env.UNOROUTER_BASE_URL &&
-      serverKeys().length > 0 &&
-      env.OSIRUS_MODEL_STRONG,
+    serverKeys().length > 0 &&
+    env.OSIRUS_MODEL_STRONG,
   );
   const status = authConfigured && database && provider ? "ok" : "degraded";
 

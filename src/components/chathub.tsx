@@ -65,12 +65,19 @@ export function ChatHub(props: {
   );
 
   useEffect(() => {
-    if (!props.initialRunId) return;
-    void refreshRun(props.initialRunId);
+    const runId = props.initialRunId;
+    if (!runId) return;
+    const refreshInitialRun = () => {
+      void refreshRun(runId);
+    };
+    const initial = window.setTimeout(refreshInitialRun, 0);
     const timer = window.setInterval(() => {
-      void refreshRun(props.initialRunId);
+      void refreshRun(runId);
     }, 2000);
-    return () => window.clearInterval(timer);
+    return () => {
+      window.clearTimeout(initial);
+      window.clearInterval(timer);
+    };
   }, [props.initialRunId, refreshRun]);
 
   const applyPacket = useCallback(
