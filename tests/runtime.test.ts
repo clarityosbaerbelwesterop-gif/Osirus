@@ -1,50 +1,84 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import { InMemoryCheckpointStore } from "../src/lib/runtime/checkpoints";
+import { InMemoryEventJournal, reconstruct } from "../src/lib/runtime/events";
 import { routeCapabilities } from "../src/lib/runtime/router";
-import { EventJournal } from "../src/lib/runtime/events";
-import { CheckpointStore } from "../src/lib/runtime/checkpoints";
-import { selectSkills, type Skill } from "../src/lib/skills";
-describe("foundation", () => {
-  it("routes compound work", () =>
+import {
+  canTransitionRun,
+  isTerminalRunStatus,
+} from "../src/lib/runtime/state-machine";
+import { parseSsePackets } from "../src/lib/runtime/sse";
+import { parseSseFrame } from "../src/lib/models/unorouter";
+import { rankSkills, selectSkills, type Skill } from "../src/lib/skills";
+
+describe("runtime foundation", () => {
+  it("routes compound work", () => {
     expect(routeCapabilities("research sources then implement code")).toEqual([
       "coding",
       "research",
-    ]));
-  it("reconstructs events", () => {
-    const j = new EventJournal();
-    j.append({
-      id: "1",
-      runId: "r",
+    ]);
+  });
+
+  it("sequences and reconstructs in-memory test events", () => {
+    const journal = new InMemoryEventJournal();
+    journal.append({
       type: "planning",
-      at: "now",
+      visibility: "user",
+      summary: "Planning",
+      data: { status: "planning" },
+    });
+    journal.append({
+      type: "running",
+      visibility: "user",
+      summary: "Running",
       data: { status: "running" },
     });
-    expect(j.reconstruct("r").status).toBe("running");
+    expect(journal.list().map((event) => event.sequence)).toEqual([1, 2]);
+    expect(reconstruct(journal.list()).status).toBe("running");
   });
-  it("restores checkpoints", () => {
-    const s = new CheckpointStore();
-    s.save({
-      runId: "r",
-      stage: "plan",
-      sequence: 1,
-      state: { x: 1 },
-      createdAt: "now",
-    });
-    expect(s.restore("r")).toEqual({ x: 1 });
+
+  it("restores the latest in-memory test checkpoint", () => {
+    const store = new InMemoryCheckpointStore();
+    store.save({ runId: "r", label: "one", state: { x: 1 } });
+    store.save({ runId: "r", label: "two", state: { x: 2 } });
+    expect(store.latest("r")?.state).toEqual({ x: 2 });
+    expect(store.latest("r")?.version).toBe(2);
   });
-  it("bounds skills", () => {
-    const skills = Array.from({ length: 20 }, (_, i): Skill => ({
-      id: String(i),
-      slug: String(i),
+
+  it("enforces valid run transitions", () => {
+    expect(canTransitionRun("created", "planning")).toBe(true);
+    expect(canTransitionRun("planning", "completed")).toBe(false);
+    expect(isTerminalRunStatus("completed")).toBe(true);
+  });
+
+  it("bounds skill selection at eight", () => {
+    const skills = Array.from({ length: 20 }, (_, index): Skill => ({
+      id: String(index),
+      slug: String(index),
       version: "1",
-      category: "x",
-      description: "x",
+      category: "engineering",
+      description: "coding skill",
       capabilities: ["coding"],
       activation: ["code"],
       risk: "low",
       requiredTools: [],
-      contextCost: i,
+      contextCost: index + 1,
       state: "enabled",
     }));
     expect(selectSkills("code", skills, ["coding"]).length).toBe(8);
+    expect(rankSkills("code", skills, ["coding"], 20).length).toBe(8);
+  });
+
+  it("parses normalized provider SSE frames", () => {
+    const chunk = parseSseFrame(
+      'data: {"choices":[{"delta":{"content":"hel"}}],"usage":{"prompt_tokens":3}}',
+    );
+    expect(chunk?.choices?.[0]?.delta?.content).toBe("hel");
+  });
+
+  it("parses ChatHub SSE packets", () => {
+    const packets = parseSsePackets(
+      'data: {"kind":"delta","runId":"r","text":"hello"}\n\n',
+    );
+    expect(packets).toEqual([{ kind: "delta", runId: "r", text: "hello" }]);
   });
 });
