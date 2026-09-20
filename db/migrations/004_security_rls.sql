@@ -1,4 +1,5 @@
--- Security helpers, FORCE RLS, policies and update triggers recovered from verification.\nCREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Security helpers, FORCE RLS, policies and update triggers recovered from verification.
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE OR REPLACE FUNCTION osirus.can_access_organization(target_organization_id uuid)
  RETURNS boolean
@@ -257,4 +258,4 @@ CREATE TRIGGER runs_touch_updated_at BEFORE UPDATE ON osirus.runs FOR EACH ROW E
 CREATE TRIGGER sessions_touch_updated_at BEFORE UPDATE ON osirus.sessions FOR EACH ROW EXECUTE FUNCTION osirus.touch_updated_at();
 CREATE TRIGGER skill_definitions_touch_updated_at BEFORE UPDATE ON osirus.skill_definitions FOR EACH ROW EXECUTE FUNCTION osirus.touch_updated_at();
 CREATE TRIGGER users_touch_updated_at BEFORE UPDATE ON osirus.users FOR EACH ROW EXECUTE FUNCTION osirus.touch_updated_at();
-CREATE TRIGGER workspaces_touch_updated_at BEFORE UPDATE ON osirus.workspaces FOR EACH ROW EXECUTE FUNCTION osirus.touch_updated_at();\n
+CREATE TRIGGER workspaces_touch_updated_at BEFORE UPDATE ON osirus.workspaces FOR EACH ROW EXECUTE FUNCTION osirus.touch_updated_at();
