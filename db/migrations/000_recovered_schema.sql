@@ -1,4 +1,5 @@
--- Canonical M1-M5 schema recovered from osirus-m1-m5-verify.\nCREATE SCHEMA IF NOT EXISTS osirus;
+-- Canonical M1-M5 schema recovered from osirus-m1-m5-verify.
+CREATE SCHEMA IF NOT EXISTS osirus;
 
 CREATE TABLE osirus.approvals (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -633,4 +634,4 @@ CREATE INDEX tool_calls_run_created_idx ON osirus.tool_calls USING btree (run_id
 CREATE INDEX usage_ledger_organization_idx ON osirus.usage_ledger USING btree (organization_id, occurred_at DESC);
 CREATE UNIQUE INDEX users_email_unique ON osirus.users USING btree (lower(email)) WHERE (email IS NOT NULL);
 CREATE INDEX workspace_memberships_user_idx ON osirus.workspace_memberships USING btree (user_id, workspace_id);
-CREATE INDEX workspaces_organization_idx ON osirus.workspaces USING btree (organization_id, created_at DESC);\n
+CREATE INDEX workspaces_organization_idx ON osirus.workspaces USING btree (organization_id, created_at DESC);
