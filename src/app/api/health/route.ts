@@ -19,8 +19,8 @@ export async function GET() {
 
   const provider = Boolean(
     env.UNOROUTER_BASE_URL &&
-    serverKeys().length > 0 &&
-    env.OSIRUS_MODEL_STRONG,
+      serverKeys().length > 0 &&
+      env.OSIRUS_MODEL_STRONG,
   );
   const status = authConfigured && database && provider ? "ok" : "degraded";
 
@@ -35,7 +35,7 @@ export async function GET() {
       },
     },
     {
-      status: status === "ok" ? 200 : 200,
+      status: 200,
       headers: { "Cache-Control": "no-store" },
     },
   );
