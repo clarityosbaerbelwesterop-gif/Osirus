@@ -1,1 +1,26 @@
-export type Capability="general"|"coding"|"research"|"math_science"|"data";export type RunStatus="queued"|"running"|"waiting_approval"|"verifying"|"repairing"|"completed"|"failed"|"cancelled";export type RuntimeEvent={id:string;runId:string;type:string;stage?:string;at:string;data:Record<string,unknown>};export type Checkpoint={runId:string;stage:string;sequence:number;state:Record<string,unknown>;createdAt:string};
+export type Capability =
+  "general" | "coding" | "research" | "math_science" | "data";
+export type RunStatus =
+  | "queued"
+  | "running"
+  | "waiting_approval"
+  | "verifying"
+  | "repairing"
+  | "completed"
+  | "failed"
+  | "cancelled";
+export type RuntimeEvent = {
+  id: string;
+  runId: string;
+  type: string;
+  stage?: string;
+  at: string;
+  data: Record<string, unknown>;
+};
+export type Checkpoint = {
+  runId: string;
+  stage: string;
+  sequence: number;
+  state: Record<string, unknown>;
+  createdAt: string;
+};

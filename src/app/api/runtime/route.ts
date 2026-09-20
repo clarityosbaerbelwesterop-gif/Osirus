@@ -1,2 +1,13 @@
-import {NextRequest,NextResponse} from "next/server";import {routeCapabilities} from "@/lib/runtime/router";
-export async function POST(req:NextRequest){const body=await req.json().catch(()=>null) as {objective?:unknown}|null;if(!body||typeof body.objective!=="string"||!body.objective.trim())return NextResponse.json({error:"invalid_objective"},{status:400});return NextResponse.json({capabilities:routeCapabilities(body.objective),status:"accepted"})}
+import { NextRequest, NextResponse } from "next/server";
+import { routeCapabilities } from "@/lib/runtime/router";
+export async function POST(req: NextRequest) {
+  const body = (await req.json().catch(() => null)) as {
+    objective?: unknown;
+  } | null;
+  if (!body || typeof body.objective !== "string" || !body.objective.trim())
+    return NextResponse.json({ error: "invalid_objective" }, { status: 400 });
+  return NextResponse.json({
+    capabilities: routeCapabilities(body.objective),
+    status: "accepted",
+  });
+}
