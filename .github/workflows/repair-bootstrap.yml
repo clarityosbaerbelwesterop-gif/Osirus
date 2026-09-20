@@ -1,0 +1,36 @@
+name: Repair bootstrap
+
+on:
+  push:
+    branches:
+      - build/m1-m5-production-gate
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: ${{ !contains(github.event.head_commit.message || '', '[repair-bootstrap]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: build/m1-m5-production-gate
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: npm install --package-lock-only
+      - run: npx prettier --write .
+      - name: Commit deterministic bootstrap outputs
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json .
+          if git diff --cached --quiet; then
+            echo "No bootstrap changes"
+            exit 0
+          fi
+          git commit -m "Normalize project and commit lockfile [repair-bootstrap]"
+          git push origin HEAD:build/m1-m5-production-gate
