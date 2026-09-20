@@ -4,10 +4,13 @@ import { InMemoryEventJournal, reconstruct } from "../src/lib/runtime/events";
 import { routeCapabilities } from "../src/lib/runtime/router";
 import {
   canTransitionRun,
+  canTransitionStage,
   isTerminalRunStatus,
 } from "../src/lib/runtime/state-machine";
 import { parseSsePackets } from "../src/lib/runtime/sse";
-import { parseSseFrame } from "../src/lib/models/unorouter";
+import { parseSseFrame, ProviderError } from "../src/lib/models/unorouter";
+import { publicRuntimeErrorMessage } from "../src/lib/runtime/errors";
+import { hasSameOrigin, readJsonBody } from "../src/lib/security/request";
 import { rankSkills, selectSkills, type Skill } from "../src/lib/skills";
 
 describe("runtime foundation", () => {
@@ -48,6 +51,8 @@ describe("runtime foundation", () => {
     expect(canTransitionRun("created", "planning")).toBe(true);
     expect(canTransitionRun("planning", "completed")).toBe(false);
     expect(isTerminalRunStatus("completed")).toBe(true);
+    expect(canTransitionStage("pending", "running")).toBe(true);
+    expect(canTransitionStage("completed", "running")).toBe(false);
   });
 
   it("bounds skill selection at eight", () => {
@@ -73,6 +78,8 @@ describe("runtime foundation", () => {
       'data: {"choices":[{"delta":{"content":"hel"}}],"usage":{"prompt_tokens":3}}',
     );
     expect(chunk?.choices?.[0]?.delta?.content).toBe("hel");
+    expect(parseSseFrame("data: [DONE]")).toBeNull();
+    expect(() => parseSseFrame("data: not-json")).toThrow(ProviderError);
   });
 
   it("parses ChatHub SSE packets", () => {
@@ -80,5 +87,38 @@ describe("runtime foundation", () => {
       'data: {"kind":"delta","runId":"r","text":"hello"}\n\n',
     );
     expect(packets).toEqual([{ kind: "delta", runId: "r", text: "hello" }]);
+  });
+
+  it("enforces same-origin, bounded JSON requests", async () => {
+    const request = new Request("https://osirus.test/api/runtime", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: "https://osirus.test",
+      },
+      body: JSON.stringify({ objective: "hello" }),
+    });
+    expect(hasSameOrigin(request)).toBe(true);
+    expect(await readJsonBody(request)).toEqual({
+      ok: true,
+      value: { objective: "hello" },
+    });
+
+    const oversized = new Request("https://osirus.test/api/runtime", {
+      method: "POST",
+      body: "12345",
+    });
+    expect(await readJsonBody(oversized, 4)).toEqual({
+      ok: false,
+      error: "payload_too_large",
+    });
+  });
+
+  it("does not expose provider diagnostics to the user", () => {
+    expect(
+      publicRuntimeErrorMessage(
+        new ProviderError("Bearer super-secret", "provider_error"),
+      ),
+    ).toBe("The run could not be completed. Please try again.");
   });
 });

@@ -2,9 +2,11 @@ import { z } from "zod";
 import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
 import { executeRuntimeRun, prepareRuntimeRun } from "@/lib/runtime/executor";
+import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 import { routeCapabilities } from "@/lib/runtime/router";
 import { encodeSse } from "@/lib/runtime/sse";
 import type { RuntimePacket } from "@/lib/runtime/types";
+import { hasSameOrigin, readJsonBody } from "@/lib/security/request";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -23,12 +25,29 @@ export async function POST(request: Request) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
-  const parsed = inputSchema.safeParse(await request.json().catch(() => null));
-  if (!parsed.success) {
+  if (!hasSameOrigin(request)) {
+    return Response.json({ error: "invalid_origin" }, { status: 403 });
+  }
+  if (
+    !request.headers
+      .get("content-type")
+      ?.toLowerCase()
+      .startsWith("application/json")
+  ) {
+    return Response.json({ error: "unsupported_media_type" }, { status: 415 });
+  }
+
+  const body = await readJsonBody(request);
+  if (!body.ok) {
     return Response.json(
-      { error: "invalid_request", details: parsed.error.flatten() },
-      { status: 400 },
+      { error: body.error },
+      { status: body.error === "payload_too_large" ? 413 : 400 },
     );
+  }
+
+  const parsed = inputSchema.safeParse(body.value);
+  if (!parsed.success) {
+    return Response.json({ error: "invalid_request" }, { status: 400 });
   }
 
   const identity = await bootstrapProductIdentity({
@@ -37,13 +56,21 @@ export async function POST(request: Request) {
     name: session.user.name,
   });
   const capabilities = routeCapabilities(parsed.data.objective);
-  const prepared = await prepareRuntimeRun({
-    identity,
-    objective: parsed.data.objective,
-    requestId: parsed.data.requestId,
-    capabilities,
-    sessionId: parsed.data.sessionId,
-  });
+  let prepared;
+  try {
+    prepared = await prepareRuntimeRun({
+      identity,
+      objective: parsed.data.objective,
+      requestId: parsed.data.requestId,
+      capabilities,
+      sessionId: parsed.data.sessionId,
+    });
+  } catch (error) {
+    return Response.json(
+      { error: publicRuntimeErrorMessage(error) },
+      { status: 400 },
+    );
+  }
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
@@ -68,8 +95,7 @@ export async function POST(request: Request) {
             emit({
               kind: "error",
               runId: prepared.runId,
-              message:
-                error instanceof Error ? error.message : "Reconnect failed",
+              message: publicRuntimeErrorMessage(error),
             });
           })
           .finally(() => controller.close());
@@ -88,10 +114,7 @@ export async function POST(request: Request) {
           emit({
             kind: "error",
             runId: prepared.runId,
-            message:
-              error instanceof Error
-                ? error.message
-                : "Runtime execution failed",
+            message: publicRuntimeErrorMessage(error),
           });
         })
         .finally(() => controller.close());

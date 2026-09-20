@@ -123,6 +123,7 @@ ALTER TABLE osirus.connector_grants ADD CONSTRAINT connector_grants_workspace_id
 ALTER TABLE osirus.connector_installations ADD CONSTRAINT connector_installations_installed_by_fkey FOREIGN KEY (installed_by) REFERENCES osirus.users(id) ON DELETE RESTRICT;
 ALTER TABLE osirus.connector_installations ADD CONSTRAINT connector_installations_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES osirus.organizations(id) ON DELETE CASCADE;
 ALTER TABLE osirus.connector_installations ADD CONSTRAINT connector_installations_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES osirus.workspaces(id) ON DELETE CASCADE;
+ALTER TABLE osirus.tool_calls ADD CONSTRAINT tool_calls_connector_installation_id_fkey FOREIGN KEY (connector_installation_id) REFERENCES osirus.connector_installations(id) ON DELETE SET NULL;
 ALTER TABLE osirus.eval_results ADD CONSTRAINT eval_results_eval_run_id_fkey FOREIGN KEY (eval_run_id) REFERENCES osirus.eval_runs(id) ON DELETE CASCADE;
 ALTER TABLE osirus.eval_runs ADD CONSTRAINT eval_runs_initiated_by_fkey FOREIGN KEY (initiated_by) REFERENCES osirus.users(id) ON DELETE SET NULL;
 ALTER TABLE osirus.eval_runs ADD CONSTRAINT eval_runs_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES osirus.organizations(id) ON DELETE CASCADE;

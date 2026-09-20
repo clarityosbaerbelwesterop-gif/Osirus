@@ -5,6 +5,7 @@ import { UnoRouterProvider } from "../models/unorouter";
 import { rankSkills } from "../skills";
 import { SkillRepository } from "../skills/repository";
 import { abortLocalRun, registerRunController } from "./cancellation";
+import { publicRuntimeErrorMessage, runtimeErrorCode } from "./errors";
 import { RuntimeRepository } from "./repository";
 import { isTerminalRunStatus } from "./state-machine";
 import type { Capability, RuntimePacket } from "./types";
@@ -44,11 +45,6 @@ function roleFor(capability: Capability): ModelRole {
 
 function estimateTokens(text: string) {
   return Math.max(1, Math.ceil(text.length / 4));
-}
-
-function safeErrorMessage(error: unknown) {
-  if (error instanceof Error) return error.message.slice(0, 500);
-  return "Runtime execution failed";
 }
 
 function sleep(ms: number, signal: AbortSignal) {
@@ -405,7 +401,7 @@ export async function executeRuntimeRun(input: {
         .finishModelCall(modelCallId, {
           status: cancelled ? "cancelled" : "failed",
           latencyMs: Date.now() - startedAt,
-          errorCode: cancelled ? "cancelled" : "runtime_error",
+          errorCode: cancelled ? "cancelled" : runtimeErrorCode(error),
         })
         .catch(() => undefined);
     }
@@ -436,15 +432,15 @@ export async function executeRuntimeRun(input: {
       } else {
         await repository
           .transitionRun(input.runId, "failed", {
-            errorCode: "runtime_error",
-            errorMessage: safeErrorMessage(error),
+            errorCode: runtimeErrorCode(error),
+            errorMessage: publicRuntimeErrorMessage(error),
           })
           .catch(() => undefined);
         await activity("failed", "Failed").catch(() => undefined);
         await input.emit({
           kind: "error",
           runId: input.runId,
-          message: safeErrorMessage(error),
+          message: publicRuntimeErrorMessage(error),
         });
       }
     }

@@ -55,6 +55,13 @@ export function canTransitionStage(from: StageStatus, to: StageStatus) {
   return stageTransitions[from].includes(to);
 }
 
+export function assertStageTransition(from: StageStatus, to: StageStatus) {
+  if (from === to) return;
+  if (!canTransitionStage(from, to)) {
+    throw new Error(`invalid_stage_transition:${from}->${to}`);
+  }
+}
+
 export function isTerminalRunStatus(status: RunStatus) {
   return terminalRunStatuses.has(status);
 }

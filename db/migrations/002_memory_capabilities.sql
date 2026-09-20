@@ -255,7 +255,6 @@ ALTER TABLE osirus.model_calls ADD CONSTRAINT model_calls_organization_id_fkey F
 ALTER TABLE osirus.model_calls ADD CONSTRAINT model_calls_run_id_fkey FOREIGN KEY (run_id) REFERENCES osirus.runs(id) ON DELETE SET NULL;
 ALTER TABLE osirus.model_calls ADD CONSTRAINT model_calls_stage_id_fkey FOREIGN KEY (stage_id) REFERENCES osirus.run_stages(id) ON DELETE SET NULL;
 ALTER TABLE osirus.model_calls ADD CONSTRAINT model_calls_workspace_id_fkey FOREIGN KEY (workspace_id) REFERENCES osirus.workspaces(id) ON DELETE CASCADE;
-ALTER TABLE osirus.tool_calls ADD CONSTRAINT tool_calls_connector_installation_id_fkey FOREIGN KEY (connector_installation_id) REFERENCES osirus.connector_installations(id) ON DELETE SET NULL;
 ALTER TABLE osirus.tool_calls ADD CONSTRAINT tool_calls_organization_id_fkey FOREIGN KEY (organization_id) REFERENCES osirus.organizations(id) ON DELETE CASCADE;
 ALTER TABLE osirus.tool_calls ADD CONSTRAINT tool_calls_run_id_fkey FOREIGN KEY (run_id) REFERENCES osirus.runs(id) ON DELETE SET NULL;
 ALTER TABLE osirus.tool_calls ADD CONSTRAINT tool_calls_stage_id_fkey FOREIGN KEY (stage_id) REFERENCES osirus.run_stages(id) ON DELETE SET NULL;

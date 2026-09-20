@@ -1,6 +1,22 @@
 -- Security helpers, FORCE RLS, policies and update triggers recovered from verification.
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+CREATE OR REPLACE FUNCTION osirus.current_user_id()
+ RETURNS uuid
+ LANGUAGE sql
+ STABLE
+AS $function$
+  SELECT NULLIF(current_setting('app.current_user_id', true), '')::uuid;
+$function$;
+
+CREATE OR REPLACE FUNCTION osirus.is_system()
+ RETURNS boolean
+ LANGUAGE sql
+ STABLE
+AS $function$
+  SELECT COALESCE(current_setting('app.osirus_system', true), '') = 'true';
+$function$;
+
 CREATE OR REPLACE FUNCTION osirus.can_access_organization(target_organization_id uuid)
  RETURNS boolean
  LANGUAGE sql
@@ -13,7 +29,7 @@ AS $function$
     WHERE membership.organization_id = target_organization_id
       AND membership.user_id = osirus.current_user_id()
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION osirus.can_access_run(target_run_id uuid)
  RETURNS boolean
@@ -28,7 +44,7 @@ AS $function$
     WHERE run.id = target_run_id
       AND membership.user_id = osirus.current_user_id()
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION osirus.can_access_workspace(target_workspace_id uuid)
  RETURNS boolean
@@ -42,7 +58,7 @@ AS $function$
     WHERE membership.workspace_id = target_workspace_id
       AND membership.user_id = osirus.current_user_id()
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION osirus.can_manage_organization(target_organization_id uuid)
  RETURNS boolean
@@ -57,7 +73,7 @@ AS $function$
       AND membership.user_id = osirus.current_user_id()
       AND membership.role IN ('owner', 'admin')
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION osirus.can_manage_run(target_run_id uuid)
  RETURNS boolean
@@ -77,7 +93,7 @@ AS $function$
         OR membership.role IN ('owner', 'editor')
       )
   );
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION osirus.can_manage_workspace(target_workspace_id uuid)
  RETURNS boolean
@@ -92,23 +108,7 @@ AS $function$
       AND membership.user_id = osirus.current_user_id()
       AND membership.role IN ('owner', 'editor')
   );
-$function$
-
-CREATE OR REPLACE FUNCTION osirus.current_user_id()
- RETURNS uuid
- LANGUAGE sql
- STABLE
-AS $function$
-  SELECT NULLIF(current_setting('app.current_user_id', true), '')::uuid;
-$function$
-
-CREATE OR REPLACE FUNCTION osirus.is_system()
- RETURNS boolean
- LANGUAGE sql
- STABLE
-AS $function$
-  SELECT COALESCE(current_setting('app.osirus_system', true), '') = 'true';
-$function$
+$function$;
 
 CREATE OR REPLACE FUNCTION osirus.touch_updated_at()
  RETURNS trigger
@@ -118,7 +118,7 @@ BEGIN
   NEW.updated_at = now();
   RETURN NEW;
 END;
-$function$
+$function$;
 
 
 ALTER TABLE osirus.approvals ENABLE ROW LEVEL SECURITY;

@@ -1,5 +1,5 @@
 import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
-import { auth } from "@/lib/auth/server";
+import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { RuntimeRepository } from "@/lib/runtime/repository";
 import { ChatHub } from "@/components/chathub";
 import { redirect } from "next/navigation";
@@ -8,6 +8,7 @@ import { signOut } from "./actions";
 export const dynamic = "force-dynamic";
 
 export default async function AppPage() {
+  requireAuthConfiguration();
   const { data: session } = await auth.getSession();
   if (!session?.user) redirect("/auth/sign-in");
 

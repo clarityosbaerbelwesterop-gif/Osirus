@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { queryAs } from "../db/client";
-import { assertRunTransition } from "./state-machine";
+import { assertRunTransition, assertStageTransition } from "./state-machine";
 import type {
   Checkpoint,
   RunSnapshot,
@@ -45,6 +45,11 @@ type CheckpointRow = {
   state: Record<string, unknown>;
   version: number;
   created_at: string | Date;
+};
+
+type StageRow = {
+  id: string;
+  status: StageStatus;
 };
 
 function mapEvent(row: EventRow): RuntimeEvent {
@@ -366,6 +371,15 @@ export class RuntimeRepository {
     output?: Record<string, unknown>,
     verifierStatus?: "unverified" | "verified" | "conflicted" | "rejected",
   ) {
+    const current = await queryAs<StageRow>(
+      this.actorId,
+      "select id, status from osirus.run_stages where id = $1::uuid",
+      [stageId],
+    );
+    const stage = current[0];
+    if (!stage) throw new Error("stage_not_found");
+    assertStageTransition(stage.status, status);
+
     const rows = await queryAs<{ id: string }>(
       this.actorId,
       `update osirus.run_stages
@@ -381,16 +395,17 @@ export class RuntimeRepository {
                   then now()
                 else completed_at
               end
-        where id = $1::uuid
+        where id = $1::uuid and status = $5
         returning id`,
       [
         stageId,
         status,
         output ? JSON.stringify(output) : null,
         verifierStatus ?? null,
+        stage.status,
       ],
     );
-    if (!rows[0]) throw new Error("stage_update_failed");
+    if (!rows[0]) throw new Error("stage_transition_conflict");
   }
 
   async appendEvent(input: {
