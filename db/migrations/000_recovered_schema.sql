@@ -1,4 +1,4 @@
--- Reconstructed from osirus-m1-m5-verify. Source of truth; reviewed extraction.
+-- Reconstructed from osirus-m1-m5-verify. Source of truth - reviewed extraction.
 CREATE SCHEMA IF NOT EXISTS osirus;
 
 CREATE TABLE osirus.checkpoints (
