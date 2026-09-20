@@ -1,4 +1,5 @@
--- Reconstructed from osirus-m1-m5-verify.\nCREATE TABLE osirus.connector_grants (
+-- Reconstructed from osirus-m1-m5-verify.
+CREATE TABLE osirus.connector_grants (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   connector_installation_id uuid NOT NULL,
   organization_id uuid NOT NULL,
@@ -133,4 +134,4 @@ ALTER TABLE osirus.skill_versions ADD CONSTRAINT skill_versions_pkey PRIMARY KEY
 ALTER TABLE osirus.skill_versions ADD CONSTRAINT skill_versions_skill_id_fkey FOREIGN KEY (skill_id) REFERENCES osirus.skill_definitions(id) ON DELETE CASCADE;
 ALTER TABLE osirus.skill_versions ADD CONSTRAINT skill_versions_skill_id_version_key UNIQUE (skill_id, version);
 
-CREATE INDEX skill_usage_run_idx ON osirus.skill_usage USING btree (run_id, stage_id, created_at);\n
+CREATE INDEX skill_usage_run_idx ON osirus.skill_usage USING btree (run_id, stage_id, created_at);
