@@ -1,0 +1,9 @@
+.next
+node_modules
+.env
+.env.*
+!.env.example
+coverage
+playwright-report
+test-results
+.vercel
