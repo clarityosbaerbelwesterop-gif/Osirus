@@ -1,4 +1,5 @@
--- Reconstructed from osirus-m1-m5-verify. Source of truth; reviewed extraction.\nCREATE SCHEMA IF NOT EXISTS osirus;
+-- Reconstructed from osirus-m1-m5-verify. Source of truth; reviewed extraction.
+CREATE SCHEMA IF NOT EXISTS osirus;
 
 CREATE TABLE osirus.checkpoints (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
@@ -221,4 +222,4 @@ CREATE INDEX runs_workspace_created_idx ON osirus.runs USING btree (workspace_id
 CREATE INDEX sessions_workspace_updated_idx ON osirus.sessions USING btree (workspace_id, updated_at DESC) WHERE (archived_at IS NULL);
 CREATE UNIQUE INDEX users_email_unique ON osirus.users USING btree (lower(email)) WHERE (email IS NOT NULL);
 CREATE INDEX workspace_memberships_user_idx ON osirus.workspace_memberships USING btree (user_id, workspace_id);
-CREATE INDEX workspaces_organization_idx ON osirus.workspaces USING btree (organization_id, created_at DESC);\n
+CREATE INDEX workspaces_organization_idx ON osirus.workspaces USING btree (organization_id, created_at DESC);
