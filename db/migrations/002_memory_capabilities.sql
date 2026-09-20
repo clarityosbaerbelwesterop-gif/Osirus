@@ -1,4 +1,5 @@
--- Reconstructed from osirus-m1-m5-verify. JSONB embeddings are intentionally not vector search.\nCREATE TABLE osirus.approvals (
+-- Reconstructed from osirus-m1-m5-verify. JSONB embeddings are intentionally not vector search.
+CREATE TABLE osirus.approvals (
   id uuid NOT NULL DEFAULT gen_random_uuid(),
   organization_id uuid NOT NULL,
   workspace_id uuid NOT NULL,
@@ -275,4 +276,4 @@ CREATE INDEX memory_relations_to_idx ON osirus.memory_relations USING btree (to_
 CREATE INDEX memory_summaries_scope_idx ON osirus.memory_summaries USING btree (owner_id, workspace_id, horizon, updated_at DESC);
 CREATE INDEX model_calls_run_created_idx ON osirus.model_calls USING btree (run_id, created_at DESC) WHERE (run_id IS NOT NULL);
 CREATE INDEX tool_calls_run_created_idx ON osirus.tool_calls USING btree (run_id, created_at DESC) WHERE (run_id IS NOT NULL);
-CREATE INDEX usage_ledger_organization_idx ON osirus.usage_ledger USING btree (organization_id, occurred_at DESC);\n
+CREATE INDEX usage_ledger_organization_idx ON osirus.usage_ledger USING btree (organization_id, occurred_at DESC);
