@@ -7,7 +7,8 @@ async function configuredProvider() {
   vi.stubEnv("UNOROUTER_BASE_URL", endpoint);
   vi.stubEnv("UNOROUTER_API_KEY_1", "test-key-one");
   vi.stubEnv("UNOROUTER_API_KEY_2", "test-key-two");
-  vi.stubEnv("OSIRUS_MODEL_STRONG", "configured-strong-model");
+  vi.stubEnv("OSIRUS_MODEL_STRONG", "grok-4.6");
+  vi.stubEnv("OSIRUS_REASONING_EFFORT", "high");
   const providerModule = await import("../src/lib/models/unorouter");
   return providerModule.UnoRouterProvider;
 }
@@ -74,7 +75,8 @@ describe("UnoRouterProvider", () => {
     expect(
       JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string),
     ).toMatchObject({
-      model: "configured-strong-model",
+      model: "grok-4.6",
+      reasoning_effort: "high",
       stream: true,
       stream_options: { include_usage: true },
     });

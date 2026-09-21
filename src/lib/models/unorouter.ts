@@ -90,6 +90,15 @@ export class UnoRouterProvider implements ModelProvider {
     return model;
   }
 
+  private reasoningEffort(role: ModelRole) {
+    // Grok 4.6 is Osirus's default high-reasoning model. Do not send a
+    // provider-specific reasoning field to another selected model family
+    // until its OpenAI-compatible contract has been verified.
+    return this.modelFor(role) === "grok-4.6"
+      ? (env.OSIRUS_REASONING_EFFORT ?? "high")
+      : undefined;
+  }
+
   modelId(role: ModelRole) {
     return this.modelFor(role);
   }
@@ -170,6 +179,7 @@ export class UnoRouterProvider implements ModelProvider {
             model: this.modelFor(input.role),
             messages: input.messages,
             stream: input.stream,
+            reasoning_effort: this.reasoningEffort(input.role),
             stream_options: input.stream ? { include_usage: true } : undefined,
           }),
           signal,

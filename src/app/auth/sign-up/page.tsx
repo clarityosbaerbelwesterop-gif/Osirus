@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { GitHubSignInButton } from "@/components/auth/github-sign-in-button";
 import { signUpWithEmail } from "./actions";
 
 export default function SignUpPage() {
@@ -37,6 +38,7 @@ export default function SignUpPage() {
         <button type="submit" disabled={pending}>
           {pending ? "Creating…" : "Create account"}
         </button>
+        <GitHubSignInButton />
         <p className="muted">
           Already registered? <Link href="/auth/sign-in">Sign in</Link>
         </p>

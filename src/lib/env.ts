@@ -18,6 +18,9 @@ const schema = z.object({
   OSIRUS_MODEL_RESEARCH: z.string().min(1).optional(),
   OSIRUS_MODEL_MATH: z.string().min(1).optional(),
   OSIRUS_MODEL_VERIFY: z.string().min(1).optional(),
+  OSIRUS_REASONING_EFFORT: z
+    .enum(["low", "medium", "high", "xhigh"])
+    .optional(),
   VERCEL_GIT_COMMIT_SHA: z.string().min(1).optional(),
 });
 
