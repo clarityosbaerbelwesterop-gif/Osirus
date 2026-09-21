@@ -18,7 +18,10 @@ export default async function AppPage() {
     name: session.user.name,
   });
   const repository = new RuntimeRepository(identity.userId);
-  const recent = await repository.getRecentWorkspaceState(identity.workspaceId);
+  const [recent, sessions] = await Promise.all([
+    repository.getRecentWorkspaceState(identity.workspaceId),
+    repository.listWorkspaceSessions(identity.workspaceId),
+  ]);
 
   return (
     <>
@@ -27,6 +30,8 @@ export default async function AppPage() {
         initialSessionId={recent.sessionId}
         initialMessages={recent.messages}
         initialRunId={recent.activeRunId}
+        initialSnapshotRunId={recent.recentRunId}
+        initialSessions={sessions}
       />
       <form action={signOut} className="account-exit">
         <button type="submit">Sign out</button>

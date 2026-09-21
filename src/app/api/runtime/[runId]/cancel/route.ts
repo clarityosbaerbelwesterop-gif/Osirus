@@ -3,6 +3,11 @@ import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { abortLocalRun } from "@/lib/runtime/cancellation";
 import { RuntimeRepository } from "@/lib/runtime/repository";
 import { hasSameOrigin } from "@/lib/security/request";
+import {
+  enforceRateLimit,
+  RateLimitError,
+  RateLimitUnavailableError,
+} from "@/lib/security/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -28,6 +33,21 @@ export async function POST(
   }
 
   const repository = new RuntimeRepository(session.user.id);
+  try {
+    await enforceRateLimit({
+      subject: `user:${session.user.id}`,
+      route: "runtime.cancel",
+      limit: 30,
+    });
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      return Response.json({ error: "rate_limited" }, { status: 429 });
+    }
+    if (error instanceof RateLimitUnavailableError) {
+      return Response.json({ error: "service_unavailable" }, { status: 503 });
+    }
+    throw error;
+  }
   const run = await repository.requestCancellation(parsed.data.runId);
   if (!run) return Response.json({ error: "not_found" }, { status: 404 });
 

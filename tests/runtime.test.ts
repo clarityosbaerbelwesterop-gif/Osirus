@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { InMemoryCheckpointStore } from "../src/lib/runtime/checkpoints";
 import { InMemoryEventJournal, reconstruct } from "../src/lib/runtime/events";
 import { routeCapabilities } from "../src/lib/runtime/router";
+import { pipelineForCapabilities } from "../src/lib/pipelines/definitions";
 import {
   canTransitionRun,
   canTransitionStage,
@@ -19,6 +20,21 @@ describe("runtime foundation", () => {
       "coding",
       "research",
     ]);
+  });
+
+  it("creates durable branch stages for compound work", () => {
+    const pipeline = pipelineForCapabilities(["research", "coding"]);
+    expect(pipeline.id).toBe("research+coding:v1");
+    expect(pipeline.stages.map((stage) => stage.kind)).toEqual([
+      "decompose_question",
+      "ground_task",
+      "retrieve_memory",
+      "select_skills",
+      "plan",
+      "execute",
+      "verify",
+    ]);
+    expect(pipeline.stages.at(-1)?.name).toBe("Verify response contract");
   });
 
   it("sequences and reconstructs in-memory test events", () => {
@@ -70,7 +86,9 @@ describe("runtime foundation", () => {
       state: "enabled",
     }));
     expect(selectSkills("code", skills, ["coding"]).length).toBe(8);
-    expect(rankSkills("code", skills, ["coding"], 20).length).toBe(8);
+    expect(
+      rankSkills("code", skills, ["coding"], { maxActiveSkills: 20 }).length,
+    ).toBe(8);
   });
 
   it("parses normalized provider SSE frames", () => {

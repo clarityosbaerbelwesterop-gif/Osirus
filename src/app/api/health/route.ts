@@ -1,11 +1,13 @@
 import { authConfigured } from "@/lib/auth/server";
 import { db } from "@/lib/db/client";
 import { env, serverKeys } from "@/lib/env";
+import { logger } from "@/lib/telemetry/logger";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function GET(request: Request) {
+  const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
   let database = false;
   if (env.DATABASE_URL) {
     try {
@@ -14,6 +16,7 @@ export async function GET() {
       database = true;
     } catch {
       database = false;
+      logger.warn("health.database_unreachable", { requestId });
     }
   }
 
@@ -33,10 +36,13 @@ export async function GET() {
         database,
         provider,
       },
+      version: env.VERCEL_GIT_COMMIT_SHA ?? "local",
+      runtime: "nodejs",
+      timestamp: new Date().toISOString(),
     },
     {
       status: 200,
-      headers: { "Cache-Control": "no-store" },
+      headers: { "Cache-Control": "no-store", "X-Request-Id": requestId },
     },
   );
 }

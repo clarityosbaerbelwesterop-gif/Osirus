@@ -18,6 +18,7 @@ The ordered migration chain in `db/migrations` is the source of truth for a clea
 - `001` through `003` create the core runtime, memory/capability, and skill/connector entities.
 - `004` adds security helpers, FORCE RLS policies, and update triggers.
 - `005` adds the production runtime durability functions and indexes.
+- `006` adds the database-backed, fail-closed mutation rate-limit store.
 
 Neon Auth must be enabled before applying the chain because `osirus.users` is linked to the Neon Auth user table.
 

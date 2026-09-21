@@ -52,6 +52,12 @@ type StageRow = {
   status: StageStatus;
 };
 
+export type WorkspaceSession = {
+  id: string;
+  title: string;
+  updatedAt: string;
+};
+
 function mapEvent(row: EventRow): RuntimeEvent {
   return {
     id: row.id,
@@ -138,10 +144,15 @@ export class RuntimeRepository {
     );
     const sessionId = sessions[0]?.id ?? null;
     if (!sessionId) {
-      return { sessionId: null, messages: [], activeRunId: null };
+      return {
+        sessionId: null,
+        messages: [],
+        activeRunId: null,
+        recentRunId: null,
+      };
     }
 
-    const [messages, activeRuns] = await Promise.all([
+    const [messages, activeRuns, recentRuns] = await Promise.all([
       queryAs<{
         id: string;
         role: "user" | "assistant" | "system";
@@ -165,6 +176,14 @@ export class RuntimeRepository {
           limit 1`,
         [sessionId],
       ),
+      queryAs<{ id: string }>(
+        this.actorId,
+        `select id from osirus.runs
+          where session_id = $1::uuid
+          order by created_at desc
+          limit 1`,
+        [sessionId],
+      ),
     ]);
 
     return {
@@ -176,7 +195,96 @@ export class RuntimeRepository {
         createdAt: new Date(message.created_at).toISOString(),
       })),
       activeRunId: activeRuns[0]?.id ?? null,
+      recentRunId: recentRuns[0]?.id ?? null,
     };
+  }
+
+  async listWorkspaceSessions(
+    workspaceId: string,
+  ): Promise<WorkspaceSession[]> {
+    const sessions = await queryAs<{
+      id: string;
+      title: string;
+      updated_at: string | Date;
+    }>(
+      this.actorId,
+      `select id, title, updated_at
+         from osirus.sessions
+        where workspace_id = $1::uuid and archived_at is null
+        order by updated_at desc
+        limit 100`,
+      [workspaceId],
+    );
+    return sessions.map((session) => ({
+      id: session.id,
+      title: session.title,
+      updatedAt: new Date(session.updated_at).toISOString(),
+    }));
+  }
+
+  async getSessionState(sessionId: string, workspaceId: string) {
+    const resolved = await this.resolveSession(sessionId, workspaceId);
+    if (!resolved) throw new Error("session_not_found");
+    const [messages, activeRuns, recentRuns] = await Promise.all([
+      queryAs<{
+        id: string;
+        role: "user" | "assistant" | "system";
+        content: string;
+        created_at: string | Date;
+      }>(
+        this.actorId,
+        `select id, role, content, created_at
+           from osirus.messages
+          where session_id = $1::uuid
+          order by created_at
+          limit 200`,
+        [resolved],
+      ),
+      queryAs<{ id: string }>(
+        this.actorId,
+        `select id from osirus.runs
+          where session_id = $1::uuid
+            and status not in ('completed','failed','cancelled')
+          order by created_at desc
+          limit 1`,
+        [resolved],
+      ),
+      queryAs<{ id: string }>(
+        this.actorId,
+        `select id from osirus.runs
+          where session_id = $1::uuid
+          order by created_at desc
+          limit 1`,
+        [resolved],
+      ),
+    ]);
+    return {
+      sessionId: resolved,
+      messages: messages.map((message) => ({
+        id: message.id,
+        role: message.role,
+        content: message.content,
+        createdAt: new Date(message.created_at).toISOString(),
+      })),
+      activeRunId: activeRuns[0]?.id ?? null,
+      recentRunId: recentRuns[0]?.id ?? null,
+    };
+  }
+
+  async getSessionMessages(sessionId: string, limit = 12) {
+    const rows = await queryAs<{
+      role: "user" | "assistant" | "system";
+      content: string;
+    }>(
+      this.actorId,
+      `select role, content
+         from osirus.messages
+        where session_id = $1::uuid
+        order by created_at desc
+        limit $2`,
+      [sessionId, Math.min(Math.max(limit, 1), 24)],
+    );
+    return rows.reverse();
   }
 
   async createMessage(input: {
@@ -205,6 +313,11 @@ export class RuntimeRepository {
       ],
     );
     if (!rows[0]) throw new Error("message_insert_failed");
+    await queryAs(
+      this.actorId,
+      "update osirus.sessions set updated_at = now() where id = $1::uuid",
+      [input.sessionId],
+    );
     return rows[0].id;
   }
 

@@ -9,6 +9,7 @@ const migrations = [
   "003_skills_connectors_evals.sql",
   "004_security_rls.sql",
   "005_runtime_production.sql",
+  "006_api_controls.sql",
 ];
 
 function migration(name: string) {
@@ -57,5 +58,19 @@ describe("migration replay invariants", () => {
         expect(line.trim().endsWith(";")).toBe(true);
       }
     }
+  });
+
+  it("keeps mutation rate limits durable and system-only", () => {
+    const controls = migration("006_api_controls.sql");
+    expect(controls).toContain("CREATE TABLE osirus.request_rate_limits");
+    expect(controls).toContain("FORCE ROW LEVEL SECURITY");
+    expect(controls).toContain("request_rate_limits_system_only");
+  });
+
+  it("serializes append-only event sequence allocation", () => {
+    const runtime = migration("005_runtime_production.sql");
+    expect(runtime).toContain("FUNCTION osirus.append_run_event");
+    expect(runtime).toContain("pg_advisory_xact_lock");
+    expect(runtime).toContain("MAX(sequence)");
   });
 });

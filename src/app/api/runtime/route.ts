@@ -7,6 +7,11 @@ import { routeCapabilities } from "@/lib/runtime/router";
 import { encodeSse } from "@/lib/runtime/sse";
 import type { RuntimePacket } from "@/lib/runtime/types";
 import { hasSameOrigin, readJsonBody } from "@/lib/security/request";
+import {
+  enforceRateLimit,
+  RateLimitError,
+  RateLimitUnavailableError,
+} from "@/lib/security/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -16,9 +21,14 @@ const inputSchema = z.object({
   objective: z.string().trim().min(1).max(100_000),
   requestId: z.string().uuid(),
   sessionId: z.string().uuid().nullable().optional(),
+  regenerate: z.boolean().optional().default(false),
 });
 
 export async function POST(request: Request) {
+  const suppliedCorrelationId = request.headers.get("x-request-id");
+  const correlationId =
+    z.string().uuid().safeParse(suppliedCorrelationId).data ??
+    crypto.randomUUID();
   requireAuthConfiguration();
   const { data: session } = await auth.getSession();
   if (!session?.user) {
@@ -55,6 +65,21 @@ export async function POST(request: Request) {
     email: session.user.email,
     name: session.user.name,
   });
+  try {
+    await enforceRateLimit({
+      subject: `user:${identity.userId}`,
+      route: "runtime.create",
+      limit: 12,
+    });
+  } catch (error) {
+    if (error instanceof RateLimitError) {
+      return Response.json({ error: "rate_limited" }, { status: 429 });
+    }
+    if (error instanceof RateLimitUnavailableError) {
+      return Response.json({ error: "service_unavailable" }, { status: 503 });
+    }
+    throw error;
+  }
   const capabilities = routeCapabilities(parsed.data.objective);
   let prepared;
   try {
@@ -64,6 +89,7 @@ export async function POST(request: Request) {
       requestId: parsed.data.requestId,
       capabilities,
       sessionId: parsed.data.sessionId,
+      regenerate: parsed.data.regenerate,
     });
   } catch (error) {
     return Response.json(
@@ -109,6 +135,7 @@ export async function POST(request: Request) {
         objective: parsed.data.objective,
         capabilities,
         emit,
+        correlationId,
       })
         .catch((error: unknown) => {
           emit({
@@ -130,6 +157,7 @@ export async function POST(request: Request) {
       "X-Accel-Buffering": "no",
       "X-Osirus-Run-Id": prepared.runId,
       "X-Osirus-Session-Id": prepared.sessionId,
+      "X-Request-Id": correlationId,
     },
   });
 }
