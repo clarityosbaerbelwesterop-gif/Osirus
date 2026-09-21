@@ -108,6 +108,30 @@ describe("runtime database access", () => {
     expect(roleSwitches).toHaveLength(2);
   });
 
+  it("provisions a first tenancy without the caller's own policies", () => {
+    // A new user has no membership rows yet, so they cannot see any row in
+    // osirus.workspaces. `on conflict` has to probe the target table for a
+    // conflicting row, so the provisioning insert is rejected with a row-level
+    // security violation and signup fails outright. Provisioning therefore runs
+    // as a system caller, which the is_system() branches in those policies
+    // exist for. Verified against a live replay of the full schema.
+    const bootstrap = readFileSync(
+      join(process.cwd(), "src", "lib", "auth", "bootstrap.ts"),
+      "utf8",
+    );
+    for (const table of [
+      "osirus.organizations",
+      "osirus.organization_memberships",
+      "osirus.workspaces",
+      "osirus.workspace_memberships",
+    ]) {
+      const insert = bootstrap.indexOf(`insert into ${table}`);
+      expect(insert).toBeGreaterThan(-1);
+      const helper = bootstrap.lastIndexOf("await query", insert);
+      expect(bootstrap.slice(helper, insert)).toContain("querySystem");
+    }
+  });
+
   it("scopes every access-control setting to the transaction", () => {
     // A session-scoped set_config would leak the previous caller's identity
     // onto the next request that reuses the pooled connection.

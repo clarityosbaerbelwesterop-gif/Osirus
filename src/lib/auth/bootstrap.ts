@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { queryAs } from "../db/client";
+import { queryAs, querySystem } from "../db/client";
 
 export type ProductIdentity = {
   userId: string;
@@ -57,8 +57,15 @@ export async function bootstrapProductIdentity(user: {
   const stableSuffix = user.id.replaceAll("-", "").slice(0, 16);
   const organizationSlug = `personal-${stableSuffix}`;
 
-  const organizations = await queryAs<{ id: string }>(
-    user.id,
+  // Provisioning a user's first tenancy runs as a system caller. Every
+  // statement below is parameterised by the already-authenticated user id and
+  // touches only that user's rows, but it cannot run under the caller's own
+  // policies: `on conflict` has to probe the target table for a conflicting
+  // row, and until the membership rows exist the caller cannot see any row in
+  // osirus.workspaces, so the insert is rejected outright with a row-level
+  // security violation. The is_system() branches in these policies exist for
+  // exactly this bootstrap. Ordinary reads and writes stay on queryAs.
+  const organizations = await querySystem<{ id: string }>(
     `with inserted as (
        insert into osirus.organizations (id, name, slug, created_by)
        values ($1::uuid, $2, $3, $4::uuid)
@@ -82,16 +89,14 @@ export async function bootstrapProductIdentity(user: {
     throw new Error("Unable to bootstrap organization");
   }
 
-  await queryAs(
-    user.id,
+  await querySystem(
     `insert into osirus.organization_memberships (organization_id, user_id, role)
      values ($1::uuid, $2::uuid, 'owner')
      on conflict (organization_id, user_id) do nothing`,
     [resolvedOrganizationId, user.id],
   );
 
-  const workspaces = await queryAs<{ id: string; name: string }>(
-    user.id,
+  const workspaces = await querySystem<{ id: string; name: string }>(
     `with inserted as (
        insert into osirus.workspaces (id, organization_id, name, slug, created_by)
        values ($1::uuid, $2::uuid, 'Personal', 'personal', $3::uuid)
@@ -108,8 +113,7 @@ export async function bootstrapProductIdentity(user: {
   const resolvedWorkspace = workspaces[0];
   if (!resolvedWorkspace) throw new Error("Unable to bootstrap workspace");
 
-  await queryAs(
-    user.id,
+  await querySystem(
     `insert into osirus.workspace_memberships
        (workspace_id, organization_id, user_id, role)
      values ($1::uuid, $2::uuid, $3::uuid, 'owner')
