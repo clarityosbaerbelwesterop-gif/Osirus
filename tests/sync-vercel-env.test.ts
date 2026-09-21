@@ -3,6 +3,7 @@ import {
   coversTargets,
   hasAnyValue,
   isAllowedPrimaryModel,
+  optionalSecret,
   parseTargetList,
   uncoveredTargets,
   type VercelEnvironmentRow,
@@ -112,6 +113,26 @@ describe("primary model policy", () => {
     expect(isAllowedPrimaryModel("opus")).toBe(false);
     expect(isAllowedPrimaryModel("grok-5")).toBe(false);
     expect(isAllowedPrimaryModel("gpt-5")).toBe(false);
+  });
+});
+
+describe("optional secret reading", () => {
+  it("treats a configured-but-blank secret as absent", () => {
+    // Regression: a GitHub secret that exists with an empty value arrives as
+    // "". That is falsy but not nullish, so `?? generated` does not fall back
+    // past it. The cookie secret was then set to "", which is itself falsy, so
+    // it was dropped from the sync entirely and the run reported success while
+    // leaving the deployment with auth unconfigured.
+    expect(optionalSecret("")).toBeUndefined();
+    expect(optionalSecret("   ")).toBeUndefined();
+    expect(optionalSecret(undefined)).toBeUndefined();
+    expect(optionalSecret(" value ")).toBe("value");
+  });
+
+  it("lets a generated fallback take over from a blank secret", () => {
+    const generated = "generated-secret";
+    expect(optionalSecret("") ?? generated).toBe(generated);
+    expect(optionalSecret("supplied") ?? generated).toBe("supplied");
   });
 });
 

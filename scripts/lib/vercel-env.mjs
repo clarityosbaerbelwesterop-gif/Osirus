@@ -73,3 +73,15 @@ export function parseTargetList(value) {
   if (target === "both") return ["preview", "production"];
   throw new Error("OSIRUS_SYNC_TARGET must be preview, production, or both");
 }
+
+/**
+ * Read an optional secret from the environment, treating blank as absent.
+ *
+ * A GitHub secret that exists but is empty arrives as "". That is falsy but not
+ * nullish, so `??` will not fall back past it -- an empty secret would be
+ * synced verbatim, or silently suppress the value meant to replace it.
+ */
+export function optionalSecret(value) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : undefined;
+}

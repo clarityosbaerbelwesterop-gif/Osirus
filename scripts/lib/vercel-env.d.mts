@@ -35,3 +35,5 @@ export function hasAnyValue(
 export function isAllowedPrimaryModel(model: string): boolean;
 
 export function parseTargetList(value: string | undefined): string[];
+
+export function optionalSecret(value: string | undefined): string | undefined;

@@ -3,6 +3,7 @@ import {
   coversTargets,
   hasAnyValue,
   isAllowedPrimaryModel,
+  optionalSecret,
   parseTargetList,
   uncoveredTargets,
 } from "./lib/vercel-env.mjs";
@@ -59,7 +60,7 @@ async function availableModelIds(apiKey) {
 const teamId = required("VERCEL_TEAM_ID");
 const projectId = required("VERCEL_PROJECT_ID");
 const neonAuthUrl = (
-  process.env.NEON_AUTH_URL?.trim() || DEFAULT_NEON_AUTH_URL
+  optionalSecret(process.env.NEON_AUTH_URL) ?? DEFAULT_NEON_AUTH_URL
 ).replace(/\/$/, "");
 const unoRouterKeyOne = required("UNOROUTER_API_KEY_1");
 const unoRouterKeyTwo = required("UNOROUTER_API_KEY_2");
@@ -93,7 +94,7 @@ const existing = Array.isArray(existingResponse.envs)
 // deployment and scopes preview values to a git branch. GitHub Actions cannot
 // read it, and its absence here is not a failure: database availability is
 // certified separately by deploying and asserting /api/health runs SELECT 1.
-const databaseUrl = process.env.DATABASE_URL?.trim();
+const databaseUrl = optionalSecret(process.env.DATABASE_URL);
 const uncoveredDatabaseTargets = uncoveredTargets(
   existing,
   "DATABASE_URL",
@@ -108,7 +109,11 @@ if (!databaseUrl && uncoveredDatabaseTargets.length > 0) {
   );
 }
 
-const cookieSecretFromGitHub = process.env.NEON_AUTH_COOKIE_SECRET?.trim();
+// A configured-but-blank secret must not stand in for a real one: it would
+// leave the app with an empty cookie secret and auth permanently unconfigured.
+const cookieSecretFromGitHub = optionalSecret(
+  process.env.NEON_AUTH_COOKIE_SECRET,
+);
 const rotateCookieSecret =
   process.env.OSIRUS_ROTATE_AUTH_COOKIE_SECRET === "true";
 const hasCookieSecret = coversTargets(
