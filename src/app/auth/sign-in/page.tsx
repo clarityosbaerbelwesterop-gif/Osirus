@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { GitHubSignInButton } from "@/components/auth/github-sign-in-button";
 import { signInWithEmail } from "./actions";
 
 export default function SignInPage() {
@@ -32,6 +33,7 @@ export default function SignInPage() {
         <button type="submit" disabled={pending}>
           {pending ? "Signing in…" : "Sign in"}
         </button>
+        <GitHubSignInButton />
         <p className="muted">
           New to Osirus? <Link href="/auth/sign-up">Create an account</Link>
         </p>

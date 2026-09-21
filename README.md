@@ -25,3 +25,26 @@ Neon Auth must be enabled before applying the chain because `osirus.users` is li
 ## Development
 
 Copy `.env.example` to `.env.local`, provide server-side values, then run `npm install && npm run dev`.
+
+## Runtime configuration sync
+
+`.github/workflows/sync-runtime-configuration.yml` securely synchronizes the
+existing GitHub runtime secrets to the existing Vercel project. It runs only on
+the protected production branch, the active production-gate branch, or a manual
+dispatch — never on arbitrary pull-request code.
+
+- `NEON_AUTH_URL` is mapped to the server-only Neon Auth base URL and its
+  verified JWKS URL.
+- `UNOROUTER_API_KEY_1` through `_3` are synced as sensitive Vercel variables.
+  `NEON_API_KEY` remains GitHub-only: it is a Neon management credential, not a
+  web-runtime secret.
+- `DATABASE_URL` remains owned by the existing Vercel–Neon integration unless a
+  GitHub `DATABASE_URL` secret is deliberately supplied.
+- The workflow validates the selected model against UnoRouter before syncing all
+  Osirus model roles. It defaults to `grok-4.6` with high reasoning. To select
+  Opus, set the repository variable `OSIRUS_PRIMARY_MODEL` to the exact,
+  currently available UnoRouter Opus 5 model ID, then dispatch the workflow.
+- The Neon Auth cookie secret is created once in Vercel if absent and is never
+  printed. Its rotation requires an explicit manual-dispatch confirmation because
+  it invalidates active sessions; a partially configured target fails closed
+  instead of silently rotating an existing secret.
