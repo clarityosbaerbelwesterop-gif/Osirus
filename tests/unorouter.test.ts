@@ -8,8 +8,8 @@ async function configuredProvider() {
   vi.stubEnv("UNOROUTER_API_KEY_1", "test-key-one");
   vi.stubEnv("UNOROUTER_API_KEY_2", "test-key-two");
   vi.stubEnv("OSIRUS_MODEL_STRONG", "configured-strong-model");
-  const module = await import("../src/lib/models/unorouter");
-  return module.UnoRouterProvider;
+  const providerModule = await import("../src/lib/models/unorouter");
+  return providerModule.UnoRouterProvider;
 }
 
 async function collect<T>(stream: AsyncIterable<T>) {
