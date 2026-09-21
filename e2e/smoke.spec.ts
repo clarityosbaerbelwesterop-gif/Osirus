@@ -5,6 +5,9 @@ test("renders authentication entry point", async ({ page }) => {
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
   await expect(page.getByLabel("Email")).toBeVisible();
   await expect(page.getByLabel("Password")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Continue with GitHub" }),
+  ).toBeVisible();
 });
 
 test("health response never exposes secrets", async ({ request }) => {

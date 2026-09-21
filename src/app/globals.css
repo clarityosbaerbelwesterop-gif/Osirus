@@ -469,6 +469,40 @@ a {
   min-height: 44px;
 }
 
+.social-auth {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.auth-divider span {
+  height: 1px;
+  background: var(--line);
+}
+
+.auth-card .social-auth-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border: 1px solid var(--line);
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.social-auth-button span {
+  font-weight: 800;
+}
+
 .form-error {
   color: var(--danger);
 }

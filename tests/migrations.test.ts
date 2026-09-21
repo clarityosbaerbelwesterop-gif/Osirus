@@ -10,6 +10,7 @@ const migrations = [
   "004_security_rls.sql",
   "005_runtime_production.sql",
   "006_api_controls.sql",
+  "007_app_role.sql",
 ];
 
 function migration(name: string) {
@@ -72,5 +73,70 @@ describe("migration replay invariants", () => {
     expect(runtime).toContain("FUNCTION osirus.append_run_event");
     expect(runtime).toContain("pg_advisory_xact_lock");
     expect(runtime).toContain("MAX(sequence)");
+  });
+
+  it("provisions a runtime role that cannot bypass row-level security", () => {
+    // Neon's owner role carries BYPASSRLS, which silently disables every policy
+    // in 004. A verified probe running as the owner could read and delete
+    // another tenant's rows; running as this role, the same probe is rejected.
+    const appRole = migration("007_app_role.sql");
+    expect(appRole).toContain("CREATE ROLE osirus_app");
+    expect(appRole).toContain("NOBYPASSRLS");
+    expect(appRole).toContain("GRANT USAGE ON SCHEMA osirus TO osirus_app");
+    expect(appRole).toContain("ALTER DEFAULT PRIVILEGES IN SCHEMA osirus");
+
+    // The attribute may be discussed in comments, but no statement may grant it.
+    const statements = appRole
+      .split("\n")
+      .filter((line) => !line.trim().startsWith("--"))
+      .join("\n");
+    expect(statements).not.toMatch(/(?<!NO)BYPASSRLS/);
+  });
+});
+
+describe("runtime database access", () => {
+  const client = readFileSync(
+    join(process.cwd(), "src", "lib", "db", "client.ts"),
+    "utf8",
+  );
+
+  it("assumes the non-bypassing role on every tenant-scoped statement", () => {
+    expect(client).toContain('const APP_ROLE = "osirus_app"');
+    // Both helpers must switch role in the same transaction that sets the
+    // tenant GUC, or the policies are evaluated against a role that skips them.
+    const roleSwitches = client.match(/set_config\('role', \$\d+, true\)/g);
+    expect(roleSwitches).toHaveLength(2);
+  });
+
+  it("provisions a first tenancy without the caller's own policies", () => {
+    // A new user has no membership rows yet, so they cannot see any row in
+    // osirus.workspaces. `on conflict` has to probe the target table for a
+    // conflicting row, so the provisioning insert is rejected with a row-level
+    // security violation and signup fails outright. Provisioning therefore runs
+    // as a system caller, which the is_system() branches in those policies
+    // exist for. Verified against a live replay of the full schema.
+    const bootstrap = readFileSync(
+      join(process.cwd(), "src", "lib", "auth", "bootstrap.ts"),
+      "utf8",
+    );
+    for (const table of [
+      "osirus.organizations",
+      "osirus.organization_memberships",
+      "osirus.workspaces",
+      "osirus.workspace_memberships",
+    ]) {
+      const insert = bootstrap.indexOf(`insert into ${table}`);
+      expect(insert).toBeGreaterThan(-1);
+      const helper = bootstrap.lastIndexOf("await query", insert);
+      expect(bootstrap.slice(helper, insert)).toContain("querySystem");
+    }
+  });
+
+  it("scopes every access-control setting to the transaction", () => {
+    // A session-scoped set_config would leak the previous caller's identity
+    // onto the next request that reuses the pooled connection.
+    for (const call of client.match(/set_config\([^)]*\)/g) ?? []) {
+      expect(call.endsWith("true)")).toBe(true);
+    }
   });
 });
