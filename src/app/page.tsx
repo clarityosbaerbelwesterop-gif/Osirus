@@ -1,1 +1,51 @@
-export default function Home(){return <main className="shell"><aside className="rail"><div className="brand">OSIRUS</div><p className="muted">Workspace</p><div className="section"><span className="pill">Foundation online</span></div></aside><section className="chat"><header className="top"><strong>ChatHub</strong> <span className="muted">· event-driven workspace</span></header><div className="stream"><div className="hero"><h1>Build with an agent that remembers.</h1><p className="muted">Plan, execute, verify and recover from durable checkpoints. Runtime events—not browser state—are the source of truth.</p></div></div><form className="composer"><input aria-label="Message" placeholder="Give Osirus an objective…" /><button type="button">Run</button></form></section><aside className="workbench"><strong>Workbench</strong><div className="section"><p>Activity</p><p className="muted">No active run</p></div><div className="section"><p>Plan</p><p className="muted">Waiting for an objective</p></div><div className="section"><p>Artifacts</p><p className="muted">No artifacts yet</p></div><div className="section"><p>Memory</p><p className="muted">Context is private and tenant-scoped</p></div></aside></main>}
+import { auth } from "@/lib/auth/server";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+
+export const dynamic = "force-dynamic";
+
+export default async function HomePage() {
+  const { data: session } = await auth
+    .getSession()
+    .catch(() => ({ data: null }));
+  if (session?.user) redirect("/app");
+
+  return (
+    <main className="landing">
+      <nav className="landing-nav" aria-label="Primary navigation">
+        <span className="brand">OSIRUS</span>
+        <Link href="/auth/sign-in">Sign in</Link>
+      </nav>
+      <section className="landing-hero">
+        <p className="eyebrow">AGENT OPERATING SYSTEM</p>
+        <h1>Durable execution, not another chat wrapper.</h1>
+        <p className="landing-copy">
+          Osirus combines a model gateway with durable runtime state, contextual
+          memory, progressive skills, verification and human control.
+        </p>
+        <div className="landing-actions">
+          <Link className="landing-primary" href="/auth/sign-up">
+            Create account
+          </Link>
+          <Link className="landing-secondary" href="/auth/sign-in">
+            Sign in
+          </Link>
+        </div>
+      </section>
+      <section className="landing-principles" aria-label="Product principles">
+        <article>
+          <strong>Durable runtime</strong>
+          <p>Runs, events and checkpoints survive refreshes and restarts.</p>
+        </article>
+        <article>
+          <strong>Scoped memory</strong>
+          <p>Useful context is retrieved selectively and tenant-scoped.</p>
+        </article>
+        <article>
+          <strong>Progressive skills</strong>
+          <p>Only the small skill set relevant to a stage is activated.</p>
+        </article>
+      </section>
+    </main>
+  );
+}

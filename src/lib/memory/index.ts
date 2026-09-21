@@ -1,1 +1,159 @@
-export type MemoryTier="working"|"second"|"third";export type MemoryDecision="DROP"|"WORKING_ONLY"|"SECOND_BRAIN"|"THIRD_BRAIN"|"UPDATE_EXISTING"|"CONFLICT";export type MemoryItem={id:string;workspaceId:string;tier:MemoryTier;kind:string;content:string;source:string;verifiedAt?:string;updatedAt:string};export function compileMemory(item:MemoryItem,existing?:MemoryItem):MemoryDecision{if(!item.content.trim())return "DROP";if(existing&&existing.content!==item.content)return item.verifiedAt?"UPDATE_EXISTING":"CONFLICT";if(item.kind==="transient")return "WORKING_ONLY";if(["decision","repository","constraint","failure"].includes(item.kind))return "SECOND_BRAIN";return "THIRD_BRAIN"}export function lexicalRetrieve(q:string,items:MemoryItem[],limit=8){const terms=q.toLowerCase().split(/\W+/).filter(Boolean);return items.map(item=>({item,score:terms.reduce((n,t)=>n+(item.content.toLowerCase().includes(t)?1:0),0)})).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,limit).map(x=>x.item)}
+export type MemoryTier = "working" | "second" | "third";
+export type MemoryDecision =
+  | "DROP"
+  | "WORKING_ONLY"
+  | "PROMOTE_SECOND_BRAIN"
+  | "DISTILL_THIRD_BRAIN"
+  | "UPDATE_EXISTING"
+  | "MARK_CONFLICT";
+
+export type MemoryItem = {
+  id: string;
+  workspaceId?: string | null;
+  tier: MemoryTier;
+  kind: string;
+  content: string;
+  source: Record<string, unknown> | string;
+  verifiedAt?: string;
+  updatedAt: string;
+  confidence?: number;
+  importance?: number;
+  subjectKey?: string | null;
+  canonicalValue?: string | null;
+  verificationStatus?: "unverified" | "verified" | "conflicted" | "rejected";
+  contradictionStatus?: "none" | "suspected" | "resolved";
+};
+
+export type MemoryCompileInput = {
+  content: string;
+  kind: MemoryItem["kind"] | "transient";
+  scope?: "user" | "workspace" | "organization" | "session";
+  source: Record<string, unknown> | string;
+  confidence?: number;
+  importance?: number;
+  verified?: boolean;
+  authoritative?: boolean;
+  recurring?: boolean;
+  novel?: boolean;
+  private?: boolean;
+  subjectKey?: string | null;
+  canonicalValue?: string | null;
+};
+
+export type MemoryCompileResult = {
+  decision: MemoryDecision;
+  reason: string;
+  existingMemoryId?: string;
+};
+
+/**
+ * Promotion is conservative: a run does not become a transcript-shaped
+ * database. Conflicting canonical facts remain explicitly marked until an
+ * authoritative update resolves them.
+ */
+export function compileMemoryCandidate(
+  candidate: MemoryCompileInput,
+  existing: MemoryItem[] = [],
+): MemoryCompileResult {
+  const content = candidate.content.trim();
+  const importance = candidate.importance ?? 0.5;
+  const confidence = candidate.confidence ?? 0.5;
+  if (!content || candidate.private) {
+    return { decision: "DROP", reason: "empty_or_private" };
+  }
+  if (
+    candidate.kind === "transient" ||
+    (importance < 0.2 && !candidate.recurring)
+  ) {
+    return { decision: "WORKING_ONLY", reason: "low_future_utility" };
+  }
+
+  const sameSubject = candidate.subjectKey
+    ? existing.filter((item) => item.subjectKey === candidate.subjectKey)
+    : [];
+  const conflict = sameSubject.find(
+    (item) =>
+      item.canonicalValue &&
+      candidate.canonicalValue &&
+      item.canonicalValue !== candidate.canonicalValue &&
+      item.verificationStatus !== "rejected",
+  );
+  if (conflict) {
+    return {
+      decision: "MARK_CONFLICT",
+      reason: "canonical_value_disagrees_with_existing_memory",
+      existingMemoryId: conflict.id,
+    };
+  }
+
+  const duplicate = sameSubject.find(
+    (item) => item.canonicalValue === candidate.canonicalValue,
+  );
+  if (duplicate) {
+    return {
+      decision: "UPDATE_EXISTING",
+      reason: "candidate_confirms_existing_memory",
+      existingMemoryId: duplicate.id,
+    };
+  }
+
+  if (
+    candidate.authoritative &&
+    candidate.verified &&
+    confidence >= 0.75 &&
+    importance >= 0.75 &&
+    (candidate.recurring ||
+      candidate.scope === "workspace" ||
+      candidate.scope === "organization")
+  ) {
+    return {
+      decision: "DISTILL_THIRD_BRAIN",
+      reason: "verified_reusable_knowledge",
+    };
+  }
+
+  if (candidate.novel === false && importance < 0.45) {
+    return { decision: "WORKING_ONLY", reason: "low_novelty" };
+  }
+  return {
+    decision: "PROMOTE_SECOND_BRAIN",
+    reason: "useful_structured_knowledge",
+  };
+}
+
+/** Backwards-compatible one-item compiler entry point. */
+export function compileMemory(
+  item: MemoryItem,
+  existing?: MemoryItem,
+): MemoryDecision {
+  return compileMemoryCandidate(
+    {
+      content: item.content,
+      kind: item.kind,
+      source: item.source,
+      confidence: item.confidence,
+      importance: item.importance,
+      verified: Boolean(item.verifiedAt),
+      subjectKey: item.subjectKey,
+      canonicalValue: item.canonicalValue,
+    },
+    existing ? [existing] : [],
+  ).decision;
+}
+
+export function lexicalRetrieve(query: string, items: MemoryItem[], limit = 8) {
+  const terms = query.toLowerCase().split(/\W+/).filter(Boolean);
+  return items
+    .map((item) => ({
+      item,
+      score: terms.reduce(
+        (score, term) =>
+          score + (item.content.toLowerCase().includes(term) ? 1 : 0),
+        0,
+      ),
+    }))
+    .filter((candidate) => candidate.score > 0)
+    .sort((left, right) => right.score - left.score)
+    .slice(0, limit)
+    .map((candidate) => candidate.item);
+}

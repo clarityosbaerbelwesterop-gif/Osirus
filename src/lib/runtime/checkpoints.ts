@@ -1,1 +1,32 @@
-import type { Checkpoint } from "./types";export class CheckpointStore{#items=new Map<string,Checkpoint[]>();save(cp:Checkpoint){const a=this.#items.get(cp.runId)??[];a.push(structuredClone(cp));this.#items.set(cp.runId,a);return cp}latest(runId:string){return this.#items.get(runId)?.at(-1)}restore(runId:string){const cp=this.latest(runId);return cp?structuredClone(cp.state):null}}
+import { randomUUID } from "node:crypto";
+import type { Checkpoint } from "./types";
+
+export class InMemoryCheckpointStore {
+  private readonly items = new Map<string, Checkpoint[]>();
+
+  save(input: {
+    runId: string;
+    stageId?: string | null;
+    label?: string;
+    state: Record<string, unknown>;
+  }) {
+    const current = this.items.get(input.runId) ?? [];
+    const checkpoint: Checkpoint = {
+      id: randomUUID(),
+      runId: input.runId,
+      stageId: input.stageId ?? null,
+      label: input.label ?? "test-checkpoint",
+      state: input.state,
+      version: current.length + 1,
+      createdAt: new Date().toISOString(),
+    };
+    this.items.set(input.runId, [...current, checkpoint]);
+    return checkpoint;
+  }
+
+  latest(runId: string) {
+    return this.items.get(runId)?.at(-1);
+  }
+}
+
+export const CheckpointStore = InMemoryCheckpointStore;
