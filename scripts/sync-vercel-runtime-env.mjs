@@ -1,41 +1,24 @@
 import { randomBytes } from "node:crypto";
+import {
+  coversTargets,
+  hasAnyValue,
+  isAllowedPrimaryModel,
+  parseTargetList,
+  uncoveredTargets,
+} from "./lib/vercel-env.mjs";
 
 const api = "https://api.vercel.com";
+
+// The Neon Auth base URL is public configuration -- the browser calls it -- not
+// a secret. Defaulting it removes a hand-maintained GitHub secret that can
+// silently drift from the Neon project; NEON_AUTH_URL still overrides it.
+const DEFAULT_NEON_AUTH_URL =
+  "https://ep-icy-shadow-b2ea2wve.neonauth.c-6.eu-central-1.aws.neon.tech/neondb/auth";
 
 function required(name) {
   const value = process.env[name]?.trim();
   if (!value) throw new Error(`${name} must be configured in GitHub Actions`);
   return value;
-}
-
-function targetList() {
-  const target = process.env.OSIRUS_SYNC_TARGET ?? "both";
-  if (target === "preview") return ["preview"];
-  if (target === "production") return ["production"];
-  if (target === "both") return ["preview", "production"];
-  throw new Error("OSIRUS_SYNC_TARGET must be preview, production, or both");
-}
-
-function isAllowedPrimaryModel(model) {
-  if (model === "grok-4.6") return true;
-  const normalized = model.toLowerCase();
-  return (
-    normalized.includes("opus") &&
-    /(?:^|[-_.:/])5(?:$|[-_.:/])/.test(normalized)
-  );
-}
-
-function environmentTargets(environment) {
-  if (Array.isArray(environment.target)) return environment.target;
-  return environment.target ? [environment.target] : [];
-}
-
-function hasTargets(environments, key, targets) {
-  return environments.some((environment) => {
-    if (environment.key !== key) return false;
-    const configured = environmentTargets(environment);
-    return targets.every((target) => configured.includes(target));
-  });
 }
 
 async function vercelRequest(path, init = {}) {
@@ -75,11 +58,14 @@ async function availableModelIds(apiKey) {
 
 const teamId = required("VERCEL_TEAM_ID");
 const projectId = required("VERCEL_PROJECT_ID");
-const neonAuthUrl = required("NEON_AUTH_URL").replace(/\/$/, "");
+const neonAuthUrl = (
+  process.env.NEON_AUTH_URL?.trim() || DEFAULT_NEON_AUTH_URL
+).replace(/\/$/, "");
 const unoRouterKeyOne = required("UNOROUTER_API_KEY_1");
 const unoRouterKeyTwo = required("UNOROUTER_API_KEY_2");
 const unoRouterKeyThree = required("UNOROUTER_API_KEY_3");
-const targets = targetList();
+const targets = parseTargetList(process.env.OSIRUS_SYNC_TARGET);
+const syncGitBranch = process.env.OSIRUS_SYNC_GIT_BRANCH?.trim() || undefined;
 const primaryModel = (process.env.OSIRUS_PRIMARY_MODEL ?? "grok-4.6").trim();
 
 if (!isAllowedPrimaryModel(primaryModel)) {
@@ -103,24 +89,35 @@ const existing = Array.isArray(existingResponse.envs)
   ? existingResponse.envs
   : [];
 
+// DATABASE_URL is owned by the Vercel-Neon integration, which provisions it per
+// deployment and scopes preview values to a git branch. GitHub Actions cannot
+// read it, and its absence here is not a failure: database availability is
+// certified separately by deploying and asserting /api/health runs SELECT 1.
 const databaseUrl = process.env.DATABASE_URL?.trim();
-if (!databaseUrl && !hasTargets(existing, "DATABASE_URL", targets)) {
-  throw new Error(
-    "DATABASE_URL is missing for the selected Vercel target. Configure the existing Vercel–Neon integration or add the GitHub DATABASE_URL secret; do not substitute NEON_API_KEY.",
+const uncoveredDatabaseTargets = uncoveredTargets(
+  existing,
+  "DATABASE_URL",
+  targets,
+  syncGitBranch,
+);
+if (!databaseUrl && uncoveredDatabaseTargets.length > 0) {
+  console.warn(
+    `Notice: DATABASE_URL is not directly visible for ${uncoveredDatabaseTargets.join(
+      ", ",
+    )}. This is expected while the Vercel-Neon integration owns it. Not synchronizing it; database health is certified by /api/health on a fresh deployment.`,
   );
 }
 
 const cookieSecretFromGitHub = process.env.NEON_AUTH_COOKIE_SECRET?.trim();
 const rotateCookieSecret =
   process.env.OSIRUS_ROTATE_AUTH_COOKIE_SECRET === "true";
-const hasCookieSecret = hasTargets(
+const hasCookieSecret = coversTargets(
   existing,
   "NEON_AUTH_COOKIE_SECRET",
   targets,
+  syncGitBranch,
 );
-const hasAnyCookieSecret = existing.some(
-  (environment) => environment.key === "NEON_AUTH_COOKIE_SECRET",
-);
+const hasAnyCookieSecret = hasAnyValue(existing, "NEON_AUTH_COOKIE_SECRET");
 if (!hasCookieSecret && hasAnyCookieSecret && !rotateCookieSecret) {
   throw new Error(
     "NEON_AUTH_COOKIE_SECRET is only partially configured in Vercel. Refusing to rotate active sessions; complete the target manually or dispatch with explicit rotation.",

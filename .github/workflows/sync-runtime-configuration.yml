@@ -49,6 +49,9 @@ jobs:
       UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
       OSIRUS_PRIMARY_MODEL: ${{ inputs.primary_model || vars.OSIRUS_PRIMARY_MODEL || 'grok-4.6' }}
       OSIRUS_SYNC_TARGET: ${{ inputs.target || 'both' }}
+      # Preview values provisioned by the Vercel-Neon integration are pinned to a
+      # git branch, so coverage has to be judged against the branch being synced.
+      OSIRUS_SYNC_GIT_BRANCH: ${{ github.ref_name }}
       OSIRUS_ROTATE_AUTH_COOKIE_SECRET: ${{ inputs.rotate_auth_cookie_secret || 'false' }}
     steps:
       - uses: actions/checkout@v4
