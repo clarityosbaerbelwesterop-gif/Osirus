@@ -12,6 +12,7 @@ const migrations = [
   "006_api_controls.sql",
   "007_app_role.sql",
   "008_workflow_engine.sql",
+  "009_agent_execution.sql",
 ];
 
 function migration(name: string) {
@@ -128,6 +129,48 @@ describe("migration replay invariants", () => {
       expect(engine).toContain(`CREATE POLICY ${table}_access`);
       expect(engine).toContain(`ON osirus.${table} TO osirus_app`);
     }
+  });
+
+  it("separates the retry ceiling from the slice ceiling", () => {
+    // Under 008 every claim consumed a retry, so a stage allowed one attempt
+    // could never yield and resume -- the second claim failed it. 009 counts a
+    // claim as a retry only when the previous attempt ended badly, and bounds
+    // continuations with their own ceiling so neither can run unbounded.
+    const execution = migration("009_agent_execution.sql");
+    expect(execution).toContain("slice_count integer NOT NULL DEFAULT 0");
+    expect(execution).toContain("v_is_retry");
+    expect(execution).toMatch(
+      /v_is_retry := v_last_status IS NULL\s*\n\s*OR v_last_status IN \('failed', 'lost', 'cancelled'\)/,
+    );
+    expect(execution).toContain(
+      "IF v_is_retry AND v_stage.attempt_count >= v_max_attempts",
+    );
+    expect(execution).toContain("IF v_stage.slice_count >= v_max_slices");
+  });
+
+  it("writes a verification verdict together with its evidence", () => {
+    // Recording the label first would leave a window in which a stage reads as
+    // verified with nothing behind it, which is the exact claim this engine
+    // must never make.
+    const execution = migration("009_agent_execution.sql");
+    expect(execution).toContain("FUNCTION osirus.record_verification");
+    expect(execution).toContain("verification jsonb");
+    const start = execution.indexOf("FUNCTION osirus.record_verification");
+    const body = execution.slice(
+      start,
+      execution.indexOf("$function$;", start),
+    );
+    expect(body).toContain("verifier_status = p_verifier_status");
+    expect(body).toContain("verification = p_verification");
+    expect(body).toContain("invalid_verifier_status");
+  });
+
+  it("keeps the acceptance contract on the run, written before execution", () => {
+    const execution = migration("009_agent_execution.sql");
+    expect(execution).toContain("ADD COLUMN IF NOT EXISTS arm_id text");
+    expect(execution).toContain(
+      "ADD COLUMN IF NOT EXISTS acceptance_contract jsonb",
+    );
   });
 
   it("provisions a runtime role that cannot bypass row-level security", () => {

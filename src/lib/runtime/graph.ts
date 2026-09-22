@@ -21,7 +21,12 @@ export type WorkflowNode = {
   name: string;
   capability: Capability;
   dependsOn: string[];
-  retryPolicy: { maxAttempts: number };
+  /**
+   * maxAttempts bounds retries after a failure; maxSlices bounds how many
+   * times a stage may yield and resume. Both are enforced in
+   * osirus.claim_next_stage, not here, so a caller cannot opt out of them.
+   */
+  retryPolicy: { maxAttempts: number; maxSlices?: number };
   failurePolicy: FailurePolicy;
   requiresVerification: boolean;
   workerKind: string;

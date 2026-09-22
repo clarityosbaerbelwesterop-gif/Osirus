@@ -1,5 +1,8 @@
+// THINKING is the structured task-analysis role. It is separate from STRONG
+// because analysis is asked for as schema-validated JSON, not prose, and may
+// be pointed at a different model without changing how answers are written.
 export type ModelRole =
-  "FAST" | "STRONG" | "CODING" | "RESEARCH" | "MATH" | "VERIFY";
+  "FAST" | "STRONG" | "THINKING" | "CODING" | "RESEARCH" | "MATH" | "VERIFY";
 
 export type Usage = {
   inputTokens?: number;
@@ -30,6 +33,8 @@ export interface ModelProvider {
     validate: (value: unknown) => T;
     signal?: AbortSignal;
   }): Promise<{ value: T; usage: Usage }>;
+  /** The configured model identifier for a role. */
+  modelId(role: ModelRole): string;
   capabilities(): Promise<Record<string, unknown>>;
   healthCheck(): Promise<boolean>;
   cancel(id: string): Promise<void>;

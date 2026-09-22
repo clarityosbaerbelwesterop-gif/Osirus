@@ -36,6 +36,8 @@ export type ClaimedWork = {
   organizationId: string;
   workspaceId: string;
   sessionId: string;
+  /** The run's owner. The scheduler executes as this user, not as itself. */
+  requestedBy: string;
   objective: string;
   stageName: string;
   capability: string;
@@ -56,6 +58,7 @@ type ClaimRow = {
   organization_id: string;
   workspace_id: string;
   session_id: string;
+  requested_by: string;
   objective: string;
   stage_name: string;
   capability: string;
@@ -92,6 +95,7 @@ export async function claimNextStage(input: {
             r.organization_id,
             r.workspace_id,
             r.session_id,
+            r.requested_by,
             r.objective,
             s.name as stage_name,
             s.capability,
@@ -117,6 +121,7 @@ export async function claimNextStage(input: {
     organizationId: row.organization_id,
     workspaceId: row.workspace_id,
     sessionId: row.session_id,
+    requestedBy: row.requested_by,
     objective: row.objective,
     stageName: row.stage_name,
     capability: row.capability,

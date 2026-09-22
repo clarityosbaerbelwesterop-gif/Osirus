@@ -63,6 +63,9 @@ export type RuntimePacket =
   | { kind: "done"; runId: string; status: RunStatus }
   | { kind: "error"; runId?: string; message: string };
 
+export type VerdictStatus =
+  "verified" | "rejected" | "conflicted" | "unverified";
+
 export type RunSnapshot = {
   run: {
     id: string;
@@ -73,8 +76,18 @@ export type RunSnapshot = {
     errorCode?: string | null;
     errorMessage?: string | null;
     cancelRequested: boolean;
+    /** Which agent arm drove the run, once routing has decided. */
+    armId?: string | null;
+    /** What the run promised to deliver, written before execution. */
+    acceptanceContract?: Record<string, unknown> | null;
   };
   stages: Array<Record<string, unknown>>;
+  /** One row per worker that took a stage, with its lease and outcome. */
+  attempts: Array<Record<string, unknown>>;
+  /** The DAG edges, so the plan can be drawn rather than assumed linear. */
+  dependencies: Array<Record<string, unknown>>;
+  artifacts: Array<Record<string, unknown>>;
+  approvals: Array<Record<string, unknown>>;
   events: RuntimeEvent[];
   checkpoints: Checkpoint[];
   messages: Array<{
