@@ -17,6 +17,8 @@ type WorkbenchTab =
   | "plan"
   | "arms"
   | "workers"
+  | "skills"
+  | "tools"
   | "verification"
   | "memory"
   | "artifacts";
@@ -26,6 +28,8 @@ const WORKBENCH_TABS: Array<{ id: WorkbenchTab; label: string }> = [
   { id: "plan", label: "Plan" },
   { id: "arms", label: "Arms" },
   { id: "workers", label: "Workers" },
+  { id: "skills", label: "Skills" },
+  { id: "tools", label: "Tools" },
   { id: "verification", label: "Verification" },
   { id: "memory", label: "Memory" },
   { id: "artifacts", label: "Artifacts" },
@@ -445,6 +449,22 @@ export function ChatHub(props: {
   const verifiedStages = planStages.filter((stage) =>
     recordString(stage, "verifier_status"),
   );
+  const skillEvents = (snapshot?.events ?? []).filter(
+    (event) => event.type === "skill.selected",
+  );
+  const selectedSkills = skillEvents.flatMap((event) =>
+    Array.isArray(event.data.skills)
+      ? (event.data.skills as unknown[]).map((entry) => ({
+          id: recordString(entry, "id") ?? "",
+          name: recordString(entry, "name") ?? "Skill",
+          version: recordString(entry, "version") ?? "",
+        }))
+      : [],
+  );
+  const toolEvents = (snapshot?.events ?? []).filter(
+    (event) =>
+      event.type.startsWith("sandbox.") || event.type.startsWith("tool."),
+  );
   const memoryEvent = snapshot?.events.find(
     (event) => event.type === "memory.retrieved",
   );
@@ -698,6 +718,43 @@ export function ChatHub(props: {
             ) : (
               <p className="muted">
                 Each worker that takes a stage appears here with its lease.
+              </p>
+            )}
+          </div>
+        ) : null}
+        {tab === "skills" ? (
+          <div className="workbench-panel">
+            {selectedSkills.length ? (
+              selectedSkills.map((skill, index) => (
+                <p key={skill.id || String(index)}>
+                  <strong>{skill.name}</strong>
+                  {skill.version ? (
+                    <span className="muted"> · {skill.version}</span>
+                  ) : null}
+                </p>
+              ))
+            ) : (
+              <p className="muted">
+                The skills selected for this run appear here.
+              </p>
+            )}
+          </div>
+        ) : null}
+        {tab === "tools" ? (
+          <div className="workbench-panel">
+            {toolEvents.length ? (
+              toolEvents.map((event) => (
+                <p key={event.id}>
+                  <strong>{event.summary}</strong>
+                  {typeof event.data.reason === "string" ? (
+                    <span className="muted"> · {event.data.reason}</span>
+                  ) : null}
+                </p>
+              ))
+            ) : (
+              <p className="muted">
+                Tool and sandbox activity appears here. Nothing ran for this
+                run.
               </p>
             )}
           </div>

@@ -175,6 +175,78 @@ export class SkillRepository {
     );
   }
 
+  /**
+   * How often each skill was selected and then verified.
+   *
+   * Feeds the ranking's history term. Only verified outcomes count as
+   * success: a run that finished is not the same as a run that was right, and
+   * ranking on completion would reward whatever is cheapest to finish.
+   */
+  async outcomeWeights(workspaceId: string) {
+    const rows = await queryAs<{
+      skill_id: string;
+      selections: string | number;
+      verified: string | number;
+    }>(
+      this.actorId,
+      `select skill_id,
+              count(*) as selections,
+              count(*) filter (where verifier_status = 'verified') as verified
+         from osirus.skill_usage
+        where workspace_id = $1::uuid
+          and created_at > now() - interval '90 days'
+        group by skill_id
+       having count(*) >= 3`,
+      [workspaceId],
+    );
+    const weights: Record<string, number> = {};
+    for (const row of rows) {
+      const selections = Number(row.selections);
+      if (selections <= 0) continue;
+      weights[row.skill_id] = Number(row.verified) / selections;
+    }
+    return weights;
+  }
+
+  /**
+   * Write what a stage actually cost and how it was judged.
+   *
+   * These columns existed from 003 and were always 0 or null, which made every
+   * quality metric unanswerable. recordOutcome below still writes the run-wide
+   * result; this writes the per-stage detail underneath it.
+   */
+  async recordStageTelemetry(input: {
+    runId: string;
+    stageId: string;
+    verifierStatus: "unverified" | "verified" | "conflicted" | "rejected";
+    latencyMs?: number | null;
+    tokenCost?: number | null;
+    toolCallCount?: number;
+    repairRounds?: number;
+  }) {
+    await queryAs(
+      this.actorId,
+      `update osirus.skill_usage
+          set verifier_status = $3,
+              outcome = case when $3 = 'verified' then 'success' else 'failure' end,
+              latency_ms = coalesce($4, latency_ms),
+              token_cost = coalesce($5, token_cost),
+              tool_call_count = greatest(tool_call_count, $6),
+              repair_rounds = greatest(repair_rounds, $7)
+        where run_id = $1::uuid
+          and stage_id = $2::uuid`,
+      [
+        input.runId,
+        input.stageId,
+        input.verifierStatus,
+        input.latencyMs ?? null,
+        input.tokenCost ?? null,
+        Math.max(0, input.toolCallCount ?? 0),
+        Math.max(0, input.repairRounds ?? 0),
+      ],
+    );
+  }
+
   async recordOutcome(runId: string, outcome: "success" | "failure") {
     await queryAs(
       this.actorId,

@@ -83,6 +83,10 @@ export class ThinkingArm extends BaseArm {
     return "THINKING";
   }
 
+  protected skillAffinity(): string[] {
+    return ["planning", "reasoning", "analysis"];
+  }
+
   protected answerDirectives(): string[] {
     return [
       "Present the analysis as a plan the reader can act on.",

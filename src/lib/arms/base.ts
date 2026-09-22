@@ -173,13 +173,32 @@ export abstract class BaseArm implements AgentArm {
     };
   }
 
+  /**
+   * Skill categories this arm works in. Used to break ties within a
+   * capability, never to exclude a skill that wins on its own signals.
+   */
+  protected skillAffinity(): string[] {
+    return [];
+  }
+
   async selectSkills(context: ArmStageContext): Promise<RankedSkill[]> {
-    const available = await context.runtime.skills.loadEnabled();
+    const [available, outcomeWeights] = await Promise.all([
+      context.runtime.skills.loadEnabled(),
+      context.runtime.skills
+        .outcomeWeights(context.work.workspaceId)
+        .catch(() => ({}) as Record<string, number>),
+    ]);
     return rankSkills(
       context.work.objective,
       available,
       [this.primaryCapability()],
-      { maxActiveSkills: 8, maxP0Skills: 4, maxContextTokens: 4000 },
+      {
+        maxActiveSkills: 8,
+        maxP0Skills: 4,
+        maxContextTokens: 4000,
+        armAffinity: this.skillAffinity(),
+        outcomeWeights,
+      },
     );
   }
 
@@ -417,7 +436,19 @@ export abstract class BaseArm implements AgentArm {
   }
 
   protected async verifyStage(context: ArmStageContext): Promise<StageOutcome> {
+    const startedAt = Date.now();
     const verdict = await this.verify(context);
+    // The verdict is what the skill telemetry is worth recording against:
+    // "this run finished" says nothing about whether the skills helped.
+    await context.runtime.skills
+      .recordStageTelemetry({
+        runId: context.work.runId,
+        stageId: context.work.stageId,
+        verifierStatus: verdict.status,
+        latencyMs: Date.now() - startedAt,
+        repairRounds: readState<number>(context, "repairRound", 0),
+      })
+      .catch(() => undefined);
     await context.runtime.activity(
       `verification.${verdict.status}`,
       `Verification ${verdict.status}`,

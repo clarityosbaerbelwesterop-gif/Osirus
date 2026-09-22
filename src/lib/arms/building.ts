@@ -46,6 +46,10 @@ export class BuildingArm extends BaseArm {
     return [{ key: "design", name: "Design the deliverable", kind: "design" }];
   }
 
+  protected skillAffinity(): string[] {
+    return ["writing", "planning", "documentation"];
+  }
+
   protected answerDirectives(input: RoutingInput): string[] {
     const sections = input.analysis?.successCriteria ?? [];
     return [

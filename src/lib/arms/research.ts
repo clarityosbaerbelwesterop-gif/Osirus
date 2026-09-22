@@ -73,6 +73,10 @@ export class ResearchArm extends BaseArm {
     ];
   }
 
+  protected skillAffinity(): string[] {
+    return ["research", "analysis", "sourcing"];
+  }
+
   protected answerDirectives(): string[] {
     return [
       "Cite a source URL for every factual claim that is not common knowledge.",

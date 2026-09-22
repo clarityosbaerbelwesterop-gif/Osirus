@@ -113,6 +113,36 @@ sequencing connectives and routed per segment, which composes several arms into
 one DAG without a model call; a structured classification is escalated to only
 when the scores are genuinely close.
 
+## Tools and the sandbox
+
+`src/lib/tools/registry.ts` decides three things before a call happens: whether
+the arm may see the tool, whether the input matches its declared schema, and
+whether a side-effecting call has an approval behind it. With no approval gate
+configured, a side-effecting call does not run -- defaulting to allowed would
+make the permission model opt-in. Denials are audited into `osirus.tool_calls`
+alongside successes, with metadata rather than arguments and output.
+
+MCP servers are discovered at runtime, with no hardcoded list, and trusted
+least. A server names its tools and writes their descriptions; it does not get
+to declare its own risk. Every discovered tool is external and high risk, so
+every call goes through approval, descriptions are stripped of control
+characters and injection fences, and names are namespaced so none can shadow a
+builtin. Results reach a model only through `asPromptContext`, which labels them
+as data and neutralises any delimiter they contain.
+
+The sandbox is Vercel Sandbox over OIDC federation, so no `VERCEL_TOKEN` enters
+the app runtime, and its network policy is deny-all unless a caller names the
+hosts it needs. The coding arm writes its generated files there and runs a real
+syntax check over them. Where no sandbox is configured -- anywhere outside a
+Vercel function -- every command returns a null exit code, the check reports
+inconclusive, and the verdict lands at `unverified`. Nothing reports success for
+code that was not executed. `/api/health` reports sandbox availability under
+`capabilities` without gating `status` on it.
+
+Files, Diff, Terminal and Preview panels are **not built**. They need a sandbox
+that outlives a single stage; today one is created and stopped inside the check
+stage.
+
 ## Development
 
 Copy `.env.example` to `.env.local`, provide server-side values, then run `npm install && npm run dev`.

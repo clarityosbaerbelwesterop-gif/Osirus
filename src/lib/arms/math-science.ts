@@ -93,6 +93,10 @@ export class MathScienceArm extends BaseArm {
     ];
   }
 
+  protected skillAffinity(): string[] {
+    return ["math", "science", "reasoning"];
+  }
+
   protected answerDirectives(): string[] {
     return [
       "Show the derivation step by step, each step checkable on its own.",

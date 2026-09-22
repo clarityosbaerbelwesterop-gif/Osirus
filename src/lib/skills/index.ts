@@ -26,6 +26,24 @@ export type SkillSelectionPolicy = {
   maxP0Skills?: number;
   maxContextTokens?: number;
   allowHighRisk?: boolean;
+  /**
+   * Categories the requesting arm works in.
+   *
+   * Capability matching already narrows the field, but capability is coarse:
+   * "coding" covers reviewing a diff and writing a migration, and a pack has
+   * skills for both. Affinity breaks that tie towards the arm's own work
+   * without excluding anything, so a skill outside the arm's categories can
+   * still win on its own signals.
+   */
+  armAffinity?: string[];
+  /**
+   * Past outcomes per skill id, between 0 and 1.
+   *
+   * A skill that has been selected and then verified repeatedly is worth more
+   * than one that has not. Bounded deliberately: this nudges the ranking, it
+   * does not let history override what the objective actually asks for.
+   */
+  outcomeWeights?: Record<string, number>;
 };
 
 const alwaysConsider = new Set(["intent-contract", "uncertainty-calibration"]);
@@ -68,9 +86,18 @@ export function rankSkills(
       ).length;
       const riskPenalty =
         skill.risk === "high" ? 1.5 : skill.risk === "medium" ? 0.5 : 0;
+      const affinity = (policy.armAffinity ?? []).includes(skill.category)
+        ? 0.8
+        : 0;
+      const history = Math.min(
+        Math.max(policy.outcomeWeights?.[skill.id] ?? 0, 0),
+        1,
+      );
       const score =
         activationHits * 0.34 +
         capabilityHits * 2 +
+        affinity +
+        history * 0.5 +
         (skill.priority === "P0" ? 0.7 : 0) +
         (alwaysConsider.has(skill.slug) ? 2 : 0) -
         skill.contextCost / 10000 -
@@ -78,7 +105,7 @@ export function rankSkills(
       return {
         skill,
         score,
-        reason: `capability=${capabilityHits}; signals=${activationHits}; risk=${skill.risk}`,
+        reason: `capability=${capabilityHits}; signals=${activationHits}; affinity=${affinity > 0 ? "yes" : "no"}; history=${history.toFixed(2)}; risk=${skill.risk}`,
       };
     })
     .sort((left, right) => right.score - left.score)

@@ -249,6 +249,10 @@ export class CodingArm extends BaseArm {
     }
   }
 
+  protected skillAffinity(): string[] {
+    return ["engineering", "code", "testing", "debugging"];
+  }
+
   protected answerDirectives(): string[] {
     return [
       "Produce the code the task asks for, in fenced blocks tagged with the language.",
