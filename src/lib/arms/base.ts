@@ -44,7 +44,18 @@ export function stageKindOf(context: ArmStageContext): StageKind {
   return typeof kind === "string" ? kind : "answer";
 }
 
-function readState<T>(context: ArmStageContext, key: string, fallback: T): T {
+/** Keep tool evidence small enough to checkpoint. */
+function compactEvidence(data: unknown): unknown {
+  const text = JSON.stringify(data ?? null);
+  if (text.length <= 8000) return data;
+  return { truncated: true, preview: text.slice(0, 8000) };
+}
+
+export function readState<T>(
+  context: ArmStageContext,
+  key: string,
+  fallback: T,
+): T {
   const value = context.state[key];
   return value === undefined ? fallback : (value as T);
 }
@@ -314,7 +325,285 @@ export abstract class BaseArm implements AgentArm {
     };
   }
 
+  /**
+   * Answer through the agent loop when this arm has tools here, and through a
+   * single streamed call when it has none. A question with nothing to look up
+   * or compute does not need a loop, and paying for one buys nothing.
+   */
   protected async answerStage(context: ArmStageContext): Promise<StageOutcome> {
+    if (!this.useAgentLoop()) return this.streamAnswer(context);
+    const { buildToolbox } = await import("../agent/toolbox");
+    const toolbox = await buildToolbox(context, {
+      armId: this.id,
+      extensions: this.toolExtensions(),
+    });
+    try {
+      if (toolbox.registry.profileFor(this.id).length === 0) {
+        return await this.streamAnswer(context);
+      }
+      return await this.loopAnswer(context, toolbox);
+    } finally {
+      await toolbox.dispose();
+    }
+  }
+
+  /** Arms opt out of the loop for work that never needs a tool. */
+  protected useAgentLoop(): boolean {
+    return true;
+  }
+
+  /** Extra tools this arm contributes on top of memory and compute. */
+  protected toolExtensions(): import("../agent/toolbox").ToolboxExtension[] {
+    return [];
+  }
+
+  /** How far the loop may run in one stage. */
+  protected loopBounds(): Partial<import("../agent/loop").LoopBounds> {
+    return {};
+  }
+
+  protected async loopAnswer(
+    context: ArmStageContext,
+    toolbox: import("../agent/toolbox").Toolbox,
+  ): Promise<StageOutcome> {
+    const { runtime, work, identity, signal } = context;
+    const role = this.modelRole();
+    const prepared = await this.prepareContext(context);
+    const routing: RoutingInput = {
+      objective: work.objective,
+      capabilities: [this.primaryCapability()],
+      analysis: context.state.analysis as RoutingInput["analysis"],
+    };
+    const { runAgentLoop } = await import("../agent/loop");
+    const { agentDecisionSchema } = await import("../agent/decision");
+    const { consumeBudget } = await import("../runtime/dispatch");
+
+    let callIndex = 0;
+    const decide = async (input: {
+      system: string;
+      user: string;
+      signal?: AbortSignal;
+    }) => {
+      callIndex += 1;
+      const modelCallId = await runtime.repository.createModelCall({
+        organizationId: identity.organizationId,
+        workspaceId: identity.workspaceId,
+        runId: work.runId,
+        stageId: work.stageId,
+        model: runtime.provider.modelId(role),
+        role,
+        requestMetadata: { armId: this.id, loopCall: callIndex },
+      });
+      const startedAt = Date.now();
+      try {
+        const { value, usage } = await runtime.provider.structured({
+          requestId: `${work.runId}:${work.stageId}:${work.attemptNumber}:${callIndex}`,
+          role,
+          signal: input.signal,
+          messages: [
+            { role: "system", content: input.system },
+            { role: "user", content: input.user },
+          ],
+          validate: (raw) => agentDecisionSchema.parse(raw),
+        });
+        await runtime.repository.finishModelCall(modelCallId, {
+          status: "completed",
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          cost: usage.cost,
+          latencyMs: Date.now() - startedAt,
+          responseMetadata: { armId: this.id, loop: true },
+        });
+        return value;
+      } catch (error) {
+        await runtime.repository
+          .finishModelCall(modelCallId, {
+            status: "failed",
+            latencyMs: Date.now() - startedAt,
+            errorCode: "decision_failed",
+          })
+          .catch(() => undefined);
+        throw error;
+      }
+    };
+
+    const result = await runAgentLoop({
+      objective: work.objective,
+      directives: [...SYSTEM_CONTRACT, ...this.answerDirectives(routing)],
+      context: prepared.sections.map(
+        (section) => `[${section.kind}] ${section.text}`,
+      ),
+      tools: toolbox.registry,
+      toolContext: {
+        runId: work.runId,
+        stageId: work.stageId,
+        armId: this.id,
+        organizationId: identity.organizationId,
+        workspaceId: identity.workspaceId,
+      },
+      decide,
+      bounds: this.loopBounds(),
+      resume: context.state.loopState as
+        import("../agent/loop").LoopState | undefined,
+      signal,
+      hooks: {
+        onStep: async (step) => {
+          await runtime.activity(
+            "agent.step",
+            step.summary,
+            {
+              armId: this.id,
+              action: step.action,
+              toolId: step.toolId ?? null,
+              outcome: step.outcome,
+              evidenceRefs: step.evidenceRefs ?? [],
+            },
+            "user",
+          );
+        },
+        onToolResult: (entry) => toolbox.record(entry),
+        retrieveMemory: async (query) =>
+          (
+            await runtime.memory.retrieve({
+              workspaceId: work.workspaceId,
+              objective: query,
+              capability: work.capability,
+              stage: "agent_loop",
+              tokenBudget: 1200,
+              limit: 6,
+            })
+          ).map(
+            (item) =>
+              `[${item.tier}/${item.verificationStatus ?? "unverified"}] ${item.content}`,
+          ),
+        createArtifact: async (artifact) => ({
+          ref: await runtime.repository.createArtifact({
+            organizationId: identity.organizationId,
+            workspaceId: identity.workspaceId,
+            sessionId: work.sessionId,
+            runId: work.runId,
+            kind: artifact.kind.slice(0, 40),
+            title: artifact.title,
+            contentType: "text/markdown",
+            content: { body: artifact.content.slice(0, 200_000) },
+            provenance: {
+              producedBy: `${this.id}.agent_loop`,
+              stageId: work.stageId,
+            },
+          }),
+        }),
+      },
+    });
+
+    // Whatever the loop spent is charged to the run, win or lose.
+    await consumeBudget({
+      runId: work.runId,
+      scope: "run",
+      modelCalls: result.state.modelCalls,
+      toolCalls: result.state.toolCalls,
+    }).catch(() => undefined);
+
+    context.state.toolEvidence = [
+      ...readState<unknown[]>(context, "toolEvidence", []),
+      ...toolbox.evidence.map((entry) => ({
+        ...entry,
+        data: compactEvidence(entry.data),
+      })),
+    ].slice(-40);
+    context.state.agentSteps = result.state.steps;
+    context.state.sandbox = toolbox.sandboxStatus;
+
+    if (result.status === "waiting_for_approval") {
+      context.state.loopState = result.state;
+      return {
+        kind: "WAITING",
+        reason: "approval",
+        output: { pending: result.pendingApproval ?? null },
+      };
+    }
+    if (result.status === "yielded") {
+      context.state.loopState = result.state;
+      return {
+        kind: "PROGRESS",
+        output: { steps: result.state.steps.length },
+        resume: {},
+      };
+    }
+    delete context.state.loopState;
+
+    let answer = result.answer;
+    if (!answer && result.status === "exhausted") {
+      // Out of budget without finishing. One last bounded call turns what the
+      // observations support into an answer that says what is incomplete,
+      // instead of returning nothing for all the work already done.
+      try {
+        const final = await decide({
+          system: [
+            ...SYSTEM_CONTRACT,
+            "The step budget is spent. RESPOND now with the best answer the observations support.",
+            "State clearly what remains unverified or incomplete.",
+            'Reply with a single JSON object: {"action": "RESPOND", "summary": "...", "answer": "..."}',
+          ].join("\n"),
+          user: `Objective:\n${work.objective}\n\nObservations:\n${result.state.observations.slice(-6).join("\n\n")}`,
+          signal,
+        });
+        answer = final.answer?.trim() || null;
+      } catch {
+        answer = null;
+      }
+    }
+    if (!answer) {
+      return {
+        kind: "FAILED",
+        failureClass: `agent_loop_${result.status}`,
+        error: `The agent loop ended (${result.reason}) without an answer.`,
+        retryable: result.status !== "exhausted",
+      };
+    }
+
+    await runtime.emitDelta(answer);
+    const assistantMessageId = await runtime.repository.createMessage({
+      organizationId: identity.organizationId,
+      workspaceId: identity.workspaceId,
+      sessionId: work.sessionId,
+      runId: work.runId,
+      role: "assistant",
+      content: answer,
+      metadata: {
+        modelRole: role,
+        armId: this.id,
+        agentLoop: true,
+        steps: result.state.steps.length,
+      },
+    });
+    await runtime.activity("model.completed", "Answer ready", {
+      steps: result.state.steps.length,
+      toolCalls: result.state.toolCalls,
+    });
+    context.state.answer = answer;
+    context.state.assistantMessageId = assistantMessageId;
+    context.state.answers = [
+      ...readState<string[]>(context, "answers", []),
+      answer,
+    ];
+    return {
+      kind: "COMPLETE",
+      output: {
+        assistantMessageId,
+        armId: this.id,
+        modelRole: role,
+        loopStatus: result.status,
+        steps: result.state.steps.length,
+        toolCalls: result.state.toolCalls,
+        modelCalls: result.state.modelCalls,
+      },
+    };
+  }
+
+  /** The single-call path: one streamed model response. */
+  protected async streamAnswer(
+    context: ArmStageContext,
+  ): Promise<StageOutcome> {
     const { runtime, work, identity, signal } = context;
     const role = this.modelRole();
     const prepared = await this.prepareContext(context);

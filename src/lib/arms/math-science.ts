@@ -5,6 +5,7 @@ import {
   secretLeakCheck,
   structureCheck,
 } from "../verification/checks";
+import { computeEvidenceCheck } from "../verification/compute-evidence";
 import { BaseArm } from "./base";
 import type { ArmId, ArmStageContext, RoutingInput } from "./types";
 
@@ -99,6 +100,9 @@ export class MathScienceArm extends BaseArm {
 
   protected answerDirectives(): string[] {
     return [
+      "Compute every number with the compute.run tool. Never do arithmetic, algebra or unit conversion in your head.",
+      "Use op 'dimension' with expectUnit to check a physical result's units before stating it.",
+      "Use data.analyze for any table or dataset. For facts or constants you do not know, say they are needed rather than inventing them.",
       "Show the derivation step by step, each step checkable on its own.",
       "End with a line beginning 'Result:' carrying the final answer and its units.",
       "State assumptions explicitly.",
@@ -137,6 +141,17 @@ export class MathScienceArm extends BaseArm {
                 status: "failed" as const,
                 detail: "Answer does not state a final 'Result:' line.",
               },
+      },
+      {
+        id: "computed-result",
+        type: "MATH" as const,
+        required: true,
+        run: () =>
+          computeEvidenceCheck(
+            answer,
+            (context.state.toolEvidence as
+              Parameters<typeof computeEvidenceCheck>[1] | undefined) ?? [],
+          ),
       },
       mathCheck({
         id: "arithmetic",

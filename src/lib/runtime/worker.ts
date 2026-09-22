@@ -91,6 +91,10 @@ const DURABLE_STATE_KEYS = new Set([
   "repairInstruction",
   "testResult",
   "buildResult",
+  "toolEvidence",
+  "agentSteps",
+  "loopState",
+  "sandbox",
 ]);
 
 function durableState(state: Record<string, unknown>) {

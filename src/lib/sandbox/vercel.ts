@@ -22,9 +22,11 @@ import type {
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 
-function oidcToken() {
-  return process.env.VERCEL_OIDC_TOKEN;
-}
+export type SandboxCredentials = {
+  token: string;
+  teamId: string;
+  projectId: string;
+};
 
 class VercelSandboxHandle implements SandboxHandle {
   constructor(private readonly sandbox: Sandbox) {}
@@ -103,19 +105,22 @@ class VercelSandboxHandle implements SandboxHandle {
 export class VercelSandboxDriver implements SandboxDriver {
   readonly id = "vercel";
 
+  /**
+   * Constructed only after resolveSandbox() has found either an OIDC token on
+   * the request or explicit CI credentials, so it reports configured. Which
+   * of the two authenticated it is recorded, because they are different
+   * trust paths and the evidence should say which one ran.
+   */
+  constructor(private readonly credentials?: SandboxCredentials) {}
+
   availability(): SandboxAvailability {
-    return oidcToken()
-      ? {
-          configured: true,
-          driver: this.id,
-          reason: "Vercel Sandbox via OIDC federation.",
-        }
-      : {
-          configured: false,
-          driver: null,
-          reason:
-            "VERCEL_OIDC_TOKEN is not present; sandboxes are only available inside a Vercel function.",
-        };
+    return {
+      configured: true,
+      driver: this.id,
+      reason: this.credentials
+        ? "Vercel Sandbox with CI-scoped credentials."
+        : "Vercel Sandbox via OIDC federation.",
+    };
   }
 
   async create(input: {
@@ -124,11 +129,8 @@ export class VercelSandboxDriver implements SandboxDriver {
     allowedDomains?: string[];
     signal?: AbortSignal;
   }): Promise<SandboxHandle> {
-    const availability = this.availability();
-    if (!availability.configured) {
-      throw new Error(`sandbox_not_configured: ${availability.reason}`);
-    }
     const sandbox = await Sandbox.create({
+      ...(this.credentials ?? {}),
       timeout: input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       ports: input.ports,
       // "deny-all" is the default rather than a hardening option. A sandbox

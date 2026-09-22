@@ -116,7 +116,9 @@ const goldens: Golden[] = [
       "Step one: 12 * 12 = 144. Step two: 144 + 6 = 150.\n\nResult: 150 units",
     badAnswer:
       "Step one: 12 * 12 = 145. Step two: 145 + 6 = 151.\n\nResult: 151 units",
-    expectedGood: "verified",
+    // Right arithmetic, but nothing was computed: the numbers are asserted.
+    // The computed-result check is required, so the ceiling is unverified.
+    expectedGood: "unverified",
     expectedBad: "rejected",
   },
   {
@@ -203,6 +205,60 @@ describe.each(goldens)("$name", (golden) => {
       }),
     );
     expect(verdict.status, verdict.summary).toBe(golden.expectedBad);
+  });
+});
+
+describe("math verified from computation, not assertion", () => {
+  const computed = [
+    {
+      toolId: "compute.run",
+      ok: true,
+      input: { op: "evaluate", expression: "12 * 12 + 6" },
+      data: {
+        result: { op: "evaluate", ok: true, value: 150, text: "150" },
+        check: { agrees: true, method: "python-sympy" },
+      },
+    },
+  ];
+
+  it("verifies a result the engine produced and a second method confirmed", async () => {
+    const verdict = await armFor("math_science").verify(
+      contextFor("Calculate the total and show your working", {
+        answer:
+          "Step one: 12 * 12 = 144. Step two: 144 + 6 = 150.\n\nResult: 150 units",
+        toolEvidence: computed,
+      }),
+    );
+    expect(verdict.status, verdict.summary).toBe("verified");
+  });
+
+  it("rejects a stated result no computation produced", async () => {
+    const verdict = await armFor("math_science").verify(
+      contextFor("Calculate the total and show your working", {
+        answer:
+          "Step one: 12 * 12 = 144. Step two: 144 + 7 = 151.\n\nResult: 151 units",
+        toolEvidence: computed,
+      }),
+    );
+    expect(verdict.status).toBe("rejected");
+  });
+
+  it("rejects a result whose independent check disagreed", async () => {
+    const verdict = await armFor("math_science").verify(
+      contextFor("Calculate", {
+        answer: "Result: 150",
+        toolEvidence: [
+          {
+            ...computed[0],
+            data: {
+              ...computed[0]!.data,
+              check: { agrees: false, method: "substitution" },
+            },
+          },
+        ],
+      }),
+    );
+    expect(verdict.status).toBe("rejected");
   });
 });
 
