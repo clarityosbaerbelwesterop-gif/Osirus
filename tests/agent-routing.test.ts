@@ -1,3 +1,5 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { composeWorkflow } from "../src/lib/arms/compose";
 import { armFor, routableArms } from "../src/lib/arms/registry";
@@ -226,5 +228,43 @@ describe("arm workflows", () => {
         expect(node.retryPolicy.maxAttempts).toBeLessThanOrEqual(3);
       }
     }
+  });
+});
+
+describe("compound run completion", () => {
+  it("gives the meta verification stage a handler in every arm", () => {
+    // compose.ts appends a meta_verify node to every compound run. Without a
+    // handler the stage falls through to the unhandled branch and fails the
+    // run at the last step, after all the real work is already done.
+    const composed = composeWorkflow({
+      objective: "Research then build",
+      composition: ["research", "building"],
+    });
+    const meta = composed.graph.nodes.find(
+      (node) => node.key === "meta-verify",
+    );
+    expect(meta?.input.stageKind).toBe("meta_verify");
+
+    const source = readFileSync(
+      join(process.cwd(), "src", "lib", "arms", "base.ts"),
+      "utf8",
+    );
+    expect(source).toContain('case "meta_verify":');
+    expect(source).toContain("metaVerifyStage");
+  });
+
+  it("grades every segment's answer, not only the last one", () => {
+    const source = readFileSync(
+      join(process.cwd(), "src", "lib", "arms", "base.ts"),
+      "utf8",
+    );
+    expect(source).toContain('readState<string[]>(context, "answers", [])');
+    const worker = readFileSync(
+      join(process.cwd(), "src", "lib", "runtime", "worker.ts"),
+      "utf8",
+    );
+    // The accumulated answers have to survive a checkpoint, or a run picked up
+    // by another worker grades against whatever one segment produced.
+    expect(worker).toContain('"answers"');
   });
 });

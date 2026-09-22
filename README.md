@@ -20,6 +20,10 @@ The ordered migration chain in `db/migrations` is the source of truth for a clea
 - `005` adds the production runtime durability functions and indexes.
 - `006` adds the database-backed, fail-closed mutation rate-limit store.
 - `007` provisions the `osirus_app` role that makes those policies enforceable.
+- `008` adds the durable workflow engine: DAG edges, leases and the atomic
+  stage claim.
+- `009` separates the retry ceiling from the slice ceiling and records
+  verification verdicts with their evidence.
 
 Neon Auth must be enabled before applying the chain because `osirus.users` is linked to the Neon Auth user table.
 
@@ -43,6 +47,71 @@ same statement that sets the tenant GUC. System work keeps its cross-tenant
 reach through `osirus.is_system()`, which the policies evaluate — it does not
 bypass them. Any new database entry point must go through those two helpers; a
 connection that skips the role switch silently disables tenant isolation.
+
+## Execution
+
+A run is a DAG of stages in the database, not a function call. `POST
+/api/runtime` plans the run, writes the graph, and then claims and executes
+stages one at a time under a lease it renews, until the work is gone or the
+request nears its deadline. It then returns with the run intact. Nothing about
+finishing a run depends on that request surviving.
+
+`osirus.claim_next_stage` is what makes several workers safe: it takes one
+runnable stage with `FOR UPDATE ... SKIP LOCKED`, checks its dependencies in the
+same statement, and mints a per-claim `lease_token`. Every later write is fenced
+on that token, so a worker that stalled and woke up after its stage was
+reclaimed cannot overwrite newer work -- it is told the lease is gone and
+discards its result.
+
+Two counters bound a stage. `attempt_count` bounds retries after a failure;
+`slice_count` bounds how many times a stage may yield and resume. Keeping them
+apart is what lets a stage allowed a single attempt still run in several slices.
+
+Work nobody is holding is recovered two ways. The client's existing poll of
+`GET /api/runtime/[runId]` drains its own run under the caller's own
+authorisation. `POST` or `GET /api/scheduler/tick` claims across tenants behind
+`OSIRUS_SCHEDULER_SECRET`, executing each stage as the run's owner rather than
+as itself; with the secret unset it returns 503, never 200. The `vercel.json`
+cron is a daily liveness floor, not the heartbeat -- the poll is.
+
+## Verification
+
+`src/lib/verification/engine.ts` replaces what used to be
+`assistant.trim().length > 0`. Checks are typed `STRUCTURE`, `MODEL`, `TOOL`,
+`TEST`, `BUILD`, `SOURCE`, `MATH`, `SECURITY` or `COMPOSITE`, and arbitration
+over their results is pure, so the rule that decides whether something may be
+called verified is unit-tested without a database, a sandbox or a model.
+
+The rules that matter:
+
+- A `MODEL` check alone can never reach `verified`; its ceiling is `unverified`.
+- Deterministic evidence outranks model review; a deterministic pass the model
+  objects to is `conflicted`, and a deterministic failure is `rejected`.
+- A check that throws is `inconclusive`. Treating it as a pass is the exact
+  failure this file exists to prevent.
+- A cited source the run never retrieved fails. `mathCheck` accepts only methods
+  that compute, so a model-reviewed derivation cannot be recorded as a checked
+  one.
+
+## Agent arms
+
+`src/lib/arms` holds six specialised arms -- thinking, coding, research,
+math/science, building and general -- behind one `AgentArm` interface. An arm
+decides which stages exist, what the answering stage is told to produce, and
+what counts as evidence at the end; everything else is shared.
+
+The thinking arm produces a schema-validated `TaskAnalysis` through the
+`THINKING` model role. That analysis is the plan: its proposed stages become the
+graph, its verifier requirements become the checks, and its success criteria
+become the acceptance contract the meta verifier grades the finished run
+against. It carries conclusions only -- the schema has no field for reasoning,
+and none may be added.
+
+`src/lib/runtime/router-v2.ts` scores every arm rather than returning a first
+match, so ambiguity is measurable. Compound objectives are segmented on
+sequencing connectives and routed per segment, which composes several arms into
+one DAG without a model call; a structured classification is escalated to only
+when the scores are genuinely close.
 
 ## Development
 

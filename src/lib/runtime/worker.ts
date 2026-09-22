@@ -78,6 +78,7 @@ const DURABLE_STATE_KEYS = new Set([
   "analysis",
   "plan",
   "answer",
+  "answers",
   "assistantMessageId",
   "memoryContext",
   "memoryItemIds",

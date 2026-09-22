@@ -197,6 +197,8 @@ export abstract class BaseArm implements AgentArm {
         return this.answerStage(context);
       case "verify":
         return this.verifyStage(context);
+      case "meta_verify":
+        return this.metaVerifyStage(context);
       default:
         return this.customStage(context);
     }
@@ -395,6 +397,13 @@ export abstract class BaseArm implements AgentArm {
 
     context.state.answer = answer;
     context.state.assistantMessageId = assistantMessageId;
+    // A compound run has one answer per segment. The contract is graded
+    // against all of them, so a criterion met by the research segment is not
+    // reported as unmet because the building segment did not repeat it.
+    context.state.answers = [
+      ...readState<string[]>(context, "answers", []),
+      answer,
+    ];
     return {
       kind: "COMPLETE",
       output: {
@@ -422,6 +431,150 @@ export abstract class BaseArm implements AgentArm {
         checks: verdict.checks,
       },
       verdict,
+    };
+  }
+
+  /**
+   * The last stage of a compound run: grade the whole thing against the
+   * contract written before any of it started.
+   *
+   * Per-stage verification asks whether each step did its job. This asks
+   * whether the run delivered what it promised, which is a different question
+   * and the only one the user actually cares about.
+   */
+  protected async metaVerifyStage(
+    context: ArmStageContext,
+  ): Promise<StageOutcome> {
+    const contract = await this.loadContract(context);
+    const segments = readState<string[]>(context, "answers", []);
+    const latest = readState<string>(context, "answer", "");
+    const answer = segments.length > 0 ? segments.join("\n\n") : latest;
+
+    const verdict = await VerificationEngine.of(
+      structureCheck({
+        id: "deliverable-present",
+        required: true,
+        requiredFields: ["answer"],
+        minLength: 1,
+      }),
+      {
+        id: "acceptance-contract",
+        type: "COMPOSITE" as const,
+        required: true,
+        run: () => {
+          if (contract.successCriteria.length === 0) {
+            return {
+              status: "inconclusive" as const,
+              detail: "The run recorded no success criteria to grade against.",
+            };
+          }
+          const body = answer.toLowerCase();
+          const unmet = contract.successCriteria.filter((criterion) => {
+            const terms = (
+              criterion.toLowerCase().match(/[a-z]{4,}/g) ?? []
+            ).slice(0, 8);
+            if (terms.length === 0) return false;
+            return (
+              terms.filter((term) => body.includes(term)).length /
+                terms.length <
+              0.5
+            );
+          });
+          return unmet.length === 0
+            ? {
+                status: "passed" as const,
+                detail: `All ${contract.successCriteria.length} success criteria are addressed in the result.`,
+                evidence: { successCriteria: contract.successCriteria },
+              }
+            : {
+                status: "failed" as const,
+                detail: `Success criteria not addressed: ${unmet.join("; ")}.`,
+                evidence: { unmet },
+              };
+        },
+      },
+      {
+        id: "stage-verdicts",
+        type: "COMPOSITE" as const,
+        required: true,
+        run: async () => {
+          // A run whose own stages came back rejected has not delivered,
+          // whatever the final text says.
+          const snapshot = await context.runtime.repository.getSnapshot(
+            context.work.runId,
+          );
+          const statuses = snapshot.stages
+            .map((stage) => stage.verifier_status)
+            .filter((status): status is string => typeof status === "string");
+          const rejected = statuses.filter((status) => status === "rejected");
+          const unverified = statuses.filter(
+            (status) => status === "unverified" || status === "conflicted",
+          );
+          if (rejected.length > 0) {
+            return {
+              status: "failed" as const,
+              detail: `${rejected.length} stage verdict(s) were rejected.`,
+              evidence: { statuses },
+            };
+          }
+          if (statuses.length === 0 || unverified.length === statuses.length) {
+            return {
+              status: "inconclusive" as const,
+              detail: "No stage produced a verified result.",
+              evidence: { statuses },
+            };
+          }
+          return {
+            status: "passed" as const,
+            detail: `${statuses.length} stage verdict(s), none rejected.`,
+            evidence: { statuses },
+          };
+        },
+      },
+      secretLeakCheck(),
+    ).run({
+      runId: context.work.runId,
+      stageId: context.work.stageId,
+      objective: context.work.objective,
+      output: { answer },
+      signal: context.signal,
+    });
+
+    await context.runtime.activity(
+      `meta_verification.${verdict.status}`,
+      `Contract check ${verdict.status}`,
+      { summary: verdict.summary, criteria: contract.successCriteria.length },
+    );
+
+    return {
+      kind: "COMPLETE",
+      output: {
+        verifierStatus: verdict.status,
+        summary: verdict.summary,
+        checks: verdict.checks,
+        successCriteria: contract.successCriteria,
+      },
+      verdict,
+    };
+  }
+
+  /** The contract recorded at planning time, not one inferred afterwards. */
+  private async loadContract(
+    context: ArmStageContext,
+  ): Promise<AcceptanceContract> {
+    const snapshot = await context.runtime.repository.getSnapshot(
+      context.work.runId,
+    );
+    const stored = snapshot.run.acceptanceContract;
+    const criteria = stored?.successCriteria;
+    return {
+      objective: context.work.objective,
+      successCriteria: Array.isArray(criteria) ? criteria.map(String) : [],
+      requiredEvidence: Array.isArray(stored?.requiredEvidence)
+        ? (stored.requiredEvidence as unknown[]).map(String)
+        : [],
+      outputFields: ["answer"],
+      forbidden: [],
     };
   }
 
