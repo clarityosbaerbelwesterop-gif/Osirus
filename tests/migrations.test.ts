@@ -11,6 +11,7 @@ const migrations = [
   "005_runtime_production.sql",
   "006_api_controls.sql",
   "007_app_role.sql",
+  "008_workflow_engine.sql",
 ];
 
 function migration(name: string) {
@@ -73,6 +74,60 @@ describe("migration replay invariants", () => {
     expect(runtime).toContain("FUNCTION osirus.append_run_event");
     expect(runtime).toContain("pg_advisory_xact_lock");
     expect(runtime).toContain("MAX(sequence)");
+  });
+
+  it("claims workflow stages without two workers taking the same one", () => {
+    const engine = migration("008_workflow_engine.sql");
+    // SKIP LOCKED is what makes concurrent claims take different rows instead
+    // of blocking; the lease is what keeps them apart after the lock is gone.
+    expect(engine).toContain("FUNCTION osirus.claim_next_stage");
+    expect(engine).toContain("FOR UPDATE OF s SKIP LOCKED");
+    // The dependency test must sit inside the same statement as the lock, or a
+    // predecessor completing concurrently could let a dependent start early.
+    expect(engine).toContain("osirus.run_stage_dependencies");
+    expect(engine).toMatch(/dep\.status NOT IN \('completed', 'skipped'\)/);
+  });
+
+  it("fences lease writes on a token rather than a worker id", () => {
+    // A worker id survives a restart. Without a per-claim token, a stalled
+    // worker waking after its stage was reclaimed would still match on
+    // lease_owner and overwrite newer work.
+    const engine = migration("008_workflow_engine.sql");
+    expect(engine).toContain("lease_token uuid");
+    for (const fn of ["heartbeat_attempt", "finish_attempt"]) {
+      const start = engine.indexOf(`FUNCTION osirus.${fn}`);
+      expect(start).toBeGreaterThan(-1);
+      const body = engine.slice(start, engine.indexOf("$function$;", start));
+      expect(body).toContain("p_lease_token uuid");
+      expect(body).toContain("lease_token = p_lease_token");
+      expect(body).not.toContain("lease_owner = p_worker_id");
+    }
+  });
+
+  it("derives the attempt number from attempts, not the stage counter", () => {
+    // attempt_count is the retry ceiling. Trusting it to allocate the attempt
+    // number produces a duplicate key against run_attempts_run_stage_attempt_key
+    // whenever the two disagree.
+    const engine = migration("008_workflow_engine.sql");
+    expect(engine).toContain("COALESCE(MAX(a.attempt_number), 0) + 1");
+    expect(engine).toContain("run_attempts_run_stage_attempt_key");
+    expect(engine).toContain(
+      "UNIQUE NULLS NOT DISTINCT (run_id, stage_id, attempt_number)",
+    );
+  });
+
+  it("puts every new workflow table behind tenant policy", () => {
+    const engine = migration("008_workflow_engine.sql");
+    for (const table of ["run_stage_dependencies", "run_budgets"]) {
+      expect(engine).toContain(
+        `ALTER TABLE osirus.${table} ENABLE ROW LEVEL SECURITY`,
+      );
+      expect(engine).toContain(
+        `ALTER TABLE osirus.${table} FORCE ROW LEVEL SECURITY`,
+      );
+      expect(engine).toContain(`CREATE POLICY ${table}_access`);
+      expect(engine).toContain(`ON osirus.${table} TO osirus_app`);
+    }
   });
 
   it("provisions a runtime role that cannot bypass row-level security", () => {
