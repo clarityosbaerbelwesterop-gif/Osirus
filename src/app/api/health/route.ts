@@ -25,6 +25,13 @@ export async function GET(request: Request) {
     serverKeys().length > 0 &&
     env.OSIRUS_MODEL_STRONG,
   );
+  // Reported, not gated. Hosted execution being unconfigured is a capability
+  // the deployment lacks, not a fault: runs still work, and anything needing
+  // execution comes back unverified rather than claiming it ran. Folding it
+  // into `status` would make a healthy deployment look broken.
+  const { sandboxAvailability } = await import("@/lib/sandbox");
+  const sandbox = await sandboxAvailability();
+
   const status = authConfigured && database && provider ? "ok" : "degraded";
 
   return Response.json(
@@ -35,6 +42,10 @@ export async function GET(request: Request) {
         auth: authConfigured,
         database,
         provider,
+      },
+      capabilities: {
+        sandbox: sandbox.configured ? sandbox.driver : "NOT_CONFIGURED",
+        sandboxReason: sandbox.reason,
       },
       version: env.VERCEL_GIT_COMMIT_SHA ?? "local",
       runtime: "nodejs",

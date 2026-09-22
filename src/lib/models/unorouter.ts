@@ -76,6 +76,7 @@ export class UnoRouterProvider implements ModelProvider {
     const models: Record<ModelRole, string | undefined> = {
       FAST: env.OSIRUS_MODEL_FAST,
       STRONG: env.OSIRUS_MODEL_STRONG,
+      THINKING: env.OSIRUS_MODEL_THINKING ?? env.OSIRUS_MODEL_STRONG,
       CODING: env.OSIRUS_MODEL_CODING,
       RESEARCH: env.OSIRUS_MODEL_RESEARCH,
       MATH: env.OSIRUS_MODEL_MATH,

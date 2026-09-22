@@ -133,6 +133,17 @@ const cookieSecret =
     ? (cookieSecretFromGitHub ?? randomBytes(48).toString("base64url"))
     : undefined;
 
+// The scheduler tick secret. Generated once and left alone afterwards:
+// replacing it mid-flight would make every scheduled tick fail closed until
+// the cron configuration caught up. Never printed, same as the cookie secret.
+const schedulerSecretFromGitHub = optionalSecret(
+  process.env.OSIRUS_SCHEDULER_SECRET,
+);
+const hasAnySchedulerSecret = hasAnyValue(existing, "OSIRUS_SCHEDULER_SECRET");
+const schedulerSecret =
+  schedulerSecretFromGitHub ??
+  (hasAnySchedulerSecret ? undefined : randomBytes(48).toString("base64url"));
+
 const variables = [
   {
     key: "NEON_AUTH_BASE_URL",
@@ -164,11 +175,13 @@ const variables = [
     value: unoRouterKeyThree,
     type: "sensitive",
   },
-  ...["FAST", "STRONG", "CODING", "RESEARCH", "MATH", "VERIFY"].map((role) => ({
-    key: `OSIRUS_MODEL_${role}`,
-    value: primaryModel,
-    type: "plain",
-  })),
+  ...["FAST", "STRONG", "THINKING", "CODING", "RESEARCH", "MATH", "VERIFY"].map(
+    (role) => ({
+      key: `OSIRUS_MODEL_${role}`,
+      value: primaryModel,
+      type: "plain",
+    }),
+  ),
   ...(primaryModel === "grok-4.6"
     ? [
         {
@@ -186,6 +199,24 @@ const variables = [
         {
           key: "NEON_AUTH_COOKIE_SECRET",
           value: cookieSecret,
+          type: "sensitive",
+        },
+      ]
+    : []),
+  ...(schedulerSecret
+    ? [
+        {
+          key: "OSIRUS_SCHEDULER_SECRET",
+          value: schedulerSecret,
+          type: "sensitive",
+        },
+        // Vercel Cron sends `Authorization: Bearer $CRON_SECRET` and cannot
+        // set a custom header. Holding the same value under both keys lets the
+        // cron authenticate without adding a second credential that would also
+        // open the route.
+        {
+          key: "CRON_SECRET",
+          value: schedulerSecret,
           type: "sensitive",
         },
       ]
@@ -215,4 +246,9 @@ console.log(
   cookieSecret
     ? "Provisioned the Neon Auth cookie secret without printing it."
     : "Preserved the existing Neon Auth cookie secret.",
+);
+console.log(
+  schedulerSecret
+    ? "Provisioned the scheduler tick secret without printing it."
+    : "Preserved the existing scheduler tick secret.",
 );

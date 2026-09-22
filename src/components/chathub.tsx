@@ -12,7 +12,35 @@ type Message = {
 
 type Activity = { id: string; label: string; at?: string };
 type WorkspaceSession = { id: string; title: string; updatedAt: string };
-type WorkbenchTab = "activity" | "plan" | "memory" | "artifacts";
+type WorkbenchTab =
+  | "activity"
+  | "plan"
+  | "arms"
+  | "workers"
+  | "skills"
+  | "tools"
+  | "verification"
+  | "memory"
+  | "artifacts";
+
+const WORKBENCH_TABS: Array<{ id: WorkbenchTab; label: string }> = [
+  { id: "activity", label: "Activity" },
+  { id: "plan", label: "Plan" },
+  { id: "arms", label: "Arms" },
+  { id: "workers", label: "Workers" },
+  { id: "skills", label: "Skills" },
+  { id: "tools", label: "Tools" },
+  { id: "verification", label: "Verification" },
+  { id: "memory", label: "Memory" },
+  { id: "artifacts", label: "Artifacts" },
+];
+
+const VERDICT_LABEL: Record<string, string> = {
+  verified: "Verified",
+  rejected: "Rejected",
+  conflicted: "Conflicted",
+  unverified: "Not verified",
+};
 type SessionState = {
   sessionId: string;
   messages: Message[];
@@ -50,6 +78,51 @@ function recordString(value: unknown, key: string) {
     typeof (value as Record<string, unknown>)[key] === "string"
     ? String((value as Record<string, unknown>)[key])
     : null;
+}
+
+function recordNumber(value: unknown, key: string) {
+  const raw =
+    typeof value === "object" && value !== null
+      ? (value as Record<string, unknown>)[key]
+      : undefined;
+  const parsed = typeof raw === "string" ? Number(raw) : raw;
+  return typeof parsed === "number" && Number.isFinite(parsed) ? parsed : null;
+}
+
+function recordObject(value: unknown, key: string) {
+  const raw =
+    typeof value === "object" && value !== null
+      ? (value as Record<string, unknown>)[key]
+      : undefined;
+  return typeof raw === "object" && raw !== null
+    ? (raw as Record<string, unknown>)
+    : null;
+}
+
+type VerificationCheckRow = {
+  id?: unknown;
+  type?: unknown;
+  status?: unknown;
+  detail?: unknown;
+  required?: unknown;
+};
+
+function checksOf(stage: Record<string, unknown>): VerificationCheckRow[] {
+  const verification = recordObject(stage, "verification");
+  const checks = verification?.checks;
+  return Array.isArray(checks) ? (checks as VerificationCheckRow[]) : [];
+}
+
+/**
+ * Elapsed lease time, so a worker that stopped heartbeating is visible rather
+ * than looking identical to one that is still working.
+ */
+function leaseState(attempt: Record<string, unknown>) {
+  const status = recordString(attempt, "status") ?? "created";
+  if (status !== "claimed" && status !== "running") return status;
+  const expiresAt = recordString(attempt, "lease_expires_at");
+  if (!expiresAt) return status;
+  return Date.parse(expiresAt) < Date.now() ? "lease expired" : status;
 }
 
 export function ChatHub(props: {
@@ -347,6 +420,51 @@ export function ChatHub(props: {
     .reverse()
     .find((message) => message.role === "user")?.content;
   const planStages = snapshot?.stages ?? [];
+  const attempts = snapshot?.attempts ?? [];
+  const artifacts = snapshot?.artifacts ?? [];
+  const approvals = snapshot?.approvals ?? [];
+  const dependencies = snapshot?.dependencies ?? [];
+  const stageNameById = new Map(
+    planStages.map((stage) => [
+      recordString(stage, "id") ?? "",
+      recordString(stage, "name") ?? "Stage",
+    ]),
+  );
+  const dependenciesByStage = new Map<string, string[]>();
+  for (const edge of dependencies) {
+    const stageId = recordString(edge, "stage_id");
+    const dependsOn = recordString(edge, "depends_on_stage_id");
+    if (!stageId || !dependsOn) continue;
+    dependenciesByStage.set(stageId, [
+      ...(dependenciesByStage.get(stageId) ?? []),
+      stageNameById.get(dependsOn) ?? "a previous stage",
+    ]);
+  }
+  const armId = snapshot?.run.armId ?? null;
+  const contract = snapshot?.run.acceptanceContract ?? null;
+  const successCriteria = Array.isArray(contract?.successCriteria)
+    ? (contract.successCriteria as unknown[]).map(String)
+    : [];
+  const routing = recordObject(contract, "routing");
+  const verifiedStages = planStages.filter((stage) =>
+    recordString(stage, "verifier_status"),
+  );
+  const skillEvents = (snapshot?.events ?? []).filter(
+    (event) => event.type === "skill.selected",
+  );
+  const selectedSkills = skillEvents.flatMap((event) =>
+    Array.isArray(event.data.skills)
+      ? (event.data.skills as unknown[]).map((entry) => ({
+          id: recordString(entry, "id") ?? "",
+          name: recordString(entry, "name") ?? "Skill",
+          version: recordString(entry, "version") ?? "",
+        }))
+      : [],
+  );
+  const toolEvents = (snapshot?.events ?? []).filter(
+    (event) =>
+      event.type.startsWith("sandbox.") || event.type.startsWith("tool."),
+  );
   const memoryEvent = snapshot?.events.find(
     (event) => event.type === "memory.retrieved",
   );
@@ -479,24 +597,20 @@ export function ChatHub(props: {
           role="tablist"
           aria-label="Workbench tabs"
         >
-          {(["activity", "plan", "memory", "artifacts"] as WorkbenchTab[]).map(
-            (item) => (
-              <button
-                aria-selected={tab === item}
-                className={
-                  tab === item ? "workbench-tab-active" : "workbench-tab"
-                }
-                key={item}
-                onClick={() => setTab(item)}
-                role="tab"
-                type="button"
-              >
-                {item === "memory"
-                  ? "Memory"
-                  : item[0]!.toUpperCase() + item.slice(1)}
-              </button>
-            ),
-          )}
+          {WORKBENCH_TABS.map((item) => (
+            <button
+              aria-selected={tab === item.id}
+              className={
+                tab === item.id ? "workbench-tab-active" : "workbench-tab"
+              }
+              key={item.id}
+              onClick={() => setTab(item.id)}
+              role="tab"
+              type="button"
+            >
+              {item.label}
+            </button>
+          ))}
         </div>
         {tab === "activity" ? (
           <div className="activity-list" role="status">
@@ -515,18 +629,170 @@ export function ChatHub(props: {
         {tab === "plan" ? (
           <div className="workbench-panel">
             {planStages.length ? (
-              planStages.map((stage, index) => (
-                <p key={recordString(stage, "id") ?? String(index)}>
-                  <strong>{recordString(stage, "name") ?? "Stage"}</strong>
-                  <span className="muted">
-                    {" "}
-                    · {recordString(stage, "status") ?? "pending"}
-                  </span>
+              planStages.map((stage, index) => {
+                const stageId = recordString(stage, "id") ?? String(index);
+                const waitsOn = dependenciesByStage.get(stageId) ?? [];
+                return (
+                  <p key={stageId}>
+                    <strong>{recordString(stage, "name") ?? "Stage"}</strong>
+                    <span className="muted">
+                      {" "}
+                      · {recordString(stage, "status") ?? "pending"}
+                    </span>
+                    {waitsOn.length ? (
+                      <span className="muted">
+                        {" "}
+                        · after {waitsOn.join(", ")}
+                      </span>
+                    ) : null}
+                  </p>
+                );
+              })
+            ) : (
+              <p className="muted">
+                A durable stage plan appears when a run begins.
+              </p>
+            )}
+          </div>
+        ) : null}
+        {tab === "arms" ? (
+          <div className="workbench-panel">
+            {armId ? (
+              <>
+                <p>
+                  <strong>{armId}</strong>
+                  {routing && Array.isArray(routing.composition) ? (
+                    <span className="muted">
+                      {" "}
+                      ·{" "}
+                      {(routing.composition as unknown[])
+                        .map(String)
+                        .join(" → ")}
+                    </span>
+                  ) : null}
+                </p>
+                {routing ? (
+                  <p className="muted">{String(routing.reason ?? "")}</p>
+                ) : null}
+                {successCriteria.length ? (
+                  <>
+                    <p>
+                      <strong>Success criteria</strong>
+                    </p>
+                    {successCriteria.map((criterion) => (
+                      <p className="muted" key={criterion}>
+                        {criterion}
+                      </p>
+                    ))}
+                  </>
+                ) : null}
+              </>
+            ) : (
+              <p className="muted">
+                The arm and its acceptance contract appear once a run is
+                planned.
+              </p>
+            )}
+          </div>
+        ) : null}
+        {tab === "workers" ? (
+          <div className="workbench-panel">
+            {attempts.length ? (
+              attempts.map((attempt, index) => {
+                const stageId = recordString(attempt, "stage_id") ?? "";
+                const failure = recordString(attempt, "failure_class");
+                return (
+                  <p key={recordString(attempt, "id") ?? String(index)}>
+                    <strong>{stageNameById.get(stageId) ?? "Stage"}</strong>
+                    <span className="muted">
+                      {" "}
+                      · attempt {recordNumber(attempt, "attempt_number") ??
+                        1} · {leaseState(attempt)}
+                    </span>
+                    {failure ? (
+                      <span className="muted"> · {failure}</span>
+                    ) : null}
+                  </p>
+                );
+              })
+            ) : (
+              <p className="muted">
+                Each worker that takes a stage appears here with its lease.
+              </p>
+            )}
+          </div>
+        ) : null}
+        {tab === "skills" ? (
+          <div className="workbench-panel">
+            {selectedSkills.length ? (
+              selectedSkills.map((skill, index) => (
+                <p key={skill.id || String(index)}>
+                  <strong>{skill.name}</strong>
+                  {skill.version ? (
+                    <span className="muted"> · {skill.version}</span>
+                  ) : null}
                 </p>
               ))
             ) : (
               <p className="muted">
-                A durable stage plan appears when a run begins.
+                The skills selected for this run appear here.
+              </p>
+            )}
+          </div>
+        ) : null}
+        {tab === "tools" ? (
+          <div className="workbench-panel">
+            {toolEvents.length ? (
+              toolEvents.map((event) => (
+                <p key={event.id}>
+                  <strong>{event.summary}</strong>
+                  {typeof event.data.reason === "string" ? (
+                    <span className="muted"> · {event.data.reason}</span>
+                  ) : null}
+                </p>
+              ))
+            ) : (
+              <p className="muted">
+                Tool and sandbox activity appears here. Nothing ran for this
+                run.
+              </p>
+            )}
+          </div>
+        ) : null}
+        {tab === "verification" ? (
+          <div className="workbench-panel">
+            {verifiedStages.length ? (
+              verifiedStages.map((stage, index) => {
+                const status = recordString(stage, "verifier_status") ?? "";
+                const verification = recordObject(stage, "verification");
+                return (
+                  <div key={recordString(stage, "id") ?? String(index)}>
+                    <p>
+                      <strong>{recordString(stage, "name") ?? "Stage"}</strong>
+                      <span className="muted">
+                        {" "}
+                        · {VERDICT_LABEL[status] ?? status}
+                      </span>
+                    </p>
+                    {verification?.summary ? (
+                      <p className="muted">{String(verification.summary)}</p>
+                    ) : null}
+                    {checksOf(stage).map((check, checkIndex) => (
+                      <p
+                        className="muted"
+                        key={`${String(check.id ?? checkIndex)}`}
+                      >
+                        {String(check.type ?? "CHECK")} ·{" "}
+                        {String(check.status ?? "")} ·{" "}
+                        {String(check.detail ?? "")}
+                      </p>
+                    ))}
+                  </div>
+                );
+              })
+            ) : (
+              <p className="muted">
+                Verification verdicts and the evidence behind them appear here.
               </p>
             )}
           </div>
@@ -548,9 +814,40 @@ export function ChatHub(props: {
         ) : null}
         {tab === "artifacts" ? (
           <div className="workbench-panel">
-            <p className="muted">
-              No artifacts have been persisted for this run.
-            </p>
+            {approvals.length ? (
+              <>
+                <p>
+                  <strong>Approvals</strong>
+                </p>
+                {approvals.map((approval, index) => (
+                  <p
+                    className="muted"
+                    key={recordString(approval, "id") ?? String(index)}
+                  >
+                    {recordString(approval, "action") ?? "Action"} ·{" "}
+                    {recordString(approval, "status") ?? "pending"} ·{" "}
+                    {recordString(approval, "risk") ?? "low"} risk
+                  </p>
+                ))}
+              </>
+            ) : null}
+            {artifacts.length ? (
+              artifacts.map((artifact, index) => (
+                <p key={recordString(artifact, "id") ?? String(index)}>
+                  <strong>
+                    {recordString(artifact, "title") ?? "Artifact"}
+                  </strong>
+                  <span className="muted">
+                    {" "}
+                    · {recordString(artifact, "kind") ?? "artifact"}
+                  </span>
+                </p>
+              ))
+            ) : (
+              <p className="muted">
+                No artifacts have been persisted for this run.
+              </p>
+            )}
           </div>
         ) : null}
       </aside>

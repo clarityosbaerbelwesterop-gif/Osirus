@@ -21,6 +21,8 @@ type RunRow = {
   error_code: string | null;
   error_message: string | null;
   cancel_requested: boolean;
+  arm_id: string | null;
+  acceptance_contract: Record<string, unknown> | null;
 };
 
 type EventRow = {
@@ -645,11 +647,21 @@ export class RuntimeRepository {
     const run = await this.getRun(runId);
     if (!run) throw new Error("run_not_found");
 
-    const [stages, events, checkpoints, messages] = await Promise.all([
+    const [
+      stages,
+      events,
+      checkpoints,
+      messages,
+      attempts,
+      dependencies,
+      artifacts,
+      approvals,
+    ] = await Promise.all([
       queryAs<Record<string, unknown>>(
         this.actorId,
         `select id, ordinal, name, capability, status, output, verifier_status,
-                started_at, completed_at
+                verification, attempt_count, slice_count, worker_kind,
+                requires_verification, runnable_after, started_at, completed_at
            from osirus.run_stages
           where run_id = $1::uuid
           order by ordinal`,
@@ -678,6 +690,40 @@ export class RuntimeRepository {
           order by created_at`,
         [run.session_id],
       ),
+      queryAs<Record<string, unknown>>(
+        this.actorId,
+        `select id, stage_id, attempt_number, worker_kind, status, lease_owner,
+                lease_expires_at, heartbeat_at, slice_count, failure_class,
+                last_error, started_at, completed_at
+           from osirus.run_attempts
+          where run_id = $1::uuid
+          order by started_at nulls last, attempt_number`,
+        [runId],
+      ),
+      queryAs<Record<string, unknown>>(
+        this.actorId,
+        `select stage_id, depends_on_stage_id, kind
+           from osirus.run_stage_dependencies
+          where run_id = $1::uuid`,
+        [runId],
+      ),
+      queryAs<Record<string, unknown>>(
+        this.actorId,
+        `select id, kind, title, content_type, content, provenance, created_at
+           from osirus.artifacts
+          where run_id = $1::uuid
+          order by created_at`,
+        [runId],
+      ),
+      queryAs<Record<string, unknown>>(
+        this.actorId,
+        `select id, stage_id, action, risk, status, request, decided_at,
+                expires_at, created_at
+           from osirus.approvals
+          where run_id = $1::uuid
+          order by created_at`,
+        [runId],
+      ),
     ]);
 
     return {
@@ -690,8 +736,14 @@ export class RuntimeRepository {
         errorCode: run.error_code,
         errorMessage: run.error_message,
         cancelRequested: run.cancel_requested,
+        armId: run.arm_id ?? null,
+        acceptanceContract: run.acceptance_contract ?? null,
       },
       stages,
+      attempts,
+      dependencies,
+      artifacts,
+      approvals,
       events: events.map(mapEvent),
       checkpoints: checkpoints.map(mapCheckpoint),
       messages: messages.map((message) => ({
@@ -701,5 +753,200 @@ export class RuntimeRepository {
         createdAt: new Date(message.created_at).toISOString(),
       })),
     };
+  }
+
+  /** The run-level state a resuming worker rebuilds its context from. */
+  async loadLatestCheckpoint(runId: string): Promise<Checkpoint | null> {
+    const rows = await queryAs<CheckpointRow>(
+      this.actorId,
+      `select * from osirus.checkpoints
+        where run_id = $1::uuid
+        order by version desc
+        limit 1`,
+      [runId],
+    );
+    return rows[0] ? mapCheckpoint(rows[0]) : null;
+  }
+
+  async setRunPlan(input: {
+    runId: string;
+    armId: string;
+    acceptanceContract: Record<string, unknown>;
+  }) {
+    await queryAs(
+      this.actorId,
+      `update osirus.runs
+          set arm_id = $2,
+              acceptance_contract = $3::jsonb
+        where id = $1::uuid`,
+      [input.runId, input.armId, JSON.stringify(input.acceptanceContract)],
+    );
+  }
+
+  /**
+   * The verdict and its evidence land together, in one statement. Writing the
+   * label first would leave a window in which a stage reads as verified with
+   * nothing behind it.
+   */
+  async recordVerification(input: {
+    stageId: string;
+    status: "unverified" | "verified" | "conflicted" | "rejected";
+    verification: Record<string, unknown>;
+  }) {
+    const rows = await queryAs<{ recorded: boolean }>(
+      this.actorId,
+      "select osirus.record_verification($1::uuid, $2, $3::jsonb) as recorded",
+      [input.stageId, input.status, JSON.stringify(input.verification)],
+    );
+    return rows[0]?.recorded === true;
+  }
+
+  /** How much of the graph is still outstanding, and whether any of it failed. */
+  async stageProgress(runId: string) {
+    const rows = await queryAs<{
+      total: string | number;
+      settled: string | number;
+      failed: string | number;
+      waiting: string | number;
+      blocked_future: string | number;
+    }>(
+      this.actorId,
+      `select count(*) as total,
+              count(*) filter (
+                where status in ('completed', 'skipped', 'cancelled')
+              ) as settled,
+              count(*) filter (where status = 'failed') as failed,
+              count(*) filter (where status = 'waiting') as waiting,
+              count(*) filter (
+                where status = 'blocked' and runnable_after > now()
+              ) as blocked_future
+         from osirus.run_stages
+        where run_id = $1::uuid`,
+      [runId],
+    );
+    const row = rows[0];
+    return {
+      total: Number(row?.total ?? 0),
+      settled: Number(row?.settled ?? 0),
+      failed: Number(row?.failed ?? 0),
+      waiting: Number(row?.waiting ?? 0),
+      blockedFuture: Number(row?.blocked_future ?? 0),
+    };
+  }
+
+  async createArtifact(input: {
+    organizationId: string;
+    workspaceId: string;
+    sessionId?: string | null;
+    runId: string;
+    kind: string;
+    title: string;
+    contentType: string;
+    content: Record<string, unknown>;
+    provenance: Record<string, unknown>;
+  }) {
+    const rows = await queryAs<{ id: string }>(
+      this.actorId,
+      `insert into osirus.artifacts
+         (organization_id, workspace_id, session_id, run_id, kind, title,
+          content_type, content, provenance, created_by)
+       values ($1::uuid, $2::uuid, $3::uuid, $4::uuid, $5, $6, $7,
+               $8::jsonb, $9::jsonb, $10::uuid)
+       returning id`,
+      [
+        input.organizationId,
+        input.workspaceId,
+        input.sessionId ?? null,
+        input.runId,
+        input.kind,
+        // artifacts_title_check caps the column at 240.
+        input.title.slice(0, 240),
+        input.contentType,
+        JSON.stringify(input.content),
+        JSON.stringify(input.provenance),
+        this.actorId,
+      ],
+    );
+    if (!rows[0]) throw new Error("artifact_insert_failed");
+    return rows[0].id;
+  }
+
+  async createApproval(input: {
+    organizationId: string;
+    workspaceId: string;
+    runId: string;
+    stageId?: string | null;
+    action: string;
+    risk: "low" | "medium" | "high";
+    request: Record<string, unknown>;
+    expiresInSeconds?: number;
+  }) {
+    const rows = await queryAs<{ id: string }>(
+      this.actorId,
+      `insert into osirus.approvals
+         (organization_id, workspace_id, run_id, stage_id, action, risk,
+          status, request, expires_at)
+       values ($1::uuid, $2::uuid, $3::uuid, $4::uuid, $5, $6, 'requested',
+               $7::jsonb,
+               case when $8::integer > 0
+                 then now() + make_interval(secs => $8::integer)
+                 else null end)
+       returning id`,
+      [
+        input.organizationId,
+        input.workspaceId,
+        input.runId,
+        input.stageId ?? null,
+        input.action,
+        input.risk,
+        JSON.stringify(input.request),
+        input.expiresInSeconds ?? 0,
+      ],
+    );
+    if (!rows[0]) throw new Error("approval_insert_failed");
+    return rows[0].id;
+  }
+
+  /**
+   * Decide an approval and release its stage in one statement.
+   *
+   * 'requested' is the undecided state, not 'pending': that is what
+   * approvals_status_check permits, and an insert outside the constraint
+   * simply throws.
+   *
+   * An expired approval is not decidable: letting a stale request through
+   * after its window closed is the same as having no window.
+   */
+  async resolveApproval(input: {
+    approvalId: string;
+    runId: string;
+    decision: "approved" | "rejected";
+  }) {
+    const rows = await queryAs<{ id: string; stage_id: string | null }>(
+      this.actorId,
+      `with decided as (
+         update osirus.approvals
+            set status = $3,
+                decided_by = $4::uuid,
+                decided_at = now()
+          where id = $1::uuid
+            and run_id = $2::uuid
+            and status = 'requested'
+            and (expires_at is null or expires_at > now())
+          returning id, stage_id
+       ), released as (
+         update osirus.run_stages s
+            set status = case when $3 = 'approved' then 'blocked' else 'cancelled' end,
+                runnable_after = null,
+                completed_at = case when $3 = 'approved' then null else now() end
+           from decided d
+          where s.id = d.stage_id
+            and s.status = 'waiting'
+          returning s.id
+       )
+       select id, stage_id from decided`,
+      [input.approvalId, input.runId, input.decision, this.actorId],
+    );
+    return rows[0] ?? null;
   }
 }

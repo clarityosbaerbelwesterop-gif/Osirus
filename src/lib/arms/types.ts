@@ -1,0 +1,204 @@
+import { z } from "zod";
+import type { MemoryRepository } from "../memory/repository";
+import type { ModelProvider } from "../models/provider";
+import type { ClaimedWork } from "../runtime/dispatch";
+import type { WorkflowGraph } from "../runtime/graph";
+import type { RuntimeRepository } from "../runtime/repository";
+import type { Capability } from "../runtime/types";
+import type { SkillRepository } from "../skills/repository";
+import type { RankedSkill } from "../skills";
+import type { Verdict } from "../verification/engine";
+
+export type ArmId =
+  "thinking" | "coding" | "research" | "math_science" | "building" | "general";
+
+export type RuntimeIdentity = {
+  userId: string;
+  organizationId: string;
+  workspaceId: string;
+};
+
+/**
+ * What the user gets to hold the run to.
+ *
+ * Written before execution from the routing decision (and, when the thinking
+ * arm runs, from its analysis), so the meta verifier grades against a promise
+ * made up front rather than one reverse-engineered from whatever came out.
+ */
+export type AcceptanceContract = {
+  objective: string;
+  successCriteria: string[];
+  requiredEvidence: string[];
+  outputFields: string[];
+  forbidden: string[];
+};
+
+// Structured task analysis.
+//
+// This is the thinking arm's whole product. It is a schema rather than prose
+// precisely so the plan can be executed: proposedStages become the workflow
+// graph, verifierRequirements become the checks, successCriteria become the
+// contract. It carries conclusions only -- there is no field for reasoning,
+// because nothing in it may be private chain-of-thought.
+export const taskAnalysisSchema = z.object({
+  objective: z.string().min(1).max(2000),
+  successCriteria: z.array(z.string().min(1).max(400)).min(1).max(10),
+  constraints: z.array(z.string().min(1).max(400)).max(10).default([]),
+  unknowns: z.array(z.string().min(1).max(400)).max(10).default([]),
+  capabilities: z
+    .array(
+      z.enum([
+        "general",
+        "coding",
+        "research",
+        "math_science",
+        "data",
+        "multimodal",
+        "computer_use",
+      ]),
+    )
+    .min(1)
+    .max(4),
+  complexity: z.enum(["low", "medium", "high"]),
+  risk: z.enum(["low", "medium", "high"]),
+  requiredEvidence: z
+    .array(
+      z.enum([
+        "STRUCTURE",
+        "MODEL",
+        "TOOL",
+        "TEST",
+        "BUILD",
+        "SOURCE",
+        "MATH",
+        "SECURITY",
+      ]),
+    )
+    .max(8)
+    .default([]),
+  proposedStages: z
+    .array(
+      z.object({
+        key: z
+          .string()
+          .min(1)
+          .max(48)
+          .regex(/^[a-z0-9][a-z0-9_-]*$/),
+        name: z.string().min(1).max(120),
+        capability: z.enum([
+          "general",
+          "coding",
+          "research",
+          "math_science",
+          "data",
+          "multimodal",
+          "computer_use",
+        ]),
+        dependsOn: z.array(z.string().min(1).max(48)).max(8).default([]),
+      }),
+    )
+    .min(1)
+    .max(12),
+  parallelGroups: z
+    .array(z.array(z.string().min(1).max(48)).max(8))
+    .max(4)
+    .default([]),
+  verifierRequirements: z.array(z.string().min(1).max(300)).max(8).default([]),
+});
+
+export type TaskAnalysis = z.infer<typeof taskAnalysisSchema>;
+
+/**
+ * The worker contract.
+ *
+ * A stage says how it ended; the executor translates that into one
+ * osirus.finish_attempt call. Nothing else may move a stage, so a worker
+ * cannot leave one in a state the claim scan disagrees with.
+ */
+export type StageOutcome =
+  /** Done. The stage will not run again. */
+  | { kind: "COMPLETE"; output: Record<string, unknown>; verdict?: Verdict }
+  /** More to do. Resume state is checkpointed; the stage is immediately re-claimable. */
+  | {
+      kind: "PROGRESS";
+      output: Record<string, unknown>;
+      resume: Record<string, unknown>;
+    }
+  /** Parked on something outside the engine. */
+  | {
+      kind: "WAITING";
+      reason: "approval" | "external";
+      output: Record<string, unknown>;
+      approvalId?: string;
+    }
+  /** Temporarily unable to proceed; try again after the delay. */
+  | { kind: "BLOCKED"; reason: string; retryAfterSeconds: number }
+  /** Went wrong. `retryable` decides whether the stage gets another attempt. */
+  | {
+      kind: "FAILED";
+      failureClass: string;
+      error: string;
+      retryable: boolean;
+    };
+
+export type RepairPlan = {
+  /** Stage key to re-run, or null to repair in place. */
+  stageKey: string | null;
+  instruction: string;
+  maxRounds: number;
+};
+
+export type ArmActivity = (
+  type: string,
+  summary: string,
+  data?: Record<string, unknown>,
+  visibility?: "user" | "internal",
+) => Promise<{ id: string }>;
+
+export type ArmRuntime = {
+  provider: ModelProvider;
+  repository: RuntimeRepository;
+  memory: MemoryRepository;
+  skills: SkillRepository;
+  activity: ArmActivity;
+  /** Streams assistant text to the browser as it arrives. */
+  emitDelta: (text: string) => Promise<void> | void;
+};
+
+export type RoutingInput = {
+  objective: string;
+  capabilities: Capability[];
+  /** Present only when the thinking arm has already run. */
+  analysis?: TaskAnalysis;
+};
+
+export type ArmStageContext = {
+  identity: RuntimeIdentity;
+  work: ClaimedWork;
+  runtime: ArmRuntime;
+  signal: AbortSignal;
+  /** Accumulated run state, rebuilt from the latest checkpoint on resume. */
+  state: Record<string, unknown>;
+};
+
+export type PreparedContext = {
+  sections: Array<{ kind: string; text: string }>;
+  usedTokens: number;
+  omitted: string[];
+};
+
+export interface AgentArm {
+  readonly id: ArmId;
+  /** 0..1 confidence that this arm should own the objective. */
+  canHandle(input: RoutingInput): number;
+  buildContract(input: RoutingInput): AcceptanceContract;
+  buildWorkflow(input: RoutingInput): WorkflowGraph;
+  prepareContext(context: ArmStageContext): Promise<PreparedContext>;
+  selectSkills(context: ArmStageContext): Promise<RankedSkill[]>;
+  executeStage(context: ArmStageContext): Promise<StageOutcome>;
+  verify(context: ArmStageContext): Promise<Verdict>;
+  repairStrategy(failure: {
+    verdict: Verdict;
+    round: number;
+  }): RepairPlan | null;
+}

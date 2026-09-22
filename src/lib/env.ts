@@ -14,6 +14,7 @@ const schema = z.object({
   UNOROUTER_API_KEY_3: z.string().min(1).optional(),
   OSIRUS_MODEL_FAST: z.string().min(1).optional(),
   OSIRUS_MODEL_STRONG: z.string().min(1).optional(),
+  OSIRUS_MODEL_THINKING: z.string().min(1).optional(),
   OSIRUS_MODEL_CODING: z.string().min(1).optional(),
   OSIRUS_MODEL_RESEARCH: z.string().min(1).optional(),
   OSIRUS_MODEL_MATH: z.string().min(1).optional(),
@@ -21,6 +22,9 @@ const schema = z.object({
   OSIRUS_REASONING_EFFORT: z
     .enum(["low", "medium", "high", "xhigh"])
     .optional(),
+  // Shared secret for POST /api/scheduler/tick. Unset means the scheduler
+  // endpoint refuses every request; it is never open when unconfigured.
+  OSIRUS_SCHEDULER_SECRET: z.string().min(32).optional(),
   VERCEL_GIT_COMMIT_SHA: z.string().min(1).optional(),
 });
 
