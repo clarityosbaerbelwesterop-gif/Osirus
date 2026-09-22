@@ -1,5 +1,8 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
+  isSafeRelativePath,
   UnconfiguredSandbox,
   unavailableResult,
 } from "../src/lib/sandbox/driver";
@@ -115,5 +118,35 @@ describe("sandbox tools", () => {
   it("keeps write tools away from the research arm", () => {
     expect(byId.get("sandbox.write")!.arms).not.toContain("research");
     expect(byId.get("sandbox.read")!.arms).toContain("research");
+  });
+});
+
+describe("path safety", () => {
+  it("refuses a traversal, an absolute path and a drive letter", () => {
+    expect(isSafeRelativePath("src/app.ts")).toBe(true);
+    expect(isSafeRelativePath("a/b/../c.ts")).toBe(false);
+    expect(isSafeRelativePath("../../etc/cron.d/evil.sh")).toBe(false);
+    expect(isSafeRelativePath("/etc/passwd")).toBe(false);
+    expect(isSafeRelativePath("C:\\Windows\\system32")).toBe(false);
+    expect(isSafeRelativePath("")).toBe(false);
+  });
+
+  it("applies the same rule to code the model named a path for", () => {
+    // The tool schema guarded this; the coding arm's check stage wrote
+    // extractFiles() output straight through, and a path parsed out of model
+    // output is attacker-influenced whenever the objective is.
+    const files = extractFiles(
+      "Write `../../../etc/cron.d/evil.sh`:\n\n```js\nx\n```\n",
+    );
+    expect(files[0]?.path).toBe("../../../etc/cron.d/evil.sh");
+    expect(isSafeRelativePath(files[0]!.path)).toBe(false);
+
+    const coding = readFileSync(
+      join(process.cwd(), "src", "lib", "arms", "coding.ts"),
+      "utf8",
+    );
+    expect(coding).toContain("files.filter((file) => isSafeRelativePath");
+    expect(coding).toContain("safe.map((file)");
+    expect(coding).not.toContain("files.map((file) => ({ path: file.path");
   });
 });

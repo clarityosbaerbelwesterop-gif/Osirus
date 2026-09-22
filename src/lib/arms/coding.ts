@@ -169,7 +169,13 @@ export class CodingArm extends BaseArm {
       Boolean(syntaxCheckFor(file.path)),
     );
 
-    const { resolveSandbox, unavailableResult } = await import("../sandbox");
+    const { resolveSandbox, unavailableResult, isSafeRelativePath } =
+      await import("../sandbox");
+    // The path came out of model output, which the objective influences. A
+    // file naming ../../etc/cron.d/anything is dropped rather than written,
+    // even though the sandbox that would receive it is ephemeral.
+    const safe = files.filter((file) => isSafeRelativePath(file.path));
+    const refused = files.length - safe.length;
     const driver = await resolveSandbox();
     const availability = driver.availability();
 
@@ -192,10 +198,12 @@ export class CodingArm extends BaseArm {
       };
     }
 
-    if (files.length === 0) {
+    if (safe.length === 0) {
       const result = unavailableResult(
         "syntax check",
-        "No file in the answer is in a language this run can check.",
+        refused > 0
+          ? `Every candidate file named a path outside the working directory (${refused} refused).`
+          : "No file in the answer is in a language this run can check.",
       );
       context.state.buildResult = result;
       context.state.testResult = result;
@@ -211,11 +219,11 @@ export class CodingArm extends BaseArm {
     });
     try {
       await sandbox.writeFiles(
-        files.map((file) => ({ path: file.path, content: file.content })),
+        safe.map((file) => ({ path: file.path, content: file.content })),
       );
       const failures: CommandEvidence[] = [];
       let last: CommandEvidence | null = null;
-      for (const file of files) {
+      for (const file of safe) {
         const check = syntaxCheckFor(file.path);
         if (!check) continue;
         const [cmd, args] = check;
@@ -233,14 +241,15 @@ export class CodingArm extends BaseArm {
         failures.length > 0 ? "sandbox.check_failed" : "sandbox.check_passed",
         failures.length > 0
           ? `${failures.length} generated file(s) failed a syntax check`
-          : `${files.length} generated file(s) parse`,
-        { driver: availability.driver, checked: files.length },
+          : `${safe.length} generated file(s) parse`,
+        { driver: availability.driver, checked: safe.length, refused },
       );
       return {
         kind: "COMPLETE",
         output: {
           sandbox: availability.driver,
-          checkedFiles: files.length,
+          checkedFiles: safe.length,
+          refusedPaths: refused,
           failed: failures.length,
         },
       };

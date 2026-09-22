@@ -24,6 +24,22 @@ export type CommandResult = {
 
 export type SandboxFile = { path: string; content: string };
 
+/**
+ * Whether a path stays inside the sandbox working directory.
+ *
+ * Shared rather than duplicated because both callers reach the same
+ * writeFiles: the sandbox tool, where an arm names the path, and the coding
+ * arm's check stage, where the path is parsed out of model output. The second
+ * is the one that matters -- a file path in generated text is attacker-
+ * influenced whenever the objective is.
+ */
+export function isSafeRelativePath(value: string) {
+  if (value.length === 0 || value.length > 400) return false;
+  if (value.startsWith("/") || /^[a-zA-Z]:/.test(value)) return false;
+  if (value.includes("\\0")) return false;
+  return !value.split("/").includes("..");
+}
+
 export interface SandboxHandle {
   readonly sandboxId: string;
   writeFiles(files: SandboxFile[]): Promise<void>;

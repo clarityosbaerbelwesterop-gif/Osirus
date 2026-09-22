@@ -859,7 +859,8 @@ export class RuntimeRepository {
         input.sessionId ?? null,
         input.runId,
         input.kind,
-        input.title.slice(0, 300),
+        // artifacts_title_check caps the column at 240.
+        input.title.slice(0, 240),
         input.contentType,
         JSON.stringify(input.content),
         JSON.stringify(input.provenance),
@@ -885,7 +886,7 @@ export class RuntimeRepository {
       `insert into osirus.approvals
          (organization_id, workspace_id, run_id, stage_id, action, risk,
           status, request, expires_at)
-       values ($1::uuid, $2::uuid, $3::uuid, $4::uuid, $5, $6, 'pending',
+       values ($1::uuid, $2::uuid, $3::uuid, $4::uuid, $5, $6, 'requested',
                $7::jsonb,
                case when $8::integer > 0
                  then now() + make_interval(secs => $8::integer)
@@ -909,6 +910,10 @@ export class RuntimeRepository {
   /**
    * Decide an approval and release its stage in one statement.
    *
+   * 'requested' is the undecided state, not 'pending': that is what
+   * approvals_status_check permits, and an insert outside the constraint
+   * simply throws.
+   *
    * An expired approval is not decidable: letting a stale request through
    * after its window closed is the same as having no window.
    */
@@ -926,7 +931,7 @@ export class RuntimeRepository {
                 decided_at = now()
           where id = $1::uuid
             and run_id = $2::uuid
-            and status = 'pending'
+            and status = 'requested'
             and (expires_at is null or expires_at > now())
           returning id, stage_id
        ), released as (

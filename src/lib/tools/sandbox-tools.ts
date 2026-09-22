@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { SandboxHandle } from "../sandbox";
+import { isSafeRelativePath, type SandboxHandle } from "../sandbox";
 import type { ToolDefinition } from "./registry";
 
 // Sandbox tools.
@@ -11,16 +11,12 @@ import type { ToolDefinition } from "./registry";
 // not a prompt. Exposing a port is external, because it publishes a URL that
 // anyone holding it can reach, so it is gated.
 
-const pathSchema = z
-  .string()
-  .min(1)
-  .max(400)
-  // A traversal out of the working directory is refused here as well as by the
-  // sandbox, because a tool that accepts it and relies on something downstream
-  // to catch it is one refactor away from not being checked at all.
-  .refine((value) => !value.split("/").includes(".."), {
-    message: "path_traversal_refused",
-  });
+// A traversal out of the working directory is refused here as well as by the
+// sandbox, because a tool that accepts it and relies on something downstream
+// to catch it is one refactor away from not being checked at all.
+const pathSchema = z.string().refine(isSafeRelativePath, {
+  message: "path_traversal_refused",
+});
 
 export function sandboxTools(handle: () => Promise<SandboxHandle>) {
   const write: ToolDefinition<

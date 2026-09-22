@@ -150,7 +150,7 @@ describe("approval gate", () => {
     expect(result.ok).toBe(true);
   });
 
-  it("records denials in the audit, not only successes", async () => {
+  it("records refusals in the audit, not only successes", async () => {
     const entries: string[] = [];
     const registry = new ToolRegistry({
       audit: async (entry) => {
@@ -164,7 +164,10 @@ describe("approval gate", () => {
         context: { ...context, armId: "research" },
       })
       .catch(() => undefined);
-    expect(entries).toContain("denied");
+    // "cancelled" is what osirus.tool_calls.status permits; the reason lives
+    // in error_code. A status outside the constraint would throw, losing the
+    // audit row for the call that was refused.
+    expect(entries).toContain("cancelled");
   });
 
   it("keeps tool arguments and output out of the audit metadata", async () => {

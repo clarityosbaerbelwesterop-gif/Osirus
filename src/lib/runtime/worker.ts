@@ -286,7 +286,8 @@ export async function executeClaimedStage(input: {
     .saveCheckpoint({
       runId: work.runId,
       stageId: work.stageId,
-      label: `${work.stageName}:${outcome.kind.toLowerCase()}`,
+      // checkpoints_label_check caps the column at 160.
+      label: `${work.stageName}:${outcome.kind.toLowerCase()}`.slice(0, 160),
       state: durableState(state),
     })
     .catch(() => undefined);

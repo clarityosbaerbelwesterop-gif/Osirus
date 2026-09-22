@@ -123,7 +123,13 @@ export type ApprovalGate = (input: {
 export type ToolAudit = (entry: {
   context: ToolContext;
   tool: ToolDefinition;
-  status: "completed" | "failed" | "denied" | "awaiting_approval";
+  /**
+   * Mirrors osirus.tool_calls.status exactly. A refusal is recorded as
+   * "cancelled" with the reason in errorCode -- there is no "denied" value in
+   * the constraint, and a status outside it throws, which would mean the one
+   * audit row that most needs writing is the one that cannot be.
+   */
+  status: "completed" | "failed" | "cancelled" | "awaiting_approval";
   inputMetadata: Record<string, unknown>;
   outputMetadata: Record<string, unknown>;
   latencyMs: number;
@@ -208,7 +214,7 @@ export class ToolRegistry {
       await this.options.audit?.({
         context: input.context,
         tool,
-        status: "denied",
+        status: "cancelled",
         inputMetadata: { reason: "arm_not_permitted" },
         outputMetadata: {},
         latencyMs: Date.now() - startedAt,
@@ -222,7 +228,7 @@ export class ToolRegistry {
       await this.options.audit?.({
         context: input.context,
         tool,
-        status: "denied",
+        status: "cancelled",
         inputMetadata: { reason: "invalid_input" },
         outputMetadata: {},
         latencyMs: Date.now() - startedAt,
@@ -254,7 +260,7 @@ export class ToolRegistry {
         await this.options.audit?.({
           context: input.context,
           tool,
-          status: decision === "rejected" ? "denied" : "awaiting_approval",
+          status: decision === "rejected" ? "cancelled" : "awaiting_approval",
           inputMetadata: { effect: tool.effect, risk: tool.risk },
           outputMetadata: {},
           latencyMs: Date.now() - startedAt,
