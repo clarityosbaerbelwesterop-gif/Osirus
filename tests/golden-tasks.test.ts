@@ -105,7 +105,10 @@ const goldens: Golden[] = [
       "This answer is unsourced: no documents were retrieved in this run, so the claims below are not backed by a source I fetched.",
     badAnswer:
       "According to https://invented.example/postgres-locks, advisory locks are session scoped.",
-    expectedGood: "verified",
+    // Honest about having no sources, but research with nothing retrieved is
+    // not verified research. The real verified path is in research.test.ts,
+    // over documents the run actually fetched.
+    expectedGood: "unverified",
     expectedBad: "rejected",
   },
   {

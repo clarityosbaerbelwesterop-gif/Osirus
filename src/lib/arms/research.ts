@@ -1,12 +1,24 @@
 import type { ModelRole } from "../models/provider";
+import {
+  defineNode,
+  validateGraph,
+  type WorkflowGraph,
+} from "../runtime/graph";
 import type { Capability } from "../runtime/types";
+import type { CoverageReport } from "../research/citations";
+import type { ResearchPlan, VerifiedClaim } from "../research/types";
 import {
   secretLeakCheck,
   sourceCheck,
   structureCheck,
 } from "../verification/checks";
 import { BaseArm } from "./base";
-import type { ArmId, ArmStageContext, RoutingInput } from "./types";
+import type {
+  ArmId,
+  ArmStageContext,
+  RoutingInput,
+  StageOutcome,
+} from "./types";
 
 export type RetrievedDocument = {
   url: string;
@@ -27,12 +39,16 @@ export function extractCitations(answer: string): string[] {
 }
 
 /**
- * Research answers are graded against what this run actually fetched.
+ * Research that actually researches.
  *
- * With no retrieval tool configured the retrieved set is empty, so any URL in
- * the answer is a citation the run cannot support and the source check fails.
- * That is the point: an unsourced answer comes back "unverified", and a
- * fabricated source comes back "rejected". Neither is reported as research.
+ * The workflow fans out: after a plan, three workers gather in parallel with
+ * different mandates -- primary sources, independent corroboration and
+ * counter-evidence -- each running its own agent loop over the research tools.
+ * Everything they fetch lands in the evidence store, which is the only thing
+ * the synthesis stage may cite. Synthesis proposes claims with verbatim
+ * excerpts; the citation verifier then accepts or rejects each one against
+ * the stored documents. The answer the user reads is rendered from the
+ * verified claims, so a rejected citation cannot reach it.
  */
 export class ResearchArm extends BaseArm {
   readonly id: ArmId = "research";
@@ -62,52 +78,255 @@ export class ResearchArm extends BaseArm {
     return "RESEARCH";
   }
 
-  protected additionalStages() {
-    return [
-      {
-        key: "decompose",
-        name: "Decompose the research question",
-        kind: "understand",
-      },
-      { key: "gather", name: "Gather sources", kind: "gather" },
-    ];
-  }
-
   protected skillAffinity(): string[] {
     return ["research", "analysis", "sourcing"];
   }
 
   protected answerDirectives(): string[] {
     return [
-      "Cite a source URL for every factual claim that is not common knowledge.",
-      "Only cite documents supplied to you in this run's context.",
-      "If no sources were supplied, say so and mark the answer as unsourced rather than inventing citations.",
-      "Separate what the sources state from what you infer.",
+      "Answer only from documents fetched in this run, and say plainly what the sources do not establish.",
+      "Show disagreement between sources instead of resolving it by assertion.",
     ];
   }
 
-  protected async customStage(context: ArmStageContext) {
-    if ((context.work.stageInput.stageKind as string) !== "gather") {
-      return super.customStage(context);
-    }
-    // Retrieval tooling arrives with the tool registry. Until then this stage
-    // records honestly that nothing was fetched, which is what the source
-    // check grades against.
-    const retrieved: RetrievedDocument[] = [];
-    context.state.retrieved = retrieved;
-    await context.runtime.activity("research.gathered", "Gathered sources", {
-      count: retrieved.length,
-      retrieval: "NOT_CONFIGURED",
+  buildWorkflow(): WorkflowGraph {
+    const base = (
+      key: string,
+      name: string,
+      stageKind: string,
+      dependsOn: string[],
+      extra: Record<string, unknown> = {},
+    ) =>
+      defineNode({
+        key,
+        name,
+        capability: "research",
+        dependsOn,
+        retryPolicy: { maxAttempts: 2, maxSlices: 6 },
+        input: { stageKind, armId: this.id, ...extra },
+      });
+    const graph = {
+      nodes: [
+        base("understand", "Ground the question", "understand", []),
+        base(
+          "retrieve-memory",
+          "Retrieve internal context",
+          "retrieve_memory",
+          ["understand"],
+        ),
+        base("plan-research", "Plan the research", "research_plan", [
+          "retrieve-memory",
+        ]),
+        base(
+          "gather-official",
+          "Gather primary and official sources",
+          "research_gather",
+          ["plan-research"],
+          { worker: "official" },
+        ),
+        base(
+          "gather-independent",
+          "Gather independent corroboration",
+          "research_gather",
+          ["plan-research"],
+          { worker: "independent" },
+        ),
+        base(
+          "gather-counter",
+          "Search for counter-evidence",
+          "research_gather",
+          ["plan-research"],
+          { worker: "counter" },
+        ),
+        {
+          ...base(
+            "synthesize",
+            "Synthesise verified claims",
+            "research_synthesize",
+            ["gather-official", "gather-independent", "gather-counter"],
+          ),
+          requiresVerification: true,
+        },
+        {
+          ...base("verify", "Verify citations and coverage", "verify", [
+            "synthesize",
+          ]),
+          requiresVerification: true,
+        },
+      ],
+    };
+    validateGraph(graph);
+    return graph;
+  }
+
+  private async store(context: ArmStageContext) {
+    const { DbEvidenceStore } = await import("../research/db-store");
+    return new DbEvidenceStore(
+      context.identity.userId,
+      context.work.runId,
+      context.work.stageId,
+    );
+  }
+
+  protected async customStage(context: ArmStageContext): Promise<StageOutcome> {
+    const kind = context.work.stageInput.stageKind as string;
+    if (kind === "research_plan") return this.planStageResearch(context);
+    if (kind === "research_gather") return this.gatherStage(context);
+    if (kind === "research_synthesize") return this.synthesizeStage(context);
+    return super.customStage(context);
+  }
+
+  private async planStageResearch(
+    context: ArmStageContext,
+  ): Promise<StageOutcome> {
+    const { planResearch } = await import("../research/pipeline");
+    const plan = await planResearch(
+      context.work.objective,
+      this.structuredFor(context, "RESEARCH"),
+      context.signal,
+    );
+    context.state.researchPlan = plan;
+    await context.runtime.activity("research.planned", "Planned the research", {
+      subquestions: plan.subquestions,
+      freshness: plan.freshness,
+      queries: plan.queries.length,
+      counterQueries: plan.counterQueries.length,
     });
+    return { kind: "COMPLETE", output: { plan } };
+  }
+
+  private async gatherStage(context: ArmStageContext): Promise<StageOutcome> {
+    const { gather, fallbackPlan } = await import("../research/pipeline");
+    const { agentDecisionSchema } = await import("../agent/decision");
+    const { buildToolbox } = await import("../agent/toolbox");
+    const plan =
+      (context.state.researchPlan as ResearchPlan | undefined) ??
+      fallbackPlan(context.work.objective);
+    const worker =
+      (context.work.stageInput.worker as
+        "official" | "independent" | "counter") ?? "official";
+    const toolbox = await buildToolbox(context, { armId: this.id });
+    try {
+      const structured = this.structuredFor(context, "RESEARCH");
+      const result = await gather({
+        worker,
+        plan,
+        store: await this.store(context),
+        registry: toolbox.registry,
+        decide: (input) =>
+          structured({
+            ...input,
+            validate: (raw) => agentDecisionSchema.parse(raw),
+          }),
+        toolContext: {
+          runId: context.work.runId,
+          stageId: context.work.stageId,
+          armId: this.id,
+          organizationId: context.identity.organizationId,
+          workspaceId: context.identity.workspaceId,
+        },
+        hooks: this.loopHooks(context, toolbox.record),
+        signal: context.signal,
+      });
+      const fetched = toolbox.evidence.filter(
+        (entry) => entry.toolId === "research.fetch" && entry.ok,
+      ).length;
+      await context.runtime.activity(
+        "research.gathered",
+        `${worker}: fetched ${fetched} document(s)`,
+        {
+          worker,
+          fetched,
+          loopStatus: result.status,
+          steps: result.state.steps.length,
+        },
+      );
+      return {
+        kind: "COMPLETE",
+        output: { worker, fetched, loopStatus: result.status },
+      };
+    } finally {
+      await toolbox.dispose();
+    }
+  }
+
+  private async synthesizeStage(
+    context: ArmStageContext,
+  ): Promise<StageOutcome> {
+    const { synthesize, finalizeResearch, fallbackPlan } =
+      await import("../research/pipeline");
+    const plan =
+      (context.state.researchPlan as ResearchPlan | undefined) ??
+      fallbackPlan(context.work.objective);
+    const store = await this.store(context);
+    const documents = await store.documents();
+    const synthesis = await synthesize({
+      question: context.work.objective,
+      plan,
+      documents,
+      structured: this.structuredFor(context, "RESEARCH"),
+      signal: context.signal,
+    });
+    const outcome = await finalizeResearch({
+      synthesis,
+      documents,
+      plan,
+      store,
+    });
+
+    await context.runtime.emitDelta(outcome.answer);
+    const assistantMessageId = await context.runtime.repository.createMessage({
+      organizationId: context.identity.organizationId,
+      workspaceId: context.identity.workspaceId,
+      sessionId: context.work.sessionId,
+      runId: context.work.runId,
+      role: "assistant",
+      content: outcome.answer,
+      metadata: { armId: this.id, research: true, coverage: outcome.coverage },
+    });
+    context.state.answer = outcome.answer;
+    context.state.answers = [
+      ...((context.state.answers as string[] | undefined) ?? []),
+      outcome.answer,
+    ];
+    context.state.assistantMessageId = assistantMessageId;
+    context.state.researchClaims = outcome.claims.map((claim) => ({
+      statement: claim.statement,
+      status: claim.status,
+      confidence: claim.confidence,
+      supporting: claim.supporting.length,
+      contradicting: claim.contradicting.length,
+      rejected: claim.rejectedCitations,
+    }));
+    context.state.researchCoverage = outcome.coverage;
+    context.state.retrieved = documents.map((doc) => ({
+      url: doc.url,
+      fetchedAt: doc.retrievedAt,
+    }));
+    await context.runtime.activity(
+      "research.synthesised",
+      "Verified the research claims",
+      { ...outcome.coverage },
+    );
     return {
-      kind: "COMPLETE" as const,
-      output: { retrieved, retrieval: "NOT_CONFIGURED" },
+      kind: "COMPLETE",
+      output: { assistantMessageId, coverage: outcome.coverage },
     };
   }
 
   protected checksFor(context: ArmStageContext, answer: string) {
     const retrieved =
       (context.state.retrieved as RetrievedDocument[] | undefined) ?? [];
+    const claims =
+      (context.state.researchClaims as
+        | Array<
+            Pick<VerifiedClaim, "status" | "statement"> & {
+              rejected: VerifiedClaim["rejectedCitations"];
+            }
+          >
+        | undefined) ?? [];
+    const coverageReport = context.state.researchCoverage as
+      CoverageReport | undefined;
     const citations = extractCitations(answer);
 
     return [
@@ -120,43 +339,56 @@ export class ResearchArm extends BaseArm {
       sourceCheck({
         citations,
         retrieved,
-        // With no retrieval configured, demanding a citation would make every
-        // run fail rather than report honestly. Demanding that every citation
-        // given be one this run fetched still holds, and is the check that
-        // catches a fabricated source.
         minimumCitations: 0,
         required: true,
       }),
       {
-        id: "sourcing-disclosed",
-        type: "STRUCTURE" as const,
-        required: false,
+        id: "claims-supported",
+        type: "SOURCE" as const,
+        required: true,
         run: () => {
-          if (retrieved.length > 0) {
+          if (!coverageReport || coverageReport.documents === 0) {
             return {
-              status: "passed" as const,
-              detail: `${retrieved.length} document(s) retrieved in this run.`,
-              evidence: { retrieved },
+              status: "inconclusive" as const,
+              detail:
+                "No documents were retrieved, so no claim could be checked.",
             };
           }
-          const discloses =
-            /\b(unsourced|no sources|without sources|not retrieved|could not (?:access|fetch|browse)|no (?:internet|web) access)\b/i.test(
-              answer,
-            );
-          return discloses
+          const supported = claims.filter(
+            (claim) =>
+              claim.status === "SUPPORTED" || claim.status === "CONTESTED",
+          ).length;
+          const ratio = claims.length ? supported / claims.length : 0;
+          return supported > 0 && ratio >= 0.5
             ? {
                 status: "passed" as const,
-                detail:
-                  "Answer discloses that it was produced without retrieved sources.",
-                evidence: { retrieval: "NOT_CONFIGURED" },
+                detail: `${supported} of ${claims.length} claim(s) are backed by verbatim excerpts from retrieved documents.`,
+                evidence: { ...coverageReport },
               }
             : {
                 status: "failed" as const,
-                detail:
-                  "No sources were retrieved and the answer does not disclose that.",
-                evidence: { retrieval: "NOT_CONFIGURED" },
+                detail: `Only ${supported} of ${claims.length} claim(s) are backed by retrieved evidence.`,
+                evidence: { ...coverageReport },
               };
         },
+      },
+      {
+        id: "source-diversity",
+        type: "SOURCE" as const,
+        required: false,
+        run: () =>
+          !coverageReport
+            ? { status: "inconclusive" as const, detail: "No coverage report." }
+            : coverageReport.meetsStopRule
+              ? {
+                  status: "passed" as const,
+                  detail: `${coverageReport.documents} documents from ${coverageReport.publishers} publisher(s).`,
+                  evidence: { ...coverageReport.authorities },
+                }
+              : {
+                  status: "failed" as const,
+                  detail: `Coverage below the plan's floor: ${coverageReport.documents} documents from ${coverageReport.publishers} publisher(s).`,
+                },
       },
       secretLeakCheck(),
     ];

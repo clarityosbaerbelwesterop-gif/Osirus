@@ -600,6 +600,92 @@ export abstract class BaseArm implements AgentArm {
     };
   }
 
+  /**
+   * A schema-validated model call that is recorded in model_calls like every
+   * other call, so loop decisions, plans and syntheses all show up in cost and
+   * latency accounting.
+   */
+  protected structuredFor(context: ArmStageContext, role: ModelRole) {
+    const { runtime, work, identity } = context;
+    let callIndex = 0;
+    return async <T>(input: {
+      system: string;
+      user: string;
+      validate: (value: unknown) => T;
+      signal?: AbortSignal;
+    }): Promise<T> => {
+      callIndex += 1;
+      const modelCallId = await runtime.repository.createModelCall({
+        organizationId: identity.organizationId,
+        workspaceId: identity.workspaceId,
+        runId: work.runId,
+        stageId: work.stageId,
+        model: runtime.provider.modelId(role),
+        role,
+        requestMetadata: { armId: this.id, call: callIndex },
+      });
+      const startedAt = Date.now();
+      try {
+        const { value, usage } = await runtime.provider.structured({
+          requestId: `${work.runId}:${work.stageId}:${work.attemptNumber}:${callIndex}`,
+          role,
+          signal: input.signal ?? context.signal,
+          messages: [
+            { role: "system", content: input.system },
+            { role: "user", content: input.user },
+          ],
+          validate: input.validate,
+        });
+        await runtime.repository.finishModelCall(modelCallId, {
+          status: "completed",
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+          cost: usage.cost,
+          latencyMs: Date.now() - startedAt,
+          responseMetadata: { armId: this.id, structured: true },
+        });
+        return value;
+      } catch (error) {
+        await runtime.repository
+          .finishModelCall(modelCallId, {
+            status: "failed",
+            latencyMs: Date.now() - startedAt,
+            errorCode: "structured_call_failed",
+          })
+          .catch(() => undefined);
+        throw error;
+      }
+    };
+  }
+
+  /** Hooks every loop in this arm shares: step activity and tool evidence. */
+  protected loopHooks(
+    context: ArmStageContext,
+    record?: (entry: {
+      toolId: string;
+      input: unknown;
+      result: import("../tools/registry").ToolResult;
+    }) => void,
+  ): import("../agent/loop").LoopHooks {
+    return {
+      onStep: async (step) => {
+        await context.runtime.activity(
+          "agent.step",
+          step.summary,
+          {
+            armId: this.id,
+            action: step.action,
+            toolId: step.toolId ?? null,
+            outcome: step.outcome,
+            evidenceRefs: step.evidenceRefs ?? [],
+          },
+          "user",
+        );
+      },
+      onToolResult: record,
+    };
+  }
+
   /** The single-call path: one streamed model response. */
   protected async streamAnswer(
     context: ArmStageContext,
