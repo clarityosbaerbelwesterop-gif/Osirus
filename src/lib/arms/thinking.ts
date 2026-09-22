@@ -72,7 +72,9 @@ export class ThinkingArm extends BaseArm {
     ) {
       return 0.7;
     }
-    return input.objective.length > 1200 ? 0.5 : 0.2;
+    // Below the general arm's floor on purpose: an objective with no
+    // analytical signal is not thinking work just because it is unclear.
+    return input.objective.length > 1200 ? 0.5 : 0.1;
   }
 
   protected primaryCapability(): Capability {

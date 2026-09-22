@@ -23,9 +23,18 @@ export function allArms(): AgentArm[] {
   return Object.values(arms);
 }
 
-/** Arms that compete for an objective. Thinking is escalated to, not routed to. */
+/**
+ * Arms that compete for an objective.
+ *
+ * Thinking is among them. It is both a destination and an escalation: an
+ * objective that asks for analysis, a comparison or a decision is thinking
+ * work in its own right, and excluding it here left an arm that was built and
+ * could never be reached. It does not hijack ordinary work -- its confidence
+ * comes from analysis wording, so "fix the failing build" still routes to
+ * coding.
+ */
 export function routableArms(): AgentArm[] {
-  return allArms().filter((arm) => arm.id !== "thinking");
+  return allArms();
 }
 
 export const ARM_IDS = Object.keys(arms) as ArmId[];
