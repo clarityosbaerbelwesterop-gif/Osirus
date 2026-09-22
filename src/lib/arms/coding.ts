@@ -1,4 +1,9 @@
 import type { ModelRole } from "../models/provider";
+import {
+  defineNode,
+  validateGraph,
+  type WorkflowGraph,
+} from "../runtime/graph";
 import type { Capability } from "../runtime/types";
 import {
   commandCheck,
@@ -6,7 +11,12 @@ import {
   structureCheck,
 } from "../verification/checks";
 import { BaseArm } from "./base";
-import type { ArmId, ArmStageContext, RoutingInput } from "./types";
+import type {
+  ArmId,
+  ArmStageContext,
+  RoutingInput,
+  StageOutcome,
+} from "./types";
 
 type CommandEvidence = {
   command: string;
@@ -23,6 +33,42 @@ export function extractCodeBlocks(answer: string) {
     blocks.push({ language: match[1] || "text", code: match[2] ?? "" });
   }
   return blocks;
+}
+
+const PATH_LINE =
+  /(?:^|\n)[^\n]{0,80}?[`*\s(]((?:[\w.-]+\/)*[\w.-]+\.[a-z0-9]{1,8})[`*\s):]{0,3}[^\n]{0,20}\n+```/gi;
+
+/**
+ * Pair each code block with the file path named above it.
+ *
+ * The answering stage is told to name the path immediately above each block.
+ * A block with no path is still returned, under a generated name, because
+ * dropping it would quietly reduce what gets checked.
+ */
+export function extractFiles(answer: string) {
+  const blocks = extractCodeBlocks(answer);
+  const paths: string[] = [];
+  for (const match of answer.matchAll(PATH_LINE)) {
+    if (match[1]) paths.push(match[1]);
+  }
+  return blocks.map((block, index) => ({
+    path: paths[index] ?? `generated/block-${index + 1}.${block.language}`,
+    content: block.code,
+    language: block.language,
+  }));
+}
+
+/** Languages a syntax check exists for in the sandbox image. */
+const SYNTAX_CHECKS: Array<[RegExp, (path: string) => [string, string[]]]> = [
+  [/\.(js|mjs|cjs)$/i, (path) => ["node", ["--check", path]]],
+  [/\.py$/i, (path) => ["python3", ["-m", "py_compile", path]]],
+];
+
+export function syntaxCheckFor(path: string) {
+  for (const [pattern, build] of SYNTAX_CHECKS) {
+    if (pattern.test(path)) return build(path);
+  }
+  return null;
 }
 
 /**
@@ -71,6 +117,136 @@ export class CodingArm extends BaseArm {
         kind: "understand",
       },
     ];
+  }
+
+  buildWorkflow(): WorkflowGraph {
+    const base = super.buildWorkflow();
+    // The check stage sits between answering and verifying: the verifier reads
+    // its result, so it has to have run first.
+    const nodes = base.nodes.map((node) =>
+      node.key === "verify"
+        ? defineNode({ ...node, dependsOn: ["check-code"] })
+        : node,
+    );
+    nodes.push(
+      defineNode({
+        key: "check-code",
+        name: "Check the generated code",
+        capability: "coding",
+        dependsOn: ["answer"],
+        // Failing to check is not failing the run: the verifier reports the
+        // result as inconclusive and the verdict lands at unverified.
+        failurePolicy: "continue",
+        retryPolicy: { maxAttempts: 1, maxSlices: 2 },
+        input: { stageKind: "check_code", armId: this.id },
+      }),
+    );
+    const graph = { nodes };
+    validateGraph(graph);
+    return graph;
+  }
+
+  protected async customStage(context: ArmStageContext) {
+    if ((context.work.stageInput.stageKind as string) !== "check_code") {
+      return super.customStage(context);
+    }
+    return this.checkCodeStage(context);
+  }
+
+  /**
+   * Run the generated code through a real checker.
+   *
+   * With no sandbox configured every result carries a null exit code, which
+   * the verification engine reads as inconclusive -- so the verdict is
+   * "unverified", never "verified". Nothing here reports success for code that
+   * was not executed.
+   */
+  private async checkCodeStage(
+    context: ArmStageContext,
+  ): Promise<StageOutcome> {
+    const answer = (context.state.answer as string | undefined) ?? "";
+    const files = extractFiles(answer).filter((file) =>
+      Boolean(syntaxCheckFor(file.path)),
+    );
+
+    const { resolveSandbox, unavailableResult } = await import("../sandbox");
+    const driver = await resolveSandbox();
+    const availability = driver.availability();
+
+    if (!availability.configured) {
+      await context.runtime.activity(
+        "sandbox.not_configured",
+        "Generated code was not executed",
+        { reason: availability.reason },
+      );
+      const result = unavailableResult("syntax check", availability.reason);
+      context.state.buildResult = result;
+      context.state.testResult = result;
+      return {
+        kind: "COMPLETE",
+        output: {
+          sandbox: "NOT_CONFIGURED",
+          reason: availability.reason,
+          candidateFiles: files.length,
+        },
+      };
+    }
+
+    if (files.length === 0) {
+      const result = unavailableResult(
+        "syntax check",
+        "No file in the answer is in a language this run can check.",
+      );
+      context.state.buildResult = result;
+      context.state.testResult = result;
+      return {
+        kind: "COMPLETE",
+        output: { sandbox: availability.driver, checkedFiles: 0 },
+      };
+    }
+
+    const sandbox = await driver.create({
+      timeoutMs: 120_000,
+      signal: context.signal,
+    });
+    try {
+      await sandbox.writeFiles(
+        files.map((file) => ({ path: file.path, content: file.content })),
+      );
+      const failures: CommandEvidence[] = [];
+      let last: CommandEvidence | null = null;
+      for (const file of files) {
+        const check = syntaxCheckFor(file.path);
+        if (!check) continue;
+        const [cmd, args] = check;
+        const result = await sandbox.runCommand({
+          cmd,
+          args,
+          timeoutMs: 30_000,
+          signal: context.signal,
+        });
+        last = result;
+        if (result.exitCode !== 0) failures.push(result);
+      }
+      context.state.buildResult = failures[0] ?? last;
+      await context.runtime.activity(
+        failures.length > 0 ? "sandbox.check_failed" : "sandbox.check_passed",
+        failures.length > 0
+          ? `${failures.length} generated file(s) failed a syntax check`
+          : `${files.length} generated file(s) parse`,
+        { driver: availability.driver, checked: files.length },
+      );
+      return {
+        kind: "COMPLETE",
+        output: {
+          sandbox: availability.driver,
+          checkedFiles: files.length,
+          failed: failures.length,
+        },
+      };
+    } finally {
+      await sandbox.stop();
+    }
   }
 
   protected answerDirectives(): string[] {
