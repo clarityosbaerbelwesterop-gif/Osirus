@@ -14,7 +14,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["evals/**/*.eval.ts"],
-    testTimeout: 60 * 60 * 1000,
+    testTimeout: 230 * 60 * 1000,
     hookTimeout: 120_000,
     fileParallelism: false,
   },

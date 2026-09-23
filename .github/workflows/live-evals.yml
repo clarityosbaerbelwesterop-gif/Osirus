@@ -70,8 +70,11 @@ jobs:
   arena:
     if: (github.event_name == 'workflow_dispatch' && !inputs.list_models) || contains(github.event.head_commit.message, '[run-live-evals]')
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    # Free models are rate-limited (e.g. one request a minute); the provider
+    # waits those limits out, so a full arena can take a few hours.
+    timeout-minutes: 240
     env:
+      OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "90"
       UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
       UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
       UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
