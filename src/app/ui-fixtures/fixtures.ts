@@ -1,5 +1,6 @@
 import type { RunSnapshot, RuntimeEvent } from "@/lib/runtime/types";
 import type { ShellData } from "@/components/shell/shell-context";
+import type { RoleStatus } from "@/lib/product/model-status";
 
 // Deterministic data for the UI fixture surfaces used by visual, responsive,
 // accessibility and journey tests. Nothing here touches a database: the
@@ -8,6 +9,7 @@ import type { ShellData } from "@/components/shell/shell-context";
 
 export const FIXTURE_IDS = {
   session: "5f1b8a4e-2c1d-4c3e-9a6b-1f2e3d4c5b6a",
+  researchSession: "6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d",
   codingRun: "0a9b8c7d-6e5f-4a3b-8c2d-1e0f9a8b7c6d",
   researchRun: "1b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e",
   approval: "2c3d4e5f-6a7b-4c8d-9e0f-1a2b3c4d5e6f",
@@ -29,7 +31,7 @@ export function shellFixture(): ShellData {
         pinnedAt: null,
       },
       {
-        id: "6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d",
+        id: FIXTURE_IDS.researchSession,
         title: "Compare vector databases for small teams",
         updatedAt: minutes(60, now),
         pinnedAt: minutes(30, now),
@@ -367,7 +369,7 @@ export function researchRunFixture(): RunSnapshot {
   return {
     run: {
       id: run,
-      sessionId: FIXTURE_IDS.session,
+      sessionId: FIXTURE_IDS.researchSession,
       objective: RESEARCH_OBJECTIVE,
       status: "completed",
       cancelRequested: false,
@@ -649,3 +651,235 @@ export const researchFixture = {
     },
   ],
 };
+
+export function connectionsFixture() {
+  const now = Date.now();
+  return {
+    github: {
+      status: "CONNECTED" as const,
+      login: "baerbel",
+      scopes: ["repo:read", "repo:write"],
+      connectedAt: minutes(60 * 24 * 3, now),
+      health: {
+        last: {
+          ok: true,
+          latencyMs: 212,
+          error: null,
+          checkedAt: minutes(2, now),
+        },
+        lastOkAt: minutes(2, now),
+      },
+      lastToolCallAt: minutes(35, now),
+    },
+    mcp: {
+      available: true,
+      servers: [
+        {
+          id: "7c1e2d3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f",
+          name: "Docs search",
+          url: "https://mcp.docs.example.com/mcp",
+          hasToken: true,
+          enabled: true,
+          status: "healthy" as const,
+          serverName: "docs-mcp",
+          serverVersion: "1.4.2",
+          lastCheckedAt: minutes(12, now),
+          lastOkAt: minutes(12, now),
+          lastLatencyMs: 184,
+          lastError: null,
+          toolCount: 3,
+          enabledToolCount: 1,
+          lastToolCallAt: minutes(90, now),
+          tools: [
+            {
+              id: "8d2f3e4a-5b6c-4d7e-8f9a-0b1c2d3e4f5a",
+              name: "search_pages",
+              description:
+                "Search the documentation and return matching pages with titles and URLs.",
+              parameters: ["query", "limit"],
+              enabled: true,
+              reviewedAt: minutes(60, now),
+              risk: "high" as const,
+            },
+            {
+              id: "9e3a4f5b-6c7d-4e8f-9a0b-1c2d3e4f5a6b",
+              name: "get_page",
+              description: "Return the full text of one documentation page.",
+              parameters: ["url"],
+              enabled: false,
+              reviewedAt: null,
+              risk: "high" as const,
+            },
+            {
+              id: "0f4b5a6c-7d8e-4f9a-8b1c-2d3e4f5a6b7c",
+              name: "create_page",
+              description: "Create a new documentation page.",
+              parameters: ["title", "body"],
+              enabled: false,
+              reviewedAt: null,
+              risk: "high" as const,
+            },
+          ],
+        },
+      ],
+    },
+  };
+}
+
+export function approvalsFixture() {
+  const active = codingRunFixture("active");
+  return active.approvals.map((row) => ({
+    row: { ...row, run_id: active.run.id },
+    sessionId: FIXTURE_IDS.session,
+    objective: active.run.objective,
+  }));
+}
+
+export function inboxFixture() {
+  const now = Date.now();
+  return [
+    {
+      id: "i1",
+      kind: "approval_pending" as const,
+      title: "Approve: Push a branch to GitHub",
+      body: "For “Fix the median bug in stats-lib and open a pull request”",
+      href: "/app/approvals",
+      read: false,
+      createdAt: minutes(1, now),
+    },
+    {
+      id: "i2",
+      kind: "connector_expired" as const,
+      title: "GitHub access expired",
+      body: "Reconnect GitHub so Osirus can read and push to your repositories again.",
+      href: "/app/connections",
+      read: false,
+      createdAt: minutes(60, now),
+    },
+    {
+      id: "i3",
+      kind: "automation_completed" as const,
+      title: "Automation finished: Weekday dependency check",
+      body: "No outdated dependencies with safe updates. Nothing was changed.",
+      href: `/app?session=${FIXTURE_IDS.session}`,
+      read: false,
+      createdAt: minutes(600, now),
+    },
+  ];
+}
+
+export function automationsFixture() {
+  const now = Date.now();
+  return [
+    {
+      id: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      name: "Weekday dependency check",
+      objective:
+        "Check https://github.com/osirus-demo/stats-lib for outdated dependencies and open a pull request with safe updates.",
+      trigger: "schedule" as const,
+      schedule: { cadence: "weekdays" as const },
+      scheduleLabel: "Weekdays, 03:00 UTC",
+      policyPreset: "cautious" as const,
+      maxCostUsd: 2,
+      maxTokens: 200_000,
+      allowedTools: ["workspace.write", "workspace.run", "git.deliver"],
+      notifyOn: ["completed", "failed", "approval"],
+      enabled: true,
+      sessionId: FIXTURE_IDS.session,
+      nextRunAt: new Date(now + 14 * 3_600_000).toISOString(),
+      lastRunAt: minutes(60 * 10, now),
+      lastRunId: FIXTURE_IDS.codingRun,
+      lastStatus: "completed",
+    },
+    {
+      id: "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+      name: "Summarize finished research",
+      objective:
+        "Summarize the findings of the run that just finished in five bullet points.",
+      trigger: "run_completed" as const,
+      schedule: null,
+      scheduleLabel: null,
+      policyPreset: "balanced" as const,
+      maxCostUsd: null,
+      maxTokens: null,
+      allowedTools: [],
+      notifyOn: ["failed", "approval"],
+      enabled: false,
+      sessionId: null,
+      nextRunAt: null,
+      lastRunAt: null,
+      lastRunId: null,
+      lastStatus: null,
+    },
+  ];
+}
+
+export function modelStatusFixture(): RoleStatus[] {
+  const now = Date.now();
+  return [
+    {
+      role: "STRONG",
+      label: "Strong model",
+      state: "unavailable",
+      message: "Temporarily unavailable.",
+      lastCallAt: new Date(now - 5 * 60_000).toISOString(),
+      calls24h: 14,
+      failures24h: 3,
+      admin: {
+        provider: "UnoRouter",
+        modelId: "grok-4.6",
+        sharesStrong: false,
+        failureCategory: "insufficient_credit",
+        lastFailureAt: new Date(now - 5 * 60_000).toISOString(),
+      },
+    },
+    {
+      role: "FAST",
+      label: "Fast model",
+      state: "available",
+      message: "Answering normally.",
+      lastCallAt: new Date(now - 20 * 60_000).toISOString(),
+      calls24h: 41,
+      failures24h: 0,
+      admin: {
+        provider: "UnoRouter",
+        modelId: "grok-4.6-fast",
+        sharesStrong: false,
+        failureCategory: null,
+        lastFailureAt: null,
+      },
+    },
+    {
+      role: "THINKING",
+      label: "Thinking model",
+      state: "not_used",
+      message: "Not used in the last 24 hours.",
+      lastCallAt: null,
+      calls24h: 0,
+      failures24h: 0,
+      admin: {
+        provider: "UnoRouter",
+        modelId: "grok-4.6",
+        sharesStrong: true,
+        failureCategory: null,
+        lastFailureAt: null,
+      },
+    },
+    {
+      role: "VERIFY",
+      label: "Verification model",
+      state: "not_configured",
+      message: "Not set up on this deployment.",
+      lastCallAt: null,
+      calls24h: 0,
+      failures24h: 0,
+      admin: {
+        provider: "UnoRouter",
+        modelId: null,
+        sharesStrong: false,
+        failureCategory: null,
+        lastFailureAt: null,
+      },
+    },
+  ];
+}

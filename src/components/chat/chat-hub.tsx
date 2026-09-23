@@ -86,7 +86,9 @@ export function ChatHub(props: {
   const [tab, setTab] = useState<WorkbenchTab | null>(null);
   const [width, setWidth] = useState(420);
   const [github, setGithub] = useState<GithubState>({ status: "loading" });
-  const [githubRequested, setGithubRequested] = useState(false);
+  // Set once the GitHub status request has answered; a ref, so recording it
+  // does not re-run the effect and abort the request it belongs to.
+  const githubRequested = useRef(false);
   const streamAbort = useRef<AbortController | null>(null);
   const streamEnd = useRef<HTMLDivElement | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
@@ -379,10 +381,9 @@ export function ChatHub(props: {
 
   const hasRepository = Boolean(repositoryInObjective(objective));
   useEffect(() => {
-    if (!hasRepository || githubRequested) return;
+    if (!hasRepository || githubRequested.current) return;
     const controller = new AbortController();
     const timer = window.setTimeout(() => {
-      setGithubRequested(true);
       fetch("/api/connectors/github", {
         cache: "no-store",
         signal: controller.signal,
@@ -392,6 +393,7 @@ export function ChatHub(props: {
             status?: string;
             login?: string;
           };
+          githubRequested.current = true;
           setGithub(
             body.status === "CONNECTED" && body.login
               ? { status: "CONNECTED", login: body.login }
@@ -403,13 +405,17 @@ export function ChatHub(props: {
                 },
           );
         })
-        .catch(() => setGithub({ status: "unknown" }));
+        .catch(() => {
+          if (controller.signal.aborted) return;
+          githubRequested.current = true;
+          setGithub({ status: "unknown" });
+        });
     }, 0);
     return () => {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [githubRequested, hasRepository]);
+  }, [hasRepository]);
 
   const view = useMemo(
     () => (snapshot ? deriveRunView(snapshot) : null),

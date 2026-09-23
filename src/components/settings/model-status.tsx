@@ -1,6 +1,7 @@
 import type { RoleStatus } from "@/lib/product/model-status";
-import { relativeTime, type Tone } from "@/lib/ui/labels";
+import { type Tone } from "@/lib/ui/labels";
 import { Badge } from "../ui/badge";
+import { RelativeTime } from "../ui/relative-time";
 
 const TONE: Record<RoleStatus["state"], { label: string; tone: Tone }> = {
   available: { label: "Available", tone: "success" },
@@ -57,7 +58,11 @@ export function ModelStatusTable({ roles }: { roles: RoleStatus[] }) {
                   ) : null}
                 </td>
                 <td className="tabular">
-                  {role.lastCallAt ? relativeTime(role.lastCallAt) : "—"}
+                  {role.lastCallAt ? (
+                    <RelativeTime value={role.lastCallAt} />
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 {admin ? (
                   <td>
@@ -77,9 +82,16 @@ export function ModelStatusTable({ roles }: { roles: RoleStatus[] }) {
                             Last failure:{" "}
                             {CATEGORY[role.admin.failureCategory] ??
                               role.admin.failureCategory}
-                            {role.admin.lastFailureAt
-                              ? `, ${relativeTime(role.admin.lastFailureAt)}`
-                              : ""}
+                            {role.admin.lastFailureAt ? (
+                              <>
+                                ,{" "}
+                                <RelativeTime
+                                  value={role.admin.lastFailureAt}
+                                />
+                              </>
+                            ) : (
+                              ""
+                            )}
                           </div>
                         ) : null}
                       </div>

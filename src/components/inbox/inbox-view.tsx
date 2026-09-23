@@ -62,7 +62,7 @@ export function InboxView({
   return (
     <div className="stack">
       {unreadIds.length ? (
-        <div>
+        <div className="inbox-actions">
           <button
             type="button"
             className="btn btn-ghost btn-sm"

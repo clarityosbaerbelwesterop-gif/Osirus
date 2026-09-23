@@ -6,16 +6,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { AutomationView } from "@/lib/automations/store-types";
-import {
-  formatCount,
-  formatUsd,
-  relativeTime,
-  runStatus,
-} from "@/lib/ui/labels";
+import { formatCount, formatUsd, runStatus } from "@/lib/ui/labels";
 import { Badge } from "../ui/badge";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { EmptyState } from "../ui/empty-state";
 import { AutomationForm } from "./automation-form";
+import { RelativeTime } from "../ui/relative-time";
 
 const TRIGGER_LABEL: Record<AutomationView["trigger"], string> = {
   schedule: "Schedule",
@@ -88,21 +84,25 @@ function AutomationCard({ automation }: { automation: AutomationView }) {
         <div>
           <dt>Next run</dt>
           <dd className="tabular">
-            {!automation.enabled
-              ? "Paused"
-              : automation.trigger !== "schedule"
-                ? "On the next matching event"
-                : automation.nextRunAt
-                  ? relativeTime(automation.nextRunAt)
-                  : "—"}
+            {!automation.enabled ? (
+              "Paused"
+            ) : automation.trigger !== "schedule" ? (
+              "On the next matching event"
+            ) : automation.nextRunAt ? (
+              <RelativeTime value={automation.nextRunAt} />
+            ) : (
+              "—"
+            )}
           </dd>
         </div>
         <div>
           <dt>Last run</dt>
           <dd className="tabular">
-            {automation.lastRunAt
-              ? relativeTime(automation.lastRunAt)
-              : "Never"}
+            {automation.lastRunAt ? (
+              <RelativeTime value={automation.lastRunAt} />
+            ) : (
+              "Never"
+            )}
           </dd>
         </div>
         <div>
@@ -204,15 +204,11 @@ export function AutomationList({
   const [creating, setCreating] = useState(false);
   return (
     <div className="stack">
-      {creating ? <AutomationForm onDone={() => setCreating(false)} /> : null}
-      {automations.map((automation) => (
-        <AutomationCard key={automation.id} automation={automation} />
-      ))}
       {!creating && automations.length ? (
-        <div>
+        <div className="list-actions">
           <button
             type="button"
-            className="btn btn-secondary"
+            className="btn btn-primary"
             onClick={() => setCreating(true)}
           >
             <Plus size={16} aria-hidden="true" />
@@ -220,6 +216,10 @@ export function AutomationList({
           </button>
         </div>
       ) : null}
+      {creating ? <AutomationForm onDone={() => setCreating(false)} /> : null}
+      {automations.map((automation) => (
+        <AutomationCard key={automation.id} automation={automation} />
+      ))}
       {!creating && !automations.length ? (
         <EmptyState
           icon={Timer}

@@ -3,9 +3,9 @@
 import { Trash2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { relativeTime } from "@/lib/ui/labels";
 import { Badge } from "../ui/badge";
 import { ConfirmDialog } from "../ui/confirm-dialog";
+import { RelativeTime } from "../ui/relative-time";
 
 export type MemoryListItem = {
   id: string;
@@ -42,7 +42,7 @@ export function MemoryList({ items }: { items: MemoryListItem[] }) {
               <p className="wrap-anywhere">{item.content}</p>
               <p className="item-meta">
                 {item.kind.replaceAll("_", " ")} ·{" "}
-                {relativeTime(item.createdAt)}
+                <RelativeTime value={item.createdAt} />
               </p>
             </div>
             <div className="item-side">

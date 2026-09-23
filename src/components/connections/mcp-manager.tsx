@@ -49,7 +49,13 @@ const ADD_ERRORS: Record<string, string> = {
     "Connections are not set up on this deployment yet.",
 };
 
-function AddServerForm({ onDone }: { onDone: () => void }) {
+function AddServerForm({
+  onDone,
+  onCancel,
+}: {
+  onDone: () => void;
+  onCancel: () => void;
+}) {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [token, setToken] = useState("");
@@ -136,6 +142,9 @@ function AddServerForm({ onDone }: { onDone: () => void }) {
           disabled={busy || !name.trim() || !url.trim()}
         >
           {busy ? "Adding and testing…" : "Add and test"}
+        </button>
+        <button type="button" className="btn btn-ghost" onClick={onCancel}>
+          Cancel
         </button>
       </div>
     </form>
@@ -327,6 +336,7 @@ export function McpManager({
             setAdding(false);
             router.refresh();
           }}
+          onCancel={() => setAdding(false)}
         />
       ) : servers.length ? (
         <div>

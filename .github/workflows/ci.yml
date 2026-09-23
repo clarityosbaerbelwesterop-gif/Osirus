@@ -28,4 +28,18 @@ jobs:
       - run: python -m pip install --quiet sympy==1.14.0 numpy
       - run: npm test
       - run: npm run build
+      # Smoke, visual regression, responsive, keyboard, accessibility and the
+      # user journeys (see playwright.config.ts).
       - run: npm run test:e2e
+      # The compared baselines, the HTML report and, on failure, the actual
+      # and diff images and traces.
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-evidence
+          path: |
+            playwright-report
+            test-results
+            e2e/__screenshots__
+          retention-days: 14
+          if-no-files-found: ignore

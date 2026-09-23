@@ -84,7 +84,7 @@
 
 .conn-health {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
   gap: var(--space-3);
   margin: 0;
   padding: var(--space-3);
@@ -335,17 +335,27 @@
     gap: var(--space-4);
   }
 
+  /* Wrap instead of scrolling sideways: every section, and the current one,
+     stays visible on a phone. */
   .settings-nav {
     position: static;
     display: flex;
-    overflow-x: auto;
-    padding-bottom: var(--space-1);
+    flex-wrap: wrap;
+    gap: var(--space-1);
+    padding-bottom: var(--space-3);
     border-bottom: 1px solid var(--color-border);
-    scrollbar-width: none;
   }
 
   .settings-nav a {
     flex: none;
+    min-height: 36px;
+    padding: 0 var(--space-2-5);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-full);
+  }
+
+  .settings-nav a[aria-current="page"] {
+    border-color: transparent;
   }
 
   .settings-rows > div {
@@ -534,6 +544,7 @@
 .preset {
   position: relative;
   display: grid;
+  align-content: start;
   gap: var(--space-1);
   padding: var(--space-3) var(--space-3) var(--space-3) var(--space-8);
   border: 1px solid var(--color-border);
@@ -577,6 +588,33 @@
   gap: var(--space-1);
   margin-top: var(--space-1);
   font-size: var(--text-xs);
+}
+
+@media (max-width: 600px) {
+  .policy-table thead {
+    display: none;
+  }
+
+  .policy-table tr {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-3) 0;
+  }
+
+  .policy-table td {
+    padding: 0 var(--space-3);
+    border: 0;
+  }
+
+  .policy-table tbody tr + tr {
+    border-top: 1px solid var(--color-border);
+  }
+}
+
+.inbox-actions,
+.list-actions {
+  display: flex;
+  justify-content: flex-end;
 }
 
 .select {

@@ -9,8 +9,8 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import type { SecurityEventView } from "@/lib/security/events-read";
-import { relativeTime } from "@/lib/ui/labels";
 import { Badge } from "../ui/badge";
+import { RelativeTime } from "../ui/relative-time";
 
 const KIND: Record<string, { label: string; icon: LucideIcon }> = {
   prompt_injection_neutralized: {
@@ -59,7 +59,7 @@ export function SecurityEventList({ events }: { events: SecurityEventView[] }) {
               <p className="wrap-anywhere">{event.summary}</p>
               <p className="item-meta">
                 <time dateTime={event.createdAt}>
-                  {relativeTime(event.createdAt)}
+                  <RelativeTime value={event.createdAt} />
                 </time>
               </p>
             </div>

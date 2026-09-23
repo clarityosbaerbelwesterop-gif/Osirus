@@ -97,7 +97,7 @@ export function AgentBehaviorSettings({ policy }: { policy: WorkspacePolicy }) {
       </fieldset>
 
       <div className="table-wrap">
-        <table className="table">
+        <table className="table policy-table">
           <caption className="sr-only">What Osirus may do on its own</caption>
           <thead>
             <tr>
@@ -155,8 +155,8 @@ export function AgentBehaviorSettings({ policy }: { policy: WorkspacePolicy }) {
                     )}
                     {info.floor ? (
                       <div className="subtle floor-note">
-                        <Lock size={12} aria-hidden="true" /> Always asks at
-                        least
+                        <Lock size={12} aria-hidden="true" /> Never runs without
+                        asking
                       </div>
                     ) : null}
                   </td>

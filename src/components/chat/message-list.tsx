@@ -1,9 +1,16 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
+import dynamic from "next/dynamic";
 import { useState, type ReactNode } from "react";
 import { OsirusMark } from "../shell/osirus-mark";
-import { Markdown } from "./markdown";
+
+// The Markdown pipeline (micromark, GFM, hast) is the largest client module;
+// it loads with the first answer instead of with the empty chat. The server
+// still renders answers as HTML, so nothing shifts while it loads.
+const Markdown = dynamic(() =>
+  import("./markdown").then((module) => module.Markdown),
+);
 
 export type ChatMessage = {
   id: string;

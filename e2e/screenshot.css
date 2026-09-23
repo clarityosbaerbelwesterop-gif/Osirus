@@ -1,0 +1,6 @@
+/* Applied only while Playwright takes comparison screenshots: values that
+   depend on the clock are hidden, layout stays exactly as rendered. */
+time,
+.stage-duration {
+  visibility: hidden !important;
+}

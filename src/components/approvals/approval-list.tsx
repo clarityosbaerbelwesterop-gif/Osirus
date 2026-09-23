@@ -5,8 +5,8 @@ import type { Route } from "next";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { ApprovalView } from "@/lib/ui/approval-view";
-import { relativeTime } from "@/lib/ui/labels";
 import { ApprovalCard } from "./approval-card";
+import { RelativeTime } from "../ui/relative-time";
 
 export type ApprovalListItem = {
   view: ApprovalView;
@@ -26,7 +26,9 @@ export function ApprovalList({ items }: { items: ApprovalListItem[] }) {
               {item.objective ? `“${item.objective}”` : "A run"}
             </span>
             <span>
-              {item.view.createdAt ? relativeTime(item.view.createdAt) : null}
+              {item.view.createdAt ? (
+                <RelativeTime value={item.view.createdAt} />
+              ) : null}
             </span>
             {item.sessionId ? (
               <Link

@@ -330,7 +330,9 @@
 
 .md th,
 .md td {
+  min-width: 10ch;
   padding: var(--space-2) var(--space-3);
+  overflow-wrap: normal;
   border-bottom: 1px solid var(--color-border);
   text-align: left;
   vertical-align: top;

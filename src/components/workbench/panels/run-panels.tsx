@@ -77,9 +77,16 @@ export function PlanPanel({ view }: { view: RunView }) {
               </span>
               <span className="subtle plan-meta">
                 {stage.stateLabel}
-                {stage.durationMs !== null
-                  ? ` · ${formatDuration(stage.durationMs)}`
-                  : ""}
+                {stage.durationMs !== null ? (
+                  <>
+                    {" · "}
+                    <span className="stage-duration">
+                      {formatDuration(stage.durationMs)}
+                    </span>
+                  </>
+                ) : (
+                  ""
+                )}
                 {stage.waitsOn.length
                   ? ` · after ${stage.waitsOn.join(", ")}`
                   : ""}

@@ -3,10 +3,10 @@
 import { Check, ChevronRight, ShieldAlert, ShieldCheck, X } from "lucide-react";
 import { useState } from "react";
 import type { ApprovalView } from "@/lib/ui/approval-view";
-import { relativeTime } from "@/lib/ui/labels";
 import { Badge } from "../ui/badge";
 import { ConfirmDialog } from "../ui/confirm-dialog";
 import { cx } from "../ui/cx";
+import { RelativeTime } from "../ui/relative-time";
 
 /**
  * One decision, in context. What will happen, why, where, how risky, and the
@@ -125,9 +125,11 @@ export function ApprovalCard({
       {approval.decidable ? (
         <footer className="approval-actions">
           <span className="subtle approval-expiry">
-            {approval.expiresAt
-              ? `Expires ${relativeTime(approval.expiresAt)}`
-              : null}
+            {approval.expiresAt ? (
+              <>
+                Expires <RelativeTime value={approval.expiresAt} />
+              </>
+            ) : null}
           </span>
           <button
             type="button"

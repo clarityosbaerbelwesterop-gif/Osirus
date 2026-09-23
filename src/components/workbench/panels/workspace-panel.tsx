@@ -168,7 +168,11 @@ export function WorkspacePanel({
                 onClick={() => setFile(null)}
               />
             </div>
-            <pre className="code-view">
+            <pre
+              className="code-view"
+              tabIndex={0}
+              aria-label={`Contents of ${file.path}`}
+            >
               <code>{file.content}</code>
             </pre>
           </div>
@@ -205,7 +209,11 @@ export function WorkspacePanel({
       <div className="wb-section">
         <Header workspace={workspace} />
         {workspace.diff ? (
-          <pre className="code-view diff-view" aria-label="Changes">
+          <pre
+            className="code-view diff-view"
+            tabIndex={0}
+            aria-label="Changes"
+          >
             <code>
               {workspace.diff.split("\n").map((line, index) => (
                 <span key={index} className={diffClass(line)}>
@@ -243,7 +251,10 @@ export function WorkspacePanel({
           <ol className="terminal-log">
             {workspace.commandLog.map((entry, index) => (
               <li key={`${entry.at}:${index}`}>
-                <details className="disclosure terminal-entry">
+                <details
+                  className="disclosure terminal-entry"
+                  open={index === workspace.commandLog.length - 1}
+                >
                   <summary>
                     <ChevronRight
                       size={14}
@@ -260,7 +271,11 @@ export function WorkspacePanel({
                       {formatDuration(entry.durationMs)}
                     </span>
                   </summary>
-                  <pre className="code-view">
+                  <pre
+                    className="code-view"
+                    tabIndex={0}
+                    aria-label={`Output of ${entry.command}`}
+                  >
                     <code>
                       {entry.stdoutTail}
                       {entry.stderrTail ? `\n${entry.stderrTail}` : ""}

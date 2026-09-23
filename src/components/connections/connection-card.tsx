@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
-import { relativeTime, type Tone } from "@/lib/ui/labels";
+import { type Tone } from "@/lib/ui/labels";
 import { Badge } from "../ui/badge";
+import { RelativeTime } from "../ui/relative-time";
 
 export type HealthFacts = {
   healthLabel: string;
@@ -71,24 +72,32 @@ export function ConnectionCard({
           <div>
             <dt>Last checked</dt>
             <dd className="tabular">
-              {health.lastCheckedAt
-                ? relativeTime(health.lastCheckedAt)
-                : "Never"}
+              {health.lastCheckedAt ? (
+                <RelativeTime value={health.lastCheckedAt} />
+              ) : (
+                "Never"
+              )}
               {health.latencyMs !== null ? ` · ${health.latencyMs} ms` : ""}
             </dd>
           </div>
           <div>
             <dt>Last success</dt>
             <dd className="tabular">
-              {health.lastOkAt ? relativeTime(health.lastOkAt) : "None yet"}
+              {health.lastOkAt ? (
+                <RelativeTime value={health.lastOkAt} />
+              ) : (
+                "None yet"
+              )}
             </dd>
           </div>
           <div>
             <dt>Last tool call</dt>
             <dd className="tabular">
-              {health.lastToolCallAt
-                ? relativeTime(health.lastToolCallAt)
-                : "None yet"}
+              {health.lastToolCallAt ? (
+                <RelativeTime value={health.lastToolCallAt} />
+              ) : (
+                "None yet"
+              )}
             </dd>
           </div>
           {health.lastError ? (

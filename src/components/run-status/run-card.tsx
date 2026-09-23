@@ -121,7 +121,7 @@ export function RunCard({
                     ) : null}
                     <span className="sr-only">{stage.stateLabel}</span>
                     {stage.durationMs !== null ? (
-                      <span className="tabular subtle">
+                      <span className="tabular subtle stage-duration">
                         {formatDuration(stage.durationMs)}
                       </span>
                     ) : (

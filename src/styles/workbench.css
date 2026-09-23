@@ -26,7 +26,8 @@
 }
 
 .resizer:focus-visible {
-  box-shadow: none;
+  border-radius: var(--radius-full);
+  box-shadow: var(--focus-ring);
 }
 
 .workbench {
