@@ -466,7 +466,7 @@ export type RunCompletion = {
  * Deliberately separate from the slice loop: several workers may drive the
  * same run, and only the one that finds every stage settled may close it.
  */
-export async function finalizeRun(input: {
+async function finalizeRunCore(input: {
   identity: RuntimeIdentity;
   runId: string;
   exhausted?: string | null;
@@ -625,4 +625,54 @@ function isSettledRun(status: string) {
   return (
     status === "completed" || status === "failed" || status === "cancelled"
   );
+}
+
+/**
+ * Settle a run, then tell the people and automations that care: the
+ * automation that started it records its result and notifies per its
+ * policy; a run someone started fires run-completed automations; a run
+ * stopped by its budget notifies its requester. Best effort -- the run's
+ * own state is already settled when these run.
+ */
+export async function finalizeRun(input: {
+  identity: RuntimeIdentity;
+  runId: string;
+  exhausted?: string | null;
+}): Promise<RunCompletion> {
+  const completion = await finalizeRunCore(input);
+  if (
+    completion.reason === "already_settled" ||
+    (completion.status !== "completed" && completion.status !== "failed")
+  )
+    return completion;
+  try {
+    const { queryAs } = await import("../db/client");
+    const rows = await queryAs<{
+      automation_id: string | null;
+      objective: string;
+    }>(
+      input.identity.userId,
+      "select automation_id, objective from osirus.runs where id = $1::uuid",
+      [input.runId],
+    );
+    const run = rows[0];
+    if (!run) return completion;
+    const { onRunSettled, notifyRunBlocked } =
+      await import("../automations/store");
+    await onRunSettled(input.identity, {
+      id: input.runId,
+      status: completion.status,
+      automationId: run.automation_id,
+      objective: run.objective,
+    });
+    if (completion.reason.startsWith("budget_exhausted") && !run.automation_id)
+      await notifyRunBlocked(input.identity, {
+        id: input.runId,
+        reason: "it reached its budget",
+        objective: run.objective,
+      });
+  } catch {
+    // Notifications and triggers never change how the run settled.
+  }
+  return completion;
 }

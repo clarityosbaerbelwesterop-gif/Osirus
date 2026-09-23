@@ -5,12 +5,8 @@ import { queryAs } from "../db/client";
 // dedupe key, so a re-checked approval or a retried run produces one entry,
 // not one per attempt. Internal progress events never become notifications.
 
-export type NotificationKind =
-  | "approval_needed"
-  | "automation_completed"
-  | "automation_failed"
-  | "run_blocked"
-  | "connector_expired";
+import type { NotificationKind } from "./notifications-types";
+export type { NotificationKind };
 
 export type NotificationView = {
   id: string;
