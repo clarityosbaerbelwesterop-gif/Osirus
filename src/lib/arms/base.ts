@@ -260,6 +260,14 @@ export abstract class BaseArm implements AgentArm {
     });
     await context.runtime.activity("memory.retrieved", "Searched memory", {
       count: items.length,
+      // What the run was given, so the Memory Context tab can show it. The
+      // workspace's own memory, shown back to the workspace that owns it.
+      items: items.map((item) => ({
+        id: item.id,
+        tier: item.tier,
+        verification: item.verificationStatus ?? "unverified",
+        excerpt: item.content.slice(0, 160),
+      })),
     });
     context.state.memoryContext = items.map(
       (item) =>

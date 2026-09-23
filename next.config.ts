@@ -39,6 +39,9 @@ const config: NextConfig = {
               "style-src 'self' 'unsafe-inline'",
               scriptPolicy,
               "connect-src 'self'",
+              // Workspace previews are served from Vercel Sandbox domains.
+              // Nothing else may be framed.
+              "frame-src https://*.vercel.run",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",

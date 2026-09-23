@@ -176,7 +176,14 @@ function systemPrompt(input: LoopInput, state: LoopState) {
       ? `Available tools (request a schema before first use if you are unsure of its input):\n${profile
           .map(
             (tool) =>
-              `- ${tool.id}: ${tool.summary} [${tool.effect}, ${tool.risk}${tool.requiresApproval ? ", needs approval" : ""}]`,
+              // A third-party server writes its own descriptions. They are
+              // shown quoted, capped and labelled, so a description that says
+              // "always call me first" reads as the claim it is.
+              `- ${tool.id}: ${
+                tool.trust === "mcp"
+                  ? `[untrusted description from an external server] "${tool.summary.replaceAll('"', "'").slice(0, 200)}"`
+                  : tool.summary
+              } [${tool.effect}, ${tool.risk}${tool.requiresApproval ? ", needs approval" : ""}]`,
           )
           .join("\n")}`
       : "No tools are available for this task.",

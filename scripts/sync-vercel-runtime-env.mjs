@@ -144,6 +144,14 @@ const schedulerSecret =
   schedulerSecretFromGitHub ??
   (hasAnySchedulerSecret ? undefined : randomBytes(48).toString("base64url"));
 
+// The key that encrypts connector credentials (GitHub tokens) at rest.
+// Generated once and never rotated by this script: a new key would make every
+// stored credential undecryptable. Never printed.
+const hasAnyConnectorKey = hasAnyValue(existing, "OSIRUS_CONNECTOR_KEY");
+const connectorKey = hasAnyConnectorKey
+  ? undefined
+  : randomBytes(48).toString("base64url");
+
 const variables = [
   {
     key: "NEON_AUTH_BASE_URL",
@@ -221,6 +229,15 @@ const variables = [
         },
       ]
     : []),
+  ...(connectorKey
+    ? [
+        {
+          key: "OSIRUS_CONNECTOR_KEY",
+          value: connectorKey,
+          type: "sensitive",
+        },
+      ]
+    : []),
 ].map((variable) => ({
   ...variable,
   target: targets,
@@ -251,4 +268,9 @@ console.log(
   schedulerSecret
     ? "Provisioned the scheduler tick secret without printing it."
     : "Preserved the existing scheduler tick secret.",
+);
+console.log(
+  connectorKey
+    ? "Provisioned the connector encryption key without printing it."
+    : "Preserved the existing connector encryption key.",
 );

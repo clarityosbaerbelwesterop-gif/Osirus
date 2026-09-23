@@ -2,6 +2,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RunSnapshot, RuntimePacket } from "@/lib/runtime/types";
+import {
+  ApprovalButtons,
+  GithubConnectorPanel,
+  ResearchPanel,
+  WorkspacePanel,
+} from "./workbench-panels";
 
 type Message = {
   id: string;
@@ -19,6 +25,11 @@ type WorkbenchTab =
   | "workers"
   | "skills"
   | "tools"
+  | "files"
+  | "diff"
+  | "terminal"
+  | "preview"
+  | "research"
   | "verification"
   | "memory"
   | "artifacts";
@@ -30,8 +41,13 @@ const WORKBENCH_TABS: Array<{ id: WorkbenchTab; label: string }> = [
   { id: "workers", label: "Workers" },
   { id: "skills", label: "Skills" },
   { id: "tools", label: "Tools" },
+  { id: "research", label: "Research" },
+  { id: "memory", label: "Memory Context" },
+  { id: "files", label: "Files" },
+  { id: "diff", label: "Diff" },
+  { id: "terminal", label: "Terminal" },
+  { id: "preview", label: "Preview" },
   { id: "verification", label: "Verification" },
-  { id: "memory", label: "Memory" },
   { id: "artifacts", label: "Artifacts" },
 ];
 
@@ -463,8 +479,13 @@ export function ChatHub(props: {
   );
   const toolEvents = (snapshot?.events ?? []).filter(
     (event) =>
-      event.type.startsWith("sandbox.") || event.type.startsWith("tool."),
+      event.type.startsWith("sandbox.") ||
+      event.type.startsWith("tool.") ||
+      event.type.startsWith("workspace.") ||
+      (event.type === "agent.step" && typeof event.data.toolId === "string"),
   );
+  const snapshotRunId = snapshot?.run.id ?? null;
+  const runLive = snapshot ? !terminalStatuses.has(snapshot.run.status) : false;
   const memoryEvent = snapshot?.events.find(
     (event) => event.type === "memory.retrieved",
   );
@@ -472,6 +493,14 @@ export function ChatHub(props: {
     memoryEvent && typeof memoryEvent.data.count === "number"
       ? memoryEvent.data.count
       : null;
+  const memoryItems = Array.isArray(memoryEvent?.data.items)
+    ? (memoryEvent.data.items as unknown[]).map((item) => ({
+        id: recordString(item, "id") ?? "",
+        tier: recordString(item, "tier") ?? "",
+        verification: recordString(item, "verification") ?? "unverified",
+        excerpt: recordString(item, "excerpt") ?? "",
+      }))
+    : [];
 
   return (
     <div className="shell">
@@ -757,6 +786,20 @@ export function ChatHub(props: {
                 run.
               </p>
             )}
+            <GithubConnectorPanel />
+          </div>
+        ) : null}
+        {tab === "files" ||
+        tab === "diff" ||
+        tab === "terminal" ||
+        tab === "preview" ? (
+          <div className="workbench-panel">
+            <WorkspacePanel runId={snapshotRunId} tab={tab} live={runLive} />
+          </div>
+        ) : null}
+        {tab === "research" ? (
+          <div className="workbench-panel">
+            <ResearchPanel runId={snapshotRunId} live={runLive} />
           </div>
         ) : null}
         {tab === "verification" ? (
@@ -807,6 +850,11 @@ export function ChatHub(props: {
                 ? "No run-specific memory has been retrieved yet."
                 : `${memoryCount} relevant memory item${memoryCount === 1 ? "" : "s"} informed this run.`}
             </p>
+            {memoryItems.map((item) => (
+              <p className="muted" key={item.id}>
+                {item.tier} · {item.verification} · {item.excerpt}
+              </p>
+            ))}
             <p className="muted">
               Osirus exposes useful context, not internal memory-layer details.
             </p>
@@ -827,6 +875,15 @@ export function ChatHub(props: {
                     {recordString(approval, "action") ?? "Action"} ·{" "}
                     {recordString(approval, "status") ?? "pending"} ·{" "}
                     {recordString(approval, "risk") ?? "low"} risk
+                    {snapshotRunId &&
+                    recordString(approval, "status") === "requested" &&
+                    recordString(approval, "id") ? (
+                      <ApprovalButtons
+                        runId={snapshotRunId}
+                        approvalId={recordString(approval, "id")!}
+                        onDecided={() => void refreshRun(snapshotRunId)}
+                      />
+                    ) : null}
                   </p>
                 ))}
               </>
