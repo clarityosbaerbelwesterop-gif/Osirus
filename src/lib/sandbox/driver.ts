@@ -58,6 +58,15 @@ export interface SandboxHandle {
   previewUrl(port: number): string | null;
   /** Stop the VM. A persistent workspace keeps its filesystem for resume. */
   stop(): Promise<void>;
+  /**
+   * Start a long-running process (a preview server) without waiting for it.
+   * Absent where the driver cannot keep a process running between calls.
+   */
+  startBackground?(input: {
+    cmd: string;
+    args?: string[];
+    cwd?: string;
+  }): Promise<void>;
   /** Push the idle deadline out. Absent where the driver has no deadline. */
   keepAlive?(ms: number): Promise<void>;
   /** Freeze the filesystem as a restorable snapshot; stops the VM. */

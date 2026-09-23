@@ -60,6 +60,23 @@ export function readState<T>(
   return value === undefined ? fallback : (value as T);
 }
 
+/**
+ * What earlier arms in a composed run handed to this one, as context lines.
+ * Structured records, not transcripts: facts with their sources, a contract,
+ * a diff summary -- whatever the handoff type carries.
+ */
+export function handoffContext(context: ArmStageContext): string[] {
+  const handoff = context.state.handoff as
+    Array<{ from: string; kind: string; payload: unknown }> | undefined;
+  if (!Array.isArray(handoff)) return [];
+  return handoff
+    .slice(-4)
+    .map(
+      (entry) =>
+        `[handoff from ${entry.from}: ${entry.kind}] ${JSON.stringify(entry.payload).slice(0, 4_000)}`,
+    );
+}
+
 export abstract class BaseArm implements AgentArm {
   abstract readonly id: ArmId;
   abstract canHandle(input: RoutingInput): number;
@@ -355,6 +372,13 @@ export abstract class BaseArm implements AgentArm {
     }
   }
 
+  protected async planStore(
+    context: ArmStageContext,
+  ): Promise<import("../agent/plan").PlanRevisionStore> {
+    const { DbPlanRevisionStore } = await import("../agent/plan-store");
+    return new DbPlanRevisionStore(context.identity.userId);
+  }
+
   /** Arms opt out of the loop for work that never needs a tool. */
   protected useAgentLoop(): boolean {
     return true;
@@ -435,12 +459,80 @@ export abstract class BaseArm implements AgentArm {
       }
     };
 
+    const { renderPlan, detectReplanTrigger, replanFromObservation } =
+      await import("../agent/plan");
+    const planStore = await this.planStore(context);
+    let planGraph = readState<import("../agent/plan").PlanGraph | null>(
+      context,
+      "planGraph",
+      null,
+    );
+    let autoReplans = 0;
+    let replannedAtStep = 0;
+    const replan = async (
+      trigger: import("../agent/plan").ReplanTrigger,
+      reason: string,
+      steps: import("../agent/loop").AgentStep[],
+    ) => {
+      const revised = await replanFromObservation({
+        structured: this.structuredFor(context, "THINKING"),
+        objective: work.objective,
+        plan: planGraph,
+        trigger,
+        reason,
+        recentSteps: steps,
+        signal,
+      });
+      const stored = await planStore.append(work.runId, {
+        trigger,
+        reason,
+        plan: revised,
+      });
+      planGraph = revised;
+      context.state.planGraph = revised;
+      await runtime.activity(
+        "plan.revised",
+        `Plan revision ${stored.revision}: ${reason.slice(0, 160)}`,
+        { trigger, revision: stored.revision, nodes: revised.nodes.length },
+        "user",
+      );
+      return `Plan revision ${stored.revision} (${trigger}): ${reason}\n${renderPlan(revised)}`;
+    };
+
+    // An approval the agent asked for itself (REQUEST_APPROVAL) is a row the
+    // user can decide like any tool approval; on resume the decision is
+    // handed back to the loop as an observation.
+    const resumeState = context.state.loopState as
+      | (import("../agent/loop").LoopState & { agentApprovalId?: string })
+      | undefined;
+    if (resumeState?.agentApprovalId) {
+      const decision = await runtime.repository
+        .approvalStatus(resumeState.agentApprovalId)
+        .catch(() => null);
+      if (decision === "requested") {
+        return { kind: "WAITING", reason: "approval", output: {} };
+      }
+      resumeState.observations.push(
+        `----- BEGIN UNTRUSTED TOOL RESULT (approval) -----\nThe user ${decision === "approved" ? "APPROVED" : "did not approve"} the request.\n----- END UNTRUSTED TOOL RESULT -----`,
+      );
+      delete resumeState.agentApprovalId;
+    }
+
     const result = await runAgentLoop({
       objective: work.objective,
       directives: [...SYSTEM_CONTRACT, ...this.answerDirectives(routing)],
-      context: prepared.sections.map(
-        (section) => `[${section.kind}] ${section.text}`,
-      ),
+      context: [
+        ...prepared.sections.map(
+          (section) => `[${section.kind}] ${section.text}`,
+        ),
+        ...(planGraph ? [`[plan] ${renderPlan(planGraph)}`] : []),
+        ...(context.state.buildContract
+          ? [
+              `[build contract] ${JSON.stringify(context.state.buildContract).slice(0, 6_000)}`,
+            ]
+          : []),
+        ...handoffContext(context),
+      ],
       tools: toolbox.registry,
       toolContext: {
         runId: work.runId,
@@ -455,6 +547,34 @@ export abstract class BaseArm implements AgentArm {
         import("../agent/loop").LoopState | undefined,
       signal,
       hooks: {
+        replan: async (reason) => {
+          try {
+            return {
+              summary: await replan("agent_requested", reason, []),
+            };
+          } catch {
+            return {
+              summary: "Replanning failed; continue with the current plan.",
+            };
+          }
+        },
+        checkpoint: async (state) => {
+          if (autoReplans >= 2) return null;
+          // Only steps since the last automatic replan count, so one failure
+          // does not trigger the same replan twice.
+          const found = detectReplanTrigger({
+            steps: state.steps.slice(replannedAtStep),
+            budgetUsed:
+              state.modelCalls /
+              Math.max(1, this.loopBounds().maxModelCalls ?? 14),
+          });
+          if (!found) return null;
+          autoReplans += 1;
+          replannedAtStep = state.steps.length;
+          return replan(found.trigger, found.detail, state.steps).catch(
+            () => null,
+          );
+        },
         onStep: async (step) => {
           await runtime.activity(
             "agent.step",
@@ -523,6 +643,27 @@ export abstract class BaseArm implements AgentArm {
 
     if (result.status === "waiting_for_approval") {
       context.state.loopState = result.state;
+      if (!result.pendingApproval?.toolId) {
+        const approvalId = await runtime.repository.createApproval({
+          organizationId: identity.organizationId,
+          workspaceId: identity.workspaceId,
+          runId: work.runId,
+          stageId: work.stageId,
+          action: "agent:request",
+          risk: "medium",
+          request: {
+            ...(result.pendingApproval?.request ?? {}),
+            summary:
+              result.state.steps.at(-1)?.summary ??
+              "The agent asked to proceed.",
+          },
+          expiresInSeconds: 24 * 60 * 60,
+        });
+        context.state.loopState = {
+          ...result.state,
+          agentApprovalId: approvalId,
+        };
+      }
       return {
         kind: "WAITING",
         reason: "approval",

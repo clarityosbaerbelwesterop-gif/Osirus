@@ -201,12 +201,17 @@ describe("workflow composition", () => {
 });
 
 describe("arm workflows", () => {
-  it("gives the thinking arm an analysis stage before it answers", () => {
+  it("gives the thinking arm analysis and planning stages before it answers", () => {
     const graph = armFor("thinking").buildWorkflow({
       objective: "Plan a migration",
       capabilities: [],
     });
-    expect(topologicalOrder(graph)).toEqual(["analyse", "answer", "verify"]);
+    expect(topologicalOrder(graph)).toEqual([
+      "analyse",
+      "model-plan",
+      "answer",
+      "verify",
+    ]);
   });
 
   it("requires the answering stage to be verified in every arm", () => {

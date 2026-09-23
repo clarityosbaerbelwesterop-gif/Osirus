@@ -56,6 +56,21 @@ export function qaPassed(report: QaReport) {
   );
 }
 
+let factory: (() => BrowserQa) | null = null;
+
+/**
+ * Install a real browser for QA. The live-eval runner and tests register
+ * Playwright here; the deployed app never does, because it has no browser,
+ * and then QA falls back to the HTTP check and says so.
+ */
+export function registerBrowserQa(create: (() => BrowserQa) | null) {
+  factory = create;
+}
+
+export function browserQa(): BrowserQa {
+  return factory ? factory() : new HttpPreviewCheck();
+}
+
 /** Markup-level checks shared by both implementations. */
 export function markupChecks(
   html: string,
@@ -120,16 +135,15 @@ export class HttpPreviewCheck implements BrowserQa {
         viewports: [],
         checks: [
           ...markupChecks(html, expectations),
-          ...(expectations.selectors ?? []).map((selector) => ({
-            id: `selector:${selector.slice(0, 40)}`,
-            // Without a DOM only id selectors can be checked from markup.
-            passed: selector.startsWith("#")
-              ? new RegExp(`id=["']${selector.slice(1)}["']`).test(html)
-              : false,
-            detail: selector.startsWith("#")
-              ? `Element ${selector} present in the markup.`
-              : `Selector ${selector} needs a browser to check.`,
-          })),
+          // Without a DOM only id selectors can be checked from markup; the
+          // rest are left for a browser rather than reported as failures.
+          ...(expectations.selectors ?? [])
+            .filter((selector) => /^#[\w-]+$/.test(selector))
+            .map((selector) => ({
+              id: `selector:${selector.slice(0, 40)}`,
+              passed: new RegExp(`id=["']${selector.slice(1)}["']`).test(html),
+              detail: `Element ${selector} present in the markup.`,
+            })),
         ],
       };
     } catch (error) {

@@ -31,18 +31,22 @@ export class PlaywrightQa implements BrowserQa {
     const failedRequests: string[] = [];
     try {
       const page = await browser.newPage();
+      // The browser asks for /favicon.ico on its own; a page that never
+      // referenced one is not broken because it is missing.
+      const isFavicon = (url: string) => /\/favicon\.ico(\?|$)/.test(url);
       page.on("console", (message) => {
-        if (message.type() === "error")
+        if (message.type() === "error" && !isFavicon(message.location().url))
           consoleErrors.push(message.text().slice(0, 300));
       });
       page.on("pageerror", (error) =>
         consoleErrors.push(`pageerror: ${error.message.slice(0, 300)}`),
       );
-      page.on("requestfailed", (request) =>
-        failedRequests.push(`${request.method()} ${request.url()}`),
-      );
+      page.on("requestfailed", (request) => {
+        if (!isFavicon(request.url()))
+          failedRequests.push(`${request.method()} ${request.url()}`);
+      });
       page.on("response", (response) => {
-        if (response.status() >= 400)
+        if (response.status() >= 400 && !isFavicon(response.url()))
           failedRequests.push(`${response.status()} ${response.url()}`);
       });
       const response = await page.goto(url, {

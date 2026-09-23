@@ -129,6 +129,12 @@ export type LoopHooks = {
   }) => Promise<{ ref: string }>;
   verify?: (answer: string) => Promise<{ status: string; summary: string }>;
   replan?: (reason: string) => Promise<{ summary: string }>;
+  /**
+   * Called before each decision. A returned note is added as an observation
+   * -- used to replan automatically when the run's own record shows the plan
+   * no longer fits (the same tool failing twice, a tool that is not there).
+   */
+  checkpoint?: (state: LoopState) => Promise<string | null>;
 };
 
 export type LoopInput = {
@@ -297,6 +303,11 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
         answer: state.answer ?? null,
         reason: `bound_reached:${limit}`,
       };
+    }
+
+    if (!state.pendingCall && input.hooks?.checkpoint) {
+      const note = await input.hooks.checkpoint(state).catch(() => null);
+      if (note) state.observations.push(observe("plan.revised", note));
     }
 
     const stepStartedAt = now();

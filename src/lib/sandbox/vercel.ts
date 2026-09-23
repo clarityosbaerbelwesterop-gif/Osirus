@@ -103,6 +103,15 @@ class VercelSandboxHandle implements SandboxHandle {
     await this.sandbox.stop().catch(() => undefined);
   }
 
+  async startBackground(input: { cmd: string; args?: string[]; cwd?: string }) {
+    await this.sandbox.runCommand({
+      cmd: input.cmd,
+      args: input.args,
+      cwd: input.cwd,
+      detached: true,
+    });
+  }
+
   async keepAlive(ms: number) {
     await this.sandbox.extendTimeout(ms);
   }

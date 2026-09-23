@@ -174,7 +174,7 @@ export class CodingArm extends BaseArm {
         key: "open-workspace",
         name: "Open the coding workspace",
         capability: "coding",
-        dependsOn: ["ground-task"],
+        dependsOn: [this.additionalStages().at(-1)?.key ?? "plan"],
         // No workspace is not a failed run: the answer proceeds without one
         // and the verdict is capped at unverified.
         failurePolicy: "continue",
@@ -220,13 +220,13 @@ export class CodingArm extends BaseArm {
     }
   }
 
-  private async workspaceStore(context: ArmStageContext) {
+  protected async workspaceStore(context: ArmStageContext) {
     const { DbWorkspaceStore } = await import("../coding/db-store");
     return new DbWorkspaceStore(context.identity.userId);
   }
 
   /** Reattach to this run's workspace, or null when there is none to use. */
-  private async reopen(context: ArmStageContext) {
+  protected async reopen(context: ArmStageContext) {
     const state = readState<WorkspaceState | null>(context, "workspace", null);
     if (!state || (state.status !== "ready" && state.status !== "stopped"))
       return null;
@@ -248,7 +248,7 @@ export class CodingArm extends BaseArm {
     return WorkspaceSession.attach(handle, record, store);
   }
 
-  private async openWorkspaceStage(
+  protected async openWorkspaceStage(
     context: ArmStageContext,
   ): Promise<StageOutcome> {
     const { resolveSandbox } = await import("../sandbox");
@@ -399,7 +399,7 @@ export class CodingArm extends BaseArm {
     }
   }
 
-  private async runChecksStage(
+  protected async runChecksStage(
     context: ArmStageContext,
   ): Promise<StageOutcome> {
     const session = await this.reopen(context);
@@ -455,7 +455,7 @@ export class CodingArm extends BaseArm {
     };
   }
 
-  private async finalizeWorkspaceStage(
+  protected async finalizeWorkspaceStage(
     context: ArmStageContext,
   ): Promise<StageOutcome> {
     const session = await this.reopen(context);
@@ -480,7 +480,7 @@ export class CodingArm extends BaseArm {
    * which the verification engine reads as inconclusive -- so the verdict is
    * "unverified", never "verified".
    */
-  private async checkCodeStage(
+  protected async checkCodeStage(
     context: ArmStageContext,
   ): Promise<StageOutcome> {
     const answer = (context.state.answer as string | undefined) ?? "";
@@ -581,7 +581,9 @@ export class CodingArm extends BaseArm {
     return ["engineering", "code", "testing", "debugging"];
   }
 
-  protected answerDirectives(): string[] {
+  // The routing input is accepted so subclasses can shape directives by it.
+  protected answerDirectives(input?: RoutingInput): string[] {
+    void input;
     return [
       "When workspace.* tools are available, work in the repository: inspect with workspace.tree, workspace.search and workspace.read before editing.",
       "Form a hypothesis, make the smallest edit that tests it (prefer workspace.replace over rewriting a file), then run the relevant discovered command with workspace.run.",

@@ -2,7 +2,19 @@ import type { ModelRole } from "../models/provider";
 import { sequential, type WorkflowGraph } from "../runtime/graph";
 import type { Capability } from "../runtime/types";
 import { secretLeakCheck, structureCheck } from "../verification/checks";
-import { BaseArm } from "./base";
+import {
+  chooseDepth,
+  critiquePlan,
+  planProblems,
+  planTask,
+  revisePlan,
+  unresolvedObjections,
+  type Critique,
+  type PlanGraph,
+  type PlanRevisionResponse,
+  type TaskModel,
+} from "../agent/plan";
+import { BaseArm, readState } from "./base";
 import {
   taskAnalysisSchema,
   type AcceptanceContract,
@@ -91,7 +103,7 @@ export class ThinkingArm extends BaseArm {
 
   protected answerDirectives(): string[] {
     return [
-      "Present the analysis as a plan the reader can act on.",
+      "Present the analysis as a plan the reader can act on. When a [plan] is in the context, present that plan's steps in order and keep its done-conditions.",
       "State the success criteria and the open unknowns explicitly.",
       "Do not describe how you reasoned; state what you concluded.",
     ];
@@ -105,6 +117,13 @@ export class ThinkingArm extends BaseArm {
         capability: "general",
         retryPolicy: { maxAttempts: 2, maxSlices: 4 },
         input: { stageKind: "analyse", armId: this.id },
+      },
+      {
+        key: "model-plan",
+        name: "Model the task and plan it",
+        capability: "general",
+        retryPolicy: { maxAttempts: 2, maxSlices: 4 },
+        input: { stageKind: "model_plan", armId: this.id },
       },
       {
         key: "answer",
@@ -133,6 +152,9 @@ export class ThinkingArm extends BaseArm {
   }
 
   protected async customStage(context: ArmStageContext): Promise<StageOutcome> {
+    if ((context.work.stageInput.stageKind as string) === "model_plan") {
+      return this.modelPlanStage(context);
+    }
     if ((context.work.stageInput.stageKind as string) !== "analyse") {
       return super.customStage(context);
     }
@@ -167,9 +189,172 @@ export class ThinkingArm extends BaseArm {
     }
   }
 
+  /**
+   * Task model and plan graph, at the depth the task deserves.
+   *
+   * direct: no planning call. standard: one planning call. deep: the THINKING
+   * role plans, a critic reviews, and the planner answers every objection in
+   * a new revision. Every plan is stored as a revision; nothing overwrites.
+   */
+  private async modelPlanStage(
+    context: ArmStageContext,
+  ): Promise<StageOutcome> {
+    const analysis = context.state.analysis as TaskAnalysis | undefined;
+    const depth = chooseDepth({
+      complexity: analysis?.complexity ?? "medium",
+      risk: analysis?.risk ?? "medium",
+      compound: (analysis?.capabilities.length ?? 1) > 1,
+    });
+    context.state.thinkingDepth = depth;
+    if (depth === "direct") {
+      await context.runtime.activity(
+        "plan.skipped",
+        "Simple task: answered without a separate planning call",
+        { depth },
+      );
+      return { kind: "COMPLETE", output: { depth } };
+    }
+
+    const structured = this.structuredFor(
+      context,
+      depth === "deep" ? "THINKING" : "STRONG",
+    );
+    const planned = await planTask({
+      structured,
+      objective: context.work.objective,
+      context: readState<string[]>(context, "memoryContext", []).slice(0, 6),
+      signal: context.signal,
+    });
+    const store = await this.planStore(context);
+    let plan = planned.plan;
+    const first = await store.append(context.work.runId, {
+      trigger: "agent_requested",
+      reason: `Initial plan (${depth})`,
+      plan,
+    });
+    context.state.taskModel = planned.taskModel;
+
+    if (depth === "deep") {
+      const critique = await critiquePlan({
+        structured: this.structuredFor(context, "VERIFY"),
+        objective: context.work.objective,
+        taskModel: planned.taskModel,
+        plan,
+        signal: context.signal,
+      });
+      context.state.critique = critique;
+      const serious = critique.objections.filter(
+        (objection) => objection.severity !== "low",
+      );
+      if (critique.verdict === "revise" || serious.length > 0) {
+        const revision = await revisePlan({
+          structured,
+          objective: context.work.objective,
+          plan,
+          critique,
+          signal: context.signal,
+        });
+        plan = revision.plan;
+        context.state.planResolutions = revision.resolutions;
+        await store.append(context.work.runId, {
+          trigger: "critic_objection",
+          reason: `Revised for ${serious.length} critic objection(s)`,
+          plan,
+          resolutions: revision.resolutions,
+        });
+      }
+      await context.runtime.activity(
+        "plan.critiqued",
+        `Critic: ${critique.verdict}, ${critique.objections.length} objection(s)`,
+        {
+          objections: critique.objections.map((objection) => ({
+            id: objection.id,
+            severity: objection.severity,
+            issue: objection.issue,
+          })),
+        },
+        "user",
+      );
+    }
+    context.state.planGraph = plan;
+    await context.runtime.activity(
+      "plan.created",
+      `Plan with ${plan.nodes.length} step(s) (${depth})`,
+      {
+        depth,
+        revision: first.revision,
+        nodes: plan.nodes.map((node) => `${node.arm}: ${node.title}`),
+      },
+      "user",
+    );
+    return {
+      kind: "COMPLETE",
+      output: { depth, nodes: plan.nodes.length },
+    };
+  }
+
   protected checksFor(context: ArmStageContext, answer: string) {
     const analysis = context.state.analysis as TaskAnalysis | undefined;
+    const taskModel = context.state.taskModel as TaskModel | undefined;
+    const plan = context.state.planGraph as PlanGraph | undefined;
+    const critique = context.state.critique as Critique | undefined;
+    const resolutions = readState<PlanRevisionResponse["resolutions"]>(
+      context,
+      "planResolutions",
+      [],
+    );
+    const planChecks = [
+      {
+        id: "plan-graph-valid",
+        type: "STRUCTURE" as const,
+        required: Boolean(plan),
+        run: () => {
+          if (!plan)
+            return {
+              status: "inconclusive" as const,
+              detail:
+                "No plan graph for this task (simple task, direct answer).",
+            };
+          const problems = planProblems(plan);
+          return problems.length === 0
+            ? {
+                status: "passed" as const,
+                detail: `Plan graph with ${plan.nodes.length} node(s) is acyclic and every dependency exists.`,
+                evidence: { nodes: plan.nodes.map((node) => node.id) },
+              }
+            : {
+                status: "failed" as const,
+                detail: `Plan graph invalid: ${problems.join("; ")}.`,
+              };
+        },
+      },
+      {
+        id: "critic-objections-answered",
+        type: "STRUCTURE" as const,
+        required: Boolean(critique),
+        run: () => {
+          if (!critique)
+            return {
+              status: "inconclusive" as const,
+              detail: "No critic ran for this task.",
+            };
+          const open = unresolvedObjections(critique, resolutions);
+          return open.length === 0
+            ? {
+                status: "passed" as const,
+                detail: `${critique.objections.length} objection(s); every medium or high one was answered.`,
+                evidence: { resolutions },
+              }
+            : {
+                status: "failed" as const,
+                detail: `Unanswered critic objections: ${open.map((objection) => objection.issue).join("; ")}.`,
+              };
+        },
+      },
+    ];
+    const criteria = taskModel?.successCriteria ?? analysis?.successCriteria;
     return [
+      ...planChecks,
       structureCheck({
         id: "analysis-present",
         required: true,
@@ -191,17 +376,26 @@ export class ThinkingArm extends BaseArm {
                   stages: analysis.proposedStages.length,
                 },
               }
-            : {
-                status: "failed" as const,
-                detail: "No schema-valid analysis was produced.",
-              },
+            : taskModel
+              ? {
+                  status: "passed" as const,
+                  detail: `Task model validated with ${taskModel.successCriteria.length} success criteria.`,
+                  evidence: {
+                    complexity: taskModel.complexity,
+                    risk: taskModel.riskLevel,
+                  },
+                }
+              : {
+                  status: "failed" as const,
+                  detail: "No schema-valid analysis was produced.",
+                },
       },
       {
         id: "criteria-covered",
         type: "STRUCTURE" as const,
         required: false,
         run: () => {
-          if (!analysis) {
+          if (!criteria) {
             return {
               status: "inconclusive" as const,
               detail: "No analysis to compare the answer against.",
@@ -210,7 +404,7 @@ export class ThinkingArm extends BaseArm {
           // Every success criterion has to survive into the presented plan,
           // or the user is shown a plan the verifier is not grading.
           const body = answer.toLowerCase();
-          const missing = analysis.successCriteria.filter((criterion) => {
+          const missing = criteria.filter((criterion) => {
             const terms = (
               criterion.toLowerCase().match(/[a-z]{4,}/g) ?? []
             ).slice(0, 6);
@@ -221,8 +415,8 @@ export class ThinkingArm extends BaseArm {
           return missing.length === 0
             ? {
                 status: "passed" as const,
-                detail: `All ${analysis.successCriteria.length} success criteria appear in the presented plan.`,
-                evidence: { criteria: analysis.successCriteria },
+                detail: `All ${criteria.length} success criteria appear in the presented plan.`,
+                evidence: { criteria },
               }
             : {
                 status: "failed" as const,
