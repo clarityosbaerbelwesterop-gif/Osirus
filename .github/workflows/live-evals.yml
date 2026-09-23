@@ -33,6 +33,11 @@ on:
         type: choice
         default: vercel
         options: [vercel, local]
+      list_models:
+        description: Only list the models the UnoRouter key can use
+        required: false
+        type: boolean
+        default: false
   push:
     branches: [build/m11-m15-agent-intelligence]
 
@@ -44,8 +49,23 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  models:
+    # Free of model spend: lists IDs and pricing so a model is chosen from
+    # the real list, never guessed.
+    if: inputs.list_models || contains(github.event.head_commit.message, '[list-models]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: node scripts/list-unorouter-models.mjs
+
   arena:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-live-evals]')
+    if: (github.event_name == 'workflow_dispatch' && !inputs.list_models) || contains(github.event.head_commit.message, '[run-live-evals]')
     runs-on: ubuntu-latest
     timeout-minutes: 90
     env:
@@ -70,6 +90,16 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: python -m pip install --quiet sympy==1.14.0 numpy
+      - name: Resolve the model
+        # A push run may name its model in the commit message as
+        # [live-evals-model:<id>]; the ID must be one the models job listed.
+        env:
+          COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            override=$(printf '%s' "$COMMIT_MESSAGE" | grep -oE '\[live-evals-model:[A-Za-z0-9._:/-]+\]' | head -n1 | sed -E 's/^\[live-evals-model:(.*)\]$/\1/')
+            if [ -n "$override" ]; then echo "MODEL_OVERRIDE=$override" >> "$GITHUB_ENV"; fi
+          fi
       - name: Run the arena
         env:
           # CI-scoped Vercel credentials for Sandbox only. The deployed app
@@ -80,6 +110,8 @@ jobs:
           VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
           OSIRUS_ALLOW_LOCAL_EXEC: "1"
         run: |
+          MODEL="${MODEL_OVERRIDE:-$MODEL}"
+          echo "Model: $MODEL"
           export OSIRUS_MODEL_FAST="$MODEL" OSIRUS_MODEL_STRONG="$MODEL" \
             OSIRUS_MODEL_THINKING="$MODEL" OSIRUS_MODEL_CODING="$MODEL" \
             OSIRUS_MODEL_RESEARCH="$MODEL" OSIRUS_MODEL_MATH="$MODEL" \
