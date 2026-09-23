@@ -28,7 +28,10 @@ on:
         required: false
         type: string
       sandbox:
-        description: Where workspaces run
+        # "local" runs workspace commands on the runner itself. It is not an
+        # isolation boundary (a process can read its parent's environment),
+        # so it is for trusted fixtures only; "vercel" is the default.
+        description: Where workspaces run (local = runner, not isolated)
         required: true
         type: choice
         default: vercel

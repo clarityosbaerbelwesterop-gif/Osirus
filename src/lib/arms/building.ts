@@ -221,6 +221,14 @@ export class BuildingArm extends CodingArm {
     const hostedUrl = handle.startBackground
       ? handle.previewUrl(PREVIEW_PORT)
       : null;
+    // A hosted preview is reachable by anyone holding its URL. Serving the
+    // root of a cloned repository would publish its whole source tree (a
+    // private one included); only a build output directory, or a repository
+    // this run created from nothing, is served that way.
+    if (hostedUrl && directory === "." && session.record.repository)
+      return unavailable(
+        "Refusing to publish the root of a cloned repository as a preview; build into dist/, build/, out/ or public/.",
+      );
     if (hostedUrl && handle.startBackground) {
       await handle.startBackground({
         cmd: "python3",
