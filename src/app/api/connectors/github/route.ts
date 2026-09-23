@@ -73,6 +73,11 @@ export async function POST(request: Request) {
       token: body.data.token.trim(),
       scopes: body.data.allowWrite ? ["repo:write"] : [],
     });
+    const { triggerAutomations } = await import("@/lib/automations/store");
+    await triggerAutomations(who, {
+      kind: "connector_changed",
+      detail: "GitHub connected",
+    }).catch(() => undefined);
     return Response.json({ status: "CONNECTED", login });
   } catch (error) {
     const reason = error instanceof Error ? error.message : "connect_failed";
@@ -99,5 +104,10 @@ export async function DELETE(request: Request) {
   if (!hasSameOrigin(request))
     return Response.json({ error: "invalid_origin" }, { status: 403 });
   await disconnectGithub(who);
+  const { triggerAutomations } = await import("@/lib/automations/store");
+  await triggerAutomations(who, {
+    kind: "connector_changed",
+    detail: "GitHub disconnected",
+  }).catch(() => undefined);
   return Response.json({ status: "NOT_CONNECTED" });
 }

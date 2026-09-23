@@ -1,6 +1,8 @@
-import { auth } from "@/lib/auth/server";
+import { BrainCircuit, History, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { OsirusMark } from "@/components/shell/osirus-mark";
+import { auth } from "@/lib/auth/server";
 
 export const dynamic = "force-dynamic";
 
@@ -13,37 +15,51 @@ export default async function HomePage() {
   return (
     <main className="landing">
       <nav className="landing-nav" aria-label="Primary navigation">
-        <span className="brand">OSIRUS</span>
-        <Link href="/auth/sign-in">Sign in</Link>
+        <span className="landing-brand">
+          <OsirusMark />
+          Osirus
+        </span>
+        <Link className="btn btn-ghost" href="/auth/sign-in">
+          Sign in
+        </Link>
       </nav>
       <section className="landing-hero">
-        <p className="eyebrow">AGENT OPERATING SYSTEM</p>
-        <h1>Durable execution, not another chat wrapper.</h1>
+        <h1>An agent that finishes the work, and shows it.</h1>
         <p className="landing-copy">
-          Osirus combines a model gateway with durable runtime state, contextual
-          memory, progressive skills, verification and human control.
+          Osirus plans a task, works in an isolated sandbox, asks before it acts
+          on anything you connected, and checks its own result before it calls
+          it done.
         </p>
         <div className="landing-actions">
-          <Link className="landing-primary" href="/auth/sign-up">
+          <Link className="btn btn-primary btn-lg" href="/auth/sign-up">
             Create account
           </Link>
-          <Link className="landing-secondary" href="/auth/sign-in">
+          <Link className="btn btn-secondary btn-lg" href="/auth/sign-in">
             Sign in
           </Link>
         </div>
       </section>
-      <section className="landing-principles" aria-label="Product principles">
+      <section className="landing-principles" aria-label="How Osirus works">
         <article>
-          <strong>Durable runtime</strong>
-          <p>Runs, events and checkpoints survive refreshes and restarts.</p>
+          <h2>
+            <History size={17} aria-hidden="true" />
+            Durable runs
+          </h2>
+          <p>Runs, steps and checkpoints survive reloads and restarts.</p>
         </article>
         <article>
-          <strong>Scoped memory</strong>
-          <p>Useful context is retrieved selectively and tenant-scoped.</p>
+          <h2>
+            <ShieldCheck size={17} aria-hidden="true" />
+            You approve what matters
+          </h2>
+          <p>Pushes, pull requests and external actions wait for your yes.</p>
         </article>
         <article>
-          <strong>Progressive skills</strong>
-          <p>Only the small skill set relevant to a stage is activated.</p>
+          <h2>
+            <BrainCircuit size={17} aria-hidden="true" />
+            Verified results
+          </h2>
+          <p>Every answer is checked against evidence before it is final.</p>
         </article>
       </section>
     </main>

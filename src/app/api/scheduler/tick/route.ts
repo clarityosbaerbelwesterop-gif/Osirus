@@ -102,6 +102,13 @@ async function tick(request: Request) {
     { once: true },
   );
 
+  // Scheduled automations whose window has come start first, so the claim
+  // loop below executes them in this same tick.
+  const { startDueAutomations } = await import("@/lib/automations/store");
+  const automationsStarted = await startDueAutomations(5).catch(
+    () => [] as string[],
+  );
+
   const workerId = `scheduler:${randomUUID()}`;
   const deadlineAt = Date.now() + TICK_BUDGET_MS;
   const touched = new Map<
@@ -168,7 +175,13 @@ async function tick(request: Request) {
   // identifier, because whoever holds the scheduler secret is not thereby
   // entitled to read anyone's work.
   return Response.json(
-    { runs: touched.size, claimed, completed, failed },
+    {
+      runs: touched.size,
+      claimed,
+      completed,
+      failed,
+      automationsStarted: automationsStarted.length,
+    },
     { headers: { "Cache-Control": "no-store" } },
   );
 }

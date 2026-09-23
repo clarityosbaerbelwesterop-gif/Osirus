@@ -2,6 +2,7 @@
 
 import { authClient } from "@/lib/auth/client";
 import { useState } from "react";
+import { GithubMark } from "./github-mark";
 
 /**
  * Starts Neon Auth's server-managed OAuth flow. The provider owns PKCE/state,
@@ -43,7 +44,7 @@ export function GitHubSignInButton() {
         disabled={pending}
         onClick={signInWithGitHub}
       >
-        <span aria-hidden="true">GitHub</span>
+        <GithubMark />
         {pending ? "Redirecting to GitHub…" : "Continue with GitHub"}
       </button>
       {error ? (

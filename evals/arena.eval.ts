@@ -1,4 +1,4 @@
-import { mkdir, writeFile, appendFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile, appendFile } from "node:fs/promises";
 import { describe, expect, it } from "vitest";
 import { runArenaTask } from "../src/lib/arena/harness";
 import {
@@ -8,6 +8,12 @@ import {
   type TaskResult,
 } from "../src/lib/arena/metrics";
 import { ARENA_TASKS } from "../src/lib/arena/suites";
+import {
+  evaluateGate,
+  gateMetrics,
+  renderGate,
+  type GateMetrics,
+} from "../src/lib/arena/gate";
 import { registerBrowserQa } from "../src/lib/coding/browser-qa";
 import { PlaywrightQa } from "../src/lib/coding/playwright-qa";
 import { UnoRouterProvider } from "../src/lib/models/unorouter";
@@ -139,10 +145,27 @@ describe("agent arena (live)", () => {
         2,
       ),
     );
-    await writeFile(`${outDir}/summary.md`, summary);
+    // Regression gate against the stored baseline for this model, if any.
+    const current = gateMetrics(model, results);
+    const baselinePath = `evals/baselines/${model.replaceAll(/[^a-zA-Z0-9._-]/g, "_")}.json`;
+    const baseline = await readFile(baselinePath, "utf8")
+      .then((text) => JSON.parse(text) as GateMetrics)
+      .catch(() => null);
+    const gate = evaluateGate({ baseline, current });
+    const gateText = renderGate(gate);
+    await writeFile(
+      `${outDir}/gate.json`,
+      JSON.stringify({ current, gate }, null, 2),
+    );
+    await writeFile(`${outDir}/summary.md`, `${summary}\n\n${gateText}\n`);
     if (process.env.GITHUB_STEP_SUMMARY)
-      await appendFile(process.env.GITHUB_STEP_SUMMARY, `${summary}\n`);
+      await appendFile(
+        process.env.GITHUB_STEP_SUMMARY,
+        `${summary}\n\n${gateText}\n`,
+      );
     console.log(summary);
+    console.log(gateText);
     expect(results.length).toBeGreaterThan(0);
+    if (gate.enforced) expect(gate.passed, gateText).toBe(true);
   });
 });

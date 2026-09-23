@@ -20,7 +20,8 @@ export function publicRuntimeErrorMessage(error: unknown) {
       return "The model runtime is not configured.";
     case "credential_rejected":
     case "provider_unavailable":
-      return "The model provider is temporarily unavailable.";
+    case "insufficient_credit":
+      return "The strong model is temporarily unavailable. Please try again later.";
     case "invalid_stream":
     case "invalid_json":
       return "The model returned an unusable response. Please try again.";

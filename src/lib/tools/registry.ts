@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { containsInjectionAttempt } from "../security/injection";
 import type { ArmId } from "../arms/types";
 
 // The tool layer.
@@ -114,6 +115,12 @@ export function needsApproval(tool: {
   return false;
 }
 
+export type ToolPolicy = (input: {
+  tool: ToolDefinition;
+  context: ToolContext;
+  builtinRequiresApproval: boolean;
+}) => Promise<"allow" | "ask" | "deny">;
+
 export type ApprovalGate = (input: {
   tool: ToolDefinition;
   context: ToolContext;
@@ -143,6 +150,11 @@ export class ToolRegistry {
     private readonly options: {
       approvalGate?: ApprovalGate;
       audit?: ToolAudit;
+      /**
+       * The workspace policy for this call. Given the built-in requirement,
+       * it returns allow, ask or deny; without it the built-in rule applies.
+       */
+      policy?: ToolPolicy;
     } = {},
   ) {}
 
@@ -237,7 +249,37 @@ export class ToolRegistry {
       throw new ToolPermissionError(input.toolId, "invalid_input");
     }
 
-    if (needsApproval(tool)) {
+    const builtinRequiresApproval = needsApproval(tool);
+    let decision: "allow" | "ask" | "deny" = builtinRequiresApproval
+      ? "ask"
+      : "allow";
+    if (this.options.policy) {
+      try {
+        decision = await this.options.policy({
+          tool,
+          context: input.context,
+          builtinRequiresApproval,
+        });
+      } catch {
+        // A policy that cannot be read falls back to the built-in rule; it
+        // never becomes more permissive than that.
+        decision = builtinRequiresApproval ? "ask" : "allow";
+      }
+    }
+    if (decision === "deny") {
+      await this.options.audit?.({
+        context: input.context,
+        tool,
+        status: "cancelled",
+        inputMetadata: { reason: "policy_denied" },
+        outputMetadata: {},
+        latencyMs: Date.now() - startedAt,
+        errorCode: "policy_denied",
+      });
+      throw new ToolPermissionError(input.toolId, "policy_denied");
+    }
+
+    if (decision === "ask") {
       const request = {
         toolId: tool.id,
         effect: tool.effect,
@@ -249,24 +291,24 @@ export class ToolRegistry {
       // No gate configured means no way to approve, which means the call does
       // not happen. Defaulting to "allowed" here would make the whole model
       // opt-in.
-      const decision = this.options.approvalGate
+      const approval = this.options.approvalGate
         ? await this.options.approvalGate({
             tool,
             context: input.context,
             request,
           })
         : "pending";
-      if (decision !== "approved") {
+      if (approval !== "approved") {
         await this.options.audit?.({
           context: input.context,
           tool,
-          status: decision === "rejected" ? "cancelled" : "awaiting_approval",
+          status: approval === "rejected" ? "cancelled" : "awaiting_approval",
           inputMetadata: { effect: tool.effect, risk: tool.risk },
           outputMetadata: {},
           latencyMs: Date.now() - startedAt,
-          errorCode: decision === "rejected" ? "approval_rejected" : null,
+          errorCode: approval === "rejected" ? "approval_rejected" : null,
         });
-        if (decision === "rejected") {
+        if (approval === "rejected") {
           throw new ToolPermissionError(input.toolId, "approval_rejected");
         }
         throw new ToolApprovalRequired(input.toolId, request);
@@ -284,7 +326,14 @@ export class ToolRegistry {
         // tenant content; the audit row records that a call happened and how
         // it went, not what was in it.
         inputMetadata: { effect: tool.effect, risk: tool.risk },
-        outputMetadata: { bytes: JSON.stringify(data ?? null).length },
+        outputMetadata: {
+          bytes: JSON.stringify(data ?? null).length,
+          // A credential was removed from the output before anyone saw it.
+          redacted: JSON.stringify(data ?? null).includes("[REDACTED]"),
+          // The output tried to instruct the model; it stays fenced as
+          // untrusted data, and the attempt is recorded.
+          injection: containsInjectionAttempt(JSON.stringify(data ?? null)),
+        },
         latencyMs,
       });
       return { toolId: tool.id, ok: true, untrusted: true, data, latencyMs };
@@ -299,7 +348,13 @@ export class ToolRegistry {
         inputMetadata: { effect: tool.effect, risk: tool.risk },
         outputMetadata: {},
         latencyMs,
-        errorCode: "tool_call_failed",
+        // Guard refusals are named so they can be surfaced as security
+        // events; everything else is an ordinary tool failure.
+        errorCode: /path_(outside|escapes)|cwd_outside/.test(message)
+          ? "unsafe_path"
+          : message.startsWith("outbound_blocked")
+            ? "outbound_blocked"
+            : "tool_call_failed",
       });
       return {
         toolId: tool.id,

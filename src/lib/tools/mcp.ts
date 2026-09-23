@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ArmId } from "../arms/types";
+import { containsInjectionAttempt } from "../security/injection";
 import type { ToolDefinition } from "./registry";
 
 // MCP servers.
@@ -45,7 +46,32 @@ export type DiscoveredTool = {
   serverId: string;
   remoteName: string;
   description: string;
+  /** Parameter names the server advertises, for review only. */
+  parameters: string[];
+  /** The raw description tried to address the model; shown as a warning. */
+  flagged: boolean;
 };
+
+/** A description that tries to address the model rather than describe a tool. */
+export function injectionSuspected(raw: string | undefined) {
+  if (!raw) return false;
+  return (
+    raw.length > 400 ||
+    /```|-{5,}/.test(raw) ||
+    containsInjectionAttempt(raw) ||
+    /you must|do not tell/i.test(raw)
+  );
+}
+
+function parameterNames(schema: unknown) {
+  if (typeof schema !== "object" || schema === null) return [];
+  const properties = (schema as { properties?: unknown }).properties;
+  if (typeof properties !== "object" || properties === null) return [];
+  return Object.keys(properties)
+    .map((key) => key.replaceAll(/[^a-zA-Z0-9_.-]/g, "").slice(0, 64))
+    .filter(Boolean)
+    .slice(0, 24);
+}
 
 /**
  * Strip anything that lets a description escape the context it is rendered in.
@@ -77,12 +103,149 @@ export type McpTransport = (input: {
   signal?: AbortSignal;
 }) => Promise<unknown>;
 
+const PROTOCOL_VERSION = "2025-06-18";
+
+type RpcPayload = {
+  id?: unknown;
+  result?: unknown;
+  error?: { code?: number; message?: string };
+};
+
+/** A JSON-RPC response from a JSON body or a server-sent event stream. */
+export function parseRpcResponse(
+  text: string,
+  contentType: string,
+  id: string,
+) {
+  let payload: RpcPayload | null = null;
+  if (contentType.includes("text/event-stream")) {
+    for (const block of text.split(/\r?\n\r?\n/)) {
+      const data = block
+        .split(/\r?\n/)
+        .filter((line) => line.startsWith("data:"))
+        .map((line) => line.slice(5).trim())
+        .join("\n");
+      if (!data) continue;
+      try {
+        const candidate = JSON.parse(data) as RpcPayload;
+        if (candidate.id === id) {
+          payload = candidate;
+          break;
+        }
+      } catch {
+        continue;
+      }
+    }
+  } else {
+    try {
+      payload = JSON.parse(text) as RpcPayload;
+    } catch {
+      payload = null;
+    }
+  }
+  if (!payload) throw new Error("mcp_invalid_response");
+  if (payload.error)
+    throw new Error(`mcp_error:${Number(payload.error.code) || "unknown"}`);
+  return payload.result;
+}
+
+async function rpc(input: {
+  server: McpServer;
+  method: string;
+  params: Record<string, unknown>;
+  signal?: AbortSignal;
+  sessionId?: string | null;
+  notification?: boolean;
+}) {
+  const { outboundFetch } = await import("../security/outbound");
+  const id = crypto.randomUUID();
+  const response = await outboundFetch(input.server.url, {
+    method: "POST",
+    signal: input.signal,
+    headers: {
+      "content-type": "application/json",
+      accept: "application/json, text/event-stream",
+      "mcp-protocol-version": PROTOCOL_VERSION,
+      ...(input.sessionId ? { "mcp-session-id": input.sessionId } : {}),
+      ...(input.server.token
+        ? { authorization: `Bearer ${input.server.token}` }
+        : {}),
+    },
+    body: JSON.stringify({
+      jsonrpc: "2.0",
+      ...(input.notification ? {} : { id }),
+      method: input.method,
+      params: input.params,
+    }),
+  });
+  if (response.status === 401 || response.status === 403)
+    throw new Error(`mcp_unauthorized:${response.status}`);
+  if (response.status < 200 || response.status >= 300)
+    throw new Error(`mcp_transport_failed:${response.status}`);
+  const sessionId = response.headers.get("mcp-session-id") ?? input.sessionId;
+  if (input.notification) return { result: null, sessionId };
+  return {
+    result: parseRpcResponse(
+      response.text,
+      response.headers.get("content-type") ?? "",
+      id,
+    ),
+    sessionId,
+  };
+}
+
+export type McpServerInfo = {
+  name: string | null;
+  version: string | null;
+  protocolVersion: string | null;
+  sessionId: string | null;
+};
+
+function claim(value: unknown) {
+  return typeof value === "string"
+    ? sanitizeDescription(value).slice(0, 80)
+    : null;
+}
+
 /**
- * The default transport: JSON-RPC over HTTP.
- *
- * Kept injectable so discovery and the trust rules above are testable without
- * a network, which matters because the environments this is developed in do
- * not have one.
+ * Open a session: initialize, then the initialized notification. What the
+ * server reports about itself is kept as an untrusted claim.
+ */
+export async function mcpInitialize(server: McpServer, signal?: AbortSignal) {
+  const opened = await rpc({
+    server,
+    method: "initialize",
+    params: {
+      protocolVersion: PROTOCOL_VERSION,
+      capabilities: {},
+      clientInfo: { name: "osirus", version: "1" },
+    },
+    signal,
+  });
+  const result = (opened.result ?? {}) as {
+    protocolVersion?: unknown;
+    serverInfo?: { name?: unknown; version?: unknown };
+  };
+  await rpc({
+    server,
+    method: "notifications/initialized",
+    params: {},
+    signal,
+    sessionId: opened.sessionId,
+    notification: true,
+  }).catch(() => undefined);
+  return {
+    name: claim(result.serverInfo?.name),
+    version: claim(result.serverInfo?.version),
+    protocolVersion: claim(result.protocolVersion),
+    sessionId: opened.sessionId ?? null,
+  } satisfies McpServerInfo;
+}
+
+/**
+ * The default transport: MCP over Streamable HTTP, one short session per
+ * call. Every request goes through the outbound guard, so a server URL can
+ * never reach a private or loopback address.
  */
 export const httpTransport: McpTransport = async ({
   server,
@@ -90,26 +253,15 @@ export const httpTransport: McpTransport = async ({
   params,
   signal,
 }) => {
-  const response = await fetch(server.url, {
-    method: "POST",
+  const session = await mcpInitialize(server, signal);
+  const { result } = await rpc({
+    server,
+    method,
+    params,
     signal,
-    headers: {
-      "content-type": "application/json",
-      accept: "application/json",
-      ...(server.token ? { authorization: `Bearer ${server.token}` } : {}),
-    },
-    body: JSON.stringify({
-      jsonrpc: "2.0",
-      id: crypto.randomUUID(),
-      method,
-      params,
-    }),
+    sessionId: session.sessionId,
   });
-  if (!response.ok) {
-    throw new Error(`mcp_transport_failed:${response.status}`);
-  }
-  const payload = (await response.json()) as { result?: unknown };
-  return payload.result;
+  return result;
 };
 
 export async function discoverTools(input: {
@@ -138,6 +290,8 @@ export async function discoverTools(input: {
       serverId: input.server.id,
       remoteName: tool.name,
       description: sanitizeDescription(tool.description),
+      parameters: parameterNames(tool.inputSchema),
+      flagged: injectionSuspected(tool.description),
     });
   }
   return tools;

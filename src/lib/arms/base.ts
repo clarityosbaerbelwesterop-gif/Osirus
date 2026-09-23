@@ -29,6 +29,18 @@ import type {
 // three things and inherit the rest, so an arm is a specialisation rather than
 // a parallel implementation of the runtime.
 
+/**
+ * The provider's failure category (rate_limited, insufficient_credit,
+ * provider_unavailable, ...) when the error carries one, else the fallback.
+ * Recorded on the model call so model status can say why a role failed.
+ */
+function modelErrorCode(error: unknown, fallback: string) {
+  const code = (error as { code?: unknown } | null)?.code;
+  return typeof code === "string" && /^[a-z_]{3,40}$/.test(code)
+    ? code
+    : fallback;
+}
+
 export const SYSTEM_CONTRACT = [
   "You are OSIRUS, an execution-focused AI agent.",
   "Return the user-facing answer only. Never expose private chain-of-thought.",
@@ -460,7 +472,7 @@ export abstract class BaseArm implements AgentArm {
           .finishModelCall(modelCallId, {
             status: "failed",
             latencyMs: Date.now() - startedAt,
-            errorCode: "decision_failed",
+            errorCode: modelErrorCode(error, "decision_failed"),
           })
           .catch(() => undefined);
         throw error;
@@ -818,7 +830,7 @@ export abstract class BaseArm implements AgentArm {
           .finishModelCall(modelCallId, {
             status: "failed",
             latencyMs: Date.now() - startedAt,
-            errorCode: "structured_call_failed",
+            errorCode: modelErrorCode(error, "structured_call_failed"),
           })
           .catch(() => undefined);
         throw error;
@@ -922,7 +934,7 @@ export abstract class BaseArm implements AgentArm {
         .finishModelCall(modelCallId, {
           status: "failed",
           latencyMs: Date.now() - startedAt,
-          errorCode: "model_call_failed",
+          errorCode: modelErrorCode(error, "model_call_failed"),
         })
         .catch(() => undefined);
       throw error;
