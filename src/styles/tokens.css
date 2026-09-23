@@ -1,0 +1,193 @@
+/*
+ * Osirus design tokens.
+ *
+ * One definition per token: colors use light-dark(), and the theme is chosen
+ * with color-scheme on <html> (data-theme="light" | "dark", or the system
+ * preference when absent). Dark is designed, not inverted: surfaces step up in
+ * lightness instead of flipping, shadows give way to borders, and status hues
+ * are lifted for contrast. Every text/background pair used by components is
+ * at least 4.5:1 (checked for canvas, surface, raised and hover surfaces);
+ * control boundaries and focus rings are at least 3:1.
+ */
+
+:root {
+  color-scheme: light dark;
+
+  /* Typography */
+  --font-sans:
+    "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-mono:
+    ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono",
+    monospace;
+  --text-2xs: 0.6875rem; /* 11px: overlines only */
+  --text-xs: 0.75rem; /* 12px: meta, badges */
+  --text-sm: 0.8125rem; /* 13px: secondary UI */
+  --text-base: 0.875rem; /* 14px: UI default */
+  --text-md: 0.9375rem; /* 15px: reading (messages) */
+  --text-lg: 1.0625rem; /* 17px: section titles */
+  --text-xl: 1.3125rem; /* 21px: page titles */
+  --text-2xl: 1.75rem; /* 28px: home greeting */
+  --text-3xl: 2.5rem; /* 40px: landing */
+  --leading-tight: 1.25;
+  --leading-snug: 1.4;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+
+  /* Spacing: 4px grid */
+  --space-0-5: 2px;
+  --space-1: 4px;
+  --space-1-5: 6px;
+  --space-2: 8px;
+  --space-2-5: 10px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+
+  /* Radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+  --radius-full: 999px;
+
+  /* Density */
+  --control-h-sm: 28px;
+  --control-h: 36px;
+  --control-h-lg: 44px;
+  --touch-min: 44px;
+  --icon-sm: 14px;
+  --icon: 16px;
+  --icon-lg: 20px;
+
+  /* Layout */
+  --sidebar-w: 268px;
+  --sidebar-w-collapsed: 64px;
+  --workbench-w: 420px;
+  --workbench-w-min: 340px;
+  --workbench-w-max: 640px;
+  --reading-w: 760px;
+  --topbar-h: 52px;
+
+  /* Motion: explains state changes only */
+  --dur-instant: 80ms;
+  --dur-fast: 120ms;
+  --dur-base: 180ms;
+  --dur-sheet: 220ms;
+  --ease-out: ease-out;
+  --ease-in: ease-in;
+
+  /* Layers */
+  --z-base: 0;
+  --z-sticky: 10;
+  --z-drawer: 40;
+  --z-overlay: 50;
+  --z-modal: 60;
+  --z-toast: 70;
+  --z-tooltip: 80;
+
+  /* Surfaces */
+  --color-canvas: light-dark(#f6f7f9, #0a0e17);
+  --color-surface: light-dark(#ffffff, #0f1422);
+  --color-surface-raised: light-dark(#ffffff, #151c2e);
+  --color-surface-sunken: light-dark(#f1f3f6, #080b12);
+  --color-surface-hover: light-dark(#eef1f5, #1b2337);
+  --color-surface-active: light-dark(#e6ebf2, #212b42);
+  --color-backdrop: light-dark(rgb(14 21 37 / 0.32), rgb(3 6 12 / 0.64));
+
+  /* Lines */
+  --color-border: light-dark(#e2e6ec, #1f2839);
+  --color-border-strong: light-dark(#cdd4de, #2c3750);
+  --color-border-control: light-dark(#858fa2, #5e6a85);
+
+  /* Text */
+  --color-text: light-dark(#0e1525, #e8ecf4);
+  --color-text-muted: light-dark(#4a5568, #a3adc2);
+  --color-text-subtle: light-dark(#5f6b80, #8591a8);
+  --color-text-on-accent: #ffffff;
+
+  /* Accent: one per view, for the primary action and the current place */
+  --color-accent: light-dark(#2563eb, #2563eb);
+  --color-accent-hover: light-dark(#1d4ed8, #1d4ed8);
+  --color-accent-text: light-dark(#1d4ed8, #7ab4ff);
+  --color-accent-soft: light-dark(
+    rgb(37 99 235 / 0.08),
+    rgb(96 165 250 / 0.12)
+  );
+  --color-accent-border: light-dark(
+    rgb(37 99 235 / 0.35),
+    rgb(122 180 255 / 0.4)
+  );
+  --color-focus: light-dark(#1d4ed8, #7ab4ff);
+
+  /* Status: always paired with an icon or a word, never color alone */
+  --color-success: light-dark(#047857, #4ade80);
+  --color-success-soft: light-dark(rgb(4 120 87 / 0.08), rgb(74 222 128 / 0.1));
+  --color-warning: light-dark(#a1470a, #fbbf24);
+  --color-warning-soft: light-dark(
+    rgb(161 71 10 / 0.08),
+    rgb(251 191 36 / 0.1)
+  );
+  --color-danger: light-dark(#b91c1c, #fb8a8a);
+  --color-danger-soft: light-dark(
+    rgb(185 28 28 / 0.07),
+    rgb(251 138 138 / 0.1)
+  );
+  --color-danger-fill: light-dark(#b91c1c, #dc2626);
+  --color-info: var(--color-accent-text);
+  --color-info-soft: var(--color-accent-soft);
+  --color-neutral-soft: light-dark(
+    rgb(14 21 37 / 0.05),
+    rgb(232 236 244 / 0.07)
+  );
+
+  /* Code and diffs */
+  --color-code-bg: light-dark(#f3f5f8, #0b1019);
+  --color-diff-add: light-dark(rgb(4 120 87 / 0.1), rgb(74 222 128 / 0.1));
+  --color-diff-remove: light-dark(
+    rgb(185 28 28 / 0.08),
+    rgb(251 138 138 / 0.1)
+  );
+
+  /* Elevation: light mode leans on shadow, dark mode on borders */
+  --shadow-color: light-dark(rgb(14 21 37 / 0.08), rgb(0 0 0 / 0.45));
+  --shadow-sm: 0 1px 2px var(--shadow-color);
+  --shadow-md: 0 4px 14px var(--shadow-color);
+  --shadow-lg: 0 18px 48px var(--shadow-color);
+
+  /* Focus */
+  --focus-ring: 0 0 0 2px var(--color-canvas), 0 0 0 4px var(--color-focus);
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+@media (pointer: coarse) {
+  :root {
+    --control-h: 40px;
+    --control-h-sm: 36px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-instant: 0ms;
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-sheet: 0ms;
+  }
+}

@@ -44,14 +44,7 @@ export const WORKSPACE_ALLOWED_DOMAINS = [
   "sum.golang.org",
 ];
 
-const GITHUB_REPO =
-  /https:\/\/github\.com\/[A-Za-z0-9-]{1,39}\/[A-Za-z0-9._-]{1,100}?(?:\.git)?(?=[\s)>\]"'`,;]|$|\/(?:\s|$))/;
-
-/** The first github.com repository URL an objective names, if any. */
-export function repositoryInObjective(objective: string) {
-  const match = objective.match(GITHUB_REPO);
-  return match ? match[0].replace(/\.git$/, "") : null;
-}
+export { repositoryInObjective } from "./repository-ref";
 
 export type CheckRun = {
   phase: DiscoveredCommand["phase"];

@@ -16,12 +16,10 @@ export default function ErrorBoundary({
   return (
     <main className="status-page">
       <section className="status-card">
-        <p className="eyebrow">OSIRUS</p>
+        <p className="overline">Osirus</p>
         <h1>That request could not be completed.</h1>
-        <p className="muted">
-          No private diagnostic information is displayed here.
-        </p>
-        <button type="button" onClick={reset}>
+        <p>No private diagnostic information is displayed here.</p>
+        <button type="button" className="btn btn-secondary" onClick={reset}>
           Try again
         </button>
       </section>

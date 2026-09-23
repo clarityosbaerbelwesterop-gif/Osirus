@@ -58,6 +58,7 @@ export type WorkspaceSession = {
   id: string;
   title: string;
   updatedAt: string;
+  pinnedAt: string | null;
 };
 
 function mapEvent(row: EventRow): RuntimeEvent {
@@ -208,12 +209,13 @@ export class RuntimeRepository {
       id: string;
       title: string;
       updated_at: string | Date;
+      pinned_at: string | Date | null;
     }>(
       this.actorId,
-      `select id, title, updated_at
+      `select id, title, updated_at, pinned_at
          from osirus.sessions
         where workspace_id = $1::uuid and archived_at is null
-        order by updated_at desc
+        order by pinned_at desc nulls last, updated_at desc
         limit 100`,
       [workspaceId],
     );
@@ -221,7 +223,27 @@ export class RuntimeRepository {
       id: session.id,
       title: session.title,
       updatedAt: new Date(session.updated_at).toISOString(),
+      pinnedAt: session.pinned_at
+        ? new Date(session.pinned_at).toISOString()
+        : null,
     }));
+  }
+
+  /** Pin or unpin a conversation; false when it is not in this workspace. */
+  async setSessionPinned(input: {
+    sessionId: string;
+    workspaceId: string;
+    pinned: boolean;
+  }) {
+    const rows = await queryAs<{ id: string }>(
+      this.actorId,
+      `update osirus.sessions
+          set pinned_at = case when $3 then now() else null end
+        where id = $1::uuid and workspace_id = $2::uuid and archived_at is null
+        returning id`,
+      [input.sessionId, input.workspaceId, input.pinned],
+    );
+    return rows.length > 0;
   }
 
   async getSessionState(sessionId: string, workspaceId: string) {

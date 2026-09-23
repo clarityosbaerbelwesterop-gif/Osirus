@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { GitHubSignInButton } from "@/components/auth/github-sign-in-button";
+import { OsirusMark } from "@/components/shell/osirus-mark";
 import { signUpWithEmail } from "./actions";
 
 export default function SignUpPage() {
@@ -11,10 +12,13 @@ export default function SignUpPage() {
   return (
     <main className="auth-page">
       <form action={action} className="auth-card">
-        <p className="eyebrow">OSIRUS</p>
+        <p className="auth-brand">
+          <OsirusMark size={24} />
+          Osirus
+        </p>
         <h1>Create account</h1>
-        <p className="muted">
-          Your personal workspace is provisioned after first sign-in.
+        <p className="auth-lede">
+          Your personal workspace is ready after your first sign-in.
         </p>
         <label>
           Name
@@ -34,12 +38,20 @@ export default function SignUpPage() {
             required
           />
         </label>
-        {state?.error ? <p className="form-error">{state.error}</p> : null}
-        <button type="submit" disabled={pending}>
+        {state?.error ? (
+          <p className="form-error" role="alert">
+            {state.error}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          className="btn btn-primary auth-submit"
+          disabled={pending}
+        >
           {pending ? "Creating…" : "Create account"}
         </button>
         <GitHubSignInButton />
-        <p className="muted">
+        <p className="auth-footer">
           Already registered? <Link href="/auth/sign-in">Sign in</Link>
         </p>
       </form>

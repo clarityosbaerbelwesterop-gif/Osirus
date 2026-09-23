@@ -1,41 +1,44 @@
-import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
-import { auth, requireAuthConfiguration } from "@/lib/auth/server";
+import { ChatHub } from "@/components/chat/chat-hub";
 import { RuntimeRepository } from "@/lib/runtime/repository";
-import { ChatHub } from "@/components/chathub";
-import { redirect } from "next/navigation";
-import { signOut } from "./actions";
+import { firstName, requireProductSession } from "@/lib/product/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function AppPage() {
-  requireAuthConfiguration();
-  const { data: session } = await auth.getSession();
-  if (!session?.user) redirect("/auth/sign-in");
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  const identity = await bootstrapProductIdentity({
-    id: session.user.id,
-    email: session.user.email,
-    name: session.user.name,
-  });
+export default async function AppPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ session?: string; new?: string }>;
+}) {
+  const { user, identity } = await requireProductSession();
+  const params = await searchParams;
   const repository = new RuntimeRepository(identity.userId);
-  const [recent, sessions] = await Promise.all([
-    repository.getRecentWorkspaceState(identity.workspaceId),
-    repository.listWorkspaceSessions(identity.workspaceId),
-  ]);
+
+  const empty = {
+    sessionId: null,
+    messages: [],
+    activeRunId: null,
+    recentRunId: null,
+  };
+  const state =
+    params.new === "1"
+      ? empty
+      : params.session && UUID.test(params.session)
+        ? await repository
+            .getSessionState(params.session, identity.workspaceId)
+            .catch(() => empty)
+        : await repository.getRecentWorkspaceState(identity.workspaceId);
 
   return (
-    <>
-      <ChatHub
-        workspaceName={identity.workspaceName}
-        initialSessionId={recent.sessionId}
-        initialMessages={recent.messages}
-        initialRunId={recent.activeRunId}
-        initialSnapshotRunId={recent.recentRunId}
-        initialSessions={sessions}
-      />
-      <form action={signOut} className="account-exit">
-        <button type="submit">Sign out</button>
-      </form>
-    </>
+    <ChatHub
+      key={state.sessionId ?? "new"}
+      firstName={firstName(user)}
+      workspaceName={identity.workspaceName}
+      initialSessionId={state.sessionId}
+      initialMessages={state.messages}
+      initialRunId={state.activeRunId}
+      initialSnapshotRunId={state.recentRunId}
+    />
   );
 }

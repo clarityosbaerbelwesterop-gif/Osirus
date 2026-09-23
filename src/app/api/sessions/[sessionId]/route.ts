@@ -2,6 +2,7 @@ import { z } from "zod";
 import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
 import { RuntimeRepository } from "@/lib/runtime/repository";
+import { guardWrite, json } from "@/lib/product/api";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -39,4 +40,29 @@ export async function GET(
     }
     throw error;
   }
+}
+
+const pinSchema = z.object({ pinned: z.boolean() });
+
+export async function PATCH(
+  request: Request,
+  context: { params: Promise<{ sessionId: string }> },
+) {
+  const parsed = paramsSchema.safeParse(await context.params);
+  if (!parsed.success) return json({ error: "invalid_session_id" }, 400);
+  const guard = await guardWrite(request, {
+    schema: pinSchema,
+    route: "sessions.pin",
+    limit: 60,
+    maxBytes: 1024,
+  });
+  if (!guard.ok) return guard.response;
+  const repository = new RuntimeRepository(guard.identity.userId);
+  const updated = await repository.setSessionPinned({
+    sessionId: parsed.data.sessionId,
+    workspaceId: guard.identity.workspaceId,
+    pinned: guard.body.pinned,
+  });
+  if (!updated) return json({ error: "not_found" }, 404);
+  return json({ id: parsed.data.sessionId, pinned: guard.body.pinned });
 }
