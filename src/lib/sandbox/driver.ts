@@ -49,18 +49,43 @@ export interface SandboxHandle {
     cmd: string;
     args?: string[];
     cwd?: string;
+    /** Extra environment for this command only. Values are never logged. */
+    env?: Record<string, string>;
     timeoutMs?: number;
     signal?: AbortSignal;
   }): Promise<CommandResult>;
   /** The public URL of an exposed port, or null when none is exposed. */
   previewUrl(port: number): string | null;
+  /** Stop the VM. A persistent workspace keeps its filesystem for resume. */
   stop(): Promise<void>;
+  /**
+   * Start a long-running process (a preview server) without waiting for it.
+   * Absent where the driver cannot keep a process running between calls.
+   */
+  startBackground?(input: {
+    cmd: string;
+    args?: string[];
+    cwd?: string;
+  }): Promise<void>;
+  /** Push the idle deadline out. Absent where the driver has no deadline. */
+  keepAlive?(ms: number): Promise<void>;
+  /** Freeze the filesystem as a restorable snapshot; stops the VM. */
+  snapshot?(): Promise<{ snapshotId: string }>;
+  /** Delete the workspace and everything in it. Not recoverable. */
+  destroy?(): Promise<void>;
 }
 
 export interface SandboxDriver {
   readonly id: string;
   availability(): SandboxAvailability;
   create(input: {
+    /**
+     * A stable name, so a later request can reattach to the same workspace.
+     * Omitted for throwaway sandboxes.
+     */
+    name?: string;
+    /** Keep the filesystem across stop and resume. */
+    persistent?: boolean;
     /** Ports to expose for a preview. Keep this empty unless one is needed. */
     ports?: number[];
     timeoutMs?: number;
@@ -68,6 +93,8 @@ export interface SandboxDriver {
     allowedDomains?: string[];
     signal?: AbortSignal;
   }): Promise<SandboxHandle>;
+  /** Reattach to a named workspace, or null when it no longer exists. */
+  reattach?(name: string): Promise<SandboxHandle | null>;
 }
 
 /**

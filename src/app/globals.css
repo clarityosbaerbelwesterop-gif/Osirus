@@ -685,3 +685,114 @@ a {
     flex-basis: 100%;
   }
 }
+
+.file-tree {
+  max-height: 280px;
+  margin: 0 0 12px;
+  padding: 0;
+  overflow: auto;
+  list-style: none;
+}
+
+.file-entry,
+.file-entry-open {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  padding: 2px 4px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12px;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.file-entry-open {
+  background: var(--panel-2);
+  color: var(--text);
+}
+
+.code-view {
+  max-height: 420px;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  padding: 10px;
+  font-size: 12px;
+  white-space: pre;
+}
+
+.diff-add {
+  color: var(--accent);
+}
+
+.diff-remove {
+  color: var(--danger);
+}
+
+.terminal-entry {
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.terminal-entry summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+
+.exit-ok {
+  color: var(--accent);
+}
+
+.exit-failed {
+  color: var(--danger);
+}
+
+.preview-frame {
+  width: 100%;
+  height: 420px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.claim {
+  border-left: 2px solid var(--line);
+  margin-bottom: 12px;
+  padding-left: 10px;
+}
+
+.claim-status {
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: 11px;
+  background: var(--panel-2);
+}
+
+.claim-supported {
+  color: var(--accent);
+}
+
+.claim-contested,
+.claim-stale {
+  color: var(--danger);
+}
+
+.approval-actions {
+  display: inline-flex;
+  gap: 6px;
+  margin-left: 8px;
+}
+
+.connector {
+  margin-top: 18px;
+  border-top: 1px solid var(--line);
+  padding-top: 12px;
+}
+
+.connector form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}

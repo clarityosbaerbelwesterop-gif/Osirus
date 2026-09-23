@@ -155,7 +155,27 @@ export type ArmActivity = (
   visibility?: "user" | "internal",
 ) => Promise<{ id: string }>;
 
+/**
+ * Where an arm keeps run-scoped records. Omitted in the app, where every store
+ * is the database under row-level security. The arena harness supplies
+ * in-memory stores so the same arm code runs end to end where there is no
+ * database -- never a different code path for the agent itself.
+ */
+export type RuntimeStores = {
+  sandbox?: () => Promise<import("../sandbox/driver").SandboxDriver>;
+  workspace?: () => import("../coding/store").WorkspaceRecordStore;
+  plans?: () => import("../agent/plan").PlanRevisionStore;
+  evidence?: (
+    runId: string,
+    stageId: string,
+  ) => import("../research/types").EvidenceStore;
+  registry?: () => import("../tools/registry").ToolRegistry;
+  /** Files a new workspace starts from when the objective names no repository. */
+  fixture?: () => Array<{ path: string; content: string }>;
+};
+
 export type ArmRuntime = {
+  stores?: RuntimeStores;
   provider: ModelProvider;
   repository: RuntimeRepository;
   memory: MemoryRepository;

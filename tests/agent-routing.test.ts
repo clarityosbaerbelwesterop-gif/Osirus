@@ -201,19 +201,33 @@ describe("workflow composition", () => {
 });
 
 describe("arm workflows", () => {
-  it("gives the thinking arm an analysis stage before it answers", () => {
+  it("gives the thinking arm analysis and planning stages before it answers", () => {
     const graph = armFor("thinking").buildWorkflow({
       objective: "Plan a migration",
       capabilities: [],
     });
-    expect(topologicalOrder(graph)).toEqual(["analyse", "answer", "verify"]);
+    expect(topologicalOrder(graph)).toEqual([
+      "analyse",
+      "model-plan",
+      "answer",
+      "verify",
+    ]);
   });
 
   it("requires the answering stage to be verified in every arm", () => {
     for (const arm of routableArms()) {
       const graph = arm.buildWorkflow({ objective: "x", capabilities: [] });
-      const answer = graph.nodes.find((node) => node.key === "answer");
+      // The research arm answers from its synthesis stage; the others from
+      // "answer". Either way the stage that produces the answer is verified,
+      // and a verify stage follows it.
+      const answer = graph.nodes.find(
+        (node) => node.key === "answer" || node.key === "synthesize",
+      );
       expect(answer?.requiresVerification, arm.id).toBe(true);
+      expect(
+        graph.nodes.some((node) => node.key === "verify"),
+        arm.id,
+      ).toBe(true);
     }
   });
 

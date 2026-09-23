@@ -907,6 +907,20 @@ export class RuntimeRepository {
     return rows[0].id;
   }
 
+  /** The current status of one approval, or null when not visible. */
+  async approvalStatus(approvalId: string) {
+    const rows = await queryAs<{ status: string; expired: boolean }>(
+      this.actorId,
+      `select status, (expires_at is not null and expires_at <= now()) as expired
+         from osirus.approvals where id = $1::uuid`,
+      [approvalId],
+    );
+    const row = rows[0];
+    if (!row) return null;
+    if (row.status === "requested" && row.expired) return "expired";
+    return row.status;
+  }
+
   /**
    * Decide an approval and release its stage in one statement.
    *

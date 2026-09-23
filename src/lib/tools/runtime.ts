@@ -89,7 +89,9 @@ export function databaseApprovalGate(input: {
     const status = existing[0]?.status;
     if (status === "approved") return "approved";
     if (status === "rejected") return "rejected";
-    if (status === "pending") return "pending";
+    // 'requested' is the undecided state approvals_status_check allows. Without
+    // this, every re-check of an undecided call filed a duplicate request.
+    if (status === "requested" || status === "pending") return "pending";
 
     await input.repository
       .createApproval({

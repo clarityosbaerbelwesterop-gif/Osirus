@@ -124,6 +124,40 @@ describe("UnoRouterProvider", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("waits out a rate limit on the same key when the provider says how long", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(
+          '{"error":{"message":"Too many requests. retry in 1s."}}',
+          { status: 429 },
+        ),
+      )
+      .mockResolvedValueOnce(
+        new Response(
+          'data: {"choices":[{"delta":{"content":"ok"}}]}\n\ndata: [DONE]\n\n',
+          { status: 200 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const UnoRouterProvider = await configuredProvider();
+    const provider = new UnoRouterProvider();
+    await expect(
+      collect(
+        provider.stream({
+          requestId: "rate-limit-wait",
+          role: "STRONG",
+          messages: [],
+        }),
+      ),
+    ).resolves.toEqual([{ type: "delta", text: "ok" }]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    // Same key both times: waiting is honouring the limit, not evading it.
+    expect(fetchMock.mock.calls[0]?.[1]?.headers.Authorization).toBe(
+      fetchMock.mock.calls[1]?.[1]?.headers.Authorization,
+    );
+  });
+
   it("propagates a user cancellation to the provider request", async () => {
     const fetchMock = vi.fn(
       (_url: string, options: RequestInit) =>

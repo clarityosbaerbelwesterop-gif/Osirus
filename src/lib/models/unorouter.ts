@@ -29,10 +29,32 @@ export class ProviderError extends Error {
     readonly code: string,
     readonly status?: number,
     readonly retryable = false,
+    /** For a rate limit: how long the provider asked the caller to wait. */
+    readonly retryAfterMs?: number,
   ) {
     super(message);
     this.name = "ProviderError";
   }
+}
+
+/** The wait a 429 asks for: Retry-After, or "retry in Ns" in the body. */
+export function rateLimitWaitMs(headers: Headers, body: string) {
+  const header = Number(headers.get("retry-after"));
+  if (Number.isFinite(header) && header > 0) return header * 1000;
+  const match = body.match(/retry in (\d+(?:\.\d+)?)\s*s/i);
+  return match ? Math.ceil(Number(match[1]) * 1000) : undefined;
+}
+
+/**
+ * The longest this process waits out a rate limit before failing. Waiting on
+ * the same key is honouring the limit, not evading it; the ceiling keeps a
+ * web request from hanging, and the eval runner raises it.
+ */
+function maxRateLimitWaitMs() {
+  const configured = Number(process.env.OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS);
+  return (
+    (Number.isFinite(configured) && configured >= 0 ? configured : 20) * 1000
+  );
 }
 
 const RETRYABLE_STATUS = new Set([408, 500, 502, 503, 504]);
@@ -160,6 +182,30 @@ export class UnoRouterProvider implements ModelProvider {
     stream: boolean;
     signal?: AbortSignal;
   }) {
+    // A rate limit is waited out on the same key, as the provider asks, up to
+    // a ceiling -- never sidestepped by switching keys.
+    for (let attempt = 0; ; attempt += 1) {
+      try {
+        return await this.requestOnce(input);
+      } catch (error) {
+        const wait =
+          error instanceof ProviderError && error.code === "rate_limited"
+            ? error.retryAfterMs
+            : undefined;
+        if (wait === undefined || wait > maxRateLimitWaitMs() || attempt >= 3)
+          throw error;
+        await sleep(wait + 250, input.signal);
+      }
+    }
+  }
+
+  private async requestOnce(input: {
+    requestId: string;
+    role: ModelRole;
+    messages: unknown[];
+    stream: boolean;
+    signal?: AbortSignal;
+  }) {
     const keys = this.eligibleKeys();
     let lastError: Error | undefined;
 
@@ -207,6 +253,7 @@ export class UnoRouterProvider implements ModelProvider {
                 : "provider_error",
           status,
           retryable || credentialFailure,
+          rateLimited ? rateLimitWaitMs(response.headers, body) : undefined,
         );
         cleanup();
 

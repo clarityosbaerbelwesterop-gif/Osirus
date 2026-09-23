@@ -10,8 +10,8 @@ import type {
 
 // Vercel Sandbox.
 //
-// Authentication is OIDC federation: running inside a Vercel function, the
-// platform provides VERCEL_OIDC_TOKEN and the SDK exchanges it for sandbox
+// Authentication is OIDC federation: inside a Vercel function the platform
+// attaches an OIDC token to each request and the SDK exchanges it for sandbox
 // credentials. No VERCEL_TOKEN is read here and none belongs in the app
 // runtime -- a deployment token is a management credential, and the web
 // process has no business holding one.
@@ -22,9 +22,11 @@ import type {
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 
-function oidcToken() {
-  return process.env.VERCEL_OIDC_TOKEN;
-}
+export type SandboxCredentials = {
+  token: string;
+  teamId: string;
+  projectId: string;
+};
 
 class VercelSandboxHandle implements SandboxHandle {
   constructor(private readonly sandbox: Sandbox) {}
@@ -62,6 +64,7 @@ class VercelSandboxHandle implements SandboxHandle {
     cmd: string;
     args?: string[];
     cwd?: string;
+    env?: Record<string, string>;
     timeoutMs?: number;
     signal?: AbortSignal;
   }): Promise<CommandResult> {
@@ -71,6 +74,7 @@ class VercelSandboxHandle implements SandboxHandle {
       cmd: input.cmd,
       args: input.args,
       cwd: input.cwd,
+      env: input.env,
       timeoutMs: input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       signal: input.signal,
     });
@@ -98,37 +102,91 @@ class VercelSandboxHandle implements SandboxHandle {
   async stop() {
     await this.sandbox.stop().catch(() => undefined);
   }
+
+  async startBackground(input: { cmd: string; args?: string[]; cwd?: string }) {
+    await this.sandbox.runCommand({
+      cmd: input.cmd,
+      args: input.args,
+      cwd: input.cwd,
+      detached: true,
+    });
+  }
+
+  async keepAlive(ms: number) {
+    await this.sandbox.extendTimeout(ms);
+  }
+
+  async snapshot() {
+    const snapshot = await this.sandbox.snapshot();
+    return { snapshotId: snapshot.snapshotId };
+  }
+
+  async destroy() {
+    await this.sandbox.delete({ deleteOrphanSnapshots: true });
+  }
+}
+
+/**
+ * Reattach to a sandbox a previous stage created, by its name.
+ *
+ * A persistent sandbox that was stopped resumes from its last filesystem
+ * state; one that was deleted, or never persistent and has timed out, is gone
+ * and this returns null rather than a fresh empty VM under the old name.
+ */
+export async function reattachVercelSandbox(
+  name: string,
+  credentials?: SandboxCredentials,
+): Promise<SandboxHandle | null> {
+  try {
+    const sandbox = await Sandbox.get({
+      name,
+      resume: true,
+      ...(credentials ?? {}),
+    } as never);
+    return new VercelSandboxHandle(sandbox);
+  } catch {
+    return null;
+  }
 }
 
 export class VercelSandboxDriver implements SandboxDriver {
   readonly id = "vercel";
 
+  /**
+   * Constructed only after resolveSandbox() has found either an OIDC token on
+   * the request or explicit CI credentials, so it reports configured. Which
+   * of the two authenticated it is recorded, because they are different
+   * trust paths and the evidence should say which one ran.
+   */
+  constructor(private readonly credentials?: SandboxCredentials) {}
+
   availability(): SandboxAvailability {
-    return oidcToken()
-      ? {
-          configured: true,
-          driver: this.id,
-          reason: "Vercel Sandbox via OIDC federation.",
-        }
-      : {
-          configured: false,
-          driver: null,
-          reason:
-            "VERCEL_OIDC_TOKEN is not present; sandboxes are only available inside a Vercel function.",
-        };
+    return {
+      configured: true,
+      driver: this.id,
+      reason: this.credentials
+        ? "Vercel Sandbox with CI-scoped credentials."
+        : "Vercel Sandbox via OIDC federation.",
+    };
   }
 
   async create(input: {
+    name?: string;
+    persistent?: boolean;
     ports?: number[];
     timeoutMs?: number;
     allowedDomains?: string[];
     signal?: AbortSignal;
   }): Promise<SandboxHandle> {
-    const availability = this.availability();
-    if (!availability.configured) {
-      throw new Error(`sandbox_not_configured: ${availability.reason}`);
-    }
     const sandbox = await Sandbox.create({
+      ...(this.credentials ?? {}),
+      ...(input.name ? { name: input.name } : {}),
+      // A persistent workspace keeps its filesystem as a snapshot between
+      // sessions; those snapshots expire after a week rather than accruing.
+      ...(input.persistent
+        ? { persistent: true, snapshotExpiration: 7 * 24 * 60 * 60 * 1000 }
+        : {}),
+      signal: input.signal,
       timeout: input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       ports: input.ports,
       // "deny-all" is the default rather than a hardening option. A sandbox
@@ -139,5 +197,9 @@ export class VercelSandboxDriver implements SandboxDriver {
         : "deny-all",
     });
     return new VercelSandboxHandle(sandbox);
+  }
+
+  reattach(name: string) {
+    return reattachVercelSandbox(name, this.credentials);
   }
 }

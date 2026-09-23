@@ -38,6 +38,11 @@ export type MemoryCompileInput = {
   private?: boolean;
   subjectKey?: string | null;
   canonicalValue?: string | null;
+  /**
+   * Memory Compiler V2 policy: an outcome that was not verified is kept for
+   * the run and never promoted. Set for everything derived from a run.
+   */
+  requireVerified?: boolean;
 };
 
 export type MemoryCompileResult = {
@@ -66,6 +71,12 @@ export function compileMemoryCandidate(
     (importance < 0.2 && !candidate.recurring)
   ) {
     return { decision: "WORKING_ONLY", reason: "low_future_utility" };
+  }
+  if (candidate.requireVerified && !candidate.verified) {
+    return {
+      decision: "WORKING_ONLY",
+      reason: "unverified_outcome_not_promoted",
+    };
   }
 
   const sameSubject = candidate.subjectKey

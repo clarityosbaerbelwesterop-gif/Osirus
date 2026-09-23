@@ -105,7 +105,10 @@ const goldens: Golden[] = [
       "This answer is unsourced: no documents were retrieved in this run, so the claims below are not backed by a source I fetched.",
     badAnswer:
       "According to https://invented.example/postgres-locks, advisory locks are session scoped.",
-    expectedGood: "verified",
+    // Honest about having no sources, but research with nothing retrieved is
+    // not verified research. The real verified path is in research.test.ts,
+    // over documents the run actually fetched.
+    expectedGood: "unverified",
     expectedBad: "rejected",
   },
   {
@@ -116,7 +119,9 @@ const goldens: Golden[] = [
       "Step one: 12 * 12 = 144. Step two: 144 + 6 = 150.\n\nResult: 150 units",
     badAnswer:
       "Step one: 12 * 12 = 145. Step two: 145 + 6 = 151.\n\nResult: 151 units",
-    expectedGood: "verified",
+    // Right arithmetic, but nothing was computed: the numbers are asserted.
+    // The computed-result check is required, so the ceiling is unverified.
+    expectedGood: "unverified",
     expectedBad: "rejected",
   },
   {
@@ -206,6 +211,60 @@ describe.each(goldens)("$name", (golden) => {
   });
 });
 
+describe("math verified from computation, not assertion", () => {
+  const computed = [
+    {
+      toolId: "compute.run",
+      ok: true,
+      input: { op: "evaluate", expression: "12 * 12 + 6" },
+      data: {
+        result: { op: "evaluate", ok: true, value: 150, text: "150" },
+        check: { agrees: true, method: "python-sympy" },
+      },
+    },
+  ];
+
+  it("verifies a result the engine produced and a second method confirmed", async () => {
+    const verdict = await armFor("math_science").verify(
+      contextFor("Calculate the total and show your working", {
+        answer:
+          "Step one: 12 * 12 = 144. Step two: 144 + 6 = 150.\n\nResult: 150 units",
+        toolEvidence: computed,
+      }),
+    );
+    expect(verdict.status, verdict.summary).toBe("verified");
+  });
+
+  it("rejects a stated result no computation produced", async () => {
+    const verdict = await armFor("math_science").verify(
+      contextFor("Calculate the total and show your working", {
+        answer:
+          "Step one: 12 * 12 = 144. Step two: 144 + 7 = 151.\n\nResult: 151 units",
+        toolEvidence: computed,
+      }),
+    );
+    expect(verdict.status).toBe("rejected");
+  });
+
+  it("rejects a result whose independent check disagreed", async () => {
+    const verdict = await armFor("math_science").verify(
+      contextFor("Calculate", {
+        answer: "Result: 150",
+        toolEvidence: [
+          {
+            ...computed[0],
+            data: {
+              ...computed[0]!.data,
+              check: { agrees: false, method: "substitution" },
+            },
+          },
+        ],
+      }),
+    );
+    expect(verdict.status).toBe("rejected");
+  });
+});
+
 describe("compound golden task", () => {
   it("composes research and building, in that order, with one meta check", async () => {
     const decision = await routeObjective(
@@ -222,5 +281,63 @@ describe("compound golden task", () => {
     expect(
       order.findIndex((key) => key.startsWith("s1-building")),
     ).toBeGreaterThan(order.findIndex((key) => key === "s0-research-verify"));
+  });
+});
+
+describe("coding verified from the workspace's own checks", () => {
+  const objective =
+    "Fix the failing add test in the repository and make the tests pass";
+  const passing = {
+    command: "npm run test",
+    exitCode: 0,
+    stdout: "# pass 1",
+    stderr: "",
+    durationMs: 800,
+  };
+  const failing = { ...passing, exitCode: 1, stdout: "# fail 1" };
+  const diff =
+    "--- a/src/add.js\n+++ b/src/add.js\n-export const add = (a, b) => a - b;\n+export const add = (a, b) => a + b;\n";
+
+  it("verifies a change whose test and build commands exited 0", async () => {
+    const verdict = await armFor("coding").verify(
+      contextFor(objective, {
+        answer:
+          "Changed src/add.js to add instead of subtract. Ran `npm run test` (exit 0) and `npm run build` (exit 0).",
+        testResult: passing,
+        buildResult: { ...passing, command: "npm run build" },
+        workspaceDiff: diff,
+        checkRuns: [
+          { phase: "test", command: "npm run test", exitCode: 0 },
+          { phase: "build", command: "npm run build", exitCode: 0 },
+        ],
+      }),
+    );
+    expect(verdict.status, verdict.summary).toBe("verified");
+  });
+
+  it("rejects a claim that tests pass when the test run failed", async () => {
+    const verdict = await armFor("coding").verify(
+      contextFor(objective, {
+        answer: "Fixed src/add.js. All tests pass now.",
+        testResult: failing,
+        buildResult: { ...passing, command: "npm run build" },
+        workspaceDiff: diff,
+      }),
+    );
+    expect(verdict.status).toBe("rejected");
+    expect(
+      verdict.checks.find((check) => check.id === "claims-match-evidence")
+        ?.status,
+    ).toBe("failed");
+  });
+
+  it("does not verify a change nobody ran", async () => {
+    const verdict = await armFor("coding").verify(
+      contextFor(objective, {
+        answer: "Changed src/add.js to add instead of subtract. Tests not run.",
+        workspaceDiff: diff,
+      }),
+    );
+    expect(verdict.status).toBe("unverified");
   });
 });

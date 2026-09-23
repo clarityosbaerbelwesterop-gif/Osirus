@@ -91,6 +91,26 @@ const DURABLE_STATE_KEYS = new Set([
   "repairInstruction",
   "testResult",
   "buildResult",
+  "toolEvidence",
+  "agentSteps",
+  "loopState",
+  "sandbox",
+  "workspace",
+  "checkRuns",
+  "workspaceDiff",
+  "buildContract",
+  "qaReport",
+  "taskModel",
+  "planGraph",
+  "critique",
+  "handoff",
+  "planResolutions",
+  "thinkingDepth",
+  // Research state has to survive a slice boundary: the verify stage is
+  // often claimed by a different request than the synthesis that wrote it.
+  "researchPlan",
+  "researchClaims",
+  "researchCoverage",
 ]);
 
 function durableState(state: Record<string, unknown>) {
@@ -501,6 +521,13 @@ export async function finalizeRun(input: {
 
   if (progress.total > 0 && progress.settled === progress.total) {
     await repository.transitionRun(input.runId, "completed");
+    // Learning happens where completion happens -- request, poll or
+    // scheduler tick alike -- not only on the request path.
+    await learnFromRun({
+      identity: input.identity,
+      repository,
+      runId: input.runId,
+    }).catch(() => undefined);
     return {
       status: "completed",
       reason: "all_stages_settled",
@@ -529,6 +556,69 @@ export async function finalizeRun(input: {
     settled: progress.settled,
     total: progress.total,
   };
+}
+
+/**
+ * Memory Compiler V2 and skill outcome for a completed run.
+ *
+ * Candidates come from what the run recorded (checkpoint state, stage
+ * verdicts), and only a fully verified run promotes anything; an unverified
+ * one stays in its own working memory.
+ */
+async function learnFromRun(input: {
+  identity: RuntimeIdentity;
+  repository: RuntimeRepository;
+  runId: string;
+}) {
+  const snapshot = await input.repository.getSnapshot(input.runId);
+  const verdicts = snapshot.stages
+    .map((stage) => stage.verifier_status)
+    .filter((status): status is string => typeof status === "string");
+  const answer =
+    [...snapshot.messages]
+      .reverse()
+      .find((message) => message.role === "assistant")?.content ?? "";
+  const checkpoint = await input.repository.loadLatestCheckpoint(input.runId);
+  const { memoryCandidates, isVerifiedOutcome } =
+    await import("../memory/compiler-v2");
+  const candidates = memoryCandidates({
+    runId: input.runId,
+    armId: snapshot.run.armId ?? "general",
+    objective: snapshot.run.objective,
+    answer,
+    verdicts,
+    state: (checkpoint?.state ?? {}) as Record<string, unknown>,
+  });
+  const memory = new MemoryRepository(input.identity.userId);
+  let promoted = 0;
+  for (const candidate of answer ? candidates : candidates.slice(1)) {
+    const result = await memory
+      .compileAndStore({
+        ...candidate,
+        organizationId: input.identity.organizationId,
+        workspaceId: input.identity.workspaceId,
+        sessionId: snapshot.run.sessionId,
+        runId: input.runId,
+        tier: "second",
+      })
+      .catch(() => null);
+    if (result?.persistedId) promoted += 1;
+  }
+  const verified = isVerifiedOutcome(verdicts);
+  await new SkillRepository(input.identity.userId)
+    .recordOutcome(input.runId, verified ? "success" : "failure")
+    .catch(() => undefined);
+  await input.repository
+    .appendEvent({
+      runId: input.runId,
+      type: "memory.compiled",
+      summary: verified
+        ? `Remembered ${promoted} verified item(s) from this run`
+        : "Nothing promoted: the run was not verified",
+      data: { candidates: candidates.length, promoted, verified },
+      visibility: "user",
+    })
+    .catch(() => undefined);
 }
 
 function isSettledRun(status: string) {
