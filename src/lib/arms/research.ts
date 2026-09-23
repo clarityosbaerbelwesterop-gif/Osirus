@@ -160,6 +160,8 @@ export class ResearchArm extends BaseArm {
   }
 
   private async store(context: ArmStageContext) {
+    const injected = context.runtime.stores?.evidence;
+    if (injected) return injected(context.work.runId, context.work.stageId);
     const { DbEvidenceStore } = await import("../research/db-store");
     return new DbEvidenceStore(
       context.identity.userId,

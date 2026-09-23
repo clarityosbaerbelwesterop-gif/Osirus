@@ -181,7 +181,11 @@ export class VercelSandboxDriver implements SandboxDriver {
     const sandbox = await Sandbox.create({
       ...(this.credentials ?? {}),
       ...(input.name ? { name: input.name } : {}),
-      ...(input.persistent ? { persistent: true } : {}),
+      // A persistent workspace keeps its filesystem as a snapshot between
+      // sessions; those snapshots expire after a week rather than accruing.
+      ...(input.persistent
+        ? { persistent: true, snapshotExpiration: 7 * 24 * 60 * 60 * 1000 }
+        : {}),
       signal: input.signal,
       timeout: input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       ports: input.ports,

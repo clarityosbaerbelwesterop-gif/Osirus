@@ -10,7 +10,7 @@ import {
   secretLeakCheck,
   structureCheck,
 } from "../verification/checks";
-import { BaseArm, readState } from "./base";
+import { BaseArm, readState, sandboxDriver } from "./base";
 import type {
   ArmId,
   ArmStageContext,
@@ -221,6 +221,8 @@ export class CodingArm extends BaseArm {
   }
 
   protected async workspaceStore(context: ArmStageContext) {
+    if (context.runtime.stores?.workspace)
+      return context.runtime.stores.workspace();
     const { DbWorkspaceStore } = await import("../coding/db-store");
     return new DbWorkspaceStore(context.identity.userId);
   }
@@ -230,8 +232,7 @@ export class CodingArm extends BaseArm {
     const state = readState<WorkspaceState | null>(context, "workspace", null);
     if (!state || (state.status !== "ready" && state.status !== "stopped"))
       return null;
-    const { resolveSandbox } = await import("../sandbox");
-    const driver = await resolveSandbox();
+    const driver = await sandboxDriver(context);
     if (!driver.availability().configured || !driver.reattach) return null;
     const { WorkspaceSession } = await import("../coding/session");
     const store = await this.workspaceStore(context);
@@ -251,8 +252,7 @@ export class CodingArm extends BaseArm {
   protected async openWorkspaceStage(
     context: ArmStageContext,
   ): Promise<StageOutcome> {
-    const { resolveSandbox } = await import("../sandbox");
-    const driver = await resolveSandbox();
+    const driver = await sandboxDriver(context);
     const availability = driver.availability();
     if (!availability.configured) {
       context.state.workspace = {
@@ -292,6 +292,7 @@ export class CodingArm extends BaseArm {
         runId: context.work.runId,
         repository,
         readToken,
+        fixture: repository ? undefined : context.runtime.stores?.fixture?.(),
         signal: context.signal,
       });
       const map = session.record.repositoryMap;
@@ -488,14 +489,14 @@ export class CodingArm extends BaseArm {
       Boolean(syntaxCheckFor(file.path)),
     );
 
-    const { resolveSandbox, unavailableResult, isSafeRelativePath } =
+    const { unavailableResult, isSafeRelativePath } =
       await import("../sandbox");
     // The path came out of model output, which the objective influences. A
     // file naming ../../etc/cron.d/anything is dropped rather than written,
     // even though the sandbox that would receive it is ephemeral.
     const safe = files.filter((file) => isSafeRelativePath(file.path));
     const refused = files.length - safe.length;
-    const driver = await resolveSandbox();
+    const driver = await sandboxDriver(context);
     const availability = driver.availability();
 
     if (!availability.configured) {

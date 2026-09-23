@@ -38,6 +38,8 @@ export type Toolbox = {
     result: ToolResult;
   }) => void;
   sandboxStatus: string;
+  /** How the offered tools have behaved in this workspace. A hint only. */
+  performance: string[];
   dispose: () => Promise<void>;
 };
 
@@ -52,13 +54,16 @@ export async function buildToolbox(
   options: { armId: ArmId; extensions?: ToolboxExtension[] },
 ): Promise<Toolbox> {
   const { runtime, identity, work } = context;
-  const registry = registryFor({
-    repository: runtime.repository,
-    actorId: identity.userId,
-  });
+  const registry =
+    runtime.stores?.registry?.() ??
+    registryFor({
+      repository: runtime.repository,
+      actorId: identity.userId,
+    });
 
-  const { resolveSandbox } = await import("../sandbox");
-  const driver = await resolveSandbox();
+  const driver = runtime.stores?.sandbox
+    ? await runtime.stores.sandbox()
+    : await (await import("../sandbox")).resolveSandbox();
   const availability = driver.availability();
   let handle: SandboxHandle | null = null;
   const sandbox = async () => {
@@ -134,8 +139,29 @@ export async function buildToolbox(
     }
   }
 
+  // Tool track record from the audit table. Routing input for the model and
+  // nothing else: permissions and approvals are decided by the registry.
+  let performance: string[] = [];
+  try {
+    const { queryAs } = await import("../db/client");
+    const { TOOL_PERFORMANCE_SQL, toolStats, performanceHints } =
+      await import("../tools/performance");
+    const rows = await queryAs<import("../tools/performance").ToolCallRow>(
+      identity.userId,
+      TOOL_PERFORMANCE_SQL,
+      [identity.workspaceId],
+    );
+    performance = performanceHints(
+      toolStats(rows),
+      registry.profileFor(options.armId).map((tool) => tool.id),
+    );
+  } catch {
+    performance = [];
+  }
+
   const evidence: ToolEvidence[] = [];
   return {
+    performance,
     registry,
     evidence,
     record: ({ toolId, input, result }) => {

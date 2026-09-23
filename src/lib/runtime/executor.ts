@@ -1,8 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { composeWorkflow } from "../arms/compose";
 import { analyseTask } from "../arms/thinking";
-import type { ArmId, RuntimeIdentity, TaskAnalysis } from "../arms/types";
-import { MemoryRepository } from "../memory/repository";
+import type { RuntimeIdentity, TaskAnalysis } from "../arms/types";
 import { UnoRouterProvider } from "../models/unorouter";
 import { abortLocalRun, registerRunController } from "./cancellation";
 import { persistGraph, setBudget } from "./dispatch";
@@ -339,7 +338,7 @@ export async function executeRuntimeRun(input: {
       sessionId: input.sessionId,
     });
 
-    const { decision } = await planRuntimeRun({
+    await planRuntimeRun({
       identity: input.identity,
       runId: input.runId,
       objective: input.objective,
@@ -369,14 +368,6 @@ export async function executeRuntimeRun(input: {
     });
 
     if (completion.status === "completed") {
-      await promoteRunMemory({
-        identity: input.identity,
-        repository,
-        runId: input.runId,
-        sessionId: input.sessionId,
-        objective: input.objective,
-        armId: decision.primary,
-      });
       await activity("completed", "Completed", {
         stages: completion.total,
       });
@@ -450,59 +441,4 @@ export async function executeRuntimeRun(input: {
     abortLocalRun(input.runId, "runtime_finished");
     await watcher;
   }
-}
-
-async function promoteRunMemory(input: {
-  identity: RuntimeIdentity;
-  repository: RuntimeRepository;
-  runId: string;
-  sessionId: string;
-  objective: string;
-  armId: ArmId;
-}) {
-  const snapshot = await input.repository.getSnapshot(input.runId);
-  const lastAssistant = [...snapshot.messages]
-    .reverse()
-    .find((message) => message.role === "assistant");
-  if (!lastAssistant) return;
-
-  // What the verifier concluded travels with the memory. Promoting a result
-  // without its verdict is how an unverified claim becomes a remembered fact.
-  const verdicts = snapshot.stages
-    .map((stage) => stage.verifier_status)
-    .filter((status): status is string => typeof status === "string");
-  const verified =
-    verdicts.length > 0 && verdicts.every((v) => v === "verified");
-
-  const memory = new MemoryRepository(input.identity.userId);
-  await memory
-    .compileAndStore({
-      organizationId: input.identity.organizationId,
-      workspaceId: input.identity.workspaceId,
-      sessionId: input.sessionId,
-      runId: input.runId,
-      tier: "second",
-      kind: "run_summary",
-      content: `Objective: ${input.objective}\nResult: ${lastAssistant.content.slice(0, 4000)}`,
-      source: {
-        runId: input.runId,
-        armId: input.armId,
-        verification: verdicts.join(","),
-      },
-      confidence: verified ? 0.7 : 0.45,
-      importance: 0.6,
-      verified,
-      scope: "workspace",
-      recurring: false,
-      novel: true,
-      authoritative: false,
-    })
-    .catch(() => undefined);
-
-  const skills = new (await import("../skills/repository")).SkillRepository(
-    input.identity.userId,
-  );
-  await skills
-    .recordOutcome(input.runId, verified ? "success" : "failure")
-    .catch(() => undefined);
 }

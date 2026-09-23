@@ -60,6 +60,13 @@ export function readState<T>(
   return value === undefined ? fallback : (value as T);
 }
 
+/** The sandbox driver for this stage: injected in the arena, resolved otherwise. */
+export async function sandboxDriver(context: ArmStageContext) {
+  if (context.runtime.stores?.sandbox) return context.runtime.stores.sandbox();
+  const { resolveSandbox } = await import("../sandbox");
+  return resolveSandbox();
+}
+
 /**
  * What earlier arms in a composed run handed to this one, as context lines.
  * Structured records, not transcripts: facts with their sources, a contract,
@@ -67,13 +74,13 @@ export function readState<T>(
  */
 export function handoffContext(context: ArmStageContext): string[] {
   const handoff = context.state.handoff as
-    Array<{ from: string; kind: string; payload: unknown }> | undefined;
+    Array<{ from: string; kind: string; verdict: string }> | undefined;
   if (!Array.isArray(handoff)) return [];
   return handoff
     .slice(-4)
     .map(
       (entry) =>
-        `[handoff from ${entry.from}: ${entry.kind}] ${JSON.stringify(entry.payload).slice(0, 4_000)}`,
+        `[handoff from ${entry.from}: ${entry.kind}, ${entry.verdict}] ${JSON.stringify(entry).slice(0, 4_000)}`,
     );
 }
 
@@ -375,6 +382,7 @@ export abstract class BaseArm implements AgentArm {
   protected async planStore(
     context: ArmStageContext,
   ): Promise<import("../agent/plan").PlanRevisionStore> {
+    if (context.runtime.stores?.plans) return context.runtime.stores.plans();
     const { DbPlanRevisionStore } = await import("../agent/plan-store");
     return new DbPlanRevisionStore(context.identity.userId);
   }
@@ -532,6 +540,11 @@ export abstract class BaseArm implements AgentArm {
             ]
           : []),
         ...handoffContext(context),
+        ...(toolbox.performance.length
+          ? [
+              `[tool record in this workspace] ${toolbox.performance.join("; ")}`,
+            ]
+          : []),
       ],
       tools: toolbox.registry,
       toolContext: {
@@ -978,6 +991,22 @@ export abstract class BaseArm implements AgentArm {
       `Verification ${verdict.status}`,
       { summary: verdict.summary, checks: verdict.checks.length },
     );
+    // In a composed run, leave the next arm a typed handoff: what this
+    // segment established and whether it was verified. Never a transcript.
+    if (context.work.stageInput.composed === true) {
+      const { handoffFor } = await import("../agent/handoff");
+      const entry = handoffFor(this.id, context.state, verdict.status);
+      context.state.handoff = [
+        ...readState<unknown[]>(context, "handoff", []),
+        entry,
+      ].slice(-6);
+      await context.runtime.activity(
+        "handoff.created",
+        `${this.id} handed over ${entry.kind.replace("_", " ")} (${verdict.status})`,
+        { kind: entry.kind, verdict: verdict.status },
+        "user",
+      );
+    }
     return {
       kind: "COMPLETE",
       output: {

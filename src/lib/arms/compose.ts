@@ -82,7 +82,14 @@ export function composeWorkflow(input: {
                 // segment finishing, which is what makes "research, then
                 // build" run in that order rather than in parallel.
                 previousTail,
-          input: { ...node.input, armId, segment: index },
+          input: {
+            ...node.input,
+            armId,
+            segment: index,
+            // Handoffs are only written between arms; a single-arm run has
+            // no one to hand over to.
+            ...(composition.length > 1 ? { composed: true } : {}),
+          },
         }),
       );
     }

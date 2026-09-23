@@ -1,0 +1,94 @@
+name: Live evals
+
+# The Agent Arena against the real model, real retrieval, real Vercel Sandbox
+# and a real browser. It spends model budget, so it never runs on ordinary
+# pushes or pull requests: only when dispatched, or on a push whose commit
+# message explicitly asks for it with [run-live-evals].
+
+on:
+  workflow_dispatch:
+    inputs:
+      suites:
+        description: Comma-separated suites (empty = all)
+        required: false
+        type: string
+        default: ""
+      max_cost_usd:
+        description: Stop starting tasks once this much has been spent
+        required: true
+        type: string
+        default: "3"
+      max_tokens:
+        description: Stop starting tasks once this many tokens have been used
+        required: true
+        type: string
+        default: "1500000"
+      model:
+        description: Exact UnoRouter model ID
+        required: false
+        type: string
+      sandbox:
+        description: Where workspaces run
+        required: true
+        type: choice
+        default: vercel
+        options: [vercel, local]
+  push:
+    branches: [build/m11-m15-agent-intelligence]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osirus-live-evals
+  cancel-in-progress: false
+
+jobs:
+  arena:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-live-evals]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
+      UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+      UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
+      UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
+      MODEL: ${{ inputs.model || vars.OSIRUS_PRIMARY_MODEL || 'grok-4.6' }}
+      ARENA_SUITES: ${{ inputs.suites || '' }}
+      ARENA_MAX_COST_USD: ${{ inputs.max_cost_usd || '3' }}
+      ARENA_MAX_TOKENS: ${{ inputs.max_tokens || '1500000' }}
+      SANDBOX: ${{ inputs.sandbox || 'vercel' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - run: python -m pip install --quiet sympy==1.14.0 numpy
+      - name: Run the arena
+        env:
+          # CI-scoped Vercel credentials for Sandbox only. The deployed app
+          # never reads these; it authenticates through OIDC.
+          OSIRUS_SANDBOX_CREDENTIALS: ${{ env.SANDBOX == 'vercel' && 'ci' || '' }}
+          VERCEL_TOKEN: ${{ env.SANDBOX == 'vercel' && secrets.VERCEL_TOKEN || '' }}
+          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
+          OSIRUS_ALLOW_LOCAL_EXEC: "1"
+        run: |
+          export OSIRUS_MODEL_FAST="$MODEL" OSIRUS_MODEL_STRONG="$MODEL" \
+            OSIRUS_MODEL_THINKING="$MODEL" OSIRUS_MODEL_CODING="$MODEL" \
+            OSIRUS_MODEL_RESEARCH="$MODEL" OSIRUS_MODEL_MATH="$MODEL" \
+            OSIRUS_MODEL_VERIFY="$MODEL"
+          if [ "$MODEL" = "grok-4.6" ]; then export OSIRUS_REASONING_EFFORT=high; fi
+          npx vitest run --config vitest.arena.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: arena-results
+          path: arena-results/
+          if-no-files-found: warn
