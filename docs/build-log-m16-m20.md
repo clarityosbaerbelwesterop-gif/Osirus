@@ -82,3 +82,28 @@ its budgets: CLS < 0.1, LCP < 2.5 s (local server), compressed JavaScript
 The Markdown pipeline (micromark, GFM, hast; about 60 KB compressed) loads
 with the first answer instead of with the empty chat, and the workspace and
 research panels load when their tab opens.
+
+Visual baselines: rendered by the CI browser in the `Visual baselines`
+workflow, run 35885165364 (commit `80362cd`), then inspected before the pull
+request.
+
+## Migration 011
+
+`db/migrations/011_productization.sql` is additive (new tables, nullable
+columns), so it was applied before the merge; the deployed code ignores what
+it does not use. 000–010 are untouched.
+
+1. Disposable branch `br-curly-glitter-b2pt4hu1`: 49 statements plus ledger
+   row in one transaction. Every osirus table has RLS enabled and forced; the
+   seven new tables carry 11 policies; `osirus_app` has no UPDATE or DELETE on
+   `security_events` and `connector_health`.
+2. Cross-tenant probe on that branch (seeded as the system, run through
+   `osirus_app`, rolled back): a non-member sees 0 rows in all seven tables and
+   is refused (42501) inserting an MCP server, a notification for someone
+   else, or a security event; the member sees 1 row each, cannot rewrite a
+   security event or delete a health check (42501); an MCP tool with risk
+   `low` or enabled without review is rejected by CHECK (23514).
+3. Production `br-ancient-sunset-b2d9pasu`: same transaction, ledger row
+   `011_productization.sql` (checksum `4ad13f05…`, 49 statements). Tables
+   without forced RLS: 0. `/api/health` stayed `ok` on the running
+   deployment.
