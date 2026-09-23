@@ -17,6 +17,8 @@ import type {
   RoutingInput,
   StageOutcome,
 } from "./types";
+import type { RepositoryMap } from "../coding/repo-map";
+import type { RuntimePolicy } from "../strategy/runtime";
 
 type CommandEvidence = {
   command: string;
@@ -218,6 +220,26 @@ export class CodingArm extends BaseArm {
       default:
         return super.customStage(context);
     }
+  }
+
+  /**
+   * Under a strategy that asks for it, the answering loop is given the
+   * repository map up front instead of having to discover it with tree calls.
+   */
+  protected async policyContext(
+    context: ArmStageContext,
+    policy: RuntimePolicy,
+  ): Promise<string[]> {
+    const mode = policy.genome.coding?.repoContext ?? "none";
+    if (mode === "none") return [];
+    const record = await (
+      await this.workspaceStore(context)
+    )
+      .load(context.work.runId)
+      .catch(() => null);
+    const map = record?.repositoryMap;
+    if (!map) return [];
+    return [renderRepositoryContext(map, mode)];
   }
 
   protected async workspaceStore(context: ArmStageContext) {
@@ -755,4 +777,31 @@ export class CodingArm extends BaseArm {
       secretLeakCheck(),
     ];
   }
+}
+
+/** The repository map as one context line; "full" adds the file list. */
+export function renderRepositoryContext(
+  map: RepositoryMap,
+  mode: "summary" | "full",
+) {
+  const parts = [
+    `languages: ${map.languages.map((entry) => `${entry.language} (${entry.files})`).join(", ") || "unknown"}`,
+    map.packageManager ? `package manager: ${map.packageManager}` : null,
+    map.frameworks.length ? `frameworks: ${map.frameworks.join(", ")}` : null,
+    Object.keys(map.scripts).length
+      ? `scripts: ${Object.entries(map.scripts)
+          .slice(0, 12)
+          .map(([name, command]) => `${name}=${command}`)
+          .join("; ")}`
+      : null,
+    map.testDirs.length ? `test dirs: ${map.testDirs.join(", ")}` : null,
+    map.entryPoints.length
+      ? `entry points: ${map.entryPoints.join(", ")}`
+      : null,
+    `files: ${map.fileCount}${map.truncated ? "+" : ""}`,
+    mode === "full" && map.files?.length
+      ? `tree: ${map.files.slice(0, 200).join(" ")}`
+      : null,
+  ].filter(Boolean);
+  return `[repository] ${parts.join(" | ")}`.slice(0, 8_000);
 }

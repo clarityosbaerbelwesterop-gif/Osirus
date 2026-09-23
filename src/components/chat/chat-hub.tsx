@@ -92,6 +92,7 @@ export function ChatHub(props: {
   const streamAbort = useRef<AbortController | null>(null);
   const streamEnd = useRef<HTMLDivElement | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
+  const content = useRef<HTMLDivElement | null>(null);
   const nearBottom = useRef(true);
   const composer = useRef<ComposerHandle | null>(null);
   const wide = useWideLayout();
@@ -145,6 +146,20 @@ export function ChatHub(props: {
       behavior: reducedMotion ? "auto" : "smooth",
     });
   }, [messages, snapshot]);
+
+  // Content can grow after the scroll above: web fonts swap in, lazy Markdown
+  // renders, a run card expands. While the reader is at the bottom, stay
+  // there, so the latest line never ends up below the fold.
+  useEffect(() => {
+    const node = content.current;
+    const frame = scroller.current;
+    if (!node || !frame || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (nearBottom.current) frame.scrollTop = frame.scrollHeight;
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   const applyPacket = useCallback(
     (packet: RuntimePacket) => {
@@ -487,7 +502,7 @@ export function ChatHub(props: {
               node.scrollHeight - node.scrollTop - node.clientHeight < 120;
           }}
         >
-          <div className="chat-content">
+          <div className="chat-content" ref={content}>
             {empty ? (
               <ChatHome firstName={props.firstName} onStart={start} />
             ) : (

@@ -447,6 +447,25 @@ export class RuntimeRepository {
     return rows[0];
   }
 
+  /**
+   * Move a queued run to running when a worker starts its first stage.
+   * Runs started outside a request (automations, the scheduler, the Foundry)
+   * are planned into `queued` and never pass through the request path that
+   * used to do this, so without it they could not complete.
+   */
+  async startIfQueued(runId: string) {
+    const rows = await queryAs<RunRow>(
+      this.actorId,
+      `update osirus.runs
+          set status = 'running',
+              started_at = coalesce(started_at, now())
+        where id = $1::uuid and status = 'queued'
+        returning *`,
+      [runId],
+    );
+    return rows[0] ?? null;
+  }
+
   async requestCancellation(runId: string) {
     const rows = await queryAs<RunRow>(
       this.actorId,
@@ -601,7 +620,7 @@ export class RuntimeRepository {
     organizationId: string;
     workspaceId: string;
     runId: string;
-    stageId: string;
+    stageId: string | null;
     model: string;
     role: string;
     requestMetadata?: Record<string, unknown>;

@@ -91,10 +91,30 @@ export function parseSseFrame(frame: string): OpenAIChunk | null {
   }
 }
 
+export type UnoRouterOptions = {
+  /**
+   * One model for every role. The Foundry runs its trials on a single named
+   * model (the free one, by operator decision); product runs leave this unset
+   * and use the per-role environment configuration.
+   */
+  model?: string;
+  /** Longest wait for a rate limit, overriding the environment default. */
+  maxRateLimitWaitSeconds?: number;
+};
+
 export class UnoRouterProvider implements ModelProvider {
   private readonly controllers = new Map<string, AbortController>();
 
+  constructor(private readonly options: UnoRouterOptions = {}) {}
+
+  private rateLimitCeilingMs() {
+    return this.options.maxRateLimitWaitSeconds !== undefined
+      ? this.options.maxRateLimitWaitSeconds * 1000
+      : maxRateLimitWaitMs();
+  }
+
   private modelFor(role: ModelRole) {
+    if (this.options.model) return this.options.model;
     const models: Record<ModelRole, string | undefined> = {
       FAST: env.OSIRUS_MODEL_FAST,
       STRONG: env.OSIRUS_MODEL_STRONG,
@@ -192,7 +212,11 @@ export class UnoRouterProvider implements ModelProvider {
           error instanceof ProviderError && error.code === "rate_limited"
             ? error.retryAfterMs
             : undefined;
-        if (wait === undefined || wait > maxRateLimitWaitMs() || attempt >= 3)
+        if (
+          wait === undefined ||
+          wait > this.rateLimitCeilingMs() ||
+          attempt >= 3
+        )
           throw error;
         await sleep(wait + 250, input.signal);
       }

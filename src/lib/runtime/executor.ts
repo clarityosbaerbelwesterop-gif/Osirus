@@ -3,6 +3,9 @@ import { composeWorkflow } from "../arms/compose";
 import { analyseTask } from "../arms/thinking";
 import type { RuntimeIdentity, TaskAnalysis } from "../arms/types";
 import { UnoRouterProvider } from "../models/unorouter";
+import { recordingProvider } from "../models/recording";
+import { resolveProductPolicy } from "../strategy/resolve";
+import { stampPolicy, type RuntimePolicy } from "../strategy/runtime";
 import { abortLocalRun, registerRunController } from "./cancellation";
 import { persistGraph, setBudget } from "./dispatch";
 import { publicRuntimeErrorMessage, runtimeErrorCode } from "./errors";
@@ -164,9 +167,19 @@ export async function planRuntimeRun(input: {
   emit?: RuntimeEmit;
   correlationId?: string;
   signal?: AbortSignal;
+  /**
+   * The strategy to run under. Foundry trials pass theirs; product runs get
+   * the product champion (or a canary) resolved here.
+   */
+  policy?: RuntimePolicy;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
-  const provider = new UnoRouterProvider();
+  const provider = input.policy?.model
+    ? new UnoRouterProvider({
+        model: input.policy.model,
+        maxRateLimitWaitSeconds: 60,
+      })
+    : new UnoRouterProvider();
 
   const activity = async (
     type: string,
@@ -196,7 +209,13 @@ export async function planRuntimeRun(input: {
   const decision = await routeObjective(input.objective, {
     classify: (objective) =>
       analyseTask({
-        provider,
+        provider: recordingProvider(provider, repository, {
+          organizationId: input.identity.organizationId,
+          workspaceId: input.identity.workspaceId,
+          runId: input.runId,
+          stageId: null,
+          purpose: "routing",
+        }),
         requestId: `${input.runId}:routing`,
         objective,
         signal: input.signal,
@@ -223,6 +242,14 @@ export async function planRuntimeRun(input: {
     },
   });
 
+  const policy =
+    input.policy ??
+    (await resolveProductPolicy({
+      armId: decision.primary,
+      runId: input.runId,
+    }));
+  stampPolicy(composed.graph.nodes, policy);
+
   const stageIds = await persistGraph({
     runId: input.runId,
     graph: composed.graph,
@@ -242,6 +269,18 @@ export async function planRuntimeRun(input: {
     escalated: decision.escalated,
     reason: decision.reason,
   });
+
+  await activity(
+    "strategy.selected",
+    `Strategy ${policy.label}`,
+    {
+      strategyVersionId: policy.strategyVersionId,
+      label: policy.label,
+      assignment: policy.assignment,
+      model: policy.model ?? null,
+    },
+    "internal",
+  );
 
   await activity("plan.persisted", "Planned the run", {
     stages: composed.graph.nodes.map((node) => ({

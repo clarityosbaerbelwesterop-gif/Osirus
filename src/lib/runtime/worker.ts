@@ -22,6 +22,7 @@ import { RuntimeRepository } from "./repository";
 import { SkillRepository } from "../skills/repository";
 import { settlementFor } from "./settlement";
 import type { RuntimePacket } from "./types";
+import { policyOfStage } from "../strategy/runtime";
 
 // The slice loop.
 //
@@ -198,8 +199,14 @@ export async function executeClaimedStage(input: {
   const repository = new RuntimeRepository(identity.userId);
   const guard = new LeaseGuard(work, input.leaseSeconds, input.signal);
 
+  const stagePolicy = policyOfStage(work.stageInput);
   const runtime: ArmRuntime = {
-    provider: new UnoRouterProvider(),
+    provider: stagePolicy.model
+      ? new UnoRouterProvider({
+          model: stagePolicy.model,
+          maxRateLimitWaitSeconds: 60,
+        })
+      : new UnoRouterProvider(),
     repository,
     memory: new MemoryRepository(identity.userId),
     skills: new SkillRepository(identity.userId),
@@ -221,6 +228,7 @@ export async function executeClaimedStage(input: {
     },
   };
 
+  await repository.startIfQueued(work.runId);
   const checkpoint = await repository.loadLatestCheckpoint(work.runId);
   const state: Record<string, unknown> = { ...(checkpoint?.state ?? {}) };
 
