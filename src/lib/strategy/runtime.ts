@@ -211,11 +211,11 @@ export function directivesUnder(policy: RuntimePolicy, armId: string) {
     );
   if (armId === "coding" && coding?.failureHints === "structured")
     out.push(FAILURE_PLAYBOOK);
-  if (armId === "math" && math?.computeFirst)
+  if (armId === "math_science" && math?.computeFirst)
     out.push(
       "Compute every numeric result with the compute tool before stating it; never state a number you did not compute.",
     );
-  if (armId === "math" && math?.finalLine)
+  if (armId === "math_science" && math?.finalLine)
     out.push(
       "End with a single line of the form `Final answer: <value>` holding only the result.",
     );

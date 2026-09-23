@@ -314,7 +314,10 @@ export class CodingArm extends BaseArm {
         runId: context.work.runId,
         repository,
         readToken,
-        fixture: repository ? undefined : context.runtime.stores?.fixture?.(),
+        fixture: repository
+          ? undefined
+          : (context.runtime.stores?.fixture?.() ??
+            fixtureOf(context.work.stageInput)),
         signal: context.signal,
       });
       const map = session.record.repositoryMap;
@@ -430,6 +433,30 @@ export class CodingArm extends BaseArm {
     const runs = await session.runChecks(context.signal);
     context.state.checkRuns = runs;
     context.state.workspaceDiff = (session.record.diff ?? "").slice(0, 20_000);
+    // A Foundry trial carries its own judge: test files restored over
+    // whatever the agent left, then run. Product runs never have one.
+    const hidden = hiddenChecksOf(context.work.stageInput);
+    if (hidden) {
+      try {
+        for (const file of hidden.files)
+          await session.workspace.write(file.path, file.content);
+        const [cmd, ...args] = hidden.command;
+        const record = await session.workspace.exec(cmd!, args, {
+          record: false,
+          timeoutMs: 120_000,
+          signal: context.signal,
+        });
+        context.state.hiddenCheck = {
+          exitCode: record.exitCode,
+          output: `${record.stdout}\n${record.stderr}`.slice(-2_000),
+        };
+      } catch (error) {
+        context.state.hiddenCheck = {
+          exitCode: null,
+          output: error instanceof Error ? error.message : String(error),
+        };
+      }
+    }
     const find = (phase: string) => runs.find((run) => run.phase === phase);
     const evidence = (run: (typeof runs)[number] | undefined) =>
       run
@@ -474,6 +501,9 @@ export class CodingArm extends BaseArm {
           exitCode: run.exitCode,
           failureClass: run.analysis?.failureClass ?? null,
         })),
+        ...(context.state.hiddenCheck
+          ? { hiddenCheck: context.state.hiddenCheck }
+          : {}),
       },
     };
   }
@@ -804,4 +834,43 @@ export function renderRepositoryContext(
       : null,
   ].filter(Boolean);
   return `[repository] ${parts.join(" | ")}`.slice(0, 8_000);
+}
+
+/** Hidden checks stamped into a Foundry trial's stages, if any. */
+export function hiddenChecksOf(input: Record<string, unknown> | undefined) {
+  const raw = input?.hiddenChecks as
+    { files?: unknown; command?: unknown } | undefined;
+  if (!raw || !Array.isArray(raw.files) || !Array.isArray(raw.command))
+    return null;
+  const files = raw.files.filter(
+    (file): file is { path: string; content: string } =>
+      !!file &&
+      typeof (file as { path?: unknown }).path === "string" &&
+      typeof (file as { content?: unknown }).content === "string" &&
+      /^[A-Za-z0-9._/-]{1,200}$/.test((file as { path: string }).path) &&
+      !(file as { path: string }).path.includes(".."),
+  );
+  const command = raw.command.filter(
+    (part): part is string => typeof part === "string",
+  );
+  if (!files.length || !command.length) return null;
+  return { files, command };
+}
+
+/**
+ * Seed files a Foundry trial's workspace starts from, stamped into the stage
+ * input at planning because a durable run has no in-memory fixture store.
+ */
+export function fixtureOf(input: Record<string, unknown> | undefined) {
+  const files = input?.fixture;
+  if (!Array.isArray(files)) return undefined;
+  const valid = files.filter(
+    (file): file is { path: string; content: string } =>
+      !!file &&
+      typeof (file as { path?: unknown }).path === "string" &&
+      typeof (file as { content?: unknown }).content === "string" &&
+      /^[A-Za-z0-9._/-]{1,200}$/.test((file as { path: string }).path) &&
+      !(file as { path: string }).path.includes(".."),
+  );
+  return valid.length ? valid : undefined;
 }

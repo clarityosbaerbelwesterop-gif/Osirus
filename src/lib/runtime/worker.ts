@@ -99,6 +99,7 @@ const DURABLE_STATE_KEYS = new Set([
   "workspace",
   "checkRuns",
   "workspaceDiff",
+  "hiddenCheck",
   "buildContract",
   "qaReport",
   "taskModel",

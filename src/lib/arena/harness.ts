@@ -17,6 +17,7 @@ import type { SandboxDriver } from "../sandbox/driver";
 import { ToolRegistry, type ToolAudit } from "../tools/registry";
 import { isFalseCompletion, type TaskResult } from "./metrics";
 import type { ArenaTask } from "./suites";
+import { stampPolicy, type RuntimePolicy } from "../strategy/runtime";
 
 // Runs one arena task through the real arms.
 //
@@ -34,6 +35,10 @@ export type HarnessOptions = {
   /** Stop starting stages once this much has been spent. */
   budget?: { maxCostUsd?: number; maxTokens?: number };
   spent?: { costUsd: number; tokens: number };
+  /** The strategy the run uses; the baseline when absent. */
+  policy?: RuntimePolicy;
+  /** Extra input every stage receives, e.g. a Foundry trial's hidden checks. */
+  stageInput?: Record<string, unknown>;
 };
 
 type Counters = {
@@ -79,7 +84,16 @@ function meteredProvider(
 export async function runArenaTask(
   task: ArenaTask,
   options: HarnessOptions,
-): Promise<TaskResult & { events: string[] }> {
+): Promise<
+  TaskResult & {
+    events: string[];
+    answer: string;
+    hiddenCheck: { exitCode: number | null; output: string } | null;
+    diff: string;
+    stages: string[];
+    actions: Array<{ action: string; toolId?: string; outcome: string }>;
+  }
+> {
   const startedAt = Date.now();
   const counters: Counters = {
     modelCalls: 0,
@@ -205,6 +219,10 @@ export async function runArenaTask(
   const decision = await routeObjective(task.objective);
   const composition = task.composition ?? decision.composition;
   const composed = composeWorkflow({ objective: task.objective, composition });
+  if (options.policy) stampPolicy(composed.graph.nodes, options.policy);
+  if (options.stageInput)
+    for (const node of composed.graph.nodes)
+      node.input = { ...node.input, ...options.stageInput };
   const order = topologicalOrder(composed.graph);
   const nodes = new Map(composed.graph.nodes.map((node) => [node.key, node]));
   const state: Record<string, unknown> = {};
@@ -327,7 +345,8 @@ export async function runArenaTask(
     verdicts.length > 0 && verdicts.every((verdict) => verdict === "verified");
   const steps =
     (state.agentSteps as
-      Array<{ action: string; outcome: string }> | undefined) ?? [];
+      | Array<{ action: string; outcome: string; toolId?: string }>
+      | undefined) ?? [];
   return {
     taskId: task.id,
     suite: task.suite,
@@ -351,5 +370,16 @@ export async function runArenaTask(
     notes,
     answerExcerpt: answer.slice(0, 600),
     events,
+    answer,
+    hiddenCheck:
+      (state.hiddenCheck as { exitCode: number | null; output: string }) ??
+      null,
+    diff: String(state.workspaceDiff ?? ""),
+    stages: order,
+    actions: steps.map((step) => ({
+      action: step.action,
+      ...(step.toolId ? { toolId: step.toolId } : {}),
+      outcome: step.outcome,
+    })),
   };
 }
