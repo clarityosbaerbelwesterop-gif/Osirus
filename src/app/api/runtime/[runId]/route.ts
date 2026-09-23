@@ -5,6 +5,7 @@ import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
 import { RuntimeRepository } from "@/lib/runtime/repository";
 import { driveSlices, finalizeRun } from "@/lib/runtime/worker";
 import type { RunSnapshot } from "@/lib/runtime/types";
+import { recordAccessRefused } from "@/lib/security/access";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -67,6 +68,10 @@ export async function GET(
     snapshot = await repository.getSnapshot(parsed.data.runId);
   } catch (error) {
     if (error instanceof Error && error.message === "run_not_found") {
+      await recordAccessRefused(session.user, {
+        resource: "run",
+        id: parsed.data.runId,
+      });
       return Response.json({ error: "not_found" }, { status: 404 });
     }
     throw error;

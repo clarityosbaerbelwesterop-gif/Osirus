@@ -20,7 +20,7 @@ export const STARTERS: Starter[] = [
     id: "research",
     label: "Research",
     description: "Find sources and verify claims",
-    prefix: "Research and compare ",
+    prefix: "Research ",
   },
   {
     id: "code",

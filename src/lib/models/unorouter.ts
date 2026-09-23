@@ -242,24 +242,39 @@ export class UnoRouterProvider implements ModelProvider {
         const credentialFailure = status === 401 || status === 403;
         const rateLimited = status === 429;
         const body = (await response.text()).slice(0, 500);
+        // A refused paid request (no balance, exhausted quota) is its own
+        // category so it can be reported as such; it is never retried and
+        // never answered by switching to another model.
+        const noCredit =
+          !rateLimited &&
+          (status === 402 ||
+            /insufficient|balance|credit|quota exceeded|billing|payment required/i.test(
+              body,
+            ));
         const error = new ProviderError(
           body || `Provider request failed with ${status}`,
           rateLimited
             ? "rate_limited"
-            : credentialFailure
-              ? "credential_rejected"
-              : retryable
-                ? "provider_unavailable"
-                : "provider_error",
+            : noCredit
+              ? "insufficient_credit"
+              : credentialFailure
+                ? "credential_rejected"
+                : retryable
+                  ? "provider_unavailable"
+                  : "provider_error",
           status,
-          retryable || credentialFailure,
+          !noCredit && (retryable || credentialFailure),
           rateLimited ? rateLimitWaitMs(response.headers, body) : undefined,
         );
         cleanup();
 
         // Keys are a resilience failover, not a way to evade provider rate limits.
         if (rateLimited) throw error;
-        if (!(retryable || credentialFailure) || index === keys.length - 1)
+        if (
+          noCredit ||
+          !(retryable || credentialFailure) ||
+          index === keys.length - 1
+        )
           throw error;
 
         lastError = error;

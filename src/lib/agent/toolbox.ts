@@ -139,6 +139,20 @@ export async function buildToolbox(
     }
   }
 
+  // MCP tools the workspace reviewed and enabled. Always external and high
+  // risk, so every call goes through the approval gate. Skipped for injected
+  // stores (the arena), which run without a database.
+  if (!runtime.stores) {
+    try {
+      const { mcpToolsForWorkspace } = await import("../connectors/mcp-store");
+      for (const tool of await mcpToolsForWorkspace(identity)) {
+        if (!registry.has(tool.id)) registry.register(tool);
+      }
+    } catch {
+      // No MCP tools this run: the table is missing or unreachable.
+    }
+  }
+
   // Tool track record from the audit table. Routing input for the model and
   // nothing else: permissions and approvals are decided by the registry.
   let performance: string[] = [];

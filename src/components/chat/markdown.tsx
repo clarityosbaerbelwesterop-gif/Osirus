@@ -63,12 +63,27 @@ function CodeBlock(props: ComponentProps<"pre">) {
 }
 
 const components: Components = {
-  a: ({ href, children }) => {
+  a: (props) => {
+    const { href, children } = props;
+    // Keep only the attributes remark-gfm uses for footnotes.
+    const rest = Object.fromEntries(
+      Object.entries(props).filter(
+        ([key]) =>
+          key.startsWith("data-") || key === "id" || key === "aria-describedby",
+      ),
+    );
     const internal = typeof href === "string" && href.startsWith("#");
     return internal ? (
-      <a href={href}>{children}</a>
+      <a href={href} {...rest}>
+        {children}
+      </a>
     ) : (
-      <a href={href} target="_blank" rel="noopener noreferrer nofollow">
+      <a
+        href={href}
+        {...rest}
+        target="_blank"
+        rel="noopener noreferrer nofollow"
+      >
         {children}
       </a>
     );

@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { RuntimeRepository } from "@/lib/runtime/repository";
+import { recordAccessRefused } from "@/lib/security/access";
 import { hasSameOrigin } from "@/lib/security/request";
 import {
   enforceRateLimit,
@@ -57,7 +58,15 @@ export async function POST(
     runId: params.data.runId,
     decision: body.data.decision,
   });
-  if (!decided) return Response.json({ error: "not_found" }, { status: 404 });
+  if (!decided) {
+    // Not decidable: foreign, already decided (replay), or expired. The
+    // decision is refused either way; a replay or a foreign id is recorded.
+    await recordAccessRefused(session.user, {
+      resource: "approval",
+      id: params.data.approvalId,
+    });
+    return Response.json({ error: "not_found" }, { status: 404 });
+  }
   return Response.json({
     approvalId: decided.id,
     decision: body.data.decision,

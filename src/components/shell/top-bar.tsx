@@ -14,10 +14,13 @@ import { ThemeMenu } from "./theme-menu";
  */
 export function TopBar({
   title,
+  titleAs = "h1",
   status,
   actions,
 }: {
   title: ReactNode;
+  /** Pages with their own h1 show the top-bar title as plain text. */
+  titleAs?: "h1" | "p";
   status?: ReactNode;
   actions?: ReactNode;
 }) {
@@ -34,7 +37,11 @@ export function TopBar({
         onClick={() => shell.setNavOpen(true)}
       />
       <div className="topbar-title">
-        <h1 className="truncate">{title}</h1>
+        {titleAs === "h1" ? (
+          <h1 className="truncate">{title}</h1>
+        ) : (
+          <p className="topbar-name truncate">{title}</p>
+        )}
         {status}
       </div>
       <div className="topbar-actions">

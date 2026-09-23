@@ -2,12 +2,24 @@ import "server-only";
 import type { ArmId } from "../arms/types";
 import { queryAs } from "../db/client";
 import type { RuntimeRepository } from "../runtime/repository";
+import { decide, type ActionClass, type Decision } from "../policy/model";
+import { combine, loadWorkspacePolicy, runRestrictions } from "../policy/store";
+import { notify } from "../product/notifications";
+import { recordSecurityEvent } from "../security/events";
+import { toolLabel } from "../ui/labels";
 import {
   ToolRegistry,
   type ApprovalGate,
   type ToolAudit,
   type ToolContext,
+  type ToolPolicy,
 } from "./registry";
+
+const DENIAL_REASON: Record<string, string> = {
+  policy_denied: "the workspace policy does not allow it",
+  arm_not_permitted: "this kind of task may not use it",
+  approval_rejected: "the approval was rejected",
+};
 
 // Wiring the registry to the database.
 //
@@ -53,6 +65,124 @@ export function databaseAudit(
       ],
     ).catch(() => undefined);
     void repository;
+    if (entry.outputMetadata.injection === true)
+      await recordSecurityEvent(
+        {
+          userId: actorId,
+          organizationId: entry.context.organizationId,
+          workspaceId: entry.context.workspaceId,
+        },
+        {
+          kind: "prompt_injection_neutralized",
+          severity: "warning",
+          summary: `The result of ${toolLabel(entry.tool.id, entry.tool.title)} contained instructions aimed at the agent. It was treated as untrusted data and not followed.`,
+          runId: entry.context.runId,
+          detail: { tool: entry.tool.id },
+        },
+      );
+    if (entry.outputMetadata.redacted === true)
+      await recordSecurityEvent(
+        {
+          userId: actorId,
+          organizationId: entry.context.organizationId,
+          workspaceId: entry.context.workspaceId,
+        },
+        {
+          kind: "secret_redacted",
+          severity: "info",
+          summary: `A credential in the output of ${toolLabel(entry.tool.id, entry.tool.title)} was replaced with [REDACTED] before the agent or anyone else saw it.`,
+          runId: entry.context.runId,
+          detail: { tool: entry.tool.id },
+        },
+      );
+    if (
+      entry.errorCode === "unsafe_path" ||
+      entry.errorCode === "outbound_blocked"
+    )
+      await recordSecurityEvent(
+        {
+          userId: actorId,
+          organizationId: entry.context.organizationId,
+          workspaceId: entry.context.workspaceId,
+        },
+        entry.errorCode === "unsafe_path"
+          ? {
+              kind: "unsafe_path_blocked",
+              severity: "warning",
+              summary: `${toolLabel(entry.tool.id, entry.tool.title)} tried a path outside the repository. It was refused.`,
+              runId: entry.context.runId,
+              detail: { tool: entry.tool.id },
+            }
+          : {
+              kind: "outbound_blocked",
+              severity: "warning",
+              summary: `${toolLabel(entry.tool.id, entry.tool.title)} tried to reach a private or disallowed address. It was refused.`,
+              runId: entry.context.runId,
+              detail: { tool: entry.tool.id },
+            },
+      );
+    const reason = entry.errorCode ? DENIAL_REASON[entry.errorCode] : null;
+    if (reason)
+      await recordSecurityEvent(
+        {
+          userId: actorId,
+          organizationId: entry.context.organizationId,
+          workspaceId: entry.context.workspaceId,
+        },
+        {
+          kind:
+            entry.errorCode === "policy_denied"
+              ? "policy_denied"
+              : "tool_denied",
+          severity: "info",
+          summary: `${toolLabel(entry.tool.id, entry.tool.title)} was not run: ${reason}.`,
+          runId: entry.context.runId,
+          detail: { tool: entry.tool.id, reason: entry.errorCode ?? "" },
+        },
+      );
+  };
+}
+
+/**
+ * The workspace policy, plus any restriction recorded on the run (an
+ * automation's policy and allowed tools). Read once per registry, i.e. once
+ * per stage slice, so a tightened policy applies from the next slice on.
+ */
+export function databasePolicy(actorId: string): ToolPolicy {
+  const cache = new Map<
+    string,
+    Promise<{
+      decisions: Record<ActionClass, Decision>;
+      allowedTools: string[] | null;
+    }>
+  >();
+  const load = (context: ToolContext) => {
+    const key = `${context.workspaceId}:${context.runId}`;
+    let entry = cache.get(key);
+    if (!entry) {
+      entry = Promise.all([
+        loadWorkspacePolicy({
+          userId: actorId,
+          workspaceId: context.workspaceId,
+        }),
+        runRestrictions(actorId, context.runId),
+      ]).then(([workspace, run]) => ({
+        decisions: combine(workspace.decisions, run),
+        allowedTools: run.allowedTools,
+      }));
+      cache.set(key, entry);
+    }
+    return entry;
+  };
+  return async ({ tool, context, builtinRequiresApproval }) => {
+    const policy = await load(context);
+    if (
+      policy.allowedTools &&
+      !policy.allowedTools.includes(tool.id) &&
+      tool.effect !== "read"
+    )
+      return "deny";
+    return decide(policy.decisions, tool, builtinRequiresApproval);
   };
 }
 
@@ -93,7 +223,35 @@ export function databaseApprovalGate(input: {
     // this, every re-check of an undecided call filed a duplicate request.
     if (status === "requested" || status === "pending") return "pending";
 
-    await input.repository
+    // A request that expired undecided is closed as expired and recorded, so
+    // it cannot be approved late; a fresh request is filed below.
+    const expired = await queryAs<{ id: string }>(
+      input.actorId,
+      `update osirus.approvals set status = 'expired'
+        where run_id = $1::uuid and action = $2
+          and request ->> 'fingerprint' = $3
+          and status = 'requested'
+          and expires_at is not null and expires_at <= now()
+        returning id`,
+      [context.runId, `tool:${tool.id}`, fingerprint],
+    ).catch(() => []);
+    for (const row of expired)
+      await recordSecurityEvent(
+        {
+          userId: input.actorId,
+          organizationId: context.organizationId,
+          workspaceId: context.workspaceId,
+        },
+        {
+          kind: "approval_expired",
+          severity: "info",
+          summary: `An approval for ${toolLabel(tool.id, tool.title)} expired before anyone decided. A new one was requested.`,
+          runId: context.runId,
+          detail: { approval: row.id },
+        },
+      );
+
+    const approvalId = await input.repository
       .createApproval({
         organizationId: context.organizationId,
         workspaceId: context.workspaceId,
@@ -111,6 +269,22 @@ export function databaseApprovalGate(input: {
         expiresInSeconds: 60 * 60,
       })
       .catch(() => undefined);
+    if (approvalId)
+      await notify(
+        {
+          userId: input.actorId,
+          organizationId: context.organizationId,
+          workspaceId: context.workspaceId,
+        },
+        {
+          kind: "approval_needed",
+          title: `Approval needed: ${toolLabel(tool.id, tool.title)}`,
+          body: tool.summary,
+          dedupeKey: `approval:${approvalId}`,
+          runId: context.runId,
+          approvalId,
+        },
+      );
     return "pending";
   };
 }
@@ -122,6 +296,7 @@ export function registryFor(input: {
   return new ToolRegistry({
     audit: databaseAudit(input.repository, input.actorId),
     approvalGate: databaseApprovalGate(input),
+    policy: databasePolicy(input.actorId),
   });
 }
 

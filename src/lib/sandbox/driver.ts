@@ -36,7 +36,9 @@ export type SandboxFile = { path: string; content: string };
 export function isSafeRelativePath(value: string) {
   if (value.length === 0 || value.length > 400) return false;
   if (value.startsWith("/") || /^[a-zA-Z]:/.test(value)) return false;
-  if (value.includes("\\0")) return false;
+  // Control characters (NUL above all) truncate paths in the C tools that
+  // later receive them, so a path that looked safe here could name another.
+  if (/[\u0000-\u001f]/.test(value)) return false;
   return !value.split("/").includes("..");
 }
 
