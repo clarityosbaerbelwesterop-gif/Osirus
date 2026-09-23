@@ -72,6 +72,8 @@ export type LoopContext = {
   suite?: SuiteSize;
   maxChallengers?: number;
   productModels?: string[];
+  /** Pin the agenda to one capability (the CI cycle runner does this). */
+  focusCapability?: string;
   log?: (line: string) => void;
 };
 
@@ -446,7 +448,11 @@ async function advance(
       );
       const preferred = previous?.summary.next as
         { capabilityId?: string } | undefined;
+      const focused = ctx.focusCapability
+        ? items.find((entry) => entry.capabilityId === ctx.focusCapability)
+        : undefined;
       const item =
+        focused ||
         (preferred?.capabilityId &&
           items.find(
             (entry) =>

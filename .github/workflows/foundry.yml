@@ -1,0 +1,108 @@
+name: Intelligence Foundry cycles
+
+# Real autonomous research cycles on the real agent, in CI. The model is the
+# free one by operator decision; it allows about one request a minute, so a
+# cycle takes hours. Runs only when dispatched, or on a push whose commit
+# message asks for it with [run-foundry]. Coding runs first, then math:
+# sequential, because both share one account's rate limit.
+
+on:
+  workflow_dispatch:
+    inputs:
+      model:
+        description: Exact UnoRouter model ID
+        required: false
+        type: string
+        default: deepseek-v4-pro-0813:free
+  push:
+    branches: [build/m21-m25-intelligence-foundry]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osirus-foundry
+  cancel-in-progress: false
+
+jobs:
+  coding:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-foundry]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "90"
+      UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
+      UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+      UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
+      UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
+      FOUNDRY_MODEL: ${{ inputs.model || 'deepseek-v4-pro-0813:free' }}
+      FOUNDRY_CAPABILITY: coding.debug
+      FOUNDRY_MAX_MINUTES: "320"
+      FOUNDRY_OUT_DIR: foundry-results/coding
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Run the coding cycle
+        env:
+          # Trials run in Vercel Sandbox with CI-scoped credentials, isolated
+          # from this runner. Label checks run only fixture code, locally.
+          OSIRUS_SANDBOX_CREDENTIALS: ci
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
+          OSIRUS_ALLOW_LOCAL_EXEC: "1"
+        run: npx vitest run --config vitest.foundry.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foundry-coding
+          path: foundry-results/coding/
+          if-no-files-found: warn
+
+  math:
+    needs: coding
+    if: always() && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-foundry]'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "90"
+      UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
+      UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+      UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
+      UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
+      FOUNDRY_MODEL: ${{ inputs.model || 'deepseek-v4-pro-0813:free' }}
+      FOUNDRY_CAPABILITY: math.quantitative
+      FOUNDRY_MAX_MINUTES: "320"
+      FOUNDRY_DEV: "4"
+      FOUNDRY_ADVERSARIAL: "2"
+      FOUNDRY_HOLDOUT: "4"
+      FOUNDRY_OUT_DIR: foundry-results/math
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: python -m pip install --quiet sympy==1.14.0 numpy
+      - name: Run the math cycle
+        env:
+          OSIRUS_SANDBOX_CREDENTIALS: ci
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
+          OSIRUS_ALLOW_LOCAL_EXEC: "1"
+        run: npx vitest run --config vitest.foundry.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foundry-math
+          path: foundry-results/math/
+          if-no-files-found: warn
