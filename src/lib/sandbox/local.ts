@@ -39,10 +39,14 @@ export function localExecutionAllowed() {
 
 const MAX_OUTPUT = 200_000;
 
+/** Named workspaces in this process, so a test can stop, reattach and resume. */
+const NAMED = new Map<string, string>();
+
 class LocalWorkspaceHandle implements SandboxHandle {
   constructor(
     readonly sandboxId: string,
     private readonly root: string,
+    private readonly persistent = false,
   ) {}
 
   /** Resolve a path inside the root, refusing traversal and symlink escape. */
@@ -124,6 +128,7 @@ class LocalWorkspaceHandle implements SandboxHandle {
     cmd: string;
     args?: string[];
     cwd?: string;
+    env?: Record<string, string>;
     timeoutMs?: number;
     signal?: AbortSignal;
   }): Promise<CommandResult> {
@@ -144,6 +149,9 @@ class LocalWorkspaceHandle implements SandboxHandle {
             LANG: "C.UTF-8",
             CI: "1",
             NODE_ENV: "development",
+            GIT_TERMINAL_PROMPT: "0",
+            GIT_CONFIG_NOSYSTEM: "1",
+            ...(input.env ?? {}),
           } as NodeJS.ProcessEnv,
           stdio: ["ignore", "pipe", "pipe"],
           signal: input.signal,
@@ -192,6 +200,19 @@ class LocalWorkspaceHandle implements SandboxHandle {
   }
 
   async stop() {
+    // A persistent workspace keeps its files, as Vercel's persistent sandbox
+    // does across stop and resume. A throwaway one is removed.
+    if (!this.persistent) await this.destroy();
+  }
+
+  async keepAlive() {}
+
+  async snapshot() {
+    return { snapshotId: `local-${this.sandboxId}` };
+  }
+
+  async destroy() {
+    NAMED.delete(this.sandboxId);
     await rm(this.root, { recursive: true, force: true });
   }
 }
@@ -213,10 +234,27 @@ export class LocalWorkspaceDriver implements SandboxDriver {
         };
   }
 
-  async create(): Promise<SandboxHandle> {
+  async create(
+    input: { name?: string; persistent?: boolean } = {},
+  ): Promise<SandboxHandle> {
     if (!localExecutionAllowed())
       throw new Error("local_execution_not_allowed");
     const root = await realpath(await mkdtemp(join(tmpdir(), "osirus-ws-")));
-    return new LocalWorkspaceHandle(root.split(sep).pop()!, root);
+    const name = input.name ?? root.split(sep).pop()!;
+    if (input.name) NAMED.set(name, root);
+    return new LocalWorkspaceHandle(name, root, Boolean(input.persistent));
+  }
+
+  async reattach(name: string): Promise<SandboxHandle | null> {
+    if (!localExecutionAllowed()) return null;
+    const root = NAMED.get(name);
+    if (!root) return null;
+    try {
+      await lstat(root);
+    } catch {
+      NAMED.delete(name);
+      return null;
+    }
+    return new LocalWorkspaceHandle(name, root, true);
   }
 }

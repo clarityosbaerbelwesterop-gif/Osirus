@@ -95,6 +95,15 @@ const DURABLE_STATE_KEYS = new Set([
   "agentSteps",
   "loopState",
   "sandbox",
+  "workspace",
+  "checkRuns",
+  "workspaceDiff",
+  "buildContract",
+  "qaReport",
+  "taskModel",
+  "planGraph",
+  "critique",
+  "handoff",
 ]);
 
 function durableState(state: Record<string, unknown>) {

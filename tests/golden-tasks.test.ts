@@ -283,3 +283,61 @@ describe("compound golden task", () => {
     ).toBeGreaterThan(order.findIndex((key) => key === "s0-research-verify"));
   });
 });
+
+describe("coding verified from the workspace's own checks", () => {
+  const objective =
+    "Fix the failing add test in the repository and make the tests pass";
+  const passing = {
+    command: "npm run test",
+    exitCode: 0,
+    stdout: "# pass 1",
+    stderr: "",
+    durationMs: 800,
+  };
+  const failing = { ...passing, exitCode: 1, stdout: "# fail 1" };
+  const diff =
+    "--- a/src/add.js\n+++ b/src/add.js\n-export const add = (a, b) => a - b;\n+export const add = (a, b) => a + b;\n";
+
+  it("verifies a change whose test and build commands exited 0", async () => {
+    const verdict = await armFor("coding").verify(
+      contextFor(objective, {
+        answer:
+          "Changed src/add.js to add instead of subtract. Ran `npm run test` (exit 0) and `npm run build` (exit 0).",
+        testResult: passing,
+        buildResult: { ...passing, command: "npm run build" },
+        workspaceDiff: diff,
+        checkRuns: [
+          { phase: "test", command: "npm run test", exitCode: 0 },
+          { phase: "build", command: "npm run build", exitCode: 0 },
+        ],
+      }),
+    );
+    expect(verdict.status, verdict.summary).toBe("verified");
+  });
+
+  it("rejects a claim that tests pass when the test run failed", async () => {
+    const verdict = await armFor("coding").verify(
+      contextFor(objective, {
+        answer: "Fixed src/add.js. All tests pass now.",
+        testResult: failing,
+        buildResult: { ...passing, command: "npm run build" },
+        workspaceDiff: diff,
+      }),
+    );
+    expect(verdict.status).toBe("rejected");
+    expect(
+      verdict.checks.find((check) => check.id === "claims-match-evidence")
+        ?.status,
+    ).toBe("failed");
+  });
+
+  it("does not verify a change nobody ran", async () => {
+    const verdict = await armFor("coding").verify(
+      contextFor(objective, {
+        answer: "Changed src/add.js to add instead of subtract. Tests not run.",
+        workspaceDiff: diff,
+      }),
+    );
+    expect(verdict.status).toBe("unverified");
+  });
+});

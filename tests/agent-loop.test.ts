@@ -259,28 +259,40 @@ describe("agent loop", () => {
     expect(parked.status).toBe("waiting_for_approval");
     expect(parked.pendingApproval?.toolId).toBe("net.post");
 
+    expect(parked.state.pendingCall).toEqual({
+      toolId: "net.post",
+      input: { body: "Paris" },
+      summary: "Send the result",
+    });
+
+    // After approval the exact parked call is replayed -- no model call, no
+    // chance to swap in different arguments under the same approval.
     const second = scripted([
-      {
-        action: "USE_TOOL",
-        summary: "Send the result",
-        toolId: "net.post",
-        toolInput: { body: "Paris" },
-      },
       { action: "FINISH", summary: "Sent", answer: "Sent Paris." },
     ]);
+    const approvedCalls: string[] = [];
     const resumed = await runAgentLoop({
       objective: "Look up and send",
       directives: [],
       context: [],
-      tools: registry({ approvalGate: async () => "approved" }),
+      tools: registry({
+        approvalGate: async ({ request }) => {
+          approvedCalls.push(JSON.stringify(request.input));
+          return "approved";
+        },
+      }),
       toolContext: context,
       decide: second.decide,
       resume: parked.state,
     });
     expect(resumed.status).toBe("finished");
+    expect(approvedCalls).toEqual(['{"body":"Paris"}']);
+    expect(second.prompts).toHaveLength(1);
+    expect(resumed.state.modelCalls).toBe(parked.state.modelCalls + 1);
     // The resumed run still remembers the lookup it did before parking.
     expect(resumed.state.steps[0]!.toolId).toBe("kb.lookup");
-    expect(second.prompts[0]!.user).toContain("Paris");
+    expect(second.prompts[0]!.user).toContain("sent");
+    expect(resumed.state.pendingCall).toBeUndefined();
   });
 
   it("gives up after repeated failures rather than retrying forever", async () => {

@@ -38,6 +38,12 @@ export type LoopBounds = {
   maxWallMs: number;
   /** Consecutive failed actions before the loop stops trying. */
   maxConsecutiveFailures: number;
+  /**
+   * When this slice's wall clock runs out, yield and resume in the next slice
+   * instead of stopping. Step, model-call and tool-call bounds still hold
+   * across slices, because they are counted in the persisted state.
+   */
+  yieldOnWallClock?: boolean;
 };
 
 export const DEFAULT_BOUNDS: LoopBounds = {
@@ -74,6 +80,13 @@ export type LoopState = {
   toolCalls: number;
   answer?: string;
   artifacts: Array<{ title: string; kind: string; ref?: string }>;
+  /**
+   * The exact call an approval was requested for. On resume it is replayed
+   * as-is, without asking the model again: the approval covers this call's
+   * input and nothing else, and a re-decided call with different arguments
+   * would need a new approval.
+   */
+  pendingCall?: { toolId: string; input: unknown; summary: string };
 };
 
 export type LoopResult = {
@@ -262,6 +275,14 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
       };
     }
     const limit = exhaustedBy();
+    if (limit === "wall_clock" && input.bounds?.yieldOnWallClock) {
+      return {
+        status: "yielded",
+        state,
+        answer: state.answer ?? null,
+        reason: "slice_wall_clock",
+      };
+    }
     if (limit) {
       return {
         status: "exhausted",
@@ -273,13 +294,24 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
 
     const stepStartedAt = now();
     let decision: AgentDecision;
+    const pending = state.pendingCall;
     try {
-      state.modelCalls += 1;
-      decision = await input.decide({
-        system: systemPrompt(input, state),
-        user: userPrompt(input, state),
-        signal: input.signal,
-      });
+      if (pending) {
+        delete state.pendingCall;
+        decision = {
+          action: "USE_TOOL",
+          summary: pending.summary,
+          toolId: pending.toolId,
+          toolInput: pending.input as AgentDecision["toolInput"],
+        } as AgentDecision;
+      } else {
+        state.modelCalls += 1;
+        decision = await input.decide({
+          system: systemPrompt(input, state),
+          user: userPrompt(input, state),
+          signal: input.signal,
+        });
+      }
     } catch (error) {
       consecutiveFailures += 1;
       const message =
@@ -379,6 +411,13 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
           });
         } catch (error) {
           if (error instanceof ToolApprovalRequired) {
+            state.pendingCall = {
+              toolId: decision.toolId!,
+              input: decision.toolInput ?? {},
+              summary: decision.summary,
+            };
+            // The call has not happened; it is not charged until it does.
+            state.toolCalls -= 1;
             await record(
               {
                 action: "USE_TOOL",
