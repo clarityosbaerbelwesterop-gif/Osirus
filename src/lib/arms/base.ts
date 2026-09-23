@@ -718,7 +718,13 @@ export abstract class BaseArm implements AgentArm {
       return {
         kind: "FAILED",
         failureClass: `agent_loop_${result.status}`,
-        error: `The agent loop ended (${result.reason}) without an answer.`,
+        // The last step's detail names the cause (a provider refusal, a tool
+        // that kept failing); "consecutive failures" alone does not.
+        error: `The agent loop ended (${result.reason}) without an answer.${
+          result.state.steps.at(-1)?.detail
+            ? ` Last error: ${result.state.steps.at(-1)!.detail!.slice(0, 240)}`
+            : ""
+        }`,
         retryable: result.status !== "exhausted",
       };
     }
