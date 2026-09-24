@@ -6,7 +6,13 @@ import {
 } from "../runtime/graph";
 import type { Capability } from "../runtime/types";
 import type { CoverageReport } from "../research/citations";
-import type { ResearchPlan, VerifiedClaim } from "../research/types";
+import { buildEvidenceLedger } from "../research/evidence-ledger";
+import { persistResearchNotes } from "../research/memory-notes";
+import type {
+  EvidenceLedger,
+  ResearchPlan,
+  VerifiedClaim,
+} from "../research/types";
 import {
   secretLeakCheck,
   sourceCheck,
@@ -190,9 +196,11 @@ export class ResearchArm extends BaseArm {
     context.state.researchPlan = plan;
     await context.runtime.activity("research.planned", "Planned the research", {
       subquestions: plan.subquestions,
+      informationNeeds: plan.informationNeeds?.length ?? 0,
       freshness: plan.freshness,
       queries: plan.queries.length,
       counterQueries: plan.counterQueries.length,
+      stopCriteria: plan.stopCriteria ?? plan.stop,
     });
     return { kind: "COMPLETE", output: { plan } };
   }
@@ -275,6 +283,25 @@ export class ResearchArm extends BaseArm {
       plan,
       store,
     });
+    const priorLedger = context.state.researchLedger as
+      | EvidenceLedger
+      | undefined;
+    const ledger = buildEvidenceLedger({
+      question: context.work.objective,
+      plan,
+      synthesis,
+      verified: outcome.claims,
+      documents,
+      prior: priorLedger ?? null,
+    });
+    const memoryNotes = await persistResearchNotes({
+      memory: context.runtime.memory,
+      organizationId: context.identity.organizationId,
+      workspaceId: context.identity.workspaceId,
+      sessionId: context.work.sessionId,
+      runId: context.work.runId,
+      ledger,
+    }).catch(() => ({ episodicId: null, semanticIds: [] }));
 
     await context.runtime.emitDelta(outcome.answer);
     const assistantMessageId = await context.runtime.repository.createMessage({
@@ -301,6 +328,24 @@ export class ResearchArm extends BaseArm {
       rejected: claim.rejectedCitations,
     }));
     context.state.researchCoverage = outcome.coverage;
+    context.state.researchLedger = {
+      question: ledger.question,
+      claims: ledger.claims.map((claim) => ({
+        id: claim.id,
+        statement: claim.statement,
+        kind: claim.kind,
+        status: claim.status,
+        confidence: claim.confidence,
+        supporting: claim.supporting.length,
+        contradicting: claim.contradicting.length,
+      })),
+      contradictions: ledger.contradictions.length,
+      beliefUpdates: ledger.beliefUpdates,
+      openQuestions: ledger.openQuestions,
+      brief: ledger.brief,
+      stopMet: ledger.stopMet,
+      memoryNotes,
+    };
     context.state.retrieved = documents.map((doc) => ({
       url: doc.url,
       fetchedAt: doc.retrievedAt,
@@ -308,7 +353,13 @@ export class ResearchArm extends BaseArm {
     await context.runtime.activity(
       "research.synthesised",
       "Verified the research claims",
-      { ...outcome.coverage },
+      {
+        ...outcome.coverage,
+        ledgerClaims: ledger.claims.length,
+        contradictions: ledger.contradictions.length,
+        beliefUpdates: ledger.beliefUpdates.length,
+        stopMet: ledger.stopMet,
+      },
     );
     return {
       kind: "COMPLETE",
