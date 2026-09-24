@@ -786,96 +786,96 @@ export abstract class BaseArm implements AgentArm {
         lane: pulseLane,
         runId: work.runId,
         hooks: {
-        replan: async (reason) => {
-          try {
-            return {
-              summary: await replan("agent_requested", reason, []),
-            };
-          } catch {
-            return {
-              summary: "Replanning failed; continue with the current plan.",
-            };
-          }
-        },
-        checkpoint: async (state) => {
-          const kernel = state.kernel;
-          const autoReplans = kernel?.autoReplans ?? 0;
-          const replannedAtStep = kernel?.replannedAtStep ?? 0;
-          if (autoReplans >= 2) return null;
-          // Only steps since the last automatic replan count, so one failure
-          // does not trigger the same replan twice. The cursor is on the
-          // kernel, which is part of the checkpointed loop state.
-          const found = detectReplanTrigger({
-            steps: state.steps.slice(replannedAtStep),
-            budgetUsed:
-              state.modelCalls / Math.max(1, bounds.maxModelCalls ?? 14),
-            planNodesTotal: planGraph?.nodes.length,
-          });
-          if (!found) return null;
-          if (kernel) {
-            kernel.autoReplans += 1;
-            kernel.replannedAtStep = state.steps.length;
-            kernel.hypotheses.push(
-              createHypothesis({
-                id: `obs-${state.steps.length}`,
-                statement: found.detail.slice(0, 400),
-                supportingEvidence: kernel.evidenceRefs.slice(-4),
-              }),
-            );
-            kernel.hypotheses = kernel.hypotheses.slice(-8);
-            recordPlanRevision(kernel, {
-              atStep: state.steps.length,
-              reason: found.trigger,
-              summary: found.detail,
+          replan: async (reason) => {
+            try {
+              return {
+                summary: await replan("agent_requested", reason, []),
+              };
+            } catch {
+              return {
+                summary: "Replanning failed; continue with the current plan.",
+              };
+            }
+          },
+          checkpoint: async (state) => {
+            const kernel = state.kernel;
+            const autoReplans = kernel?.autoReplans ?? 0;
+            const replannedAtStep = kernel?.replannedAtStep ?? 0;
+            if (autoReplans >= 2) return null;
+            // Only steps since the last automatic replan count, so one failure
+            // does not trigger the same replan twice. The cursor is on the
+            // kernel, which is part of the checkpointed loop state.
+            const found = detectReplanTrigger({
+              steps: state.steps.slice(replannedAtStep),
+              budgetUsed:
+                state.modelCalls / Math.max(1, bounds.maxModelCalls ?? 14),
+              planNodesTotal: planGraph?.nodes.length,
             });
-          }
-          return replan(found.trigger, found.detail, state.steps).catch(
-            () => null,
-          );
-        },
-        onStep: async (step) => {
-          await runtime.activity(
-            "agent.step",
-            step.summary,
-            {
-              armId: this.id,
-              action: step.action,
-              toolId: step.toolId ?? null,
-              outcome: step.outcome,
-              evidenceRefs: step.evidenceRefs ?? [],
-            },
-            "user",
-          );
-        },
-        onToolResult: (entry) => toolbox.record(entry),
-        retrieveMemory: async (query) => {
-          const bundle = await runtime.memory.retrieveBundle({
-            workspaceId: work.workspaceId,
-            objective: query,
-            capability: work.capability,
-            stage: "agent_loop",
-            tokenBudget: 1200,
-            limit: 6,
-          });
-          return bundle.contextLines;
-        },
-        createArtifact: async (artifact) => ({
-          ref: await runtime.repository.createArtifact({
-            organizationId: identity.organizationId,
-            workspaceId: identity.workspaceId,
-            sessionId: work.sessionId,
-            runId: work.runId,
-            kind: artifact.kind.slice(0, 40),
-            title: artifact.title,
-            contentType: "text/markdown",
-            content: { body: artifact.content.slice(0, 200_000) },
-            provenance: {
-              producedBy: `${this.id}.agent_loop`,
-              stageId: work.stageId,
-            },
+            if (!found) return null;
+            if (kernel) {
+              kernel.autoReplans += 1;
+              kernel.replannedAtStep = state.steps.length;
+              kernel.hypotheses.push(
+                createHypothesis({
+                  id: `obs-${state.steps.length}`,
+                  statement: found.detail.slice(0, 400),
+                  supportingEvidence: kernel.evidenceRefs.slice(-4),
+                }),
+              );
+              kernel.hypotheses = kernel.hypotheses.slice(-8);
+              recordPlanRevision(kernel, {
+                atStep: state.steps.length,
+                reason: found.trigger,
+                summary: found.detail,
+              });
+            }
+            return replan(found.trigger, found.detail, state.steps).catch(
+              () => null,
+            );
+          },
+          onStep: async (step) => {
+            await runtime.activity(
+              "agent.step",
+              step.summary,
+              {
+                armId: this.id,
+                action: step.action,
+                toolId: step.toolId ?? null,
+                outcome: step.outcome,
+                evidenceRefs: step.evidenceRefs ?? [],
+              },
+              "user",
+            );
+          },
+          onToolResult: (entry) => toolbox.record(entry),
+          retrieveMemory: async (query) => {
+            const bundle = await runtime.memory.retrieveBundle({
+              workspaceId: work.workspaceId,
+              objective: query,
+              capability: work.capability,
+              stage: "agent_loop",
+              tokenBudget: 1200,
+              limit: 6,
+            });
+            return bundle.contextLines;
+          },
+          createArtifact: async (artifact) => ({
+            ref: await runtime.repository.createArtifact({
+              organizationId: identity.organizationId,
+              workspaceId: identity.workspaceId,
+              sessionId: work.sessionId,
+              runId: work.runId,
+              kind: artifact.kind.slice(0, 40),
+              title: artifact.title,
+              contentType: "text/markdown",
+              content: { body: artifact.content.slice(0, 200_000) },
+              provenance: {
+                producedBy: `${this.id}.agent_loop`,
+                stageId: work.stageId,
+              },
+            }),
           }),
-        }),
-      },
+        },
       }),
     });
 

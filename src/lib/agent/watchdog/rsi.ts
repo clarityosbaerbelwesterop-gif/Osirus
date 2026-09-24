@@ -79,9 +79,7 @@ export function gradeLoopOutcome(result: LoopResult) {
       finished &&
       result.state.steps.some(
         (step) =>
-          step.action === "FINISH" &&
-          step.outcome === "ok" &&
-          !verified,
+          step.action === "FINISH" && step.outcome === "ok" && !verified,
       ),
   };
 }

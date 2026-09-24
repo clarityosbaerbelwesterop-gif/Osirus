@@ -17,7 +17,15 @@ describe("RSI watchdog", () => {
     const result: LoopResult = {
       status: "finished",
       state: {
-        steps: [{ index: 0, action: "FINISH", summary: "done", outcome: "finished", latencyMs: 1 }],
+        steps: [
+          {
+            index: 0,
+            action: "FINISH",
+            summary: "done",
+            outcome: "finished",
+            latencyMs: 1,
+          },
+        ],
         observations: [],
         disclosedSchemas: {},
         modelCalls: 1,

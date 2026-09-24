@@ -49,7 +49,12 @@ async function runProtocol(input: {
     tools: input.tools,
     toolContext: context(),
     decide: input.decide,
-    bounds: { maxSteps: 6, maxModelCalls: 6, maxToolCalls: 4, maxWallMs: 5_000 },
+    bounds: {
+      maxSteps: 6,
+      maxModelCalls: 6,
+      maxToolCalls: 4,
+      maxWallMs: 5_000,
+    },
     hooks: input.hooks,
   });
   const graded = input.grade(result);
@@ -149,8 +154,7 @@ export async function crossDomainLongHorizonL3(): Promise<PulseTaskResult> {
       return {
         success,
         verifiedSuccess: success && answer.includes("schema v3"),
-        notes:
-          "Offline memory + planning fixture across recall and synthesis.",
+        notes: "Offline memory + planning fixture across recall and synthesis.",
       };
     },
   });

@@ -4,7 +4,10 @@ import {
   listPulseRegistrations,
   registerPulseTask,
 } from "../src/lib/agent/pulse/registry";
-import { runPulseSlice, PULSE_INTERVAL_MS } from "../src/lib/agent/pulse/runner";
+import {
+  runPulseSlice,
+  PULSE_INTERVAL_MS,
+} from "../src/lib/agent/pulse/runner";
 import { runCapabilityPulseTick } from "../src/lib/agent/pulse/scheduler";
 import { preparePulseSuite } from "../src/lib/agent/pulse/suite";
 import {
@@ -36,7 +39,9 @@ describe("capability pulse registry", () => {
       objective: "Registered task placeholder",
     });
     expect(
-      listPulseRegistrations({ lane: "CODING" }).some((task) => task.id === "custom:CODING:L2"),
+      listPulseRegistrations({ lane: "CODING" }).some(
+        (task) => task.id === "custom:CODING:L2",
+      ),
     ).toBe(true);
   });
 });
@@ -76,8 +81,7 @@ describe("capability pulse scheduler", () => {
 
     const last = getLastPulseCompletedAt();
     expect(last).toBeTruthy();
-    const recent =
-      Date.now() - Date.parse(last!) < PULSE_INTERVAL_MS;
+    const recent = Date.now() - Date.parse(last!) < PULSE_INTERVAL_MS;
     expect(recent).toBe(true);
   }, 120_000);
 });

@@ -26,11 +26,7 @@ export async function runCapabilityPulseTick(input: {
 
   const active = getActivePulseCycle();
   const last = getLastPulseCompletedAt();
-  if (
-    !active &&
-    last &&
-    Date.now() - Date.parse(last) < PULSE_INTERVAL_MS
-  )
+  if (!active && last && Date.now() - Date.parse(last) < PULSE_INTERVAL_MS)
     return idle("pulse_not_due");
 
   const slice = await runPulseSlice({
@@ -40,9 +36,7 @@ export async function runCapabilityPulseTick(input: {
   });
 
   const busy =
-    !slice.completedCycle &&
-    slice.results.length > 0 &&
-    !input.signal.aborted;
+    !slice.completedCycle && slice.results.length > 0 && !input.signal.aborted;
 
   return {
     ran: slice.results.length > 0,

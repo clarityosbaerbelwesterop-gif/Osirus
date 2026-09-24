@@ -1,5 +1,9 @@
 import { fingerprint } from "../../intelligence/evals/random";
-import type { PulseBaselineCell, PulseCycleState, PulseTaskResult } from "./types";
+import type {
+  PulseBaselineCell,
+  PulseCycleState,
+  PulseTaskResult,
+} from "./types";
 import { laneKey } from "./lanes";
 
 // Pulse cycle state lives in-process and is mirrored to learning artifacts
@@ -62,7 +66,8 @@ function updateBaseline(result: PulseTaskResult) {
   const prior = baselines.get(key);
   const sampleCount = (prior?.sampleCount ?? 0) + 1;
   const verified = result.verifiedSuccess ? 1 : 0;
-  const priorVerified = (prior?.verifiedSuccessRate ?? 0) * (prior?.sampleCount ?? 0);
+  const priorVerified =
+    (prior?.verifiedSuccessRate ?? 0) * (prior?.sampleCount ?? 0);
   baselines.set(key, {
     lane: result.lane,
     level: result.level,
@@ -74,7 +79,10 @@ function updateBaseline(result: PulseTaskResult) {
   });
 }
 
-export function pulseBaselineFor(lane: PulseTaskResult["lane"], level: PulseTaskResult["level"]) {
+export function pulseBaselineFor(
+  lane: PulseTaskResult["lane"],
+  level: PulseTaskResult["level"],
+) {
   return baselines.get(laneKey(lane, level)) ?? null;
 }
 

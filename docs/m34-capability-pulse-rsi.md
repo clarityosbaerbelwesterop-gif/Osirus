@@ -6,17 +6,17 @@ M34 adds an hourly capability pulse and an in-loop RSI watchdog on the existing 
 
 The pulse measures nine lanes at levels L1–L5:
 
-| Lane | Default L3 source |
-| --- | --- |
-| THINKING | M30 baseline |
-| REASONING | M30 baseline |
-| CODING | M30 baseline |
-| RESEARCH | M30 baseline |
-| MATH_SCIENCE | M30 baseline |
-| BUILDING_COMPUTER | M30 baseline (building at L3, computer at L4) |
-| MEMORY_CONTEXT | M30 baseline |
-| TOOL_MULTIMODAL | Offline compute fixture |
-| CROSS_DOMAIN_LONG_HORIZON | Offline memory + synthesis fixture |
+| Lane                      | Default L3 source                             |
+| ------------------------- | --------------------------------------------- |
+| THINKING                  | M30 baseline                                  |
+| REASONING                 | M30 baseline                                  |
+| CODING                    | M30 baseline                                  |
+| RESEARCH                  | M30 baseline                                  |
+| MATH_SCIENCE              | M30 baseline                                  |
+| BUILDING_COMPUTER         | M30 baseline (building at L3, computer at L4) |
+| MEMORY_CONTEXT            | M30 baseline                                  |
+| TOOL_MULTIMODAL           | Offline compute fixture                       |
+| CROSS_DOMAIN_LONG_HORIZON | Offline memory + synthesis fixture            |
 
 Levels without a registered task are skipped. The default suite seeds L3 for every lane.
 

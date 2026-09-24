@@ -151,7 +151,8 @@ export async function ensureBuiltinRunners() {
     }
     if (registration.ref === "baseline:COMPUTER") {
       const record = baselineByDomain.get("COMPUTER");
-      if (record) runners.set(registration.id, baselineRunner(registration, record));
+      if (record)
+        runners.set(registration.id, baselineRunner(registration, record));
       continue;
     }
     const mapping = BASELINE_DOMAIN_BY_LANE[registration.lane];
