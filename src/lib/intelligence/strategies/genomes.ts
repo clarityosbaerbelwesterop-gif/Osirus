@@ -110,6 +110,15 @@ const LIBRARY: LibraryEntry[] = [
     expected: "Higher verified rate on multi-module tasks.",
   },
   {
+    gap: "context",
+    arm: "coding",
+    statement:
+      "The loop spends navigation budget on grep because it lacks a software structure model.",
+    intervention: { coding: { worldModel: "summary" } },
+    expected:
+      "Fewer workspace.search calls; faster path to the failing symbol.",
+  },
+  {
     gap: "planning",
     arm: "coding",
     statement:
@@ -384,6 +393,8 @@ export function describeGenome(genome: StrategyGenome) {
   if (genome.computeTier) parts.push(`tier ${genome.computeTier}`);
   if (genome.coding?.repoContext)
     parts.push(`repo map ${genome.coding.repoContext}`);
+  if (genome.coding?.worldModel)
+    parts.push(`world model ${genome.coding.worldModel}`);
   if (genome.coding?.reproduceFirst) parts.push("reproduce first");
   if (genome.coding?.failureHints)
     parts.push(`failure hints ${genome.coding.failureHints}`);

@@ -50,6 +50,8 @@ export const genomeSchema = z
       .object({
         /** What of the repository map the answering loop is given. */
         repoContext: z.enum(["none", "summary", "full"]),
+        /** Decision-useful software structure model for navigation. */
+        worldModel: z.enum(["none", "summary", "full"]),
         /** Ask for the failing check to be reproduced before any edit. */
         reproduceFirst: z.boolean(),
         /** Hand the loop the failure-class playbook up front. */
@@ -214,7 +216,7 @@ export function directivesUnder(policy: RuntimePolicy, armId: string) {
   const { coding, math, research } = policy.genome;
   if (armId === "coding" && coding?.reproduceFirst)
     out.push(
-      "Before editing anything, run the failing test command once with workspace.run and read its analysis; base the first edit on that output.",
+      "Before editing anything, run the failing test command once with workspace.run and read its analysis; record the result with workspace.reproduce; base the first edit on that output.",
     );
   if (armId === "coding" && coding?.failureHints === "structured")
     out.push(FAILURE_PLAYBOOK);

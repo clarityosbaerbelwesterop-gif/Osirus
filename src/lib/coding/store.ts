@@ -1,5 +1,6 @@
 import type { DiscoveredCommand } from "./commands";
 import type { RepositoryMap } from "./repo-map";
+import type { SoftwareWorldModel } from "./software-world-model";
 import type { CommandRecord } from "./workspace";
 
 // What the database remembers about a coding workspace.
@@ -19,6 +20,7 @@ export type WorkspaceRecord = {
   repository: string | null;
   branch: string | null;
   repositoryMap: RepositoryMap | null;
+  softwareWorldModel: SoftwareWorldModel | null;
   commands: DiscoveredCommand[];
   commandLog: CommandLogEntry[];
   fileTree: string[];
