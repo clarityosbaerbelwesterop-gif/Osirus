@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { composeWorkflow } from "../arms/compose";
 import { analyseTask } from "../arms/thinking";
-import type { RuntimeIdentity, TaskAnalysis } from "../arms/types";
+import type { ArmId, RuntimeIdentity, TaskAnalysis } from "../arms/types";
 import { UnoRouterProvider } from "../models/unorouter";
 import { recordingProvider } from "../models/recording";
 import { resolveProductPolicy } from "../strategy/resolve";
@@ -10,7 +10,7 @@ import { abortLocalRun, registerRunController } from "./cancellation";
 import { persistGraph, setBudget } from "./dispatch";
 import { publicRuntimeErrorMessage, runtimeErrorCode } from "./errors";
 import { RuntimeRepository } from "./repository";
-import { routeObjective } from "./router-v2";
+import { capabilitiesFor, routeObjective } from "./router-v2";
 import { isTerminalRunStatus } from "./state-machine";
 import type { Capability, RuntimePacket } from "./types";
 import { driveSlices, finalizeRun } from "./worker";
@@ -172,6 +172,13 @@ export async function planRuntimeRun(input: {
    * the product champion (or a canary) resolved here.
    */
   policy?: RuntimePolicy;
+  /**
+   * Foundry trials only: the composition the task is defined by, so both
+   * sides of a comparison run the same arms and routing costs no model call.
+   */
+  composition?: ArmId[];
+  /** Foundry trials only: the fixture and hidden checks, server-written. */
+  stageInput?: Record<string, unknown>;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
   const provider = input.policy?.model
@@ -206,21 +213,30 @@ export async function planRuntimeRun(input: {
   // Escalation to a structured analysis is the router's decision, not this
   // function's. Passing the classifier in means an unconfigured provider
   // degrades to the heuristic route instead of failing the run.
-  const decision = await routeObjective(input.objective, {
-    classify: (objective) =>
-      analyseTask({
-        provider: recordingProvider(provider, repository, {
-          organizationId: input.identity.organizationId,
-          workspaceId: input.identity.workspaceId,
-          runId: input.runId,
-          stageId: null,
-          purpose: "routing",
-        }),
-        requestId: `${input.runId}:routing`,
-        objective,
-        signal: input.signal,
-      }),
-  });
+  const fixed = input.composition?.length ? input.composition : null;
+  const decision = fixed
+    ? {
+        ...(await routeObjective(input.objective)),
+        primary: fixed[0]!,
+        composition: fixed,
+        capabilities: capabilitiesFor(fixed),
+        reason: "Composition fixed by the evaluation task.",
+      }
+    : await routeObjective(input.objective, {
+        classify: (objective) =>
+          analyseTask({
+            provider: recordingProvider(provider, repository, {
+              organizationId: input.identity.organizationId,
+              workspaceId: input.identity.workspaceId,
+              runId: input.runId,
+              stageId: null,
+              purpose: "routing",
+            }),
+            requestId: `${input.runId}:routing`,
+            objective,
+            signal: input.signal,
+          }),
+      });
 
   const composed = composeWorkflow({
     objective: input.objective,
@@ -249,6 +265,9 @@ export async function planRuntimeRun(input: {
       runId: input.runId,
     }));
   stampPolicy(composed.graph.nodes, policy);
+  if (input.stageInput)
+    for (const node of composed.graph.nodes)
+      node.input = { ...node.input, ...input.stageInput };
 
   const stageIds = await persistGraph({
     runId: input.runId,

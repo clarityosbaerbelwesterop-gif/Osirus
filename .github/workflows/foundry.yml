@@ -3,8 +3,11 @@ name: Intelligence Foundry cycles
 # Real autonomous research cycles on the real agent, in CI. The model is the
 # free one by operator decision; it allows about one request a minute, so a
 # cycle takes hours. Runs only when dispatched, or on a push whose commit
-# message asks for it with [run-foundry]. Coding runs first, then math:
-# sequential, because both share one account's rate limit.
+# message asks for it with [run-foundry]. Math runs first (cheapest per
+# trial, so a whole cycle can fit one day's free quota), then coding:
+# sequential, because both share one account's quota. When the provider
+# refuses, the runner pauses the cycle instead of charging the refusal to a
+# strategy, and reports where the cycle stands.
 
 on:
   workflow_dispatch:
@@ -21,12 +24,58 @@ permissions:
   contents: read
 
 concurrency:
-  group: osirus-foundry
+  # Pushes without the marker skip at once instead of queueing behind a
+  # multi-hour run.
+  group: osirus-foundry-${{ (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-foundry]')) && 'run' || github.sha }}
   cancel-in-progress: false
 
 jobs:
-  coding:
+  math:
     if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-foundry]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "90"
+      UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
+      UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+      UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
+      UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
+      FOUNDRY_MODEL: ${{ inputs.model || 'deepseek-v4-pro-0813:free' }}
+      FOUNDRY_CAPABILITY: math.quantitative
+      FOUNDRY_MAX_MINUTES: "320"
+      FOUNDRY_DEV: "4"
+      FOUNDRY_ADVERSARIAL: "1"
+      FOUNDRY_HOLDOUT: "3"
+      FOUNDRY_OUT_DIR: foundry-results/math
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: python -m pip install --quiet sympy==1.14.0 numpy
+      - name: Run the math cycle
+        env:
+          OSIRUS_SANDBOX_CREDENTIALS: ci
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
+          OSIRUS_ALLOW_LOCAL_EXEC: "1"
+        run: npx vitest run --config vitest.foundry.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: foundry-math
+          path: foundry-results/math/
+          if-no-files-found: warn
+
+  coding:
+    needs: math
+    if: always() && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-foundry]'))
     runs-on: ubuntu-latest
     timeout-minutes: 350
     env:
@@ -61,48 +110,4 @@ jobs:
         with:
           name: foundry-coding
           path: foundry-results/coding/
-          if-no-files-found: warn
-
-  math:
-    needs: coding
-    if: always() && (github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[run-foundry]'))
-    runs-on: ubuntu-latest
-    timeout-minutes: 350
-    env:
-      OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "90"
-      UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
-      UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
-      UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
-      UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
-      FOUNDRY_MODEL: ${{ inputs.model || 'deepseek-v4-pro-0813:free' }}
-      FOUNDRY_CAPABILITY: math.quantitative
-      FOUNDRY_MAX_MINUTES: "320"
-      FOUNDRY_DEV: "4"
-      FOUNDRY_ADVERSARIAL: "2"
-      FOUNDRY_HOLDOUT: "4"
-      FOUNDRY_OUT_DIR: foundry-results/math
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
-          cache: npm
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-      - run: npm ci
-      - run: python -m pip install --quiet sympy==1.14.0 numpy
-      - name: Run the math cycle
-        env:
-          OSIRUS_SANDBOX_CREDENTIALS: ci
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
-          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
-          OSIRUS_ALLOW_LOCAL_EXEC: "1"
-        run: npx vitest run --config vitest.foundry.config.ts
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: foundry-math
-          path: foundry-results/math/
           if-no-files-found: warn

@@ -42,6 +42,7 @@ export function trialPolicy(
 export function trialStageInput(task: EvalTask): Record<string, unknown> {
   return {
     ...(task.spec.fixture ? { fixture: task.spec.fixture } : {}),
+    ...(task.spec.memory?.length ? { plantedMemory: task.spec.memory } : {}),
     ...(task.spec.verify.kind === "tests"
       ? {
           hiddenChecks: {

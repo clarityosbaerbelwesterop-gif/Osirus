@@ -8,6 +8,7 @@ import type {
   StageOutcome,
 } from "../arms/types";
 import { MemoryRepository } from "../memory/repository";
+import { providerRefusalOf, refusalDelaySeconds } from "../models/provider";
 import { UnoRouterProvider } from "../models/unorouter";
 import type { Verdict } from "../verification/engine";
 import {
@@ -259,14 +260,27 @@ export async function executeClaimedStage(input: {
   try {
     outcome = await arm.executeStage(context);
   } catch (error) {
-    outcome = {
-      kind: "FAILED",
-      failureClass: runtimeErrorCode(error),
-      error: error instanceof Error ? error.message : "stage_failed",
-      // An aborted stage is not a failure of the work; it is this worker
-      // losing the right to do it. Either way the next claim decides.
-      retryable: !guard.leaseLost,
-    };
+    const refusal = providerRefusalOf(error);
+    outcome =
+      refusal?.transient && !guard.leaseLost
+        ? {
+            // A rate limit or outage outside the agent loop: park the stage
+            // for as long as the provider asked, without spending an attempt.
+            kind: "BLOCKED",
+            reason: `provider_${refusal.code}`,
+            retryAfterSeconds: refusalDelaySeconds(refusal),
+          }
+        : {
+            kind: "FAILED",
+            failureClass: refusal
+              ? `provider_${refusal.code}`
+              : runtimeErrorCode(error),
+            error: error instanceof Error ? error.message : "stage_failed",
+            // An aborted stage is not a failure of the work; it is this
+            // worker losing the right to do it. Either way the next claim
+            // decides. A permanent provider refusal will not heal on retry.
+            retryable: !guard.leaseLost && !refusal,
+          };
   } finally {
     guard.stop();
   }
@@ -531,12 +545,15 @@ async function finalizeRunCore(input: {
   if (progress.total > 0 && progress.settled === progress.total) {
     await repository.transitionRun(input.runId, "completed");
     // Learning happens where completion happens -- request, poll or
-    // scheduler tick alike -- not only on the request path.
-    await learnFromRun({
-      identity: input.identity,
-      repository,
-      runId: input.runId,
-    }).catch(() => undefined);
+    // scheduler tick alike -- not only on the request path. Foundry trials
+    // (negative priority) are the exception: memory one trial wrote would be
+    // read by the next, and the comparison would no longer be controlled.
+    if (!isFoundryRun(run))
+      await learnFromRun({
+        identity: input.identity,
+        repository,
+        runId: input.runId,
+      }).catch(() => undefined);
     return {
       status: "completed",
       reason: "all_stages_settled",
@@ -630,6 +647,11 @@ async function learnFromRun(input: {
     .catch(() => undefined);
 }
 
+/** Foundry trials run below product priority; see migration 012. */
+function isFoundryRun(run: object) {
+  return Number((run as { priority?: unknown }).priority ?? 0) < 0;
+}
+
 function isSettledRun(status: string) {
   return (
     status === "completed" || status === "failed" || status === "cancelled"
@@ -659,13 +681,15 @@ export async function finalizeRun(input: {
     const rows = await queryAs<{
       automation_id: string | null;
       objective: string;
+      priority: number;
     }>(
       input.identity.userId,
-      "select automation_id, objective from osirus.runs where id = $1::uuid",
+      "select automation_id, objective, priority from osirus.runs where id = $1::uuid",
       [input.runId],
     );
     const run = rows[0];
-    if (!run) return completion;
+    // Foundry trials notify nobody and trigger nothing.
+    if (!run || isFoundryRun(run)) return completion;
     const { onRunSettled, notifyRunBlocked } =
       await import("../automations/store");
     await onRunSettled(input.identity, {

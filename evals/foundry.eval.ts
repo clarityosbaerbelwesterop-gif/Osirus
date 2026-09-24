@@ -50,6 +50,8 @@ describe("intelligence foundry (live)", () => {
       },
       budgets: {
         ...DEFAULT_SETTINGS.budgets,
+        // The provider's own quota is the real limit; the governor pauses on
+        // its refusal rather than on an envelope of its own here.
         dailyModelCalls: 5000,
         dailyTokens: 50_000_000,
         dailySandboxMinutes: 2000,
@@ -93,14 +95,21 @@ describe("intelligence foundry (live)", () => {
         log: say,
       });
       if (report.completedCycle) completed += 1;
-      if (
-        report.waiting &&
-        /Provider: provider:(insufficient_credit|credential)/.test(
-          report.waiting,
-        )
-      ) {
-        say(`Stopping: ${report.waiting}`);
-        break;
+      // The provider refused: sit it out if it lifts within this job, else
+      // stop and report where the cycle stands. Nothing was charged to a
+      // strategy either way.
+      const paused = report.waiting?.match(/^Provider paused until (\S+)/);
+      if (paused) {
+        const until = Date.parse(paused[1]!);
+        if (until > deadline - 10 * 60_000) {
+          say(`Stopping: ${report.waiting}`);
+          break;
+        }
+        say(`Waiting: ${report.waiting}`);
+        await new Promise((resolve) =>
+          setTimeout(resolve, Math.max(0, until - Date.now()) + 5_000),
+        );
+        continue;
       }
       if (
         report.waiting === "Foundry disabled" ||
@@ -120,8 +129,13 @@ describe("intelligence foundry (live)", () => {
 
     const lines: string[] = [];
     lines.push(`# Foundry cycle report`, "");
+    const pause = snapshot.settings.providerPause;
     lines.push(
       `Model: \`${model}\` · capability focus: \`${capability}\` · ${Math.round((Date.now() - startedAt) / 60_000)} min · completed cycles: ${completed}`,
+      "",
+      pause
+        ? `Provider refusal: \`${pause.code}\` at ${pause.at} after ${pause.observedCalls} model calls today; paused until ${pause.until}.`
+        : "No provider refusal.",
       "",
     );
     for (const cycle of snapshot.cycles) {

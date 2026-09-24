@@ -291,6 +291,10 @@ export async function runArenaTask(
       }
       if (outcome.kind === "PROGRESS" || outcome.kind === "WAITING") continue;
       if (outcome.kind === "BLOCKED") {
+        // A provider refusal that asks for more than a short wait ends the
+        // task: an evaluation cannot sit out a quota, and the refusal says
+        // nothing about the work. The note carries the cause to the judge.
+        if (outcome.retryAfterSeconds > 30) break;
         const wait = Math.min(outcome.retryAfterSeconds, 5) * 1000;
         await new Promise((resolve) => setTimeout(resolve, wait));
         continue;
@@ -309,6 +313,13 @@ export async function runArenaTask(
     }
     if (outcome?.kind === "COMPLETE" && outcome.verdict)
       verdicts.push(outcome.verdict.status);
+    if (outcome?.kind === "BLOCKED") {
+      notes.push(
+        `${key} failed: ${outcome.reason} (retry after ${outcome.retryAfterSeconds}s)`,
+      );
+      status = "failed";
+      break;
+    }
     if (outcome?.kind === "FAILED") {
       notes.push(
         `${key} failed: ${outcome.failureClass}: ${outcome.error.slice(0, 200)}`,

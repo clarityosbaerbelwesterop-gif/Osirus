@@ -30,16 +30,63 @@ export async function allowance(
     sandboxMinutes: settings.budgets.dailySandboxMinutes - used.sandbox_minutes,
     chainedTicks: settings.budgets.dailyChainedTicks - used.chained_ticks,
   };
+  const pause = settings.providerPause;
+  const paused = pause && Date.parse(pause.until) > Date.now();
   const reason = !settings.flags.intelligencePlane
     ? "Intelligence Plane is disabled"
-    : remaining.modelCalls < (need.modelCalls ?? 1)
-      ? "Daily model-call envelope spent"
-      : remaining.tokens <= 0
-        ? "Daily token envelope spent"
-        : remaining.sandboxMinutes < (need.sandboxMinutes ?? 0)
-          ? "Daily sandbox envelope spent"
-          : null;
+    : paused
+      ? `Provider paused until ${pause.until} (${pause.code})`
+      : remaining.modelCalls < (need.modelCalls ?? 1)
+        ? "Daily model-call envelope spent"
+        : remaining.tokens <= 0
+          ? "Daily token envelope spent"
+          : remaining.sandboxMinutes < (need.sandboxMinutes ?? 0)
+            ? "Daily sandbox envelope spent"
+            : null;
   return { allowed: reason === null, reason, remaining };
+}
+
+/** Parked by a provider refusal: how long, from the refusal itself. */
+export function pauseFor(
+  code: string,
+  notes: string[],
+  now = new Date(),
+): number {
+  const asked = notes.join(" ").match(/retry after (\d+)s/)?.[1];
+  if (asked) return Math.max(60, Number(asked)) * 1000;
+  // No credit or no valid credential will not heal by itself soon.
+  if (/insufficient_credit|credential|not_configured/.test(code))
+    return 6 * 60 * 60 * 1000;
+  // A refusal without a stated wait: until the next UTC midnight, when free
+  // pools reset, but never less than fifteen minutes.
+  const midnight = Date.UTC(
+    now.getUTCFullYear(),
+    now.getUTCMonth(),
+    now.getUTCDate() + 1,
+  );
+  return Math.max(15 * 60 * 1000, midnight - now.getTime());
+}
+
+/** Record a provider refusal so no further trial starts before it lifts. */
+export async function pauseForProvider(
+  store: IntelStore,
+  code: string,
+  notes: string[],
+) {
+  const settings = await store.settings();
+  const now = new Date();
+  const used = await store.usage();
+  const until = new Date(now.getTime() + pauseFor(code, notes, now));
+  await store.saveSettings({
+    ...settings,
+    providerPause: {
+      until: until.toISOString(),
+      code,
+      observedCalls: used.model_calls,
+      at: now.toISOString(),
+    },
+  });
+  return until;
 }
 
 export async function charge(

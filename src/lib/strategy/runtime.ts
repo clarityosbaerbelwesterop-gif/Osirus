@@ -235,3 +235,30 @@ export function bucketOf(key: string) {
   }
   return (hash >>> 0) % 100;
 }
+
+/**
+ * Memory an evaluation task plants (a red task's conflicting memory), in
+ * place of workspace retrieval. Honoured only for Foundry trials, whose stage
+ * input the server writes at planning; a product run never has it, and one
+ * trial's memory never reaches another through the workspace.
+ */
+export function plantedMemoryOf(
+  stageInput: Record<string, unknown> | undefined,
+  policy: RuntimePolicy,
+) {
+  if (policy.assignment !== "trial") return null;
+  const raw = stageInput?.plantedMemory;
+  if (!Array.isArray(raw)) return null;
+  return raw
+    .filter((entry): entry is string => typeof entry === "string")
+    .slice(0, 8)
+    .map((content, index) => ({
+      id: `planted-${index}`,
+      tier: "second" as const,
+      kind: "decision",
+      content: content.slice(0, 2_000),
+      source: "evaluation task",
+      updatedAt: new Date(0).toISOString(),
+      verificationStatus: "verified" as const,
+    }));
+}

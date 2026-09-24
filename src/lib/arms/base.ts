@@ -1,5 +1,9 @@
 import { buildFirstBrain } from "../context/builder";
-import type { ModelRole, Usage } from "../models/provider";
+import {
+  refusalDelaySeconds,
+  type ModelRole,
+  type Usage,
+} from "../models/provider";
 import { defineNode, sequential, type WorkflowGraph } from "../runtime/graph";
 import type { Capability } from "../runtime/types";
 import { rankSkills, type RankedSkill } from "../skills";
@@ -25,6 +29,7 @@ import {
   contextTokensUnder,
   directivesUnder,
   memoryLimitsUnder,
+  plantedMemoryOf,
   policyOfStage,
   skillLimitsUnder,
   type RuntimePolicy,
@@ -297,13 +302,17 @@ export abstract class BaseArm implements AgentArm {
   protected async retrieveMemoryStage(
     context: ArmStageContext,
   ): Promise<StageOutcome> {
-    const items = await context.runtime.memory.retrieve({
-      workspaceId: context.work.workspaceId,
-      objective: context.work.objective,
-      capability: this.primaryCapability(),
-      stage: "retrieve_memory",
-      ...memoryLimitsUnder(policyOfStage(context.work.stageInput)),
-    });
+    const policy = policyOfStage(context.work.stageInput);
+    const planted = plantedMemoryOf(context.work.stageInput, policy);
+    const items = planted
+      ? planted
+      : await context.runtime.memory.retrieve({
+          workspaceId: context.work.workspaceId,
+          objective: context.work.objective,
+          capability: this.primaryCapability(),
+          stage: "retrieve_memory",
+          ...memoryLimitsUnder(policy),
+        });
     await context.runtime.activity("memory.retrieved", "Searched memory", {
       count: items.length,
       // What the run was given, so the Memory Context tab can show it. The
@@ -731,6 +740,23 @@ export abstract class BaseArm implements AgentArm {
         kind: "PROGRESS",
         output: { steps: result.state.steps.length },
         resume: {},
+      };
+    }
+    if (result.refusal) {
+      // The provider refused, not the model: keep the loop where it was and
+      // either wait out a transient refusal or fail with its real cause.
+      context.state.loopState = result.state;
+      if (result.refusal.transient)
+        return {
+          kind: "BLOCKED",
+          reason: `provider_${result.refusal.code}`,
+          retryAfterSeconds: refusalDelaySeconds(result.refusal),
+        };
+      return {
+        kind: "FAILED",
+        failureClass: `provider_${result.refusal.code}`,
+        error: `The model provider refused the request (${result.refusal.code}).`,
+        retryable: false,
       };
     }
     delete context.state.loopState;

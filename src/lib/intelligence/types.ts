@@ -386,6 +386,17 @@ export type FoundrySettings = {
   foundryModel: string;
   /** The model product runs use; canaries must be verified on it. */
   productModel: string | null;
+  /**
+   * Set by the Foundry itself when the provider refused a call: no trial
+   * starts before `until`. `observedCalls` is what the day had spent when the
+   * refusal came, the provider's real envelope as far as can be seen.
+   */
+  providerPause?: {
+    until: string;
+    code: string;
+    observedCalls: number;
+    at: string;
+  } | null;
 };
 
 export const DEFAULT_SETTINGS: FoundrySettings = {
@@ -403,13 +414,17 @@ export const DEFAULT_SETTINGS: FoundrySettings = {
     paidModelEmergency: false,
   },
   budgets: {
-    dailyModelCalls: 600,
+    // The free model's pool refuses after roughly 90-100 calls a day
+    // (observed 2026-09-23); the envelope stays under that.
+    dailyModelCalls: 90,
     dailyTokens: 3_000_000,
     dailyCostUsd: 0,
     dailySandboxMinutes: 180,
-    dailyChainedTicks: 400,
+    // Each chained tick holds a function for up to 300 s: 36 is three hours.
+    dailyChainedTicks: 36,
     parallelTrials: 1,
   },
   foundryModel: "deepseek-v4-pro-0813:free",
   productModel: null,
+  providerPause: null,
 };

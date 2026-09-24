@@ -18,6 +18,7 @@ import {
   allowance,
   charge,
   DEFAULT_CALLS_PER_TRIAL,
+  pauseForProvider,
 } from "../governor/governor";
 import { compileExperience } from "../learning/compiler";
 import { registerModels, updateModelCompetition } from "../models/registry";
@@ -194,7 +195,8 @@ async function runTrials(
   }
 
   while (Date.now() < ctx.deadline - 5_000 && !ctx.signal.aborted) {
-    const budget = await allowance(store, settings, {
+    // Re-read each time: a refusal collected above may have paused us.
+    const budget = await allowance(store, await store.settings(), {
       modelCalls: DEFAULT_CALLS_PER_TRIAL,
     });
     if (!budget.allowed)
@@ -256,16 +258,14 @@ async function runTrials(
       model,
       version,
     );
-    const provider = outcome.result.failureClass?.startsWith("provider:");
-    if (
-      provider &&
-      /insufficient_credit|credential/.test(outcome.result.failureClass!)
-    )
+    if (outcome.result.failureClass?.startsWith("provider:")) {
+      const pause = (await store.settings()).providerPause;
       return {
         done: false,
         progressed,
-        waiting: `Provider: ${outcome.result.failureClass}`,
+        waiting: `Provider paused until ${pause?.until ?? "later"} (${outcome.result.failureClass})`,
       };
+    }
   }
 
   const left = (await store.listTrials(experimentId)).filter(
@@ -291,15 +291,26 @@ async function settleTrial(
   const { store } = ctx;
   const version = known ?? (await store.getVersion(trial.strategyVersionId));
   if (!version) return 0;
-  const provider = result.failureClass?.startsWith("provider:");
-  // A provider outage is not evidence about the strategy: retry once later.
-  if (provider && trial.attempts < 2) {
-    await store.updateTrial(trial.id, { status: "pending", result });
+  // A provider refusal is not evidence about the strategy. The trial goes
+  // back in the queue as if it had not run, and the Foundry pauses for as
+  // long as the provider asked instead of burning the rest of the suite.
+  if (result.failureClass?.startsWith("provider:")) {
+    await store.updateTrial(trial.id, {
+      status: "pending",
+      attempts: Math.max(0, trial.attempts - 1),
+    });
     await charge(store, {
       model_calls: result.modelCalls,
       tokens: result.tokens,
     });
-    ctx.log?.(`  provider failure (${result.failureClass}); trial re-queued`);
+    const until = await pauseForProvider(
+      store,
+      result.failureClass.slice("provider:".length),
+      result.notes,
+    );
+    ctx.log?.(
+      `  provider refused (${result.failureClass}); trial re-queued, Foundry paused until ${until.toISOString()}`,
+    );
     return 1;
   }
   const experience = await recordTrialExperience(store, {

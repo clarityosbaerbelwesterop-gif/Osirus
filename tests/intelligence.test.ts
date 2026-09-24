@@ -20,7 +20,10 @@ import {
   mathTask,
 } from "../src/lib/intelligence/evals/math-tasks";
 import { hamming, simhash } from "../src/lib/intelligence/evals/random";
-import { judge } from "../src/lib/intelligence/executors/judge";
+import {
+  judge,
+  trialResultFrom,
+} from "../src/lib/intelligence/executors/judge";
 import { InProcessExecutor } from "../src/lib/intelligence/executors/in-process";
 import { foundryStep } from "../src/lib/intelligence/loop/research-loop";
 import {
@@ -654,4 +657,165 @@ describe("intelligence research loop", () => {
     expect((await store.listExperience({})).length).toBeGreaterThan(0);
     expect((await store.usage()).model_calls).toBeGreaterThan(0);
   }, 120_000);
+});
+
+describe("provider refusals", () => {
+  it("classifies refusals by shape, transient or permanent", async () => {
+    const { providerRefusalOf, refusalDelaySeconds } =
+      await import("../src/lib/models/provider");
+    const make = (code: string, retryAfterMs?: number) =>
+      Object.assign(new Error(code), {
+        name: "ProviderError",
+        code,
+        retryAfterMs,
+      });
+    expect(providerRefusalOf(make("rate_limited", 120_000))).toEqual({
+      code: "rate_limited",
+      transient: true,
+      retryAfterMs: 120_000,
+    });
+    expect(providerRefusalOf(make("insufficient_credit"))?.transient).toBe(
+      false,
+    );
+    // A bad reply or a timeout is about the work, not a refusal.
+    expect(providerRefusalOf(make("invalid_json"))).toBeNull();
+    expect(providerRefusalOf(make("timeout"))).toBeNull();
+    expect(providerRefusalOf(new Error("rate_limited"))).toBeNull();
+    expect(
+      refusalDelaySeconds({
+        code: "rate_limited",
+        transient: true,
+        retryAfterMs: 5_000,
+      }),
+    ).toBe(60);
+    expect(
+      refusalDelaySeconds({
+        code: "rate_limited",
+        transient: true,
+        retryAfterMs: 48 * 3_600_000,
+      }),
+    ).toBe(6 * 3600);
+  });
+
+  it("judges a refused trial as a provider failure, not the strategy's", () => {
+    const result = trialResultFrom({
+      verify: { kind: "numeric", value: 4, tolerance: 0 },
+      run: {
+        status: "failed",
+        answer: "",
+        verdicts: [],
+        hiddenCheck: null,
+        notes: ["answer failed: provider_rate_limited (retry after 3600s)"],
+      },
+      costUsd: 0,
+      tokens: 0,
+      latencyMs: 1000,
+      modelCalls: 0,
+      toolCalls: 0,
+      repairs: 0,
+    });
+    expect(result.failureClass).toBe("provider:rate_limited");
+  });
+
+  it("pauses the Foundry on a refusal and re-queues the trial uncounted", async () => {
+    const { pauseFor, allowance } =
+      await import("../src/lib/intelligence/governor/governor");
+    const now = new Date("2026-09-23T23:17:00Z");
+    expect(
+      pauseFor(
+        "rate_limited",
+        ["x failed: provider_rate_limited (retry after 600s)"],
+        now,
+      ),
+    ).toBe(600_000);
+    // No stated wait: until the UTC midnight reset, at least 15 minutes.
+    expect(pauseFor("rate_limited", [], now)).toBe(43 * 60_000);
+    expect(pauseFor("insufficient_credit", [], now)).toBe(6 * 3_600_000);
+
+    const store = new MemoryIntelStore();
+    const settings = await store.settings();
+    await store.saveSettings({
+      ...settings,
+      flags: { ...settings.flags, intelligencePlane: true },
+      providerPause: {
+        until: new Date(Date.now() + 60_000).toISOString(),
+        code: "rate_limited",
+        observedCalls: 92,
+        at: new Date().toISOString(),
+      },
+    });
+    const state = await allowance(store, await store.settings());
+    expect(state.allowed).toBe(false);
+    expect(state.reason).toMatch(/^Provider paused until .* \(rate_limited\)$/);
+  });
+});
+
+describe("research loop under a provider refusal", () => {
+  it("pauses instead of charging the refusal to the strategy", async () => {
+    const store = new MemoryIntelStore();
+    await store.saveSettings({
+      ...DEFAULT_SETTINGS,
+      flags: {
+        ...DEFAULT_SETTINGS.flags,
+        intelligencePlane: true,
+        experiments: true,
+        strategyEvolution: true,
+      },
+      foundryModel: "scripted-free",
+    });
+    const refusing: ModelProvider = {
+      modelId: () => "scripted-free",
+      structured: async () => {
+        throw Object.assign(new Error("daily free budget spent"), {
+          name: "ProviderError",
+          code: "rate_limited",
+          retryAfterMs: 2 * 3_600_000,
+        });
+      },
+      complete: async () => {
+        throw Object.assign(new Error("daily free budget spent"), {
+          name: "ProviderError",
+          code: "rate_limited",
+          retryAfterMs: 2 * 3_600_000,
+        });
+      },
+    } as unknown as ModelProvider;
+    const executor = new InProcessExecutor({
+      provider: () => refusing,
+      sandbox: async () => new UnconfiguredSandbox("unit test"),
+    });
+    const log: string[] = [];
+    let waiting: string | null = null;
+    for (let step = 0; step < 12 && !waiting?.startsWith("Provider"); step += 1)
+      waiting = (
+        await foundryStep({
+          store,
+          executor,
+          owner: "test",
+          deadline: Date.now() + 60_000,
+          signal: new AbortController().signal,
+          focusCapability: "math.quantitative",
+          suite: { dev: 3, adversarial: 1, holdout: 3 },
+          log: (line) => log.push(line),
+        })
+      ).waiting;
+    expect(waiting, log.join("\n")).toMatch(/^Provider paused until/);
+    const settings = await store.settings();
+    expect(settings.providerPause?.code).toBe("rate_limited");
+    // Nothing was judged: no experience, and every trial is still pending.
+    expect(await store.listExperience({})).toHaveLength(0);
+    const [experiment] = await store.listExperiments(1);
+    const trials = await store.listTrials(experiment!.id);
+    expect(trials.every((trial) => trial.status === "pending")).toBe(true);
+    expect(trials.every((trial) => trial.attempts === 0)).toBe(true);
+    // And the next step does not start another trial while paused.
+    const again = await foundryStep({
+      store,
+      executor,
+      owner: "test",
+      deadline: Date.now() + 60_000,
+      signal: new AbortController().signal,
+    });
+    expect(again.waiting).toMatch(/^Provider paused until/);
+  });
 });
