@@ -1,153 +1,34 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import type { BaselineRecord } from "../src/lib/agent/baseline";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { CAPABILITY_LANES } from "../src/lib/agent/pulse/lanes";
+import {
+  clearPulseRegistry,
+  listPulseRegistrations,
+  registerPulseTask,
+  seedDefaultPulseRegistry,
+} from "../src/lib/agent/pulse/registry";
+import {
+  PULSE_INTERVAL_MS,
+  runPulseSlice,
+} from "../src/lib/agent/pulse/runner";
+import { runCapabilityPulseTick } from "../src/lib/agent/pulse/scheduler";
+import {
+  getActivePulseCycle,
+  getLastPulseCompletedAt,
+  resetPulseState,
+  startPulseCycle,
+} from "../src/lib/agent/pulse/state";
 import type { CapabilityLane } from "../src/lib/agent/pulse/lanes";
 import type { PulseTaskResult } from "../src/lib/agent/pulse/types";
 
-const mockBaselineRecords = vi.hoisted((): BaselineRecord[] => [
-  {
-    id: "mock-thinking",
-    domain: "THINKING",
-    objective: "mock",
-    liveProvider: false,
-    mode: "offline-fixture",
-    success: true,
-    verifiedSuccess: true,
-    falseCompletion: false,
-    modelCalls: 1,
-    toolCalls: 0,
-    steps: 1,
-    repairs: 0,
-    latencyMs: 0,
-    costUsd: null,
-    notes: "mock",
-  },
-  {
-    id: "mock-reasoning",
-    domain: "REASONING",
-    objective: "mock",
-    liveProvider: false,
-    mode: "offline-fixture",
-    success: true,
-    verifiedSuccess: true,
-    falseCompletion: false,
-    modelCalls: 1,
-    toolCalls: 0,
-    steps: 1,
-    repairs: 0,
-    latencyMs: 0,
-    costUsd: null,
-    notes: "mock",
-  },
-  {
-    id: "mock-coding",
-    domain: "CODING",
-    objective: "mock",
-    liveProvider: false,
-    mode: "offline-fixture",
-    success: false,
-    verifiedSuccess: false,
-    falseCompletion: false,
-    modelCalls: 1,
-    toolCalls: 0,
-    steps: 1,
-    repairs: 0,
-    latencyMs: 0,
-    costUsd: null,
-    notes: "mock",
-  },
-  {
-    id: "mock-research",
-    domain: "RESEARCH",
-    objective: "mock",
-    liveProvider: false,
-    mode: "offline-fixture",
-    success: true,
-    verifiedSuccess: true,
-    falseCompletion: false,
-    modelCalls: 1,
-    toolCalls: 0,
-    steps: 1,
-    repairs: 0,
-    latencyMs: 0,
-    costUsd: null,
-    notes: "mock",
-  },
-  {
-    id: "mock-math",
-    domain: "MATH",
-    objective: "mock",
-    liveProvider: false,
-    mode: "offline-fixture",
-    success: true,
-    verifiedSuccess: true,
-    falseCompletion: false,
-    modelCalls: 1,
-    toolCalls: 0,
-    steps: 1,
-    repairs: 0,
-    latencyMs: 0,
-    costUsd: null,
-    notes: "mock",
-  },
-  {
-    id: "mock-building",
-    domain: "BUILDING",
-    objective: "mock",
-    liveProvider: false,
-    mode: "offline-fixture",
-    success: true,
-    verifiedSuccess: true,
-    falseCompletion: false,
-    modelCalls: 1,
-    toolCalls: 0,
-    steps: 1,
-    repairs: 0,
-    latencyMs: 0,
-    costUsd: null,
-    notes: "mock",
-  },
-  {
-    id: "mock-computer",
-    domain: "COMPUTER",
-    objective: "mock",
-    liveProvider: false,
-    mode: "offline-fixture",
-    success: true,
-    verifiedSuccess: false,
-    falseCompletion: false,
-    modelCalls: 1,
-    toolCalls: 0,
-    steps: 1,
-    repairs: 0,
-    latencyMs: 0,
-    costUsd: null,
-    notes: "mock",
-  },
-  {
-    id: "mock-memory",
-    domain: "MEMORY",
-    objective: "mock",
-    liveProvider: false,
-    mode: "offline-fixture",
-    success: true,
-    verifiedSuccess: true,
-    falseCompletion: false,
-    modelCalls: 1,
-    toolCalls: 0,
-    steps: 1,
-    repairs: 0,
-    latencyMs: 0,
-    costUsd: null,
-    notes: "mock",
-  },
-]);
+const FAST_TASK_IDS = ["fast:lane-a", "fast:lane-b", "fast:lane-c"] as const;
 
-function mockPulseResult(
+function instantResult(
+  taskId: string,
   lane: CapabilityLane,
   level: PulseTaskResult["level"],
 ): PulseTaskResult {
   return {
-    taskId: `mock:${lane}:L${level}`,
+    taskId,
     lane,
     level,
     success: true,
@@ -158,48 +39,59 @@ function mockPulseResult(
     steps: 1,
     repairs: 0,
     latencyMs: 0,
-    notes: "mock fixture",
+    notes: "instant test runner",
   };
 }
 
-vi.mock("../src/lib/agent/baseline", () => ({
-  runCapabilityBaseline: vi.fn(async () => mockBaselineRecords),
-}));
+function registerFastRunners() {
+  const lanes: CapabilityLane[] = ["THINKING", "REASONING", "CODING"];
+  FAST_TASK_IDS.forEach((id, index) => {
+    registerPulseTask(
+      {
+        id,
+        lane: lanes[index]!,
+        level: 3,
+        source: "builtin",
+        ref: "test:instant",
+        title: id,
+        objective: "instant",
+      },
+      async () => instantResult(id, lanes[index]!, 3),
+    );
+  });
+}
 
-vi.mock("../src/lib/agent/pulse/fixtures", () => ({
-  toolMultimodalL3: vi.fn(async () => mockPulseResult("TOOL_MULTIMODAL", 3)),
-  crossDomainLongHorizonL3: vi.fn(async () =>
-    mockPulseResult("CROSS_DOMAIN_LONG_HORIZON", 3),
-  ),
-}));
+function installFastSuite() {
+  clearPulseRegistry();
+  resetPulseState();
+  registerFastRunners();
+  startPulseCycle([...FAST_TASK_IDS]);
+}
 
-import {
-  clearPulseRegistry,
-  listPulseRegistrations,
-  registerPulseTask,
-} from "../src/lib/agent/pulse/registry";
-import {
-  runPulseSlice,
-  PULSE_INTERVAL_MS,
-} from "../src/lib/agent/pulse/runner";
-import { runCapabilityPulseTick } from "../src/lib/agent/pulse/scheduler";
-import { preparePulseSuite } from "../src/lib/agent/pulse/suite";
-import {
-  getActivePulseCycle,
-  getLastPulseCompletedAt,
-  resetPulseState,
-} from "../src/lib/agent/pulse/state";
-import { CAPABILITY_LANES } from "../src/lib/agent/pulse/lanes";
+vi.mock("../src/lib/agent/pulse/suite", async (importOriginal) => {
+  const actual =
+    await importOriginal<typeof import("../src/lib/agent/pulse/suite")>();
+  return {
+    ...actual,
+    preparePulseSuite: vi.fn(async () => {
+      clearPulseRegistry();
+      resetPulseState();
+      registerFastRunners();
+      return [...FAST_TASK_IDS];
+    }),
+  };
+});
 
 afterEach(() => {
+  vi.useRealTimers();
   clearPulseRegistry();
   resetPulseState();
 });
 
 describe("capability pulse registry", () => {
-  it("seeds nine L3 lanes and accepts registrations for M35+", async () => {
-    const taskIds = await preparePulseSuite();
-    expect(taskIds.length).toBeGreaterThanOrEqual(CAPABILITY_LANES.length);
+  it("seeds nine L3 lanes and accepts registrations for M35+", () => {
+    seedDefaultPulseRegistry();
+    expect(listPulseRegistrations().length).toBe(CAPABILITY_LANES.length);
     const lanes = new Set(listPulseRegistrations().map((task) => task.lane));
     for (const lane of CAPABILITY_LANES) expect(lanes.has(lane)).toBe(true);
 
@@ -221,14 +113,18 @@ describe("capability pulse registry", () => {
 });
 
 describe("capability pulse scheduler", () => {
+  beforeEach(() => {
+    installFastSuite();
+  });
+
   it("runs a bounded slice and chains until the cycle completes", async () => {
     const first = await runPulseSlice({
       deadline: Date.now() + 60_000,
       signal: new AbortController().signal,
       maxTasks: 2,
     });
-    expect(first.results.length).toBeGreaterThan(0);
-    expect(getActivePulseCycle()?.cursor).toBe(first.results.length);
+    expect(first.results).toHaveLength(2);
+    expect(getActivePulseCycle()?.cursor).toBe(2);
 
     const tick = await runCapabilityPulseTick({
       owner: "test",
@@ -239,23 +135,35 @@ describe("capability pulse scheduler", () => {
   });
 
   it("waits an hour after a completed cycle before starting another", async () => {
-    while (getActivePulseCycle() || !getLastPulseCompletedAt()) {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2026-01-01T00:00:00.000Z"));
+
+    while (
+      getActivePulseCycle() &&
+      getActivePulseCycle()!.cursor < FAST_TASK_IDS.length
+    ) {
       await runPulseSlice({
         deadline: Date.now() + 120_000,
         signal: new AbortController().signal,
-        maxTasks: 5,
+        maxTasks: FAST_TASK_IDS.length,
       });
     }
-    const due = await runCapabilityPulseTick({
+    expect(getLastPulseCompletedAt()).toBeTruthy();
+    expect(getActivePulseCycle()).toBeNull();
+
+    const blocked = await runCapabilityPulseTick({
       owner: "test",
       signal: new AbortController().signal,
     });
-    expect(due.ran).toBe(false);
-    expect(due.reason).toBe("pulse_not_due");
+    expect(blocked.ran).toBe(false);
+    expect(blocked.reason).toBe("pulse_not_due");
 
-    const last = getLastPulseCompletedAt();
-    expect(last).toBeTruthy();
-    const recent = Date.now() - Date.parse(last!) < PULSE_INTERVAL_MS;
-    expect(recent).toBe(true);
+    vi.setSystemTime(new Date(Date.now() + PULSE_INTERVAL_MS + 1));
+    const allowed = await runCapabilityPulseTick({
+      owner: "test",
+      signal: new AbortController().signal,
+    });
+    expect(allowed.ran).toBe(true);
+    expect(allowed.reason).not.toBe("pulse_not_due");
   });
 });
