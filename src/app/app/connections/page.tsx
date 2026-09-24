@@ -15,7 +15,12 @@ export default async function ConnectionsPage() {
       title="Connections"
       lede="What Osirus can reach on your behalf, and whether each connection works right now."
     >
-      <ConnectionsView github={data.github} mcp={data.mcp} />
+      <ConnectionsView
+        github={data.github}
+        mcp={data.mcp}
+        platforms={data.platforms}
+        webhooks={data.webhooks}
+      />
     </PageFrame>
   );
 }

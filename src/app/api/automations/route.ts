@@ -15,7 +15,31 @@ const schema = z
   .object({
     name: z.string().trim().min(1).max(120),
     objective: z.string().trim().min(8).max(4000),
-    trigger: z.enum(["schedule", "run_completed", "connector_changed"]),
+    trigger: z.enum([
+      "schedule",
+      "run_completed",
+      "connector_changed",
+      "webhook",
+    ]),
+    webhook: z
+      .object({
+        endpointId: z.string().uuid().nullable().optional(),
+        events: z
+          .array(
+            z.enum([
+              "push",
+              "pull_request",
+              "ci_failure",
+              "deployment",
+              "db_event",
+              "generic",
+            ]),
+          )
+          .max(6)
+          .optional(),
+      })
+      .nullable()
+      .optional(),
     schedule: z
       .object({
         cadence: z.enum(["daily", "weekdays", "weekly"]),

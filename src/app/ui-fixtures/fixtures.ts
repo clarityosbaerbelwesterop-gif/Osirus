@@ -725,9 +725,53 @@ export function connectionsFixture() {
         },
       ],
     },
+    platforms: [
+      {
+        id: "vercel" as const,
+        name: "Vercel",
+        status: "CONNECTED" as const,
+        account: "baerbel",
+        health: {
+          last: {
+            ok: true,
+            latencyMs: 212,
+            error: null,
+            checkedAt: minutes(4, now),
+          },
+          lastOkAt: minutes(4, now),
+        },
+      },
+      {
+        id: "neon" as const,
+        name: "Neon",
+        status: "NOT_CONNECTED" as const,
+        account: null,
+        health: null,
+      },
+      {
+        id: "supabase" as const,
+        name: "Supabase",
+        status: "NOT_CONNECTED" as const,
+        account: null,
+        health: null,
+      },
+    ],
+    webhooks: {
+      available: true,
+      endpoints: [
+        {
+          id: "3d4e5f6a-7b8c-4d9e-8f0a-1b2c3d4e5f6a",
+          name: "stats-lib CI",
+          source: "github" as const,
+          events: ["ci_failure"],
+          enabled: true,
+          lastDeliveryAt: minutes(35, now),
+          lastStatus: "triggered",
+        },
+      ],
+    },
   };
 }
-
 export function approvalsFixture() {
   const active = codingRunFixture("active");
   return active.approvals.map((row) => ({

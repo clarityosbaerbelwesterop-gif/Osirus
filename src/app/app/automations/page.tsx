@@ -5,6 +5,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { listAutomations } from "@/lib/automations/store";
 import type { AutomationView } from "@/lib/automations/store-types";
 import { requireProductSession } from "@/lib/product/session";
+import { listEndpoints } from "@/lib/webhooks/store";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Automations" };
@@ -18,13 +19,14 @@ export default async function AutomationsPage() {
   } catch {
     available = false;
   }
+  const endpoints = await listEndpoints(identity).catch(() => []);
   return (
     <PageFrame
       title="Automations"
       lede="Objectives that run on their own: on a schedule or when something happens. Each run is an ordinary task with the same approvals and audit."
     >
       {available ? (
-        <AutomationList automations={automations} />
+        <AutomationList automations={automations} endpoints={endpoints} />
       ) : (
         <EmptyState title="Automations are not available yet">
           This deployment has not been upgraded for automations.

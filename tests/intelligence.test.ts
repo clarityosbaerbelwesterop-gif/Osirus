@@ -910,3 +910,68 @@ describe("value of compute and skill evolution", () => {
     ]);
   });
 });
+
+describe("team topology", () => {
+  it("routes a draft through critic and synthesizer, and keeps the draft when the critic cannot run", async () => {
+    const { armFor } = await import("../src/lib/arms/registry");
+    const arm = armFor("thinking") as unknown as {
+      teamReview(
+        context: unknown,
+        input: { answer: string; observations: string[] },
+      ): Promise<string>;
+    };
+    const activities: string[] = [];
+    const context = (structured: (id: string) => unknown) => ({
+      identity: { userId: "u", organizationId: "o", workspaceId: "w" },
+      work: {
+        runId: "r",
+        stageId: "s",
+        attemptNumber: 1,
+        objective: "Add 5 and 7.",
+      },
+      signal: new AbortController().signal,
+      state: {},
+      runtime: {
+        provider: {
+          modelId: () => "m",
+          structured: async (input: {
+            requestId: string;
+            validate: (v: unknown) => unknown;
+          }) => ({
+            value: input.validate(structured(input.requestId)),
+            usage: { inputTokens: 1, outputTokens: 1, cost: 0 },
+          }),
+        },
+        repository: {
+          createModelCall: async () => "call",
+          finishModelCall: async () => undefined,
+        },
+        activity: async (type: string) => {
+          activities.push(type);
+          return { id: "e" };
+        },
+      },
+    });
+    const revised = await arm.teamReview(
+      context((id) =>
+        id.endsWith(":critic")
+          ? { verdict: "revise", issues: ["5 + 7 is 12, not 13."] }
+          : { answer: "5 + 7 = 12." },
+      ),
+      { answer: "5 + 7 = 13.", observations: [] },
+    );
+    expect(revised).toBe("5 + 7 = 12.");
+    expect(activities).toEqual(["team.critic", "team.revised"]);
+
+    const kept = await arm.teamReview(
+      context(() => {
+        throw Object.assign(new Error("quota"), {
+          name: "ProviderError",
+          code: "rate_limited",
+        });
+      }),
+      { answer: "5 + 7 = 12.", observations: [] },
+    );
+    expect(kept).toBe("5 + 7 = 12.");
+  });
+});

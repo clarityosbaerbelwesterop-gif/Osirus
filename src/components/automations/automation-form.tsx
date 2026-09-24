@@ -34,13 +34,30 @@ const ERRORS: Record<string, string> = {
   rate_limited: "Too many changes at once. Wait a minute.",
 };
 
-export function AutomationForm({ onDone }: { onDone: () => void }) {
+const WEBHOOK_EVENTS = [
+  { id: "push", label: "Push" },
+  { id: "pull_request", label: "Pull request" },
+  { id: "ci_failure", label: "CI failure" },
+  { id: "deployment", label: "Deployment" },
+  { id: "db_event", label: "Database event" },
+  { id: "generic", label: "Other signed event" },
+] as const;
+
+export function AutomationForm({
+  onDone,
+  endpoints = [],
+}: {
+  onDone: () => void;
+  endpoints?: Array<{ id: string; name: string; source: string }>;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [objective, setObjective] = useState("");
   const [trigger, setTrigger] = useState<
-    "schedule" | "run_completed" | "connector_changed"
+    "schedule" | "run_completed" | "connector_changed" | "webhook"
   >("schedule");
+  const [endpointId, setEndpointId] = useState<string>("");
+  const [events, setEvents] = useState<string[]>(["ci_failure"]);
   const [cadence, setCadence] = useState<"daily" | "weekdays" | "weekly">(
     "weekdays",
   );
@@ -66,6 +83,10 @@ export function AutomationForm({ onDone }: { onDone: () => void }) {
         schedule:
           trigger === "schedule"
             ? { cadence, weekday: cadence === "weekly" ? weekday : undefined }
+            : null,
+        webhook:
+          trigger === "webhook"
+            ? { endpointId: endpointId || null, events }
             : null,
         policyPreset: preset,
         maxCostUsd: maxCost ? Number(maxCost) : null,
@@ -186,9 +207,61 @@ export function AutomationForm({ onDone }: { onDone: () => void }) {
             When a connection changes (GitHub connected or disconnected)
           </span>
         </label>
-        <p className="field-hint">
-          GitHub repository events and inbound webhooks are not available yet.
-        </p>
+        <label className="check">
+          <input
+            type="radio"
+            name="trigger"
+            checked={trigger === "webhook"}
+            disabled={!endpoints.length}
+            onChange={() => setTrigger("webhook")}
+          />
+          <span>
+            When a signed webhook arrives
+            {endpoints.length
+              ? ""
+              : " (add a webhook endpoint under Connections first)"}
+          </span>
+        </label>
+        {trigger === "webhook" ? (
+          <div className="indent stack">
+            <select
+              className="select"
+              aria-label="Webhook endpoint"
+              value={endpointId}
+              onChange={(event) => setEndpointId(event.target.value)}
+            >
+              <option value="">Any endpoint in this workspace</option>
+              {endpoints.map((endpoint) => (
+                <option key={endpoint.id} value={endpoint.id}>
+                  {endpoint.name} ({endpoint.source})
+                </option>
+              ))}
+            </select>
+            <div className="tool-checks" role="group" aria-label="Events">
+              {WEBHOOK_EVENTS.map((event) => (
+                <label key={event.id} className="check">
+                  <input
+                    type="checkbox"
+                    checked={events.includes(event.id)}
+                    onChange={(change) =>
+                      setEvents((current) =>
+                        change.target.checked
+                          ? [...current, event.id]
+                          : current.filter((id) => id !== event.id),
+                      )
+                    }
+                  />
+                  <span>{event.label}</span>
+                </label>
+              ))}
+            </div>
+            <span className="field-hint">
+              Only verified deliveries start it; the run is told what happened
+              (event, repository, branch, commit), never the sender&apos;s free
+              text.
+            </span>
+          </div>
+        ) : null}
       </fieldset>
       <fieldset className="field fieldset">
         <legend className="field-label">What it may do on its own</legend>

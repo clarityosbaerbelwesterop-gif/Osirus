@@ -185,6 +185,24 @@ const LIBRARY: LibraryEntry[] = [
     intervention: { research: { citeEverySentence: true } },
     expected: "Higher citation validity.",
   },
+  {
+    gap: "verification",
+    arm: "math_science",
+    statement:
+      "A single worker ships its first draft; an independent critic would catch the wrong quantity before it does.",
+    intervention: { team: { critic: true } },
+    expected:
+      "Fewer wrong answers at the cost of one or two calls: a team only wins if the gain outweighs that.",
+  },
+  {
+    gap: "planning",
+    arm: "research",
+    statement:
+      "Parts of the question are left unanswered; a critic checking coverage against the objective would find them.",
+    intervention: { team: { critic: true } },
+    expected:
+      "More complete answers; the team must beat one worker on the same tasks.",
+  },
 ];
 
 function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
@@ -355,6 +373,7 @@ export function describeGenome(genome: StrategyGenome) {
   if (genome.math?.computeFirst) parts.push("compute first");
   if (genome.math?.finalLine) parts.push("final line");
   if (genome.research?.citeEverySentence) parts.push("cite every sentence");
+  if (genome.team?.critic) parts.push("team: solver + critic");
   if (genome.contextTokens) parts.push(`context ${genome.contextTokens}`);
   if (genome.skills?.maxActive !== undefined)
     parts.push(`skills ${genome.skills.maxActive}`);

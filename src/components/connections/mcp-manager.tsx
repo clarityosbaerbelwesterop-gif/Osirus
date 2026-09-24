@@ -49,6 +49,14 @@ const ADD_ERRORS: Record<string, string> = {
     "Connections are not set up on this deployment yet.",
 };
 
+type RegistryResult = {
+  name: string;
+  title: string | null;
+  description: string;
+  remoteUrl: string | null;
+  localOnly: boolean;
+};
+
 function AddServerForm({
   onDone,
   onCancel,
@@ -61,6 +69,27 @@ function AddServerForm({
   const [token, setToken] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [searching, setSearching] = useState(false);
+  const [results, setResults] = useState<RegistryResult[] | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+
+  const search = async () => {
+    setSearching(true);
+    setSearchError(null);
+    const response = await fetch(
+      `/api/mcp/registry?q=${encodeURIComponent(query.trim())}`,
+    ).catch(() => null);
+    setSearching(false);
+    const body = (await response?.json().catch(() => ({}))) as {
+      servers?: RegistryResult[];
+    };
+    if (!response?.ok || !body.servers) {
+      setSearchError("The MCP Registry could not be searched right now.");
+      return;
+    }
+    setResults(body.servers);
+  };
 
   const submit = async () => {
     setBusy(true);
@@ -94,6 +123,78 @@ function AddServerForm({
           servers you trust. Osirus treats every tool as high risk and asks you
           before each call, whatever the server says about itself.
         </span>
+      </div>
+      <div className="stack">
+        <div className="row row-wrap">
+          <Field
+            label="Find in the MCP Registry"
+            hint="The official registry. Only servers with a remote endpoint can be added here."
+          >
+            {(props) => (
+              <input
+                {...props}
+                className="input"
+                type="search"
+                value={query}
+                placeholder="github, sentry, context7…"
+                onChange={(event) => setQuery(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") {
+                    event.preventDefault();
+                    if (query.trim().length >= 2) void search();
+                  }
+                }}
+              />
+            )}
+          </Field>
+          <button
+            type="button"
+            className="btn btn-secondary"
+            disabled={searching || query.trim().length < 2}
+            onClick={() => void search()}
+          >
+            {searching ? "Searching…" : "Search"}
+          </button>
+        </div>
+        {searchError ? <p className="field-error">{searchError}</p> : null}
+        {results ? (
+          results.length ? (
+            <ul className="tool-list" aria-label="Registry results">
+              {results.map((server) => (
+                <li key={server.name} className="tool-item">
+                  <div className="tool-main">
+                    <p className="tool-name mono">
+                      {server.title ?? server.name}
+                    </p>
+                    <p className="tool-desc">
+                      <span>{server.description || "No description."}</span>
+                    </p>
+                    <p className="subtle wrap-anywhere">
+                      {server.remoteUrl ??
+                        (server.localOnly
+                          ? "Runs locally (stdio) only; cannot be added here."
+                          : "No remote endpoint published.")}
+                    </p>
+                  </div>
+                  {server.remoteUrl ? (
+                    <button
+                      type="button"
+                      className="btn btn-sm btn-secondary"
+                      onClick={() => {
+                        setName((server.title ?? server.name).slice(0, 80));
+                        setUrl(server.remoteUrl!);
+                      }}
+                    >
+                      Use
+                    </button>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="subtle">Nothing in the registry matches.</p>
+          )
+        ) : null}
       </div>
       <Field label="Name" hint="How this server appears in approvals.">
         {(props) => (

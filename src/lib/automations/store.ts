@@ -87,6 +87,8 @@ export type AutomationInput = {
   maxTokens?: number | null;
   allowedTools?: string[];
   notifyOn?: string[];
+  /** Webhook automations: which endpoint and which event kinds start it. */
+  webhook?: { endpointId?: string | null; events?: string[] } | null;
 };
 
 export async function listAutomations(identity: ProductIdentity) {
@@ -111,9 +113,9 @@ export async function createAutomation(
     `insert into osirus.automations
        (organization_id, workspace_id, created_by, name, objective,
         trigger_kind, schedule, policy_preset, max_cost_usd, max_tokens,
-        allowed_tools, notify_on, next_run_at)
+        allowed_tools, notify_on, next_run_at, trigger_filter)
      values ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6, $7::jsonb, $8, $9, $10,
-             $11::text[], $12::text[], $13::timestamptz)
+             $11::text[], $12::text[], $13::timestamptz, $14::jsonb)
      returning ${COLUMNS}`,
     [
       identity.organizationId,
@@ -129,6 +131,18 @@ export async function createAutomation(
       input.allowedTools ?? [],
       input.notifyOn ?? ["failed", "approval"],
       schedule ? nextRunAt(schedule, new Date()).toISOString() : null,
+      JSON.stringify(
+        input.trigger === "webhook" && input.webhook
+          ? {
+              ...(input.webhook.endpointId
+                ? { endpointId: input.webhook.endpointId }
+                : {}),
+              ...(input.webhook.events?.length
+                ? { events: input.webhook.events }
+                : {}),
+            }
+          : {},
+      ),
     ],
   );
   return view(rows[0]!);
@@ -190,16 +204,24 @@ async function loadRow(actorId: string, id: string) {
  */
 export async function startAutomationRun(
   row: Row,
-  input: { slot: string; reason: string },
+  input: {
+    slot: string;
+    reason: string;
+    /** Verified, validated facts about what started it (a webhook event). */
+    trigger?: string;
+  },
 ) {
   const identity = {
     userId: row.created_by,
     organizationId: row.organization_id,
     workspaceId: row.workspace_id,
   };
+  const objective = input.trigger
+    ? `${row.objective}\n\nTriggered by: ${input.trigger}`
+    : row.objective;
   const prepared = await prepareRuntimeRun({
     identity,
-    objective: row.objective,
+    objective,
     requestId: `automation:${row.id}:${input.slot}`.slice(0, 120),
     capabilities: routeCapabilities(row.objective),
     sessionId: row.session_id,
@@ -225,7 +247,7 @@ export async function startAutomationRun(
     await planRuntimeRun({
       identity,
       runId: prepared.runId,
-      objective: row.objective,
+      objective,
     });
     if (row.max_cost_usd !== null || row.max_tokens !== null)
       await setBudget({
@@ -391,4 +413,36 @@ export async function notifyRunBlocked(
     dedupeKey: `blocked:${run.id}`,
     runId: run.id,
   });
+}
+
+/**
+ * A verified webhook delivery: start the workspace's webhook automations
+ * that listen to this endpoint (or to any endpoint) and this event kind.
+ * Read as the system -- the sender is not a user -- and started as each
+ * automation's creator, under that automation's own policy.
+ */
+export async function triggerWebhookAutomations(input: {
+  workspaceId: string;
+  endpointId: string;
+  event: { kind: string; deliveryId: string };
+  description: string;
+}) {
+  const rows = await querySystem<Row>(
+    `select ${COLUMNS} from osirus.automations
+      where workspace_id = $1::uuid and enabled and trigger_kind = 'webhook'
+        and coalesce(trigger_filter ->> 'endpointId', $2) = $2
+        and (not (trigger_filter ? 'events')
+             or trigger_filter -> 'events' ? $3)`,
+    [input.workspaceId, input.endpointId, input.event.kind],
+  );
+  const started: string[] = [];
+  for (const row of rows) {
+    const run = await startAutomationRun(row, {
+      slot: `webhook:${input.endpointId}:${input.event.deliveryId}`,
+      reason: `Webhook: ${input.description}`,
+      trigger: input.description,
+    }).catch(() => null);
+    if (run) started.push(run.runId);
+  }
+  return started;
 }

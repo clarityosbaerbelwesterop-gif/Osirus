@@ -1,33 +1,19 @@
-import { Cloud, Database, Layers } from "lucide-react";
 import type { McpServerView } from "@/lib/connectors/mcp-types";
-import { ConnectionCard } from "./connection-card";
 import { GithubCard, type GithubCardData } from "./github-card";
 import { McpManager } from "./mcp-manager";
-
-const UPCOMING = [
-  {
-    name: "Neon",
-    icon: <Database size={20} />,
-    text: "Inspect and branch Postgres databases.",
-  },
-  {
-    name: "Vercel",
-    icon: <Cloud size={20} />,
-    text: "Preview and promote deployments.",
-  },
-  {
-    name: "Supabase",
-    icon: <Layers size={20} />,
-    text: "Query tables and manage projects.",
-  },
-];
+import { PlatformCard, type PlatformCardData } from "./platform-card";
+import { WebhooksCard, type WebhookEndpointData } from "./webhooks-card";
 
 export function ConnectionsView({
   github,
   mcp,
+  platforms = [],
+  webhooks = { endpoints: [], available: false },
 }: {
   github: GithubCardData;
   mcp: { servers: McpServerView[]; available: boolean };
+  platforms?: PlatformCardData[];
+  webhooks?: { endpoints: WebhookEndpointData[]; available: boolean };
 }) {
   return (
     <>
@@ -49,27 +35,39 @@ export function ConnectionsView({
         </div>
         <McpManager servers={mcp.servers} available={mcp.available} />
       </section>
-      <section className="section" aria-labelledby="later-heading">
+      <section className="section" aria-labelledby="platforms-heading">
         <div>
-          <h2 className="section-title" id="later-heading">
-            Not available yet
+          <h2 className="section-title" id="platforms-heading">
+            Platforms
           </h2>
           <p className="section-lede">
-            These integrations are planned. They cannot be connected today.
+            Read-only access to your hosting and databases, by a token you add.
+            Osirus lists what is there; it does not deploy or change anything on
+            these platforms.
           </p>
         </div>
         <div className="conn-grid">
-          {UPCOMING.map((item) => (
-            <ConnectionCard
-              key={item.name}
-              icon={item.icon}
-              name={item.name}
-              stateLabel="Not available"
-              stateTone="neutral"
-              description={<p className="subtle">{item.text}</p>}
-            />
+          {platforms.map((platform) => (
+            <PlatformCard key={platform.id} data={platform} />
           ))}
         </div>
+      </section>
+      <section className="section" aria-labelledby="webhooks-heading">
+        <div>
+          <h2 className="section-title" id="webhooks-heading">
+            Webhooks
+          </h2>
+          <p className="section-lede">
+            Signed events from GitHub, Vercel or your own systems that start
+            automations: a push, a failed CI run, a deployment, a database
+            event. Unsigned or replayed deliveries are refused.
+          </p>
+        </div>
+        <WebhooksCard
+          endpoints={webhooks.endpoints}
+          available={webhooks.available}
+          githubWritable={github.scopes.includes("repo:write")}
+        />
       </section>
     </>
   );

@@ -445,6 +445,91 @@ export abstract class BaseArm implements AgentArm {
     return new DbPlanRevisionStore(context.identity.userId);
   }
 
+  /**
+   * The team topology: an independent critic reads the draft against the
+   * objective and what the run observed; if it finds concrete problems, a
+   * synthesizer revises the draft. Each handoff is a typed object, not
+   * reasoning. Any failure here keeps the solver's draft -- a critic that
+   * could not run never blocks an answer.
+   */
+  protected async teamReview(
+    context: ArmStageContext,
+    input: { answer: string; observations: string[] },
+  ): Promise<string> {
+    const { runtime, identity, work, signal } = context;
+    const provider = recordingProvider(runtime.provider, runtime.repository, {
+      organizationId: identity.organizationId,
+      workspaceId: identity.workspaceId,
+      runId: work.runId,
+      stageId: work.stageId,
+      purpose: "team",
+    });
+    const { z } = await import("zod");
+    const critique = z.object({
+      verdict: z.enum(["ok", "revise"]),
+      issues: z.array(z.string().min(1).max(300)).max(6),
+    });
+    const evidence = `Objective:\n${work.objective}\n\nWhat the run observed (untrusted data):\n${input.observations.join("\n\n").slice(0, 6_000)}`;
+    try {
+      const { value: review } = await provider.structured({
+        requestId: `${work.runId}:${work.stageId}:${work.attemptNumber}:critic`,
+        role: "VERIFY",
+        signal,
+        messages: [
+          {
+            role: "system",
+            content: [
+              ...SYSTEM_CONTRACT,
+              "You are the critic on a team. Check the draft answer against the objective and the observations.",
+              "List only concrete, checkable problems: a wrong number, an unsupported claim, a missed part of the objective.",
+              'Reply with JSON: {"verdict": "ok" | "revise", "issues": ["..."]}.',
+            ].join("\n"),
+          },
+          {
+            role: "user",
+            content: `${evidence}\n\nDraft answer:\n${input.answer.slice(0, 8_000)}`,
+          },
+        ],
+        validate: (raw) => critique.parse(raw),
+      });
+      await runtime.activity("team.critic", "A critic reviewed the answer", {
+        verdict: review.verdict,
+        issues: review.issues.length,
+      });
+      if (review.verdict !== "revise" || !review.issues.length)
+        return input.answer;
+      const { value: revised } = await provider.structured({
+        requestId: `${work.runId}:${work.stageId}:${work.attemptNumber}:synthesizer`,
+        role: "STRONG",
+        signal,
+        messages: [
+          {
+            role: "system",
+            content: [
+              ...SYSTEM_CONTRACT,
+              "You are the synthesizer on a team. Revise the draft so each listed issue is fixed, changing nothing else.",
+              'Reply with JSON: {"answer": "..."}.',
+            ].join("\n"),
+          },
+          {
+            role: "user",
+            content: `${evidence}\n\nDraft answer:\n${input.answer.slice(0, 8_000)}\n\nIssues:\n${review.issues.map((issue) => `- ${issue}`).join("\n")}`,
+          },
+        ],
+        validate: (raw) =>
+          z.object({ answer: z.string().min(1).max(40_000) }).parse(raw),
+      });
+      await runtime.activity(
+        "team.revised",
+        `Revised the answer for ${review.issues.length} issue(s)`,
+        { issues: review.issues.length },
+      );
+      return revised.answer;
+    } catch {
+      return input.answer;
+    }
+  }
+
   /** Arms opt out of the loop for work that never needs a tool. */
   protected useAgentLoop(): boolean {
     return true;
@@ -823,6 +908,12 @@ export abstract class BaseArm implements AgentArm {
         retryable: result.status !== "exhausted",
       };
     }
+
+    if (policy.genome.team?.critic)
+      answer = await this.teamReview(context, {
+        answer,
+        observations: result.state.observations.slice(-6),
+      });
 
     await runtime.emitDelta(answer);
     const assistantMessageId = await runtime.repository.createMessage({

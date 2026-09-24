@@ -73,6 +73,13 @@ export const genomeSchema = z
       })
       .partial()
       .optional(),
+    /**
+     * Worker topology. With a critic, the solver's answer goes to an
+     * independent critic and, if it finds problems, to a synthesizer that
+     * revises it: Solver vs Critic, as a strategy the Foundry can test
+     * against a single worker on the same tasks.
+     */
+    team: z.object({ critic: z.boolean() }).partial().optional(),
   })
   .strict();
 

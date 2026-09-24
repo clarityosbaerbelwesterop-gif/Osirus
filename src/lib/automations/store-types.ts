@@ -1,6 +1,7 @@
 import type { Schedule } from "./schedule";
 
-export type TriggerKind = "schedule" | "run_completed" | "connector_changed";
+export type TriggerKind =
+  "schedule" | "run_completed" | "connector_changed" | "webhook";
 
 export type AutomationView = {
   id: string;
