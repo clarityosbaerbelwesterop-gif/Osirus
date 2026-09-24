@@ -294,7 +294,7 @@ export class ResearchArm extends BaseArm {
       prior: priorLedger ?? null,
     });
     const memoryNotes = await persistResearchNotes({
-      memory: context.runtime.memory,
+      memory: context.runtime.memory.repository,
       organizationId: context.identity.organizationId,
       workspaceId: context.identity.workspaceId,
       sessionId: context.work.sessionId,

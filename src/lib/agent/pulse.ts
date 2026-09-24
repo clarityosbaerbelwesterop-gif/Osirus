@@ -1044,7 +1044,7 @@ async function toolUseL5(): Promise<PulseRecord> {
     objective,
     armId: "math_science",
     tools,
-    hypotheses: [{ id: "h-product", statement: "6 * 7 equals 42." }],
+    hypotheses: [{ id: "h-product", statement: "The product equals 42." }],
     decisions: [
       {
         action: "USE_TOOL",
