@@ -1,5 +1,5 @@
 import { querySystem } from "../../db/client";
-import { holdoutSignal } from "../datasets/verify";
+import { holdoutSignal, type ExampleSignal } from "../datasets/verify";
 import { assertCandidateTransition } from "../models/training";
 import {
   DEFAULT_SETTINGS,
@@ -1237,17 +1237,32 @@ export class PgIntelStore implements IntelStore {
     );
     return new Set(rows.map((row) => row.fingerprint as string));
   }
-  async datasetHoldoutSignals() {
+  async datasetExampleSignals(filter: {
+    partitions: DatasetExample["partition"][];
+    datasetId?: string;
+  }) {
     const rows = await q(
-      `select fingerprint, input from osirus_intel.dataset_examples
-        where partition = 'holdout'`,
+      `select e.partition, e.fingerprint, e.input
+         from osirus_intel.dataset_examples e
+         join osirus_intel.dataset_versions v on v.id = e.dataset_version_id
+        where e.partition = any($1::text[])
+          and ($2::text is null or v.dataset_id = $2)`,
+      [filter.partitions, filter.datasetId ?? null],
     );
-    return rows.map((row) =>
-      holdoutSignal({
-        fingerprint: row.fingerprint as string,
-        input: (row.input as Record<string, unknown>) ?? {},
-      }),
-    );
+    return rows.map((row) => {
+      const signal: ExampleSignal = {
+        ...holdoutSignal({
+          fingerprint: row.fingerprint as string,
+          input: (row.input as Record<string, unknown>) ?? {},
+        }),
+        partition: row.partition as ExampleSignal["partition"],
+      };
+      return signal;
+    });
+  }
+  async datasetHoldoutSignals() {
+    const rows = await this.datasetExampleSignals({ partitions: ["holdout"] });
+    return rows.map(({ fingerprint, simhash }) => ({ fingerprint, simhash }));
   }
 
   async upsertModel(entry: ModelRecord) {

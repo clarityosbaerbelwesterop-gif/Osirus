@@ -12,7 +12,10 @@ import {
 // its provenance. Partitions follow the task that produced the example.
 // verifyExamples drops duplicate fingerprints and any train/dev/adversarial
 // example that matches a holdout example exactly or by near-duplicate
-// objective, including holdout rows in this same batch.
+// objective, including holdout rows in this same batch. It also drops a
+// non-holdout example whose objective is a near-duplicate of an earlier
+// non-holdout example in this dataset, including rows already stored for
+// that dataset. A different format is a different dataset and is left alone.
 
 export const MIN_QUALITY = 0.6;
 
@@ -126,12 +129,17 @@ export async function buildDatasets(
   const out: Built[] = [];
   for (const [format, examples] of Object.entries(sets)) {
     const datasetId = `${input.capabilityId}.${format}`;
+    const storedCorpus = await store.datasetExampleSignals({
+      datasetId,
+      partitions: ["train", "dev", "adversarial"],
+    });
     const verified = verifyExamples(
       examples.map((example) => ({
         ...example,
         text: exampleText(example.input),
       })),
       storedHoldout,
+      storedCorpus,
     );
     const clean = verified.kept.map((example) => ({
       partition: example.partition,
@@ -175,7 +183,7 @@ export async function buildDatasets(
       provenance: {
         sources: [...new Set(clean.map((example) => example.experienceId))]
           .length,
-        rule: `verified experience, quality >= ${MIN_QUALITY}, no product data, duplicate and holdout overlap removed`,
+        rule: `verified experience, quality >= ${MIN_QUALITY}, no product data, duplicate and holdout overlap removed, train-set near-duplicates removed within the dataset`,
         strategyVersionIds: policyVersionIds,
       },
       contamination: verified.report,

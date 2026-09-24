@@ -3,12 +3,20 @@ import type { DatasetExample } from "../store/store";
 
 // Dataset verification before a version is stored.
 //
-// Exact duplicates (same normalized fingerprint) are kept once. A train, dev
+// Exact duplicates (same normalized fingerprint) are kept once, including a
+// fingerprint already stored in this dataset's non-holdout rows. A train, dev
 // or adversarial example whose fingerprint is a holdout example — in this
-// batch or already stored — is dropped. Near-duplicate objectives are dropped
-// the same way: simhash distance at or under NEAR_DUPLICATE_HAMMING. Holdout
-// rows themselves are not dropped for overlapping holdout; only a second copy
-// of the same fingerprint is.
+// batch or already stored, in any dataset — is dropped. Near-duplicate
+// objectives are dropped the same way: simhash distance at or under
+// NEAR_DUPLICATE_HAMMING.
+//
+// Holdout near-duplicates are leakage: the comparison is against holdout rows
+// only, and a holdout row is not dropped for being near another holdout row.
+// Train-set near-duplicates are redundancy inside the non-holdout corpus
+// (train, dev, adversarial) of this dataset: the first copy is kept, a later
+// copy in this batch or an already stored row of the same dataset is dropped.
+// Another format of the same task is a different dataset and is not a
+// train-set near-duplicate.
 //
 // The threshold sits between the near-duplicate pair and the unrelated pair
 // in the simhash test (distances 14 and 32). Short objectives move the
@@ -22,6 +30,10 @@ export type HoldoutSignal = {
   simhash: string;
 };
 
+export type ExampleSignal = HoldoutSignal & {
+  partition: "train" | "dev" | "holdout" | "adversarial";
+};
+
 export type ContaminationReport = {
   checked: number;
   dropped: number;
@@ -29,7 +41,10 @@ export type ContaminationReport = {
   rejected: number;
   duplicates: number;
   holdoutOverlap: number;
+  /** Non-holdout objective near a holdout objective. */
   nearDuplicates: number;
+  /** Non-holdout objective near another non-holdout objective in this dataset. */
+  trainNearDuplicates: number;
 };
 
 type Verifiable = {
@@ -53,9 +68,16 @@ export function holdoutSignal(example: {
   };
 }
 
+function populatedHashes(signals: HoldoutSignal[]) {
+  return signals
+    .map((signal) => signal.simhash)
+    .filter((hash) => hash.length > 0);
+}
+
 export function verifyExamples<T extends Verifiable>(
   examples: T[],
   storedHoldout: HoldoutSignal[],
+  storedCorpus: HoldoutSignal[] = [],
 ): { kept: T[]; report: ContaminationReport } {
   const kept: T[] = [];
   const seen = new Set<string>();
@@ -75,39 +97,58 @@ export function verifyExamples<T extends Verifiable>(
     ...seen,
   ]);
   const holdoutHashes = [
-    ...storedHoldout.map((signal) => signal.simhash),
+    ...populatedHashes(storedHoldout),
     ...kept
       .filter((example) => example.text)
       .map((example) => simhash(example.text)),
-  ].filter((hash) => hash.length > 0);
+  ];
+  const corpusFingerprints = new Set(
+    storedCorpus.map((signal) => signal.fingerprint),
+  );
+  const corpusHashes = populatedHashes(storedCorpus);
 
   let holdoutOverlap = 0;
   let nearDuplicates = 0;
+  let trainNearDuplicates = 0;
   for (const example of examples) {
     if (example.partition === "holdout") continue;
     if (holdoutFingerprints.has(example.fingerprint)) {
       holdoutOverlap += 1;
       continue;
     }
-    if (seen.has(example.fingerprint)) {
+    if (
+      seen.has(example.fingerprint) ||
+      corpusFingerprints.has(example.fingerprint)
+    ) {
       duplicates += 1;
       continue;
     }
     if (example.text) {
       const hash = simhash(example.text);
-      const near = holdoutHashes.some(
-        (other) => hamming(hash, other) <= NEAR_DUPLICATE_HAMMING,
-      );
-      if (near) {
+      if (
+        holdoutHashes.some(
+          (other) => hamming(hash, other) <= NEAR_DUPLICATE_HAMMING,
+        )
+      ) {
         nearDuplicates += 1;
         continue;
       }
+      if (
+        corpusHashes.some(
+          (other) => hamming(hash, other) <= NEAR_DUPLICATE_HAMMING,
+        )
+      ) {
+        trainNearDuplicates += 1;
+        continue;
+      }
+      corpusHashes.push(hash);
     }
     seen.add(example.fingerprint);
     kept.push(example);
   }
 
-  const dropped = duplicates + holdoutOverlap + nearDuplicates;
+  const dropped =
+    duplicates + holdoutOverlap + nearDuplicates + trainNearDuplicates;
   return {
     kept,
     report: {
@@ -117,6 +158,7 @@ export function verifyExamples<T extends Verifiable>(
       duplicates,
       holdoutOverlap,
       nearDuplicates,
+      trainNearDuplicates,
     },
   };
 }

@@ -15,7 +15,7 @@ import type {
   StrategyVersion,
   Trial,
 } from "../types";
-import type { HoldoutSignal } from "../datasets/verify";
+import type { ExampleSignal, HoldoutSignal } from "../datasets/verify";
 
 // Where the Intelligence Plane keeps what it knows. Two implementations: the
 // Postgres store (osirus_intel, production) and the memory store (tests and
@@ -279,6 +279,15 @@ export interface IntelStore {
   ): Promise<Set<string>>;
   /** Fingerprint and objective simhash of every stored holdout example. */
   datasetHoldoutSignals(): Promise<HoldoutSignal[]>;
+  /**
+   * Fingerprint and objective simhash of stored examples in `partitions`.
+   * `datasetId` limits the rows to one dataset. Train-set near-duplicates
+   * use that limit; holdout leakage does not.
+   */
+  datasetExampleSignals(filter: {
+    partitions: Array<DatasetExample["partition"]>;
+    datasetId?: string;
+  }): Promise<ExampleSignal[]>;
 
   insertTrainingRun(
     run: Omit<TrainingRunRecord, "id" | "createdAt" | "updatedAt">,
