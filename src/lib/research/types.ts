@@ -185,10 +185,7 @@ export type LedgerContradiction = {
   supporting: LedgerSourceRef[];
   contradicting: LedgerSourceRef[];
   diagnosis:
-    | "source_disagreement"
-    | "scope_mismatch"
-    | "temporal_drift"
-    | "unknown";
+    "source_disagreement" | "scope_mismatch" | "temporal_drift" | "unknown";
 };
 
 export type EvidenceLedger = {

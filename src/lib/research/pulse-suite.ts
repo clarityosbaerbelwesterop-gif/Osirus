@@ -1,9 +1,5 @@
 import { classifyAuthority } from "./authority";
-import {
-  checkCitation,
-  coverage,
-  verifyClaims,
-} from "./citations";
+import { checkCitation, coverage, verifyClaims } from "./citations";
 import {
   buildEvidenceLedger,
   synthesizeBrief,
@@ -71,7 +67,8 @@ export const RESEARCH_PULSE_TASKS: ResearchPulseTask[] = [
   {
     id: "research-l2-corroboration",
     level: "L2",
-    title: "Require two independent publishers before treating coverage as sufficient",
+    title:
+      "Require two independent publishers before treating coverage as sufficient",
     objective: "Coverage stop rule with two publishers.",
     adversarial: false,
   },
@@ -92,7 +89,8 @@ export const RESEARCH_PULSE_TASKS: ResearchPulseTask[] = [
   {
     id: "research-l5-ledger-brief",
     level: "L5",
-    title: "Produce an actionable brief that separates fact, inference, and open questions",
+    title:
+      "Produce an actionable brief that separates fact, inference, and open questions",
     objective: "Full evidence ledger and brief synthesis.",
     adversarial: true,
   },

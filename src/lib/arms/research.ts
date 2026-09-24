@@ -284,8 +284,7 @@ export class ResearchArm extends BaseArm {
       store,
     });
     const priorLedger = context.state.researchLedger as
-      | EvidenceLedger
-      | undefined;
+      EvidenceLedger | undefined;
     const ledger = buildEvidenceLedger({
       question: context.work.objective,
       plan,

@@ -23,14 +23,14 @@ Extend `ResearchArm` so it plans information needs, gathers evidence, triangulat
 
 `src/lib/research/evidence-ledger.ts` is the citation-grade record:
 
-| Field | Role |
-| --- | --- |
-| `claims` | statement, kind, status, confidence, supporting/contradicting source refs |
+| Field            | Role                                                                                |
+| ---------------- | ----------------------------------------------------------------------------------- |
+| `claims`         | statement, kind, status, confidence, supporting/contradicting source refs           |
 | `contradictions` | diagnosed disagreements (`source_disagreement`, `scope_mismatch`, `temporal_drift`) |
-| `beliefUpdates` | prior → new status when contradiction weakens a belief |
-| `openQuestions` | unresolved items from synthesis |
-| `brief` | actionable summary for downstream decisions |
-| `stopMet` | whether the plan's stop criteria were satisfied |
+| `beliefUpdates`  | prior → new status when contradiction weakens a belief                              |
+| `openQuestions`  | unresolved items from synthesis                                                     |
+| `brief`          | actionable summary for downstream decisions                                         |
+| `stopMet`        | whether the plan's stop criteria were satisfied                                     |
 
 The ledger is built after citation verification in `ResearchArm.synthesizeStage` and stored on run state as `researchLedger`.
 
@@ -57,29 +57,29 @@ No parallel memory OS was added.
 
 M34 hourly pulse remains deferred (`docs/m31-m34-deferred.md`). M36 registers typed offline tasks in `src/lib/research/pulse-suite.ts`:
 
-| Level | Task | Adversarial |
-| --- | --- | --- |
-| L1 | Verbatim citation acceptance | no |
-| L2 | Two-publisher corroboration + stop rule | no |
-| L3 | Contradiction stays visible | yes |
-| L4 | Stale-source belief weakening | yes |
-| L5 | Full ledger + actionable brief | yes |
+| Level | Task                                    | Adversarial |
+| ----- | --------------------------------------- | ----------- |
+| L1    | Verbatim citation acceptance            | no          |
+| L2    | Two-publisher corroboration + stop rule | no          |
+| L3    | Contradiction stays visible             | yes         |
+| L4    | Stale-source belief weakening           | yes         |
+| L5    | Full ledger + actionable brief          | yes         |
 
 Run offline: `runResearchPulseSuite()` (see `tests/research-v4.test.ts`).
 
 ## Files
 
-| Path | Purpose |
-| --- | --- |
-| `src/lib/research/evidence-ledger.ts` | Ledger builder, belief updates, brief synthesis |
-| `src/lib/research/memory-notes.ts` | Memory compiler integration |
-| `src/lib/research/pulse-suite.ts` | L1–L5 offline pulse tasks |
-| `src/lib/research/types.ts` | Extended plan + synthesis + ledger types |
-| `src/lib/research/pipeline.ts` | Planning and synthesis prompts |
-| `src/lib/research/citations.ts` | Grouped findings rendering |
-| `src/lib/arms/research.ts` | Arm integration |
-| `tests/research-v4.test.ts` | Unit tests |
-| `docs/m36-research-intelligence-v4.md` | This document |
+| Path                                   | Purpose                                         |
+| -------------------------------------- | ----------------------------------------------- |
+| `src/lib/research/evidence-ledger.ts`  | Ledger builder, belief updates, brief synthesis |
+| `src/lib/research/memory-notes.ts`     | Memory compiler integration                     |
+| `src/lib/research/pulse-suite.ts`      | L1–L5 offline pulse tasks                       |
+| `src/lib/research/types.ts`            | Extended plan + synthesis + ledger types        |
+| `src/lib/research/pipeline.ts`         | Planning and synthesis prompts                  |
+| `src/lib/research/citations.ts`        | Grouped findings rendering                      |
+| `src/lib/arms/research.ts`             | Arm integration                                 |
+| `tests/research-v4.test.ts`            | Unit tests                                      |
+| `docs/m36-research-intelligence-v4.md` | This document                                   |
 
 ## Explicitly not in M36
 

@@ -58,14 +58,13 @@ function contradictionDiagnosis(
   ) {
     return "scope_mismatch";
   }
-  const supportAuthorities = new Set(supporting.map((entry) => entry.authority));
+  const supportAuthorities = new Set(
+    supporting.map((entry) => entry.authority),
+  );
   const contraAuthorities = new Set(
     contradicting.map((entry) => entry.authority),
   );
-  if (
-    supportAuthorities.has("primary") &&
-    contraAuthorities.has("primary")
-  ) {
+  if (supportAuthorities.has("primary") && contraAuthorities.has("primary")) {
     return "source_disagreement";
   }
   if (
@@ -164,8 +163,7 @@ export function updateBeliefsUnderContradiction(
   const updates: BeliefUpdate[] = [];
   for (const claim of current) {
     const previous = prior.find(
-      (entry) =>
-        entry.id === claim.id || entry.statement === claim.statement,
+      (entry) => entry.id === claim.id || entry.statement === claim.statement,
     );
     if (!previous || previous.status === claim.status) continue;
     const becameContested =

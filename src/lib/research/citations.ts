@@ -266,7 +266,10 @@ export function renderResearchAnswer(
       .join("");
   const lines = [summary.trim(), "", "## Findings"];
   const sections = [
-    { title: "Facts", filter: (claim: VerifiedClaim) => claim.status === "SUPPORTED" },
+    {
+      title: "Facts",
+      filter: (claim: VerifiedClaim) => claim.status === "SUPPORTED",
+    },
     {
       title: "Possibly outdated",
       filter: (claim: VerifiedClaim) => claim.status === "STALE",
@@ -294,8 +297,7 @@ export function renderResearchAnswer(
         );
       } else if (claim.status === "STALE")
         lines.push(`- ${claim.statement} ${refs}`);
-      else
-        lines.push(`- ${claim.statement}`);
+      else lines.push(`- ${claim.statement}`);
     }
   }
   const used = documents.filter((doc) =>

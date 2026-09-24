@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { classifyAuthority } from "../src/lib/research/authority";
-import { renderResearchAnswer, verifyClaims } from "../src/lib/research/citations";
+import {
+  renderResearchAnswer,
+  verifyClaims,
+} from "../src/lib/research/citations";
 import {
   buildEvidenceLedger,
   synthesizeBrief,
@@ -250,7 +253,11 @@ describe("M36 memory integration", () => {
     const memory = {
       compileAndStore: async (input: { kind: string; content: string }) => {
         stored.push(`${input.kind}:${input.content.slice(0, 40)}`);
-        return { decision: "STORE", persistedId: `m-${stored.length}`, reason: "ok" };
+        return {
+          decision: "STORE",
+          persistedId: `m-${stored.length}`,
+          reason: "ok",
+        };
       },
       latestBySubject: async () => [],
     };

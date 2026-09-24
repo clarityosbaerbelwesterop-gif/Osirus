@@ -156,9 +156,11 @@ export async function gather(input: {
     ],
     context: [
       `Subquestions: ${input.plan.subquestions.join(" | ")}`,
-      `Information needs: ${(input.plan.informationNeeds ?? [])
-        .map((need) => `${need.priority}:${need.need}`)
-        .join(" | ") || "none"}`,
+      `Information needs: ${
+        (input.plan.informationNeeds ?? [])
+          .map((need) => `${need.priority}:${need.need}`)
+          .join(" | ") || "none"
+      }`,
       `Source strategy: ${JSON.stringify(input.plan.sourceStrategy ?? {})}`,
       `Suggested queries for this worker: ${queriesFor(input.worker, input.plan).join(" | ")}`,
       `Freshness required: ${input.plan.freshness}`,
