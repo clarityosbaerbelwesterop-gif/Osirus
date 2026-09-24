@@ -17,6 +17,7 @@ const TRIGGER_LABEL: Record<AutomationView["trigger"], string> = {
   schedule: "Schedule",
   run_completed: "After a run completes",
   connector_changed: "When a connection changes",
+  webhook: "When a webhook arrives",
 };
 
 async function call(url: string, method: string, body?: unknown) {
@@ -198,8 +199,10 @@ function AutomationCard({ automation }: { automation: AutomationView }) {
 
 export function AutomationList({
   automations,
+  endpoints = [],
 }: {
   automations: AutomationView[];
+  endpoints?: Array<{ id: string; name: string; source: string }>;
 }) {
   const [creating, setCreating] = useState(false);
   return (
@@ -216,7 +219,12 @@ export function AutomationList({
           </button>
         </div>
       ) : null}
-      {creating ? <AutomationForm onDone={() => setCreating(false)} /> : null}
+      {creating ? (
+        <AutomationForm
+          endpoints={endpoints}
+          onDone={() => setCreating(false)}
+        />
+      ) : null}
       {automations.map((automation) => (
         <AutomationCard key={automation.id} automation={automation} />
       ))}

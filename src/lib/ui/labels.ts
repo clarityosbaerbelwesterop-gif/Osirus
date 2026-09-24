@@ -94,6 +94,12 @@ export function verdict(status: string | null | undefined) {
 
 const TOOL_LABEL: Record<string, string> = {
   "git.deliver": "Push a branch to GitHub",
+  "attachments.search": "Search the attached files",
+  "computer.inspect": "Use the app in a browser",
+  "world.query": "Look up what this workspace knows",
+  "vercel.deployments": "List Vercel deployments",
+  "neon.projects": "List Neon projects",
+  "supabase.projects": "List Supabase projects",
   "sandbox.preview": "Start a preview server",
   "sandbox.write": "Write a file in the sandbox",
   "sandbox.read": "Read a file in the sandbox",

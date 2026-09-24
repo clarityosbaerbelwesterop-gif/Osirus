@@ -238,3 +238,90 @@ describe("runtime database access", () => {
     }
   });
 });
+
+describe("migrations 012 and 013", () => {
+  const tablesOf = (sql: string, schema: string) =>
+    [
+      ...sql.matchAll(
+        new RegExp(`CREATE TABLE IF NOT EXISTS ${schema}\\.([a-z_]+)`, "g"),
+      ),
+    ].map((match) => match[1]!);
+
+  it("puts every Intelligence Plane table under forced RLS, system writes, operator reads", () => {
+    const sql = migration("012_intelligence_foundry.sql");
+    const tables = tablesOf(sql, "osirus_intel");
+    expect(tables.length).toBeGreaterThanOrEqual(24);
+    for (const table of tables) {
+      expect(sql, table).toContain(
+        `ALTER TABLE osirus_intel.${table} ENABLE ROW LEVEL SECURITY;`,
+      );
+      expect(sql, table).toContain(
+        `ALTER TABLE osirus_intel.${table} FORCE ROW LEVEL SECURITY;`,
+      );
+      expect(sql, table).toMatch(
+        new RegExp(`GRANT [A-Z, ]+ ON osirus_intel\\.${table} TO osirus_app;`),
+      );
+    }
+    // Operators read; nobody but the system writes.
+    expect(sql).toMatch(
+      /CREATE POLICY [a-z_]+_read ON osirus_intel\.experience[\s\S]*?osirus_intel\.is_operator\(\)/,
+    );
+    expect(sql).not.toMatch(/WITH CHECK \([^)]*is_operator/);
+    // Append-only history.
+    expect(sql).toContain(
+      "GRANT SELECT, INSERT ON osirus_intel.promotion_events TO osirus_app;",
+    );
+    expect(sql).toContain(
+      "GRANT SELECT, INSERT ON osirus_intel.experience TO osirus_app;",
+    );
+  });
+
+  it("refuses a high-risk asset in a product canary at the database, not only in code", () => {
+    const sql = migration("012_intelligence_foundry.sql");
+    expect(sql).toContain(
+      "CONSTRAINT strategy_versions_high_risk_product_check CHECK (risk_class = 'low' OR status <> ALL (ARRAY['canary'::text, 'active'::text]))",
+    );
+  });
+
+  it("claims product stages before Foundry stages, otherwise as before", () => {
+    const sql = migration("012_intelligence_foundry.sql");
+    expect(sql).toContain(
+      "ADD COLUMN IF NOT EXISTS priority smallint NOT NULL DEFAULT 0",
+    );
+    expect(sql).toMatch(
+      /ORDER BY r\.priority DESC, s\.runnable_after NULLS FIRST/,
+    );
+  });
+
+  it("keeps attachments, webhooks and entitlements tenant-scoped", () => {
+    const sql = migration("013_product_frontier.sql");
+    const tables = tablesOf(sql, "osirus");
+    expect(tables).toEqual([
+      "attachments",
+      "attachment_chunks",
+      "webhook_endpoints",
+      "webhook_deliveries",
+      "entitlements",
+    ]);
+    for (const table of tables) {
+      expect(sql, table).toContain(
+        `ALTER TABLE osirus.${table} FORCE ROW LEVEL SECURITY;`,
+      );
+    }
+    expect(sql).toContain(
+      "byte_size <= 10485760 AND octet_length(content) = byte_size",
+    );
+    // A delivery id is accepted once; only the system records deliveries.
+    expect(sql).toContain(
+      "CONSTRAINT webhook_deliveries_unique_key UNIQUE (endpoint_id, delivery_id)",
+    );
+    expect(sql).toMatch(
+      /webhook_deliveries_insert[\s\S]*?WITH CHECK \(osirus\.is_system\(\)\)/,
+    );
+    // Plans are set by the system only; organizations can read theirs.
+    expect(sql).toMatch(
+      /entitlements_write[\s\S]*?WITH CHECK \(osirus\.is_system\(\)\)/,
+    );
+    expect(sql).not.toMatch(/DROP TABLE|TRUNCATE|DELETE FROM/i);
+  });
+});

@@ -370,4 +370,50 @@ describe("agent loop", () => {
     expect(result.status).toBe("finished");
     expect(prompts[1]!.user).toContain("X = 42");
   });
+
+  it("ends at once on a provider refusal instead of counting it as a bad reply", async () => {
+    const refusal = Object.assign(new Error("free pool exhausted"), {
+      name: "ProviderError",
+      code: "rate_limited",
+      retryAfterMs: 3_600_000,
+    });
+    const { decide, prompts } = scripted([refusal]);
+    const result = await runAgentLoop({
+      objective: "What is the capital of France?",
+      directives: [],
+      context: [],
+      tools: registry(),
+      toolContext: context,
+      decide,
+    });
+    expect(prompts).toHaveLength(1);
+    expect(result.status).toBe("failed");
+    expect(result.reason).toBe("provider:rate_limited");
+    expect(result.refusal).toEqual({
+      code: "rate_limited",
+      transient: true,
+      retryAfterMs: 3_600_000,
+    });
+    // The refused call produced nothing, so it is not counted as one.
+    expect(result.state.modelCalls).toBe(0);
+    expect(result.state.steps.at(-1)?.detail).toBe("provider:rate_limited");
+  });
+
+  it("still treats a malformed model reply as a correctable decision failure", async () => {
+    const { decide, prompts } = scripted([
+      new Error("invalid_json"),
+      { action: "RESPOND", summary: "Answer", answer: "Paris" },
+    ]);
+    const result = await runAgentLoop({
+      objective: "What is the capital of France?",
+      directives: [],
+      context: [],
+      tools: registry(),
+      toolContext: context,
+      decide,
+    });
+    expect(prompts).toHaveLength(2);
+    expect(result.status).toBe("finished");
+    expect(result.refusal).toBeUndefined();
+  });
 });

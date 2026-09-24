@@ -1,13 +1,16 @@
 import { randomUUID } from "node:crypto";
 import { composeWorkflow } from "../arms/compose";
 import { analyseTask } from "../arms/thinking";
-import type { RuntimeIdentity, TaskAnalysis } from "../arms/types";
+import type { ArmId, RuntimeIdentity, TaskAnalysis } from "../arms/types";
 import { UnoRouterProvider } from "../models/unorouter";
+import { recordingProvider } from "../models/recording";
+import { resolveProductPolicy } from "../strategy/resolve";
+import { stampPolicy, type RuntimePolicy } from "../strategy/runtime";
 import { abortLocalRun, registerRunController } from "./cancellation";
 import { persistGraph, setBudget } from "./dispatch";
 import { publicRuntimeErrorMessage, runtimeErrorCode } from "./errors";
 import { RuntimeRepository } from "./repository";
-import { routeObjective } from "./router-v2";
+import { capabilitiesFor, routeObjective } from "./router-v2";
 import { isTerminalRunStatus } from "./state-machine";
 import type { Capability, RuntimePacket } from "./types";
 import { driveSlices, finalizeRun } from "./worker";
@@ -164,9 +167,28 @@ export async function planRuntimeRun(input: {
   emit?: RuntimeEmit;
   correlationId?: string;
   signal?: AbortSignal;
+  /**
+   * The strategy to run under. Foundry trials pass theirs; product runs get
+   * the product champion (or a canary) resolved here.
+   */
+  policy?: RuntimePolicy;
+  /**
+   * Foundry trials only: the composition the task is defined by, so both
+   * sides of a comparison run the same arms and routing costs no model call.
+   */
+  composition?: ArmId[];
+  /** Foundry trials only: the fixture and hidden checks, server-written. */
+  stageInput?: Record<string, unknown>;
+  /** Files sent with the objective; their excerpts are retrieved per stage. */
+  attachments?: Array<{ id: string; kind: string }>;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
-  const provider = new UnoRouterProvider();
+  const provider = input.policy?.model
+    ? new UnoRouterProvider({
+        model: input.policy.model,
+        maxRateLimitWaitSeconds: 60,
+      })
+    : new UnoRouterProvider();
 
   const activity = async (
     type: string,
@@ -193,15 +215,44 @@ export async function planRuntimeRun(input: {
   // Escalation to a structured analysis is the router's decision, not this
   // function's. Passing the classifier in means an unconfigured provider
   // degrades to the heuristic route instead of failing the run.
-  const decision = await routeObjective(input.objective, {
-    classify: (objective) =>
-      analyseTask({
-        provider,
-        requestId: `${input.runId}:routing`,
-        objective,
-        signal: input.signal,
-      }),
-  });
+  const fixed = input.composition?.length ? input.composition : null;
+  const decision = fixed
+    ? {
+        ...(await routeObjective(input.objective)),
+        primary: fixed[0]!,
+        composition: fixed,
+        capabilities: capabilitiesFor(fixed),
+        reason: "Composition fixed by the evaluation task.",
+      }
+    : await routeObjective(input.objective, {
+        classify: (objective) =>
+          analyseTask({
+            provider: recordingProvider(provider, repository, {
+              organizationId: input.identity.organizationId,
+              workspaceId: input.identity.workspaceId,
+              runId: input.runId,
+              stageId: null,
+              purpose: "routing",
+            }),
+            requestId: `${input.runId}:routing`,
+            objective,
+            signal: input.signal,
+          }),
+      });
+
+  // Tabular or structured data goes to the math/data arm first, which can
+  // compute over it; everything else keeps the route the objective chose.
+  const data = (input.attachments ?? []).some(
+    (attachment) => attachment.kind === "csv" || attachment.kind === "json",
+  );
+  if (data && !fixed && !decision.composition.includes("math_science")) {
+    decision.composition = [
+      "math_science" as ArmId,
+      ...decision.composition,
+    ].slice(0, 4);
+    decision.primary = "math_science";
+    decision.reason = `${decision.reason} Attached data routed to the math/data arm.`;
+  }
 
   const composed = composeWorkflow({
     objective: input.objective,
@@ -223,6 +274,23 @@ export async function planRuntimeRun(input: {
     },
   });
 
+  const policy =
+    input.policy ??
+    (await resolveProductPolicy({
+      armId: decision.primary,
+      runId: input.runId,
+    }));
+  stampPolicy(composed.graph.nodes, policy);
+  if (input.stageInput)
+    for (const node of composed.graph.nodes)
+      node.input = { ...node.input, ...input.stageInput };
+  if (input.attachments?.length)
+    for (const node of composed.graph.nodes)
+      node.input = {
+        ...node.input,
+        attachmentIds: input.attachments.map((attachment) => attachment.id),
+      };
+
   const stageIds = await persistGraph({
     runId: input.runId,
     graph: composed.graph,
@@ -242,6 +310,18 @@ export async function planRuntimeRun(input: {
     escalated: decision.escalated,
     reason: decision.reason,
   });
+
+  await activity(
+    "strategy.selected",
+    `Strategy ${policy.label}`,
+    {
+      strategyVersionId: policy.strategyVersionId,
+      label: policy.label,
+      assignment: policy.assignment,
+      model: policy.model ?? null,
+    },
+    "internal",
+  );
 
   await activity("plan.persisted", "Planned the run", {
     stages: composed.graph.nodes.map((node) => ({
@@ -305,6 +385,7 @@ export async function executeRuntimeRun(input: {
   capabilities: Capability[];
   emit: RuntimeEmit;
   correlationId?: string;
+  attachments?: Array<{ id: string; kind: string }>;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
   const controller = new AbortController();
@@ -344,6 +425,7 @@ export async function executeRuntimeRun(input: {
       objective: input.objective,
       emit: input.emit,
       correlationId: input.correlationId,
+      attachments: input.attachments,
       signal: controller.signal,
     });
 

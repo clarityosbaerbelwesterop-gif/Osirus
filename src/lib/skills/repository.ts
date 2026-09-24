@@ -212,8 +212,10 @@ export class SkillRepository {
    * Write what a stage actually cost and how it was judged.
    *
    * These columns existed from 003 and were always 0 or null, which made every
-   * quality metric unanswerable. recordOutcome below still writes the run-wide
-   * result; this writes the per-stage detail underneath it.
+   * quality metric unanswerable. Skills are selected in one stage and judged
+   * in the verify stage, so the verdict applies to every selection of the
+   * run, not to rows of the judging stage (which never had any).
+   * recordOutcome below only fills in what no stage verdict has set.
    */
   async recordStageTelemetry(input: {
     runId: string;
@@ -234,7 +236,7 @@ export class SkillRepository {
               tool_call_count = greatest(tool_call_count, $6),
               repair_rounds = greatest(repair_rounds, $7)
         where run_id = $1::uuid
-          and stage_id = $2::uuid`,
+          and ($2::uuid is not null)`,
       [
         input.runId,
         input.stageId,
@@ -252,7 +254,11 @@ export class SkillRepository {
       this.actorId,
       `update osirus.skill_usage
           set outcome = $2,
-              verifier_status = case when $2 = 'success' then 'verified' else 'rejected' end
+              verifier_status = case
+                when verifier_status <> 'unverified' then verifier_status
+                when $2 = 'success' then 'verified'
+                else 'rejected'
+              end
         where run_id = $1::uuid`,
       [runId, outcome],
     );

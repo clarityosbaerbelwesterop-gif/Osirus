@@ -6,6 +6,7 @@ import { ApprovalList } from "@/components/approvals/approval-list";
 import { AutomationList } from "@/components/automations/automation-list";
 import { ConnectionsView } from "@/components/connections/connections-view";
 import { InboxView } from "@/components/inbox/inbox-view";
+import { IntelligenceLab } from "@/components/intelligence/lab";
 import { AgentBehaviorSettings } from "@/components/settings/agent-behavior";
 import { ModelStatusTable } from "@/components/settings/model-status";
 import { SettingsNav } from "@/components/settings/settings-nav";
@@ -19,6 +20,7 @@ import {
   codingRunFixture,
   connectionsFixture,
   inboxFixture,
+  intelligenceLabFixture,
   modelStatusFixture,
   researchRunFixture,
   shellFixture,
@@ -69,7 +71,12 @@ export default async function FixturePage({
             title="Connections"
             lede="What Osirus can reach on your behalf, and whether each connection works right now."
           >
-            <ConnectionsView github={data.github} mcp={data.mcp} />
+            <ConnectionsView
+              github={data.github}
+              mcp={data.mcp}
+              platforms={data.platforms}
+              webhooks={data.webhooks}
+            />
           </PageFrame>
         </AppShell>
       );
@@ -128,6 +135,17 @@ export default async function FixturePage({
                 objective: item.objective,
               }))}
             />
+          </PageFrame>
+        </AppShell>
+      );
+    case "intelligence":
+      return (
+        <AppShell data={shell}>
+          <PageFrame
+            title="Intelligence Lab"
+            lede="The Foundry: what it measured, what it is testing, what it kept and why. Internal; customers never see it."
+          >
+            <IntelligenceLab view={intelligenceLabFixture()} canRunNow />
           </PageFrame>
         </AppShell>
       );

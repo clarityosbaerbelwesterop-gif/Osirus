@@ -6,6 +6,7 @@ import {
   type ToolRegistry,
   type ToolResult,
 } from "../tools/registry";
+import { providerRefusalOf, type ProviderRefusal } from "../models/provider";
 import {
   DECISION_FORMAT,
   decisionProblems,
@@ -96,6 +97,8 @@ export type LoopResult = {
   /** Set when the loop parked on an approval. */
   pendingApproval?: { toolId?: string; request: Record<string, unknown> };
   reason: string;
+  /** Set when the model provider refused the call (see providerRefusalOf). */
+  refusal?: ProviderRefusal;
 };
 
 export type Decider = (input: {
@@ -331,6 +334,28 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
         });
       }
     } catch (error) {
+      // The provider refused the call: nothing the model said is wrong, so
+      // this is not a bad decision to correct. End here, resumable.
+      const refusal = providerRefusalOf(error);
+      if (refusal) {
+        state.modelCalls -= 1;
+        await record(
+          {
+            action: "RESPOND",
+            summary: "The model provider refused the request",
+            outcome: "error",
+            detail: `provider:${refusal.code}`,
+          },
+          stepStartedAt,
+        );
+        return {
+          status: "failed",
+          state,
+          answer: state.answer ?? null,
+          reason: `provider:${refusal.code}`,
+          refusal,
+        };
+      }
       consecutiveFailures += 1;
       const message =
         error instanceof Error ? error.message : "decision_failed";

@@ -24,6 +24,8 @@ export type RepositoryMap = {
   ciWorkflows: string[];
   configs: string[];
   entryPoints: string[];
+  /** The first files of the tree, for strategies that show the loop the map. */
+  files?: string[];
 };
 
 const LANGUAGE_BY_EXTENSION: Record<string, string> = {
@@ -275,7 +277,10 @@ export async function buildRepositoryMap(workspace: CodingWorkspace) {
   const files = await workspace.tree(".", 8, { filesOnly: true });
   const contents = await readMapInputs(workspace, files);
   return {
-    map: mapRepository(files, contents, files.length >= 800),
+    map: {
+      ...mapRepository(files, contents, files.length >= 800),
+      files: files.slice(0, 300),
+    },
     contents,
     files,
   };

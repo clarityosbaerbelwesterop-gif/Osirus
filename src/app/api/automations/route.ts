@@ -15,7 +15,31 @@ const schema = z
   .object({
     name: z.string().trim().min(1).max(120),
     objective: z.string().trim().min(8).max(4000),
-    trigger: z.enum(["schedule", "run_completed", "connector_changed"]),
+    trigger: z.enum([
+      "schedule",
+      "run_completed",
+      "connector_changed",
+      "webhook",
+    ]),
+    webhook: z
+      .object({
+        endpointId: z.string().uuid().nullable().optional(),
+        events: z
+          .array(
+            z.enum([
+              "push",
+              "pull_request",
+              "ci_failure",
+              "deployment",
+              "db_event",
+              "generic",
+            ]),
+          )
+          .max(6)
+          .optional(),
+      })
+      .nullable()
+      .optional(),
     schedule: z
       .object({
         cadence: z.enum(["daily", "weekdays", "weekly"]),
@@ -50,7 +74,12 @@ export async function POST(request: Request) {
   try {
     const automation = await createAutomation(guard.identity, guard.body);
     return json({ automation }, 201);
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.startsWith("entitlement_exceeded")
+    )
+      return json({ error: "limit_reached" }, 402);
     return json({ error: "forbidden" }, 403);
   }
 }

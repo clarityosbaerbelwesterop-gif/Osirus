@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { randomUUID } from "node:crypto";
+import { after } from "next/server";
 import { env } from "@/lib/env";
 import { claimNextStage } from "@/lib/runtime/dispatch";
 import {
@@ -95,12 +96,18 @@ async function tick(request: Request) {
     throw error;
   }
 
+  // A chained tick is started by the previous tick, which lets go of the
+  // request after a few seconds; its work must not stop when it does. Every
+  // other caller's disconnect still stops the work, as before.
+  const chainHeader = request.headers.get("x-osirus-chain");
+  const chain = /^\d{1,4}$/.test(chainHeader ?? "") ? Number(chainHeader) : 0;
   const controller = new AbortController();
-  request.signal.addEventListener(
-    "abort",
-    () => controller.abort(new Error("request_aborted")),
-    { once: true },
-  );
+  if (!chainHeader)
+    request.signal.addEventListener(
+      "abort",
+      () => controller.abort(new Error("request_aborted")),
+      { once: true },
+    );
 
   // Scheduled automations whose window has come start first, so the claim
   // loop below executes them in this same tick.
@@ -109,8 +116,24 @@ async function tick(request: Request) {
     () => [] as string[],
   );
 
+  // Runs nothing else will close: a plan that died midway, or a run whose
+  // stages all settled while its worker went away.
+  const { recoverStuckRuns } = await import("@/lib/runtime/recovery");
+  const recovered = await recoverStuckRuns(10).catch(() => []);
+
   const workerId = `scheduler:${randomUUID()}`;
   const deadlineAt = Date.now() + TICK_BUDGET_MS;
+
+  // The Intelligence Foundry's bounded step: collect settled trials, start
+  // the next one, advance the research cycle. Its trials are runs below
+  // product priority, driven by the claim loop below after customer work.
+  // A Foundry failure is contained here and never stops the tick.
+  const { runFoundryTick } =
+    await import("@/lib/intelligence/production/runner");
+  const foundry = await runFoundryTick({
+    owner: workerId,
+    signal: controller.signal,
+  }).catch(() => null);
   const touched = new Map<
     string,
     { userId: string; organizationId: string; workspaceId: string }
@@ -171,6 +194,24 @@ async function tick(request: Request) {
     }).catch(() => undefined);
   }
 
+  // Keep going while there is Foundry work that moved in this tick: another
+  // tick is requested from the server, after this response, within the
+  // day's continuation envelope. A tick that moved nothing (every Foundry
+  // stage parked on a provider refusal, say) ends the chain; the daily cron
+  // starts the next one.
+  const chained =
+    Boolean(foundry?.continueChain) &&
+    (claimed > 0 || (foundry?.step?.progressed ?? 0) > 0);
+  if (chained)
+    after(async () => {
+      const { chargeChainedTick } =
+        await import("@/lib/intelligence/production/runner");
+      const { triggerTick } =
+        await import("@/lib/intelligence/production/operator");
+      await chargeChainedTick().catch(() => undefined);
+      await triggerTick(chain + 1);
+    });
+
   // Counts only. The response carries no objective, no output and no tenant
   // identifier, because whoever holds the scheduler secret is not thereby
   // entitled to read anyone's work.
@@ -181,6 +222,15 @@ async function tick(request: Request) {
       completed,
       failed,
       automationsStarted: automationsStarted.length,
+      recovered: recovered.length,
+      foundry: foundry
+        ? {
+            ran: foundry.ran,
+            phase: foundry.step?.phase ?? null,
+            waiting: foundry.reason,
+            chained,
+          }
+        : { ran: false, phase: null, waiting: "error", chained: false },
     },
     { headers: { "Cache-Control": "no-store" } },
   );

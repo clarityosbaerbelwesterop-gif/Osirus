@@ -1,5 +1,6 @@
 import "server-only";
 import { z } from "zod";
+import { attachmentIdsOf } from "../strategy/runtime";
 import type { ArmId, ArmStageContext } from "../arms/types";
 import { ComputeEngine } from "../compute/engine";
 import { MathjsProvider } from "../compute/mathjs-provider";
@@ -151,6 +152,76 @@ export async function buildToolbox(
     } catch {
       // No MCP tools this run: the table is missing or unreachable.
     }
+    // Read-only tools of the platforms this workspace connected by token.
+    try {
+      const { platformToolsForWorkspace } =
+        await import("../connectors/platform");
+      for (const tool of await platformToolsForWorkspace({
+        ...identity,
+        workspaceName: "",
+      })) {
+        if (!registry.has(tool.id)) registry.register(tool);
+      }
+    } catch {
+      // No platform tools this run.
+    }
+  }
+
+  // What this workspace's runs have established: repositories and their
+  // stack, research claims with their sources and open uncertainties.
+  // Derived on demand; skipped without a database (the arena).
+  if (!runtime.stores)
+    registry.register({
+      id: "world.query",
+      title: "Query the workspace's world model",
+      summary:
+        "Repositories this workspace worked on (languages, frameworks, CI) and research claims with supporting or contradicting sources, plus open uncertainties.",
+      trust: "builtin",
+      effect: "read",
+      risk: "low",
+      arms: ["general", "thinking", "coding", "research", "building"],
+      inputSchema: z.object({
+        about: z.string().max(200).optional(),
+      }),
+      run: async (input) => {
+        const { buildWorldModel } = await import("../world/model");
+        return buildWorldModel(identity, {
+          about: (input as { about?: string }).about,
+          limit: 40,
+        });
+      },
+    } as ToolDefinition);
+
+  // Files attached to this run: searchable beyond what retrieval put in the
+  // context, still by relevance and still as untrusted content.
+  const attached = attachmentIdsOf(work.stageInput);
+  if (attached.length && runtime.attachments) {
+    const attachments = runtime.attachments;
+    registry.register({
+      id: "attachments.search",
+      title: "Search the attached files",
+      summary:
+        "Find the passages of the files attached to this request that match a query (with file name and page or rows).",
+      trust: "builtin",
+      effect: "read",
+      risk: "low",
+      arms: [
+        "general",
+        "thinking",
+        "coding",
+        "research",
+        "math_science",
+        "building",
+      ],
+      inputSchema: z.object({ query: z.string().min(1).max(500) }),
+      run: async (input) => ({
+        passages: await attachments.retrieve({
+          ids: attached,
+          query: (input as { query: string }).query,
+          maxChars: 6_000,
+        }),
+      }),
+    } as ToolDefinition);
   }
 
   // Tool track record from the audit table. Routing input for the model and

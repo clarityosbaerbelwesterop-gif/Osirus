@@ -9,6 +9,8 @@ import {
 } from "../connectors/health";
 import { listMcpServers } from "../connectors/mcp-store";
 import type { McpServerView } from "../connectors/mcp-types";
+import { platformStatuses } from "../connectors/platform";
+import { listEndpoints } from "../webhooks/store";
 
 /**
  * Everything the Connections page shows. A connected GitHub token whose last
@@ -36,7 +38,27 @@ export async function loadConnections(identity: ProductIdentity) {
   } catch {
     mcpAvailable = false;
   }
+  const platforms = await Promise.all(
+    (await platformStatuses(identity).catch(() => [])).map(
+      async (platform) => ({
+        ...platform,
+        health:
+          platform.status === "CONNECTED"
+            ? await healthSummary(identity, platform.id).catch(() => null)
+            : null,
+      }),
+    ),
+  );
+  let endpoints: Awaited<ReturnType<typeof listEndpoints>> = [];
+  let webhooksAvailable = true;
+  try {
+    endpoints = await listEndpoints(identity);
+  } catch {
+    webhooksAvailable = false;
+  }
   return {
+    platforms,
+    webhooks: { endpoints, available: webhooksAvailable },
     github: {
       status: status.status,
       login: status.status === "CONNECTED" ? status.login : null,

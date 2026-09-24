@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  Circle,
+  CircleCheck,
   Code2,
   FlaskConical,
   Hammer,
@@ -8,6 +10,8 @@ import {
   Sigma,
   type LucideIcon,
 } from "lucide-react";
+import type { Route } from "next";
+import Link from "next/link";
 import { STARTERS, type Starter } from "@/lib/ui/starters";
 import { OsirusMark } from "../shell/osirus-mark";
 
@@ -23,13 +27,23 @@ const ICONS: Record<Starter["id"], LucideIcon> = {
  * The entry surface for a new task. The starters are optional: each one only
  * begins a sentence in the composer, and anything typed freely works the same.
  */
+export type OnboardingStep = {
+  id: string;
+  label: string;
+  done: boolean;
+  href?: string;
+};
+
 export function ChatHome({
   firstName,
   onStart,
+  onboarding,
 }: {
   firstName: string | null;
   onStart: (starter: Starter) => void;
+  onboarding?: OnboardingStep[];
 }) {
+  const remaining = onboarding?.filter((step) => !step.done).length ?? 0;
   return (
     <div className="home">
       <div className="home-hero">
@@ -66,6 +80,32 @@ export function ChatHome({
           );
         })}
       </ul>
+      {onboarding && remaining > 0 ? (
+        <section className="onboarding" aria-labelledby="onboarding-heading">
+          <h3 id="onboarding-heading" className="onboarding-title">
+            Get started · {onboarding.length - remaining} of {onboarding.length}
+          </h3>
+          <ul className="onboarding-list">
+            {onboarding.map((step) => (
+              <li key={step.id} data-done={step.done ? "true" : undefined}>
+                {step.done ? (
+                  <CircleCheck size={15} aria-hidden="true" />
+                ) : (
+                  <Circle size={15} aria-hidden="true" />
+                )}
+                {step.href && !step.done ? (
+                  <Link href={step.href as Route}>{step.label}</Link>
+                ) : (
+                  <span>{step.label}</span>
+                )}
+                <span className="sr-only">
+                  {step.done ? "(done)" : "(not done yet)"}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </div>
   );
 }

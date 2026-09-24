@@ -13,6 +13,7 @@ import {
 } from "@/lib/ui/workbench-view";
 import {
   Composer,
+  type ComposerAttachment,
   type ComposerHandle,
   type GithubState,
 } from "../composer/composer";
@@ -22,7 +23,7 @@ import { TopBar } from "../shell/top-bar";
 import { Badge } from "../ui/badge";
 import { IconButton } from "../ui/icon-button";
 import { useWideLayout, Workbench } from "../workbench/workbench";
-import { ChatHome } from "./chat-home";
+import { ChatHome, type OnboardingStep } from "./chat-home";
 import { MessageList, type ChatMessage } from "./message-list";
 
 // ChatHub: the conversation, its runs and the workbench.
@@ -54,6 +55,7 @@ export function ChatHub(props: {
   initialSnapshotRunId: string | null;
   /** Server-provided snapshot, so the first paint already shows the run. */
   initialSnapshot?: RunSnapshot | null;
+  onboarding?: OnboardingStep[];
 }) {
   const shell = useShell();
   const { upsertSession, bindChat } = shell;
@@ -66,6 +68,8 @@ export function ChatHub(props: {
     props.initialSnapshot ?? null,
   );
   const [objective, setObjective] = useState("");
+  const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [activeRunId, setActiveRunId] = useState(props.initialRunId);
   const [running, setRunning] = useState(
     Boolean(props.initialRunId) ||
@@ -92,6 +96,7 @@ export function ChatHub(props: {
   const streamAbort = useRef<AbortController | null>(null);
   const streamEnd = useRef<HTMLDivElement | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
+  const content = useRef<HTMLDivElement | null>(null);
   const nearBottom = useRef(true);
   const composer = useRef<ComposerHandle | null>(null);
   const wide = useWideLayout();
@@ -145,6 +150,20 @@ export function ChatHub(props: {
       behavior: reducedMotion ? "auto" : "smooth",
     });
   }, [messages, snapshot]);
+
+  // Content can grow after the scroll above: web fonts swap in, lazy Markdown
+  // renders, a run card expands. While the reader is at the bottom, stay
+  // there, so the latest line never ends up below the fold.
+  useEffect(() => {
+    const node = content.current;
+    const frame = scroller.current;
+    if (!node || !frame || typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(() => {
+      if (nearBottom.current) frame.scrollTop = frame.scrollHeight;
+    });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
 
   const applyPacket = useCallback(
     (packet: RuntimePacket) => {
@@ -210,6 +229,50 @@ export function ChatHub(props: {
     [applySnapshot, refreshRun],
   );
 
+  const attachFile = useCallback(
+    async (file: File) => {
+      setUploading(true);
+      setError(null);
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        if (sessionId) form.append("sessionId", sessionId);
+        const response = await fetch("/api/attachments", {
+          method: "POST",
+          body: form,
+        });
+        const body = (await response.json().catch(() => ({}))) as {
+          attachment?: ComposerAttachment;
+          error?: string;
+        };
+        if (!response.ok || !body.attachment) {
+          setError(
+            body.error === "too_large"
+              ? "That file is larger than 10 MB."
+              : body.error === "limit_reached"
+                ? "Today's attachment limit for this workspace is reached."
+                : body.error === "unsupported_type"
+                  ? "That file type cannot be read. Try PDF, text, Markdown, CSV, JSON, code or an image."
+                  : "The file could not be uploaded.",
+          );
+          return;
+        }
+        const attachment = body.attachment;
+        setAttachments((current) => [...current, attachment].slice(-8));
+      } finally {
+        setUploading(false);
+      }
+    },
+    [sessionId],
+  );
+
+  const removeAttachment = useCallback(async (id: string) => {
+    setAttachments((current) => current.filter((item) => item.id !== id));
+    await fetch(`/api/attachments/${id}`, { method: "DELETE" }).catch(
+      () => undefined,
+    );
+  }, []);
+
   const runObjective = useCallback(
     async (value: string, regenerate = false) => {
       const trimmed = value.trim();
@@ -235,6 +298,10 @@ export function ChatHub(props: {
       const controller = new AbortController();
       streamAbort.current = controller;
       try {
+        const attachmentIds = regenerate
+          ? []
+          : attachments.map((attachment) => attachment.id);
+        setAttachments([]);
         const response = await fetch("/api/runtime", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -243,6 +310,7 @@ export function ChatHub(props: {
             requestId,
             sessionId,
             regenerate,
+            ...(attachmentIds.length ? { attachmentIds } : {}),
           }),
           signal: controller.signal,
         });
@@ -307,7 +375,14 @@ export function ChatHub(props: {
         streamAbort.current = null;
       }
     },
-    [applyPacket, running, sessionId, shell.sessions, upsertSession],
+    [
+      applyPacket,
+      attachments,
+      running,
+      sessionId,
+      shell.sessions,
+      upsertSession,
+    ],
   );
 
   const cancel = useCallback(async () => {
@@ -487,9 +562,13 @@ export function ChatHub(props: {
               node.scrollHeight - node.scrollTop - node.clientHeight < 120;
           }}
         >
-          <div className="chat-content">
+          <div className="chat-content" ref={content}>
             {empty ? (
-              <ChatHome firstName={props.firstName} onStart={start} />
+              <ChatHome
+                firstName={props.firstName}
+                onStart={start}
+                onboarding={props.onboarding}
+              />
             ) : (
               <MessageList
                 messages={messages}
@@ -519,6 +598,10 @@ export function ChatHub(props: {
           value={objective}
           onChange={setObjective}
           onSubmit={() => void runObjective(objective)}
+          attachments={attachments}
+          uploading={uploading}
+          onAttach={(file) => void attachFile(file)}
+          onRemoveAttachment={(id) => void removeAttachment(id)}
           onCancel={() => void cancel()}
           onRetry={
             failedObjective
