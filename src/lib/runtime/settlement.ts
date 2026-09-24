@@ -7,6 +7,54 @@ import type { StageOutcome } from "../arms/types";
 // do next -- and a contract that cannot be tested without a database is a
 // contract nobody checks.
 
+/** Counts a slice adds to the run budget when its checkpoint commits. */
+export type PendingBudget = {
+  modelCalls: number;
+  toolCalls: number;
+};
+
+function nonNegativeInt(value: unknown) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.floor(value));
+}
+
+/**
+ * The charge recorded on the stage context, not yet committed.
+ *
+ * Absent or malformed values charge nothing. A negative or fractional count
+ * cannot increase the budget.
+ */
+export function pendingBudgetOf(state: Record<string, unknown>): PendingBudget {
+  const pending = state.pendingBudget;
+  if (!pending || typeof pending !== "object") {
+    return { modelCalls: 0, toolCalls: 0 };
+  }
+  const record = pending as Record<string, unknown>;
+  return {
+    modelCalls: nonNegativeInt(record.modelCalls),
+    toolCalls: nonNegativeInt(record.toolCalls),
+  };
+}
+
+/**
+ * Apply a slice charge once per stage attempt.
+ *
+ * The database commits this decision in the same transaction as the
+ * checkpoint. A replay of an attempt that already settled adds nothing, so a
+ * crash cannot bill the slice twice. A later slice is a new attempt and
+ * charges only its own delta.
+ */
+export function budgetChargeForAttempt(input: {
+  settledAttemptIds: readonly string[];
+  attemptId: string;
+  pending: PendingBudget;
+}): PendingBudget & { alreadySettled: boolean } {
+  if (input.settledAttemptIds.includes(input.attemptId)) {
+    return { modelCalls: 0, toolCalls: 0, alreadySettled: true };
+  }
+  return { ...input.pending, alreadySettled: false };
+}
+
 /**
  * How a stage outcome becomes one finish_attempt call. Exported because this
  * mapping is the whole contract between a worker and the claim scan, and it

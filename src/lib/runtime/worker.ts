@@ -12,6 +12,7 @@ import { providerRefusalOf, refusalDelaySeconds } from "../models/provider";
 import { UnoRouterProvider } from "../models/unorouter";
 import type { Verdict } from "../verification/engine";
 import {
+  checkpointStageBudget,
   claimNextStage,
   consumeBudget,
   finishAttempt,
@@ -21,7 +22,7 @@ import {
 import { runtimeErrorCode } from "./errors";
 import { RuntimeRepository } from "./repository";
 import { SkillRepository } from "../skills/repository";
-import { settlementFor } from "./settlement";
+import { pendingBudgetOf, settlementFor } from "./settlement";
 import type { RuntimePacket } from "./types";
 import { policyOfStage } from "../strategy/runtime";
 
@@ -42,6 +43,10 @@ import { policyOfStage } from "../strategy/runtime";
 //   2. A stage only ever changes status through finish_attempt, which is
 //      fenced on the lease token. A worker cannot leave a stage in a state the
 //      claim scan disagrees with.
+//   3. Model and tool consumption for a slice commits in the same transaction
+//      as that slice's checkpoint, and only after the lease still holds. A
+//      crash cannot record the charge while the resume still sees the previous
+//      checkpoint and charges the same calls again.
 
 /** Renewal cadence as a fraction of the lease. */
 const HEARTBEAT_DIVISOR = 3;
@@ -332,15 +337,21 @@ export async function executeClaimedStage(input: {
     return { settled: false, outcome };
   }
 
-  await repository
-    .saveCheckpoint({
-      runId: work.runId,
-      stageId: work.stageId,
-      // checkpoints_label_check caps the column at 160.
-      label: `${work.stageName}:${outcome.kind.toLowerCase()}`.slice(0, 160),
-      state: durableState(state),
-    })
-    .catch(() => undefined);
+  // Charge and checkpoint together. The pending delta stays off the
+  // durable state: the resume computes a fresh delta from the loop counts
+  // this write persists, and the attempt id makes a replay of this commit
+  // charge nothing.
+  const pending = pendingBudgetOf(state);
+  await checkpointStageBudget({
+    runId: work.runId,
+    stageId: work.stageId,
+    attemptId: work.attemptId,
+    // checkpoints_label_check caps the column at 160.
+    label: `${work.stageName}:${outcome.kind.toLowerCase()}`.slice(0, 160),
+    state: durableState(state),
+    modelCalls: pending.modelCalls,
+    toolCalls: pending.toolCalls,
+  }).catch(() => undefined);
 
   await runtime
     .activity(

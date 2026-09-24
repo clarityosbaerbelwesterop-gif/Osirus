@@ -576,7 +576,6 @@ export abstract class BaseArm implements AgentArm {
     const bounds = boundsUnder(policy, this.loopBounds(), DEFAULT_BOUNDS);
     const policyContext = await this.policyContext(context, policy);
     const { agentDecisionSchema } = await import("../agent/decision");
-    const { consumeBudget } = await import("../runtime/dispatch");
 
     let callIndex = 0;
     const decide = async (input: {
@@ -822,21 +821,21 @@ export abstract class BaseArm implements AgentArm {
       },
     });
 
-    // Charge only the calls this slice added. The loop state keeps the
+    // Record only the calls this slice added. The loop state keeps the
     // cumulative totals so the next slice can resume; charging those totals
-    // again would double-count model and tool budget.
-    const delta = sliceBudgetDelta({
-      priorModelCalls,
-      priorToolCalls,
-      modelCalls: result.state.modelCalls,
-      toolCalls: result.state.toolCalls,
-    });
-    await consumeBudget({
-      runId: work.runId,
-      scope: "run",
-      modelCalls: delta.modelCalls,
-      toolCalls: delta.toolCalls,
-    }).catch(() => undefined);
+    // again would double-count. The delta stays on the stage context until
+    // the worker commits it with the checkpoint. Charging here would bill a
+    // slice whose checkpoint never landed, and the resume would bill it again.
+    const notePending = (extraModelCalls = 0) => {
+      context.state.pendingBudget = sliceBudgetDelta({
+        priorModelCalls,
+        priorToolCalls,
+        modelCalls: result.state.modelCalls,
+        toolCalls: result.state.toolCalls,
+        extraModelCalls,
+      });
+    };
+    notePending();
 
     context.state.toolEvidence = [
       ...readState<unknown[]>(context, "toolEvidence", []),
@@ -909,7 +908,8 @@ export abstract class BaseArm implements AgentArm {
       // Out of budget without finishing. One last bounded call turns what the
       // observations support into an answer that says what is incomplete,
       // instead of returning nothing for all the work already done. It is a
-      // model call the loop counter did not include, so it is charged on its own.
+      // model call the loop counter did not include, so it is part of the
+      // pending delta the checkpoint transaction charges.
       try {
         const final = await decide({
           system: [
@@ -925,11 +925,7 @@ export abstract class BaseArm implements AgentArm {
       } catch {
         answer = null;
       } finally {
-        await consumeBudget({
-          runId: work.runId,
-          scope: "run",
-          modelCalls: 1,
-        }).catch(() => undefined);
+        notePending(1);
       }
     }
     if (!answer) {

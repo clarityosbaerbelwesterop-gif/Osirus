@@ -325,3 +325,57 @@ describe("migrations 012 and 013", () => {
     expect(sql).not.toMatch(/DROP TABLE|TRUNCATE|DELETE FROM/i);
   });
 });
+
+describe("migration 014", () => {
+  it("charges a slice only inside the transaction that writes its checkpoint", () => {
+    // A charge that commits before the checkpoint can be applied again when
+    // the resume still sees the previous loop counts. The settlement row, the
+    // checkpoint and consume_budget have to be one function, and a replay of
+    // the same attempt has to return before either write.
+    const sql = migration("014_checkpoint_budget.sql");
+    expect(sql).toContain(
+      "CREATE TABLE IF NOT EXISTS osirus.stage_budget_settlements",
+    );
+    expect(sql).toContain(
+      "ALTER TABLE osirus.stage_budget_settlements FORCE ROW LEVEL SECURITY",
+    );
+    expect(sql).toContain(
+      "CREATE POLICY stage_budget_settlements_access ON osirus.stage_budget_settlements",
+    );
+    expect(sql).toContain("USING (osirus.can_access_run(run_id))");
+    expect(sql).toContain("WITH CHECK (osirus.can_manage_run(run_id))");
+    expect(sql).toContain(
+      "GRANT SELECT, INSERT, UPDATE, DELETE ON osirus.stage_budget_settlements TO osirus_app",
+    );
+    expect(sql).toContain(
+      "CONSTRAINT stage_budget_settlements_pkey PRIMARY KEY (attempt_id)",
+    );
+    expect(sql).toContain("CHECK (model_calls >= 0 AND tool_calls >= 0)");
+
+    const start = sql.indexOf("FUNCTION osirus.checkpoint_stage_budget");
+    expect(start).toBeGreaterThan(-1);
+    const body = sql.slice(start, sql.indexOf("$function$;", start));
+    const lock = body.indexOf("pg_advisory_xact_lock");
+    const replay = body.indexOf("WHERE attempt_id = p_attempt_id");
+    const replayReturn = body.indexOf(
+      "RETURN QUERY SELECT COALESCE(v_version, 0)",
+    );
+    const settlement = body.indexOf(
+      "INSERT INTO osirus.stage_budget_settlements",
+    );
+    const checkpoint = body.indexOf("osirus.save_run_checkpoint(");
+    const charge = body.indexOf("osirus.consume_budget(");
+    expect(lock).toBeGreaterThan(-1);
+    expect(lock).toBeLessThan(replay);
+    expect(replay).toBeLessThan(replayReturn);
+    expect(replayReturn).toBeLessThan(settlement);
+    expect(settlement).toBeLessThan(checkpoint);
+    expect(checkpoint).toBeLessThan(charge);
+    expect(body).toContain("v_state - 'pendingBudget'");
+    expect(body).toContain("RAISE EXCEPTION 'attempt_run_mismatch'");
+    expect(body).toContain(
+      "hashtextextended(p_run_id::text || ':checkpoint', 0)",
+    );
+    expect(sql).not.toMatch(/DROP TABLE|TRUNCATE|DELETE FROM/i);
+  });
+});

@@ -230,6 +230,58 @@ export async function consumeBudget(input: {
   return { exhausted: row?.exhausted === true, reason: row?.reason ?? null };
 }
 
+export type CheckpointCharge = BudgetOutcome & {
+  chargedModelCalls: number;
+  chargedToolCalls: number;
+};
+
+/**
+ * Persist a stage checkpoint and consume its model/tool delta together.
+ *
+ * `osirus.checkpoint_stage_budget` inserts the settlement row, the checkpoint
+ * and the budget update in one function, so a crash rolls all three back. The
+ * attempt id is the idempotency key: replaying a commit charges nothing.
+ */
+export async function checkpointStageBudget(input: {
+  runId: string;
+  stageId?: string | null;
+  attemptId: string;
+  label: string;
+  state: Record<string, unknown>;
+  modelCalls: number;
+  toolCalls: number;
+}): Promise<CheckpointCharge> {
+  const rows = await querySystem<{
+    version: number;
+    exhausted: boolean;
+    reason: string | null;
+    charged_model_calls: number;
+    charged_tool_calls: number;
+  }>(
+    `select version, exhausted, reason, charged_model_calls, charged_tool_calls
+       from osirus.checkpoint_stage_budget(
+         $1::uuid, $2::uuid, $3::uuid, $4, $5::jsonb, $6, $7
+       )`,
+    [
+      input.runId,
+      input.stageId ?? null,
+      input.attemptId,
+      input.label,
+      JSON.stringify(input.state),
+      input.modelCalls,
+      input.toolCalls,
+    ],
+  );
+  const row = rows[0];
+  if (!row) throw new Error("checkpoint_insert_failed");
+  return {
+    exhausted: row.exhausted === true,
+    reason: row.reason ?? null,
+    chargedModelCalls: Number(row.charged_model_calls ?? 0),
+    chargedToolCalls: Number(row.charged_tool_calls ?? 0),
+  };
+}
+
 /** Declare a ceiling. Omitted dimensions stay unbounded. */
 export async function setBudget(input: {
   runId: string;
