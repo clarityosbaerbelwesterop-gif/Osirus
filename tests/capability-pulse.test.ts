@@ -1,4 +1,178 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import type { BaselineRecord } from "../src/lib/agent/baseline";
+import type { CapabilityLane } from "../src/lib/agent/pulse/lanes";
+import type { PulseTaskResult } from "../src/lib/agent/pulse/types";
+
+const mockBaselineRecords = vi.hoisted((): BaselineRecord[] => [
+  {
+    id: "mock-thinking",
+    domain: "THINKING",
+    objective: "mock",
+    liveProvider: false,
+    mode: "offline-fixture",
+    success: true,
+    verifiedSuccess: true,
+    falseCompletion: false,
+    modelCalls: 1,
+    toolCalls: 0,
+    steps: 1,
+    repairs: 0,
+    latencyMs: 0,
+    costUsd: null,
+    notes: "mock",
+  },
+  {
+    id: "mock-reasoning",
+    domain: "REASONING",
+    objective: "mock",
+    liveProvider: false,
+    mode: "offline-fixture",
+    success: true,
+    verifiedSuccess: true,
+    falseCompletion: false,
+    modelCalls: 1,
+    toolCalls: 0,
+    steps: 1,
+    repairs: 0,
+    latencyMs: 0,
+    costUsd: null,
+    notes: "mock",
+  },
+  {
+    id: "mock-coding",
+    domain: "CODING",
+    objective: "mock",
+    liveProvider: false,
+    mode: "offline-fixture",
+    success: false,
+    verifiedSuccess: false,
+    falseCompletion: false,
+    modelCalls: 1,
+    toolCalls: 0,
+    steps: 1,
+    repairs: 0,
+    latencyMs: 0,
+    costUsd: null,
+    notes: "mock",
+  },
+  {
+    id: "mock-research",
+    domain: "RESEARCH",
+    objective: "mock",
+    liveProvider: false,
+    mode: "offline-fixture",
+    success: true,
+    verifiedSuccess: true,
+    falseCompletion: false,
+    modelCalls: 1,
+    toolCalls: 0,
+    steps: 1,
+    repairs: 0,
+    latencyMs: 0,
+    costUsd: null,
+    notes: "mock",
+  },
+  {
+    id: "mock-math",
+    domain: "MATH",
+    objective: "mock",
+    liveProvider: false,
+    mode: "offline-fixture",
+    success: true,
+    verifiedSuccess: true,
+    falseCompletion: false,
+    modelCalls: 1,
+    toolCalls: 0,
+    steps: 1,
+    repairs: 0,
+    latencyMs: 0,
+    costUsd: null,
+    notes: "mock",
+  },
+  {
+    id: "mock-building",
+    domain: "BUILDING",
+    objective: "mock",
+    liveProvider: false,
+    mode: "offline-fixture",
+    success: true,
+    verifiedSuccess: true,
+    falseCompletion: false,
+    modelCalls: 1,
+    toolCalls: 0,
+    steps: 1,
+    repairs: 0,
+    latencyMs: 0,
+    costUsd: null,
+    notes: "mock",
+  },
+  {
+    id: "mock-computer",
+    domain: "COMPUTER",
+    objective: "mock",
+    liveProvider: false,
+    mode: "offline-fixture",
+    success: true,
+    verifiedSuccess: false,
+    falseCompletion: false,
+    modelCalls: 1,
+    toolCalls: 0,
+    steps: 1,
+    repairs: 0,
+    latencyMs: 0,
+    costUsd: null,
+    notes: "mock",
+  },
+  {
+    id: "mock-memory",
+    domain: "MEMORY",
+    objective: "mock",
+    liveProvider: false,
+    mode: "offline-fixture",
+    success: true,
+    verifiedSuccess: true,
+    falseCompletion: false,
+    modelCalls: 1,
+    toolCalls: 0,
+    steps: 1,
+    repairs: 0,
+    latencyMs: 0,
+    costUsd: null,
+    notes: "mock",
+  },
+]);
+
+function mockPulseResult(
+  lane: CapabilityLane,
+  level: PulseTaskResult["level"],
+): PulseTaskResult {
+  return {
+    taskId: `mock:${lane}:L${level}`,
+    lane,
+    level,
+    success: true,
+    verifiedSuccess: true,
+    falseCompletion: false,
+    modelCalls: 1,
+    toolCalls: 0,
+    steps: 1,
+    repairs: 0,
+    latencyMs: 0,
+    notes: "mock fixture",
+  };
+}
+
+vi.mock("../src/lib/agent/baseline", () => ({
+  runCapabilityBaseline: vi.fn(async () => mockBaselineRecords),
+}));
+
+vi.mock("../src/lib/agent/pulse/fixtures", () => ({
+  toolMultimodalL3: vi.fn(async () => mockPulseResult("TOOL_MULTIMODAL", 3)),
+  crossDomainLongHorizonL3: vi.fn(async () =>
+    mockPulseResult("CROSS_DOMAIN_LONG_HORIZON", 3),
+  ),
+}));
+
 import {
   clearPulseRegistry,
   listPulseRegistrations,
@@ -83,5 +257,5 @@ describe("capability pulse scheduler", () => {
     expect(last).toBeTruthy();
     const recent = Date.now() - Date.parse(last!) < PULSE_INTERVAL_MS;
     expect(recent).toBe(true);
-  }, 120_000);
+  });
 });
