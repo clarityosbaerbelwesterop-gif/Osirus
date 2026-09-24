@@ -152,6 +152,27 @@ export function compileMemory(
   ).decision;
 }
 
+export {
+  temporalDecay,
+  temporalScore,
+  rankByTemporal,
+  DEFAULT_HALF_LIFE_MS,
+} from "./temporal";
+export {
+  extractCausalGraph,
+  renderCausalNarrative,
+  type CausalEvent,
+  type CausalLink,
+  type CausalEventKind,
+  type CausalLinkType,
+} from "./causal";
+export {
+  buildCausalWorldModelFromOutcome,
+  assembleCausalWorldModel,
+  formatCausalContext,
+  type CausalWorldModel,
+} from "./causal-world-model";
+
 export function lexicalRetrieve(query: string, items: MemoryItem[], limit = 8) {
   const terms = query.toLowerCase().split(/\W+/).filter(Boolean);
   return items

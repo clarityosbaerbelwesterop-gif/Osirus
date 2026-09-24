@@ -188,6 +188,7 @@ export async function runArenaTask(
           contradictionsPending: 0,
         };
       },
+      retrieveCausalContext: async () => [],
     } as unknown as ArmRuntime["memory"],
     // The real capability pack, so skill selection runs as in production;
     // with no history, every outcome weight is zero.
