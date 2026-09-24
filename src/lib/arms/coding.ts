@@ -392,6 +392,7 @@ export class CodingArm extends BaseArm {
     };
     const { workspaceTools } = await import("../coding/tools");
     const { deliveryTool } = await import("../coding/delivery");
+    const { computerTools } = await import("../computer/tools");
     const github = await import("../connectors/github");
     const { buildToolbox } = await import("../agent/toolbox");
     const toolbox = await buildToolbox(context, {
@@ -413,6 +414,7 @@ export class CodingArm extends BaseArm {
               github.githubCredential(identity, "repo:write"),
             openPullRequest: github.openPullRequest,
           }),
+          ...computerTools(() => session.workspace.handle),
         ],
       ],
     });

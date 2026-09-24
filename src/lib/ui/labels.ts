@@ -95,6 +95,7 @@ export function verdict(status: string | null | undefined) {
 const TOOL_LABEL: Record<string, string> = {
   "git.deliver": "Push a branch to GitHub",
   "attachments.search": "Search the attached files",
+  "computer.inspect": "Use the app in a browser",
   "world.query": "Look up what this workspace knows",
   "vercel.deployments": "List Vercel deployments",
   "neon.projects": "List Neon projects",

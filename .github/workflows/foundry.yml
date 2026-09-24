@@ -111,3 +111,23 @@ jobs:
           name: foundry-coding
           path: foundry-results/coding/
           if-no-files-found: warn
+
+  computer:
+    # The computer arm in the real Vercel Sandbox; no model calls.
+    if: contains(github.event.head_commit.message, '[run-computer]')
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Drive a page in the sandbox VM
+        env:
+          OSIRUS_SANDBOX_CREDENTIALS: ci
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
+        run: npx vitest run --config vitest.computer.config.ts

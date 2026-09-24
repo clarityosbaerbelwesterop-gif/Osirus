@@ -244,7 +244,23 @@ export class BuildingArm extends CodingArm {
         cwd: "repo",
       });
       await new Promise((resolve) => setTimeout(resolve, 1_500));
-      report = await browserQa().run(hostedUrl, probes);
+      // A real browser inside the VM, next to the preview server, at
+      // localhost: the product is verified by what Chromium rendered. If the
+      // browser cannot start there, the HTTP check runs and says so.
+      const { SandboxBrowser } = await import("../computer/browser");
+      try {
+        report = await new SandboxBrowser(handle).run(
+          `http://127.0.0.1:${PREVIEW_PORT}/`,
+          probes,
+        );
+        report = { ...report, url: hostedUrl };
+      } catch (error) {
+        report = await browserQa().run(hostedUrl, probes);
+        report = {
+          ...report,
+          reason: `No browser in the sandbox (${error instanceof Error ? error.message.slice(0, 160) : "unknown"}); HTTP check only.`,
+        };
+      }
       session.record.previewUrl = hostedUrl;
     } else {
       const served = await serveWorkspaceDirectory(
