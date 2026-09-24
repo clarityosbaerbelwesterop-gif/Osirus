@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { MemoryRepository } from "../memory/repository";
+import type { MemoryOS } from "../memory/os";
 import type { ModelProvider } from "../models/provider";
 import type { ClaimedWork } from "../runtime/dispatch";
 import type { WorkflowGraph } from "../runtime/graph";
@@ -178,7 +178,7 @@ export type ArmRuntime = {
   stores?: RuntimeStores;
   provider: ModelProvider;
   repository: RuntimeRepository;
-  memory: MemoryRepository;
+  memory: MemoryOS;
   skills: SkillRepository;
   activity: ArmActivity;
   /** Streams assistant text to the browser as it arrives. */

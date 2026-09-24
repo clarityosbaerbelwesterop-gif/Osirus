@@ -3,7 +3,10 @@ import type { Route } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { AppearanceSettings } from "@/components/settings/appearance";
-import { MemoryList } from "@/components/settings/memory-list";
+import {
+  MemoryConflictList,
+  MemoryList,
+} from "@/components/settings/memory-list";
 import { ModelStatusTable } from "@/components/settings/model-status";
 import { AgentBehaviorSettings } from "@/components/settings/agent-behavior";
 import { SecurityEventList } from "@/components/settings/security-events";
@@ -171,15 +174,28 @@ export default async function SettingsSection({
         <Group
           id="memory"
           title="Memory"
-          lede="What Osirus learned from earlier work in this workspace. Only verified items inform later runs by default."
+          lede="What Osirus learned from earlier work in this workspace. Verified items inform later runs. Suspected contradictions stay out of retrieval until you resolve them."
         >
           <div className="row row-wrap">
             <Badge>{memory.total} items</Badge>
             <Badge tone="success">{memory.verified} verified</Badge>
+            {memory.contradictions ? (
+              <Badge tone="warning">{memory.contradictions} need review</Badge>
+            ) : null}
           </div>
+          {memory.conflictQueue.length ? (
+            <>
+              <p className="subtle">
+                <strong>Contradictions.</strong> These memories disagree on the
+                same subject. Osirus excludes them from retrieval until you pick
+                the value to keep.
+              </p>
+              <MemoryConflictList items={memory.conflictQueue} />
+            </>
+          ) : null}
           {memory.items.length ? (
             <MemoryList items={memory.items} />
-          ) : (
+          ) : memory.conflictQueue.length ? null : (
             <p className="subtle">Nothing has been remembered yet.</p>
           )}
         </Group>

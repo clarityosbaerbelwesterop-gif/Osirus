@@ -211,6 +211,171 @@ export class MemoryRepository {
     });
   }
 
+  async episodicByObjective(workspaceId: string, objective: string, limit = 6) {
+    const query = objective.trim();
+    if (!query) return [];
+    const rowLimit = Math.min(Math.max(limit, 1), 12);
+    const rows = await queryAs<MemoryRow>(
+      this.actorId,
+      `select item.id, item.workspace_id, item.layer, item.kind, item.content,
+              item.source, item.verification_status, item.contradiction_status,
+              item.confidence, item.importance, item.subject_key,
+              item.canonical_value, item.updated_at,
+              greatest(
+                ts_rank_cd(
+                  to_tsvector('simple', coalesce(run.objective, '')),
+                  websearch_to_tsquery('simple', $3)
+                ),
+                ts_rank_cd(
+                  to_tsvector('simple', item.searchable_text),
+                  websearch_to_tsquery('simple', $3)
+                )
+              ) as relevance
+         from osirus.memory_items item
+         join osirus.runs run on run.id = item.run_id
+        where item.owner_id = $1::uuid
+          and item.workspace_id = $2::uuid
+          and item.kind in ('run_summary', 'decision')
+          and item.verification_status <> 'rejected'
+          and item.contradiction_status <> 'suspected'
+          and run.status = 'completed'
+          and (
+            to_tsvector('simple', coalesce(run.objective, ''))
+              @@ websearch_to_tsquery('simple', $3)
+            or to_tsvector('simple', item.searchable_text)
+                @@ websearch_to_tsquery('simple', $3)
+          )
+        order by relevance desc, item.updated_at desc
+        limit $4`,
+      [this.actorId, workspaceId, query, rowLimit],
+    );
+    return rows.map(mapMemory);
+  }
+
+  async countContradictions(workspaceId: string) {
+    const rows = await queryAs<{ total: number }>(
+      this.actorId,
+      `select count(*)::int as total
+         from osirus.memory_items
+        where owner_id = $1::uuid
+          and workspace_id = $2::uuid
+          and contradiction_status = 'suspected'`,
+      [this.actorId, workspaceId],
+    );
+    return rows[0]?.total ?? 0;
+  }
+
+  async listContradictions(workspaceId: string, limit = 20) {
+    const rows = await queryAs<{
+      id: string;
+      kind: string;
+      content: string;
+      subject_key: string | null;
+      canonical_value: string | null;
+      updated_at: string | Date;
+      rival_ids: string[] | null;
+    }>(
+      this.actorId,
+      `select item.id, item.kind, item.content, item.subject_key,
+              item.canonical_value, item.updated_at,
+              array_remove(array_agg(distinct rival.id), null) as rival_ids
+         from osirus.memory_items item
+         left join osirus.memory_items rival
+           on rival.workspace_id = item.workspace_id
+          and rival.owner_id = item.owner_id
+          and rival.subject_key = item.subject_key
+          and rival.id <> item.id
+          and rival.contradiction_status = 'suspected'
+          and rival.verification_status <> 'rejected'
+        where item.owner_id = $1::uuid
+          and item.workspace_id = $2::uuid
+          and item.contradiction_status = 'suspected'
+        group by item.id, item.kind, item.content, item.subject_key,
+                 item.canonical_value, item.updated_at
+        order by item.updated_at desc
+        limit $3`,
+      [this.actorId, workspaceId, Math.min(Math.max(limit, 1), 50)],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      kind: row.kind,
+      content: row.content,
+      subjectKey: row.subject_key,
+      canonicalValue: row.canonical_value,
+      updatedAt: new Date(row.updated_at).toISOString(),
+      rivalIds: row.rival_ids ?? [],
+    }));
+  }
+
+  async upsertEntity(input: {
+    organizationId: string;
+    workspaceId: string;
+    canonicalName: string;
+    entityType: string;
+    confidence: number;
+    aliases?: string[];
+  }) {
+    const rows = await queryAs<{ id: string }>(
+      this.actorId,
+      `insert into osirus.memory_entities
+         (owner_id, organization_id, workspace_id, canonical_name,
+          entity_type, aliases, confidence)
+       values ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6::text[], $7)
+       on conflict on constraint memory_entities_owner_id_workspace_id_canonical_name_entity_key
+       do update set confidence = greatest(osirus.memory_entities.confidence, excluded.confidence),
+                     updated_at = now()
+       returning id`,
+      [
+        this.actorId,
+        input.organizationId,
+        input.workspaceId,
+        input.canonicalName,
+        input.entityType,
+        input.aliases ?? [],
+        input.confidence,
+      ],
+    );
+    return rows[0]?.id ?? null;
+  }
+
+  async linkEntities(input: {
+    organizationId: string;
+    workspaceId: string;
+    fromEntityId: string;
+    toEntityId: string;
+    relationType: string;
+    sourceMemoryId: string;
+    confidence: number;
+    provenance: Record<string, unknown>;
+  }) {
+    await queryAs(
+      this.actorId,
+      `insert into osirus.memory_relations
+         (owner_id, organization_id, workspace_id, from_entity_id, to_entity_id,
+          relation_type, source_memory_id, confidence, provenance)
+       select $1::uuid, $2::uuid, $3::uuid, $4::uuid, $5::uuid, $6, $7::uuid, $8, $9::jsonb
+        where not exists (
+          select 1 from osirus.memory_relations existing
+           where existing.owner_id = $1::uuid
+             and existing.workspace_id = $3::uuid
+             and existing.from_entity_id = $4::uuid
+             and existing.to_entity_id = $5::uuid
+             and existing.relation_type = $6
+        )`,
+      [
+        this.actorId,
+        input.organizationId,
+        input.workspaceId,
+        input.fromEntityId,
+        input.toEntityId,
+        input.relationType,
+        input.sourceMemoryId,
+        input.confidence,
+        JSON.stringify(input.provenance),
+      ],
+    );
+  }
+
   async latestBySubject(workspaceId: string, subjectKey: string) {
     const rows = await queryAs<MemoryRow>(
       this.actorId,

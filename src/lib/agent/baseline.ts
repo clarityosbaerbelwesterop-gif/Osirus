@@ -1111,7 +1111,7 @@ async function memory(): Promise<BaselineRecord> {
       claimHolds: false,
     }),
     notes:
-      "Offline memory hook, not a live memory store. The fact is written into TaskState.knownFacts and would be on the next slice's prompt. Retrieval is not a Memory OS. A FINISH that invents port 3000 is still accepted by the loop.",
+      "M31 Memory OS I routes retrieval through typed planes and TaskState.knownFacts. Offline fixture only — not a live store. A FINISH that invents port 3000 is still accepted by the loop.",
   };
 }
 

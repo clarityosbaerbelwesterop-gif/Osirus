@@ -1,6 +1,7 @@
 import "server-only";
 import type { ProductIdentity } from "../auth/bootstrap";
 import { queryAs } from "../db/client";
+import { MemoryOS } from "../memory/os";
 
 // Read models for the settings sections. Each returns exactly what its
 // section shows; everything runs as the signed-in person, so row-level
@@ -133,38 +134,56 @@ export type MemoryItemView = {
   verified: boolean;
   own: boolean;
   createdAt: string;
+  contradictionStatus?: "none" | "suspected" | "resolved";
+};
+
+export type MemoryContradictionView = {
+  id: string;
+  kind: string;
+  content: string;
+  subjectKey: string | null;
+  canonicalValue: string | null;
+  updatedAt: string;
+  rivalIds: string[];
 };
 
 export async function memoryOverview(identity: ProductIdentity) {
-  const [items, counts] = await Promise.all([
+  const memory = new MemoryOS(identity.userId);
+  const [items, counts, contradictions] = await Promise.all([
     queryAs<{
       id: string;
       kind: string;
       content: string;
       verification_status: string;
+      contradiction_status: "none" | "suspected" | "resolved";
       owner_id: string;
       created_at: Date | string;
     }>(
       identity.userId,
-      `select id, kind, content, verification_status, owner_id, created_at
+      `select id, kind, content, verification_status, contradiction_status,
+              owner_id, created_at
          from osirus.memory_items
         where workspace_id = $1::uuid
+          and contradiction_status <> 'suspected'
         order by created_at desc
         limit 25`,
       [identity.workspaceId],
     ).catch(() => []),
-    queryAs<{ total: number; verified: number }>(
+    queryAs<{ total: number; verified: number; contradictions: number }>(
       identity.userId,
       `select count(*)::int as total,
-              count(*) filter (where verification_status = 'verified')::int as verified
+              count(*) filter (where verification_status = 'verified')::int as verified,
+              count(*) filter (where contradiction_status = 'suspected')::int as contradictions
          from osirus.memory_items
         where workspace_id = $1::uuid`,
       [identity.workspaceId],
     ).catch(() => []),
+    memory.listContradictions(identity.workspaceId, 12).catch(() => []),
   ]);
   return {
     total: counts[0]?.total ?? 0,
     verified: counts[0]?.verified ?? 0,
+    contradictions: counts[0]?.contradictions ?? contradictions.length,
     items: items.map((item) => ({
       id: item.id,
       kind: item.kind,
@@ -172,8 +191,23 @@ export async function memoryOverview(identity: ProductIdentity) {
       verified: item.verification_status === "verified",
       own: item.owner_id === identity.userId,
       createdAt: new Date(item.created_at).toISOString(),
+      contradictionStatus: item.contradiction_status,
     })) satisfies MemoryItemView[],
+    conflictQueue: contradictions satisfies MemoryContradictionView[],
   };
+}
+
+export async function resolveMemoryConflict(
+  identity: ProductIdentity,
+  input: { winningMemoryId: string; rejectedMemoryIds: string[] },
+) {
+  const memory = new MemoryOS(identity.userId);
+  await memory.resolveContradiction({
+    workspaceId: identity.workspaceId,
+    winningMemoryId: input.winningMemoryId,
+    rejectedMemoryIds: input.rejectedMemoryIds,
+  });
+  return true;
 }
 
 /** Forget one memory item. Row-level security allows only its owner. */

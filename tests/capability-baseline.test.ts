@@ -69,7 +69,7 @@ describe("capability baseline", () => {
 
     expect(byDomain.MEMORY?.success).toBe(true);
     expect(byDomain.MEMORY?.verifiedSuccess).toBe(true);
-    expect(byDomain.MEMORY?.notes).toMatch(/not a Memory OS/i);
+    expect(byDomain.MEMORY?.notes).toMatch(/Memory OS I/i);
 
     const markdown = formatBaselineMarkdown(records);
     expect(markdown).toContain("M30.2 capability baseline");

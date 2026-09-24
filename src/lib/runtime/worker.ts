@@ -7,7 +7,7 @@ import type {
   RuntimeIdentity,
   StageOutcome,
 } from "../arms/types";
-import { MemoryRepository } from "../memory/repository";
+import { MemoryOS } from "../memory/os";
 import { providerRefusalOf, refusalDelaySeconds } from "../models/provider";
 import { UnoRouterProvider } from "../models/unorouter";
 import type { Verdict } from "../verification/engine";
@@ -224,7 +224,7 @@ export async function executeClaimedStage(input: {
         })
       : new UnoRouterProvider(),
     repository,
-    memory: new MemoryRepository(identity.userId),
+    memory: new MemoryOS(identity.userId),
     skills: new SkillRepository(identity.userId),
     activity: async (type, summary, data = {}, visibility = "user") => {
       const event = await repository.appendEvent({
@@ -630,32 +630,23 @@ async function learnFromRun(input: {
       .reverse()
       .find((message) => message.role === "assistant")?.content ?? "";
   const checkpoint = await input.repository.loadLatestCheckpoint(input.runId);
-  const { memoryCandidates, isVerifiedOutcome } =
-    await import("../memory/compiler-v2");
-  const candidates = memoryCandidates({
-    runId: input.runId,
-    armId: snapshot.run.armId ?? "general",
-    objective: snapshot.run.objective,
-    answer,
-    verdicts,
-    state: (checkpoint?.state ?? {}) as Record<string, unknown>,
-  });
-  const memory = new MemoryRepository(input.identity.userId);
-  let promoted = 0;
-  for (const candidate of answer ? candidates : candidates.slice(1)) {
-    const result = await memory
-      .compileAndStore({
-        ...candidate,
-        organizationId: input.identity.organizationId,
-        workspaceId: input.identity.workspaceId,
-        sessionId: snapshot.run.sessionId,
-        runId: input.runId,
-        tier: "second",
-      })
-      .catch(() => null);
-    if (result?.persistedId) promoted += 1;
-  }
-  const verified = isVerifiedOutcome(verdicts);
+  const memory = new MemoryOS(input.identity.userId);
+  const committed = await memory
+    .commit({
+      organizationId: input.identity.organizationId,
+      workspaceId: input.identity.workspaceId,
+      sessionId: snapshot.run.sessionId,
+      runId: input.runId,
+      armId: snapshot.run.armId ?? "general",
+      objective: snapshot.run.objective,
+      answer,
+      verdicts,
+      state: (checkpoint?.state ?? {}) as Record<string, unknown>,
+    })
+    .catch(() => null);
+  const verified = committed?.verified ?? false;
+  const promoted = committed?.promoted ?? 0;
+  const candidates = committed?.candidates ?? 0;
   await new SkillRepository(input.identity.userId)
     .recordOutcome(input.runId, verified ? "success" : "failure")
     .catch(() => undefined);
@@ -666,7 +657,12 @@ async function learnFromRun(input: {
       summary: verified
         ? `Remembered ${promoted} verified item(s) from this run`
         : "Nothing promoted: the run was not verified",
-      data: { candidates: candidates.length, promoted, verified },
+      data: {
+        candidates,
+        promoted,
+        verified,
+        entitiesIndexed: committed?.entitiesIndexed ?? 0,
+      },
       visibility: "user",
     })
     .catch(() => undefined);
