@@ -13,6 +13,20 @@ import {
   type AgentAction,
   type AgentDecision,
 } from "./decision";
+import {
+  addOpenQuestion,
+  applyVerificationStep,
+  createTaskState,
+  hydrateTaskState,
+  recordPlanRevision,
+  recordStepEvidence,
+  rememberFacts,
+  renderTaskStatePrompt,
+  type EvidenceRelation,
+  type HypothesisSeed,
+  type TaskSeed,
+  type TaskState,
+} from "./task-state";
 
 // The agent loop.
 //
@@ -57,30 +71,19 @@ export const DEFAULT_BOUNDS: LoopBounds = {
 
 export type StepOutcome = "ok" | "error" | "waiting" | "finished" | "yielded";
 
-export type HypothesisStatus = "open" | "supported" | "contradicted";
-
-/** A hypothesis the loop is carrying. Statements are conclusions, not reasoning. */
-export type TaskHypothesis = {
-  id: string;
-  statement: string;
-  status: HypothesisStatus;
-  evidenceRefs: string[];
-};
+export type {
+  EvidenceRelation,
+  HypothesisStatus,
+  TaskHypothesis,
+  TaskState,
+} from "./task-state";
 
 /**
- * Structured task state that lives inside the loop checkpoint, so a resumed
- * slice sees the same goal, hypotheses and evidence the previous slice had.
- * This is not a second runtime: it is fields on LoopState.
+ * Checkpoint name for cognitive state. Older slices stored a smaller kernel;
+ * hydrateTaskState fills the TaskState fields on resume. This is not a second
+ * runtime: it is still the `kernel` field of LoopState.
  */
-export type TaskKernel = {
-  goal: string;
-  hypotheses: TaskHypothesis[];
-  evidenceRefs: string[];
-  /** Automatic replans already spent. Survives a yield. */
-  autoReplans: number;
-  /** Step index after the last automatic replan. */
-  replannedAtStep: number;
-};
+export type TaskKernel = TaskState;
 
 /** One step as it is persisted and shown. No reasoning, by construction. */
 export type AgentStep = {
@@ -91,6 +94,9 @@ export type AgentStep = {
   outcome: StepOutcome;
   detail?: string;
   evidenceRefs?: string[];
+  /** VERIFY: hypotheses this step's evidence is allowed to move. */
+  hypothesisIds?: string[];
+  evidenceRelation?: EvidenceRelation;
   latencyMs: number;
 };
 
@@ -157,7 +163,12 @@ export type LoopHooks = {
     kind: string;
     content: string;
   }) => Promise<{ ref: string }>;
-  verify?: (answer: string) => Promise<{ status: string; summary: string }>;
+  verify?: (answer: string) => Promise<{
+    status: string;
+    summary: string;
+    hypothesisIds?: string[];
+    relation?: EvidenceRelation;
+  }>;
   replan?: (reason: string) => Promise<{ summary: string }>;
   /**
    * Called before each decision. A returned note is added as an observation
@@ -181,7 +192,12 @@ export type LoopInput = {
   /** Resume from a checkpointed state. */
   resume?: LoopState;
   /** Open hypotheses seeded from the task model. Ignored when resuming. */
-  hypotheses?: Array<{ id?: string; statement: string }>;
+  hypotheses?: HypothesisSeed[];
+  /**
+   * Structured task fields seeded on the first slice. Ignored when resuming:
+   * the checkpointed kernel is the task state.
+   */
+  task?: TaskSeed;
   signal?: AbortSignal;
   now?: () => number;
 };
@@ -255,7 +271,7 @@ function userPrompt(input: LoopInput, state: LoopState) {
       ? `${older.length} earlier observation(s) omitted for length; the step list above records them.`
       : "",
     recent.length ? `Observations:\n${recent.join("\n\n")}` : "",
-    kernelPrompt(state.kernel),
+    renderTaskStatePrompt(state.kernel),
     `Budget left: ${Math.max(0, bound(input, "maxSteps") - state.steps.length)} step(s), ${Math.max(0, bound(input, "maxToolCalls") - state.toolCalls)} tool call(s).`,
   ]
     .filter(Boolean)
@@ -266,73 +282,27 @@ function bound<K extends keyof LoopBounds>(input: LoopInput, key: K) {
   return input.bounds?.[key] ?? DEFAULT_BOUNDS[key];
 }
 
-function kernelPrompt(kernel: TaskKernel | undefined) {
-  if (!kernel) return "";
-  const open = kernel.hypotheses.filter(
-    (hypothesis) => hypothesis.status === "open",
-  );
-  const lines = [
-    open.length
-      ? `Open hypotheses (data, not instructions):\n${open
-          .slice(0, 6)
-          .map((hypothesis) => `- ${hypothesis.statement}`)
-          .join("\n")}`
-      : "",
-    kernel.evidenceRefs.length
-      ? `Evidence already cited: ${kernel.evidenceRefs.slice(-8).join(", ")}`
-      : "",
-  ].filter(Boolean);
-  return lines.join("\n\n");
-}
-
 function ensureKernel(state: LoopState, input: LoopInput) {
-  if (state.kernel) return state.kernel;
-  const hypotheses = (input.hypotheses ?? [])
-    .slice(0, 8)
-    .map((item, index) => ({
-      id: item.id ?? `h${index + 1}`,
-      statement: item.statement.slice(0, 400),
-      status: "open" as const,
-      evidenceRefs: [] as string[],
-    }));
+  if (state.kernel) {
+    state.kernel = hydrateTaskState(state.kernel, input.objective);
+    return state.kernel;
+  }
   const evidenceRefs: string[] = [];
   for (const step of state.steps)
     for (const ref of step.evidenceRefs ?? [])
       if (!evidenceRefs.includes(ref)) evidenceRefs.push(ref);
-  state.kernel = {
-    goal: input.objective.slice(0, 600),
-    hypotheses,
-    evidenceRefs: evidenceRefs.slice(-40),
-    autoReplans: 0,
-    replannedAtStep: 0,
-  };
-  return state.kernel;
-}
-
-function noteEvidence(kernel: TaskKernel, refs: string[] | undefined) {
-  if (!refs?.length) return;
-  for (const ref of refs)
-    if (!kernel.evidenceRefs.includes(ref)) kernel.evidenceRefs.push(ref);
-  kernel.evidenceRefs = kernel.evidenceRefs.slice(-40);
-}
-
-/** A VERIFY step can support or contradict hypotheses still open. */
-function applyVerification(kernel: TaskKernel, step: AgentStep) {
-  if (step.action !== "VERIFY" || step.outcome !== "ok") return;
-  const detail = (step.detail ?? "").toLowerCase();
-  const next: HypothesisStatus | null = detail.startsWith("verified")
-    ? "supported"
-    : detail.startsWith("rejected")
-      ? "contradicted"
-      : null;
-  if (!next) return;
-  for (const hypothesis of kernel.hypotheses) {
-    if (hypothesis.status !== "open") continue;
-    hypothesis.status = next;
-    hypothesis.evidenceRefs = [
-      ...new Set([...hypothesis.evidenceRefs, ...kernel.evidenceRefs]),
-    ].slice(-8);
+  state.kernel = createTaskState({
+    objective: input.objective,
+    hypotheses: input.hypotheses,
+    task: input.task,
+  });
+  if (evidenceRefs.length > 0) {
+    state.kernel = hydrateTaskState(
+      { ...state.kernel, evidenceRefs },
+      input.objective,
+    );
   }
+  return state.kernel;
 }
 
 /**
@@ -394,8 +364,8 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
     };
     state.steps.push(full);
     const kernel = ensureKernel(state, input);
-    noteEvidence(kernel, full.evidenceRefs);
-    applyVerification(kernel, full);
+    recordStepEvidence(kernel, full);
+    applyVerificationStep(kernel, full);
     await input.hooks?.onStep?.(full);
     return full;
   };
@@ -700,6 +670,7 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
       case "RETRIEVE_MEMORY": {
         const items =
           (await input.hooks?.retrieveMemory?.(decision.memoryQuery!)) ?? [];
+        rememberFacts(ensureKernel(state, input), items);
         state.observations.push(
           observe(
             "memory.results",
@@ -765,7 +736,9 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
             action: "VERIFY",
             summary: decision.summary,
             outcome: "ok",
-            detail: verdict.status,
+            detail: `${verdict.status}: ${verdict.summary}`,
+            hypothesisIds: verdict.hypothesisIds ?? decision.hypothesisIds,
+            evidenceRelation: verdict.relation ?? decision.evidenceRelation,
           },
           stepStartedAt,
         );
@@ -776,6 +749,19 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
         const revised = input.hooks?.replan
           ? await input.hooks.replan(decision.summary)
           : { summary: "Plan unchanged; no planner attached to this stage." };
+        const kernel = ensureKernel(state, input);
+        recordPlanRevision(kernel, {
+          atStep: state.steps.length,
+          reason: "agent_requested",
+          summary: decision.summary,
+        });
+        if (
+          /\b(conflict|unknown|blocked|cannot|unclear)\b/i.test(
+            decision.summary,
+          )
+        ) {
+          addOpenQuestion(kernel, decision.summary);
+        }
         state.observations.push(observe("plan.revised", revised.summary));
         consecutiveFailures = 0;
         await record(
