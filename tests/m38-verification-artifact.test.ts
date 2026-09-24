@@ -36,7 +36,9 @@ describe("verification artifact", () => {
     expect(artifact.kind).toBe("verification-report");
     expect(artifact.content).toContain("Export screen");
     expect(artifact.content).toContain("Contract coverage");
-    expect(artifact.evidenceRefs).toContain("qa:browser:http://127.0.0.1:4173/");
+    expect(artifact.evidenceRefs).toContain(
+      "qa:browser:http://127.0.0.1:4173/",
+    );
     expect(artifact.evidenceRefs).toContain("screenshot:desktop");
   });
 });

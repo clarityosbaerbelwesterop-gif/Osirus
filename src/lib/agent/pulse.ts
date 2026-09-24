@@ -219,7 +219,11 @@ async function liveCartSession(
 ): Promise<{ live: boolean; session: BrowserSession; url: string }> {
   const executable = browserBinary();
   if (!executable) {
-    return { live: false, session: staticCartSession(clicked), url: "http://127.0.0.1/" };
+    return {
+      live: false,
+      session: staticCartSession(clicked),
+      url: "http://127.0.0.1/",
+    };
   }
   const { server, url } = await listen(CART_PAGE);
   try {
@@ -271,7 +275,8 @@ async function liveCartSession(
 // --- BUILDING suite ---
 
 async function buildingL1(): Promise<PulseRecord> {
-  const objective = "Write index.html with Export ready text and a Save button.";
+  const objective =
+    "Write index.html with Export ready text and a Save button.";
   const files = new Map<string, string>();
   const tools = new ToolRegistry().register({
     id: "workspace.write",
@@ -326,12 +331,14 @@ async function buildingL1(): Promise<PulseRecord> {
       answer: "The page is live and browser QA passed.",
       claimHolds: false,
     }),
-    notes: "L1: scaffold only. Success means the file was written and the answer does not claim browser QA.",
+    notes:
+      "L1: scaffold only. Success means the file was written and the answer does not claim browser QA.",
   };
 }
 
 async function buildingL2(): Promise<PulseRecord> {
-  const objective = "Serve the export page and report whether a browser or HTTP check ran.";
+  const objective =
+    "Serve the export page and report whether a browser or HTTP check ran.";
   const report = reportFrom("http://127.0.0.1/", staticCartSession(false), {
     texts: ["Export ready"],
   });
@@ -344,7 +351,10 @@ async function buildingL2(): Promise<PulseRecord> {
     risk: "low",
     arms: ["building"],
     inputSchema: z.object({}),
-    run: async () => ({ mode: report.mode, failed: report.checks.filter((c) => !c.passed).map((c) => c.id) }),
+    run: async () => ({
+      mode: report.mode,
+      failed: report.checks.filter((c) => !c.passed).map((c) => c.id),
+    }),
   });
   const run = await protocol({
     objective,
@@ -497,7 +507,8 @@ async function buildingL4(): Promise<PulseRecord> {
 }
 
 async function buildingL5(): Promise<PulseRecord> {
-  const objective = "Build and verify the export screen with a verification artifact.";
+  const objective =
+    "Build and verify the export screen with a verification artifact.";
   const contract = buildContractSchema.parse({
     product: "Export screen",
     stack: "static-html",
@@ -566,7 +577,8 @@ async function buildingL5(): Promise<PulseRecord> {
       answer: "Verification artifact proves production QA passed.",
       claimHolds: report.checks.every((check) => check.passed),
     }),
-    notes: "L5: build-prove loop with a verification artifact and evidence refs.",
+    notes:
+      "L5: build-prove loop with a verification artifact and evidence refs.",
   };
 }
 
@@ -589,7 +601,8 @@ async function computerL1(): Promise<PulseRecord> {
       evidenceRefs: oav.evidenceRefs,
     }),
   });
-  const objective = "Open the cart page and report what is visible without clicking.";
+  const objective =
+    "Open the cart page and report what is visible without clicking.";
   const run = await protocol({
     objective,
     armId: "coding",
@@ -608,7 +621,9 @@ async function computerL1(): Promise<PulseRecord> {
       },
     ],
   });
-  const success = /0 items/i.test(run.result.answer ?? "") && /no click/i.test(run.result.answer ?? "");
+  const success =
+    /0 items/i.test(run.result.answer ?? "") &&
+    /no click/i.test(run.result.answer ?? "");
   return {
     id: "computer-l1-observe",
     suite: "COMPUTER",
@@ -667,7 +682,8 @@ async function computerL2(): Promise<PulseRecord> {
       },
     ],
   });
-  const success = session.texts[0]?.found === true && /1 item/i.test(run.result.answer ?? "");
+  const success =
+    session.texts[0]?.found === true && /1 item/i.test(run.result.answer ?? "");
   return {
     id: "computer-l2-act",
     suite: "COMPUTER",
@@ -737,7 +753,9 @@ async function computerL4(): Promise<PulseRecord> {
     objective,
     armId: "coding",
     tools,
-    hypotheses: [{ id: "h-count", statement: 'The cart shows "1 item" after Add.' }],
+    hypotheses: [
+      { id: "h-count", statement: 'The cart shows "1 item" after Add.' },
+    ],
     decisions: [
       {
         action: "VERIFY",
@@ -775,7 +793,8 @@ async function computerL4(): Promise<PulseRecord> {
   }
   const status = kernel?.hypotheses[0]?.status;
   const expected = session.texts[0]?.found ? "SUPPORTED" : "WEAKENED";
-  const success = status === expected || (session.texts[0]?.found && status === "CONFIRMED");
+  const success =
+    status === expected || (session.texts[0]?.found && status === "CONFIRMED");
   return {
     id: "computer-l4-ground",
     suite: "COMPUTER",
@@ -846,7 +865,9 @@ async function computerL5(): Promise<PulseRecord> {
       }),
     },
   });
-  const success = session.texts[0]?.found === true && /Evidence:/i.test(run.result.answer ?? "");
+  const success =
+    session.texts[0]?.found === true &&
+    /Evidence:/i.test(run.result.answer ?? "");
   return {
     id: "computer-l5-oav",
     suite: "COMPUTER",
@@ -888,7 +909,11 @@ async function toolUseL1(): Promise<PulseRecord> {
     tools,
     toolContext: context("coding"),
     decide: scripted([
-      { action: "USE_TOOL", summary: "Request schema", requestSchemaFor: ["fixture.echo"] },
+      {
+        action: "USE_TOOL",
+        summary: "Request schema",
+        requestSchemaFor: ["fixture.echo"],
+      },
       {
         action: "FINISH",
         summary: "Schema received",
@@ -922,7 +947,10 @@ async function toolUseL2(): Promise<PulseRecord> {
     risk: "low",
     arms: ["coding"],
     inputSchema: z.object({ message: z.string() }),
-    run: async ({ message }) => ({ message, evidenceRefs: [`echo:${message}`] }),
+    run: async ({ message }) => ({
+      message,
+      evidenceRefs: [`echo:${message}`],
+    }),
   });
   const objective = "Echo the word probe exactly once.";
   const run = await protocol({
@@ -1075,7 +1103,8 @@ async function toolUseL4(): Promise<PulseRecord> {
 }
 
 async function toolUseL5(): Promise<PulseRecord> {
-  const objective = "Compute 6 * 7 and verify the result with compute evidence.";
+  const objective =
+    "Compute 6 * 7 and verify the result with compute evidence.";
   const tools = new ToolRegistry();
   for (const tool of computeTools(async () => ComputeEngine.inProcess())) {
     tools.register(tool);
@@ -1121,7 +1150,8 @@ async function toolUseL5(): Promise<PulseRecord> {
     data: entry.result.data,
   }));
   const check = computeEvidenceCheck(run.result.answer ?? "", evidence);
-  const success = check.status === "passed" && /result:\s*42/i.test(run.result.answer ?? "");
+  const success =
+    check.status === "passed" && /result:\s*42/i.test(run.result.answer ?? "");
   return {
     id: "tool-use-l5-compute-verify",
     suite: "TOOL_USE",
@@ -1144,7 +1174,8 @@ async function toolUseL5(): Promise<PulseRecord> {
 // --- MULTIMODAL suite ---
 
 async function multimodalL1(): Promise<PulseRecord> {
-  const objective = "Read the design note attachment and quote the primary colour.";
+  const objective =
+    "Read the design note attachment and quote the primary colour.";
   const tools = new ToolRegistry();
   const run = await protocol({
     objective,
@@ -1201,7 +1232,8 @@ async function multimodalL2(): Promise<PulseRecord> {
       {
         action: "FINISH",
         summary: "Report grounding",
-        answer: "Primary colour #2F6FED grounded from attachment:design-1:chunk-1.",
+        answer:
+          "Primary colour #2F6FED grounded from attachment:design-1:chunk-1.",
       },
     ],
     hooks: {
@@ -1217,12 +1249,9 @@ async function multimodalL2(): Promise<PulseRecord> {
   if (kernel) {
     applyGrounding(
       kernel,
-      groundingFromAttachment(
-        "design-1",
-        "chunk-1",
-        "primary colour #2F6FED",
-        { hypothesisIds: ["h-colour"] },
-      ),
+      groundingFromAttachment("design-1", "chunk-1", "primary colour #2F6FED", {
+        hypothesisIds: ["h-colour"],
+      }),
     );
   }
   const status = kernel?.hypotheses[0]?.status;
@@ -1285,7 +1314,8 @@ async function multimodalL4(): Promise<PulseRecord> {
   session.html = EXPORT_PAGE;
   session.visibleText = "Export ready\nSave";
   session.texts = [{ text: "Export ready", found: true }];
-  const objective = "Cross-ground DOM and attachment evidence for the export screen.";
+  const objective =
+    "Cross-ground DOM and attachment evidence for the export screen.";
   const tools = new ToolRegistry();
   const run = await protocol({
     objective,
@@ -1356,13 +1386,16 @@ async function multimodalL4(): Promise<PulseRecord> {
 async function multimodalL5(): Promise<PulseRecord> {
   const { session, url } = await liveCartSession(true);
   const oav = observeActVerifyFromSession(url, session, { texts: ["1 item"] });
-  const objective = "Observe, act, verify and ground the cart workflow with multimodal evidence.";
+  const objective =
+    "Observe, act, verify and ground the cart workflow with multimodal evidence.";
   const tools = new ToolRegistry();
   const run = await protocol({
     objective,
     armId: "coding",
     tools,
-    hypotheses: [{ id: "h-cart", statement: 'After Add, the cart shows "1 item".' }],
+    hypotheses: [
+      { id: "h-cart", statement: 'After Add, the cart shows "1 item".' },
+    ],
     decisions: [
       {
         action: "VERIFY",
@@ -1407,7 +1440,8 @@ async function multimodalL5(): Promise<PulseRecord> {
       objective,
       armId: "coding",
       tools,
-      answer: "Multimodal evidence confirms the cart without any browser session.",
+      answer:
+        "Multimodal evidence confirms the cart without any browser session.",
       claimHolds: false,
     }),
     notes: "L5: full OAV with multimodal grounding on a named hypothesis.",
@@ -1437,9 +1471,10 @@ const PULSE_RUNNERS: Array<() => Promise<PulseRecord>> = [
   multimodalL5,
 ];
 
-export async function runPulseSuite(
-  filter?: { suite?: PulseSuite; level?: PulseLevel },
-): Promise<PulseRecord[]> {
+export async function runPulseSuite(filter?: {
+  suite?: PulseSuite;
+  level?: PulseLevel;
+}): Promise<PulseRecord[]> {
   const records: PulseRecord[] = [];
   for (const runner of PULSE_RUNNERS) {
     const record = await runner();

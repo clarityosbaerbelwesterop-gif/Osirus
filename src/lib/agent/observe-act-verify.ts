@@ -91,7 +91,13 @@ function verifyFromReport(report: QaReport): VerifyOutcome {
       ]
         .filter(Boolean)
         .join(" ");
-  return { passed, mode: report.mode, checks: report.checks, failedCheckIds, summary };
+  return {
+    passed,
+    mode: report.mode,
+    checks: report.checks,
+    failedCheckIds,
+    summary,
+  };
 }
 
 /** Evidence refs for a browser session, suitable for TaskState and artifacts. */

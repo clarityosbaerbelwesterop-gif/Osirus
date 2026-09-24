@@ -19,11 +19,7 @@ import {
 // pipeline; it does not add a second cognitive store.
 
 export type GroundingSource =
-  | "dom"
-  | "screenshot"
-  | "browser-action"
-  | "qa-report"
-  | "attachment";
+  "dom" | "screenshot" | "browser-action" | "qa-report" | "attachment";
 
 export type GroundingBundle = {
   refs: string[];
@@ -62,7 +58,10 @@ function pushEvidence(
 export function groundingFromBrowserSession(
   session: BrowserSession,
   url: string,
-  input?: { hypothesisIds?: string[]; relation?: HypothesisEvidence["relation"] },
+  input?: {
+    hypothesisIds?: string[];
+    relation?: HypothesisEvidence["relation"];
+  },
 ): GroundingBundle {
   const refs = evidenceRefsForBrowser(url, session);
   const foundTexts = session.texts.filter((item) => item.found).length;
@@ -192,8 +191,7 @@ export function groundComputerInspectResult(
           const row = action as Record<string, unknown>;
           return {
             type: String(row.type ?? "unknown"),
-            selector:
-              typeof row.selector === "string" ? row.selector : null,
+            selector: typeof row.selector === "string" ? row.selector : null,
             ok: row.ok === true,
             detail: String(row.detail ?? ""),
           };

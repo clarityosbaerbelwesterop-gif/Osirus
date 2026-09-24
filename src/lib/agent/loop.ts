@@ -828,15 +828,11 @@ function evidenceRefsOf(result: ToolResult): string[] | undefined {
   const data = result.data as Record<string, unknown> | undefined;
   if (!data || typeof data !== "object") return undefined;
   const explicit = Array.isArray(data.evidenceRefs)
-    ? data.evidenceRefs.filter((value): value is string => typeof value === "string")
+    ? data.evidenceRefs.filter(
+        (value): value is string => typeof value === "string",
+      )
     : [];
-  const refs = [
-    ...explicit,
-    data.url,
-    data.documentId,
-    data.path,
-    data.command,
-  ]
+  const refs = [...explicit, data.url, data.documentId, data.path, data.command]
     .filter((value): value is string => typeof value === "string")
     .slice(0, 12);
   return refs.length ? [...new Set(refs)] : undefined;

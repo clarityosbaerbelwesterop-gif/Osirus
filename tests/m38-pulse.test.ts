@@ -11,7 +11,9 @@ describe("M38 capability pulse", () => {
     const records = await runPulseSuite();
     expect(records).toHaveLength(20);
     for (const suite of PULSE_SUITES) {
-      const levels = records.filter((record) => record.suite === suite).map((r) => r.level);
+      const levels = records
+        .filter((record) => record.suite === suite)
+        .map((r) => r.level);
       expect(levels.sort()).toEqual([...PULSE_LEVELS]);
     }
     for (const record of records) {

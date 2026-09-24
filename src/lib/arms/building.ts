@@ -293,8 +293,8 @@ export class BuildingArm extends CodingArm {
       },
       "user",
     );
-    await context.runtime
-      .repository.createArtifact({
+    await context.runtime.repository
+      .createArtifact({
         organizationId: context.identity.organizationId,
         workspaceId: context.identity.workspaceId,
         sessionId: context.work.sessionId,

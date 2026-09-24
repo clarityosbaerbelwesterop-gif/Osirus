@@ -38,11 +38,11 @@ Artifacts are persisted via `runtime.repository.createArtifact` and cited throug
 
 Offline pulse suite over the production loop — not a second runtime or scheduler:
 
-| Suite | L1 | L2 | L3 | L4 | L5 |
-| --- | --- | --- | --- | --- | --- |
-| **BUILDING** | Scaffold file | HTTP observe | Verify probes | Ground hypothesis | Build-prove + artifact |
-| **COMPUTER** | Observe DOM | Single act | Verify probes | Ground hypothesis | Full OAV + evidence |
-| **TOOL_USE** | Request schema | Single tool call | Replan + retry | Evidence refs on step | Compute + verify |
+| Suite          | L1              | L2                | L3                      | L4                            | L5                      |
+| -------------- | --------------- | ----------------- | ----------------------- | ----------------------------- | ----------------------- |
+| **BUILDING**   | Scaffold file   | HTTP observe      | Verify probes           | Ground hypothesis             | Build-prove + artifact  |
+| **COMPUTER**   | Observe DOM     | Single act        | Verify probes           | Ground hypothesis             | Full OAV + evidence     |
+| **TOOL_USE**   | Request schema  | Single tool call  | Replan + retry          | Evidence refs on step         | Compute + verify        |
 | **MULTIMODAL** | Read attachment | Ground attachment | Image metadata (honest) | DOM + attachment cross-ground | OAV + multimodal ground |
 
 Run: `runPulseSuite()` in tests or `npm test -- tests/m38-pulse.test.ts`.
@@ -67,12 +67,12 @@ No parallel runtime. Building extends `CodingArm`; computer extends sandbox brow
 
 ## Tests
 
-| File | Covers |
-| --- | --- |
-| `tests/m38-observe-act-verify.test.ts` | OAV cycle, evidence refs, verify grading |
-| `tests/m38-multimodal-grounding.test.ts` | DOM, QA, attachment grounding |
-| `tests/m38-verification-artifact.test.ts` | Building QA artifact content |
-| `tests/m38-pulse.test.ts` | Full pulse suite (20 tasks, L1–L5 × 4 suites) |
+| File                                      | Covers                                        |
+| ----------------------------------------- | --------------------------------------------- |
+| `tests/m38-observe-act-verify.test.ts`    | OAV cycle, evidence refs, verify grading      |
+| `tests/m38-multimodal-grounding.test.ts`  | DOM, QA, attachment grounding                 |
+| `tests/m38-verification-artifact.test.ts` | Building QA artifact content                  |
+| `tests/m38-pulse.test.ts`                 | Full pulse suite (20 tasks, L1–L5 × 4 suites) |
 
 ## Constraints respected
 

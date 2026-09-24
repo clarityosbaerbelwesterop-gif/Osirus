@@ -40,7 +40,12 @@ export function verificationArtifactFromQa(
     lines.push(
       "## Screenshots",
       "",
-      screenshots.map((name) => `- ${name} (${report.viewports.find((v) => v.name === name)?.screenshotBytes ?? 0} bytes)`).join("\n"),
+      screenshots
+        .map(
+          (name) =>
+            `- ${name} (${report.viewports.find((v) => v.name === name)?.screenshotBytes ?? 0} bytes)`,
+        )
+        .join("\n"),
       "",
     );
   }

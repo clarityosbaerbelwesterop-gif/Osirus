@@ -30,17 +30,21 @@ describe("observe-act-verify", () => {
       selectors: [{ selector: "#add", count: 1 }],
       texts: [{ text: "1 item", found: true }],
     };
-    const result = observeActVerifyFromSession("http://127.0.0.1:4173/", session, {
-      selectors: ["#add"],
-      texts: ["1 item"],
-    });
+    const result = observeActVerifyFromSession(
+      "http://127.0.0.1:4173/",
+      session,
+      {
+        selectors: ["#add"],
+        texts: ["1 item"],
+      },
+    );
     expect(result.observe.title).toBe("Cart");
     expect(result.acts).toHaveLength(1);
     expect(result.verify.passed).toBe(true);
     expect(result.evidenceRefs).toContain("browser:http://127.0.0.1:4173/");
-    expect(result.evidenceRefs.some((ref) => ref.startsWith("screenshot:"))).toBe(
-      true,
-    );
+    expect(
+      result.evidenceRefs.some((ref) => ref.startsWith("screenshot:")),
+    ).toBe(true);
     expect(formatObserveActVerify(result)).toMatch(/Verify \(browser\)/);
   });
 
@@ -73,7 +77,9 @@ describe("observe-act-verify", () => {
       title: "T",
       html: "",
       actions: [{ type: "click", selector: "#x", ok: true, detail: "ok" }],
-      viewports: [{ name: "desktop", horizontalOverflow: false, screenshotBytes: 1 }],
+      viewports: [
+        { name: "desktop", horizontalOverflow: false, screenshotBytes: 1 },
+      ],
       consoleErrors: [],
       failedRequests: [],
       a11y: {},

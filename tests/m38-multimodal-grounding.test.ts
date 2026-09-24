@@ -72,12 +72,9 @@ describe("multimodal grounding", () => {
     });
     applyGrounding(
       state,
-      groundingFromAttachment(
-        "design-1",
-        "chunk-1",
-        "primary colour #2F6FED",
-        { hypothesisIds: ["h-colour"] },
-      ),
+      groundingFromAttachment("design-1", "chunk-1", "primary colour #2F6FED", {
+        hypothesisIds: ["h-colour"],
+      }),
     );
     expect(state.evidenceRefs).toContain("attachment:design-1:chunk-1");
     expect(state.hypotheses[0]?.supportingEvidence.length).toBeGreaterThan(0);
