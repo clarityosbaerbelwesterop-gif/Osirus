@@ -204,8 +204,7 @@ function decisionsForTask(task: PulseTask): AgentDecision[] {
       {
         action: "FINISH",
         summary: "State height with units",
-        answer:
-          "Result: 20.387359836901 m maximum height with g = 9.81 m/s².",
+        answer: "Result: 20.387359836901 m maximum height with g = 9.81 m/s².",
       },
     ];
   }
@@ -329,10 +328,9 @@ async function runPulseTask(task: PulseTask): Promise<PulseRecord> {
     sanity.status !== "failed" &&
     recomputation.status !== "failed" &&
     counterexample.status !== "failed";
-  const verifiedOk =
-    task.expectUnderdetermined
-      ? underdeterminedOk && gatesOk
-      : includesOk && gatesOk && compute.status === "passed";
+  const verifiedOk = task.expectUnderdetermined
+    ? underdeterminedOk && gatesOk
+    : includesOk && gatesOk && compute.status === "passed";
 
   const falseClaim = task.expectUnderdetermined
     ? "Result: x=3 and y=7. The system is uniquely solved."

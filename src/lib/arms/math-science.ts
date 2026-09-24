@@ -13,7 +13,12 @@ import {
 } from "../verification/checks";
 import { computeEvidenceCheck } from "../verification/compute-evidence";
 import { BaseArm, readState } from "./base";
-import type { ArmId, ArmStageContext, RoutingInput, StageOutcome } from "./types";
+import type {
+  ArmId,
+  ArmStageContext,
+  RoutingInput,
+  StageOutcome,
+} from "./types";
 
 const ARITHMETIC =
   /(-?\d+(?:\.\d+)?)\s*([+\-*/×÷])\s*(-?\d+(?:\.\d+)?)\s*=\s*(-?\d+(?:\.\d+)?)/g;
@@ -188,8 +193,7 @@ export class MathScienceArm extends BaseArm {
       ) ?? formalizeProblem(context.work.objective);
     const toolEvidence =
       (context.state.toolEvidence as
-        | Parameters<typeof computeEvidenceCheck>[1]
-        | undefined) ?? [];
+        Parameters<typeof computeEvidenceCheck>[1] | undefined) ?? [];
 
     return [
       ...mathScienceVerificationGates({

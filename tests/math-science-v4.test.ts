@@ -78,7 +78,9 @@ describe("M37 formalization", () => {
     );
     expect(formalization.underdetermined).toBe(true);
     expect(
-      formalization.planSteps.some((step) => /underdetermined/i.test(step.action)),
+      formalization.planSteps.some((step) =>
+        /underdetermined/i.test(step.action),
+      ),
     ).toBe(true);
     const failure = underdeterminedFailureDetail(
       formalization,

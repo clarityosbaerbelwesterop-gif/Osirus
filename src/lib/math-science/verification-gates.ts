@@ -53,7 +53,10 @@ export function sanityGateCheck(
   const failures: string[] = [];
   for (const value of values) {
     if (!Number.isFinite(value)) failures.push("non-finite value in Result:");
-    if (/\bprobability|chance|fraction\b/i.test(answer) && (value < 0 || value > 1)) {
+    if (
+      /\bprobability|chance|fraction\b/i.test(answer) &&
+      (value < 0 || value > 1)
+    ) {
       failures.push(`probability-like result ${value} outside [0, 1]`);
     }
     if (/\bheight|distance|length|metres?\b/i.test(answer) && value < 0) {
@@ -133,7 +136,8 @@ export function counterexampleGateCheck(
   if (COUNTEREXAMPLE_ATTEMPT.test(answer)) {
     return {
       status: "passed",
-      detail: "Universal claim is qualified or a counterexample search is recorded.",
+      detail:
+        "Universal claim is qualified or a counterexample search is recorded.",
     };
   }
   if (

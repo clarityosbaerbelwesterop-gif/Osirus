@@ -41,8 +41,7 @@ export const MATH_SCIENCE_PULSE_TASKS: PulseTask[] = [
     id: "pulse-l2-linear",
     level: 2,
     domain: "MATH",
-    objective:
-      "Solve 3x + 7 = 22 for x. Show the steps and end with Result:.",
+    objective: "Solve 3x + 7 = 22 for x. Show the steps and end with Result:.",
     expectIncludes: ["5", "Result:"],
     notes: "L2: single unknown, one equation.",
   },

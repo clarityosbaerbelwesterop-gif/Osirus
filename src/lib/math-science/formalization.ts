@@ -170,14 +170,16 @@ function defaultPlanSteps(
     },
     {
       step: 3,
-      action: "Compute each intermediate and final numeric value with compute.run.",
+      action:
+        "Compute each intermediate and final numeric value with compute.run.",
       tool: "compute.run",
     },
   ];
   if (/\b(unit|dimension|metres?|m\/s|kg|mol|joule)\b/i.test(objective)) {
     steps.push({
       step: 4,
-      action: "Check physical units with compute.run op dimension before stating the result.",
+      action:
+        "Check physical units with compute.run op dimension before stating the result.",
       tool: "compute.run",
     });
   }
@@ -272,7 +274,8 @@ export function renderFormalizationPlan(
   lines.push(
     "Plan:",
     ...formalization.planSteps.map(
-      (step) => `${step.step}. ${step.action}${step.tool && step.tool !== "none" ? ` (${step.tool})` : ""}`,
+      (step) =>
+        `${step.step}. ${step.action}${step.tool && step.tool !== "none" ? ` (${step.tool})` : ""}`,
     ),
   );
   return lines.join("\n");

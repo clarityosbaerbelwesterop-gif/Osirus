@@ -40,24 +40,24 @@ flowchart TD
 
 ## Key modules
 
-| Path | Role |
-| --- | --- |
-| `src/lib/math-science/formalization.ts` | Deterministic formalization + plan steps; underdetermined detection |
-| `src/lib/math-science/verification-gates.ts` | Sanity, recomputation, counterexample gates |
-| `src/lib/math-science/pulse-suite.ts` | L1–L5 task definitions |
-| `src/lib/math-science/pulse.ts` | Offline pulse runner + `registerMathSciencePulseHook` |
-| `src/lib/arms/math-science.ts` | Arm stages, directives, integrated gates |
-| `src/lib/arena/gate.ts` | `math_verified_rate` regression rule |
+| Path                                         | Role                                                                |
+| -------------------------------------------- | ------------------------------------------------------------------- |
+| `src/lib/math-science/formalization.ts`      | Deterministic formalization + plan steps; underdetermined detection |
+| `src/lib/math-science/verification-gates.ts` | Sanity, recomputation, counterexample gates                         |
+| `src/lib/math-science/pulse-suite.ts`        | L1–L5 task definitions                                              |
+| `src/lib/math-science/pulse.ts`              | Offline pulse runner + `registerMathSciencePulseHook`               |
+| `src/lib/arms/math-science.ts`               | Arm stages, directives, integrated gates                            |
+| `src/lib/arena/gate.ts`                      | `math_verified_rate` regression rule                                |
 
 ## Pulse levels
 
-| Level | Focus | Example task |
-| --- | --- | --- |
-| L1 | Single compute, basic units | 10% discount on 50 |
-| L2 | One unknown, stoichiometry | Solve 3x+7=22; moles from mass |
-| L3 | Multi-step chain, kinematics | Discount+tax; projectile height |
-| L4 | Net-rate reasoning, calculus | Pump+leak; definite integral |
-| L5 | Underdetermined honesty, counterexamples | x+y=10; n²+n+41 primality |
+| Level | Focus                                    | Example task                    |
+| ----- | ---------------------------------------- | ------------------------------- |
+| L1    | Single compute, basic units              | 10% discount on 50              |
+| L2    | One unknown, stoichiometry               | Solve 3x+7=22; moles from mass  |
+| L3    | Multi-step chain, kinematics             | Discount+tax; projectile height |
+| L4    | Net-rate reasoning, calculus             | Pump+leak; definite integral    |
+| L5    | Underdetermined honesty, counterexamples | x+y=10; n²+n+41 primality       |
 
 ## Running
 
