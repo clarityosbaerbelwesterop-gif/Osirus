@@ -18,7 +18,15 @@ import type {
   StageOutcome,
 } from "./types";
 import type { RepositoryMap } from "../coding/repo-map";
+import { renderSoftwareWorldModel } from "../coding/software-world-model";
+import {
+  evaluateReproductionGate,
+  isBugClassTask,
+  mergeReproductionArtifacts,
+  type ReproductionArtifact,
+} from "../coding/reproduction";
 import type { RuntimePolicy } from "../strategy/runtime";
+import { policyOfStage } from "../strategy/runtime";
 
 type CommandEvidence = {
   command: string;
@@ -230,16 +238,31 @@ export class CodingArm extends BaseArm {
     context: ArmStageContext,
     policy: RuntimePolicy,
   ): Promise<string[]> {
-    const mode = policy.genome.coding?.repoContext ?? "none";
-    if (mode === "none") return [];
+    const lines: string[] = [];
+    const repoMode = policy.genome.coding?.repoContext ?? "none";
+    const worldMode = policy.genome.coding?.worldModel ?? "none";
     const record = await (
       await this.workspaceStore(context)
     )
       .load(context.work.runId)
       .catch(() => null);
-    const map = record?.repositoryMap;
-    if (!map) return [];
-    return [renderRepositoryContext(map, mode)];
+    if (repoMode !== "none") {
+      const map = record?.repositoryMap;
+      if (map) lines.push(renderRepositoryContext(map, repoMode));
+    }
+    if (worldMode !== "none") {
+      const model = record?.softwareWorldModel;
+      if (model) lines.push(renderSoftwareWorldModel(model, worldMode));
+    }
+    if (
+      isBugClassTask(context.work.objective) &&
+      (policy.genome.coding?.reproduceFirst ?? false)
+    ) {
+      lines.push(
+        "[reproduction policy] Bug-class task: reproduce the failure before patching when workspace tools are available.",
+      );
+    }
+    return lines;
   }
 
   protected async workspaceStore(context: ArmStageContext) {
@@ -395,6 +418,12 @@ export class CodingArm extends BaseArm {
     const { computerTools } = await import("../computer/tools");
     const github = await import("../connectors/github");
     const { buildToolbox } = await import("../agent/toolbox");
+    const persistReproduction = (artifact: ReproductionArtifact) => {
+      context.state.reproductionArtifacts = mergeReproductionArtifacts(
+        readState<ReproductionArtifact[]>(context, "reproductionArtifacts", []),
+        artifact,
+      );
+    };
     const toolbox = await buildToolbox(context, {
       armId: this.id,
       extensions: [
@@ -402,6 +431,13 @@ export class CodingArm extends BaseArm {
           ...workspaceTools(
             async () => session.workspace,
             () => session.commands,
+            async (changedFiles) => {
+              await session.refresh(changedFiles).catch(() => undefined);
+            },
+            {
+              worldModel: () => session.record.softwareWorldModel,
+              onReproduction: persistReproduction,
+            },
           ),
           deliveryTool({
             workspace: async () => session.workspace,
@@ -640,10 +676,13 @@ export class CodingArm extends BaseArm {
   protected answerDirectives(input?: RoutingInput): string[] {
     void input;
     return [
-      "When workspace.* tools are available, work in the repository: inspect with workspace.tree, workspace.search and workspace.read before editing.",
+      "When workspace.* tools are available, work in the repository: inspect with workspace.tree, workspace.search, workspace.read and workspace.navigate before editing.",
+      "Use workspace.navigate for find_definition, find_references, symbol_search, import_graph, test_mapping and route_mapping instead of reading whole directories.",
       "Form a hypothesis, make the smallest edit that tests it (prefer workspace.replace over rewriting a file), then run the relevant discovered command with workspace.run.",
+      "For bug fixes: reproduce the failure first (workspace.run on the test command, then workspace.reproduce to record expected vs actual) before the first edit.",
       "When a command fails, read its analysis, repair, and run it again. An environment, network or permission failure is not a code defect: report it instead of editing code.",
       "Never state that tests or builds pass unless a workspace.run result in your observations shows exit code 0 for them.",
+      "Use VERIFY after a successful test run to attach evidence to your hypothesis before FINISH.",
       "Use git.deliver only when the objective asks for a pull request or a push.",
       "Without workspace tools: produce the code in fenced blocks tagged with the language, name the file path immediately above each block, and state that nothing was executed.",
       "The final answer lists the files changed, the commands run with their exit codes, and anything left unverified.",
@@ -656,6 +695,25 @@ export class CodingArm extends BaseArm {
     const buildResult = context.state.buildResult as
       CommandEvidence | undefined;
     const diff = readState<string>(context, "workspaceDiff", "");
+    const reproductionArtifacts = readState<ReproductionArtifact[]>(
+      context,
+      "reproductionArtifacts",
+      [],
+    );
+    const policy = policyOfStage(context.work.stageInput);
+    const workspaceState = readState<WorkspaceState | null>(
+      context,
+      "workspace",
+      null,
+    );
+    const reproductionGate = evaluateReproductionGate({
+      objective: context.work.objective,
+      requireReproduction: policy.genome.coding?.reproduceFirst ?? false,
+      workspaceAvailable:
+        workspaceState?.status === "ready" ||
+        workspaceState?.status === "stopped",
+      artifacts: reproductionArtifacts,
+    });
     const checkRuns = readState<
       Array<{ phase: string; command: string; exitCode: number | null }>
     >(context, "checkRuns", []);
@@ -667,6 +725,22 @@ export class CodingArm extends BaseArm {
         requiredFields: ["answer"],
         minLength: 20,
       }),
+      {
+        id: "reproduction-before-patch",
+        type: "STRUCTURE" as const,
+        required: true,
+        run: () =>
+          reproductionGate.ok
+            ? {
+                status: "passed" as const,
+                detail: reproductionGate.detail,
+                evidence: { count: reproductionArtifacts.length },
+              }
+            : {
+                status: "failed" as const,
+                detail: reproductionGate.detail,
+              },
+      },
       {
         id: "change-evidence",
         type: "STRUCTURE" as const,

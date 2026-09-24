@@ -7,6 +7,11 @@ import {
 import { analyzeFailure, type FailureAnalysis } from "./failure";
 import { buildRepositoryMap } from "./repo-map";
 import {
+  buildSoftwareWorldModel,
+  readWorldModelInputs,
+  refreshSoftwareWorldModel,
+} from "./software-world-model";
+import {
   toLogEntry,
   workspaceName,
   type WorkspaceRecord,
@@ -83,6 +88,9 @@ export class WorkspaceSession {
       store,
     );
     await store.save(session.record);
+    if (!session.record.softwareWorldModel) {
+      await session.refresh().catch(() => undefined);
+    }
     return session;
   }
 
@@ -137,6 +145,7 @@ export class WorkspaceSession {
       repository: input.repository ?? null,
       branch: input.branch ?? null,
       repositoryMap: null,
+      softwareWorldModel: null,
       commands: [],
       commandLog: [],
       fileTree: [],
@@ -167,6 +176,16 @@ export class WorkspaceSession {
       record.branch ??= head.exitCode === 0 ? head.stdout.trim() || null : null;
       const { map, contents, files } = await buildRepositoryMap(workspace);
       record.repositoryMap = map;
+      const modelContents = {
+        ...contents,
+        ...(await readWorldModelInputs(workspace, files)),
+      };
+      record.softwareWorldModel = buildSoftwareWorldModel({
+        files,
+        contents: modelContents,
+        map,
+      });
+      record.softwareWorldModel.builtAt = new Date().toISOString();
       record.commands = discoverCommands(map, contents, files);
       record.status = "ready";
       if (input.install !== false) {
@@ -189,13 +208,25 @@ export class WorkspaceSession {
     return { session, created: true };
   }
 
-  /** Re-read tree, diff and command log into the record and persist it. */
-  async refresh() {
+  /** Re-read tree, diff, command log, and incrementally refresh the software model. */
+  async refresh(changedFiles?: string[]) {
     const [tree, diff] = await Promise.all([
       this.workspace.tree(".", 6).catch(() => this.record.fileTree),
       this.workspace.diff().catch(() => null),
     ]);
     this.record.fileTree = tree;
+    if (this.record.repositoryMap) {
+      const contents = await readWorldModelInputs(this.workspace, tree);
+      this.record.softwareWorldModel = refreshSoftwareWorldModel(
+        this.record.softwareWorldModel,
+        {
+          files: tree,
+          contents,
+          map: this.record.repositoryMap,
+          changedFiles,
+        },
+      );
+    }
     if (diff) {
       const untracked = diff.untracked.length
         ? `\n# Untracked files\n${diff.untracked.map((file) => `+ ${file}`).join("\n")}\n`
