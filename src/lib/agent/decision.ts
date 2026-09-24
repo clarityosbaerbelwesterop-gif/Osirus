@@ -53,6 +53,13 @@ export const agentDecisionSchema = z.object({
   /** The user-facing answer, required for RESPOND and FINISH. */
   answer: z.string().max(100_000).optional(),
   progress: z.number().min(0).max(1).optional(),
+  /**
+   * VERIFY only. Which hypotheses this evidence bears on. Absent means the
+   * loop may match by statement or falsifier, and must not update every
+   * open hypothesis.
+   */
+  hypothesisIds: z.array(z.string().min(1).max(80)).max(8).optional(),
+  evidenceRelation: z.enum(["supports", "contradicts", "falsifies"]).optional(),
 });
 
 export type AgentDecision = z.infer<typeof agentDecisionSchema>;
@@ -112,7 +119,9 @@ export const DECISION_FORMAT = [
   '  "artifact": { "title": "", "kind": "", "content": "only for CREATE_ARTIFACT" },',
   '  "approval": { "action": "", "risk": "low|medium|high", "detail": "" },',
   '  "answer": "the complete user-facing answer, only for RESPOND or FINISH",',
-  '  "progress": 0.0',
+  '  "progress": 0.0,',
+  '  "hypothesisIds": ["only for VERIFY: hypothesis ids this evidence bears on"],',
+  '  "evidenceRelation": "supports|contradicts|falsifies, only for VERIFY"',
   "}",
   "The summary is shown to the user. State the action; do not narrate reasoning.",
 ].join("\n");

@@ -450,10 +450,12 @@ describe("agent loop", () => {
     });
     expect(parked.status).toBe("yielded");
     expect(parked.state.kernel?.evidenceRefs).toEqual(["doc-1"]);
+    // A verified lookup is not evidence for an unrelated hypothesis.
     expect(parked.state.kernel?.hypotheses[0]).toMatchObject({
       statement: "The capital is a city.",
-      status: "supported",
+      status: "OPEN",
     });
+    expect(parked.state.kernel?.verificationState.status).toBe("verified");
     const second = scripted([
       { action: "FINISH", summary: "Answer", answer: "Paris." },
     ]);
@@ -472,7 +474,117 @@ describe("agent loop", () => {
       "The capital is a city.",
     );
     expect(resumed.state.kernel?.evidenceRefs).toEqual(["doc-1"]);
+    expect(resumed.state.kernel?.objective).toBe(
+      "What is the capital of France?",
+    );
     expect(second.prompts[0]!.user).toContain("doc-1");
+    expect(second.prompts[0]!.user).toContain("The capital is a city.");
+  });
+
+  it("moves only the hypothesis a VERIFY result names", async () => {
+    const { decide } = scripted([
+      {
+        action: "VERIFY",
+        summary: "The fetched page supports the 1998 date only",
+        hypothesisIds: ["h-1998"],
+        evidenceRelation: "supports",
+        answer: "Opened in 1998 according to the city archive.",
+      },
+      { action: "YIELD", summary: "Pause" },
+    ]);
+    const result = await runAgentLoop({
+      objective: "When did the bridge open?",
+      directives: [],
+      context: [],
+      tools: registry(),
+      toolContext: context,
+      decide,
+      hypotheses: [
+        { id: "h-1998", statement: "The bridge opened in 1998." },
+        { id: "h-2001", statement: "The bridge opened in 2001." },
+      ],
+      hooks: {
+        verify: async () => ({
+          status: "verified",
+          summary: "Excerpt from the city archive says 1998.",
+          hypothesisIds: ["h-1998"],
+          relation: "supports",
+        }),
+      },
+    });
+    const byId = Object.fromEntries(
+      (result.state.kernel?.hypotheses ?? []).map((hypothesis) => [
+        hypothesis.id,
+        hypothesis.status,
+      ]),
+    );
+    expect(byId["h-1998"]).toBe("SUPPORTED");
+    expect(byId["h-2001"]).toBe("OPEN");
+    expect(result.state.kernel?.hypotheses[1]?.confidence).toBeCloseTo(0.45);
+  });
+
+  it("keeps known facts and plan revisions across a resume", async () => {
+    const first = scripted([
+      {
+        action: "RETRIEVE_MEMORY",
+        summary: "Recall the Atlas preview",
+        memoryQuery: "Atlas port and schema",
+      },
+      {
+        action: "REPLAN",
+        summary: "Constraints conflict: schema freeze versus a complete export",
+      },
+      { action: "YIELD", summary: "Pause" },
+    ]);
+    const parked = await runAgentLoop({
+      objective: "Continue the Atlas export",
+      directives: [],
+      context: [],
+      tools: registry(),
+      toolContext: context,
+      decide: first.decide,
+      task: {
+        constraints: [
+          "Do not change the schema",
+          "Finance needs a complete export",
+        ],
+      },
+      hooks: {
+        retrieveMemory: async () => [
+          "Project Atlas preview listens on port 4173 and must stay on schema v3.",
+        ],
+      },
+    });
+    expect(parked.state.kernel?.knownFacts).toEqual([
+      "Project Atlas preview listens on port 4173 and must stay on schema v3.",
+    ]);
+    expect(parked.state.kernel?.planRevisions).toHaveLength(1);
+    expect(parked.state.kernel?.openQuestions[0]).toMatch(/conflict/i);
+    const second = scripted([
+      { action: "FINISH", summary: "Answer", answer: "Use port 4173." },
+    ]);
+    const resumed = await runAgentLoop({
+      objective: "A different objective must not wipe the checkpoint",
+      directives: [],
+      context: [],
+      tools: registry(),
+      toolContext: context,
+      decide: second.decide,
+      resume: parked.state,
+      task: { constraints: ["This replacement must not stick"] },
+      hypotheses: [{ statement: "This must not replace the checkpoint." }],
+    });
+    expect(resumed.state.kernel?.objective).toBe("Continue the Atlas export");
+    expect(resumed.state.kernel?.constraints).toEqual([
+      "Do not change the schema",
+      "Finance needs a complete export",
+    ]);
+    expect(resumed.state.kernel?.knownFacts[0]).toContain("4173");
+    expect(second.prompts[0]!.user).toContain("schema v3");
+    expect(JSON.stringify(resumed.state.kernel)).not.toContain(
+      "chainOfThought",
+    );
+    expect(second.prompts[0]!.user).not.toContain("chain-of-thought");
   });
 
   it("charges a resumed slice only for the calls it adds", () => {

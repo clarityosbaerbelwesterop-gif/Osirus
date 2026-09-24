@@ -24,6 +24,7 @@ import type {
   StageOutcome,
 } from "./types";
 import { recordingProvider } from "../models/recording";
+import { createHypothesis, recordPlanRevision } from "../agent/task-state";
 import {
   boundsUnder,
   contextTokensUnder,
@@ -634,9 +635,11 @@ export abstract class BaseArm implements AgentArm {
       "planGraph",
       null,
     );
-    const taskModel = readState<{
-      assumptions?: Array<{ statement: string }>;
-    } | null>(context, "taskModel", null);
+    const taskModel = readState<import("../agent/plan").TaskModel | null>(
+      context,
+      "taskModel",
+      null,
+    );
     const replan = async (
       trigger: import("../agent/plan").ReplanTrigger,
       reason: string,
@@ -726,10 +729,37 @@ export abstract class BaseArm implements AgentArm {
       resume: context.state.loopState as
         import("../agent/loop").LoopState | undefined,
       hypotheses: (taskModel?.assumptions ?? [])
-        .map((assumption) => assumption.statement)
-        .filter((statement) => statement.length > 0)
+        .filter((assumption) => assumption.statement.length > 0)
         .slice(0, 8)
-        .map((statement) => ({ statement })),
+        .map((assumption) => ({
+          statement: assumption.statement,
+          confidence:
+            assumption.confidence === "high"
+              ? 0.7
+              : assumption.confidence === "low"
+                ? 0.3
+                : 0.45,
+          falsifiers: assumption.check ? [assumption.check] : [],
+        })),
+      task: {
+        deliverables: taskModel?.deliverable ? [taskModel.deliverable] : [],
+        constraints: [
+          ...(taskModel?.constraints ?? []),
+          ...(routing.analysis?.constraints ?? []),
+        ],
+        successCriteria:
+          taskModel?.successCriteria ?? routing.analysis?.successCriteria ?? [],
+        unknowns: taskModel?.unknowns ?? routing.analysis?.unknowns ?? [],
+        assumptions: (taskModel?.assumptions ?? []).map(
+          (assumption) => assumption.statement,
+        ),
+        openQuestions: taskModel?.unknowns ?? routing.analysis?.unknowns ?? [],
+        plan: (planGraph?.nodes ?? []).map((node) => ({
+          id: node.id,
+          title: node.title,
+          status: "pending" as const,
+        })),
+      },
       signal,
       hooks: {
         replan: async (reason) => {
@@ -761,13 +791,19 @@ export abstract class BaseArm implements AgentArm {
           if (kernel) {
             kernel.autoReplans += 1;
             kernel.replannedAtStep = state.steps.length;
-            kernel.hypotheses.push({
-              id: `obs-${state.steps.length}`,
-              statement: found.detail.slice(0, 400),
-              status: "open",
-              evidenceRefs: kernel.evidenceRefs.slice(-4),
-            });
+            kernel.hypotheses.push(
+              createHypothesis({
+                id: `obs-${state.steps.length}`,
+                statement: found.detail.slice(0, 400),
+                supportingEvidence: kernel.evidenceRefs.slice(-4),
+              }),
+            );
             kernel.hypotheses = kernel.hypotheses.slice(-8);
+            recordPlanRevision(kernel, {
+              atStep: state.steps.length,
+              reason: found.trigger,
+              summary: found.detail,
+            });
           }
           return replan(found.trigger, found.detail, state.steps).catch(
             () => null,
