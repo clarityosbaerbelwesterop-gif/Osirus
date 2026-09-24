@@ -379,3 +379,61 @@ describe("migration 014", () => {
     expect(sql).not.toMatch(/DROP TABLE|TRUNCATE|DELETE FROM/i);
   });
 });
+
+describe("migration 015", () => {
+  it("counts the run-budget attempt inside the checkpoint charge", () => {
+    // The attempt counter used to run after checkpoint_stage_budget committed.
+    // A crash in between settled the slice and left the attempt uncounted.
+    // The replacement function stores the attempt on the same settlement row
+    // and passes it to consume_budget before returning. A replay still
+    // returns before either write.
+    const sql = migration("015_checkpoint_attempt.sql");
+    expect(sql).toContain(
+      "ADD COLUMN IF NOT EXISTS attempts integer NOT NULL DEFAULT 0",
+    );
+    expect(sql).toContain(
+      "ADD CONSTRAINT stage_budget_settlements_attempts_check CHECK (attempts >= 0)",
+    );
+    expect(sql).toContain(
+      "DROP FUNCTION IF EXISTS osirus.checkpoint_stage_budget(uuid, uuid, uuid, text, jsonb, integer, integer)",
+    );
+    const drop = sql.indexOf(
+      "DROP FUNCTION IF EXISTS osirus.checkpoint_stage_budget",
+    );
+    const start = sql.indexOf(
+      "CREATE OR REPLACE FUNCTION osirus.checkpoint_stage_budget",
+    );
+    expect(drop).toBeGreaterThan(-1);
+    expect(start).toBeGreaterThan(drop);
+
+    const body = sql.slice(start, sql.indexOf("$function$;", start));
+    const lock = body.indexOf("pg_advisory_xact_lock");
+    const replay = body.indexOf("WHERE attempt_id = p_attempt_id");
+    const replayReturn = body.indexOf(
+      "RETURN QUERY SELECT COALESCE(v_version, 0), false, NULL::text, 0, 0, 0",
+    );
+    const settlement = body.indexOf(
+      "INSERT INTO osirus.stage_budget_settlements",
+    );
+    const checkpoint = body.indexOf("osirus.save_run_checkpoint(");
+    const charge = body.indexOf("osirus.consume_budget(");
+    expect(lock).toBeGreaterThan(-1);
+    expect(lock).toBeLessThan(replay);
+    expect(replay).toBeLessThan(replayReturn);
+    expect(replayReturn).toBeLessThan(settlement);
+    expect(settlement).toBeLessThan(checkpoint);
+    expect(checkpoint).toBeLessThan(charge);
+    expect(body).toContain(
+      "attempt_id, run_id, stage_id, model_calls, tool_calls, attempts",
+    );
+    expect(body).toContain(
+      "IF v_model > 0 OR v_tool > 0 OR v_attempts > 0 THEN",
+    );
+    const chargeCall = body.slice(charge, body.indexOf(") AS b", charge));
+    expect(chargeCall).toContain("v_attempts");
+    expect(chargeCall).not.toMatch(/v_tool,\s*0,/);
+    expect(body).toContain("'attempts', v_attempts");
+    expect(body).toContain("v_state - 'pendingBudget'");
+    expect(sql).not.toMatch(/DROP TABLE|TRUNCATE|DELETE FROM/i);
+  });
+});

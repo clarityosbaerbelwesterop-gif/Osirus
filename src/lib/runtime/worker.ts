@@ -14,15 +14,20 @@ import type { Verdict } from "../verification/engine";
 import {
   checkpointStageBudget,
   claimNextStage,
-  consumeBudget,
   finishAttempt,
   heartbeatAttempt,
+  type BudgetOutcome,
   type ClaimedWork,
 } from "./dispatch";
 import { runtimeErrorCode } from "./errors";
 import { RuntimeRepository } from "./repository";
 import { SkillRepository } from "../skills/repository";
-import { pendingBudgetOf, settlementFor } from "./settlement";
+import {
+  budgetStopReason,
+  pendingBudgetOf,
+  runBudgetAttempts,
+  settlementFor,
+} from "./settlement";
 import type { RuntimePacket } from "./types";
 import { policyOfStage } from "../strategy/runtime";
 
@@ -43,10 +48,10 @@ import { policyOfStage } from "../strategy/runtime";
 //   2. A stage only ever changes status through finish_attempt, which is
 //      fenced on the lease token. A worker cannot leave a stage in a state the
 //      claim scan disagrees with.
-//   3. Model and tool consumption for a slice commits in the same transaction
-//      as that slice's checkpoint, and only after the lease still holds. A
-//      crash cannot record the charge while the resume still sees the previous
-//      checkpoint and charges the same calls again.
+//   3. Model, tool and attempt consumption for a slice commits in the same
+//      transaction as that slice's checkpoint, and only after the lease still
+//      holds. A crash cannot record the charge while the resume still sees the
+//      previous checkpoint, and it cannot leave a settled slice uncounted.
 
 /** Renewal cadence as a fraction of the lease. */
 const HEARTBEAT_DIVISOR = 3;
@@ -201,7 +206,11 @@ export async function executeClaimedStage(input: {
   signal: AbortSignal;
   emit?: DriveInput["emit"];
   correlationId?: string;
-}): Promise<{ settled: boolean; outcome: StageOutcome }> {
+}): Promise<{
+  settled: boolean;
+  outcome: StageOutcome;
+  budget: BudgetOutcome | null;
+}> {
   const { work, identity } = input;
   const repository = new RuntimeRepository(identity.userId);
   const guard = new LeaseGuard(work, input.leaseSeconds, input.signal);
@@ -299,7 +308,7 @@ export async function executeClaimedStage(input: {
 
   // Rule 1: the lease is gone, so nothing this slice produced may be written.
   if (guard.leaseLost) {
-    return { settled: false, outcome };
+    return { settled: false, outcome, budget: null };
   }
 
   if (outcome.kind === "COMPLETE" && outcome.verdict) {
@@ -334,15 +343,16 @@ export async function executeClaimedStage(input: {
         "internal",
       )
       .catch(() => undefined);
-    return { settled: false, outcome };
+    return { settled: false, outcome, budget: null };
   }
 
   // Charge and checkpoint together. The pending delta stays off the
   // durable state: the resume computes a fresh delta from the loop counts
   // this write persists, and the attempt id makes a replay of this commit
-  // charge nothing.
+  // charge nothing. The run-budget attempt is part of that charge, so a
+  // crash after the checkpoint cannot leave the slice uncounted.
   const pending = pendingBudgetOf(state);
-  await checkpointStageBudget({
+  const budget = await checkpointStageBudget({
     runId: work.runId,
     stageId: work.stageId,
     attemptId: work.attemptId,
@@ -351,7 +361,8 @@ export async function executeClaimedStage(input: {
     state: durableState(state),
     modelCalls: pending.modelCalls,
     toolCalls: pending.toolCalls,
-  }).catch(() => undefined);
+    attempts: runBudgetAttempts(outcome),
+  }).catch(() => null);
 
   await runtime
     .activity(
@@ -364,7 +375,7 @@ export async function executeClaimedStage(input: {
     )
     .catch(() => undefined);
 
-  return { settled: true, outcome };
+  return { settled: true, outcome, budget };
 }
 
 async function persistVerdict(input: {
@@ -453,7 +464,7 @@ export async function driveSlices(input: DriveInput): Promise<SliceResult> {
     const effective =
       identity.userId === work.requestedBy ? identity : identityFor(work);
 
-    const { settled, outcome } = await executeClaimedStage({
+    const { settled, outcome, budget } = await executeClaimedStage({
       work,
       identity: effective,
       leaseSeconds,
@@ -477,16 +488,12 @@ export async function driveSlices(input: DriveInput): Promise<SliceResult> {
       continue;
     }
 
-    const budget = await consumeBudget({
-      runId: work.runId,
-      scope: "run",
-      attempts: 1,
-    }).catch(() => ({ exhausted: false, reason: null }));
-
-    // A ceiling that is checked and then ignored is not a ceiling. Stop the
-    // slice here and let the run be finalised as blocked on its budget.
-    if (budget.exhausted) {
-      result.exhausted = budget.reason ?? "budget";
+    // The attempt was charged with the checkpoint. A ceiling that is checked
+    // and then ignored is not a ceiling. Stop the slice here and let the run
+    // be finalised as blocked on its budget.
+    const stop = budgetStopReason(outcome, budget);
+    if (stop) {
+      result.exhausted = stop;
       break;
     }
   }

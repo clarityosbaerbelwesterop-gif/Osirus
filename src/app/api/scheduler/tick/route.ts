@@ -8,6 +8,7 @@ import {
   RateLimitError,
   RateLimitUnavailableError,
 } from "@/lib/security/rate-limit";
+import { budgetStopReason } from "@/lib/runtime/settlement";
 import { driveSlices, finalizeRun } from "@/lib/runtime/worker";
 
 export const dynamic = "force-dynamic";
@@ -174,6 +175,18 @@ async function tick(request: Request) {
     claimed += 1;
     if (settled.outcome.kind === "COMPLETE") completed += 1;
     if (settled.outcome.kind === "FAILED") failed += 1;
+
+    // The probe settled outside the slice loop. Its attempt was charged with
+    // its checkpoint; if that charge crossed a ceiling, do not claim another.
+    const probeStop = budgetStopReason(settled.outcome, settled.budget);
+    if (probeStop) {
+      await finalizeRun({
+        identity,
+        runId: probe.runId,
+        exhausted: probeStop,
+      }).catch(() => undefined);
+      continue;
+    }
 
     const slice = await driveSlices({
       runId: probe.runId,
