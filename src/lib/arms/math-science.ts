@@ -1,3 +1,9 @@
+import {
+  formalizeProblem,
+  renderFormalizationPlan,
+  type ProblemFormalization,
+} from "../math-science/formalization";
+import { mathScienceVerificationGates } from "../math-science/verification-gates";
 import type { ModelRole } from "../models/provider";
 import type { Capability } from "../runtime/types";
 import {
@@ -6,8 +12,8 @@ import {
   structureCheck,
 } from "../verification/checks";
 import { computeEvidenceCheck } from "../verification/compute-evidence";
-import { BaseArm } from "./base";
-import type { ArmId, ArmStageContext, RoutingInput } from "./types";
+import { BaseArm, readState } from "./base";
+import type { ArmId, ArmStageContext, RoutingInput, StageOutcome } from "./types";
 
 const ARITHMETIC =
   /(-?\d+(?:\.\d+)?)\s*([+\-*/×÷])\s*(-?\d+(?:\.\d+)?)\s*=\s*(-?\d+(?:\.\d+)?)/g;
@@ -90,6 +96,11 @@ export class MathScienceArm extends BaseArm {
 
   protected additionalStages() {
     return [
+      {
+        key: "formalize-problem",
+        name: "Formalize the problem",
+        kind: "formalize",
+      },
       { key: "parse-problem", name: "Parse the problem", kind: "understand" },
     ];
   }
@@ -100,21 +111,92 @@ export class MathScienceArm extends BaseArm {
 
   protected answerDirectives(): string[] {
     return [
+      "Follow the formalization plan: name knowns, unknowns, constraints and assumptions before computing.",
+      "If the problem is underdetermined, say what is missing. Do not invent constants or state a definite Result:.",
       "Compute every number with the compute.run tool. Never do arithmetic, algebra or unit conversion in your head.",
       "Use op 'dimension' with expectUnit to check a physical result's units before stating it.",
       "Use data.analyze for any table or dataset. For facts or constants you do not know, say they are needed rather than inventing them.",
       "Show the derivation step by step, each step checkable on its own.",
-      "End with a line beginning 'Result:' carrying the final answer and its units.",
+      "Before asserting a universal claim, search for a counterexample with compute.run or state the claim is conditional.",
+      "End with a line beginning 'Result:' carrying the final answer and its units when the problem is determined.",
       "State assumptions explicitly.",
       "Call a derivation a derivation. Do not describe it as a verified or formal proof.",
     ];
   }
 
+  protected async planStage(context: ArmStageContext): Promise<StageOutcome> {
+    const formalization =
+      readState<ProblemFormalization | null>(
+        context,
+        "mathFormalization",
+        null,
+      ) ?? formalizeProblem(context.work.objective);
+    const plan = renderFormalizationPlan(formalization);
+    context.state.plan = plan;
+    context.state.mathFormalization = formalization;
+    await context.runtime.activity(
+      "math.formalized",
+      formalization.underdetermined
+        ? "Problem formalized as underdetermined"
+        : "Problem formalized with plan steps",
+      {
+        knowns: formalization.knowns.length,
+        unknowns: formalization.unknowns.length,
+        steps: formalization.planSteps.length,
+        underdetermined: formalization.underdetermined,
+      },
+    );
+    return {
+      kind: "COMPLETE",
+      output: {
+        armId: this.id,
+        plan,
+        underdetermined: formalization.underdetermined,
+      },
+    };
+  }
+
+  protected async customStage(context: ArmStageContext): Promise<StageOutcome> {
+    if ((context.work.stageInput.stageKind as string) !== "formalize") {
+      return super.customStage(context);
+    }
+    const formalization = formalizeProblem(context.work.objective);
+    context.state.mathFormalization = formalization;
+    await context.runtime.activity(
+      "math.formalized",
+      "Recorded problem formalization",
+      {
+        knowns: formalization.knowns.map((item) => item.name),
+        unknowns: formalization.unknowns.map((item) => item.name),
+        underdetermined: formalization.underdetermined,
+      },
+    );
+    return {
+      kind: "COMPLETE",
+      output: { formalization },
+    };
+  }
+
   protected checksFor(context: ArmStageContext, answer: string) {
     const claims = checkArithmetic(answer);
     const wrong = claims.filter((claim) => !claim.agrees);
+    const formalization =
+      readState<ProblemFormalization | null>(
+        context,
+        "mathFormalization",
+        null,
+      ) ?? formalizeProblem(context.work.objective);
+    const toolEvidence =
+      (context.state.toolEvidence as
+        | Parameters<typeof computeEvidenceCheck>[1]
+        | undefined) ?? [];
 
     return [
+      ...mathScienceVerificationGates({
+        answer,
+        toolEvidence,
+        formalization,
+      }),
       structureCheck({
         id: "result-line",
         required: true,
