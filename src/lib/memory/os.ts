@@ -52,7 +52,7 @@ export class MemoryOS {
   }
 
   async retrieveBundle(input: MemoryRetrieveInput): Promise<MemoryBundle> {
-    const [lexical, episodic, contradictions] = await Promise.all([
+    const [lexical, episodic, contradictions, causal] = await Promise.all([
       this.repository.retrieve(input),
       this.repository.episodicByObjective(
         input.workspaceId,
@@ -60,9 +60,28 @@ export class MemoryOS {
         Math.min(input.limit ?? 8, 6),
       ),
       this.repository.countContradictions(input.workspaceId),
+      this.repository
+        .retrieveCausalContext({
+          workspaceId: input.workspaceId,
+          objective: input.objective,
+          limit: Math.min(input.limit ?? 6, 8),
+        })
+        .catch(() => [] as string[]),
     ]);
     const merged = [...episodic, ...lexical];
-    return bundleFromItems(merged, contradictions);
+    const bundle = bundleFromItems(merged, contradictions);
+    return {
+      ...bundle,
+      contextLines: [...causal, ...bundle.contextLines],
+    };
+  }
+
+  retrieveCausalContext(input: {
+    workspaceId: string;
+    objective: string;
+    limit?: number;
+  }) {
+    return this.repository.retrieveCausalContext(input);
   }
 
   async commit(input: {
@@ -113,6 +132,19 @@ export class MemoryOS {
         memoryItemId: result.persistedId,
         candidate,
       }).catch(() => 0);
+    }
+    const { extractCausalGraph } = await import("./causal");
+    const causal = extractCausalGraph(outcome);
+    if (causal.events.length > 0) {
+      await this.repository
+        .persistCausalGraph({
+          organizationId: input.organizationId,
+          workspaceId: input.workspaceId,
+          runId: input.runId,
+          events: causal.events,
+          links: causal.links,
+        })
+        .catch(() => undefined);
     }
     return {
       candidates: candidates.length,

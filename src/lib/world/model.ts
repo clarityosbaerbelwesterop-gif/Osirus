@@ -25,10 +25,22 @@ export type WorldEdge = {
   relation: "uses" | "written_in" | "checked_by" | "supports" | "contradicts";
 };
 
+export type CausalSlice = {
+  narrative: string[];
+  relationalEdges: Array<{
+    from: string;
+    to: string;
+    relation: string;
+    confidence: number;
+  }>;
+};
+
 export type WorldModel = {
   entities: WorldEntity[];
   edges: WorldEdge[];
   uncertainties: Array<{ claim: string; status: string; confidence: number }>;
+  /** Memory OS II: causal chains and relational edges for agent decisions. */
+  causal?: CausalSlice;
 };
 
 type RepositoryRow = {
@@ -178,9 +190,31 @@ export async function buildWorldModel(
 
   const kept = [...entities.values()].slice(0, limit);
   const ids = new Set(kept.map((entity) => entity.id));
+
+  let causal: CausalSlice | undefined;
+  try {
+    const { MemoryRepository } = await import("../memory/repository");
+    const narrative = await new MemoryRepository(
+      identity.userId,
+    ).retrieveCausalContext({
+      workspaceId: identity.workspaceId,
+      objective: about || "workspace",
+      limit: 8,
+    });
+    if (narrative.length > 0) {
+      causal = {
+        narrative,
+        relationalEdges: [],
+      };
+    }
+  } catch {
+    causal = undefined;
+  }
+
   return {
     entities: kept,
     edges: edges.filter((edge) => ids.has(edge.from) && ids.has(edge.to)),
     uncertainties: uncertainties.slice(0, 20),
+    causal,
   };
 }
