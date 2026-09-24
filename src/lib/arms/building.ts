@@ -274,6 +274,10 @@ export class BuildingArm extends CodingArm {
       }
     }
     context.state.qaReport = report;
+    const { verificationArtifactFromQa } =
+      await import("../building/verification-artifact");
+    const artifact = verificationArtifactFromQa(contract, report);
+    context.state.verificationArtifact = artifact;
     await session.refresh().catch(() => undefined);
     const failed = report.checks.filter((check) => !check.passed);
     await context.runtime.activity(
@@ -285,15 +289,34 @@ export class BuildingArm extends CodingArm {
         mode: report.mode,
         failed: failed.map((check) => check.id),
         consoleErrors: report.consoleErrors.slice(0, 5),
+        evidenceRefs: artifact.evidenceRefs,
       },
       "user",
     );
+    await context.runtime
+      .repository.createArtifact({
+        organizationId: context.identity.organizationId,
+        workspaceId: context.identity.workspaceId,
+        sessionId: context.work.sessionId,
+        runId: context.work.runId,
+        kind: artifact.kind,
+        title: artifact.title,
+        contentType: "text/markdown",
+        content: { body: artifact.content },
+        provenance: {
+          producedBy: `${this.id}.qa_preview`,
+          stageId: context.work.stageId,
+        },
+      })
+      .catch(() => undefined);
     return {
       kind: "COMPLETE",
       output: {
         qa: report.mode,
         passed: report.checks.length - failed.length,
         failed: failed.length,
+        verificationArtifact: artifact.title,
+        evidenceRefs: artifact.evidenceRefs,
       },
     };
   }

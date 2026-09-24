@@ -1,4 +1,9 @@
 import { z } from "zod";
+import {
+  evidenceRefsForBrowser,
+  formatObserveActVerify,
+  observeActVerifyFromSession,
+} from "../agent/observe-act-verify";
 import type { SandboxHandle } from "../sandbox/driver";
 import type { ToolDefinition } from "../tools/registry";
 import { SandboxBrowser, type BrowserAction } from "./browser";
@@ -51,12 +56,18 @@ export function computerTools(handle: () => SandboxHandle): ToolDefinition[] {
           expectText?: string[];
         };
         browser ??= new SandboxBrowser(handle());
+        const url = `http://127.0.0.1:${request.port}${request.path}`;
         const session = await browser.session({
-          url: `http://127.0.0.1:${request.port}${request.path}`,
+          url,
           actions: request.actions,
           texts: request.expectText,
         });
+        const oav = observeActVerifyFromSession(url, session, {
+          texts: request.expectText,
+        });
+        const evidenceRefs = evidenceRefsForBrowser(url, session);
         return {
+          url,
           status: session.status,
           title: session.title,
           error: session.error ?? null,
@@ -70,6 +81,14 @@ export function computerTools(handle: () => SandboxHandle): ToolDefinition[] {
             horizontalOverflow: viewport.horizontalOverflow,
           })),
           visibleText: (session.visibleText ?? "").slice(0, 2_000),
+          verify: {
+            passed: oav.verify.passed,
+            mode: oav.verify.mode,
+            failedChecks: oav.verify.failedCheckIds,
+            summary: oav.verify.summary,
+          },
+          evidenceRefs,
+          groundingSummary: formatObserveActVerify(oav),
         };
       },
     },
