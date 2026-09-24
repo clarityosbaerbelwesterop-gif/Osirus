@@ -36,7 +36,7 @@ Artifacts are persisted via `runtime.repository.createArtifact` and cited throug
 
 ### Capability pulse L1–L5 (`src/lib/agent/pulse.ts`)
 
-Offline pulse suite over the production loop — not a second runtime or scheduler:
+Offline pulse suite over the production loop — not a second runtime or scheduler. Pulse uses deterministic fixture DOM/screenshot evidence and never launches Playwright; production `computer.inspect` and `baseline.ts` may still use a real browser when one is available.
 
 | Suite          | L1              | L2                | L3                      | L4                            | L5                      |
 | -------------- | --------------- | ----------------- | ----------------------- | ----------------------------- | ----------------------- |

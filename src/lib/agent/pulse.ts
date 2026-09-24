@@ -1,6 +1,3 @@
-import { existsSync } from "node:fs";
-import { createServer, type Server } from "node:http";
-import type { AddressInfo } from "node:net";
 import { z } from "zod";
 import type { ArmId } from "../arms/types";
 import { reportFrom, type BrowserSession } from "../computer/browser";
@@ -30,9 +27,11 @@ import type { HypothesisSeed } from "./task-state";
 // M38 capability pulse: Building, Computer, Tool Use and Multimodal at L1–L5.
 //
 // Offline fixtures over the production loop, OAV helpers and grounding — not a
-// second runtime or hourly scheduler. Each level adds one capability layer:
-// L1 observe, L2 act, L3 verify, L4 ground hypotheses, L5 build-prove with
-// artifacts.
+// second runtime or hourly scheduler. Browser evidence here is deterministic
+// fixture DOM/screenshot refs; pulse never launches Playwright (production
+// computer.inspect and baseline.ts still can when a binary is present).
+// Each level adds one capability layer: L1 observe, L2 act, L3 verify, L4
+// ground hypotheses, L5 build-prove with artifacts.
 
 export const PULSE_LEVELS = [1, 2, 3, 4, 5] as const;
 export type PulseLevel = (typeof PULSE_LEVELS)[number];
@@ -84,26 +83,7 @@ function scripted(decisions: AgentDecision[]) {
   };
 }
 
-async function listen(html: string): Promise<{ server: Server; url: string }> {
-  const server = createServer((_, response) => {
-    response.writeHead(200, { "content-type": "text/html; charset=utf-8" });
-    response.end(html);
-  });
-  await new Promise<void>((resolve) => server.listen(0, "127.0.0.1", resolve));
-  const port = (server.address() as AddressInfo).port;
-  return { server, url: `http://127.0.0.1:${port}/` };
-}
-
-function browserBinary(): string | null {
-  const candidates = [
-    process.env.OSIRUS_CHROMIUM_PATH,
-    process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE,
-    "/usr/bin/chromium",
-    "/usr/bin/chromium-browser",
-    "/opt/pw-browsers/chromium-1194/chrome-linux/chrome",
-  ];
-  return candidates.find((path) => path && existsSync(path)) ?? null;
-}
+const FIXTURE_CART_URL = "http://127.0.0.1:4173/";
 
 const CART_PAGE = `<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1"><title>Cart</title></head>
@@ -200,13 +180,14 @@ function staticCartSession(clicked = false): BrowserSession {
             type: "click",
             selector: "#add",
             ok: true,
-            detail: "clicked #add",
+            detail: "clicked #add (fixture)",
           },
         ]
       : [],
     viewports: [
-      { name: "desktop", horizontalOverflow: false, screenshotBytes: 0 },
-      { name: "phone", horizontalOverflow: false, screenshotBytes: 0 },
+      { name: "desktop", horizontalOverflow: false, screenshotBytes: 1024 },
+      { name: "ipad", horizontalOverflow: false, screenshotBytes: 768 },
+      { name: "phone", horizontalOverflow: false, screenshotBytes: 512 },
     ],
     a11y: { unnamedButtons: 0, imagesWithoutAlt: 0, unlabelledInputs: 0 },
     selectors: [{ selector: "#add", count: 1 }],
@@ -214,62 +195,12 @@ function staticCartSession(clicked = false): BrowserSession {
   };
 }
 
-async function liveCartSession(
-  clicked = false,
-): Promise<{ live: boolean; session: BrowserSession; url: string }> {
-  const executable = browserBinary();
-  if (!executable) {
-    return {
-      live: false,
-      session: staticCartSession(clicked),
-      url: "http://127.0.0.1/",
-    };
-  }
-  const { server, url } = await listen(CART_PAGE);
-  try {
-    const { chromium } = await import("@playwright/test");
-    const browser = await chromium.launch({
-      executablePath: executable,
-      headless: true,
-      timeout: 15_000,
-    });
-    try {
-      const page = await browser.newPage();
-      await page.goto(url, { waitUntil: "domcontentloaded" });
-      if (clicked) await page.click("#add");
-      const countText = await page.locator("#count").innerText();
-      const session: BrowserSession = {
-        status: 200,
-        title: await page.title(),
-        html: await page.content(),
-        visibleText: await page.locator("body").innerText(),
-        consoleErrors: [],
-        failedRequests: [],
-        actions: clicked
-          ? [
-              {
-                type: "click",
-                selector: "#add",
-                ok: true,
-                detail: "clicked #add",
-              },
-            ]
-          : [],
-        viewports: [
-          { name: "desktop", horizontalOverflow: false, screenshotBytes: 0 },
-          { name: "phone", horizontalOverflow: false, screenshotBytes: 0 },
-        ],
-        a11y: { unnamedButtons: 0, imagesWithoutAlt: 0, unlabelledInputs: 0 },
-        selectors: [{ selector: "#add", count: 1 }],
-        texts: [{ text: "1 item", found: countText.includes("1 item") }],
-      };
-      return { live: true, session, url };
-    } finally {
-      await browser.close();
-    }
-  } finally {
-    server.close();
-  }
+/** Deterministic cart browser evidence for pulse — never launches Chromium. */
+function fixtureCartSession(clicked = false): {
+  session: BrowserSession;
+  url: string;
+} {
+  return { url: FIXTURE_CART_URL, session: staticCartSession(clicked) };
 }
 
 // --- BUILDING suite ---
@@ -585,7 +516,7 @@ async function buildingL5(): Promise<PulseRecord> {
 // --- COMPUTER suite ---
 
 async function computerL1(): Promise<PulseRecord> {
-  const { session, url } = await liveCartSession(false);
+  const { session, url } = fixtureCartSession(false);
   const oav = observeActVerifyFromSession(url, session, {});
   const tools = new ToolRegistry().register({
     id: "computer.inspect",
@@ -639,12 +570,12 @@ async function computerL1(): Promise<PulseRecord> {
       answer: "Clicked Add item and the count is 1 item.",
       claimHolds: false,
     }),
-    notes: `L1: observe only. Live=${String(session.actions.length === 0)}.`,
+    notes: "L1: observe only. Offline fixture DOM; no browser launched.",
   };
 }
 
 async function computerL2(): Promise<PulseRecord> {
-  const { session, url } = await liveCartSession(true);
+  const { session, url } = fixtureCartSession(true);
   const oav = observeActVerifyFromSession(url, session, { texts: ["1 item"] });
   const tools = new ToolRegistry().register({
     id: "computer.inspect",
@@ -704,7 +635,7 @@ async function computerL2(): Promise<PulseRecord> {
 }
 
 async function computerL3(): Promise<PulseRecord> {
-  const { session, url } = await liveCartSession(true);
+  const { session, url } = fixtureCartSession(true);
   const oav = observeActVerifyFromSession(url, session, {
     selectors: ["#add"],
     texts: ["1 item"],
@@ -746,7 +677,7 @@ async function computerL3(): Promise<PulseRecord> {
 }
 
 async function computerL4(): Promise<PulseRecord> {
-  const { session, url } = await liveCartSession(true);
+  const { session, url } = fixtureCartSession(true);
   const tools = new ToolRegistry();
   const objective = "Ground the cart-count hypothesis from browser evidence.";
   const run = await protocol({
@@ -815,7 +746,7 @@ async function computerL4(): Promise<PulseRecord> {
 }
 
 async function computerL5(): Promise<PulseRecord> {
-  const { session, url } = await liveCartSession(true);
+  const { session, url } = fixtureCartSession(true);
   const oav = observeActVerifyFromSession(url, session, {
     selectors: ["#add"],
     texts: ["1 item"],
@@ -1384,7 +1315,7 @@ async function multimodalL4(): Promise<PulseRecord> {
 }
 
 async function multimodalL5(): Promise<PulseRecord> {
-  const { session, url } = await liveCartSession(true);
+  const { session, url } = fixtureCartSession(true);
   const oav = observeActVerifyFromSession(url, session, { texts: ["1 item"] });
   const objective =
     "Observe, act, verify and ground the cart workflow with multimodal evidence.";
