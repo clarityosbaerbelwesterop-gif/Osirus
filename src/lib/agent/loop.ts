@@ -341,6 +341,10 @@ function applyVerification(kernel: TaskKernel, step: AgentStep) {
  * Loop state stores cumulative counts so a resume can continue. Charging
  * those totals again on the next slice double-counts. The delta is the new
  * calls only; a wrap-up call made after the loop returns is `extraModelCalls`.
+ *
+ * The delta is not a charge by itself. It is committed later, in the same
+ * transaction as the stage checkpoint, keyed by the stage attempt. Applying
+ * it before that checkpoint is what lets a crash bill the slice twice.
  */
 export function sliceBudgetDelta(input: {
   priorModelCalls: number;

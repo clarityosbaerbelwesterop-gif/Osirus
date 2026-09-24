@@ -1,7 +1,12 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { settlementFor } from "../src/lib/runtime/settlement";
+import { sliceBudgetDelta } from "../src/lib/agent/loop";
+import {
+  budgetChargeForAttempt,
+  pendingBudgetOf,
+  settlementFor,
+} from "../src/lib/runtime/settlement";
 import { canTransitionStage } from "../src/lib/runtime/state-machine";
 
 describe("stage settlement", () => {
@@ -95,6 +100,111 @@ describe("stage settlement", () => {
         settlement.stageStatus,
       ).toBe(true);
     }
+  });
+});
+
+describe("checkpoint budget charge", () => {
+  it("reads only a non-negative integer pending charge", () => {
+    expect(pendingBudgetOf({})).toEqual({ modelCalls: 0, toolCalls: 0 });
+    expect(pendingBudgetOf({ pendingBudget: null })).toEqual({
+      modelCalls: 0,
+      toolCalls: 0,
+    });
+    expect(
+      pendingBudgetOf({
+        pendingBudget: { modelCalls: 2.9, toolCalls: -4, extra: true },
+      }),
+    ).toEqual({ modelCalls: 2, toolCalls: 0 });
+    expect(
+      pendingBudgetOf({ pendingBudget: { modelCalls: "4", toolCalls: 1 } }),
+    ).toEqual({ modelCalls: 0, toolCalls: 1 });
+  });
+
+  it("charges a resumed slice once when its checkpoint commit is replayed", () => {
+    // The crash window: consume_budget used to commit before the checkpoint.
+    // A replay of that attempt must add nothing. The next slice is a new
+    // attempt and pays only the calls it added on top of the checkpointed
+    // totals.
+    const pending = sliceBudgetDelta({
+      priorModelCalls: 3,
+      priorToolCalls: 1,
+      modelCalls: 5,
+      toolCalls: 2,
+      extraModelCalls: 1,
+    });
+    expect(pending).toEqual({ modelCalls: 3, toolCalls: 1 });
+
+    const first = budgetChargeForAttempt({
+      settledAttemptIds: [],
+      attemptId: "attempt-a",
+      pending,
+    });
+    expect(first).toEqual({
+      modelCalls: 3,
+      toolCalls: 1,
+      alreadySettled: false,
+    });
+
+    const replay = budgetChargeForAttempt({
+      settledAttemptIds: ["attempt-a"],
+      attemptId: "attempt-a",
+      pending,
+    });
+    expect(replay).toEqual({
+      modelCalls: 0,
+      toolCalls: 0,
+      alreadySettled: true,
+    });
+
+    const next = budgetChargeForAttempt({
+      settledAttemptIds: ["attempt-a"],
+      attemptId: "attempt-b",
+      pending: sliceBudgetDelta({
+        priorModelCalls: 5,
+        priorToolCalls: 2,
+        modelCalls: 6,
+        toolCalls: 2,
+      }),
+    });
+    expect(next).toEqual({
+      modelCalls: 1,
+      toolCalls: 0,
+      alreadySettled: false,
+    });
+  });
+
+  it("commits the slice charge with the checkpoint, after the lease still holds", () => {
+    const worker = readFileSync(
+      join(process.cwd(), "src", "lib", "runtime", "worker.ts"),
+      "utf8",
+    );
+    const execute = worker.slice(
+      worker.indexOf("export async function executeClaimedStage"),
+      worker.indexOf("async function persistVerdict"),
+    );
+    const lost = execute.indexOf("if (guard.leaseLost)");
+    const finish = execute.indexOf("await finishAttempt(");
+    const unsettled = execute.indexOf("if (!settled)");
+    const charge = execute.indexOf("await checkpointStageBudget(");
+    expect(lost).toBeGreaterThan(-1);
+    expect(lost).toBeLessThan(finish);
+    expect(finish).toBeLessThan(unsettled);
+    expect(unsettled).toBeLessThan(charge);
+    // The pending delta is an argument, not a durable key the next slice
+    // could charge a second time.
+    expect(execute).toContain("pendingBudgetOf(state)");
+    expect(execute).toContain("state: durableState(state)");
+    expect(worker).not.toContain('"pendingBudget"');
+    expect(execute).not.toContain("consumeBudget");
+    expect(execute).not.toContain("saveCheckpoint");
+
+    const arm = readFileSync(
+      join(process.cwd(), "src", "lib", "arms", "base.ts"),
+      "utf8",
+    );
+    expect(arm).not.toContain("consumeBudget");
+    expect(arm).toContain("context.state.pendingBudget = sliceBudgetDelta(");
+    expect(arm).toContain("notePending(1)");
   });
 });
 
