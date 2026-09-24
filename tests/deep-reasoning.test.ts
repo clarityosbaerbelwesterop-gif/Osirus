@@ -48,10 +48,12 @@ describe("deep reasoning paths", () => {
         compound: true,
       }),
     ).toBe("compound");
-    expect(buildReasoningProfile({
-      objective: "Research the bridge date then compute the toll.",
-      hypotheses: [{ statement: "Toll depends on opening year." }],
-      compound: true,
-    }).phases).toContain("cross_check_segments");
+    expect(
+      buildReasoningProfile({
+        objective: "Research the bridge date then compute the toll.",
+        hypotheses: [{ statement: "Toll depends on opening year." }],
+        compound: true,
+      }).phases,
+    ).toContain("cross_check_segments");
   });
 });

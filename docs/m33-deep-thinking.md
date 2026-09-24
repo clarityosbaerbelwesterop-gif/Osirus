@@ -29,12 +29,12 @@ Implementation: `assessFinishGate` in `src/lib/agent/finish-gate.ts`, wired into
 
 `src/lib/agent/reasoning.ts` selects a deliberation profile from the objective and seeded kernel fields:
 
-| Path | When | Phases |
-| ---- | ---- | ------ |
-| `direct` | No hypotheses or success criteria | answer |
-| `standard` | Gated task with success criteria | hypothesize → verify → finish |
+| Path          | When                                       | Phases                                                          |
+| ------------- | ------------------------------------------ | --------------------------------------------------------------- |
+| `direct`      | No hypotheses or success criteria          | answer                                                          |
+| `standard`    | Gated task with success criteria           | hypothesize → verify → finish                                   |
 | `adversarial` | Rival hypotheses or explicit contradiction | seed rivals → gather → verify each → resolve or report → finish |
-| `compound` | Multi-segment objective with gates | decompose → evidence per segment → cross-check → finish |
+| `compound`    | Multi-segment objective with gates         | decompose → evidence per segment → cross-check → finish         |
 
 Path-specific directives are appended to the loop system prompt. They describe **actions**, not private chain-of-thought.
 

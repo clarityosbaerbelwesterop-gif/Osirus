@@ -640,7 +640,10 @@ describe("agent loop", () => {
           statement:
             "The tank fills in 6 hours because that is the pump's time.",
         },
-        { id: "h-net", statement: "The tank fills in 12 hours at the net rate." },
+        {
+          id: "h-net",
+          statement: "The tank fills in 12 hours at the net rate.",
+        },
       ],
       hooks: {
         verify: async () => ({

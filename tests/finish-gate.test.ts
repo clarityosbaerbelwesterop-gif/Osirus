@@ -22,9 +22,7 @@ describe("finish gate", () => {
   it("does not gate tasks without hypotheses or success criteria", () => {
     const state = createTaskState({ objective: "What is 2+2?" });
     expect(kernelHasFinishGates(state)).toBe(false);
-    expect(
-      assessFinishGate(state, "Result: 4", []).allowed,
-    ).toBe(true);
+    expect(assessFinishGate(state, "Result: 4", []).allowed).toBe(true);
   });
 
   it("requires VERIFY before FINISH when hypotheses are present", () => {
@@ -87,9 +85,13 @@ describe("finish gate", () => {
       hypotheses: [
         {
           id: "h-pump",
-          statement: "The tank fills in 6 hours because that is the pump's time.",
+          statement:
+            "The tank fills in 6 hours because that is the pump's time.",
         },
-        { id: "h-net", statement: "The tank fills in 12 hours at the net rate." },
+        {
+          id: "h-net",
+          statement: "The tank fills in 12 hours at the net rate.",
+        },
       ],
     });
     state.hypotheses[0] = createHypothesis({

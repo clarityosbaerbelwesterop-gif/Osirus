@@ -27,14 +27,14 @@ describe("capability baseline", () => {
 
     const gated = ["THINKING", "REASONING", "RESEARCH", "MATH"];
     for (const domain of gated) {
-      expect(records.find((record) => record.domain === domain)?.falseCompletion).toBe(
-        false,
-      );
+      expect(
+        records.find((record) => record.domain === domain)?.falseCompletion,
+      ).toBe(false);
     }
     for (const domain of ["CODING", "BUILDING", "COMPUTER", "MEMORY"]) {
-      expect(records.find((record) => record.domain === domain)?.falseCompletion).toBe(
-        true,
-      );
+      expect(
+        records.find((record) => record.domain === domain)?.falseCompletion,
+      ).toBe(true);
     }
 
     const byDomain = Object.fromEntries(

@@ -48,8 +48,7 @@ function competingSupportedYears(state: TaskState): string[] {
   const years = state.hypotheses
     .filter(
       (hypothesis) =>
-        hypothesis.status === "SUPPORTED" ||
-        hypothesis.status === "CONFIRMED",
+        hypothesis.status === "SUPPORTED" || hypothesis.status === "CONFIRMED",
     )
     .map((hypothesis) => hypothesis.statement.match(/\b(19|20)\d{2}\b/)?.[0])
     .filter((year): year is string => Boolean(year));
@@ -64,7 +63,10 @@ function answerContradictsHypotheses(
   const result = extractResultNumber(answer);
 
   for (const hypothesis of state.hypotheses) {
-    if (hypothesis.status !== "SUPPORTED" && hypothesis.status !== "CONFIRMED") {
+    if (
+      hypothesis.status !== "SUPPORTED" &&
+      hypothesis.status !== "CONFIRMED"
+    ) {
       continue;
     }
     const expected = statementNumber(hypothesis.statement);
@@ -136,7 +138,8 @@ export function assessFinishGate(
   if (!trimmed) {
     return {
       allowed: false,
-      reason: "FINISH requires a non-empty answer when the task kernel has gates.",
+      reason:
+        "FINISH requires a non-empty answer when the task kernel has gates.",
       suggestedAction: "VERIFY",
     };
   }
