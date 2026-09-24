@@ -262,3 +262,20 @@ export function plantedMemoryOf(
       verificationStatus: "verified" as const,
     }));
 }
+
+/** Attachment ids a run was sent with, as written into its stages. */
+export function attachmentIdsOf(
+  stageInput: Record<string, unknown> | undefined,
+) {
+  const raw = stageInput?.attachmentIds;
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (id): id is string =>
+        typeof id === "string" &&
+        /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+          id,
+        ),
+    )
+    .slice(0, 8);
+}

@@ -22,6 +22,7 @@ const inputSchema = z.object({
   requestId: z.string().uuid(),
   sessionId: z.string().uuid().nullable().optional(),
   regenerate: z.boolean().optional().default(false),
+  attachmentIds: z.array(z.string().uuid()).max(8).optional(),
 });
 
 export async function POST(request: Request) {
@@ -98,6 +99,25 @@ export async function POST(request: Request) {
     );
   }
 
+  // Files sent with this message: bound to its session, read by the run
+  // through retrieval. Ids outside the caller's workspace simply do not
+  // resolve (RLS), so they are dropped rather than trusted.
+  let attachments: Array<{ id: string; kind: string }> = [];
+  if (parsed.data.attachmentIds?.length && prepared.created) {
+    const { bindAttachments, listAttachments } =
+      await import("@/lib/attachments/store");
+    await bindAttachments(
+      identity,
+      parsed.data.attachmentIds,
+      prepared.sessionId,
+    ).catch(() => undefined);
+    attachments = (
+      await listAttachments(identity, {
+        ids: parsed.data.attachmentIds,
+      }).catch(() => [])
+    ).map((attachment) => ({ id: attachment.id, kind: attachment.kind }));
+  }
+
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
@@ -136,6 +156,7 @@ export async function POST(request: Request) {
         capabilities,
         emit,
         correlationId,
+        attachments,
       })
         .catch((error: unknown) => {
           emit({

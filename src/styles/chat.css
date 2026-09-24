@@ -707,6 +707,37 @@
   color: var(--color-warning);
 }
 
+.composer-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+  margin: 0;
+  padding: 0 var(--space-3) var(--space-1);
+  list-style: none;
+}
+
+.chip-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: calc(var(--space-2) * -1);
+  border: 0;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.chip-remove:hover {
+  background: var(--color-surface-hover);
+}
+
+.chip-remove:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
 .composer-controls {
   display: flex;
   flex: none;

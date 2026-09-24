@@ -2,12 +2,15 @@
 
 import {
   ArrowUp,
+  FileText,
   Folder,
   GitBranch,
+  Paperclip,
   RotateCcw,
   RefreshCw,
   ShieldAlert,
   Square,
+  X,
 } from "lucide-react";
 import type { Route } from "next";
 import Link from "next/link";
@@ -28,6 +31,13 @@ export type ComposerHandle = {
   focus: () => void;
 };
 
+export type ComposerAttachment = {
+  id: string;
+  filename: string;
+  status: "stored" | "parsed" | "unsupported" | "failed";
+  note: string | null;
+};
+
 export type GithubState =
   | { status: "loading" }
   | { status: "CONNECTED"; login: string }
@@ -37,7 +47,8 @@ export type GithubState =
  * The message box. Enter sends, Shift+Enter starts a new line, and an input
  * method composition is never interrupted. Every control here does something:
  * Stop cancels the run, Retry repeats a failed request, Regenerate re-runs the
- * last objective. There is no attachment button because there is no upload.
+ * last objective. Attach uploads a file (PDF, text, Markdown, CSV, JSON,
+ * code, images) that the run reads by relevance, not in full.
  */
 export const Composer = forwardRef<
   ComposerHandle,
@@ -54,9 +65,14 @@ export const Composer = forwardRef<
     workspaceName: string;
     github: GithubState;
     approvalAnchor: string | null;
+    attachments?: ComposerAttachment[];
+    uploading?: boolean;
+    onAttach?: (file: File) => void;
+    onRemoveAttachment?: (id: string) => void;
   }
 >(function Composer(props, ref) {
   const textarea = useRef<HTMLTextAreaElement | null>(null);
+  const picker = useRef<HTMLInputElement | null>(null);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -133,8 +149,59 @@ export const Composer = forwardRef<
           rows={1}
           aria-describedby="composer-hint"
         />
+        {props.attachments?.length ? (
+          <ul className="composer-files" aria-label="Attached files">
+            {props.attachments.map((file) => (
+              <li
+                key={file.id}
+                className={file.status === "parsed" ? "chip" : "chip chip-warn"}
+                title={file.note ?? file.filename}
+              >
+                <FileText size={13} aria-hidden="true" />
+                <span className="truncate">{file.filename}</span>
+                {file.status !== "parsed" ? (
+                  <span className="sr-only">{file.note}</span>
+                ) : null}
+                {props.onRemoveAttachment ? (
+                  <button
+                    type="button"
+                    className="chip-remove"
+                    aria-label={`Remove ${file.filename}`}
+                    onClick={() => props.onRemoveAttachment?.(file.id)}
+                  >
+                    <X size={12} aria-hidden="true" />
+                  </button>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <div className="composer-bar">
           <div className="composer-chips">
+            {props.onAttach ? (
+              <>
+                <input
+                  ref={picker}
+                  type="file"
+                  className="sr-only"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  accept=".pdf,.txt,.md,.markdown,.csv,.tsv,.json,.png,.jpg,.jpeg,.gif,.webp,.ts,.tsx,.js,.jsx,.py,.go,.rs,.java,.sql,.yaml,.yml,.html,.css"
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) props.onAttach?.(file);
+                    event.target.value = "";
+                  }}
+                />
+                <IconButton
+                  label={props.uploading ? "Uploading…" : "Attach a file"}
+                  icon={Paperclip}
+                  size="sm"
+                  disabled={props.running || props.uploading}
+                  onClick={() => picker.current?.click()}
+                />
+              </>
+            ) : null}
             <span className="chip" title="Workspace">
               <Folder size={13} aria-hidden="true" />
               <span className="truncate">{props.workspaceName}</span>

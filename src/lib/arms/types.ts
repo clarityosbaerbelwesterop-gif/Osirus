@@ -183,6 +183,14 @@ export type ArmRuntime = {
   activity: ArmActivity;
   /** Streams assistant text to the browser as it arrives. */
   emitDelta: (text: string) => Promise<void> | void;
+  /** Excerpts of files attached to the run, retrieved by relevance. */
+  attachments?: {
+    retrieve(input: {
+      ids: string[];
+      query: string;
+      maxChars?: number;
+    }): Promise<Array<{ label: string; content: string }>>;
+  };
 };
 
 export type RoutingInput = {

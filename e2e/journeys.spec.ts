@@ -344,3 +344,75 @@ test("6. create an automation, run it in the background, see the notification", 
     .poll(() => log.find((entry) => entry.path === "/api/notifications")?.body)
     .toEqual({ read: ["i3"] });
 });
+
+test("7. attach a CSV, send it with the question, remove another file", async ({
+  page,
+}) => {
+  const sent: unknown[] = [];
+  await mockApis(page, { runSnapshot: () => chatSnapshot() });
+  let uploads = 0;
+  await page.route("**/api/attachments", (route) => {
+    uploads += 1;
+    return route.fulfill({
+      status: 201,
+      json: {
+        attachment: {
+          id:
+            uploads === 1
+              ? "7e1d4c2a-0b3f-4a5e-9c8d-1f2a3b4c5d6e"
+              : "8f2e5d3b-1c4a-4b6f-8d9e-2a3b4c5d6e7f",
+          filename: uploads === 1 ? "sales.csv" : "notes.txt",
+          kind: uploads === 1 ? "csv" : "text",
+          status: "parsed",
+          note: null,
+        },
+      },
+    });
+  });
+  await page.route("**/api/attachments/*", (route) =>
+    route.fulfill({ status: 200, json: { deleted: true } }),
+  );
+  await page.route("**/api/runtime", (route) => {
+    sent.push(route.request().postDataJSON());
+    return route.fulfill({
+      status: 200,
+      headers: {
+        "content-type": "text/event-stream",
+        "X-Osirus-Session-Id": SESSION,
+        "X-Osirus-Run-Id": RUN,
+      },
+      body: [
+        frame({ kind: "started", runId: RUN, sessionId: SESSION }),
+        frame({ kind: "done", runId: RUN, status: "completed" }),
+      ].join(""),
+    });
+  });
+
+  await openSurface(page, "chat-empty");
+  const picker = page.locator('input[type="file"]');
+  await picker.setInputFiles({
+    name: "sales.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from("month,revenue\nJan,120\nFeb,150\n"),
+  });
+  await expect(page.getByText("sales.csv")).toBeVisible();
+  await picker.setInputFiles({
+    name: "notes.txt",
+    mimeType: "text/plain",
+    buffer: Buffer.from("scratch"),
+  });
+  await page.getByRole("button", { name: "Remove notes.txt" }).click();
+  await expect(page.getByText("notes.txt")).toHaveCount(0);
+
+  const composer = page.getByRole("textbox", { name: "Message Osirus" });
+  await composer.fill("What was the revenue growth from January to February?");
+  await composer.press("Enter");
+  await expect.poll(() => sent.length).toBe(1);
+  expect(sent[0]).toMatchObject({
+    attachmentIds: ["7e1d4c2a-0b3f-4a5e-9c8d-1f2a3b4c5d6e"],
+  });
+  // Sent files leave the composer.
+  await expect(page.getByRole("list", { name: "Attached files" })).toHaveCount(
+    0,
+  );
+});

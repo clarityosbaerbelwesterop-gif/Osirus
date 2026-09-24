@@ -13,6 +13,7 @@ import {
 } from "@/lib/ui/workbench-view";
 import {
   Composer,
+  type ComposerAttachment,
   type ComposerHandle,
   type GithubState,
 } from "../composer/composer";
@@ -66,6 +67,8 @@ export function ChatHub(props: {
     props.initialSnapshot ?? null,
   );
   const [objective, setObjective] = useState("");
+  const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [activeRunId, setActiveRunId] = useState(props.initialRunId);
   const [running, setRunning] = useState(
     Boolean(props.initialRunId) ||
@@ -225,6 +228,48 @@ export function ChatHub(props: {
     [applySnapshot, refreshRun],
   );
 
+  const attachFile = useCallback(
+    async (file: File) => {
+      setUploading(true);
+      setError(null);
+      try {
+        const form = new FormData();
+        form.append("file", file);
+        if (sessionId) form.append("sessionId", sessionId);
+        const response = await fetch("/api/attachments", {
+          method: "POST",
+          body: form,
+        });
+        const body = (await response.json().catch(() => ({}))) as {
+          attachment?: ComposerAttachment;
+          error?: string;
+        };
+        if (!response.ok || !body.attachment) {
+          setError(
+            body.error === "too_large"
+              ? "That file is larger than 10 MB."
+              : body.error === "unsupported_type"
+                ? "That file type cannot be read. Try PDF, text, Markdown, CSV, JSON, code or an image."
+                : "The file could not be uploaded.",
+          );
+          return;
+        }
+        const attachment = body.attachment;
+        setAttachments((current) => [...current, attachment].slice(-8));
+      } finally {
+        setUploading(false);
+      }
+    },
+    [sessionId],
+  );
+
+  const removeAttachment = useCallback(async (id: string) => {
+    setAttachments((current) => current.filter((item) => item.id !== id));
+    await fetch(`/api/attachments/${id}`, { method: "DELETE" }).catch(
+      () => undefined,
+    );
+  }, []);
+
   const runObjective = useCallback(
     async (value: string, regenerate = false) => {
       const trimmed = value.trim();
@@ -250,6 +295,10 @@ export function ChatHub(props: {
       const controller = new AbortController();
       streamAbort.current = controller;
       try {
+        const attachmentIds = regenerate
+          ? []
+          : attachments.map((attachment) => attachment.id);
+        setAttachments([]);
         const response = await fetch("/api/runtime", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -258,6 +307,7 @@ export function ChatHub(props: {
             requestId,
             sessionId,
             regenerate,
+            ...(attachmentIds.length ? { attachmentIds } : {}),
           }),
           signal: controller.signal,
         });
@@ -322,7 +372,14 @@ export function ChatHub(props: {
         streamAbort.current = null;
       }
     },
-    [applyPacket, running, sessionId, shell.sessions, upsertSession],
+    [
+      applyPacket,
+      attachments,
+      running,
+      sessionId,
+      shell.sessions,
+      upsertSession,
+    ],
   );
 
   const cancel = useCallback(async () => {
@@ -534,6 +591,10 @@ export function ChatHub(props: {
           value={objective}
           onChange={setObjective}
           onSubmit={() => void runObjective(objective)}
+          attachments={attachments}
+          uploading={uploading}
+          onAttach={(file) => void attachFile(file)}
+          onRemoveAttachment={(id) => void removeAttachment(id)}
           onCancel={() => void cancel()}
           onRetry={
             failedObjective

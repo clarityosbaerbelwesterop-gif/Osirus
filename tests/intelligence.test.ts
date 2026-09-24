@@ -819,3 +819,94 @@ describe("research loop under a provider refusal", () => {
     expect(again.waiting).toMatch(/^Provider paused until/);
   });
 });
+
+describe("value of compute and skill evolution", () => {
+  it("recommends a tier only with evidence, and prefers the cheaper of near-equals", async () => {
+    const { estimateTiers, recommendTier, computeHypothesis, skillHypothesis } =
+      await import("../src/lib/intelligence/routing/value-of-compute");
+    const version = (id: string, tier?: "FAST" | "DEEP") =>
+      [
+        id,
+        {
+          id,
+          strategyId: "math.quantitative",
+          kind: "math_science",
+          version: 1,
+          genome: tier ? { computeTier: tier } : {},
+          parentId: null,
+          mutation: { operator: "baseline", rationale: "" },
+          status: "champion",
+          riskClass: "low",
+          model: "m",
+          canaryPercent: 0,
+          metrics: {},
+        },
+      ] as const;
+    const versions = new Map([version("std"), version("deep", "DEEP")]);
+    const row = (versionId: string, verified: boolean) =>
+      ({
+        source: "trial",
+        outcome: verified ? "verified_success" : "failure",
+        capabilityIds: ["math.quantitative"],
+        strategyVersionId: versionId,
+        trajectory: { actions: [{ action: "RESPOND", outcome: "ok" }] },
+      }) as never;
+    // Two DEEP samples are not enough to recommend anything.
+    const thin = estimateTiers(
+      [
+        row("std", false),
+        row("std", false),
+        row("std", true),
+        row("deep", true),
+        row("deep", true),
+      ],
+      versions as never,
+      "math.quantitative",
+    );
+    expect(recommendTier(thin)).toBeNull();
+    const rows = [
+      row("std", false),
+      row("std", false),
+      row("std", true),
+      row("deep", true),
+      row("deep", true),
+      row("deep", true),
+    ];
+    const estimates = estimateTiers(
+      rows,
+      versions as never,
+      "math.quantitative",
+    );
+    expect(recommendTier(estimates)?.tier).toBe("DEEP");
+    const hypothesis = computeHypothesis(estimates, {});
+    expect(hypothesis?.intervention).toEqual({ computeTier: "DEEP" });
+    // Already at the recommended tier: nothing to propose.
+    expect(computeHypothesis(estimates, { computeTier: "DEEP" })).toBeNull();
+
+    const skill = skillHypothesis(
+      [
+        {
+          id: "a",
+          cycleId: null,
+          kind: "skill_candidate",
+          capabilityId: "math.quantitative",
+          taskPattern: null,
+          content: {
+            instruction: "State the final value on its own line.",
+            source: "math v2",
+          },
+          evidence: {},
+          support: 3,
+          status: "active",
+          fingerprint: "x",
+        },
+      ],
+      "math_science",
+      {},
+      () => "math_science",
+    );
+    expect(skill?.intervention.directives).toEqual([
+      "State the final value on its own line.",
+    ]);
+  });
+});

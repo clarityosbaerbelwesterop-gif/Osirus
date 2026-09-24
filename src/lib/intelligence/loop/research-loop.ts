@@ -36,6 +36,11 @@ import {
   seedStrategies,
   strategyForCapability,
 } from "../strategies/genomes";
+import {
+  computeHypothesis,
+  estimateTiers,
+  skillHypothesis,
+} from "../routing/value-of-compute";
 import type { IntelStore } from "../store/store";
 import type {
   CyclePhase,
@@ -666,6 +671,38 @@ async function advance(
       const hypotheses = settings.flags.strategyEvolution
         ? hypothesesFor(arm, gaps, champion!.genome, limit)
         : [];
+      // Evidence-driven proposals take the exploration slot before random
+      // mutation: the value-of-compute estimate, then a verified skill
+      // candidate from an earlier cycle.
+      if (
+        settings.flags.strategyEvolution &&
+        hypotheses.length < (ctx.maxChallengers ?? 2)
+      ) {
+        const versions = new Map(
+          (await store.listVersions()).map((version) => [version.id, version]),
+        );
+        const experience = await store.listExperience({
+          capabilityId: cycle.capabilityId!,
+          limit: 1000,
+        });
+        const compute = computeHypothesis(
+          estimateTiers(experience, versions, cycle.capabilityId!),
+          champion!.genome,
+        );
+        if (compute) hypotheses.push(compute);
+      }
+      if (
+        settings.flags.skillEvolution &&
+        hypotheses.length < (ctx.maxChallengers ?? 2)
+      ) {
+        const skill = skillHypothesis(
+          await store.listArtifacts({ kind: "skill_candidate", limit: 50 }),
+          arm,
+          champion!.genome,
+          armOfCapability,
+        );
+        if (skill) hypotheses.push(skill);
+      }
       if (
         settings.flags.strategyEvolution &&
         hypotheses.length < (ctx.maxChallengers ?? 2)

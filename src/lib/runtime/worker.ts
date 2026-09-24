@@ -228,6 +228,13 @@ export async function executeClaimedStage(input: {
     emitDelta: async (text) => {
       await input.emit?.({ kind: "delta", runId: work.runId, text });
     },
+    attachments: {
+      retrieve: async (query) => {
+        const { retrieveAttachmentChunks } =
+          await import("../attachments/store");
+        return retrieveAttachmentChunks(identity, query);
+      },
+    },
   };
 
   await repository.startIfQueued(work.runId);

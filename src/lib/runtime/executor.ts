@@ -179,6 +179,8 @@ export async function planRuntimeRun(input: {
   composition?: ArmId[];
   /** Foundry trials only: the fixture and hidden checks, server-written. */
   stageInput?: Record<string, unknown>;
+  /** Files sent with the objective; their excerpts are retrieved per stage. */
+  attachments?: Array<{ id: string; kind: string }>;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
   const provider = input.policy?.model
@@ -238,6 +240,20 @@ export async function planRuntimeRun(input: {
           }),
       });
 
+  // Tabular or structured data goes to the math/data arm first, which can
+  // compute over it; everything else keeps the route the objective chose.
+  const data = (input.attachments ?? []).some(
+    (attachment) => attachment.kind === "csv" || attachment.kind === "json",
+  );
+  if (data && !fixed && !decision.composition.includes("math_science")) {
+    decision.composition = [
+      "math_science" as ArmId,
+      ...decision.composition,
+    ].slice(0, 4);
+    decision.primary = "math_science";
+    decision.reason = `${decision.reason} Attached data routed to the math/data arm.`;
+  }
+
   const composed = composeWorkflow({
     objective: input.objective,
     composition: decision.composition,
@@ -268,6 +284,12 @@ export async function planRuntimeRun(input: {
   if (input.stageInput)
     for (const node of composed.graph.nodes)
       node.input = { ...node.input, ...input.stageInput };
+  if (input.attachments?.length)
+    for (const node of composed.graph.nodes)
+      node.input = {
+        ...node.input,
+        attachmentIds: input.attachments.map((attachment) => attachment.id),
+      };
 
   const stageIds = await persistGraph({
     runId: input.runId,
@@ -363,6 +385,7 @@ export async function executeRuntimeRun(input: {
   capabilities: Capability[];
   emit: RuntimeEmit;
   correlationId?: string;
+  attachments?: Array<{ id: string; kind: string }>;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
   const controller = new AbortController();
@@ -402,6 +425,7 @@ export async function executeRuntimeRun(input: {
       objective: input.objective,
       emit: input.emit,
       correlationId: input.correlationId,
+      attachments: input.attachments,
       signal: controller.signal,
     });
 
