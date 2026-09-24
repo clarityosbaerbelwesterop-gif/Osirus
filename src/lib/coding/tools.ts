@@ -3,6 +3,13 @@ import type { ArmId } from "../arms/types";
 import type { ToolDefinition } from "../tools/registry";
 import type { DiscoveredCommand } from "./commands";
 import { analyzeFailure } from "./failure";
+import { NAV_OPERATIONS, runNavigation } from "./navigation";
+import {
+  artifactFromCommandFailure,
+  createReproductionArtifact,
+  reproductionArtifactSchema,
+} from "./reproduction";
+import type { SoftwareWorldModel } from "./software-world-model";
 import type { CodingWorkspace } from "./workspace";
 
 // The repository as tools.
@@ -114,7 +121,13 @@ function tail(text: string, size = 6_000) {
 export function workspaceTools(
   workspace: () => Promise<CodingWorkspace>,
   commands: () => DiscoveredCommand[],
-  onChange?: () => void,
+  onChange?: (changedFiles?: string[]) => void,
+  options?: {
+    worldModel?: () => SoftwareWorldModel | null;
+    onReproduction?: (
+      artifact: ReturnType<typeof createReproductionArtifact>,
+    ) => void;
+  },
 ): ToolDefinition[] {
   const read = (
     definition: Omit<ToolDefinition, "trust" | "effect" | "risk" | "arms">,
@@ -196,7 +209,7 @@ export function workspaceTools(
           content: string;
         };
         await (await workspace()).write(file, content);
-        onChange?.();
+        onChange?.([file]);
         return { path: file, bytes: content.length };
       },
     }),
@@ -223,7 +236,7 @@ export function workspaceTools(
         const result = await (
           await workspace()
         ).replace(file, search, replacement);
-        onChange?.();
+        onChange?.([file]);
         return result;
       },
     }),
@@ -235,7 +248,7 @@ export function workspaceTools(
         inputSchema: z.object({ path }),
         run: async (input) => {
           await (await workspace()).remove((input as { path: string }).path);
-          onChange?.();
+          onChange?.([(input as { path: string }).path]);
           return { deleted: (input as { path: string }).path };
         },
       },
@@ -249,7 +262,7 @@ export function workspaceTools(
       run: async (input) => {
         const { from, to } = input as { from: string; to: string };
         await (await workspace()).rename(from, to);
-        onChange?.();
+        onChange?.([from, to]);
         return { from, to };
       },
     }),
@@ -326,13 +339,30 @@ export function workspaceTools(
             signal: context.signal,
           });
           onChange?.();
+          const analysis = analyzeFailure(record);
+          if (
+            options?.onReproduction &&
+            record.exitCode !== 0 &&
+            (request.commandId === "test" ||
+              /\b(test|vitest|jest|pytest|node --test)\b/i.test(record.command))
+          ) {
+            options.onReproduction(
+              artifactFromCommandFailure({
+                command: record.command,
+                exitCode: record.exitCode,
+                stdout: record.stdout,
+                stderr: record.stderr,
+                failureClass: analysis?.failureClass,
+              }),
+            );
+          }
           return {
             command: record.command,
             exitCode: record.exitCode,
             durationMs: record.durationMs,
             stdout: tail(record.stdout),
             stderr: tail(record.stderr),
-            analysis: analyzeFailure(record),
+            analysis,
           };
         },
       },
@@ -351,6 +381,51 @@ export function workspaceTools(
           .find((record) => record.exitCode !== 0);
         if (!failed) return { failure: null, detail: "No failed command yet." };
         return { command: failed.command, analysis: analyzeFailure(failed) };
+      },
+    }),
+    read({
+      id: "workspace.navigate",
+      title: "Semantic navigation",
+      summary:
+        "Targeted navigation: find_definition, find_references, symbol_search, import_graph, call_relationships, test_mapping, route_mapping, schema_mapping, git_blame.",
+      inputSchema: z.object({
+        op: z.enum(NAV_OPERATIONS as [string, ...string[]]),
+        symbol: z.string().max(120).optional(),
+        path: path.optional(),
+        line: z.number().int().min(1).max(100_000).optional(),
+        limit: z.number().int().min(1).max(50).optional(),
+      }),
+      run: async (input) => {
+        const model = options?.worldModel?.();
+        if (!model)
+          return {
+            op: (input as { op: string }).op,
+            query: "",
+            matches: [],
+            truncated: false,
+            note: "Software world model not built yet.",
+          };
+        return runNavigation(model, await workspace(), input as {
+          op: import("./navigation").NavOperation;
+          symbol?: string;
+          path?: string;
+          line?: number;
+          limit?: number;
+        });
+      },
+    }),
+    write({
+      id: "workspace.reproduce",
+      title: "Record reproduction",
+      summary:
+        "Record a ReproductionArtifact after reproducing a bug (command, expected, actual, status, evidence paths).",
+      inputSchema: reproductionArtifactSchema,
+      run: async (input) => {
+        const artifact = createReproductionArtifact(
+          reproductionArtifactSchema.parse(input),
+        );
+        options?.onReproduction?.(artifact);
+        return { recorded: true, artifact };
       },
     }),
   ];
