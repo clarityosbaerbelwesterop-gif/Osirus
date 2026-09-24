@@ -48,11 +48,47 @@ export function budgetChargeForAttempt(input: {
   settledAttemptIds: readonly string[];
   attemptId: string;
   pending: PendingBudget;
-}): PendingBudget & { alreadySettled: boolean } {
+  attempts?: number;
+}): PendingBudget & { attempts: number; alreadySettled: boolean } {
   if (input.settledAttemptIds.includes(input.attemptId)) {
-    return { modelCalls: 0, toolCalls: 0, alreadySettled: true };
+    return { modelCalls: 0, toolCalls: 0, attempts: 0, alreadySettled: true };
   }
-  return { ...input.pending, alreadySettled: false };
+  return {
+    ...input.pending,
+    attempts: nonNegativeInt(input.attempts ?? 0),
+    alreadySettled: false,
+  };
+}
+
+/**
+ * Run-budget attempts this settled outcome spends.
+ *
+ * A waiting stage is parked outside the engine, and a terminal failure
+ * already ends the slice, so neither spends an attempt. Every other settled
+ * outcome spends one. The checkpoint records it; a replay of that attempt
+ * records zero.
+ */
+export function runBudgetAttempts(outcome: StageOutcome): number {
+  if (outcome.kind === "WAITING") return 0;
+  if (outcome.kind === "FAILED" && !outcome.retryable) return 0;
+  return 1;
+}
+
+/**
+ * Whether the slice should stop because the checkpoint's charge crossed a
+ * ceiling.
+ *
+ * The check sits where the separate attempt counter used to sit: after a
+ * waiting stage (the slice keeps going) and after a terminal failure (the
+ * slice is already stopping). A charge that did not commit reports nothing.
+ */
+export function budgetStopReason(
+  outcome: StageOutcome,
+  budget: { exhausted: boolean; reason: string | null } | null,
+): string | null {
+  if (!budget?.exhausted) return null;
+  if (runBudgetAttempts(outcome) === 0) return null;
+  return budget.reason ?? "budget";
 }
 
 /**

@@ -233,14 +233,17 @@ export async function consumeBudget(input: {
 export type CheckpointCharge = BudgetOutcome & {
   chargedModelCalls: number;
   chargedToolCalls: number;
+  chargedAttempts: number;
 };
 
 /**
- * Persist a stage checkpoint and consume its model/tool delta together.
+ * Persist a stage checkpoint and consume its model, tool and attempt delta
+ * together.
  *
  * `osirus.checkpoint_stage_budget` inserts the settlement row, the checkpoint
- * and the budget update in one function, so a crash rolls all three back. The
- * attempt id is the idempotency key: replaying a commit charges nothing.
+ * and the budget update in one function, so a crash rolls all of them back.
+ * The attempt id is the idempotency key: replaying a commit charges nothing,
+ * including the run-budget attempt.
  */
 export async function checkpointStageBudget(input: {
   runId: string;
@@ -250,6 +253,7 @@ export async function checkpointStageBudget(input: {
   state: Record<string, unknown>;
   modelCalls: number;
   toolCalls: number;
+  attempts?: number;
 }): Promise<CheckpointCharge> {
   const rows = await querySystem<{
     version: number;
@@ -257,10 +261,12 @@ export async function checkpointStageBudget(input: {
     reason: string | null;
     charged_model_calls: number;
     charged_tool_calls: number;
+    charged_attempts: number;
   }>(
-    `select version, exhausted, reason, charged_model_calls, charged_tool_calls
+    `select version, exhausted, reason,
+            charged_model_calls, charged_tool_calls, charged_attempts
        from osirus.checkpoint_stage_budget(
-         $1::uuid, $2::uuid, $3::uuid, $4, $5::jsonb, $6, $7
+         $1::uuid, $2::uuid, $3::uuid, $4, $5::jsonb, $6, $7, $8
        )`,
     [
       input.runId,
@@ -270,6 +276,7 @@ export async function checkpointStageBudget(input: {
       JSON.stringify(input.state),
       input.modelCalls,
       input.toolCalls,
+      input.attempts ?? 0,
     ],
   );
   const row = rows[0];
@@ -279,6 +286,7 @@ export async function checkpointStageBudget(input: {
     reason: row.reason ?? null,
     chargedModelCalls: Number(row.charged_model_calls ?? 0),
     chargedToolCalls: Number(row.charged_tool_calls ?? 0),
+    chargedAttempts: Number(row.charged_attempts ?? 0),
   };
 }
 

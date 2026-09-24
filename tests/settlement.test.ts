@@ -4,7 +4,9 @@ import { describe, expect, it } from "vitest";
 import { sliceBudgetDelta } from "../src/lib/agent/loop";
 import {
   budgetChargeForAttempt,
+  budgetStopReason,
   pendingBudgetOf,
+  runBudgetAttempts,
   settlementFor,
 } from "../src/lib/runtime/settlement";
 import { canTransitionStage } from "../src/lib/runtime/state-machine";
@@ -138,10 +140,12 @@ describe("checkpoint budget charge", () => {
       settledAttemptIds: [],
       attemptId: "attempt-a",
       pending,
+      attempts: 1,
     });
     expect(first).toEqual({
       modelCalls: 3,
       toolCalls: 1,
+      attempts: 1,
       alreadySettled: false,
     });
 
@@ -149,10 +153,12 @@ describe("checkpoint budget charge", () => {
       settledAttemptIds: ["attempt-a"],
       attemptId: "attempt-a",
       pending,
+      attempts: 1,
     });
     expect(replay).toEqual({
       modelCalls: 0,
       toolCalls: 0,
+      attempts: 0,
       alreadySettled: true,
     });
 
@@ -165,12 +171,80 @@ describe("checkpoint budget charge", () => {
         modelCalls: 6,
         toolCalls: 2,
       }),
+      attempts: 1,
     });
     expect(next).toEqual({
       modelCalls: 1,
       toolCalls: 0,
+      attempts: 1,
       alreadySettled: false,
     });
+  });
+
+  it("spends one run-budget attempt except when the slice is not continuing", () => {
+    expect(runBudgetAttempts({ kind: "COMPLETE", output: {} })).toBe(1);
+    expect(
+      runBudgetAttempts({ kind: "PROGRESS", output: {}, resume: {} }),
+    ).toBe(1);
+    expect(
+      runBudgetAttempts({
+        kind: "BLOCKED",
+        reason: "rate",
+        retryAfterSeconds: 1,
+      }),
+    ).toBe(1);
+    expect(
+      runBudgetAttempts({
+        kind: "FAILED",
+        failureClass: "x",
+        error: "x",
+        retryable: true,
+      }),
+    ).toBe(1);
+    expect(
+      runBudgetAttempts({ kind: "WAITING", reason: "approval", output: {} }),
+    ).toBe(0);
+    expect(
+      runBudgetAttempts({
+        kind: "FAILED",
+        failureClass: "x",
+        error: "x",
+        retryable: false,
+      }),
+    ).toBe(0);
+  });
+
+  it("stops the slice on the checkpoint's ceiling, not a later counter", () => {
+    const complete = { kind: "COMPLETE" as const, output: {} };
+    expect(
+      budgetStopReason(complete, { exhausted: true, reason: "attempts" }),
+    ).toBe("attempts");
+    expect(budgetStopReason(complete, { exhausted: true, reason: null })).toBe(
+      "budget",
+    );
+    expect(
+      budgetStopReason(complete, { exhausted: false, reason: null }),
+    ).toBeNull();
+    expect(budgetStopReason(complete, null)).toBeNull();
+    // A waiting stage and a terminal failure do not consult the ceiling.
+    // That is the same place the old post-checkpoint counter used to sit.
+    expect(
+      budgetStopReason(
+        { kind: "WAITING", reason: "approval", output: {} },
+        { exhausted: true, reason: "attempts" },
+      ),
+    ).toBeNull();
+    expect(
+      budgetStopReason(
+        {
+          kind: "FAILED",
+          failureClass: "x",
+          error: "x",
+          retryable: false,
+        },
+        { exhausted: true, reason: "model_calls" },
+      ),
+    ).toBeNull();
   });
 
   it("commits the slice charge with the checkpoint, after the lease still holds", () => {
@@ -193,10 +267,20 @@ describe("checkpoint budget charge", () => {
     // The pending delta is an argument, not a durable key the next slice
     // could charge a second time.
     expect(execute).toContain("pendingBudgetOf(state)");
+    expect(execute).toContain("attempts: runBudgetAttempts(outcome)");
     expect(execute).toContain("state: durableState(state)");
     expect(worker).not.toContain('"pendingBudget"');
     expect(execute).not.toContain("consumeBudget");
     expect(execute).not.toContain("saveCheckpoint");
+
+    const drive = worker.slice(
+      worker.indexOf("export async function driveSlices"),
+      worker.indexOf("export type RunCompletion"),
+    );
+    // The attempt used to be a second consume_budget after the checkpoint
+    // had committed. A crash there under-counted one attempt.
+    expect(drive).not.toContain("consumeBudget");
+    expect(drive).toContain("budgetStopReason(outcome, budget)");
 
     const arm = readFileSync(
       join(process.cwd(), "src", "lib", "arms", "base.ts"),
@@ -245,6 +329,17 @@ describe("scheduler tick authorization", () => {
     for (const leak of ["objective", "answer", "workspaceId", "userId"]) {
       expect(response, leak).not.toContain(leak);
     }
+  });
+
+  it("stops when the probe's checkpoint already crossed a ceiling", () => {
+    // The probe is settled before driveSlices. Its attempt is charged with
+    // that checkpoint, so the tick must not claim another stage afterwards.
+    const probe = route.indexOf("const probeStop = budgetStopReason(");
+    const drive = route.indexOf("const slice = await driveSlices(");
+    expect(probe).toBeGreaterThan(-1);
+    expect(probe).toBeLessThan(drive);
+    expect(route).toContain("exhausted: probeStop");
+    expect(route).not.toContain("consumeBudget");
   });
 
   it("executes each stage as the run's owner, not as the caller", () => {
