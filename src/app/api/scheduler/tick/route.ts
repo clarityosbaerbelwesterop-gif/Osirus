@@ -135,6 +135,13 @@ async function tick(request: Request) {
     owner: workerId,
     signal: controller.signal,
   }).catch(() => null);
+
+  const { runCapabilityPulseTick } =
+    await import("@/lib/agent/pulse/scheduler");
+  const pulse = await runCapabilityPulseTick({
+    owner: workerId,
+    signal: controller.signal,
+  }).catch(() => null);
   const touched = new Map<
     string,
     { userId: string; organizationId: string; workspaceId: string }
@@ -213,8 +220,9 @@ async function tick(request: Request) {
   // stage parked on a provider refusal, say) ends the chain; the daily cron
   // starts the next one.
   const chained =
-    Boolean(foundry?.continueChain) &&
-    (claimed > 0 || (foundry?.step?.progressed ?? 0) > 0);
+    (Boolean(foundry?.continueChain) &&
+      (claimed > 0 || (foundry?.step?.progressed ?? 0) > 0)) ||
+    Boolean(pulse?.continueChain);
   if (chained)
     after(async () => {
       const { chargeChainedTick } =
@@ -244,6 +252,23 @@ async function tick(request: Request) {
             chained,
           }
         : { ran: false, phase: null, waiting: "error", chained: false },
+      pulse: pulse
+        ? {
+            ran: pulse.ran,
+            cycleId: pulse.cycleId,
+            tasksRun: pulse.tasksRun,
+            completedCycle: pulse.completedCycle,
+            waiting: pulse.reason,
+            chained: pulse.continueChain,
+          }
+        : {
+            ran: false,
+            cycleId: null,
+            tasksRun: 0,
+            completedCycle: false,
+            waiting: "error",
+            chained: false,
+          },
     },
     { headers: { "Cache-Control": "no-store" } },
   );

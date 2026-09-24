@@ -22,9 +22,19 @@ Multi-step deliberation with M30 hypothesis states, finish gating when TaskKerne
 
 ## M34 — Hourly Capability Pulse / RSI Watchdog
 
-DEFERRED. Awaiting the rest of the brief.
+Implemented in M34. See `docs/m34-capability-pulse-rsi.md`.
 
+<<<<<<< HEAD
 `src/lib/agent/baseline.ts` is a one-shot offline measurement. It is not scheduled, not hourly, and not a pulse over live providers. M34 owns the hourly evaluator and RSI watchdog.
+=======
+`src/lib/agent/baseline.ts` remains the offline M30 measurement. The hourly pulse reuses those fixtures through `src/lib/agent/pulse/` and the existing scheduler tick.
+
+## M34 — RSI Watchdog
+
+Implemented. See `docs/m34-capability-pulse-rsi.md`.
+
+The watchdog runs in-loop on production agent slices and feeds regressions into experience. It does not replace the agent loop and does not add a second runtime.
+>>>>>>> 564bdb2 (feat: M34 capability pulse and in-loop RSI watchdog)
 
 ## Explicitly not in this PR
 

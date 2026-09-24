@@ -707,6 +707,11 @@ export abstract class BaseArm implements AgentArm {
       delete resumeState.agentApprovalId;
     }
 
+    const { laneForArm } = await import("../agent/pulse/lanes");
+    const { withRsiWatchdogHooks, afterAgentLoop } =
+      await import("../agent/watchdog/hooks");
+    const pulseLane = laneForArm(this.id);
+
     const result = await runAgentLoop({
       objective: work.objective,
       directives: [
@@ -777,7 +782,10 @@ export abstract class BaseArm implements AgentArm {
         })),
       },
       signal,
-      hooks: {
+      hooks: withRsiWatchdogHooks({
+        lane: pulseLane,
+        runId: work.runId,
+        hooks: {
         replan: async (reason) => {
           try {
             return {
@@ -868,7 +876,14 @@ export abstract class BaseArm implements AgentArm {
           }),
         }),
       },
+      }),
     });
+
+    await afterAgentLoop({
+      lane: pulseLane,
+      result,
+      runId: work.runId,
+    }).catch(() => undefined);
 
     // Record only the calls this slice added. The loop state keeps the
     // cumulative totals so the next slice can resume; charging those totals
