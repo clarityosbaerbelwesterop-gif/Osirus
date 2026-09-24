@@ -177,6 +177,7 @@ export const REPLAN_TRIGGERS = [
   "tool_unavailable",
   "assumption_contradicted",
   "repeated_failure",
+  "repeated_diagnostic",
   "repository_mismatch",
   "budget_risk",
   "scope_change",
@@ -186,13 +187,25 @@ export const REPLAN_TRIGGERS = [
 ] as const;
 export type ReplanTrigger = (typeof REPLAN_TRIGGERS)[number];
 
+/** A successful lookup that would teach nothing if repeated on the same evidence. */
+function diagnosticSignature(step: AgentStep): string | null {
+  const diagnostic =
+    step.action === "RETRIEVE_MEMORY" ||
+    step.action === "VERIFY" ||
+    step.action === "USE_TOOL";
+  if (!diagnostic || step.outcome !== "ok") return null;
+  const refs = [...(step.evidenceRefs ?? [])].sort().join("|");
+  return `${step.action}:${step.toolId ?? ""}:${refs || step.summary}`;
+}
+
 /**
  * Read the loop's own record for a reason to replan.
  *
  * Returns the first trigger that applies, or null. The agent can also ask to
  * replan itself (REPLAN); this catches the cases where it should have and did
- * not -- the same tool failing twice running, a tool that does not exist
- * here, most of the budget gone with the plan unfinished.
+ * not -- the same tool failing twice running, the same diagnostic action
+ * succeeding twice on the same evidence, a tool that does not exist here,
+ * most of the budget gone with the plan unfinished.
  */
 export function detectReplanTrigger(input: {
   steps: AgentStep[];
@@ -219,6 +232,20 @@ export function detectReplanTrigger(input: {
     return {
       trigger: "repeated_failure",
       detail: `${lastTwo[0]!.toolId} failed twice in a row.`,
+    };
+  const diagnosticCounts = new Map<string, number>();
+  for (const step of input.steps.slice(-4)) {
+    const key = diagnosticSignature(step);
+    if (!key) continue;
+    diagnosticCounts.set(key, (diagnosticCounts.get(key) ?? 0) + 1);
+  }
+  const repeatedDiagnostic = [...diagnosticCounts.entries()].find(
+    ([, count]) => count >= 2,
+  );
+  if (repeatedDiagnostic)
+    return {
+      trigger: "repeated_diagnostic",
+      detail: `Repeated diagnostic action (${repeatedDiagnostic[0]}). The same observation is not new evidence.`,
     };
   if (
     input.planNodesTotal &&

@@ -22,6 +22,7 @@ import {
 } from "../governor/governor";
 import { compileExperience } from "../learning/compiler";
 import { registerModels, updateModelCompetition } from "../models/registry";
+import { attemptTraining, trainingProvider } from "../models/training";
 import { crownChampion, transition } from "../promotion/promotion";
 import {
   bugGeneratorRound,
@@ -29,6 +30,7 @@ import {
   redRound,
 } from "../generation/self-play";
 import {
+  architectureComparison,
   buildChallengers,
   describeGenome,
   exploratoryMutation,
@@ -894,6 +896,16 @@ async function advance(
       const winner = decision.winnerVersionId
         ? await store.getVersion(decision.winnerVersionId)
         : null;
+      const compared =
+        winner ??
+        (experiment!.challengerVersionIds[0]
+          ? await store.getVersion(experiment!.challengerVersionIds[0])
+          : null);
+      if (champion && compared)
+        cycle.summary.architecture = architectureComparison(
+          champion.genome,
+          compared.genome,
+        );
       const regressions = decision.comparisons.filter(
         (entry) =>
           entry.versionId === decision.winnerVersionId &&
@@ -902,6 +914,10 @@ async function advance(
       cycle.summary.whyImproved = winner
         ? {
             changed: `${describeGenome(champion!.genome)} → ${describeGenome(winner.genome)}`,
+            architecture: architectureComparison(
+              champion!.genome,
+              winner.genome,
+            ),
             capability: cycle.capabilityId,
             evaluation: decision.comparisons
               .filter((entry) => entry.versionId === winner.id)
@@ -979,6 +995,7 @@ async function advance(
         })
       ).filter((row) => row.taskRef && tasks.has(row.taskRef));
       const notes: string[] = [];
+      let datasetVersionId: string | null = null;
       if (settings.flags.compilation && experiment) {
         const champion = versions.get(experiment.championVersionId)!;
         const artifacts = await compileExperience(store, {
@@ -1002,6 +1019,8 @@ async function advance(
         notes.push(
           `datasets: ${datasets.map((set) => `${set.datasetId}${set.version ? ` v${set.version}` : " (empty)"}`).join(", ")}`,
         );
+        datasetVersionId =
+          datasets.find((set) => set.versionId)?.versionId ?? null;
         const championTrials = trials.filter(
           (trial) =>
             trial.strategyVersionId === experiment.championVersionId &&
@@ -1049,6 +1068,22 @@ async function advance(
           });
           notes.push(
             `self-play (problem generator): ${round.verified} new problems`,
+          );
+        }
+      }
+      if (settings.flags.training) {
+        if (!datasetVersionId) {
+          notes.push("training skipped: no verified dataset version");
+        } else {
+          const report = await attemptTraining({
+            store,
+            provider: trainingProvider(),
+            type: "sft",
+            baseModel: settings.foundryModel,
+            datasetVersionId,
+          });
+          notes.push(
+            `training: ${report.trained ? "candidate recorded" : "not trained"} (${report.run.status})`,
           );
         }
       }

@@ -1,3 +1,4 @@
+import type { TrainingJobType } from "../models/training";
 import type {
   AgendaItem,
   Capability,
@@ -14,6 +15,7 @@ import type {
   StrategyVersion,
   Trial,
 } from "../types";
+import type { HoldoutSignal } from "../datasets/verify";
 
 // Where the Intelligence Plane keeps what it knows. Two implementations: the
 // Postgres store (osirus_intel, production) and the memory store (tests and
@@ -55,6 +57,42 @@ export type ModelRecord = {
   contextTokens: number | null;
   free: boolean;
   status: "listed" | "candidate" | "available" | "unavailable" | "retired";
+};
+
+export type TrainingRunStatus =
+  "queued" | "running" | "succeeded" | "failed" | "cancelled";
+
+/** A row of osirus_intel.training_runs. Status is what the provider did. */
+export type TrainingRunRecord = {
+  id: string;
+  provider: string;
+  jobType: TrainingJobType;
+  baseModel: string;
+  datasetVersionId: string | null;
+  status: TrainingRunStatus;
+  config: Record<string, unknown>;
+  artifacts: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/**
+ * A row of osirus_intel.model_candidates.
+ * `candidate` is the only status an insert may write. `evaluating` and
+ * `champion` require a succeeded training run; there is no status that means
+ * "trained" on its own.
+ */
+export type ModelCandidateStatus =
+  "candidate" | "evaluating" | "champion" | "rejected";
+
+export type ModelCandidateRecord = {
+  id: string;
+  baseModel: string;
+  trainingRunId: string | null;
+  lineage: Record<string, unknown>;
+  status: ModelCandidateStatus;
+  evaluation: Record<string, unknown>;
+  createdAt: string;
 };
 
 export type ModelStat = {
@@ -239,6 +277,35 @@ export interface IntelStore {
   datasetFingerprints(
     partition: DatasetExample["partition"],
   ): Promise<Set<string>>;
+  /** Fingerprint and objective simhash of every stored holdout example. */
+  datasetHoldoutSignals(): Promise<HoldoutSignal[]>;
+
+  insertTrainingRun(
+    run: Omit<TrainingRunRecord, "id" | "createdAt" | "updatedAt">,
+  ): Promise<TrainingRunRecord>;
+  updateTrainingRun(
+    id: string,
+    patch: Partial<Pick<TrainingRunRecord, "status" | "config" | "artifacts">>,
+  ): Promise<void>;
+  getTrainingRun(id: string): Promise<TrainingRunRecord | null>;
+  /**
+   * Inserts a candidate at status `candidate`. Refuses unless `trainingRunId`
+   * points at a succeeded run.
+   */
+  insertModelCandidate(input: {
+    baseModel: string;
+    trainingRunId: string;
+    lineage: Record<string, unknown>;
+    evaluation?: Record<string, unknown>;
+  }): Promise<ModelCandidateRecord>;
+  updateModelCandidate(
+    id: string,
+    patch: Partial<
+      Pick<ModelCandidateRecord, "status" | "evaluation" | "lineage">
+    >,
+  ): Promise<ModelCandidateRecord>;
+  getModelCandidate(id: string): Promise<ModelCandidateRecord | null>;
+  listModelCandidates(limit?: number): Promise<ModelCandidateRecord[]>;
 
   upsertModel(model: ModelRecord): Promise<void>;
   listModels(): Promise<ModelRecord[]>;

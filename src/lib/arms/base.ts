@@ -570,7 +570,8 @@ export abstract class BaseArm implements AgentArm {
       capabilities: [this.primaryCapability()],
       analysis: context.state.analysis as RoutingInput["analysis"],
     };
-    const { runAgentLoop, DEFAULT_BOUNDS } = await import("../agent/loop");
+    const { runAgentLoop, DEFAULT_BOUNDS, sliceBudgetDelta } =
+      await import("../agent/loop");
     const policy = policyOfStage(work.stageInput);
     const bounds = boundsUnder(policy, this.loopBounds(), DEFAULT_BOUNDS);
     const policyContext = await this.policyContext(context, policy);
@@ -634,8 +635,9 @@ export abstract class BaseArm implements AgentArm {
       "planGraph",
       null,
     );
-    let autoReplans = 0;
-    let replannedAtStep = 0;
+    const taskModel = readState<{
+      assumptions?: Array<{ statement: string }>;
+    } | null>(context, "taskModel", null);
     const replan = async (
       trigger: import("../agent/plan").ReplanTrigger,
       reason: string,
@@ -672,6 +674,8 @@ export abstract class BaseArm implements AgentArm {
     const resumeState = context.state.loopState as
       | (import("../agent/loop").LoopState & { agentApprovalId?: string })
       | undefined;
+    const priorModelCalls = resumeState?.modelCalls ?? 0;
+    const priorToolCalls = resumeState?.toolCalls ?? 0;
     if (resumeState?.agentApprovalId) {
       const decision = await runtime.repository
         .approvalStatus(resumeState.agentApprovalId)
@@ -722,6 +726,11 @@ export abstract class BaseArm implements AgentArm {
       bounds,
       resume: context.state.loopState as
         import("../agent/loop").LoopState | undefined,
+      hypotheses: (taskModel?.assumptions ?? [])
+        .map((assumption) => assumption.statement)
+        .filter((statement) => statement.length > 0)
+        .slice(0, 8)
+        .map((statement) => ({ statement })),
       signal,
       hooks: {
         replan: async (reason) => {
@@ -736,17 +745,31 @@ export abstract class BaseArm implements AgentArm {
           }
         },
         checkpoint: async (state) => {
+          const kernel = state.kernel;
+          const autoReplans = kernel?.autoReplans ?? 0;
+          const replannedAtStep = kernel?.replannedAtStep ?? 0;
           if (autoReplans >= 2) return null;
           // Only steps since the last automatic replan count, so one failure
-          // does not trigger the same replan twice.
+          // does not trigger the same replan twice. The cursor is on the
+          // kernel, which is part of the checkpointed loop state.
           const found = detectReplanTrigger({
             steps: state.steps.slice(replannedAtStep),
             budgetUsed:
               state.modelCalls / Math.max(1, bounds.maxModelCalls ?? 14),
+            planNodesTotal: planGraph?.nodes.length,
           });
           if (!found) return null;
-          autoReplans += 1;
-          replannedAtStep = state.steps.length;
+          if (kernel) {
+            kernel.autoReplans += 1;
+            kernel.replannedAtStep = state.steps.length;
+            kernel.hypotheses.push({
+              id: `obs-${state.steps.length}`,
+              statement: found.detail.slice(0, 400),
+              status: "open",
+              evidenceRefs: kernel.evidenceRefs.slice(-4),
+            });
+            kernel.hypotheses = kernel.hypotheses.slice(-8);
+          }
           return replan(found.trigger, found.detail, state.steps).catch(
             () => null,
           );
@@ -799,12 +822,20 @@ export abstract class BaseArm implements AgentArm {
       },
     });
 
-    // Whatever the loop spent is charged to the run, win or lose.
+    // Charge only the calls this slice added. The loop state keeps the
+    // cumulative totals so the next slice can resume; charging those totals
+    // again would double-count model and tool budget.
+    const delta = sliceBudgetDelta({
+      priorModelCalls,
+      priorToolCalls,
+      modelCalls: result.state.modelCalls,
+      toolCalls: result.state.toolCalls,
+    });
     await consumeBudget({
       runId: work.runId,
       scope: "run",
-      modelCalls: result.state.modelCalls,
-      toolCalls: result.state.toolCalls,
+      modelCalls: delta.modelCalls,
+      toolCalls: delta.toolCalls,
     }).catch(() => undefined);
 
     context.state.toolEvidence = [
@@ -877,7 +908,8 @@ export abstract class BaseArm implements AgentArm {
     if (!answer && result.status === "exhausted") {
       // Out of budget without finishing. One last bounded call turns what the
       // observations support into an answer that says what is incomplete,
-      // instead of returning nothing for all the work already done.
+      // instead of returning nothing for all the work already done. It is a
+      // model call the loop counter did not include, so it is charged on its own.
       try {
         const final = await decide({
           system: [
@@ -892,6 +924,12 @@ export abstract class BaseArm implements AgentArm {
         answer = final.answer?.trim() || null;
       } catch {
         answer = null;
+      } finally {
+        await consumeBudget({
+          runId: work.runId,
+          scope: "run",
+          modelCalls: 1,
+        }).catch(() => undefined);
       }
     }
     if (!answer) {
