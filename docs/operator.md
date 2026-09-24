@@ -120,12 +120,12 @@ When the provider refuses a call:
 
 Default budgets are in `osirus_intel.settings`. Change them in the lab or with SQL:
 
-| Budget | Default | Why |
-|---|---|---|
-| `dailyModelCalls` | 90 | Under the free pool's observed limit |
-| `dailyChainedTicks` | 36 | Each tick holds a function for up to 300 s |
-| `dailySandboxMinutes` | 180 | |
-| `parallelTrials` | 1 | The rate limit is per account |
+| Budget                | Default | Why                                        |
+| --------------------- | ------- | ------------------------------------------ |
+| `dailyModelCalls`     | 90      | Under the free pool's observed limit       |
+| `dailyChainedTicks`   | 36      | Each tick holds a function for up to 300 s |
+| `dailySandboxMinutes` | 180     |                                            |
+| `parallelTrials`      | 1       | The rate limit is per account              |
 
 At these budgets a coding cycle (~250–300 calls) takes about three days and a math cycle about one day. Both are durable across days.
 
@@ -146,12 +146,12 @@ While the product model has no credit, no candidate can be verified on it, so no
 
 ## Connections and events
 
-| Connection | What it grants | How it is stored |
-|---|---|---|
-| GitHub | Clone; optional push and PR, each behind an approval | Sealed token, grants in `connector_grants` |
-| Vercel, Neon, Supabase | Read-only listing tools | Sealed token, verified live on connect; health recorded |
-| MCP servers | Tools reviewed one by one; every call asks | Sealed bearer token; the Registry search offers https Streamable HTTP remotes only |
-| Webhooks | Start automations | Sealed signing secret, shown once |
+| Connection             | What it grants                                       | How it is stored                                                                   |
+| ---------------------- | ---------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| GitHub                 | Clone; optional push and PR, each behind an approval | Sealed token, grants in `connector_grants`                                         |
+| Vercel, Neon, Supabase | Read-only listing tools                              | Sealed token, verified live on connect; health recorded                            |
+| MCP servers            | Tools reviewed one by one; every call asks           | Sealed bearer token; the Registry search offers https Streamable HTTP remotes only |
+| Webhooks               | Start automations                                    | Sealed signing secret, shown once                                                  |
 
 Webhook receivers live at `/api/hooks/<endpoint id>`.
 
@@ -183,17 +183,17 @@ Building QA and the `computer.inspect` tool drive Chromium inside the sandbox VM
 
 `.github/workflows/foundry.yml` runs on a push whose commit message contains:
 
-| Marker | What runs |
-|---|---|
-| `[run-foundry]` | Real Foundry cycles on the free model. Math first, then coding. Store snapshot, log and report are uploaded as artifacts. |
-| `[run-computer]` | The live computer-arm check. |
+| Marker           | What runs                                                                                                                 |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `[run-foundry]`  | Real Foundry cycles on the free model. Math first, then coding. Store snapshot, log and report are uploaded as artifacts. |
+| `[run-computer]` | The live computer-arm check.                                                                                              |
 
 ## Troubleshooting
 
-| Symptom | Where to look |
-|---|---|
-| Lab says "Provider paused until …" | The free pool refused. Wait for the time shown, or clear the pause in the lab after checking the provider. |
-| No cycle advances | Check `osirus_intel.settings.flags.intelligencePlane`, an operator row, and today's `resource_ledger`. |
-| A trial run stays open | It is probably parked on a provider refusal. Runs open longer than 30 h are judged as timed out and stopped. |
-| Tick returns `foundry.waiting: "error"` | The Foundry step threw. The product part of the tick still ran. Check the function logs for the tick. |
-| Webhook returns 401 | Wrong secret, a stale timestamp (generic), or the endpoint was deleted. The two cases get the same answer on purpose. |
+| Symptom                                 | Where to look                                                                                                         |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Lab says "Provider paused until …"      | The free pool refused. Wait for the time shown, or clear the pause in the lab after checking the provider.            |
+| No cycle advances                       | Check `osirus_intel.settings.flags.intelligencePlane`, an operator row, and today's `resource_ledger`.                |
+| A trial run stays open                  | It is probably parked on a provider refusal. Runs open longer than 30 h are judged as timed out and stopped.          |
+| Tick returns `foundry.waiting: "error"` | The Foundry step threw. The product part of the tick still ran. Check the function logs for the tick.                 |
+| Webhook returns 401                     | Wrong secret, a stale timestamp (generic), or the endpoint was deleted. The two cases get the same answer on purpose. |
