@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { describe, expect, it } from "vitest";
 import type { AgentDecision } from "../src/lib/agent/decision";
-import { runAgentLoop, type Decider } from "../src/lib/agent/loop";
+import {
+  runAgentLoop,
+  sliceBudgetDelta,
+  type Decider,
+} from "../src/lib/agent/loop";
 import { ToolRegistry, type ToolContext } from "../src/lib/tools/registry";
 
 const context: ToolContext = {
@@ -415,5 +419,79 @@ describe("agent loop", () => {
     expect(prompts).toHaveLength(2);
     expect(result.status).toBe("finished");
     expect(result.refusal).toBeUndefined();
+  });
+
+  it("carries hypotheses and cited evidence across a resume", async () => {
+    const first = scripted([
+      {
+        action: "USE_TOOL",
+        summary: "Look up the capital",
+        toolId: "kb.lookup",
+        toolInput: { key: "capital-of-france" },
+      },
+      {
+        action: "VERIFY",
+        summary: "Check the lookup",
+        answer: "Paris",
+      },
+      { action: "YIELD", summary: "Pause", answer: "Paris" },
+    ]);
+    const parked = await runAgentLoop({
+      objective: "What is the capital of France?",
+      directives: [],
+      context: [],
+      tools: registry(),
+      toolContext: context,
+      decide: first.decide,
+      hypotheses: [{ statement: "The capital is a city." }],
+      hooks: {
+        verify: async () => ({ status: "verified", summary: "matches doc-1" }),
+      },
+    });
+    expect(parked.status).toBe("yielded");
+    expect(parked.state.kernel?.evidenceRefs).toEqual(["doc-1"]);
+    expect(parked.state.kernel?.hypotheses[0]).toMatchObject({
+      statement: "The capital is a city.",
+      status: "supported",
+    });
+    const second = scripted([
+      { action: "FINISH", summary: "Answer", answer: "Paris." },
+    ]);
+    const resumed = await runAgentLoop({
+      objective: "What is the capital of France?",
+      directives: [],
+      context: [],
+      tools: registry(),
+      toolContext: context,
+      decide: second.decide,
+      resume: parked.state,
+      hypotheses: [{ statement: "This must not replace the checkpoint." }],
+    });
+    expect(resumed.status).toBe("finished");
+    expect(resumed.state.kernel?.hypotheses[0]?.statement).toBe(
+      "The capital is a city.",
+    );
+    expect(resumed.state.kernel?.evidenceRefs).toEqual(["doc-1"]);
+    expect(second.prompts[0]!.user).toContain("doc-1");
+  });
+
+  it("charges a resumed slice only for the calls it adds", () => {
+    expect(
+      sliceBudgetDelta({
+        priorModelCalls: 0,
+        priorToolCalls: 0,
+        modelCalls: 3,
+        toolCalls: 2,
+      }),
+    ).toEqual({ modelCalls: 3, toolCalls: 2 });
+    expect(
+      sliceBudgetDelta({
+        priorModelCalls: 3,
+        priorToolCalls: 2,
+        modelCalls: 4,
+        toolCalls: 2,
+        extraModelCalls: 1,
+      }),
+    ).toEqual({ modelCalls: 2, toolCalls: 0 });
   });
 });

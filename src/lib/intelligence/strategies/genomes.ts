@@ -362,6 +362,23 @@ export async function buildChallengers(
   return out;
 }
 
+/** The worker topology a genome actually runs. Knobs are not an architecture. */
+export type AgentArchitecture = "single_worker" | "solver_critic";
+
+export function architectureOf(genome: StrategyGenome): AgentArchitecture {
+  return genome.team?.critic ? "solver_critic" : "single_worker";
+}
+
+/** Whether a challenger changes the worker topology, not only a policy knob. */
+export function architectureComparison(
+  champion: StrategyGenome,
+  challenger: StrategyGenome,
+) {
+  const from = architectureOf(champion);
+  const to = architectureOf(challenger);
+  return { champion: from, challenger: to, changed: from !== to };
+}
+
 export function describeGenome(genome: StrategyGenome) {
   const parts: string[] = [];
   if (genome.computeTier) parts.push(`tier ${genome.computeTier}`);

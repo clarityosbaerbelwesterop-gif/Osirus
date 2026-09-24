@@ -34,9 +34,21 @@ import {
 import { MemoryIntelStore } from "../src/lib/intelligence/store/memory-store";
 import { analyzeExperience } from "../src/lib/intelligence/capabilities/gaps";
 import { measure } from "../src/lib/intelligence/capabilities/registry";
-import { NoTrainingProvider } from "../src/lib/intelligence/models/training";
+import { buildDatasets } from "../src/lib/intelligence/datasets/builder";
+import {
+  attemptTraining,
+  candidateTrained,
+  candidateTransitionProblems,
+  NoTrainingProvider,
+  type TrainingProvider,
+} from "../src/lib/intelligence/models/training";
+import {
+  architectureComparison,
+  architectureOf,
+} from "../src/lib/intelligence/strategies/genomes";
 import {
   DEFAULT_SETTINGS,
+  type EvalTask,
   type Experience,
   type StrategyVersion,
   type Trial,
@@ -1102,5 +1114,345 @@ describe("chaos: the Foundry survives failures", () => {
     }
     expect(report!.waiting).toBe("Daily model-call envelope spent");
     expect(executed).toBe(0);
+  });
+});
+
+function evalTask(
+  overrides: Partial<EvalTask> & Pick<EvalTask, "id" | "partition">,
+): EvalTask {
+  return {
+    suite: "m26",
+    capabilityId: "coding.debug",
+    difficulty: {},
+    difficultyScore: 2,
+    generator: "seed",
+    fingerprint: "11",
+    parentId: null,
+    labelVerified: true,
+    labelEvidence: {},
+    ...overrides,
+    spec: {
+      kind: "coding",
+      objective: overrides.spec?.objective ?? overrides.id,
+      verify: overrides.spec?.verify ?? { kind: "includes", all: ["ok"] },
+    },
+  };
+}
+
+function verifiedExperience(
+  overrides: Partial<Experience> & Pick<Experience, "id" | "taskRef">,
+): Experience {
+  return {
+    source: "trial",
+    taskType: "coding",
+    capabilityIds: ["coding.debug"],
+    difficulty: 2,
+    strategyVersionId: "policy-v1",
+    model: "m",
+    skills: [],
+    tools: [],
+    trajectory: { output: "fixed" },
+    verification: {
+      verdicts: ["verified"],
+      check: { passed: true, detail: "ok" },
+    },
+    outcome: "verified_success",
+    failureClass: null,
+    repairs: 0,
+    costUsd: 0,
+    tokens: 10,
+    latencyMs: 10,
+    confidence: null,
+    qualityScore: 1,
+    fingerprint: overrides.id,
+    partition: "dev",
+    provenance: {},
+    createdAt: "2026-09-24T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+describe("dataset verification", () => {
+  it("drops duplicate examples and holdout overlap, including near-duplicates and rows already stored", async () => {
+    const store = new MemoryIntelStore();
+    const holdoutObjective =
+      "fix the median bug in stats module for even arrays";
+    const nearObjective =
+      "fix the median bug in the stats module for even arrays";
+    const otherObjective =
+      "compute the determinant of a three by three matrix quickly";
+    const tasks = new Map<string, EvalTask>([
+      [
+        "h",
+        evalTask({
+          id: "h",
+          partition: "holdout",
+          spec: {
+            kind: "coding",
+            objective: holdoutObjective,
+            verify: { kind: "includes", all: ["ok"] },
+          },
+        }),
+      ],
+      [
+        "a",
+        evalTask({
+          id: "a",
+          partition: "train",
+          spec: {
+            kind: "coding",
+            objective: holdoutObjective,
+            verify: { kind: "includes", all: ["ok"] },
+          },
+        }),
+      ],
+      [
+        "b",
+        evalTask({
+          id: "b",
+          partition: "train",
+          spec: {
+            kind: "coding",
+            objective: holdoutObjective,
+            verify: { kind: "includes", all: ["ok"] },
+          },
+        }),
+      ],
+      [
+        "n",
+        evalTask({
+          id: "n",
+          partition: "train",
+          spec: {
+            kind: "coding",
+            objective: nearObjective,
+            verify: { kind: "includes", all: ["ok"] },
+          },
+        }),
+      ],
+      [
+        "u",
+        evalTask({
+          id: "u",
+          partition: "train",
+          spec: {
+            kind: "coding",
+            objective: otherObjective,
+            verify: { kind: "includes", all: ["ok"] },
+          },
+        }),
+      ],
+      [
+        "d1",
+        evalTask({
+          id: "d1",
+          partition: "train",
+          spec: {
+            kind: "coding",
+            objective: "sort a list of integers stably",
+            verify: { kind: "includes", all: ["ok"] },
+          },
+        }),
+      ],
+      [
+        "d2",
+        evalTask({
+          id: "d2",
+          partition: "train",
+          spec: {
+            kind: "coding",
+            objective: "sort a list of integers stably",
+            verify: { kind: "includes", all: ["ok"] },
+          },
+        }),
+      ],
+    ]);
+    const built = await buildDatasets(store, {
+      capabilityId: "coding.debug",
+      tasks,
+      experience: [
+        verifiedExperience({ id: "eh", taskRef: "h" }),
+        verifiedExperience({
+          id: "ea",
+          taskRef: "a",
+          strategyVersionId: "policy-v2",
+        }),
+        verifiedExperience({
+          id: "eb",
+          taskRef: "b",
+          strategyVersionId: "policy-v2",
+        }),
+        verifiedExperience({ id: "en", taskRef: "n" }),
+        verifiedExperience({ id: "eu", taskRef: "u" }),
+        verifiedExperience({
+          id: "ed1",
+          taskRef: "d1",
+          strategyVersionId: "policy-v2",
+        }),
+        verifiedExperience({
+          id: "ed2",
+          taskRef: "d2",
+          strategyVersionId: "policy-v2",
+        }),
+      ],
+    });
+    const problem = built.find((set) =>
+      set.datasetId.endsWith("problem_solution"),
+    )!;
+    expect(problem.contamination.duplicates).toBeGreaterThan(0);
+    expect(problem.contamination.holdoutOverlap).toBeGreaterThan(0);
+    expect(problem.contamination.nearDuplicates).toBe(1);
+    expect(problem.contamination.rejected).toBe(problem.contamination.dropped);
+    expect(problem.counts.holdout).toBe(1);
+    expect(problem.counts.train).toBe(2);
+    expect(problem.versionId).toBeTruthy();
+    const stored = await store.listDatasetVersions(5);
+    expect(stored[0]!.provenance.strategyVersionIds).toEqual(
+      expect.arrayContaining(["policy-v1", "policy-v2"]),
+    );
+
+    const leaked = await buildDatasets(store, {
+      capabilityId: "coding.debug",
+      tasks,
+      experience: [
+        verifiedExperience({
+          id: "again",
+          taskRef: "u",
+          strategyVersionId: "policy-v9",
+        }),
+        verifiedExperience({
+          id: "leak",
+          taskRef: "a",
+          strategyVersionId: "policy-v9",
+        }),
+      ],
+    });
+    const second = leaked.find((set) =>
+      set.datasetId.endsWith("problem_solution"),
+    )!;
+    expect(second.contamination.holdoutOverlap).toBeGreaterThan(0);
+    expect(second.counts.train ?? 0).toBe(1);
+    expect(second.counts.holdout).toBeUndefined();
+  });
+});
+
+describe("model candidates", () => {
+  it("does not record a candidate when the provider cannot train", async () => {
+    const store = new MemoryIntelStore();
+    const report = await attemptTraining({
+      store,
+      provider: new NoTrainingProvider(),
+      type: "sft",
+      baseModel: "deepseek-v4-pro-0813:free",
+      datasetVersionId: null,
+    });
+    expect(report.trained).toBe(false);
+    expect(report.candidate).toBeNull();
+    expect(report.run.status).toBe("failed");
+    expect(candidateTrained(report.run)).toBe(false);
+    expect(await store.listModelCandidates()).toEqual([]);
+  });
+
+  it("records a candidate only after the provider succeeds, and will not crown it without an evaluation", async () => {
+    const store = new MemoryIntelStore();
+    const provider: TrainingProvider = {
+      id: "fake",
+      async capabilities() {
+        return {
+          available: true,
+          reason: null,
+          jobTypes: ["sft"],
+          baseModels: ["base"],
+        };
+      },
+      async prepareDataset() {
+        return { uploadedId: "up" };
+      },
+      async train(input) {
+        return {
+          id: "job-1",
+          type: input.type,
+          baseModel: input.baseModel,
+          datasetVersionId: input.datasetVersionId,
+          status: "succeeded",
+        };
+      },
+      async resume(jobId) {
+        return {
+          id: jobId,
+          type: "sft",
+          baseModel: "base",
+          datasetVersionId: "d",
+          status: "succeeded",
+        };
+      },
+      async cancel() {},
+      async status(jobId) {
+        return {
+          id: jobId,
+          type: "sft",
+          baseModel: "base",
+          datasetVersionId: "d",
+          status: "succeeded",
+        };
+      },
+      async artifacts() {
+        return {};
+      },
+      async evaluate() {
+        return {};
+      },
+      async publishCandidate() {
+        return { modelCandidateId: "nope" };
+      },
+    };
+    const report = await attemptTraining({
+      store,
+      provider,
+      type: "sft",
+      baseModel: "base",
+      datasetVersionId: null,
+    });
+    expect(report.trained).toBe(true);
+    expect(report.candidate?.status).toBe("candidate");
+    expect(candidateTrained(report.run)).toBe(true);
+    await expect(
+      store.updateModelCandidate(report.candidate!.id, { status: "champion" }),
+    ).rejects.toThrow(/candidate_transition/);
+    const evaluating = await store.updateModelCandidate(report.candidate!.id, {
+      status: "evaluating",
+    });
+    expect(evaluating.status).toBe("evaluating");
+    const champion = await store.updateModelCandidate(evaluating.id, {
+      status: "champion",
+      evaluation: { verdict: "pass" },
+    });
+    expect(champion.status).toBe("champion");
+    expect(
+      candidateTransitionProblems({
+        from: "candidate",
+        to: "evaluating",
+        trainingStatus: "failed",
+        evaluation: {},
+      }),
+    ).toContain("training_not_succeeded");
+  });
+});
+
+describe("architecture comparison", () => {
+  it("names a solver-critic change separately from an unchanged single worker", () => {
+    expect(architectureOf({})).toBe("single_worker");
+    expect(architectureOf({ team: { critic: true } })).toBe("solver_critic");
+    expect(architectureComparison({}, { team: { critic: true } })).toEqual({
+      champion: "single_worker",
+      challenger: "solver_critic",
+      changed: true,
+    });
+    expect(
+      architectureComparison(
+        { coding: { reproduceFirst: true } },
+        { coding: { reproduceFirst: true }, computeTier: "DEEP" },
+      ).changed,
+    ).toBe(false);
   });
 });

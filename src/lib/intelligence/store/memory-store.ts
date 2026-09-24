@@ -14,15 +14,19 @@ import {
   type StrategyVersion,
   type Trial,
 } from "../types";
+import { holdoutSignal } from "../datasets/verify";
+import { assertCandidateTransition } from "../models/training";
 import {
   today,
   type DatasetExample,
   type DatasetVersionSummary,
   type IntelStore,
   type LedgerCategory,
+  type ModelCandidateRecord,
   type ModelRecord,
   type ModelStat,
   type PromotionEvent,
+  type TrainingRunRecord,
 } from "./store";
 
 // In-memory IntelStore. Used by the unit tests and by the GitHub Actions
@@ -71,6 +75,8 @@ export class MemoryIntelStore implements IntelStore {
     >,
     models: new Map<string, ModelRecord>(),
     modelStats: new Map<string, ModelStat>(),
+    trainingRuns: new Map<string, TrainingRunRecord>(),
+    candidates: new Map<string, ModelCandidateRecord>(),
   };
 
   async settings() {
@@ -556,6 +562,107 @@ export class MemoryIntelStore implements IntelStore {
         if (example.partition === partition) out.add(example.fingerprint);
     return out;
   }
+  async datasetHoldoutSignals() {
+    const out: ReturnType<typeof holdoutSignal>[] = [];
+    for (const version of this.state.datasetVersions)
+      for (const example of version.examples)
+        if (example.partition === "holdout") out.push(holdoutSignal(example));
+    return out;
+  }
+
+  async insertTrainingRun(
+    run: Omit<TrainingRunRecord, "id" | "createdAt" | "updatedAt">,
+  ) {
+    const now = new Date().toISOString();
+    const stored: TrainingRunRecord = {
+      ...clone(run),
+      id: randomUUID(),
+      createdAt: now,
+      updatedAt: now,
+    };
+    this.state.trainingRuns.set(stored.id, stored);
+    return clone(stored);
+  }
+  async updateTrainingRun(
+    id: string,
+    patch: Partial<Pick<TrainingRunRecord, "status" | "config" | "artifacts">>,
+  ) {
+    const current = this.state.trainingRuns.get(id);
+    if (!current) return;
+    this.state.trainingRuns.set(id, {
+      ...current,
+      ...clone(patch),
+      updatedAt: new Date().toISOString(),
+    });
+  }
+  async getTrainingRun(id: string) {
+    const run = this.state.trainingRuns.get(id);
+    return run ? clone(run) : null;
+  }
+  async insertModelCandidate(input: {
+    baseModel: string;
+    trainingRunId: string;
+    lineage: Record<string, unknown>;
+    evaluation?: Record<string, unknown>;
+  }) {
+    const run = this.state.trainingRuns.get(input.trainingRunId);
+    assertCandidateTransition({
+      from: "candidate",
+      to: "candidate",
+      trainingStatus: run?.status ?? null,
+      evaluation: input.evaluation ?? {},
+      inserting: true,
+    });
+    const stored: ModelCandidateRecord = {
+      id: randomUUID(),
+      baseModel: input.baseModel,
+      trainingRunId: input.trainingRunId,
+      lineage: clone(input.lineage),
+      status: "candidate",
+      evaluation: clone(input.evaluation ?? {}),
+      createdAt: new Date().toISOString(),
+    };
+    this.state.candidates.set(stored.id, stored);
+    return clone(stored);
+  }
+  async updateModelCandidate(
+    id: string,
+    patch: Partial<
+      Pick<ModelCandidateRecord, "status" | "evaluation" | "lineage">
+    >,
+  ) {
+    const current = this.state.candidates.get(id);
+    if (!current) throw new Error("candidate_missing");
+    const next = patch.status ?? current.status;
+    if (next !== current.status) {
+      const run = current.trainingRunId
+        ? this.state.trainingRuns.get(current.trainingRunId)
+        : undefined;
+      assertCandidateTransition({
+        from: current.status,
+        to: next,
+        trainingStatus: run?.status ?? null,
+        evaluation: patch.evaluation ?? current.evaluation,
+      });
+    }
+    const stored: ModelCandidateRecord = {
+      ...current,
+      ...clone(patch),
+      status: next,
+    };
+    this.state.candidates.set(id, stored);
+    return clone(stored);
+  }
+  async getModelCandidate(id: string) {
+    const candidate = this.state.candidates.get(id);
+    return candidate ? clone(candidate) : null;
+  }
+  async listModelCandidates(limit = 50) {
+    return [...this.state.candidates.values()]
+      .slice(-limit)
+      .reverse()
+      .map(clone);
+  }
 
   async upsertModel(model: ModelRecord) {
     this.state.models.set(model.id, clone(model));
@@ -603,6 +710,8 @@ export class MemoryIntelStore implements IntelStore {
       })),
       models: [...this.state.models.values()],
       modelStats: [...this.state.modelStats.values()],
+      trainingRuns: [...this.state.trainingRuns.values()],
+      modelCandidates: [...this.state.candidates.values()],
     };
   }
 }

@@ -1,4 +1,6 @@
 import { querySystem } from "../../db/client";
+import { holdoutSignal } from "../datasets/verify";
+import { assertCandidateTransition } from "../models/training";
 import {
   DEFAULT_SETTINGS,
   type AgendaItem,
@@ -20,9 +22,13 @@ import {
   type DatasetVersionSummary,
   type IntelStore,
   type LedgerCategory,
+  type ModelCandidateRecord,
+  type ModelCandidateStatus,
   type ModelRecord,
   type ModelStat,
   type PromotionEvent,
+  type TrainingRunRecord,
+  type TrainingRunStatus,
 } from "./store";
 
 // The production IntelStore, over the osirus_intel schema (migration 012).
@@ -253,6 +259,33 @@ function model(row: Row): ModelRecord {
     contextTokens: num(row.context_tokens),
     free: Boolean(row.free),
     status: row.status as ModelRecord["status"],
+  };
+}
+
+function trainingRun(row: Row): TrainingRunRecord {
+  return {
+    id: row.id as string,
+    provider: row.provider as string,
+    jobType: row.job_type as TrainingRunRecord["jobType"],
+    baseModel: row.base_model as string,
+    datasetVersionId: (row.dataset_version_id as string | null) ?? null,
+    status: row.status as TrainingRunStatus,
+    config: (row.config as Record<string, unknown>) ?? {},
+    artifacts: (row.artifacts as Record<string, unknown>) ?? {},
+    createdAt: iso(row.created_at)!,
+    updatedAt: iso(row.updated_at)!,
+  };
+}
+
+function modelCandidate(row: Row): ModelCandidateRecord {
+  return {
+    id: row.id as string,
+    baseModel: row.base_model as string,
+    trainingRunId: (row.training_run_id as string | null) ?? null,
+    lineage: (row.lineage as Record<string, unknown>) ?? {},
+    status: row.status as ModelCandidateStatus,
+    evaluation: (row.evaluation as Record<string, unknown>) ?? {},
+    createdAt: iso(row.created_at)!,
   };
 }
 
@@ -1204,6 +1237,18 @@ export class PgIntelStore implements IntelStore {
     );
     return new Set(rows.map((row) => row.fingerprint as string));
   }
+  async datasetHoldoutSignals() {
+    const rows = await q(
+      `select fingerprint, input from osirus_intel.dataset_examples
+        where partition = 'holdout'`,
+    );
+    return rows.map((row) =>
+      holdoutSignal({
+        fingerprint: row.fingerprint as string,
+        input: (row.input as Record<string, unknown>) ?? {},
+      }),
+    );
+  }
 
   async upsertModel(entry: ModelRecord) {
     await q(
@@ -1262,5 +1307,136 @@ export class PgIntelStore implements IntelStore {
           order by capability_id, model_id`,
       )
     ).map(modelStat);
+  }
+
+  async insertTrainingRun(
+    run: Omit<TrainingRunRecord, "id" | "createdAt" | "updatedAt">,
+  ) {
+    const [row] = await q(
+      `insert into osirus_intel.training_runs
+         (provider, job_type, base_model, dataset_version_id, status, config,
+          artifacts)
+       values ($1, $2, $3, $4::uuid, $5, $6::jsonb, $7::jsonb)
+       returning *`,
+      [
+        run.provider,
+        run.jobType,
+        run.baseModel,
+        run.datasetVersionId,
+        run.status,
+        json(run.config),
+        json(run.artifacts),
+      ],
+    );
+    return trainingRun(row!);
+  }
+  async updateTrainingRun(
+    id: string,
+    patch: Partial<Pick<TrainingRunRecord, "status" | "config" | "artifacts">>,
+  ) {
+    const params: unknown[] = [id];
+    const sets = assignments(
+      patch,
+      {
+        status: { column: "status" },
+        config: { column: "config", json: true },
+        artifacts: { column: "artifacts", json: true },
+      },
+      params,
+    );
+    if (!sets.length) return;
+    sets.push("updated_at = now()");
+    await q(
+      `update osirus_intel.training_runs set ${sets.join(", ")} where id = $1::uuid`,
+      params,
+    );
+  }
+  async getTrainingRun(id: string) {
+    const [row] = await q(
+      `select * from osirus_intel.training_runs where id = $1::uuid`,
+      [id],
+    );
+    return row ? trainingRun(row) : null;
+  }
+  async insertModelCandidate(input: {
+    baseModel: string;
+    trainingRunId: string;
+    lineage: Record<string, unknown>;
+    evaluation?: Record<string, unknown>;
+  }) {
+    const run = await this.getTrainingRun(input.trainingRunId);
+    assertCandidateTransition({
+      from: "candidate",
+      to: "candidate",
+      trainingStatus: run?.status ?? null,
+      evaluation: input.evaluation ?? {},
+      inserting: true,
+    });
+    const [row] = await q(
+      `insert into osirus_intel.model_candidates
+         (base_model, training_run_id, lineage, status, evaluation)
+       values ($1, $2::uuid, $3::jsonb, 'candidate', $4::jsonb)
+       returning *`,
+      [
+        input.baseModel,
+        input.trainingRunId,
+        json(input.lineage),
+        json(input.evaluation ?? {}),
+      ],
+    );
+    return modelCandidate(row!);
+  }
+  async getModelCandidate(id: string) {
+    const [row] = await q(
+      `select * from osirus_intel.model_candidates where id = $1::uuid`,
+      [id],
+    );
+    return row ? modelCandidate(row) : null;
+  }
+  async updateModelCandidate(
+    id: string,
+    patch: Partial<
+      Pick<ModelCandidateRecord, "status" | "evaluation" | "lineage">
+    >,
+  ) {
+    const current = await this.getModelCandidate(id);
+    if (!current) throw new Error("candidate_missing");
+    const next = patch.status ?? current.status;
+    if (next !== current.status) {
+      const run = current.trainingRunId
+        ? await this.getTrainingRun(current.trainingRunId)
+        : null;
+      assertCandidateTransition({
+        from: current.status,
+        to: next,
+        trainingStatus: run?.status ?? null,
+        evaluation: patch.evaluation ?? current.evaluation,
+      });
+    }
+    const params: unknown[] = [id];
+    const sets = assignments(
+      { ...patch, status: next },
+      {
+        status: { column: "status" },
+        evaluation: { column: "evaluation", json: true },
+        lineage: { column: "lineage", json: true },
+      },
+      params,
+    );
+    const [row] = await q(
+      `update osirus_intel.model_candidates set ${sets.join(", ")}
+        where id = $1::uuid returning *`,
+      params,
+    );
+    return modelCandidate(row!);
+  }
+  async listModelCandidates(limit = 50) {
+    return (
+      await q(
+        `select * from osirus_intel.model_candidates
+          order by created_at desc limit $1`,
+        [limit],
+      )
+    ).map(modelCandidate);
   }
 }

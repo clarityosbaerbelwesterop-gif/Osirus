@@ -1,3 +1,11 @@
+import type {
+  IntelStore,
+  ModelCandidateRecord,
+  ModelCandidateStatus,
+  TrainingRunRecord,
+  TrainingRunStatus,
+} from "../store/store";
+
 // The Model Foundry's training interface.
 //
 // Real model training (SFT, LoRA, distillation, preference, RL) needs a
@@ -109,4 +117,142 @@ export class NoTrainingProvider implements TrainingProvider {
 
 export function trainingProvider(): TrainingProvider {
   return new NoTrainingProvider();
+}
+
+/**
+ * A candidate is trained only when the training run that produced it
+ * succeeded. The candidate table has no "trained" status; this is the check.
+ */
+export function candidateTrained(
+  run: { status: TrainingRunStatus } | null | undefined,
+) {
+  return run?.status === "succeeded";
+}
+
+export function candidateTransitionProblems(input: {
+  from: ModelCandidateStatus;
+  to: ModelCandidateStatus;
+  trainingStatus: TrainingRunStatus | null;
+  evaluation: Record<string, unknown>;
+  /** Inserts stay at `candidate` and still require a succeeded run. */
+  inserting?: boolean;
+}): string[] {
+  const problems: string[] = [];
+  const needsTraining =
+    input.inserting || input.to === "evaluating" || input.to === "champion";
+  if (needsTraining && input.trainingStatus !== "succeeded")
+    problems.push("training_not_succeeded");
+  if (!input.inserting && input.from !== input.to) {
+    const allowed: Record<ModelCandidateStatus, ModelCandidateStatus[]> = {
+      candidate: ["evaluating", "rejected"],
+      evaluating: ["champion", "rejected"],
+      champion: ["rejected"],
+      rejected: [],
+    };
+    if (!allowed[input.from].includes(input.to))
+      problems.push("illegal_transition");
+  }
+  if (input.to === "champion" && input.evaluation.verdict !== "pass")
+    problems.push("evaluation_required");
+  return problems;
+}
+
+export function assertCandidateTransition(
+  input: Parameters<typeof candidateTransitionProblems>[0],
+) {
+  const problems = candidateTransitionProblems(input);
+  if (problems.length)
+    throw new Error(`candidate_transition:${problems.join(",")}`);
+}
+
+/**
+ * Ask the configured provider to train, and record only what it did.
+ * An unavailable provider writes a failed run and no candidate. A candidate
+ * row is inserted only after status `succeeded`, and it starts at `candidate`.
+ */
+export async function attemptTraining(input: {
+  store: IntelStore;
+  provider: TrainingProvider;
+  type: TrainingJobType;
+  baseModel: string;
+  datasetVersionId: string | null;
+}): Promise<{
+  run: TrainingRunRecord;
+  candidate: ModelCandidateRecord | null;
+  trained: boolean;
+  summary: string;
+}> {
+  const capabilities = await input.provider.capabilities();
+  if (!capabilities.available) {
+    const run = await input.store.insertTrainingRun({
+      provider: input.provider.id,
+      jobType: input.type,
+      baseModel: input.baseModel,
+      datasetVersionId: input.datasetVersionId,
+      status: "failed",
+      config: { reason: capabilities.reason },
+      artifacts: {},
+    });
+    return {
+      run,
+      candidate: null,
+      trained: false,
+      summary: capabilities.reason ?? "training_unavailable",
+    };
+  }
+  const queued = await input.store.insertTrainingRun({
+    provider: input.provider.id,
+    jobType: input.type,
+    baseModel: input.baseModel,
+    datasetVersionId: input.datasetVersionId,
+    status: "queued",
+    config: {},
+    artifacts: {},
+  });
+  try {
+    const job = await input.provider.train({
+      type: input.type,
+      baseModel: input.baseModel,
+      datasetVersionId: input.datasetVersionId ?? "",
+    });
+    await input.store.updateTrainingRun(queued.id, {
+      status: job.status,
+      config: { providerJobId: job.id },
+    });
+    const run = (await input.store.getTrainingRun(queued.id)) ?? queued;
+    if (!candidateTrained(run)) {
+      return {
+        run,
+        candidate: null,
+        trained: false,
+        summary: `training ${run.status}`,
+      };
+    }
+    const candidate = await input.store.insertModelCandidate({
+      baseModel: input.baseModel,
+      trainingRunId: run.id,
+      lineage: {
+        provider: input.provider.id,
+        jobType: input.type,
+        jobId: job.id,
+      },
+    });
+    return {
+      run,
+      candidate,
+      trained: true,
+      summary: `candidate ${candidate.id} from succeeded run ${run.id}`,
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "training_failed";
+    await input.store.updateTrainingRun(queued.id, {
+      status: "failed",
+      config: { error: message },
+    });
+    const run = (await input.store.getTrainingRun(queued.id)) ?? {
+      ...queued,
+      status: "failed" as const,
+    };
+    return { run, candidate: null, trained: false, summary: message };
+  }
 }

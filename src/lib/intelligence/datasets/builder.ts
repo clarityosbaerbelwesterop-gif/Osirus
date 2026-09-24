@@ -1,20 +1,27 @@
 import { fingerprint } from "../evals/random";
 import type { DatasetExample, IntelStore } from "../store/store";
 import type { EvalTask, Experience } from "../types";
+import {
+  exampleText,
+  verifyExamples,
+  type ContaminationReport,
+} from "./verify";
 
 // The DatasetBuilder. Datasets come only from experience an independent
 // judge verified, never from product conversations, and each example keeps
-// its provenance. Partitions follow the task that produced the example, so a
-// holdout task can never leak into training; a contamination check drops any
-// train/dev example whose normalized input also appears in holdout.
+// its provenance. Partitions follow the task that produced the example.
+// verifyExamples drops duplicate fingerprints and any train/dev/adversarial
+// example that matches a holdout example exactly or by near-duplicate
+// objective, including holdout rows in this same batch.
 
 export const MIN_QUALITY = 0.6;
 
 type Built = {
   datasetId: string;
   version: number | null;
+  versionId: string | null;
   counts: Record<string, number>;
-  contamination: { checked: number; dropped: number };
+  contamination: ContaminationReport;
 };
 
 const PARTITION: Record<string, DatasetExample["partition"]> = {
@@ -48,7 +55,8 @@ export async function buildDatasets(
       row.taskRef,
   );
 
-  const holdout = await store.datasetFingerprints("holdout");
+  const storedHoldout = await store.datasetHoldoutSignals();
+  const policyByExperience = new Map<string, string>();
   const make = (
     task: EvalTask,
     row: Experience,
@@ -86,6 +94,8 @@ export async function buildDatasets(
     const key = `${task.id}:${row.strategyVersionId}`;
     if (seen.has(key)) continue;
     seen.add(key);
+    if (row.strategyVersionId)
+      policyByExperience.set(row.id, row.strategyVersionId);
     sets.problem_solution!.push(
       make(task, row, "problem_solution", {
         solution: row.trajectory.output ?? null,
@@ -116,24 +126,41 @@ export async function buildDatasets(
   const out: Built[] = [];
   for (const [format, examples] of Object.entries(sets)) {
     const datasetId = `${input.capabilityId}.${format}`;
-    let dropped = 0;
-    const clean = examples.filter((example) => {
-      if (example.partition === "holdout") return true;
-      if (holdout.has(example.fingerprint)) {
-        dropped += 1;
-        return false;
-      }
-      return true;
-    });
+    const verified = verifyExamples(
+      examples.map((example) => ({
+        ...example,
+        text: exampleText(example.input),
+      })),
+      storedHoldout,
+    );
+    const clean = verified.kept.map((example) => ({
+      partition: example.partition,
+      input: example.input,
+      output: example.output,
+      experienceId: example.experienceId,
+      fingerprint: example.fingerprint,
+    }));
     const counts: Record<string, number> = {};
     for (const example of clean)
       counts[example.partition] = (counts[example.partition] ?? 0) + 1;
+    const policyVersionIds = [
+      ...new Set(
+        clean
+          .map((example) =>
+            example.experienceId
+              ? policyByExperience.get(example.experienceId)
+              : undefined,
+          )
+          .filter((id): id is string => Boolean(id)),
+      ),
+    ];
     if (!clean.length) {
       out.push({
         datasetId,
         version: null,
+        versionId: null,
         counts,
-        contamination: { checked: examples.length, dropped },
+        contamination: verified.report,
       });
       continue;
     }
@@ -148,16 +175,18 @@ export async function buildDatasets(
       provenance: {
         sources: [...new Set(clean.map((example) => example.experienceId))]
           .length,
-        rule: `verified experience, quality >= ${MIN_QUALITY}, no product data`,
+        rule: `verified experience, quality >= ${MIN_QUALITY}, no product data, duplicate and holdout overlap removed`,
+        strategyVersionIds: policyVersionIds,
       },
-      contamination: { checked: examples.length, dropped },
+      contamination: verified.report,
       examples: clean,
     });
     out.push({
       datasetId,
       version: version.version,
+      versionId: version.id,
       counts,
-      contamination: { checked: examples.length, dropped },
+      contamination: verified.report,
     });
   }
   return out;

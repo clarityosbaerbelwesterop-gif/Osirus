@@ -244,6 +244,44 @@ describe("replan triggers from the run's own record", () => {
     expect(
       detectReplanTrigger({ steps: [step({})] as never, budgetUsed: 0.1 }),
     ).toBeNull();
+    expect(
+      detectReplanTrigger({
+        steps: [
+          step({
+            toolId: "workspace.read",
+            outcome: "ok",
+            summary: "Read auth.ts",
+            evidenceRefs: ["auth.ts"],
+          }),
+          step({
+            toolId: "workspace.read",
+            outcome: "ok",
+            summary: "Read auth.ts again",
+            evidenceRefs: ["auth.ts"],
+          }),
+        ] as never,
+        budgetUsed: 0.2,
+      })?.trigger,
+    ).toBe("repeated_diagnostic");
+    expect(
+      detectReplanTrigger({
+        steps: [
+          step({
+            toolId: "workspace.read",
+            outcome: "ok",
+            summary: "Read auth.ts",
+            evidenceRefs: ["auth.ts"],
+          }),
+          step({
+            toolId: "workspace.read",
+            outcome: "ok",
+            summary: "Read billing.ts",
+            evidenceRefs: ["billing.ts"],
+          }),
+        ] as never,
+        budgetUsed: 0.2,
+      }),
+    ).toBeNull();
   });
 });
 
