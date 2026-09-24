@@ -16,6 +16,7 @@ export type GateMetrics = {
   verifiedRate: number;
   coding: { tasks: number; verifiedRate: number } | null;
   research: { tasks: number; verifiedRate: number } | null;
+  math: { tasks: number; verifiedRate: number } | null;
 };
 
 export type GateThresholds = {
@@ -25,12 +26,15 @@ export type GateThresholds = {
   codingVerifiedDrop: number;
   /** Absolute drop in research (citation) verified rate that fails the gate. */
   citationValidityDrop: number;
+  /** Absolute drop in math/science verified rate that fails the gate. */
+  mathVerifiedDrop: number;
 };
 
 export const DEFAULT_THRESHOLDS: GateThresholds = {
   falseCompletionIncrease: 0.05,
   codingVerifiedDrop: 0.25,
   citationValidityDrop: 0.15,
+  mathVerifiedDrop: 0.2,
 };
 
 export type GateFinding = {
@@ -65,6 +69,7 @@ export function gateMetrics(model: string, results: TaskResult[]): GateMetrics {
     verifiedRate: share(counted, (row) => row.verifiedSuccess),
     coding: suite("coding"),
     research: suite("research"),
+    math: suite("math"),
   };
 }
 
@@ -121,6 +126,19 @@ export function evaluateGate(input: {
         rule: "citation_validity",
         status: "not_measured",
         detail: "No research tasks in both runs.",
+      });
+    if (baseline.math && current.math) {
+      const drop = baseline.math.verifiedRate - current.math.verifiedRate;
+      relative(
+        "math_verified_rate",
+        drop > thresholds.mathVerifiedDrop,
+        `${pct(baseline.math.verifiedRate)} → ${pct(current.math.verifiedRate)}`,
+      );
+    } else
+      findings.push({
+        rule: "math_verified_rate",
+        status: "not_measured",
+        detail: "No math tasks in both runs.",
       });
   } else {
     findings.push({

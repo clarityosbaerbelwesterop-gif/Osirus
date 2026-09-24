@@ -78,6 +78,23 @@ describe("regression gate", () => {
     );
   });
 
+  it("fails when math verification drops beyond threshold", () => {
+    const mathBaseline = gateMetrics("m", [
+      result("math", true),
+      result("math", true),
+      result("coding", true),
+    ]);
+    const current = gateMetrics("m", [
+      result("math", false),
+      result("math", false),
+      result("coding", true),
+    ]);
+    const gate = evaluateGate({ baseline: mathBaseline, current });
+    expect(
+      gate.findings.find((f) => f.rule === "math_verified_rate")?.status,
+    ).toBe("failed");
+  });
+
   it("fails on security or tenant isolation regardless of baseline", () => {
     expect(
       evaluateGate({
