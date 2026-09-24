@@ -6,6 +6,17 @@ import {
   type MemoryItem,
   type MemoryTier,
 } from ".";
+import type { CausalEvent, CausalLink } from "./causal";
+import {
+  assembleCausalWorldModel,
+  formatCausalContext,
+  mapStoredEntities,
+  mapStoredRelations,
+  scoreRelationalEdge,
+  type StoredCausalRow,
+  type StoredRelationRow,
+} from "./causal-world-model";
+import { temporalScore } from "./temporal";
 
 type MemoryRow = {
   id: string;
@@ -201,14 +212,361 @@ export class MemoryRepository {
           memory.push(related);
       }
     }
+    const ranked = memory
+      .map((item) => ({
+        item,
+        score: temporalScore(
+          Number(rows.find((row) => row.id === item.id)?.relevance ?? 0.5) ||
+            item.importance ||
+            0.5,
+          item.updatedAt,
+          item.importance ?? 0.5,
+        ),
+      }))
+      .sort((left, right) => right.score - left.score)
+      .map((entry) => entry.item);
+
     const budget = input.tokenBudget ?? Number.POSITIVE_INFINITY;
     let used = 0;
-    return memory.filter((item) => {
+    return ranked.filter((item) => {
       const cost = tokenCost(item);
       if (used + cost > budget) return false;
       used += cost;
       return true;
     });
+  }
+
+  async episodicByObjective(workspaceId: string, objective: string, limit = 6) {
+    const query = objective.trim();
+    if (!query) return [];
+    const rowLimit = Math.min(Math.max(limit, 1), 12);
+    const rows = await queryAs<MemoryRow>(
+      this.actorId,
+      `select item.id, item.workspace_id, item.layer, item.kind, item.content,
+              item.source, item.verification_status, item.contradiction_status,
+              item.confidence, item.importance, item.subject_key,
+              item.canonical_value, item.updated_at,
+              greatest(
+                ts_rank_cd(
+                  to_tsvector('simple', coalesce(run.objective, '')),
+                  websearch_to_tsquery('simple', $3)
+                ),
+                ts_rank_cd(
+                  to_tsvector('simple', item.searchable_text),
+                  websearch_to_tsquery('simple', $3)
+                )
+              ) as relevance
+         from osirus.memory_items item
+         join osirus.runs run on run.id = item.run_id
+        where item.owner_id = $1::uuid
+          and item.workspace_id = $2::uuid
+          and item.kind in ('run_summary', 'decision')
+          and item.verification_status <> 'rejected'
+          and item.contradiction_status <> 'suspected'
+          and run.status = 'completed'
+          and (
+            to_tsvector('simple', coalesce(run.objective, ''))
+              @@ websearch_to_tsquery('simple', $3)
+            or to_tsvector('simple', item.searchable_text)
+                @@ websearch_to_tsquery('simple', $3)
+          )
+        order by relevance desc, item.updated_at desc
+        limit $4`,
+      [this.actorId, workspaceId, query, rowLimit],
+    );
+    return rows.map(mapMemory);
+  }
+
+  async countContradictions(workspaceId: string) {
+    const rows = await queryAs<{ total: number }>(
+      this.actorId,
+      `select count(*)::int as total
+         from osirus.memory_items
+        where owner_id = $1::uuid
+          and workspace_id = $2::uuid
+          and contradiction_status = 'suspected'`,
+      [this.actorId, workspaceId],
+    );
+    return rows[0]?.total ?? 0;
+  }
+
+  async listContradictions(workspaceId: string, limit = 20) {
+    const rows = await queryAs<{
+      id: string;
+      kind: string;
+      content: string;
+      subject_key: string | null;
+      canonical_value: string | null;
+      updated_at: string | Date;
+      rival_ids: string[] | null;
+    }>(
+      this.actorId,
+      `select item.id, item.kind, item.content, item.subject_key,
+              item.canonical_value, item.updated_at,
+              array_remove(array_agg(distinct rival.id), null) as rival_ids
+         from osirus.memory_items item
+         left join osirus.memory_items rival
+           on rival.workspace_id = item.workspace_id
+          and rival.owner_id = item.owner_id
+          and rival.subject_key = item.subject_key
+          and rival.id <> item.id
+          and rival.contradiction_status = 'suspected'
+          and rival.verification_status <> 'rejected'
+        where item.owner_id = $1::uuid
+          and item.workspace_id = $2::uuid
+          and item.contradiction_status = 'suspected'
+        group by item.id, item.kind, item.content, item.subject_key,
+                 item.canonical_value, item.updated_at
+        order by item.updated_at desc
+        limit $3`,
+      [this.actorId, workspaceId, Math.min(Math.max(limit, 1), 50)],
+    );
+    return rows.map((row) => ({
+      id: row.id,
+      kind: row.kind,
+      content: row.content,
+      subjectKey: row.subject_key,
+      canonicalValue: row.canonical_value,
+      updatedAt: new Date(row.updated_at).toISOString(),
+      rivalIds: row.rival_ids ?? [],
+    }));
+  }
+
+  async upsertEntity(input: {
+    organizationId: string;
+    workspaceId: string;
+    canonicalName: string;
+    entityType: string;
+    confidence: number;
+    aliases?: string[];
+  }) {
+    const rows = await queryAs<{ id: string }>(
+      this.actorId,
+      `insert into osirus.memory_entities
+         (owner_id, organization_id, workspace_id, canonical_name,
+          entity_type, aliases, confidence)
+       values ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6::text[], $7)
+       on conflict on constraint memory_entities_owner_id_workspace_id_canonical_name_entity_key
+       do update set confidence = greatest(osirus.memory_entities.confidence, excluded.confidence),
+                     updated_at = now()
+       returning id`,
+      [
+        this.actorId,
+        input.organizationId,
+        input.workspaceId,
+        input.canonicalName,
+        input.entityType,
+        input.aliases ?? [],
+        input.confidence,
+      ],
+    );
+    return rows[0]?.id ?? null;
+  }
+
+  async linkEntities(input: {
+    organizationId: string;
+    workspaceId: string;
+    fromEntityId: string;
+    toEntityId: string;
+    relationType: string;
+    sourceMemoryId: string;
+    confidence: number;
+    provenance: Record<string, unknown>;
+  }) {
+    await queryAs(
+      this.actorId,
+      `insert into osirus.memory_relations
+         (owner_id, organization_id, workspace_id, from_entity_id, to_entity_id,
+          relation_type, source_memory_id, confidence, provenance)
+       select $1::uuid, $2::uuid, $3::uuid, $4::uuid, $5::uuid, $6, $7::uuid, $8, $9::jsonb
+        where not exists (
+          select 1 from osirus.memory_relations existing
+           where existing.owner_id = $1::uuid
+             and existing.workspace_id = $3::uuid
+             and existing.from_entity_id = $4::uuid
+             and existing.to_entity_id = $5::uuid
+             and existing.relation_type = $6
+        )`,
+      [
+        this.actorId,
+        input.organizationId,
+        input.workspaceId,
+        input.fromEntityId,
+        input.toEntityId,
+        input.relationType,
+        input.sourceMemoryId,
+        input.confidence,
+        JSON.stringify(input.provenance),
+      ],
+    );
+  }
+
+  async retrieveCausalContext(input: {
+    workspaceId: string;
+    objective: string;
+    limit?: number;
+  }): Promise<string[]> {
+    const query = input.objective.trim();
+    if (!query) return [];
+    const limit = Math.min(Math.max(input.limit ?? 6, 1), 12);
+    const [entities, relations] = await Promise.all([
+      queryAs<StoredCausalRow>(
+        this.actorId,
+        `select id, canonical_name, entity_type, confidence, attributes, updated_at
+           from osirus.memory_entities
+          where owner_id = $1::uuid
+            and workspace_id = $2::uuid
+            and entity_type in ('action', 'outcome', 'observation', 'repository', 'claim')
+            and (
+              lower(canonical_name) like '%' || lower($3) || '%'
+              or attributes::text ilike '%' || $3 || '%'
+            )
+          order by updated_at desc
+          limit 40`,
+        [this.actorId, input.workspaceId, query],
+      ).catch(() => [] as StoredCausalRow[]),
+      queryAs<StoredRelationRow>(
+        this.actorId,
+        `select r.from_entity_id, r.to_entity_id,
+                fe.canonical_name as from_name, te.canonical_name as to_name,
+                fe.entity_type as from_type, te.entity_type as to_type,
+                r.relation_type, r.confidence, r.created_at
+           from osirus.memory_relations r
+           join osirus.memory_entities fe on fe.id = r.from_entity_id
+           join osirus.memory_entities te on te.id = r.to_entity_id
+          where r.owner_id = $1::uuid
+            and r.workspace_id = $2::uuid
+            and r.relation_type in ('caused', 'preceded', 'enabled', 'contradicted')
+            and (
+              lower(fe.canonical_name) like '%' || lower($3) || '%'
+              or lower(te.canonical_name) like '%' || lower($3) || '%'
+            )
+          order by r.created_at desc
+          limit 60`,
+        [this.actorId, input.workspaceId, query],
+      ).catch(() => [] as StoredRelationRow[]),
+    ]);
+
+    const nodes = mapStoredEntities(entities);
+    const idToLabel = new Map(nodes.map((node) => [node.id, node.label]));
+    const edges = mapStoredRelations(relations, idToLabel)
+      .map((edge, index) => ({
+        edge,
+        score: scoreRelationalEdge(
+          edge,
+          query,
+          relations[index]?.created_at ?? new Date(),
+        ),
+      }))
+      .sort((left, right) => right.score - left.score)
+      .map((entry) => entry.edge);
+
+    const events: CausalEvent[] = entities
+      .filter((row) =>
+        ["action", "outcome", "observation"].includes(row.entity_type),
+      )
+      .map((row) => ({
+        id: row.id,
+        kind: row.entity_type as CausalEvent["kind"],
+        label: row.canonical_name,
+        occurredAt: new Date(row.updated_at).toISOString(),
+        confidence: Number(row.confidence),
+        source: row.attributes ?? {},
+      }));
+
+    const links: CausalLink[] = relations.map((row) => ({
+      from: row.from_entity_id,
+      to: row.to_entity_id,
+      relation: row.relation_type as CausalLink["relation"],
+      confidence: Number(row.confidence),
+      provenance: {},
+    }));
+
+    const model = assembleCausalWorldModel({
+      events,
+      links,
+      nodes,
+      edges,
+    });
+    return formatCausalContext(model, limit);
+  }
+
+  async persistCausalGraph(input: {
+    organizationId: string;
+    workspaceId: string;
+    runId: string;
+    events: CausalEvent[];
+    links: CausalLink[];
+  }): Promise<{ entities: number; relations: number }> {
+    const idMap = new Map<string, string>();
+    let entities = 0;
+    for (const item of input.events.slice(0, 40)) {
+      const rows = await queryAs<{ id: string }>(
+        this.actorId,
+        `insert into osirus.memory_entities
+           (owner_id, organization_id, workspace_id, canonical_name, entity_type,
+            confidence, attributes)
+         values ($1::uuid, $2::uuid, $3::uuid, $4, $5, $6, $7::jsonb)
+         on conflict (owner_id, workspace_id, canonical_name, entity_type)
+         do update set
+           confidence = greatest(osirus.memory_entities.confidence, excluded.confidence),
+           attributes = osirus.memory_entities.attributes || excluded.attributes,
+           updated_at = now()
+         returning id`,
+        [
+          this.actorId,
+          input.organizationId,
+          input.workspaceId,
+          item.label.slice(0, 400),
+          item.kind,
+          item.confidence,
+          JSON.stringify({
+            ...item.source,
+            causalEventId: item.id,
+            occurredAt: item.occurredAt,
+            runId: input.runId,
+          }),
+        ],
+      ).catch(() => [] as { id: string }[]);
+      const persisted = rows[0]?.id;
+      if (persisted) {
+        idMap.set(item.id, persisted);
+        entities += 1;
+      }
+    }
+
+    let relations = 0;
+    for (const edge of input.links.slice(0, 60)) {
+      const fromId = idMap.get(edge.from);
+      const toId = idMap.get(edge.to);
+      if (!fromId || !toId || fromId === toId) continue;
+      const inserted = await queryAs<{ id: string }>(
+        this.actorId,
+        `insert into osirus.memory_relations
+           (owner_id, organization_id, workspace_id, from_entity_id, to_entity_id,
+            relation_type, confidence, provenance)
+         select $1::uuid, $2::uuid, $3::uuid, $4::uuid, $5::uuid, $6, $7, $8::jsonb
+          where not exists (
+            select 1 from osirus.memory_relations existing
+             where existing.from_entity_id = $4::uuid
+               and existing.to_entity_id = $5::uuid
+               and existing.relation_type = $6
+          )
+         returning id`,
+        [
+          this.actorId,
+          input.organizationId,
+          input.workspaceId,
+          fromId,
+          toId,
+          edge.relation,
+          edge.confidence,
+          JSON.stringify({ ...edge.provenance, runId: input.runId }),
+        ],
+      ).catch(() => [] as { id: string }[]);
+      if (inserted[0]?.id) relations += 1;
+    }
+    return { entities, relations };
   }
 
   async latestBySubject(workspaceId: string, subjectKey: string) {

@@ -163,6 +163,32 @@ export async function runArenaTask(
           updatedAt: new Date().toISOString(),
           verificationStatus: "verified",
         })),
+      retrieveBundle: async () => {
+        const items = (task.memory ?? []).map((content, index) => ({
+          id: `memory-${index}`,
+          tier: "second" as const,
+          kind: "decision",
+          content,
+          source: "arena",
+          updatedAt: new Date().toISOString(),
+          verificationStatus: "verified" as const,
+        }));
+        return {
+          planes: {
+            episodic: [],
+            semantic: items,
+            procedural: [],
+            strategic: [],
+          },
+          contextLines: items.map(
+            (item) =>
+              `[semantic/${item.tier}/${item.verificationStatus}] ${item.content}`,
+          ),
+          itemIds: items.map((item) => item.id),
+          contradictionsPending: 0,
+        };
+      },
+      retrieveCausalContext: async () => [],
     } as unknown as ArmRuntime["memory"],
     // The real capability pack, so skill selection runs as in production;
     // with no history, every outcome weight is zero.

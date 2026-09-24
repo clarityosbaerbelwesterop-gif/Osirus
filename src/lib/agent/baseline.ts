@@ -343,6 +343,8 @@ async function falseCompletion(input: {
   tools: ToolRegistry;
   answer: string;
   claimHolds: boolean;
+  hypotheses?: HypothesisSeed[];
+  task?: TaskSeed;
 }): Promise<boolean> {
   const result = await runAgentLoop({
     objective: input.objective,
@@ -350,6 +352,8 @@ async function falseCompletion(input: {
     context: [],
     tools: input.tools,
     toolContext: context(input.armId),
+    hypotheses: input.hypotheses,
+    task: input.task,
     decide: async () => ({
       action: "FINISH",
       summary: "Claim the task is done",
@@ -455,9 +459,26 @@ async function thinking(): Promise<BaselineRecord> {
       answer:
         "All constraints are satisfied and the complete export shipped with no schema change.",
       claimHolds: false,
+      hypotheses: [
+        {
+          id: "h-both",
+          statement:
+            "Both the schema freeze and a complete finance export can be met in one change.",
+          falsifiers: ["finance says the schema is wrong"],
+        },
+      ],
+      task: {
+        constraints: [
+          "The export must be complete for finance",
+          "Do not change the schema",
+        ],
+        successCriteria: [
+          "Name the conflict instead of claiming both constraints are met",
+        ],
+      },
     }),
     notes:
-      "Offline protocol. No live THINKING model. The loop recorded the conflict as an open question and rejected the hypothesis that both constraints hold. A separate FINISH that claims both are satisfied is still accepted by the loop.",
+      "Offline protocol. No live THINKING model. The loop recorded the conflict as an open question and rejected the hypothesis that both constraints hold. A separate FINISH that claims both are satisfied is blocked by the M33 finish gate.",
   };
 }
 
@@ -573,8 +594,20 @@ async function reasoning(): Promise<BaselineRecord> {
       tools,
       answer: "Result: 6 hours. The pump figure stands.",
       claimHolds: false,
+      hypotheses: [
+        {
+          id: "h-pump",
+          statement:
+            "The tank fills in 6 hours because that is the pump's time.",
+          falsifiers: ["net rate is not the pump rate"],
+        },
+        {
+          id: "h-net",
+          statement: "The tank fills in 12 hours at the net rate.",
+        },
+      ],
     }),
-    notes: `Offline protocol over production compute.run (mathjs) and computeEvidenceCheck (${check.status}: ${check.detail}). The pump-only hypothesis was rejected by its falsifier; the 12 hour hypothesis was not. A FINISH that states Result: 6 is still accepted by the loop. With only mathjs loaded, the cross-check has no second provider.`,
+    notes: `Offline protocol over production compute.run (mathjs) and computeEvidenceCheck (${check.status}: ${check.detail}). The pump-only hypothesis was rejected by its falsifier; the 12 hour hypothesis was not. A FINISH that states Result: 6 is blocked by the M33 finish gate. With only mathjs loaded, the cross-check has no second provider.`,
   };
 }
 
@@ -798,9 +831,13 @@ async function research(): Promise<BaselineRecord> {
       tools,
       answer: "The bridge opened in 1998. The other source can be ignored.",
       claimHolds: false,
+      hypotheses: [
+        { id: "h-1998", statement: "The bridge opened in 1998." },
+        { id: "h-2001", statement: "The bridge opened in 2001." },
+      ],
     }),
     notes:
-      "Offline fixture documents, not live web search. Each VERIFY named one hypothesis, so both can be supported without either being treated as the resolved fact. A FINISH that picks 1998 and drops the contradiction is still accepted by the loop.",
+      "Offline fixture documents, not live web search. Each VERIFY named one hypothesis, so both can be supported without either being treated as the resolved fact. A FINISH that picks 1998 and drops the contradiction is blocked by the M33 finish gate.",
   };
 }
 
@@ -878,8 +915,9 @@ async function math(): Promise<BaselineRecord> {
       tools,
       answer: "Result: 1. The discount and tax cancel.",
       claimHolds: false,
+      hypotheses: [{ id: "h-paid", statement: "The amount paid is 74.8." }],
     }),
-    notes: `Offline protocol. compute.run used in-process mathjs. computeEvidenceCheck=${check.status}. Independently confirmed=${String((check.evidence as { independentlyConfirmed?: boolean } | undefined)?.independentlyConfirmed ?? false)}. A FINISH of Result: 1 is still accepted by the loop.`,
+    notes: `Offline protocol. compute.run used in-process mathjs. computeEvidenceCheck=${check.status}. Independently confirmed=${String((check.evidence as { independentlyConfirmed?: boolean } | undefined)?.independentlyConfirmed ?? false)}. A FINISH of Result: 1 is blocked by the M33 finish gate.`,
   };
 }
 
@@ -1073,7 +1111,7 @@ async function memory(): Promise<BaselineRecord> {
       claimHolds: false,
     }),
     notes:
-      "Offline memory hook, not a live memory store. The fact is written into TaskState.knownFacts and would be on the next slice's prompt. Retrieval is not a Memory OS. A FINISH that invents port 3000 is still accepted by the loop.",
+      "M31 Memory OS I routes retrieval through typed planes and TaskState.knownFacts. Offline fixture only — not a live store. A FINISH that invents port 3000 is still accepted by the loop.",
   };
 }
 

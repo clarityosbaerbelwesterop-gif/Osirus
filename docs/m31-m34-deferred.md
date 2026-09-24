@@ -4,27 +4,27 @@ The capability brief stopped mid-sentence in M30.4. This PR implements M30.1 thr
 
 ## M31 — Memory OS
 
-DEFERRED. Awaiting the rest of the brief.
+**Memory OS I shipped** in `build/m31-memory-os`. See `docs/m31-memory-os.md`.
 
-Already in the product, and left as they are: workspace memory retrieval, Memory Compiler v2 (unverified outcomes stay unpromoted), and the new `TaskState.knownFacts` copy of what the current loop retrieved. None of that is a memory operating system.
+What M31 I adds on top of the existing three-brain store: a `MemoryOS` coordinator, episodic prior-run retrieval, typed memory planes, entity graph writes on promotion, and a contradiction review queue. It is still not vector search, not a second scheduler, and not a Foundry bridge.
 
-## M32 — Deep Cognition
+## M32 — Memory OS II / Causal World Model
 
-DEFERRED. Awaiting the rest of the brief.
+Implemented on branch `build/m32-memory-os-ii`. See `docs/m32-causal-world-model.md`.
 
-`TaskState` and the evidence-sensitive hypothesis update are the M30 cognitive record on the existing loop checkpoint. They are not a deep-cognition stack, and this PR does not add one.
+Causal links, temporal decay, and relational graphs extend the existing three-brain stack without a second runtime. `TaskState` remains the M30 cognitive record on the loop checkpoint; M32 adds persisted causal context to retrieval and `world.query`.
 
-## M33 — Hourly Capability Pulse
+## M33 — Deep Thinking / Reasoning
 
-DEFERRED. Awaiting the rest of the brief.
+Implemented on branch `build/m33-deep-thinking`. See `docs/m33-deep-thinking.md`.
 
-`src/lib/agent/baseline.ts` is a one-shot offline measurement for this PR. It is not scheduled, not hourly, and not a pulse over live providers.
+Multi-step deliberation with M30 hypothesis states, finish gating when TaskKernel carries hypotheses or success criteria, adversarial and compound reasoning paths on the existing loop, plus docs and tests. No second scheduler.
 
-## M34 — RSI Watchdog
+## M34 — Hourly Capability Pulse / RSI Watchdog
 
-DEFERRED. Awaiting the rest of the brief.
+Implemented in M34. See `docs/m34-capability-pulse-rsi.md`.
 
-No watchdog process was added. The brief’s direction is that recursive self-improvement is not a separate watcher: the agent is supposed to change from its own experience. This PR does not claim that change, and it does not add a second runtime to watch for it.
+`src/lib/agent/baseline.ts` remains the offline M30 measurement. The hourly pulse reuses those fixtures through `src/lib/agent/pulse/` and the existing scheduler tick. The watchdog runs in-loop on production agent slices and feeds regressions into experience. It does not replace the agent loop and does not add a second runtime.
 
 ## Explicitly not in this PR
 

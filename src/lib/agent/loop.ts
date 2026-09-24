@@ -15,6 +15,16 @@ import {
 } from "./decision";
 import { groundComputerInspectResult } from "./multimodal-grounding";
 import {
+  assessFinishGate,
+  finishGateDirective,
+  kernelHasFinishGates,
+} from "./finish-gate";
+import {
+  buildReasoningProfile,
+  reasoningDirectives,
+  type ReasoningPath,
+} from "./reasoning";
+import {
   addOpenQuestion,
   applyVerificationStep,
   createTaskState,
@@ -216,9 +226,19 @@ export function emptyState(): LoopState {
   };
 }
 
+function reasoningPathFor(input: LoopInput): ReasoningPath {
+  return buildReasoningProfile({
+    objective: input.objective,
+    hypotheses: input.hypotheses,
+    task: input.task,
+  }).path;
+}
+
 function systemPrompt(input: LoopInput, state: LoopState) {
   const profile = input.tools.profileFor(input.toolContext.armId);
   const schemas = Object.entries(state.disclosedSchemas);
+  const gateNote = finishGateDirective(state.kernel);
+  const reasoningPath = reasoningPathFor(input);
   return [
     "You are OSIRUS, an execution-focused AI agent working step by step.",
     "Each turn, choose exactly one action. Use tools to find out rather than guessing.",
@@ -226,6 +246,8 @@ function systemPrompt(input: LoopInput, state: LoopState) {
     "Never claim a tool, test, source or command was used unless an observation below shows it.",
     "When the objective is met, FINISH with the complete answer. If you cannot proceed, RESPOND with what you found and what is missing.",
     ...input.directives,
+    ...(gateNote ? [gateNote] : []),
+    ...reasoningDirectives(reasoningPath),
     "",
     profile.length
       ? `Available tools (request a schema before first use if you are unsure of its input):\n${profile
@@ -506,7 +528,28 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
     switch (decision.action) {
       case "RESPOND":
       case "FINISH": {
-        state.answer = decision.answer!.trim();
+        const answer = decision.answer!.trim();
+        if (decision.action === "FINISH") {
+          const kernel = ensureKernel(state, input);
+          if (kernelHasFinishGates(kernel)) {
+            const gate = assessFinishGate(kernel, answer, state.steps);
+            if (!gate.allowed) {
+              consecutiveFailures += 1;
+              state.observations.push(observe("loop.finish_gate", gate.reason));
+              await record(
+                {
+                  action: "FINISH",
+                  summary: decision.summary,
+                  outcome: "error",
+                  detail: gate.reason,
+                },
+                stepStartedAt,
+              );
+              continue;
+            }
+          }
+        }
+        state.answer = answer;
         await record(
           {
             action: decision.action,

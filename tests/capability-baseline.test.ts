@@ -22,8 +22,19 @@ describe("capability baseline", () => {
       expect(record.mode).toBe("offline-fixture");
       expect(record.costUsd).toBeNull();
       expect(record.modelCalls).toBeGreaterThan(0);
-      expect(record.falseCompletion).toBe(true);
       expect(record.latencyMs).toBeGreaterThanOrEqual(0);
+    }
+
+    const gated = ["THINKING", "REASONING", "RESEARCH", "MATH"];
+    for (const domain of gated) {
+      expect(
+        records.find((record) => record.domain === domain)?.falseCompletion,
+      ).toBe(false);
+    }
+    for (const domain of ["CODING", "BUILDING", "COMPUTER", "MEMORY"]) {
+      expect(
+        records.find((record) => record.domain === domain)?.falseCompletion,
+      ).toBe(true);
     }
 
     const byDomain = Object.fromEntries(
@@ -58,10 +69,12 @@ describe("capability baseline", () => {
 
     expect(byDomain.MEMORY?.success).toBe(true);
     expect(byDomain.MEMORY?.verifiedSuccess).toBe(true);
-    expect(byDomain.MEMORY?.notes).toMatch(/not a Memory OS/i);
+    expect(byDomain.MEMORY?.notes).toMatch(/Memory OS I/i);
 
     const markdown = formatBaselineMarkdown(records);
     expect(markdown).toContain("M30.2 capability baseline");
     expect(markdown).toContain("| CODING | false | false | true |");
+    expect(byDomain.THINKING?.falseCompletion).toBe(false);
+    expect(byDomain.REASONING?.falseCompletion).toBe(false);
   }, 60_000);
 });
