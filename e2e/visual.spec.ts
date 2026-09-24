@@ -99,6 +99,18 @@ const SHOTS: Shot[] = [
     viewport: "phone",
     theme: "dark",
   },
+  {
+    name: "intelligence-lab",
+    surface: "intelligence",
+    viewport: "desktop",
+    theme: "light",
+  },
+  {
+    name: "mobile-intelligence-lab-dark",
+    surface: "intelligence",
+    viewport: "phone",
+    theme: "dark",
+  },
 ];
 
 for (const shot of SHOTS) {

@@ -1,6 +1,8 @@
 import type { RunSnapshot, RuntimeEvent } from "@/lib/runtime/types";
 import type { ShellData } from "@/components/shell/shell-context";
 import type { RoleStatus } from "@/lib/product/model-status";
+import type { LabView } from "@/lib/intelligence/lab/view";
+import { DEFAULT_SETTINGS } from "@/lib/intelligence/types";
 
 // Deterministic data for the UI fixture surfaces used by visual, responsive,
 // accessibility and journey tests. Nothing here touches a database: the
@@ -882,4 +884,318 @@ export function modelStatusFixture(): RoleStatus[] {
       },
     },
   ];
+}
+
+/**
+ * The Intelligence Lab mid-cycle, shaped like the first real CI cycles
+ * (2026-09-23): a coding cycle that found no improvement once a provider
+ * refusal was excluded, and a math cycle testing two challengers.
+ */
+export function intelligenceLabFixture(): LabView {
+  const now = Date.now();
+  const cap = (
+    id: string,
+    name: string,
+    status: LabView["capabilities"][number]["status"],
+    rate: number | null,
+    samples: number,
+    depth: number,
+    dependsOn: Array<{
+      id: string;
+      status: LabView["capabilities"][number]["status"];
+    }> = [],
+    heldBackBy: string | null = null,
+  ) => ({
+    id,
+    name,
+    domain: id.split(".")[0]!,
+    status,
+    rate,
+    samples,
+    depth,
+    dependsOn,
+    heldBackBy,
+  });
+  return {
+    generatedAt: new Date(now).toISOString(),
+    settings: {
+      ...DEFAULT_SETTINGS,
+      flags: {
+        ...DEFAULT_SETTINGS.flags,
+        intelligencePlane: true,
+        experiments: true,
+        curriculum: true,
+        selfPlay: true,
+        redIntelligence: true,
+        compilation: true,
+        strategyEvolution: true,
+        skillEvolution: true,
+      },
+      providerPause: null,
+    },
+    usage: {
+      model_calls: 41,
+      tokens: 612_000,
+      cost_usd: 0,
+      sandbox_minutes: 38,
+      chained_ticks: 9,
+      trials: 8,
+    },
+    capabilities: [
+      cap("tool.compute", "Compute tool use", "developing", 0.62, 8, 0),
+      cap("tool.workspace", "Workspace tools", "strong", 0.83, 6, 0),
+      cap("verification.execution", "Execution checks", "strong", 0.83, 6, 0),
+      cap("coding.debug", "Debugging failing tests", "strong", 0.83, 6, 1, [
+        { id: "tool.workspace", status: "strong" },
+        { id: "verification.execution", status: "strong" },
+      ]),
+      cap("math.quantitative", "Quantitative problems", "weak", 0.25, 8, 1, [
+        { id: "tool.compute", status: "developing" },
+      ]),
+      cap(
+        "coding.multi_file",
+        "Multi-file changes",
+        "developing",
+        0.5,
+        4,
+        2,
+        [
+          { id: "coding.debug", status: "strong" },
+          { id: "tool.compute", status: "developing" },
+        ],
+        null,
+      ),
+    ],
+    agenda: [
+      {
+        id: "a1",
+        capabilityId: "math.quantitative",
+        title: "Improve quantitative reliability",
+        rationale: "Verified rate 25% over 8 judged runs; usefulness 0.85.",
+        score: 2.94,
+        status: "active",
+      },
+      {
+        id: "a2",
+        capabilityId: "coding.debug",
+        title: "Improve debugging of failing tests",
+        rationale: "Verified rate 83% over 6 judged runs; usefulness 0.95.",
+        score: 0.97,
+        status: "open",
+      },
+    ],
+    cycle: {
+      id: "c2",
+      capabilityId: "math.quantitative",
+      phase: "dev_eval",
+      phaseIndex: 7,
+      status: "running",
+      startedAt: minutes(95, now),
+      log: [
+        {
+          at: minutes(95, now),
+          phase: "select_agenda",
+          note: 'Selected "Improve quantitative reliability" (score 2.94).',
+        },
+        {
+          at: minutes(94, now),
+          phase: "generate_data",
+          note: "Suite stocked at level 0: 4 dev, 1 adversarial, 3 holdout; labels verified 8, rejected 0.",
+        },
+        {
+          at: minutes(52, now),
+          phase: "analyze",
+          note: 'Champion verified 2/8. Gaps: tool "numbers stated without the compute tool" ×4.',
+        },
+        {
+          at: minutes(51, now),
+          phase: "hypothesize",
+          note: "Hypotheses: [tool] Numbers stated without the compute tool are often wrong. | [verification] The final value is not stated unambiguously.",
+        },
+        {
+          at: minutes(51, now),
+          phase: "design",
+          note: "Challengers: v2 (compute first), v3 (final line) on the same 4 dev tasks.",
+        },
+      ],
+    },
+    history: [
+      {
+        id: "c1",
+        capabilityId: "coding.debug",
+        status: "completed",
+        startedAt: minutes(600, now),
+        completedAt: minutes(500, now),
+        outcome: "no_improvement",
+        summary:
+          "No challenger passed the dev screen (P(better) >= 0.6 with at least as many challenger-only successes).",
+        why: null,
+        next: "Improve quantitative reliability",
+      },
+    ],
+    experiments: [
+      {
+        id: "e1",
+        capabilityId: "coding.debug",
+        status: "concluded",
+        championLabel: "coding.debug v1",
+        challengers: [
+          {
+            label: "coding.debug v2",
+            genome: "tier DEEP, reproduce first",
+            status: "rejected",
+          },
+          {
+            label: "coding.debug v3",
+            genome: "context 6000",
+            status: "rejected",
+          },
+        ],
+        outcome: "no_improvement",
+        summary: "No challenger passed the dev screen.",
+        comparisons: [
+          {
+            versionId: "v2",
+            partition: "dev",
+            tasks: 3,
+            champion: { verified: 2, n: 3 },
+            challenger: { verified: 2, n: 3 },
+            probabilityBetter: 0.5,
+            discordant: { challengerOnly: 0, championOnly: 0 },
+            signTestP: 1,
+            costRatio: 1.2,
+            falseCompletionDelta: 0,
+          },
+        ],
+      },
+    ],
+    strategies: [
+      {
+        strategyId: "math.quantitative",
+        versions: [
+          {
+            id: "m3",
+            version: 3,
+            status: "experimental",
+            genome: "final line",
+            rationale:
+              "Correct work is lost because the final value is not stated unambiguously.",
+            canaryPercent: 0,
+            model: "deepseek-v4-pro-0813:free",
+          },
+          {
+            id: "m2",
+            version: 2,
+            status: "experimental",
+            genome: "compute first",
+            rationale:
+              "Numbers stated without the compute tool are often wrong.",
+            canaryPercent: 0,
+            model: "deepseek-v4-pro-0813:free",
+          },
+          {
+            id: "m1",
+            version: 1,
+            status: "champion",
+            genome: "baseline",
+            rationale:
+              "The strategy the agent shipped with, before the Foundry.",
+            canaryPercent: 0,
+            model: "deepseek-v4-pro-0813:free",
+          },
+        ],
+      },
+    ],
+    generation: [
+      {
+        kind: "self_play",
+        produced: 2,
+        verified: 2,
+        rejected: 0,
+        note: "developer vs bug generator",
+      },
+      {
+        kind: "red",
+        produced: 13,
+        verified: 13,
+        rejected: 0,
+        note: "traps: memory conflict, context overflow, readme injection",
+      },
+      {
+        kind: "curriculum",
+        produced: 8,
+        verified: 8,
+        rejected: 0,
+        note: "level 1",
+      },
+    ],
+    datasets: [
+      {
+        id: "d1",
+        datasetId: "coding.debug.problem_solution",
+        version: 1,
+        counts: { train: 4, dev: 1 },
+        contaminated: 0,
+      },
+      {
+        id: "d2",
+        datasetId: "coding.debug.failure_repair",
+        version: 1,
+        counts: { train: 1 },
+        contaminated: 0,
+      },
+    ],
+    experience: {
+      total: 17,
+      verified: 7,
+      failures: 6,
+      bySource: { trial: 17 },
+    },
+    artifacts: {
+      strategic_memory: 2,
+      procedural_memory: 3,
+      failure_pattern: 2,
+      router_stat: 2,
+    },
+    strategicMemory: [
+      {
+        pattern: "coding.debug level 1",
+        content: "coding.debug v1 · baseline · 67% verified",
+        support: 3,
+      },
+    ],
+    models: [
+      {
+        modelId: "unorouter:deepseek-v4-pro-0813:free",
+        capabilityId: "coding.debug",
+        trials: 6,
+        verified: 5,
+        champion: true,
+      },
+      {
+        modelId: "unorouter:deepseek-v4-pro-0813:free",
+        capabilityId: "math.quantitative",
+        trials: 8,
+        verified: 2,
+        champion: true,
+      },
+    ],
+    training: {
+      available: false,
+      reason:
+        "No training provider is configured, and model tuning is off by operator decision; the Foundry improves strategies, skills, prompts and routing instead.",
+      jobTypes: [],
+      baseModels: [],
+    },
+    promotions: [
+      {
+        versionId: "v2",
+        from: "experimental",
+        to: "rejected",
+        canaryPercent: null,
+        at: minutes(500, now),
+        reason: "No challenger passed the dev screen.",
+      },
+    ],
+  };
 }

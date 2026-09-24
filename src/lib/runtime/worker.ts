@@ -707,5 +707,17 @@ export async function finalizeRun(input: {
   } catch {
     // Notifications and triggers never change how the run settled.
   }
+  // Operational metrics for the Intelligence Plane (never content). Best
+  // effort: the run is settled whatever happens here.
+  try {
+    const { captureProductExperience } =
+      await import("../intelligence/experience/product");
+    await captureProductExperience({
+      identity: input.identity,
+      runId: input.runId,
+    });
+  } catch {
+    // The Foundry being unavailable must not touch a customer's run.
+  }
   return completion;
 }
