@@ -394,8 +394,8 @@ describe("migration 015", () => {
     expect(sql).toContain(
       "ADD CONSTRAINT stage_budget_settlements_attempts_check CHECK (attempts >= 0)",
     );
-    expect(sql).toContain(
-      "DROP FUNCTION IF EXISTS osirus.checkpoint_stage_budget(uuid, uuid, uuid, text, jsonb, integer, integer)",
+    expect(sql.replace(/\s+/g, " ")).toContain(
+      "DROP FUNCTION IF EXISTS osirus.checkpoint_stage_budget( uuid, uuid, uuid, text, jsonb, integer, integer )",
     );
     const drop = sql.indexOf(
       "DROP FUNCTION IF EXISTS osirus.checkpoint_stage_budget",
