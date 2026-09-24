@@ -41,6 +41,11 @@ export async function POST(request: Request) {
       201,
     );
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.startsWith("entitlement_exceeded")
+    )
+      return json({ error: "limit_reached" }, 402);
     return json(
       {
         error:

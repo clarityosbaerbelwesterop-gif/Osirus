@@ -714,6 +714,42 @@ export async function finalizeRun(input: {
   } catch {
     // Notifications and triggers never change how the run settled.
   }
+  // Usage accounting: one ledger row per metric for the settled run, from
+  // what the runtime recorded. Best effort, like everything after settling.
+  try {
+    const { querySystem } = await import("../db/client");
+    await querySystem(
+      `insert into osirus.usage_ledger
+         (organization_id, workspace_id, run_id, source_type, source_id,
+          metric, quantity, unit)
+       select r.organization_id, r.workspace_id, r.id, 'run', r.id::text,
+              m.metric, m.quantity, m.unit
+         from osirus.runs r
+         cross join lateral (
+           select 'model_calls' as metric, count(*)::numeric as quantity,
+                  'calls' as unit
+             from osirus.model_calls where run_id = r.id
+           union all
+           select 'input_tokens', coalesce(sum(input_tokens), 0), 'tokens'
+             from osirus.model_calls where run_id = r.id
+           union all
+           select 'output_tokens', coalesce(sum(output_tokens), 0), 'tokens'
+             from osirus.model_calls where run_id = r.id
+           union all
+           select 'cost_usd', coalesce(sum(estimated_cost_usd), 0), 'usd'
+             from osirus.model_calls where run_id = r.id
+           union all
+           select 'tool_calls', count(*)::numeric, 'calls'
+             from osirus.tool_calls where run_id = r.id
+         ) m
+        where r.id = $1::uuid
+          and not exists (select 1 from osirus.usage_ledger u
+                           where u.run_id = r.id and u.source_type = 'run')`,
+      [input.runId],
+    );
+  } catch {
+    // Accounting never changes how a run settled.
+  }
   // Operational metrics for the Intelligence Plane (never content). Best
   // effort: the run is settled whatever happens here.
   try {

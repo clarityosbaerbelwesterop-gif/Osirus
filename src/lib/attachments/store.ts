@@ -78,6 +78,8 @@ export async function saveAttachment(
   input: { filename: string; bytes: Uint8Array; sessionId?: string | null },
 ) {
   const filename = safeFilename(input.filename);
+  const { assertWithinLimit } = await import("../entitlements");
+  await assertWithinLimit(identity, "attachmentsPerDay");
   const inspection = inspectAttachment(filename, input.bytes);
   if (!inspection.ok) throw new AttachmentError(inspection.error);
   const parsed = await parseAttachment(inspection.kind, input.bytes);

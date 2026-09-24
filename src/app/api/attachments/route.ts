@@ -65,6 +65,11 @@ export async function POST(request: Request) {
   } catch (error) {
     if (error instanceof AttachmentError)
       return json({ error: error.code }, ERROR_STATUS[error.code]);
+    if (
+      error instanceof Error &&
+      error.message.startsWith("entitlement_exceeded")
+    )
+      return json({ error: "limit_reached" }, 402);
     return json({ error: "upload_failed" }, 500);
   }
 }

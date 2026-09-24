@@ -318,7 +318,7 @@ export class MemoryIntelStore implements IntelStore {
     const rest = clone(patch);
     delete rest.experienceId;
     Object.assign(trial, rest);
-    if (patch.status && patch.status !== "pending") delete trial.lease;
+    if (patch.status) delete trial.lease;
   }
   async runningTrials(limit: number) {
     return [...this.state.trials.values()]

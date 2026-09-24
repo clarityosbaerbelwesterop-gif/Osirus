@@ -106,6 +106,8 @@ export async function createAutomation(
   identity: ProductIdentity,
   input: AutomationInput,
 ) {
+  const { assertWithinLimit } = await import("../entitlements");
+  await assertWithinLimit(identity, "automations");
   const schedule =
     input.trigger === "schedule" ? parseSchedule(input.schedule) : null;
   const rows = await queryAs<Row>(

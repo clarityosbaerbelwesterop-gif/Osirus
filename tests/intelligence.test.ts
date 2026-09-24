@@ -975,3 +975,132 @@ describe("team topology", () => {
     expect(kept).toBe("5 + 7 = 12.");
   });
 });
+
+describe("chaos: the Foundry survives failures", () => {
+  const settingsFor = () => ({
+    ...DEFAULT_SETTINGS,
+    flags: {
+      ...DEFAULT_SETTINGS.flags,
+      intelligencePlane: true,
+      experiments: true,
+      strategyEvolution: true,
+      compilation: true,
+    },
+    foundryModel: "scripted-free",
+  });
+  const mathExecutor = () => {
+    const answers: Array<{ objective: string; value: number }> = [];
+    const executor = new InProcessExecutor({
+      provider: () => scriptedModel(answers),
+      sandbox: async () => new UnconfiguredSandbox("unit test"),
+    });
+    const original = executor.execute.bind(executor);
+    executor.execute = async (input) => {
+      if (input.task.spec.verify.kind === "numeric")
+        answers.push({
+          objective: input.task.spec.objective,
+          value: input.task.spec.verify.value,
+        });
+      return original(input);
+    };
+    return executor;
+  };
+
+  it("resumes a cycle from its checkpoint after the database fails mid-step", async () => {
+    const store = new MemoryIntelStore();
+    await store.saveSettings(settingsFor());
+    // The database drops the third experience write, once.
+    let writes = 0;
+    const insert = store.insertExperience.bind(store);
+    store.insertExperience = async (row) => {
+      writes += 1;
+      if (writes === 3) throw new Error("connection terminated unexpectedly");
+      return insert(row);
+    };
+    const executor = mathExecutor();
+    const step = () =>
+      foundryStep({
+        store,
+        executor,
+        owner: "tick",
+        deadline: Date.now() + 60_000,
+        signal: new AbortController().signal,
+        focusCapability: "math.quantitative",
+        suite: { dev: 3, adversarial: 1, holdout: 3 },
+        maxChallengers: 1,
+      });
+    let failures = 0;
+    for (let index = 0; index < 60; index += 1) {
+      try {
+        await step();
+      } catch {
+        failures += 1;
+      }
+      if (
+        (await store.listCycles(5)).some(
+          (cycle) => cycle.status === "completed",
+        )
+      )
+        break;
+    }
+    expect(failures).toBe(1);
+    const cycle = (await store.listCycles(5)).find(
+      (entry) => entry.status === "completed",
+    );
+    expect(cycle).toBeTruthy();
+    // The failure is on the record, and the lease was released each time.
+    expect(
+      (cycle!.state.log ?? []).some((entry) =>
+        entry.note.startsWith("step failed"),
+      ),
+    ).toBe(true);
+  });
+
+  it("lets another worker take over a cycle whose worker crashed", async () => {
+    const store = new MemoryIntelStore();
+    await store.insertCycle({
+      status: "running",
+      phase: "measure",
+      agendaItemId: null,
+      capabilityId: null,
+      state: {},
+      summary: {},
+    });
+    const crashed = await store.leaseActiveCycle("worker-a", 0.05);
+    expect(crashed).toBeTruthy();
+    expect(await store.leaseActiveCycle("worker-b", 60)).toBeNull();
+    await new Promise((resolve) => setTimeout(resolve, 80));
+    expect((await store.leaseActiveCycle("worker-b", 60))?.id).toBe(
+      crashed!.id,
+    );
+  });
+
+  it("pauses without running a trial when the day's envelope is spent", async () => {
+    const store = new MemoryIntelStore();
+    await store.saveSettings({
+      ...settingsFor(),
+      budgets: { ...DEFAULT_SETTINGS.budgets, dailyModelCalls: 0 },
+    });
+    let executed = 0;
+    const executor = mathExecutor();
+    const original = executor.execute.bind(executor);
+    executor.execute = async (input) => {
+      executed += 1;
+      return original(input);
+    };
+    let report;
+    for (let index = 0; index < 6; index += 1) {
+      report = await foundryStep({
+        store,
+        executor,
+        owner: "tick",
+        deadline: Date.now() + 30_000,
+        signal: new AbortController().signal,
+        focusCapability: "math.quantitative",
+      });
+      if (report.waiting) break;
+    }
+    expect(report!.waiting).toBe("Daily model-call envelope spent");
+    expect(executed).toBe(0);
+  });
+});

@@ -23,7 +23,7 @@ import { TopBar } from "../shell/top-bar";
 import { Badge } from "../ui/badge";
 import { IconButton } from "../ui/icon-button";
 import { useWideLayout, Workbench } from "../workbench/workbench";
-import { ChatHome } from "./chat-home";
+import { ChatHome, type OnboardingStep } from "./chat-home";
 import { MessageList, type ChatMessage } from "./message-list";
 
 // ChatHub: the conversation, its runs and the workbench.
@@ -55,6 +55,7 @@ export function ChatHub(props: {
   initialSnapshotRunId: string | null;
   /** Server-provided snapshot, so the first paint already shows the run. */
   initialSnapshot?: RunSnapshot | null;
+  onboarding?: OnboardingStep[];
 }) {
   const shell = useShell();
   const { upsertSession, bindChat } = shell;
@@ -248,9 +249,11 @@ export function ChatHub(props: {
           setError(
             body.error === "too_large"
               ? "That file is larger than 10 MB."
-              : body.error === "unsupported_type"
-                ? "That file type cannot be read. Try PDF, text, Markdown, CSV, JSON, code or an image."
-                : "The file could not be uploaded.",
+              : body.error === "limit_reached"
+                ? "Today's attachment limit for this workspace is reached."
+                : body.error === "unsupported_type"
+                  ? "That file type cannot be read. Try PDF, text, Markdown, CSV, JSON, code or an image."
+                  : "The file could not be uploaded.",
           );
           return;
         }
@@ -561,7 +564,11 @@ export function ChatHub(props: {
         >
           <div className="chat-content" ref={content}>
             {empty ? (
-              <ChatHome firstName={props.firstName} onStart={start} />
+              <ChatHome
+                firstName={props.firstName}
+                onStart={start}
+                onboarding={props.onboarding}
+              />
             ) : (
               <MessageList
                 messages={messages}

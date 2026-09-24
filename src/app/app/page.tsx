@@ -1,5 +1,6 @@
 import { ChatHub } from "@/components/chat/chat-hub";
 import { RuntimeRepository } from "@/lib/runtime/repository";
+import { onboardingSteps } from "@/lib/product/onboarding";
 import { firstName, requireProductSession } from "@/lib/product/session";
 
 export const dynamic = "force-dynamic";
@@ -30,8 +31,13 @@ export default async function AppPage({
             .catch(() => empty)
         : await repository.getRecentWorkspaceState(identity.workspaceId);
 
+  const onboarding = state.sessionId
+    ? undefined
+    : await onboardingSteps(identity).catch(() => undefined);
+
   return (
     <ChatHub
+      onboarding={onboarding}
       key={state.sessionId ?? "new"}
       firstName={firstName(user)}
       workspaceName={identity.workspaceName}

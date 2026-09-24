@@ -186,6 +186,14 @@ async function runTrials(
   let progressed = 0;
   const model = settings.foundryModel;
 
+  // A trial marked running without a run behind it was being executed by a
+  // step that crashed (only the cycle's lease holder runs trials, so nobody
+  // else is on it now): it goes back in the queue, as if it had not run.
+  for (const orphan of (await store.listTrials(experimentId)).filter(
+    (trial) => trial.status === "running" && !trial.runId,
+  ))
+    await store.updateTrial(orphan.id, { status: "pending" });
+
   // Durable runs first: collect whatever has settled.
   if (ctx.executor.collect) {
     for (const trial of (await store.listTrials(experimentId)).filter(

@@ -74,7 +74,12 @@ export async function POST(request: Request) {
   try {
     const automation = await createAutomation(guard.identity, guard.body);
     return json({ automation }, 201);
-  } catch {
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message.startsWith("entitlement_exceeded")
+    )
+      return json({ error: "limit_reached" }, 402);
     return json({ error: "forbidden" }, 403);
   }
 }

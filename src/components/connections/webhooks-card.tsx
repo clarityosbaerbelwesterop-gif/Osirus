@@ -88,7 +88,9 @@ export function WebhooksCard({
       setMessage(
         body?.error === "not_configured"
           ? "Webhooks are not set up on this deployment yet."
-          : "The endpoint was not created.",
+          : body?.error === "limit_reached"
+            ? "This workspace reached its plan's webhook limit."
+            : "The endpoint was not created.",
       );
       return;
     }

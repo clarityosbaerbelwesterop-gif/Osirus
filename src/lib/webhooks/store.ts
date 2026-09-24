@@ -67,6 +67,8 @@ export async function createEndpoint(
 ) {
   if (!connectorKeyConfigured())
     throw new Error("connector_key_not_configured");
+  const { assertWithinLimit } = await import("../entitlements");
+  await assertWithinLimit(identity, "webhookEndpoints");
   const secret = randomBytes(32).toString("hex");
   const [row] = await queryAs<Row>(
     identity.userId,

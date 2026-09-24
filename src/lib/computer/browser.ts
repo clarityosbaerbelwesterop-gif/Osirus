@@ -132,7 +132,10 @@ export class SandboxBrowser implements BrowserQa {
       args: [`${DIR}/browser.mjs`, payload],
       env: this.options.chromiumPath
         ? { OSIRUS_CHROMIUM_PATH: this.options.chromiumPath }
-        : undefined,
+        : // The VM is Amazon Linux 2023. This tells @sparticuz/chromium to
+          // unpack the shared libraries its Chromium needs there and put
+          // them on LD_LIBRARY_PATH; without it the browser exits with 127.
+          { AWS_LAMBDA_JS_RUNTIME: "nodejs22.x" },
       timeoutMs: 120_000,
     });
     const marker = result.stdout.lastIndexOf("OSIRUS_REPORT ");

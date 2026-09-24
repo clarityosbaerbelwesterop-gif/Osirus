@@ -771,7 +771,9 @@ export class PgIntelStore implements IntelStore {
       },
       params,
     );
-    if (patch.status && patch.status !== "pending")
+    // Any status change ends the claim: a trial put back in the queue is
+    // claimable at once, a settled one never again.
+    if (patch.status)
       sets.push("lease_owner = null", "lease_expires_at = null");
     if (patch.status === "running")
       sets.push("started_at = coalesce(started_at, now())");

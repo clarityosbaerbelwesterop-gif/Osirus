@@ -32,6 +32,7 @@ const ERRORS: Record<string, string> = {
     "Check the fields: a name, an objective of at least a sentence, and a schedule.",
   forbidden: "Only workspace owners and editors can create automations.",
   rate_limited: "Too many changes at once. Wait a minute.",
+  limit_reached: "This workspace reached its plan's automation limit.",
 };
 
 const WEBHOOK_EVENTS = [
