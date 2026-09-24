@@ -31,6 +31,7 @@ export function mapWorkspaceRow(row: Row): WorkspaceRecord {
     repository: row.repository,
     branch: row.branch,
     repositoryMap: row.repository_map,
+    softwareWorldModel: null,
     commands: row.commands ?? [],
     commandLog: row.command_log ?? [],
     fileTree: row.file_tree ?? [],

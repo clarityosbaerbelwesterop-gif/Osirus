@@ -13,6 +13,7 @@ import {
   type AgentAction,
   type AgentDecision,
 } from "./decision";
+import { groundComputerInspectResult } from "./multimodal-grounding";
 import {
   assessFinishGate,
   finishGateDirective,
@@ -658,6 +659,18 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
           input: decision.toolInput ?? {},
           result,
         });
+        if (
+          result.ok &&
+          decision.toolId === "computer.inspect" &&
+          result.data &&
+          typeof result.data === "object"
+        ) {
+          groundComputerInspectResult(
+            ensureKernel(state, input),
+            result.data as Record<string, unknown>,
+            decision.hypothesisIds,
+          );
+        }
         consecutiveFailures = result.ok ? 0 : consecutiveFailures + 1;
         await record(
           {
@@ -667,6 +680,7 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
             outcome: result.ok ? "ok" : "error",
             detail: result.ok ? undefined : result.error,
             evidenceRefs: evidenceRefsOf(result),
+            hypothesisIds: decision.hypothesisIds,
           },
           stepStartedAt,
         );
@@ -856,8 +870,13 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
 function evidenceRefsOf(result: ToolResult): string[] | undefined {
   const data = result.data as Record<string, unknown> | undefined;
   if (!data || typeof data !== "object") return undefined;
-  const refs = [data.url, data.documentId, data.path, data.command]
+  const explicit = Array.isArray(data.evidenceRefs)
+    ? data.evidenceRefs.filter(
+        (value): value is string => typeof value === "string",
+      )
+    : [];
+  const refs = [...explicit, data.url, data.documentId, data.path, data.command]
     .filter((value): value is string => typeof value === "string")
-    .slice(0, 4);
-  return refs.length ? refs : undefined;
+    .slice(0, 12);
+  return refs.length ? [...new Set(refs)] : undefined;
 }

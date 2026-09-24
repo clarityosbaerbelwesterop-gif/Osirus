@@ -244,7 +244,12 @@ export function coverage(
     ),
     meetsStopRule:
       documents.length >= plan.stop.minDocuments &&
-      publishers.size >= plan.stop.minIndependentPublishers,
+      publishers.size >= plan.stop.minIndependentPublishers &&
+      ((plan.stopCriteria ?? plan.stop).minSupportedClaims === undefined ||
+        claims.filter(
+          (claim) =>
+            claim.status === "SUPPORTED" || claim.status === "CONTESTED",
+        ).length >= (plan.stopCriteria ?? plan.stop).minSupportedClaims!),
   };
 }
 
@@ -260,20 +265,40 @@ export function renderResearchAnswer(
       .map((n) => `[${n}]`)
       .join("");
   const lines = [summary.trim(), "", "## Findings"];
-  for (const claim of claims) {
-    const refs = cite(claim.supporting.map((entry) => entry.documentId));
-    if (claim.status === "SUPPORTED")
-      lines.push(`- ${claim.statement} ${refs}`);
-    else if (claim.status === "CONTESTED") {
-      lines.push(
-        `- **Contested:** ${claim.statement} ${refs} — disputed by ${cite(claim.contradicting.map((entry) => entry.documentId))}. Sources disagree; the evidence does not settle it.`,
-      );
-    } else if (claim.status === "STALE")
-      lines.push(`- **Possibly outdated:** ${claim.statement} ${refs}`);
-    else
-      lines.push(
-        `- **Unsupported (not established by retrieved sources):** ${claim.statement}`,
-      );
+  const sections = [
+    {
+      title: "Facts",
+      filter: (claim: VerifiedClaim) => claim.status === "SUPPORTED",
+    },
+    {
+      title: "Possibly outdated",
+      filter: (claim: VerifiedClaim) => claim.status === "STALE",
+    },
+    {
+      title: "Contested",
+      filter: (claim: VerifiedClaim) => claim.status === "CONTESTED",
+    },
+    {
+      title: "Unsupported",
+      filter: (claim: VerifiedClaim) => claim.status === "INSUFFICIENT",
+    },
+  ];
+  for (const section of sections) {
+    const matched = claims.filter(section.filter);
+    if (!matched.length) continue;
+    lines.push("", `### ${section.title}`);
+    for (const claim of matched) {
+      const refs = cite(claim.supporting.map((entry) => entry.documentId));
+      if (claim.status === "SUPPORTED")
+        lines.push(`- ${claim.statement} ${refs}`);
+      else if (claim.status === "CONTESTED") {
+        lines.push(
+          `- ${claim.statement} ${refs} — disputed by ${cite(claim.contradicting.map((entry) => entry.documentId))}. Sources disagree; the evidence does not settle it.`,
+        );
+      } else if (claim.status === "STALE")
+        lines.push(`- ${claim.statement} ${refs}`);
+      else lines.push(`- ${claim.statement}`);
+    }
   }
   const used = documents.filter((doc) =>
     claims.some((claim) =>
