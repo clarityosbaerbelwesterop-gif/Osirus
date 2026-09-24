@@ -8,16 +8,16 @@ False completion is a second loop that FINISHes an unsupported claim. The produc
 
 Verified success means an independent check agreed with the protocol outcome: hypothesis status for the conflict, `computeEvidenceCheck` for math and the revised rate, both fixture URLs cited for research, the file the write tool actually stored for building, and `TaskState.knownFacts` for memory. It does not mean a live model was graded.
 
-| Domain | Success | Verified | False completion | Model calls | Tool calls | Steps | Repairs | Latency ms |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| THINKING | true | true | true | 3 | 0 | 3 | 1 | 2 |
-| REASONING | true | true | true | 5 | 2 | 5 | 2 | 10 |
-| CODING | false | false | true | 3 | 2 | 3 | 0 | 71 |
-| RESEARCH | true | true | true | 5 | 2 | 5 | 0 | 1 |
-| MATH | true | true | true | 3 | 1 | 3 | 0 | 1 |
-| BUILDING | true | true | true | 2 | 1 | 2 | 0 | 0 |
-| COMPUTER | true | false | true | 2 | 1 | 2 | 0 | 1 |
-| MEMORY | true | true | true | 2 | 0 | 2 | 0 | 0 |
+| Domain    | Success | Verified | False completion | Model calls | Tool calls | Steps | Repairs | Latency ms |
+| --------- | ------- | -------- | ---------------- | ----------- | ---------- | ----- | ------- | ---------- |
+| THINKING  | true    | true     | true             | 3           | 0          | 3     | 1       | 2          |
+| REASONING | true    | true     | true             | 5           | 2          | 5     | 2       | 10         |
+| CODING    | false   | false    | true             | 3           | 2          | 3     | 0       | 71         |
+| RESEARCH  | true    | true     | true             | 5           | 2          | 5     | 0       | 1          |
+| MATH      | true    | true     | true             | 3           | 1          | 3     | 0       | 1          |
+| BUILDING  | true    | true     | true             | 2           | 1          | 2     | 0       | 0          |
+| COMPUTER  | true    | false    | true             | 2           | 1          | 2     | 0       | 1          |
+| MEMORY    | true    | true     | true             | 2           | 0          | 2     | 0       | 0          |
 
 Computer success is the click, not the page. This host has `/usr/bin/google-chrome`. The protocol clicked Add item and saw "1 item". `reportFrom` still failed `buttons-have-names` and `no-overflow:phone`, so verified success is false. A machine with no Chromium binary records success false and says the workflow was not driven. The test allows that.
 
