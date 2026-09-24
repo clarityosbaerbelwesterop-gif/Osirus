@@ -606,4 +606,75 @@ describe("agent loop", () => {
       }),
     ).toEqual({ modelCalls: 2, toolCalls: 0 });
   });
+
+  it("blocks premature FINISH when the task kernel has hypotheses", async () => {
+    const { decide, prompts } = scripted([
+      {
+        action: "FINISH",
+        summary: "Claim done",
+        answer: "Result: 6 hours. The pump figure stands.",
+      },
+      {
+        action: "VERIFY",
+        summary: "Check the net rate",
+        hypothesisIds: ["h-net"],
+        answer: "Result: 12 hours.",
+      },
+      {
+        action: "FINISH",
+        summary: "State the revised result",
+        answer:
+          "Result: 12 hours. The 6 hour estimate ignored the leak; the net rate fills in 12 hours.",
+      },
+    ]);
+    const result = await runAgentLoop({
+      objective: "Pump and leak fill-time",
+      directives: [],
+      context: [],
+      tools: registry(),
+      toolContext: context,
+      decide,
+      hypotheses: [
+        {
+          id: "h-pump",
+          statement:
+            "The tank fills in 6 hours because that is the pump's time.",
+        },
+        {
+          id: "h-net",
+          statement: "The tank fills in 12 hours at the net rate.",
+        },
+      ],
+      hooks: {
+        verify: async () => ({
+          status: "verified",
+          summary: "net fill time matches",
+          hypothesisIds: ["h-net"],
+          relation: "supports",
+        }),
+      },
+    });
+    expect(prompts).toHaveLength(3);
+    expect(result.state.steps[0]?.outcome).toBe("error");
+    expect(result.state.steps[0]?.detail).toMatch(/VERIFY|12|REJECTED/i);
+    expect(result.status).toBe("finished");
+    expect(result.answer).toMatch(/result:\s*12/i);
+    expect(prompts[0]!.system).toMatch(/VERIFY/i);
+  });
+
+  it("still allows FINISH without gates on simple tasks", async () => {
+    const { decide } = scripted([
+      { action: "FINISH", summary: "Answer", answer: "Paris." },
+    ]);
+    const result = await runAgentLoop({
+      objective: "What is the capital of France?",
+      directives: [],
+      context: [],
+      tools: registry(),
+      toolContext: context,
+      decide,
+    });
+    expect(result.status).toBe("finished");
+    expect(result.state.steps[0]?.outcome).toBe("finished");
+  });
 });
