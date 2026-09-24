@@ -14,7 +14,7 @@ import {
   type StrategyVersion,
   type Trial,
 } from "../types";
-import { holdoutSignal } from "../datasets/verify";
+import { holdoutSignal, type ExampleSignal } from "../datasets/verify";
 import { assertCandidateTransition } from "../models/training";
 import {
   today,
@@ -562,12 +562,24 @@ export class MemoryIntelStore implements IntelStore {
         if (example.partition === partition) out.add(example.fingerprint);
     return out;
   }
-  async datasetHoldoutSignals() {
-    const out: ReturnType<typeof holdoutSignal>[] = [];
-    for (const version of this.state.datasetVersions)
-      for (const example of version.examples)
-        if (example.partition === "holdout") out.push(holdoutSignal(example));
+  async datasetExampleSignals(filter: {
+    partitions: DatasetExample["partition"][];
+    datasetId?: string;
+  }) {
+    const wanted = new Set(filter.partitions);
+    const out: ExampleSignal[] = [];
+    for (const version of this.state.datasetVersions) {
+      if (filter.datasetId && version.datasetId !== filter.datasetId) continue;
+      for (const example of version.examples) {
+        if (!wanted.has(example.partition)) continue;
+        out.push({ ...holdoutSignal(example), partition: example.partition });
+      }
+    }
     return out;
+  }
+  async datasetHoldoutSignals() {
+    const rows = await this.datasetExampleSignals({ partitions: ["holdout"] });
+    return rows.map(({ fingerprint, simhash }) => ({ fingerprint, simhash }));
   }
 
   async insertTrainingRun(

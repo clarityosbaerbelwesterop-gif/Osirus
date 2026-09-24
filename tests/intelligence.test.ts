@@ -36,6 +36,10 @@ import { analyzeExperience } from "../src/lib/intelligence/capabilities/gaps";
 import { measure } from "../src/lib/intelligence/capabilities/registry";
 import { buildDatasets } from "../src/lib/intelligence/datasets/builder";
 import {
+  holdoutSignal,
+  verifyExamples,
+} from "../src/lib/intelligence/datasets/verify";
+import {
   attemptTraining,
   candidateTrained,
   candidateTransitionProblems,
@@ -1266,6 +1270,30 @@ describe("dataset verification", () => {
           },
         }),
       ],
+      [
+        "snear",
+        evalTask({
+          id: "snear",
+          partition: "train",
+          spec: {
+            kind: "coding",
+            objective: "sort the list of integers stably",
+            verify: { kind: "includes", all: ["ok"] },
+          },
+        }),
+      ],
+      [
+        "fresh",
+        evalTask({
+          id: "fresh",
+          partition: "train",
+          spec: {
+            kind: "coding",
+            objective: "render a histogram of word frequencies from a log",
+            verify: { kind: "includes", all: ["ok"] },
+          },
+        }),
+      ],
     ]);
     const built = await buildDatasets(store, {
       capabilityId: "coding.debug",
@@ -1294,6 +1322,7 @@ describe("dataset verification", () => {
           taskRef: "d2",
           strategyVersionId: "policy-v2",
         }),
+        verifiedExperience({ id: "esnear", taskRef: "snear" }),
       ],
     });
     const problem = built.find((set) =>
@@ -1302,6 +1331,7 @@ describe("dataset verification", () => {
     expect(problem.contamination.duplicates).toBeGreaterThan(0);
     expect(problem.contamination.holdoutOverlap).toBeGreaterThan(0);
     expect(problem.contamination.nearDuplicates).toBe(1);
+    expect(problem.contamination.trainNearDuplicates).toBe(1);
     expect(problem.contamination.rejected).toBe(problem.contamination.dropped);
     expect(problem.counts.holdout).toBe(1);
     expect(problem.counts.train).toBe(2);
@@ -1325,14 +1355,118 @@ describe("dataset verification", () => {
           taskRef: "a",
           strategyVersionId: "policy-v9",
         }),
+        verifiedExperience({
+          id: "enear",
+          taskRef: "snear",
+          strategyVersionId: "policy-v9",
+        }),
+        verifiedExperience({
+          id: "efresh",
+          taskRef: "fresh",
+          strategyVersionId: "policy-v9",
+          trajectory: {
+            output: "fixed",
+            actions: [{ action: "run", toolId: "run", outcome: "ok" }],
+          },
+        }),
       ],
     });
     const second = leaked.find((set) =>
       set.datasetId.endsWith("problem_solution"),
     )!;
     expect(second.contamination.holdoutOverlap).toBeGreaterThan(0);
+    expect(second.contamination.duplicates).toBeGreaterThan(0);
+    expect(second.contamination.trainNearDuplicates).toBeGreaterThan(0);
     expect(second.counts.train ?? 0).toBe(1);
     expect(second.counts.holdout).toBeUndefined();
+    const trajectory = leaked.find((set) =>
+      set.datasetId.endsWith("trajectory"),
+    )!;
+    expect(trajectory.counts.train).toBe(1);
+    expect(trajectory.contamination.trainNearDuplicates).toBe(0);
+    expect(trajectory.contamination.duplicates).toBe(0);
+  });
+
+  it("keeps near-duplicate holdout rows and drops a later train near-duplicate", () => {
+    const row = (
+      partition: "train" | "dev" | "holdout" | "adversarial",
+      text: string,
+      id: string,
+    ) => ({ partition, fingerprint: id, text });
+    const batch = verifyExamples(
+      [
+        row(
+          "holdout",
+          "fix the median bug in stats module for even arrays",
+          "h1",
+        ),
+        row(
+          "holdout",
+          "fix the median bug in the stats module for even arrays",
+          "h2",
+        ),
+        row("train", "parse a csv file into rows of strings", "t1"),
+        row("train", "parse the csv file into rows of strings", "t2"),
+        row("dev", "render a histogram of word frequencies from a log", "d1"),
+        row(
+          "adversarial",
+          "compute the determinant of a three by three matrix quickly",
+          "a1",
+        ),
+      ],
+      [],
+    );
+    expect(batch.report.trainNearDuplicates).toBe(1);
+    expect(batch.report.nearDuplicates).toBe(0);
+    expect(batch.report.rejected).toBe(batch.report.dropped);
+    expect(batch.kept.map((example) => example.fingerprint)).toEqual([
+      "h1",
+      "h2",
+      "t1",
+      "d1",
+      "a1",
+    ]);
+
+    const stored = verifyExamples(
+      [
+        row("train", "sort the list of integers stably", "near-stored"),
+        row(
+          "train",
+          "fix the median bug in the stats module for even arrays",
+          "near-hold",
+        ),
+        row(
+          "train",
+          "render a histogram of word frequencies from a log",
+          "fresh",
+        ),
+        row("train", "parse a csv file into rows of strings", "same"),
+      ],
+      [
+        holdoutSignal({
+          fingerprint: "stored-hold",
+          input: {
+            objective: "fix the median bug in stats module for even arrays",
+          },
+        }),
+      ],
+      [
+        holdoutSignal({
+          fingerprint: "stored-sort",
+          input: { objective: "sort a list of integers stably" },
+        }),
+        {
+          fingerprint: "same",
+          simhash: simhash("parse a csv file into rows of strings"),
+        },
+      ],
+    );
+    expect(stored.report.trainNearDuplicates).toBe(1);
+    expect(stored.report.nearDuplicates).toBe(1);
+    expect(stored.report.duplicates).toBe(1);
+    expect(stored.kept.map((example) => example.fingerprint)).toEqual([
+      "fresh",
+    ]);
   });
 });
 
