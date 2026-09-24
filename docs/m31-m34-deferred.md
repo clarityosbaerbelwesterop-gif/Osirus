@@ -4,9 +4,9 @@ The capability brief stopped mid-sentence in M30.4. This PR implements M30.1 thr
 
 ## M31 — Memory OS
 
-DEFERRED. Awaiting the rest of the brief.
+**Memory OS I shipped** in `build/m31-memory-os`. See `docs/m31-memory-os.md`.
 
-Already in the product, and left as they are: workspace memory retrieval, Memory Compiler v2 (unverified outcomes stay unpromoted), and the new `TaskState.knownFacts` copy of what the current loop retrieved. None of that is a memory operating system.
+What M31 I adds on top of the existing three-brain store: a `MemoryOS` coordinator, episodic prior-run retrieval, typed memory planes, entity graph writes on promotion, and a contradiction review queue. It is still not vector search, not a second scheduler, and not a Foundry bridge.
 
 ## M32 — Deep Cognition
 

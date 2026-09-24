@@ -306,15 +306,34 @@ export abstract class BaseArm implements AgentArm {
   ): Promise<StageOutcome> {
     const policy = policyOfStage(context.work.stageInput);
     const planted = plantedMemoryOf(context.work.stageInput, policy);
-    const items = planted
-      ? planted
-      : await context.runtime.memory.retrieve({
+    const bundle = planted
+      ? {
+          planes: {
+            episodic: [],
+            semantic: planted,
+            procedural: [],
+            strategic: [],
+          },
+          contextLines: planted.map(
+            (item) =>
+              `[semantic/${item.tier}/${item.verificationStatus ?? "unverified"}] ${item.content}`,
+          ),
+          itemIds: planted.map((item) => item.id),
+          contradictionsPending: 0,
+        }
+      : await context.runtime.memory.retrieveBundle({
           workspaceId: context.work.workspaceId,
           objective: context.work.objective,
           capability: this.primaryCapability(),
           stage: "retrieve_memory",
           ...memoryLimitsUnder(policy),
         });
+    const items = [
+      ...bundle.planes.episodic,
+      ...bundle.planes.semantic,
+      ...bundle.planes.procedural,
+      ...bundle.planes.strategic,
+    ];
     await context.runtime.activity("memory.retrieved", "Searched memory", {
       count: items.length,
       // What the run was given, so the Memory Context tab can show it. The
@@ -346,10 +365,7 @@ export abstract class BaseArm implements AgentArm {
         { parts: excerpts.map((excerpt) => excerpt.label) },
       );
     context.state.memoryContext = [
-      ...items.map(
-        (item) =>
-          `[${item.tier}/${item.verificationStatus ?? "unverified"}] ${item.content}`,
-      ),
+      ...bundle.contextLines,
       // File content is data from the user, never instructions to follow.
       ...excerpts.map(
         (excerpt) =>
@@ -824,20 +840,17 @@ export abstract class BaseArm implements AgentArm {
           );
         },
         onToolResult: (entry) => toolbox.record(entry),
-        retrieveMemory: async (query) =>
-          (
-            await runtime.memory.retrieve({
-              workspaceId: work.workspaceId,
-              objective: query,
-              capability: work.capability,
-              stage: "agent_loop",
-              tokenBudget: 1200,
-              limit: 6,
-            })
-          ).map(
-            (item) =>
-              `[${item.tier}/${item.verificationStatus ?? "unverified"}] ${item.content}`,
-          ),
+        retrieveMemory: async (query) => {
+          const bundle = await runtime.memory.retrieveBundle({
+            workspaceId: work.workspaceId,
+            objective: query,
+            capability: work.capability,
+            stage: "agent_loop",
+            tokenBudget: 1200,
+            limit: 6,
+          });
+          return bundle.contextLines;
+        },
         createArtifact: async (artifact) => ({
           ref: await runtime.repository.createArtifact({
             organizationId: identity.organizationId,
