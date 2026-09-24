@@ -180,9 +180,7 @@ export default async function SettingsSection({
             <Badge>{memory.total} items</Badge>
             <Badge tone="success">{memory.verified} verified</Badge>
             {memory.contradictions ? (
-              <Badge tone="warning">
-                {memory.contradictions} need review
-              </Badge>
+              <Badge tone="warning">{memory.contradictions} need review</Badge>
             ) : null}
           </div>
           {memory.conflictQueue.length ? (

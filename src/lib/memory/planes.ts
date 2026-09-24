@@ -1,10 +1,6 @@
 import type { MemoryItem } from ".";
 
-export type MemoryPlane =
-  | "episodic"
-  | "semantic"
-  | "procedural"
-  | "strategic";
+export type MemoryPlane = "episodic" | "semantic" | "procedural" | "strategic";
 
 export type MemoryBundle = {
   planes: Record<MemoryPlane, MemoryItem[]>;

@@ -1,12 +1,6 @@
-import {
-  memoryCandidates,
-  type RunOutcome,
-} from "./compiler-v2";
+import { memoryCandidates, type RunOutcome } from "./compiler-v2";
 import { indexMemoryEntities } from "./entities";
-import {
-  bundleFromItems,
-  type MemoryBundle,
-} from "./planes";
+import { bundleFromItems, type MemoryBundle } from "./planes";
 import type { MemoryItem } from ".";
 import {
   MemoryRepository,
@@ -47,9 +41,7 @@ export class MemoryOS {
   }
 
   /** Backward-compatible flat retrieval used by arms, tools, and the loop. */
-  async retrieve(
-    input: MemoryRetrieveInput,
-  ): Promise<MemoryItem[]> {
+  async retrieve(input: MemoryRetrieveInput): Promise<MemoryItem[]> {
     const bundle = await this.retrieveBundle(input);
     return [
       ...bundle.planes.episodic,
@@ -59,9 +51,7 @@ export class MemoryOS {
     ];
   }
 
-  async retrieveBundle(
-    input: MemoryRetrieveInput,
-  ): Promise<MemoryBundle> {
+  async retrieveBundle(input: MemoryRetrieveInput): Promise<MemoryBundle> {
     const [lexical, episodic, contradictions] = await Promise.all([
       this.repository.retrieve(input),
       this.repository.episodicByObjective(

@@ -211,11 +211,7 @@ export class MemoryRepository {
     });
   }
 
-  async episodicByObjective(
-    workspaceId: string,
-    objective: string,
-    limit = 6,
-  ) {
+  async episodicByObjective(workspaceId: string, objective: string, limit = 6) {
     const query = objective.trim();
     if (!query) return [];
     const rowLimit = Math.min(Math.max(limit, 1), 12);

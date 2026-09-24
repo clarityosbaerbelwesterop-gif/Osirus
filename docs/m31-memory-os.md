@@ -8,24 +8,24 @@ Memory OS I is a coordinator over the existing three-brain store. It does **not*
 
 Single entry point for product memory:
 
-| Method | Role |
-|--------|------|
-| `retrieveBundle()` | Merges lexical retrieval with episodic prior-run lookup; routes items into four planes |
-| `retrieve()` | Backward-compatible flat list (arms, tools, loop) |
-| `commit()` | Wraps Compiler v2 promotion and entity indexing after verified runs |
-| `listContradictions()` | Surfaces `contradiction_status = 'suspected'` items |
-| `resolveContradiction()` | Calls existing `resolveConflict()` on the repository |
+| Method                   | Role                                                                                   |
+| ------------------------ | -------------------------------------------------------------------------------------- |
+| `retrieveBundle()`       | Merges lexical retrieval with episodic prior-run lookup; routes items into four planes |
+| `retrieve()`             | Backward-compatible flat list (arms, tools, loop)                                      |
+| `commit()`               | Wraps Compiler v2 promotion and entity indexing after verified runs                    |
+| `listContradictions()`   | Surfaces `contradiction_status = 'suspected'` items                                    |
+| `resolveContradiction()` | Calls existing `resolveConflict()` on the repository                                   |
 
 ### Memory planes (`src/lib/memory/planes.ts`)
 
 Cognitive planes are routing labels, not new tables:
 
-| Plane | Source kinds / signals |
-|-------|------------------------|
-| **Episodic** | `run_summary`; prior-run lookup by objective |
-| **Semantic** | `fact`, `project_map`, `constraint`, `evidence`, … |
-| **Procedural** | `pattern` and `source.memory` starting with `experience.` |
-| **Strategic** | `decision`, third-brain summaries, high-importance verified constraints |
+| Plane          | Source kinds / signals                                                  |
+| -------------- | ----------------------------------------------------------------------- |
+| **Episodic**   | `run_summary`; prior-run lookup by objective                            |
+| **Semantic**   | `fact`, `project_map`, `constraint`, `evidence`, …                      |
+| **Procedural** | `pattern` and `source.memory` starting with `experience.`               |
+| **Strategic**  | `decision`, third-brain summaries, high-importance verified constraints |
 
 Context lines are prefixed with `[plane/tier/verification]` so First Brain and the agent loop see typed memory instead of a flat string list.
 
