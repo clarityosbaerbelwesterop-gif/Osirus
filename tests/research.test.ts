@@ -119,10 +119,13 @@ describe("citation verification", () => {
     const [claim] = verifyClaims(
       {
         answer: "a",
+        brief: "",
+        openQuestions: [],
         claims: [
           {
             statement:
               "Transaction level advisory locks are released automatically at the end of the transaction.",
+            kind: "fact",
             support: [
               {
                 url: postgresDoc.url,
@@ -148,7 +151,7 @@ describe("citation verification", () => {
       [claim!],
       [postgresDoc, blogDoc],
     );
-    expect(rendered).toContain("**Contested:**");
+    expect(rendered).toContain("### Contested");
     expect(rendered).toContain("Sources disagree");
   });
 
@@ -156,9 +159,12 @@ describe("citation verification", () => {
     const claims = verifyClaims(
       {
         answer: "a",
+        brief: "",
+        openQuestions: [],
         claims: [
           {
             statement: "Advisory locks survive server restarts.",
+            kind: "fact",
             support: [
               {
                 url: "https://made.up/x",
@@ -189,9 +195,12 @@ describe("citation verification", () => {
     const [claim] = verifyClaims(
       {
         answer: "a",
+        brief: "",
+        openQuestions: [],
         claims: [
           {
             statement: "The current stable release is version 11.",
+            kind: "fact",
             support: [
               {
                 url: old.url,
@@ -359,10 +368,13 @@ describe("research pipeline", () => {
     const outcome = await finalizeResearch({
       synthesis: {
         answer: "Advisory locks come in session and transaction scope.",
+        brief: "",
+        openQuestions: [],
         claims: [
           {
             statement:
               "Session level advisory locks are held until released or the session ends.",
+            kind: "fact",
             support: [
               {
                 url: postgresDoc.url,
@@ -374,6 +386,7 @@ describe("research pipeline", () => {
           },
           {
             statement: "Advisory locks are replicated to standbys.",
+            kind: "fact",
             support: [
               {
                 url: "https://fabricated.example/replication",
