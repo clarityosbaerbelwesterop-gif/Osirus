@@ -405,13 +405,17 @@ export function workspaceTools(
             truncated: false,
             note: "Software world model not built yet.",
           };
-        return runNavigation(model, await workspace(), input as {
-          op: import("./navigation").NavOperation;
-          symbol?: string;
-          path?: string;
-          line?: number;
-          limit?: number;
-        });
+        return runNavigation(
+          model,
+          await workspace(),
+          input as {
+            op: import("./navigation").NavOperation;
+            symbol?: string;
+            path?: string;
+            line?: number;
+            limit?: number;
+          },
+        );
       },
     }),
     write({

@@ -166,7 +166,9 @@ export function routeMapping(model: SoftwareWorldModel, limit = 30) {
 }
 
 export function schemaMapping(model: SoftwareWorldModel, limit = 30) {
-  const schemaModules = model.modules.filter((module) => module.kind === "schema");
+  const schemaModules = model.modules.filter(
+    (module) => module.kind === "schema",
+  );
   const db = model.dbAccess.slice(0, limit);
   return {
     schemaFiles: schemaModules.slice(0, limit).map((module) => module.path),
@@ -233,7 +235,11 @@ export async function runNavigation(
       const grep = await workspace.search(symbol, path || ".");
       const grepRefs = grep.slice(0, limit).map((line) => {
         const [file, lineNo, ...rest] = line.split(":");
-        return { file, line: Number(lineNo), text: rest.join(":").slice(0, 200) };
+        return {
+          file,
+          line: Number(lineNo),
+          text: rest.join(":").slice(0, 200),
+        };
       });
       const combined = [...modelRefs, ...grepRefs].slice(0, limit);
       return {
@@ -280,7 +286,12 @@ export async function runNavigation(
     }
     case "test_mapping": {
       const matches = testMapping(model, symbol || path || undefined, limit);
-      return { op: request.op, query: symbol || path || "*", matches, truncated: false };
+      return {
+        op: request.op,
+        query: symbol || path || "*",
+        matches,
+        truncated: false,
+      };
     }
     case "route_mapping": {
       const matches = routeMapping(model, limit);

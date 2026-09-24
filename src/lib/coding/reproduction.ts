@@ -79,7 +79,9 @@ export function parseReproductionArtifact(
   try {
     const json = JSON.parse(trimmed) as unknown;
     if (!json || typeof json !== "object") return null;
-    return createReproductionArtifact(json as z.infer<typeof reproductionArtifactSchema>);
+    return createReproductionArtifact(
+      json as z.infer<typeof reproductionArtifactSchema>,
+    );
   } catch {
     return null;
   }
@@ -131,7 +133,8 @@ export function evaluateReproductionGate(input: {
     (artifact) => artifact.status === "reproduced",
   );
   const skipped = input.artifacts.filter(
-    (artifact) => artifact.status === "not_reproducible" || artifact.status === "skipped",
+    (artifact) =>
+      artifact.status === "not_reproducible" || artifact.status === "skipped",
   );
   if (reproduced.length > 0) {
     return {
@@ -178,8 +181,7 @@ export function artifactFromCommandFailure(input: {
     command: input.command,
     expected: input.expected ?? "failure reproducing the reported bug",
     actual: `exit ${input.exitCode ?? "null"}: ${output.slice(-2_000)}`,
-    status:
-      input.exitCode !== 0 ? "reproduced" : "skipped",
+    status: input.exitCode !== 0 ? "reproduced" : "skipped",
     failureClass: input.failureClass,
     evidencePaths: [],
     notes:

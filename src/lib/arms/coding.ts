@@ -18,9 +18,7 @@ import type {
   StageOutcome,
 } from "./types";
 import type { RepositoryMap } from "../coding/repo-map";
-import {
-  renderSoftwareWorldModel,
-} from "../coding/software-world-model";
+import { renderSoftwareWorldModel } from "../coding/software-world-model";
 import {
   evaluateReproductionGate,
   isBugClassTask,
@@ -422,11 +420,7 @@ export class CodingArm extends BaseArm {
     const { buildToolbox } = await import("../agent/toolbox");
     const persistReproduction = (artifact: ReproductionArtifact) => {
       context.state.reproductionArtifacts = mergeReproductionArtifacts(
-        readState<ReproductionArtifact[]>(
-          context,
-          "reproductionArtifacts",
-          [],
-        ),
+        readState<ReproductionArtifact[]>(context, "reproductionArtifacts", []),
         artifact,
       );
     };

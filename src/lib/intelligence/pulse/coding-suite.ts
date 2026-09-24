@@ -74,7 +74,7 @@ const UTIL_FIXTURE = [
   },
   {
     path: "src/format.js",
-    content: 'export function titleCase(text) {\n  return text;\n}\n',
+    content: "export function titleCase(text) {\n  return text;\n}\n",
   },
   {
     path: "src/index.js",

@@ -95,9 +95,9 @@ describe("M35 software world model", () => {
       true,
     );
     expect(model.routes.some((route) => route.method === "GET")).toBe(true);
-    expect(model.testMappings.some((mapping) => mapping.testFile.includes("test"))).toBe(
-      true,
-    );
+    expect(
+      model.testMappings.some((mapping) => mapping.testFile.includes("test")),
+    ).toBe(true);
     const summary = renderSoftwareWorldModel(model, "summary");
     expect(summary).toContain("[software model]");
     expect(summary).toContain("median");
@@ -117,7 +117,9 @@ describe("M35 software world model", () => {
   it("persists on workspace open", async () => {
     const session = await openFixture();
     expect(session.record.softwareWorldModel).not.toBeNull();
-    expect(session.record.softwareWorldModel?.symbols.length).toBeGreaterThan(0);
+    expect(session.record.softwareWorldModel?.symbols.length).toBeGreaterThan(
+      0,
+    );
   });
 });
 
@@ -166,13 +168,16 @@ describe("M35 reproduction artifact", () => {
     const merged = mergeReproductionArtifacts([], parsed!);
     expect(merged).toHaveLength(1);
     expect(
-      mergeReproductionArtifacts(merged, createReproductionArtifact({
-        id: parsed!.id,
-        command: "npm test",
-        expected: "tests pass",
-        actual: "still failing",
-        status: "reproduced",
-      })),
+      mergeReproductionArtifacts(
+        merged,
+        createReproductionArtifact({
+          id: parsed!.id,
+          command: "npm test",
+          expected: "tests pass",
+          actual: "still failing",
+          status: "reproduced",
+        }),
+      ),
     ).toHaveLength(1);
   });
 

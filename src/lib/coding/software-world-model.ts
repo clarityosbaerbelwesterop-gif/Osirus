@@ -107,7 +107,8 @@ const PY_CLASS = /^class\s+(\w+)/gm;
 const ROUTE_HANDLER =
   /export\s+(?:async\s+)?function\s+(GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/g;
 const NEXT_PAGE = /page\.(tsx?|jsx?)$/;
-const EXPRESS_ROUTE = /\.(get|post|put|patch|delete)\s*\(\s*['"`]([^'"`]+)['"`]/gi;
+const EXPRESS_ROUTE =
+  /\.(get|post|put|patch|delete)\s*\(\s*['"`]([^'"`]+)['"`]/gi;
 
 const DB_PATTERNS: Array<[RegExp, DbAccessPoint["kind"], string]> = [
   [/\b(?:SELECT|INSERT|UPDATE|DELETE)\b/i, "query", "sql"],
@@ -167,7 +168,12 @@ function parseJsTs(content: string, file: string) {
   for (const match of content.matchAll(JS_NAMED_EXPORT)) {
     const names = match[1]!
       .split(",")
-      .map((part) => part.trim().split(/\s+as\s+/)[0]?.trim())
+      .map((part) =>
+        part
+          .trim()
+          .split(/\s+as\s+/)[0]
+          ?.trim(),
+      )
       .filter(Boolean) as string[];
     for (const name of names)
       symbols.push({
@@ -182,8 +188,9 @@ function parseJsTs(content: string, file: string) {
     const names = [
       match[1],
       match[3],
-      ...(match[2]?.split(",").map((part) => part.trim().split(/\s+as\s+/)[0]) ??
-        []),
+      ...(match[2]
+        ?.split(",")
+        .map((part) => part.trim().split(/\s+as\s+/)[0]) ?? []),
     ].filter(Boolean) as string[];
     imports.push({ from: file, to: resolveImport(file, spec), spec });
     for (const name of names)
@@ -218,9 +225,15 @@ function parseJsTs(content: string, file: string) {
     for (const match of line.matchAll(JS_CALL)) {
       const callee = match[1]!;
       if (
-        ["if", "for", "while", "switch", "catch", "function", "return"].includes(
-          callee,
-        )
+        [
+          "if",
+          "for",
+          "while",
+          "switch",
+          "catch",
+          "function",
+          "return",
+        ].includes(callee)
       )
         continue;
       calls.push({ caller: file, callee, file, line: index + 1 });
@@ -259,7 +272,12 @@ function parsePython(content: string, file: string) {
   for (const match of content.matchAll(/^import\s+(\S+)/gm)) {
     imports.push({ from: file, to: match[1]!, spec: match[1]! });
   }
-  return { symbols, imports, calls: [] as CallEdge[], routes: [] as ApiRoute[] };
+  return {
+    symbols,
+    imports,
+    calls: [] as CallEdge[],
+    routes: [] as ApiRoute[],
+  };
 }
 
 function lineOf(content: string, index: number) {
@@ -336,13 +354,25 @@ function buildTestMappings(
 function buildConfigs(map: RepositoryMap, contents: Record<string, string>) {
   const configs: ConfigPoint[] = [];
   for (const manifest of map.manifests)
-    configs.push({ file: manifest, kind: "manifest", detail: "project manifest" });
+    configs.push({
+      file: manifest,
+      kind: "manifest",
+      detail: "project manifest",
+    });
   for (const config of map.configs)
-    configs.push({ file: config, kind: "build", detail: "build or lint config" });
+    configs.push({
+      file: config,
+      kind: "build",
+      detail: "build or lint config",
+    });
   for (const workflow of map.ciWorkflows)
     configs.push({ file: workflow, kind: "deploy", detail: "ci workflow" });
   if (contents["vercel.json"])
-    configs.push({ file: "vercel.json", kind: "deploy", detail: "vercel deploy" });
+    configs.push({
+      file: "vercel.json",
+      kind: "deploy",
+      detail: "vercel deploy",
+    });
   if (Object.keys(map.scripts).length)
     configs.push({
       file: "package.json",
@@ -355,9 +385,17 @@ function buildConfigs(map: RepositoryMap, contents: Record<string, string>) {
 function buildDeployHints(files: string[], contents: Record<string, string>) {
   const hints: DeployHint[] = [];
   if (files.includes("vercel.json"))
-    hints.push({ file: "vercel.json", platform: "Vercel", detail: "vercel.json" });
+    hints.push({
+      file: "vercel.json",
+      platform: "Vercel",
+      detail: "vercel.json",
+    });
   if (files.some((file) => /^Dockerfile$/i.test(file)))
-    hints.push({ file: "Dockerfile", platform: "Docker", detail: "container image" });
+    hints.push({
+      file: "Dockerfile",
+      platform: "Docker",
+      detail: "container image",
+    });
   if (files.some((file) => /docker-compose\.ya?ml$/i.test(file)))
     hints.push({
       file: "docker-compose.yml",
@@ -476,9 +514,15 @@ export function refreshSoftwareWorldModel(
   },
 ): SoftwareWorldModel {
   if (!prior || !input.changedFiles?.length) {
-    return { ...buildSoftwareWorldModel(input), builtAt: new Date().toISOString() };
+    return {
+      ...buildSoftwareWorldModel(input),
+      builtAt: new Date().toISOString(),
+    };
   }
-  return { ...buildSoftwareWorldModel(input), builtAt: new Date().toISOString() };
+  return {
+    ...buildSoftwareWorldModel(input),
+    builtAt: new Date().toISOString(),
+  };
 }
 
 export function renderSoftwareWorldModel(
@@ -501,7 +545,9 @@ export function renderSoftwareWorldModel(
     const entryPoints = model.modules
       .filter((module) => module.kind === "source" && module.exports.length > 0)
       .slice(0, 8)
-      .map((module) => `${module.path} (${module.exports.slice(0, 4).join(", ")})`);
+      .map(
+        (module) => `${module.path} (${module.exports.slice(0, 4).join(", ")})`,
+      );
     if (entryPoints.length)
       parts.push(`key modules: ${entryPoints.join("; ")}`);
     return `[software model] ${parts.join(" | ")}`.slice(0, 4_000);
@@ -535,6 +581,8 @@ export function renderSoftwareWorldModel(
 }
 
 export function entrySummaryOf(model: SoftwareWorldModel) {
-  const routes = model.routes.slice(0, 3).map((route) => `${route.method} ${route.path}`);
+  const routes = model.routes
+    .slice(0, 3)
+    .map((route) => `${route.method} ${route.path}`);
   return routes.length ? `api: ${routes.join(", ")}` : null;
 }

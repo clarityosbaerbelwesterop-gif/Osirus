@@ -29,17 +29,17 @@ Limits: no full AST; regex/heuristic only. Missing edges mean “not indexed yet
 
 Operations:
 
-| Op | Purpose |
-|----|---------|
-| `find_definition` | Symbol → defining file/line |
-| `find_references` | Model call edges + repo grep |
-| `symbol_search` | Model symbols + grep |
-| `import_graph` | Import edges from/to a path |
-| `call_relationships` | Caller/callee edges |
-| `test_mapping` | Test files → targets |
-| `route_mapping` | HTTP routes |
-| `schema_mapping` | Schema files + DB access points |
-| `git_blame` | Line history via git blame |
+| Op                   | Purpose                         |
+| -------------------- | ------------------------------- |
+| `find_definition`    | Symbol → defining file/line     |
+| `find_references`    | Model call edges + repo grep    |
+| `symbol_search`      | Model symbols + grep            |
+| `import_graph`       | Import edges from/to a path     |
+| `call_relationships` | Caller/callee edges             |
+| `test_mapping`       | Test files → targets            |
+| `route_mapping`      | HTTP routes                     |
+| `schema_mapping`     | Schema files + DB access points |
+| `git_blame`          | Line history via git blame      |
 
 Prefer `workspace.navigate` over reading whole directories.
 
