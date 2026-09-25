@@ -38,3 +38,6 @@ CREATE POLICY run_missions_update ON osirus.run_missions
   WITH CHECK (osirus.is_system() OR osirus.can_manage_run(run_id));
 
 GRANT SELECT, INSERT, UPDATE ON osirus.run_missions TO osirus_app;
+-- Default privileges would also grant DELETE; a mission goes only when its
+-- run goes (ON DELETE CASCADE), never on its own.
+REVOKE DELETE ON osirus.run_missions FROM osirus_app;

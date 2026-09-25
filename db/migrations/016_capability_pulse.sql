@@ -112,3 +112,10 @@ CREATE POLICY pulse_baselines_write ON osirus_intel.pulse_baselines
 GRANT SELECT, INSERT, UPDATE ON osirus_intel.pulse_cycles TO osirus_app;
 GRANT SELECT, INSERT ON osirus_intel.pulse_results TO osirus_app;
 GRANT SELECT, INSERT, UPDATE ON osirus_intel.pulse_baselines TO osirus_app;
+
+-- The database's default privileges give the app role every table verb.
+-- Take back what the pulse must not do: results are append-only, and no
+-- pulse row is ever deleted by the app.
+REVOKE UPDATE, DELETE ON osirus_intel.pulse_results FROM osirus_app;
+REVOKE DELETE ON osirus_intel.pulse_cycles FROM osirus_app;
+REVOKE DELETE ON osirus_intel.pulse_baselines FROM osirus_app;

@@ -180,7 +180,7 @@ export async function persistSkillCandidate(
        (id, slug, name, category, description, activation_conditions, priority,
         risk, tool_needs, capability_affinity, estimated_context_cost, source,
         enabled, status)
-     values ($1, $1, $2, 'synthesized', $3, $4::jsonb, 'P2', 'low', $5::jsonb,
+     values ($1, $1, $2, 'synthesized', $3, $4::jsonb, 'P1', 'low', $5::jsonb,
              $6::jsonb, $7, $8::jsonb, true, 'candidate')
      on conflict (id) do nothing`,
     [

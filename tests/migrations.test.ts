@@ -461,6 +461,10 @@ describe("migration 016", () => {
     expect(sql).toContain(
       "GRANT SELECT, INSERT ON osirus_intel.pulse_results TO osirus_app;",
     );
+    // Default privileges grant every verb; the append-only rule is explicit.
+    expect(sql).toContain(
+      "REVOKE UPDATE, DELETE ON osirus_intel.pulse_results FROM osirus_app;",
+    );
   });
 
   it("allows one running cycle and one result per task", () => {
@@ -501,6 +505,9 @@ describe("migration 017", () => {
       "GRANT SELECT, INSERT, UPDATE ON osirus.run_missions TO osirus_app;",
     );
     expect(sql).toContain("REFERENCES osirus.runs(id) ON DELETE CASCADE");
+    expect(sql).toContain(
+      "REVOKE DELETE ON osirus.run_missions FROM osirus_app;",
+    );
   });
 });
 
