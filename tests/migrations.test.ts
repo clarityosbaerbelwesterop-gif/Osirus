@@ -548,3 +548,67 @@ describe("migration 018", () => {
     );
   });
 });
+
+describe("migration 019", () => {
+  const sql = migration("019_recursive_intelligence.sql");
+
+  it("keeps RSI cycles system-written, operator-read, under forced RLS, never deleted", () => {
+    expect(sql).toContain(
+      "ALTER TABLE osirus_intel.rsi_cycles FORCE ROW LEVEL SECURITY;",
+    );
+    expect(sql).toMatch(
+      /CREATE POLICY rsi_cycles_read ON osirus_intel\.rsi_cycles[\s\S]*?osirus_intel\.is_operator\(\)/,
+    );
+    expect(sql).toMatch(
+      /CREATE POLICY rsi_cycles_write ON osirus_intel\.rsi_cycles[\s\S]*?WITH CHECK \(osirus\.is_system\(\)\)/,
+    );
+    expect(sql).toContain(
+      "GRANT SELECT, INSERT, UPDATE ON osirus_intel.rsi_cycles TO osirus_app;",
+    );
+    expect(sql).toContain(
+      "REVOKE DELETE ON osirus_intel.rsi_cycles FROM osirus_app;",
+    );
+    expect(sql).toMatch(
+      /CREATE UNIQUE INDEX IF NOT EXISTS rsi_cycles_one_running_idx[\s\S]*?WHERE status = 'running'/,
+    );
+  });
+
+  it("only widens CHECKs, so every existing row still satisfies them", () => {
+    const values = (list: string) => list.match(/'[^']+'/g) ?? [];
+    const pattern = (name: string, add: boolean) =>
+      new RegExp(
+        `${add ? "ADD " : ""}CONSTRAINT ${name} CHECK \\(\\w+ = ANY \\(ARRAY\\[([^\\]]+)\\]`,
+      );
+    const before = {
+      learning_artifacts_kind_check: pattern(
+        "learning_artifacts_kind_check",
+        true,
+      ).exec(migration("018_capability_synthesis.sql"))?.[1],
+      resource_ledger_category_check: pattern(
+        "resource_ledger_category_check",
+        false,
+      ).exec(migration("012_intelligence_foundry.sql"))?.[1],
+    };
+    for (const [name, list] of Object.entries(before)) {
+      const after = pattern(name, true).exec(sql)?.[1];
+      expect(list, name).toBeTruthy();
+      expect(after, name).toBeTruthy();
+      for (const value of values(list!))
+        expect(values(after!), `${name} ${value}`).toContain(value);
+    }
+  });
+
+  it("stores every artifact kind and ledger category the code writes", async () => {
+    const kinds = [
+      "failure_memory",
+      "anti_pattern",
+      "benchmark_result",
+      "code_hypothesis",
+      "live_order",
+      "rollup",
+    ];
+    for (const kind of kinds) expect(sql).toContain(`'${kind}'::text`);
+    expect(sql).toContain("'rsi_model_calls'::text");
+    expect(sql).not.toMatch(/\bDROP TABLE\b|\bDROP COLUMN\b/);
+  });
+});

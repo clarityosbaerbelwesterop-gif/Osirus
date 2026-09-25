@@ -301,7 +301,14 @@ export type ArtifactKind =
   | "procedure"
   | "tool_candidate"
   | "meta_policy"
-  | "ablation_result";
+  | "ablation_result"
+  // M44–M48: the Recursive Intelligence Cycle.
+  | "failure_memory"
+  | "anti_pattern"
+  | "benchmark_result"
+  | "code_hypothesis"
+  | "live_order"
+  | "rollup";
 
 export type LearningArtifact = {
   id: string;

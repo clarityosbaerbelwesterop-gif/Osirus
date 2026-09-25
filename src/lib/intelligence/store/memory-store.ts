@@ -98,6 +98,7 @@ export class MemoryIntelStore implements IntelStore {
       sandbox_minutes: 0,
       chained_ticks: 0,
       trials: 0,
+      rsi_model_calls: 0,
     } as Record<LedgerCategory, number>;
     for (const category of Object.keys(out) as LedgerCategory[])
       out[category] = this.state.ledger.get(`${day}:${category}`) ?? 0;
@@ -130,11 +131,25 @@ export class MemoryIntelStore implements IntelStore {
         entry.kind === gap.kind &&
         entry.summary === gap.summary,
     );
+    const ids = (value: unknown) =>
+      Array.isArray(value) ? value.map(String) : [];
+    const union = [
+      ...new Set([
+        ...ids(existing?.evidence.experienceIds),
+        ...ids(gap.evidence.experienceIds),
+      ]),
+    ];
     const stored: CapabilityGap = existing
       ? {
           ...existing,
-          support: existing.support + gap.support,
-          evidence: { ...existing.evidence, ...gap.evidence },
+          // Distinct evidence rows, not a running sum: re-detecting the same
+          // failures must not inflate a gap.
+          support: Math.max(gap.support, union.length),
+          evidence: {
+            ...existing.evidence,
+            ...gap.evidence,
+            experienceIds: union.slice(0, 500),
+          },
           status:
             existing.status === "addressed" ? existing.status : gap.status,
         }

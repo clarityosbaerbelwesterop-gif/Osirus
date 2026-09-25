@@ -28,7 +28,9 @@ export type LedgerCategory =
   | "cost_usd"
   | "sandbox_minutes"
   | "chained_ticks"
-  | "trials";
+  | "trials"
+  /** M44: the Recursive Intelligence Cycle's own live-call envelope. */
+  | "rsi_model_calls";
 
 export type DatasetExample = {
   partition: Exclude<Partition, "fresh">;

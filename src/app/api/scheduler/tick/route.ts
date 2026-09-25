@@ -156,6 +156,15 @@ async function tick(request: Request) {
     owner: workerId,
     signal: controller.signal,
   }).catch(() => null);
+  // The hourly Recursive Intelligence Cycle: self-test, self-play, red
+  // attacks, gaps, hypotheses and decisions over osirus_intel, tenantless.
+  // Contained like the Foundry and the pulse: its failure never stops the
+  // tick, and it is a phase of this tick, not a second scheduler.
+  const { runRsiTick } = await import("@/lib/intelligence/rsi/scheduler");
+  const rsi = await runRsiTick({
+    owner: workerId,
+    signal: controller.signal,
+  }).catch(() => null);
   const touched = new Map<
     string,
     { userId: string; organizationId: string; workspaceId: string }
@@ -239,7 +248,8 @@ async function tick(request: Request) {
     chain < MAX_CHAIN &&
     ((Boolean(foundry?.continueChain) &&
       (claimed > 0 || (foundry?.step?.progressed ?? 0) > 0)) ||
-      Boolean(pulse?.continueChain));
+      Boolean(pulse?.continueChain) ||
+      Boolean(rsi?.continueChain));
   if (chained)
     after(async () => {
       const { chargeChainedTick } =
@@ -285,6 +295,23 @@ async function tick(request: Request) {
             tasksRun: 0,
             completedCycle: false,
             regressions: 0,
+            waiting: "error",
+            chained: false,
+          },
+      rsi: rsi
+        ? {
+            ran: rsi.ran,
+            cycleId: rsi.cycleId,
+            phases: rsi.phasesRun.length,
+            completedCycle: rsi.completedCycle,
+            waiting: rsi.reason,
+            chained: rsi.continueChain,
+          }
+        : {
+            ran: false,
+            cycleId: null,
+            phases: 0,
+            completedCycle: false,
             waiting: "error",
             chained: false,
           },

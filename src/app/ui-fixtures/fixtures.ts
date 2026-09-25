@@ -983,6 +983,7 @@ export function intelligenceLabFixture(): LabView {
       cost_usd: 0,
       sandbox_minutes: 38,
       chained_ticks: 9,
+      rsi_model_calls: 0,
       trials: 8,
     },
     capabilities: [

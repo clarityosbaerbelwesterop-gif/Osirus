@@ -57,6 +57,7 @@ const LEDGER: LedgerCategory[] = [
   "sandbox_minutes",
   "chained_ticks",
   "trials",
+  "rsi_model_calls",
 ];
 
 function capability(row: Row): Capability {
@@ -451,8 +452,19 @@ export class PgIntelStore implements IntelStore {
          (capability_id, kind, summary, evidence, support, status)
        values ($1, $2, $3, $4::jsonb, $5, $6)
        on conflict (capability_id, kind, summary) do update set
-         support = osirus_intel.capability_gaps.support + excluded.support,
-         evidence = osirus_intel.capability_gaps.evidence || excluded.evidence,
+         -- Distinct evidence rows, not a running sum: re-detecting the
+         -- same failures must not inflate a gap.
+         support = greatest(excluded.support, (
+           select count(distinct id)::int from jsonb_array_elements_text(
+             (case when jsonb_typeof(osirus_intel.capability_gaps.evidence->'experienceIds') = 'array' then osirus_intel.capability_gaps.evidence->'experienceIds' else '[]'::jsonb end)
+             || (case when jsonb_typeof(excluded.evidence->'experienceIds') = 'array' then excluded.evidence->'experienceIds' else '[]'::jsonb end)) as t(id))),
+         evidence = osirus_intel.capability_gaps.evidence || excluded.evidence
+           || jsonb_build_object('experienceIds', (
+             select coalesce(jsonb_agg(id), '[]'::jsonb) from (
+               select distinct id from jsonb_array_elements_text(
+                 (case when jsonb_typeof(osirus_intel.capability_gaps.evidence->'experienceIds') = 'array' then osirus_intel.capability_gaps.evidence->'experienceIds' else '[]'::jsonb end)
+                 || (case when jsonb_typeof(excluded.evidence->'experienceIds') = 'array' then excluded.evidence->'experienceIds' else '[]'::jsonb end)) as t(id)
+               limit 500) u)),
          status = case when osirus_intel.capability_gaps.status = 'addressed'
                        then osirus_intel.capability_gaps.status
                        else excluded.status end,

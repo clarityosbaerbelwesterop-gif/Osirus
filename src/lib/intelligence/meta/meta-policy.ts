@@ -28,6 +28,10 @@ export const MECHANISMS = [
   "compute_tier",
   "skill",
   "generated_tool",
+  // M46–M48: how Osirus is wired, how it spends compute, how it uses the model.
+  "architecture",
+  "adaptive_compute",
+  "prompt",
 ] as const;
 export type Mechanism = (typeof MECHANISMS)[number];
 

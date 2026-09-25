@@ -137,6 +137,63 @@ export const CAPABILITY_SEEDS: Seed[] = [
     arm: "research",
     usefulness: 0.7,
   },
+  // M44: capabilities the Recursive Intelligence Cycle measures with its own
+  // generated challenges (self-play and red attacks on Osirus mechanisms).
+  {
+    id: "memory.context",
+    domain: "memory",
+    name: "Memory and context integrity",
+    description:
+      "Hand later stages current facts: stale ones expire, contradicting ones are surfaced, nothing important is crowded out.",
+    arm: "general",
+    usefulness: 0.75,
+  },
+  {
+    id: "planning.long_horizon",
+    domain: "reasoning",
+    name: "Long-horizon recovery",
+    description:
+      "Resume the right goal after the world changed: blocked steps, reopened work, expired facts.",
+    dependsOn: ["reasoning.planning"],
+    arm: "thinking",
+    usefulness: 0.7,
+  },
+  {
+    id: "reasoning.falsification",
+    domain: "reasoning",
+    name: "Settling disagreements by tests",
+    description:
+      "Let a discriminating check, not a vote or a phrasing, decide between competing answers.",
+    arm: "general",
+    usefulness: 0.65,
+  },
+  {
+    id: "reasoning.cross_domain",
+    domain: "reasoning",
+    name: "Cross-domain mission integrity",
+    description:
+      "Declare a multi-capability mission complete only when every part of it is verified.",
+    dependsOn: ["reasoning.planning"],
+    arm: "general",
+    usefulness: 0.7,
+  },
+  {
+    id: "security.adversarial",
+    domain: "security",
+    name: "Adversarial robustness",
+    description:
+      "Injected instructions, forged fences, false authority, false success signals and misleading sources do not change what Osirus does or claims.",
+    arm: "general",
+    usefulness: 0.9,
+  },
+  {
+    id: "routing.specialist",
+    domain: "reasoning",
+    name: "Specialist routing",
+    description: "Send an objective to the specialist that can do it.",
+    arm: "general",
+    usefulness: 0.6,
+  },
 ];
 
 /** Which capability a trial of a given task family also measures. */

@@ -19,6 +19,8 @@ export const CAPABILITY_LANES = [
   "MEMORY_CONTEXT",
   "CROSS_DOMAIN",
   "LONG_HORIZON",
+  // M44–M47: Osirus measuring its own improvement machinery.
+  "SELF_PLAY",
 ] as const;
 
 export type CapabilityLane = (typeof CAPABILITY_LANES)[number];
