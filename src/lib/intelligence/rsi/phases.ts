@@ -18,6 +18,7 @@ import {
 } from "../meta/meta-policy";
 import { loadMetaPolicy } from "../meta/foundry-meta";
 import { crownChampion, transition } from "../promotion/promotion";
+import { adaptiveComputeHypothesis } from "../routing/value-of-compute";
 import {
   hypothesesFor,
   seedStrategies,
@@ -91,6 +92,7 @@ export const FAMILY_CAPABILITY: Record<string, string> = {
   SELF_PLAY: "reasoning.falsification",
   SOFTWARE_RSI: "security.adversarial",
   ARCHITECTURE_SEARCH: "reasoning.planning",
+  ADAPTIVE_COMPUTE: "reasoning.planning",
 };
 
 const FAMILY_GAP: Record<string, GapKind> = {
@@ -109,6 +111,7 @@ const FAMILY_GAP: Record<string, GapKind> = {
   SELF_PLAY: "verification",
   SOFTWARE_RSI: "verification",
   ARCHITECTURE_SEARCH: "planning",
+  ADAPTIVE_COMPUTE: "execution",
 };
 
 const HOUR = 3_600_000;
@@ -785,12 +788,27 @@ export async function hypothesize(ctx: RsiContext): Promise<PhaseResult> {
       (version) => version.status === "champion",
     );
     if (!champion) continue;
-    const pool = hypothesesFor(
-      strategy.kind,
-      capabilityGaps,
-      champion.genome,
-      4,
-    )
+    const versions = new Map(
+      (await ctx.intel.listVersions(strategy.id)).map((version) => [
+        version.id,
+        version,
+      ]),
+    );
+    const experience = await ctx.intel.listExperience({
+      capabilityId: strategy.capabilityId,
+      limit: 400,
+    });
+    const compute = adaptiveComputeHypothesis({
+      experience,
+      versions,
+      capabilityId: strategy.capabilityId,
+      arm: strategy.kind,
+      champion: champion.genome,
+    });
+    const pool = [
+      ...hypothesesFor(strategy.kind, capabilityGaps, champion.genome, 4),
+      ...(compute ? [compute] : []),
+    ]
       .map((hypothesis) => ({
         ...hypothesis,
         id: fingerprint(

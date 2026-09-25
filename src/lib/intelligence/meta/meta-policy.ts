@@ -41,6 +41,7 @@ export function mechanismOf(
 ): Mechanism {
   const change = hypothesis.intervention;
   if (change.architecture) return "architecture";
+  if (change.compute) return "adaptive_compute";
   if (change.tools?.include?.length) return "generated_tool";
   if (change.team) return "topology";
   if (change.computeTier) return "compute_tier";

@@ -27,6 +27,8 @@ import type { PulseObservation, PulseTaskSpec } from "./types";
 //                  hourly with patches they must refuse and one to accept
 //   M46 wiring     ARCHITECTURE_SEARCH: the default graph is today's; every
 //                  architecture variant yields the graph it claims
+//   M47 compute    ADAPTIVE_COMPUTE: the escalation policy's rules and its
+//                  calls-per-verified arithmetic
 //   M35 coding     CODING L1–L4, live only: a coding loop on the free model
 //                  takes longer than one tick, so these run where a live
 //                  runner exists (CI), not inside the scheduler tick.
@@ -527,6 +529,35 @@ async function architectureSpecs(): Promise<PulseTaskSpec[]> {
   }));
 }
 
+async function computeSpecs(): Promise<PulseTaskSpec[]> {
+  const { COMPUTE_CHECKS } = await import("../../intelligence/compute/checks");
+  return COMPUTE_CHECKS.map((entry) => ({
+    id: `m47:compute:l${entry.level}`,
+    family: "ADAPTIVE_COMPUTE" as const,
+    level: entry.level,
+    difficulty: difficultyFor(entry.level),
+    version: 1,
+    source: "M47 adaptive compute",
+    mode: "offline" as const,
+    title: entry.title,
+    run: async () => {
+      const started = Date.now();
+      const result = entry.check();
+      return observe(
+        {
+          success: result.held,
+          verifiedSuccess: result.held,
+          latencyMs: Date.now() - started,
+          notes: result.detail,
+        },
+        result.held
+          ? { outcome: "VERIFIED_SUCCESS", reason: result.detail }
+          : { outcome: "REJECTED", reason: result.detail },
+      );
+    },
+  }));
+}
+
 /** Every task of the unified suite, offline and live. */
 export async function pulseCatalog(): Promise<PulseTaskSpec[]> {
   const groups = await Promise.all([
@@ -541,6 +572,7 @@ export async function pulseCatalog(): Promise<PulseTaskSpec[]> {
     selfPlaySpecs(),
     softwareRsiSpecs(),
     architectureSpecs(),
+    computeSpecs(),
     codingLiveSpecs(),
   ]);
   return groups.flat();

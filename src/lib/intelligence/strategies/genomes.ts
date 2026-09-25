@@ -295,6 +295,9 @@ function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
     ...(base.architecture || patch.architecture
       ? { architecture: { ...base.architecture, ...patch.architecture } }
       : {}),
+    ...(base.compute || patch.compute
+      ? { compute: { ...base.compute, ...patch.compute } }
+      : {}),
     ...(base.directives || patch.directives
       ? {
           directives: [
@@ -503,5 +506,9 @@ export function describeGenome(genome: StrategyGenome) {
   if (wiring?.planning === "planner_executor") parts.push("planner → executor");
   if (wiring?.memory === "late") parts.push("memory on demand");
   if (wiring?.evidence === "first") parts.push("evidence first");
+  if (genome.compute?.mode === "adaptive")
+    parts.push(
+      `adaptive compute${genome.compute.table ? ` (${Object.keys(genome.compute.table).join(", ")} learned)` : ""}`,
+    );
   return parts.length ? parts.join(", ") : "baseline";
 }

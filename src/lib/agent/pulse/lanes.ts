@@ -23,6 +23,7 @@ export const CAPABILITY_LANES = [
   "SELF_PLAY",
   "SOFTWARE_RSI",
   "ARCHITECTURE_SEARCH",
+  "ADAPTIVE_COMPUTE",
 ] as const;
 
 export type CapabilityLane = (typeof CAPABILITY_LANES)[number];

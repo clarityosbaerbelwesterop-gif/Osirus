@@ -139,6 +139,34 @@ export const genomeSchema = z
       })
       .partial()
       .optional(),
+    /**
+     * M47: adaptive compute. Static (absent) spends what the tier says on
+     * every task. Adaptive starts cheap and escalates one rung -- critic,
+     * adversary, team -- only for a draft that is not verified, and only
+     * when the expected gain per model call clears the threshold. `table`
+     * is what the cycle learned per arm from judged experience.
+     */
+    compute: z
+      .object({
+        mode: z.enum(["static", "adaptive"]),
+        start: z.enum(["FAST", "STANDARD"]),
+        ladder: z
+          .array(z.enum(["critic", "adversary", "team"]))
+          .min(1)
+          .max(3),
+        minGainPerCall: z.number().min(0).max(1),
+        table: z
+          .record(
+            z.string().regex(/^[a-z_]{2,20}$/),
+            z.object({
+              start: z.enum(["FAST", "STANDARD", "DEEP"]),
+              escalate: z.boolean(),
+            }),
+          )
+          .optional(),
+      })
+      .partial()
+      .optional(),
   })
   .strict();
 
