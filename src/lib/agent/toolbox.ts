@@ -62,6 +62,10 @@ export async function buildToolbox(
       actorId: identity.userId,
     });
 
+  // M40: external actions run at most once per run, across crashes.
+  const { missionLedger } = await import("../arms/horizon-runtime");
+  registry.useLedger(await missionLedger(context).catch(() => null));
+
   const driver = runtime.stores?.sandbox
     ? await runtime.stores.sandbox()
     : await (await import("../sandbox")).resolveSandbox();

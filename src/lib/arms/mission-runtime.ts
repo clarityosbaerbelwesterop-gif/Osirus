@@ -288,7 +288,6 @@ export function gateVerdicts(rows: StageVerdictRow[]) {
       capability: string;
       verdict: string | null;
       meta?: boolean;
-      ordinal: number;
     }
   >();
   for (const row of [...rows].sort((a, b) => a.ordinal - b.ordinal)) {
@@ -298,7 +297,6 @@ export function gateVerdicts(rows: StageVerdictRow[]) {
         capability: row.armId,
         verdict: row.verdict,
         meta: true,
-        ordinal: row.ordinal,
       });
       continue;
     }
@@ -308,10 +306,9 @@ export function gateVerdicts(rows: StageVerdictRow[]) {
       key,
       capability: row.armId,
       verdict: row.verdict,
-      ordinal: row.ordinal,
     });
   }
-  return [...latest.values()].map(({ ordinal: _ordinal, ...entry }) => entry);
+  return [...latest.values()];
 }
 
 /**

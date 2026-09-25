@@ -112,7 +112,12 @@ export type AgentStep = {
 };
 
 export type LoopStatus =
-  "finished" | "waiting_for_approval" | "yielded" | "exhausted" | "failed";
+  | "finished"
+  | "waiting_for_approval"
+  | "waiting"
+  | "yielded"
+  | "exhausted"
+  | "failed";
 
 export type LoopState = {
   steps: AgentStep[];
@@ -140,6 +145,8 @@ export type LoopResult = {
   answer: string | null;
   /** Set when the loop parked on an approval. */
   pendingApproval?: { toolId?: string; request: Record<string, unknown> };
+  /** Set when the loop parked on a typed wait (M40). */
+  pendingWait?: NonNullable<AgentDecision["wait"]>;
   reason: string;
   /** Set when the model provider refused the call (see providerRefusalOf). */
   refusal?: ProviderRefusal;
@@ -878,6 +885,25 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
           answer: state.answer ?? null,
           pendingApproval: { request: { ...decision.approval } },
           reason: "agent_requested_approval",
+        };
+      }
+
+      case "WAIT": {
+        await record(
+          {
+            action: "WAIT",
+            summary: decision.summary,
+            outcome: "waiting",
+            detail: `${decision.wait!.kind}: ${decision.wait!.reason}`,
+          },
+          stepStartedAt,
+        );
+        return {
+          status: "waiting",
+          state,
+          answer: state.answer ?? null,
+          pendingWait: decision.wait!,
+          reason: `agent_wait:${decision.wait!.kind}`,
         };
       }
 

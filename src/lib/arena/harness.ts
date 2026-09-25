@@ -43,6 +43,8 @@ export type HarnessOptions = {
   policy?: RuntimePolicy;
   /** Extra input every stage receives, e.g. a Foundry trial's hidden checks. */
   stageInput?: Record<string, unknown>;
+  /** What ends a typed wait (M40); nothing is observable when absent. */
+  waitProbe?: import("../agent/long-horizon").WaitProbe;
 };
 
 type Counters = {
@@ -274,6 +276,8 @@ export async function runArenaTask(
       fixture: () => task.fixture ?? [],
       missions: () => missions,
       graph: () => graphAppender,
+      waitProbe: () =>
+        options.waitProbe ?? (async () => ({ state: "unobservable" as const })),
       registry: () => {
         const registry = new ToolRegistry({
           audit,

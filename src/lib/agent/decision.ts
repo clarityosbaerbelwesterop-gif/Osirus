@@ -16,7 +16,19 @@ export const AGENT_ACTIONS = [
   "REPLAN",
   "VERIFY",
   "YIELD",
+  "WAIT",
   "FINISH",
+] as const;
+
+/** What an agent may wait for on its own (approvals go through REQUEST_APPROVAL). */
+export const AGENT_WAIT_KINDS = [
+  "dependency",
+  "external_event",
+  "deployment",
+  "ci",
+  "rate_limit",
+  "schedule",
+  "human",
 ] as const;
 
 export type AgentAction = (typeof AGENT_ACTIONS)[number];
@@ -48,6 +60,22 @@ export const agentDecisionSchema = z.object({
       action: z.string().min(1).max(200),
       risk: z.enum(["low", "medium", "high"]),
       detail: z.string().max(2000).optional(),
+    })
+    .optional(),
+  /**
+   * WAIT only. Park the task until something outside changes; the wait
+   * costs no model call and no tokens until it ends.
+   */
+  wait: z
+    .object({
+      kind: z.enum(AGENT_WAIT_KINDS),
+      reason: z.string().min(1).max(300),
+      /** schedule/rate_limit: resume at; otherwise: stop waiting at. */
+      until: z.string().datetime({ offset: true }).optional(),
+      /** external_event/dependency: the event that ends the wait. */
+      eventKey: z.string().min(1).max(200).optional(),
+      /** ci/deployment: the branch or ref to watch. */
+      ref: z.string().min(1).max(200).optional(),
     })
     .optional(),
   /** The user-facing answer, required for RESPOND and FINISH. */
@@ -105,6 +133,26 @@ export function decisionProblems(decision: AgentDecision): string[] {
         problems.push("REQUEST_APPROVAL requires approval.");
       }
       break;
+    case "WAIT":
+      if (!decision.wait) problems.push("WAIT requires wait.");
+      else if (
+        (decision.wait.kind === "schedule" ||
+          decision.wait.kind === "rate_limit") &&
+        !decision.wait.until
+      )
+        problems.push(`WAIT ${decision.wait.kind} requires wait.until.`);
+      else if (
+        (decision.wait.kind === "ci" || decision.wait.kind === "deployment") &&
+        !decision.wait.ref
+      )
+        problems.push(`WAIT ${decision.wait.kind} requires wait.ref.`);
+      else if (
+        (decision.wait.kind === "external_event" ||
+          decision.wait.kind === "dependency") &&
+        !decision.wait.eventKey
+      )
+        problems.push(`WAIT ${decision.wait.kind} requires wait.eventKey.`);
+      break;
   }
   return problems;
 }
@@ -112,7 +160,7 @@ export function decisionProblems(decision: AgentDecision): string[] {
 export const DECISION_FORMAT = [
   "Reply with exactly one JSON object and nothing else:",
   "{",
-  '  "action": "RESPOND|USE_TOOL|SPAWN_WORKER|RETRIEVE_MEMORY|REQUEST_APPROVAL|CREATE_ARTIFACT|REPLAN|VERIFY|YIELD|FINISH",',
+  '  "action": "RESPOND|USE_TOOL|SPAWN_WORKER|RETRIEVE_MEMORY|REQUEST_APPROVAL|CREATE_ARTIFACT|REPLAN|VERIFY|YIELD|WAIT|FINISH",',
   '  "summary": "one line stating what this step does",',
   '  "toolId": "only for USE_TOOL",',
   '  "toolInput": { "only for USE_TOOL": "matching the tool schema" },',
@@ -121,6 +169,7 @@ export const DECISION_FORMAT = [
   '  "memoryQuery": "only for RETRIEVE_MEMORY",',
   '  "artifact": { "title": "", "kind": "", "content": "only for CREATE_ARTIFACT" },',
   '  "approval": { "action": "", "risk": "low|medium|high", "detail": "" },',
+  '  "wait": { "kind": "ci|deployment|external_event|dependency|rate_limit|schedule|human", "reason": "", "until": "ISO time", "ref": "", "eventKey": "" },',
   '  "answer": "the complete user-facing answer, only for RESPOND or FINISH",',
   '  "progress": 0.0,',
   '  "hypothesisIds": ["only for VERIFY: hypothesis ids this evidence bears on"],',

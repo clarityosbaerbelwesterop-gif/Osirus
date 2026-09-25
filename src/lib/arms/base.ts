@@ -707,6 +707,27 @@ export abstract class BaseArm implements AgentArm {
       delete resumeState.agentApprovalId;
     }
 
+    // M40: a stage parked on a typed wait wakes only once the wait is over,
+    // decided without a model call; on resume the world is re-checked before
+    // the stage is seeded, so it does not continue on facts that expired.
+    const { resumeStage, parkOnWait, recordActivity } =
+      await import("./horizon-runtime");
+    const parked = resumeState as
+      { agentWait?: import("../agent/long-horizon").MissionWait } | undefined;
+    const resumed = await resumeStage(context, parked?.agentWait ?? null).catch(
+      () => ({
+        observations: [] as string[],
+        expired: [] as string[],
+        park: null,
+      }),
+    );
+    if (resumed.park) return resumed.park;
+    if (parked?.agentWait) delete parked.agentWait;
+    if (resumeState?.kernel && resumed.expired.length) {
+      const { pruneExpired } = await import("../agent/long-horizon");
+      resumeState.kernel = pruneExpired(resumeState.kernel, resumed.expired);
+    }
+
     const { laneForArm } = await import("../agent/pulse/lanes");
     const { withRsiWatchdogHooks, afterAgentLoop } =
       await import("../agent/watchdog/hooks");
@@ -723,6 +744,8 @@ export abstract class BaseArm implements AgentArm {
       typeof work.stageInput.subObjective === "string"
         ? work.stageInput.subObjective
         : null;
+
+    if (resumeState) resumeState.observations.push(...resumed.observations);
 
     const result = await runAgentLoop({
       objective: work.objective,
@@ -743,6 +766,7 @@ export abstract class BaseArm implements AgentArm {
           : []),
         ...handoffContext(context),
         ...(missionSeed?.context ?? []),
+        ...(resumeState ? [] : resumed.observations),
         ...(subObjective
           ? [
               `[your part of the mission] ${subObjective}. The rest of the objective is handled by other capabilities of this mission.`,
@@ -955,6 +979,39 @@ export abstract class BaseArm implements AgentArm {
     context.state.agentSteps = result.state.steps;
     context.state.sandbox = toolbox.sandboxStatus;
 
+    await recordActivity(context, result.state.kernel).catch(() => undefined);
+
+    if (result.status === "waiting" && result.pendingWait) {
+      if (result.pendingWait.kind === "human") {
+        // A person answers through the approval queue, like any decision
+        // a person makes; the run shows as waiting for them.
+        const approvalId = await runtime.repository.createApproval({
+          organizationId: identity.organizationId,
+          workspaceId: identity.workspaceId,
+          runId: work.runId,
+          stageId: work.stageId,
+          action: "agent:question",
+          risk: "low",
+          request: {
+            summary: result.pendingWait.reason,
+            question: result.pendingWait.reason,
+          },
+          expiresInSeconds: 7 * 24 * 60 * 60,
+        });
+        context.state.loopState = {
+          ...result.state,
+          agentApprovalId: approvalId,
+        };
+        return {
+          kind: "WAITING",
+          reason: "human",
+          output: { question: result.pendingWait.reason },
+        };
+      }
+      const parkedOn = await parkOnWait(context, result.pendingWait);
+      context.state.loopState = { ...result.state, agentWait: parkedOn.wait };
+      return parkedOn.outcome;
+    }
     if (result.status === "waiting_for_approval") {
       context.state.loopState = result.state;
       if (!result.pendingApproval?.toolId) {

@@ -71,13 +71,33 @@ export async function POST(
   });
   if (!event) return reply({ ignored: true }, 202);
   if (event.kind === "ping") return reply({ ok: true }, 200);
+  // M40: a verified delivery also ends the typed waits it satisfies in this
+  // endpoint's workspace (a CI run, a deployment, an awaited event), once.
+  const release = async () => {
+    const { releaseWaits } = await import("@/lib/runtime/waits");
+    const runs = await releaseWaits({
+      workspaceId: endpoint.row.workspace_id,
+      event,
+    }).catch(() => [] as string[]);
+    return runs.length;
+  };
   const wanted = endpoint.row.events ?? [];
   if (wanted.length && !wanted.includes(event.kind)) {
-    await recordDelivery(endpoint.row, event, "ignored").catch(() => false);
-    return reply({ ignored: true }, 202);
+    const fresh = await recordDelivery(endpoint.row, event, "ignored").catch(
+      () => false,
+    );
+    const released = fresh ? await release() : 0;
+    if (released)
+      after(async () => {
+        const { triggerTick } =
+          await import("@/lib/intelligence/production/operator");
+        await triggerTick(0);
+      });
+    return reply({ ignored: true, released }, 202);
   }
   const fresh = await recordDelivery(endpoint.row, event, "triggered");
   if (!fresh) return reply({ duplicate: true }, 200);
+  const released = await release();
 
   const { triggerWebhookAutomations } = await import("@/lib/automations/store");
   const started = await triggerWebhookAutomations({
@@ -86,11 +106,11 @@ export async function POST(
     event,
     description: describeEvent(event),
   }).catch(() => [] as string[]);
-  if (started.length)
+  if (started.length || released)
     after(async () => {
       const { triggerTick } =
         await import("@/lib/intelligence/production/operator");
       await triggerTick(0);
     });
-  return reply({ triggered: started.length }, 202);
+  return reply({ triggered: started.length, released }, 202);
 }

@@ -1,3 +1,4 @@
+import type { WaitKind, WakeCondition } from "../agent/long-horizon";
 import { z } from "zod";
 import type { MemoryOS } from "../memory/os";
 import type { ModelProvider } from "../models/provider";
@@ -127,9 +128,12 @@ export type StageOutcome =
   /** Parked on something outside the engine. */
   | {
       kind: "WAITING";
-      reason: "approval" | "external";
+      /** "external" is the pre-M40 untyped wait; new waits are typed. */
+      reason: WaitKind | "external";
       output: Record<string, unknown>;
       approvalId?: string;
+      /** How the wait ends. Absent: only a release (approval) wakes it. */
+      wake?: WakeCondition;
     }
   /** Temporarily unable to proceed; try again after the delay. */
   | { kind: "BLOCKED"; reason: string; retryAfterSeconds: number }
@@ -176,6 +180,8 @@ export type RuntimeStores = {
   missions?: () => import("../runtime/missions").MissionStore;
   /** Adds stages to the running graph (M39); osirus.run_stages when absent. */
   graph?: () => GraphAppender;
+  /** Model-free probe that ends typed waits (M40); webhook deliveries when absent. */
+  waitProbe?: () => import("../agent/long-horizon").WaitProbe;
 };
 
 /** A node added to a running graph: depends on `after` or on other new nodes. */

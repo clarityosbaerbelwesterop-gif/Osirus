@@ -610,7 +610,10 @@ async function finalizeRunCore(input: {
     };
   }
 
-  if (progress.waiting > 0) {
+  // M40: only a person makes the run "waiting for approval". A run parked
+  // on CI, a deployment, an event or the clock is still running; it simply
+  // has nothing claimable until its wait ends.
+  if (progress.waitingHuman > 0) {
     if (run.status !== "waiting_for_approval") {
       await repository
         .transitionRun(input.runId, "waiting_for_approval")
@@ -626,7 +629,12 @@ async function finalizeRunCore(input: {
 
   return {
     status: "running",
-    reason: progress.blockedFuture > 0 ? "retry_scheduled" : "work_remaining",
+    reason:
+      progress.waiting > 0
+        ? "waiting_external"
+        : progress.blockedFuture > 0
+          ? "retry_scheduled"
+          : "work_remaining",
     settled: progress.settled,
     total: progress.total,
   };

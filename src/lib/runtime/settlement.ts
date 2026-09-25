@@ -1,3 +1,4 @@
+import { parkingFor } from "../agent/long-horizon";
 import type { StageOutcome } from "../arms/types";
 
 // The worker/engine boundary.
@@ -96,7 +97,7 @@ export function budgetStopReason(
  * mapping is the whole contract between a worker and the claim scan, and it
  * has to be testable without a database.
  */
-export function settlementFor(outcome: StageOutcome) {
+export function settlementFor(outcome: StageOutcome, now = Date.now()) {
   switch (outcome.kind) {
     case "COMPLETE":
       return {
@@ -114,13 +115,26 @@ export function settlementFor(outcome: StageOutcome) {
         output: outcome.output,
         retryDelaySeconds: 0,
       };
-    case "WAITING":
+    case "WAITING": {
+      // M40: a timed or polled wait parks the stage as blocked until it is
+      // due (no claim, no model call before then); an event or a person
+      // parks it as waiting until a release. Both cost nothing meanwhile.
+      const parking = outcome.wake
+        ? parkingFor(outcome.wake, now)
+        : { stageStatus: "waiting" as const, retryDelaySeconds: 0 };
       return {
         attemptStatus: "completed" as const,
-        stageStatus: "waiting" as const,
-        output: { ...outcome.output, waitingOn: outcome.reason },
-        retryDelaySeconds: 0,
+        stageStatus: parking.stageStatus,
+        output: {
+          ...outcome.output,
+          waitingOn: outcome.reason,
+          ...(outcome.wake
+            ? { wait: { kind: outcome.reason, wake: outcome.wake } }
+            : {}),
+        },
+        retryDelaySeconds: parking.retryDelaySeconds,
       };
+    }
     case "BLOCKED":
       return {
         attemptStatus: "completed" as const,

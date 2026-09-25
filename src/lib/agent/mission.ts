@@ -1,4 +1,5 @@
 import type { Handoff } from "./handoff";
+import type { ActionEntry, MissionGoal, MissionWait } from "./long-horizon";
 import type { HypothesisSeed, TaskSeed, TaskState } from "./task-state";
 
 // One mission, one cognition state.
@@ -14,6 +15,7 @@ import type { HypothesisSeed, TaskSeed, TaskState } from "./task-state";
 // Pure functions only. Persistence is runtime/missions.ts.
 
 export type Volatility = "static" | "slow" | "fast" | "event";
+const VOLATILITY_ORDER: Volatility[] = ["static", "slow", "fast", "event"];
 
 export type MissionFact = {
   id: string;
@@ -113,6 +115,12 @@ export type MissionState = {
   /** How much of what earlier stages established later stages received. */
   handoff: { offered: number; received: number };
   outcome: "running" | "complete" | "partial" | "failed";
+  /** M40 long-horizon state (agent/long-horizon.ts); absent on older rows. */
+  waits?: MissionWait[];
+  goals?: MissionGoal[];
+  actions?: ActionEntry[];
+  lastActiveAt?: string | null;
+  nextWake?: string | null;
 };
 
 const MAX_FACTS = 60;
@@ -222,6 +230,12 @@ export function addFacts(
           12,
         ),
         observedAt: input.observedAt ?? now,
+        // A fact is as volatile as its most volatile sighting (M40).
+        volatility:
+          VOLATILITY_ORDER.indexOf(input.volatility) >
+          VOLATILITY_ORDER.indexOf(existing.volatility)
+            ? input.volatility
+            : existing.volatility,
         invalidated: null,
       });
       continue;
