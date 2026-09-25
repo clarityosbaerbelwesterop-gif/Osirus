@@ -1,0 +1,88 @@
+name: RSI live lane
+
+# The live lane of the hourly Recursive Intelligence Cycle. Runs after each
+# hourly pulse (and on dispatch), asks production for the open live order,
+# and exits at once when there is none -- most hours there is none, because
+# the cycle spends about two free-model calls an hour and opens an order
+# only when a champion/challenger pair can finish.
+#
+# No secret is sent to production and none is read from it: the job proves
+# who it is with a short-lived GitHub OIDC token (audience "osirus-rsi"),
+# and production answers only this workflow file on main. The free model's
+# keys stay in GitHub; the database credential never leaves Vercel.
+
+on:
+  workflow_run:
+    workflows: ["Capability pulse (hourly tick)"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: osirus-rsi-live
+  cancel-in-progress: false
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      RSI_URL: https://osirus.vercel.app/api/rsi/live
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Take the open live order
+        id: take
+        run: |
+          set -euo pipefail
+          token=$(curl -sS --fail -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=osirus-rsi" | jq -r '.value')
+          echo "::add-mask::${token}"
+          status=$(curl -sS -o "${RUNNER_TEMP}/order.json" -w '%{http_code}' --max-time 60 \
+            -H "x-osirus-github-oidc: ${token}" "${RSI_URL}")
+          echo "HTTP ${status}"
+          echo "status=${status}" >> "${GITHUB_OUTPUT}"
+      - uses: actions/setup-node@v4
+        if: steps.take.outputs.status == '200'
+        with:
+          node-version: 24
+          cache: npm
+      - if: steps.take.outputs.status == '200'
+        run: npm ci
+      - name: List the models the key can reach (IDs only, never the key)
+        # M48: a second free model is put on a role only once it is known to
+        # exist. Manual runs print the list; hourly runs skip it.
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+        run: node scripts/list-unorouter-models.mjs | head -60
+      - name: Run the order on the free model
+        if: steps.take.outputs.status == '200'
+        env:
+          OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "90"
+          OSIRUS_ALLOW_LOCAL_EXEC: "1"
+          UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
+          UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+          UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
+          UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
+          RSI_EVAL: evals/rsi-live.eval.ts
+          RSI_ORDER_FILE: ${{ runner.temp }}/order.json
+          RSI_EVIDENCE: ${{ runner.temp }}/evidence.json
+        run: npx vitest run --config vitest.rsi.config.ts
+      - name: Report the evidence
+        if: always() && steps.take.outputs.status == '200'
+        run: |
+          set -euo pipefail
+          test -f "${RUNNER_TEMP}/evidence.json" || { echo "no evidence written"; exit 1; }
+          token=$(curl -sS --fail -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=osirus-rsi" | jq -r '.value')
+          echo "::add-mask::${token}"
+          status=$(curl -sS -o response.json -w '%{http_code}' --max-time 60 -X POST \
+            -H "content-type: application/json" -H "x-osirus-github-oidc: ${token}" \
+            --data-binary "@${RUNNER_TEMP}/evidence.json" "${RSI_URL}")
+          echo "HTTP ${status}"; cat response.json
+          test "${status}" = "200"

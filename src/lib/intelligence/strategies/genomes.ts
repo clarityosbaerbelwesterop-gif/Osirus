@@ -231,6 +231,88 @@ const LIBRARY: LibraryEntry[] = [
     expected:
       "Fewer false completions; only attacks a test confirms cause a revision.",
   },
+  // M46: architecture candidates. Same model, same tools: the wiring of
+  // Osirus is the variable.
+  ...(["coding", "math_science", "research"] as const).flatMap((arm) => [
+    {
+      gap: "planning" as const,
+      arm,
+      statement:
+        "The executor starts without a plan contract; a planner stage in front of it hands one over.",
+      intervention: { architecture: { planning: "planner_executor" as const } },
+      expected:
+        "More verified results on multi-step tasks; more calls per task.",
+    },
+    {
+      gap: "context" as const,
+      arm,
+      statement:
+        "Up-front memory retrieval crowds the context; retrieving on demand keeps it focused.",
+      intervention: { architecture: { memory: "late" as const } },
+      expected: "Same or better verified rate at fewer tokens.",
+    },
+    {
+      gap: "verification" as const,
+      arm,
+      statement:
+        "Drafts are finished without an independent review; an adversarial reviewer whose attacks must be confirmed by a check catches them.",
+      intervention: { architecture: { critic: "adversarial" as const } },
+      expected: "Fewer false completions.",
+    },
+  ]),
+  {
+    gap: "knowledge",
+    arm: "research",
+    statement:
+      "Evidence arrives after the other capabilities have committed; gathering it first grounds them.",
+    intervention: { architecture: { evidence: "first" } },
+    expected: "Fewer unsupported claims in compound tasks.",
+  },
+  // M48: model-usage candidates. The same model, used differently.
+  ...(["coding", "math_science", "research"] as const).flatMap((arm) => [
+    {
+      gap: "verification" as const,
+      arm,
+      statement:
+        "The model finishes on its first derivation; asking it to re-derive the key result by another route before FINISH catches slips.",
+      intervention: { modelUse: { critique: "self_check" as const } },
+      expected: "Fewer false completions for one or two more steps.",
+    },
+    {
+      gap: "tool" as const,
+      arm,
+      statement:
+        "The model asks for tool schemas or calls tools with wrong fields; showing each tool's input fields up front avoids it.",
+      intervention: {
+        modelUse: { toolDescriptions: "summary_with_inputs" as const },
+      },
+      expected: "Fewer failed tool calls and schema requests.",
+    },
+    {
+      gap: "planning" as const,
+      arm,
+      statement:
+        "The task is buried under the contract; leading the prompt with it keeps the model on the objective.",
+      intervention: { modelUse: { promptStyle: "task_first" as const } },
+      expected: "Same or better verified rate; fewer off-objective steps.",
+    },
+    {
+      gap: "knowledge" as const,
+      arm,
+      statement:
+        "Sampling noise changes answers between runs; a low temperature makes derivations reproducible.",
+      intervention: { modelUse: { sampling: { temperature: 0.2 } } },
+      expected: "Fewer inconsistent answers on the same task.",
+    },
+  ]),
+  {
+    gap: "context",
+    arm: "coding",
+    statement:
+      "Full handoffs crowd the executor's context; compact ones keep the kind, verdict and first facts.",
+    intervention: { modelUse: { handoff: "compact" } },
+    expected: "Same verified rate at fewer tokens in compound runs.",
+  },
 ];
 
 function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
@@ -254,6 +336,15 @@ function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
       : {}),
     ...(base.tools || patch.tools
       ? { tools: { ...base.tools, ...patch.tools } }
+      : {}),
+    ...(base.architecture || patch.architecture
+      ? { architecture: { ...base.architecture, ...patch.architecture } }
+      : {}),
+    ...(base.compute || patch.compute
+      ? { compute: { ...base.compute, ...patch.compute } }
+      : {}),
+    ...(base.modelUse || patch.modelUse
+      ? { modelUse: { ...base.modelUse, ...patch.modelUse } }
       : {}),
     ...(base.directives || patch.directives
       ? {
@@ -335,6 +426,17 @@ export function exploratoryMutation(
     {
       statement: "Less retrieved memory reduces distraction.",
       intervention: { memory: { limit: random.pick([2, 4]) } },
+    },
+    {
+      statement: "A different wiring of the same capabilities may verify more.",
+      intervention: {
+        architecture: random.pick([
+          { planning: "planner_executor" as const },
+          { memory: "late" as const },
+          { critic: "specialist" as const },
+          { critic: "adversarial" as const },
+        ]),
+      },
     },
   ];
   if (arm === "coding")
@@ -448,5 +550,21 @@ export function describeGenome(genome: StrategyGenome) {
     parts.push(`memory ${genome.memory.limit}`);
   if (genome.directives?.length)
     parts.push(`${genome.directives.length} extra directive(s)`);
+  const wiring = genome.architecture;
+  if (wiring?.planning === "planner_executor") parts.push("planner → executor");
+  if (wiring?.memory === "late") parts.push("memory on demand");
+  if (wiring?.evidence === "first") parts.push("evidence first");
+  const use = genome.modelUse;
+  if (use?.promptStyle === "task_first") parts.push("task-first prompt");
+  if (use?.toolDescriptions === "summary_with_inputs")
+    parts.push("tool inputs shown");
+  if (use?.handoff === "compact") parts.push("compact handoffs");
+  if (use?.critique === "self_check") parts.push("self-check before finish");
+  if (use?.sampling?.temperature !== undefined)
+    parts.push(`temperature ${use.sampling.temperature}`);
+  if (genome.compute?.mode === "adaptive")
+    parts.push(
+      `adaptive compute${genome.compute.table ? ` (${Object.keys(genome.compute.table).join(", ")} learned)` : ""}`,
+    );
   return parts.length ? parts.join(", ") : "baseline";
 }

@@ -21,6 +21,14 @@ import type { PulseObservation, PulseTaskSpec } from "./types";
 //   M39 generalist CROSS_DOMAIN L1–L5, one mission across capabilities
 //   M40 LONG_HORIZON L1–L5: crashes, typed waits, stale facts, replans
 //   M41 team tasks: disagreement settled by tests, adversary attacks
+//   M44 self-play  SELF_PLAY: generated instances against Osirus mechanisms,
+//                  fresh every hour, judged by independent oracles
+//   M45 software   SOFTWARE_RSI: the self-modification guardrails, attacked
+//                  hourly with patches they must refuse and one to accept
+//   M46 wiring     ARCHITECTURE_SEARCH: the default graph is today's; every
+//                  architecture variant yields the graph it claims
+//   M47 compute    ADAPTIVE_COMPUTE: the escalation policy's rules and its
+//                  calls-per-verified arithmetic
 //   M35 coding     CODING L1–L4, live only: a coding loop on the free model
 //                  takes longer than one tick, so these run where a live
 //                  runner exists (CI), not inside the scheduler tick.
@@ -399,6 +407,157 @@ export async function runLiveCodingTask(
   };
 }
 
+async function selfPlaySpecs(): Promise<PulseTaskSpec[]> {
+  const { SELF_PLAY_ARENAS } =
+    await import("../../intelligence/generation/arenas");
+  const { playArena } =
+    await import("../../intelligence/generation/challenges");
+  return SELF_PLAY_ARENAS.flatMap((arena) =>
+    Array.from({ length: arena.maxLevel }, (_, index) => {
+      const level = (index + 1) as CapabilityLevel;
+      return {
+        id: `m44:self_play:${arena.id}:l${level}`,
+        family: "SELF_PLAY" as const,
+        level,
+        difficulty: "ADVERSARIAL" as const,
+        version: 1,
+        source: "M44 self-play",
+        mode: "offline" as const,
+        title: `${arena.id} L${level}`,
+        run: async () => {
+          const started = Date.now();
+          // Fresh instances every hour: the cell measures the mechanism on
+          // cases no fixed fixture could have been tuned to.
+          const round = await playArena(arena, {
+            seed: `pulse-h${Math.floor(started / 3_600_000)}`,
+            level,
+            count: 3,
+          });
+          const derived: DerivedOutcome =
+            round.invalid > 0
+              ? {
+                  outcome: "INFRASTRUCTURE_FAILURE",
+                  reason: "generator produced an instance it could not judge",
+                }
+              : round.failed === 0
+                ? {
+                    outcome: "VERIFIED_SUCCESS",
+                    reason: `${arena.verifier}: ${round.held}/${round.instances} held`,
+                  }
+                : {
+                    outcome: "REJECTED",
+                    reason: round.failures[0]?.detail ?? "oracle refused",
+                  };
+          return observe(
+            {
+              success: round.failed === 0,
+              verifiedSuccess: round.failed === 0,
+              latencyMs: Date.now() - started,
+              notes: `${arena.mechanism}: ${round.held}/${round.instances} held`,
+            },
+            derived,
+            {
+              arena: arena.id,
+              roles: arena.roles,
+              held: round.held,
+              failed: round.failed,
+            },
+          );
+        },
+      };
+    }),
+  );
+}
+
+async function softwareRsiSpecs(): Promise<PulseTaskSpec[]> {
+  const { GUARDRAIL_CASES } =
+    await import("../../intelligence/software-rsi/guardrails");
+  return GUARDRAIL_CASES.map((entry) => ({
+    id: `m45:software_rsi:l${entry.level}`,
+    family: "SOFTWARE_RSI" as const,
+    level: entry.level,
+    difficulty: "ADVERSARIAL" as const,
+    version: 1,
+    source: "M45 software RSI guardrails",
+    mode: "offline" as const,
+    title: entry.title,
+    run: async () => {
+      const started = Date.now();
+      const result = entry.check();
+      return observe(
+        {
+          success: result.held,
+          verifiedSuccess: result.held,
+          latencyMs: Date.now() - started,
+          notes: result.detail,
+        },
+        result.held
+          ? { outcome: "VERIFIED_SUCCESS", reason: result.detail }
+          : { outcome: "REJECTED", reason: result.detail },
+      );
+    },
+  }));
+}
+
+async function architectureSpecs(): Promise<PulseTaskSpec[]> {
+  const { ARCHITECTURE_CHECKS } =
+    await import("../../intelligence/architecture/checks");
+  return ARCHITECTURE_CHECKS.map((entry) => ({
+    id: `m46:architecture:l${entry.level}`,
+    family: "ARCHITECTURE_SEARCH" as const,
+    level: entry.level,
+    difficulty: difficultyFor(entry.level),
+    version: 1,
+    source: "M46 architecture evolution",
+    mode: "offline" as const,
+    title: entry.title,
+    run: async () => {
+      const started = Date.now();
+      const result = entry.check();
+      return observe(
+        {
+          success: result.held,
+          verifiedSuccess: result.held,
+          latencyMs: Date.now() - started,
+          notes: result.detail,
+        },
+        result.held
+          ? { outcome: "VERIFIED_SUCCESS", reason: result.detail }
+          : { outcome: "REJECTED", reason: result.detail },
+      );
+    },
+  }));
+}
+
+async function computeSpecs(): Promise<PulseTaskSpec[]> {
+  const { COMPUTE_CHECKS } = await import("../../intelligence/compute/checks");
+  return COMPUTE_CHECKS.map((entry) => ({
+    id: `m47:compute:l${entry.level}`,
+    family: "ADAPTIVE_COMPUTE" as const,
+    level: entry.level,
+    difficulty: difficultyFor(entry.level),
+    version: 1,
+    source: "M47 adaptive compute",
+    mode: "offline" as const,
+    title: entry.title,
+    run: async () => {
+      const started = Date.now();
+      const result = entry.check();
+      return observe(
+        {
+          success: result.held,
+          verifiedSuccess: result.held,
+          latencyMs: Date.now() - started,
+          notes: result.detail,
+        },
+        result.held
+          ? { outcome: "VERIFIED_SUCCESS", reason: result.detail }
+          : { outcome: "REJECTED", reason: result.detail },
+      );
+    },
+  }));
+}
+
 /** Every task of the unified suite, offline and live. */
 export async function pulseCatalog(): Promise<PulseTaskSpec[]> {
   const groups = await Promise.all([
@@ -410,6 +569,10 @@ export async function pulseCatalog(): Promise<PulseTaskSpec[]> {
     crossDomainSpecs(),
     longHorizonSpecs(),
     teamSpecs(),
+    selfPlaySpecs(),
+    softwareRsiSpecs(),
+    architectureSpecs(),
+    computeSpecs(),
     codingLiveSpecs(),
   ]);
   return groups.flat();

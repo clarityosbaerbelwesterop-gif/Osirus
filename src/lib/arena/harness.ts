@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { MemoryPlanRevisionStore } from "../agent/plan";
-import { composeWorkflow, missionFor } from "../arms/compose";
+import {
+  architectComposition,
+  composeWorkflow,
+  missionFor,
+} from "../arms/compose";
 import { armFor } from "../arms/registry";
 import type {
   GraphAppender,
@@ -21,7 +25,11 @@ import type { SandboxDriver } from "../sandbox/driver";
 import { ToolRegistry, type ToolAudit } from "../tools/registry";
 import { isFalseCompletion, type TaskResult } from "./metrics";
 import type { ArenaTask } from "./suites";
-import { stampPolicy, type RuntimePolicy } from "../strategy/runtime";
+import {
+  architectureUnder,
+  stampPolicy,
+  type RuntimePolicy,
+} from "../strategy/runtime";
 
 // Runs one arena task through the real arms.
 //
@@ -326,8 +334,18 @@ export async function runArenaTask(
   };
 
   const decision = await routeObjective(task.objective);
-  const composition = task.composition ?? decision.composition;
-  const composed = composeWorkflow({ objective: task.objective, composition });
+  // The same M46 architecture step as the executor: a trial of an
+  // architecture runs the graph that architecture produces.
+  const architecture = architectureUnder(options.policy);
+  const composition = architectComposition(
+    task.composition ?? decision.composition,
+    architecture,
+  );
+  const composed = composeWorkflow({
+    objective: task.objective,
+    composition,
+    architecture,
+  });
   if (options.policy) stampPolicy(composed.graph.nodes, options.policy);
   if (options.stageInput)
     for (const node of composed.graph.nodes)

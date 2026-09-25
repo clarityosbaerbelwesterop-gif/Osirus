@@ -136,8 +136,13 @@ export async function detectGaps(
         capabilityId,
         kind: analysis.kind,
         summary: analysis.summary,
-        evidence: { experienceIds: ids.slice(0, 20), signal: analysis.signal },
-        support: ids.length,
+        // Support counts distinct experience rows. Re-reading the same rows
+        // in a later cycle adds nothing; the store unions the ids.
+        evidence: {
+          experienceIds: [...new Set(ids)].slice(0, 200),
+          signal: analysis.signal,
+        },
+        support: new Set(ids).size,
         status: analysis.kind === "model" ? "dismissed" : "open",
       }),
     );

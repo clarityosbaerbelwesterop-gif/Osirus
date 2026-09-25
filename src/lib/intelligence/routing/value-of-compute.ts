@@ -270,3 +270,90 @@ export function topologyHypothesis(
       "A team is kept only if its verified rate beats one worker by more than its extra tokens cost.",
   };
 }
+
+/**
+ * M47: learn the adaptive-compute table for an arm from judged experience.
+ * The start tier is the cheapest tier within the margin of the best
+ * measured one; escalation stays on only if some team topology measurably
+ * beat a single worker for its extra cost. Null until something is measured
+ * -- an unmeasured arm keeps the plan's defaults, it is not guessed.
+ */
+export function learnComputeEntry(
+  experience: Experience[],
+  versions: Map<string, StrategyVersion>,
+  capabilityId: string,
+): {
+  start: "FAST" | "STANDARD" | "DEEP";
+  escalate: boolean;
+  evidence: string;
+} | null {
+  const tier = recommendTier(estimateTiers(experience, versions, capabilityId));
+  const topologies = estimateTopologies(experience, versions, capabilityId);
+  const single = topologies.find((entry) => entry.topology === "single")!;
+  const teams = topologies
+    .filter((entry) => entry.topology !== "single")
+    .map((entry) => ({ entry, value: delegationValue(single, entry) }))
+    .filter((row) => row.value.measured);
+  if (!tier && !teams.length) return null;
+  const start =
+    tier && tier.tier !== "EXTREME" ? tier.tier : ("STANDARD" as const);
+  const escalate = teams.length
+    ? teams.some((row) => row.value.worthwhile)
+    : true;
+  return {
+    start,
+    escalate,
+    evidence: [
+      tier
+        ? `tier ${tier.tier}: ${tier.verified}/${tier.n} verified`
+        : "tiers unmeasured",
+      teams.length
+        ? teams
+            .map(
+              (row) =>
+                `${row.entry.topology} gain ${row.value.gain.toFixed(2)}`,
+            )
+            .join(", ")
+        : "teams unmeasured",
+    ].join("; "),
+  };
+}
+
+/** The adaptive-compute hypothesis for a strategy, learned or from the prior. */
+export function adaptiveComputeHypothesis(input: {
+  experience: Experience[];
+  versions: Map<string, StrategyVersion>;
+  capabilityId: string;
+  arm: ArmId;
+  champion: StrategyGenome;
+}): Hypothesis | null {
+  if (input.champion.compute?.mode === "adaptive" && !input.experience.length)
+    return null;
+  const learned = learnComputeEntry(
+    input.experience,
+    input.versions,
+    input.capabilityId,
+  );
+  const table = learned
+    ? { [input.arm]: { start: learned.start, escalate: learned.escalate } }
+    : undefined;
+  if (
+    input.champion.compute?.mode === "adaptive" &&
+    JSON.stringify(input.champion.compute.table ?? {}) ===
+      JSON.stringify(table ?? {})
+  )
+    return null;
+  return {
+    id: randomUUID(),
+    gap: "execution",
+    statement: learned
+      ? `Learned adaptive compute for ${input.arm}: start ${learned.start}, escalate ${learned.escalate} (${learned.evidence}).`
+      : `The same compute on every ${input.arm} task wastes calls: start cheap, escalate only drafts that are not verified.`,
+    intervention: {
+      compute: { mode: "adaptive", ...(table ? { table } : {}) },
+    },
+    expected:
+      "At least as many verified results for fewer model calls per verified success.",
+    origin: learned ? "learned_compute" : "compute_prior",
+  };
+}

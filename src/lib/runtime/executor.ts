@@ -1,11 +1,20 @@
 import { randomUUID } from "node:crypto";
-import { composeWorkflow, missionFor } from "../arms/compose";
+import {
+  architectComposition,
+  composeWorkflow,
+  missionFor,
+} from "../arms/compose";
 import { analyseTask } from "../arms/thinking";
 import type { ArmId, RuntimeIdentity, TaskAnalysis } from "../arms/types";
+import { freeRoleModels } from "../models/free";
 import { UnoRouterProvider } from "../models/unorouter";
 import { recordingProvider } from "../models/recording";
 import { resolveProductPolicy } from "../strategy/resolve";
-import { stampPolicy, type RuntimePolicy } from "../strategy/runtime";
+import {
+  architectureUnder,
+  stampPolicy,
+  type RuntimePolicy,
+} from "../strategy/runtime";
 import { abortLocalRun, registerRunController } from "./cancellation";
 import { persistGraph, setBudget } from "./dispatch";
 import { publicRuntimeErrorMessage, runtimeErrorCode } from "./errors";
@@ -186,6 +195,8 @@ export async function planRuntimeRun(input: {
   const provider = input.policy?.model
     ? new UnoRouterProvider({
         model: input.policy.model,
+        // M48: a model per role, from the free-model allowlist only.
+        roleModels: freeRoleModels(input.policy.genome.modelUse?.roles),
         maxRateLimitWaitSeconds: 60,
       })
     : new UnoRouterProvider();
@@ -254,10 +265,27 @@ export async function planRuntimeRun(input: {
     decision.reason = `${decision.reason} Attached data routed to the math/data arm.`;
   }
 
+  // The policy is resolved before the graph is composed (M46), so a
+  // strategy's architecture can change the graph's shape, not only what
+  // happens inside a stage. The default architecture leaves it unchanged.
+  const policy =
+    input.policy ??
+    (await resolveProductPolicy({
+      armId: decision.primary,
+      runId: input.runId,
+    }));
+  const architecture = architectureUnder(policy);
+  const architected = architectComposition(decision.composition, architecture);
+  if (architected.join(",") !== decision.composition.join(",")) {
+    decision.composition = architected;
+    decision.reason = `${decision.reason} Architecture ${JSON.stringify(policy.genome.architecture)} reordered the capabilities.`;
+  }
+
   const composed = composeWorkflow({
     objective: input.objective,
     composition: decision.composition,
     analysis: decision.analysis,
+    architecture,
   });
 
   await repository.setRunPlan({
@@ -274,12 +302,6 @@ export async function planRuntimeRun(input: {
     },
   });
 
-  const policy =
-    input.policy ??
-    (await resolveProductPolicy({
-      armId: decision.primary,
-      runId: input.runId,
-    }));
   stampPolicy(composed.graph.nodes, policy);
   if (input.stageInput)
     for (const node of composed.graph.nodes)

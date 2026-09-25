@@ -4,6 +4,7 @@ import type {
   ModelRole,
   ModelStreamEvent,
   Usage,
+  Sampling,
 } from "./provider";
 
 type OpenAIChunk = {
@@ -98,6 +99,11 @@ export type UnoRouterOptions = {
    * and use the per-role environment configuration.
    */
   model?: string;
+  /**
+   * M48: a model per role for a trial, from the free-model allowlist only
+   * (see models/free.ts); a role without an entry uses `model`.
+   */
+  roleModels?: Partial<Record<ModelRole, string>>;
   /** Longest wait for a rate limit, overriding the environment default. */
   maxRateLimitWaitSeconds?: number;
 };
@@ -114,6 +120,8 @@ export class UnoRouterProvider implements ModelProvider {
   }
 
   private modelFor(role: ModelRole) {
+    const assigned = this.options.roleModels?.[role];
+    if (assigned) return assigned;
     if (this.options.model) return this.options.model;
     const models: Record<ModelRole, string | undefined> = {
       FAST: env.OSIRUS_MODEL_FAST,
@@ -201,6 +209,7 @@ export class UnoRouterProvider implements ModelProvider {
     messages: unknown[];
     stream: boolean;
     signal?: AbortSignal;
+    sampling?: Sampling;
   }) {
     // A rate limit is waited out on the same key, as the provider asks, up to
     // a ceiling -- never sidestepped by switching keys.
@@ -229,6 +238,7 @@ export class UnoRouterProvider implements ModelProvider {
     messages: unknown[];
     stream: boolean;
     signal?: AbortSignal;
+    sampling?: Sampling;
   }) {
     const keys = this.eligibleKeys();
     let lastError: Error | undefined;
@@ -251,6 +261,9 @@ export class UnoRouterProvider implements ModelProvider {
             messages: input.messages,
             stream: input.stream,
             reasoning_effort: this.reasoningEffort(input.role),
+            // M48: only when a strategy set them; otherwise the defaults.
+            temperature: input.sampling?.temperature,
+            top_p: input.sampling?.topP,
             stream_options: input.stream ? { include_usage: true } : undefined,
           }),
           signal,
@@ -331,6 +344,7 @@ export class UnoRouterProvider implements ModelProvider {
     role: ModelRole;
     messages: unknown[];
     signal?: AbortSignal;
+    sampling?: Sampling;
   }): AsyncIterable<ModelStreamEvent> {
     const { response, cleanup } = await this.request({
       ...input,
@@ -386,6 +400,7 @@ export class UnoRouterProvider implements ModelProvider {
     role: ModelRole;
     messages: unknown[];
     signal?: AbortSignal;
+    sampling?: Sampling;
   }) {
     const { response, cleanup } = await this.request({
       ...input,
@@ -408,6 +423,7 @@ export class UnoRouterProvider implements ModelProvider {
     messages: unknown[];
     validate: (value: unknown) => T;
     signal?: AbortSignal;
+    sampling?: Sampling;
   }) {
     const result = await this.complete(input);
     const start = result.text.indexOf("{");

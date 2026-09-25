@@ -30,6 +30,7 @@ import {
   contextTokensUnder,
   directivesUnder,
   memoryLimitsUnder,
+  modelUseUnder,
   attachmentIdsOf,
   plantedMemoryOf,
   policyOfStage,
@@ -105,11 +106,16 @@ export function handoffContext(context: ArmStageContext): string[] {
   const handoff = context.state.handoff as
     Array<{ from: string; kind: string; verdict: string }> | undefined;
   if (!Array.isArray(handoff)) return [];
+  // M48: a strategy may pass handoffs on compactly; full is the default.
+  const cap =
+    modelUseUnder(policyOfStage(context.work.stageInput)).handoff === "compact"
+      ? 1_200
+      : 4_000;
   return handoff
     .slice(-4)
     .map(
       (entry) =>
-        `[handoff from ${entry.from}: ${entry.kind}, ${entry.verdict}] ${JSON.stringify(entry).slice(0, 4_000)}`,
+        `[handoff from ${entry.from}: ${entry.kind}, ${entry.verdict}] ${JSON.stringify(entry).slice(0, cap)}`,
     );
 }
 
@@ -593,8 +599,22 @@ export abstract class BaseArm implements AgentArm {
     const { runAgentLoop, DEFAULT_BOUNDS, sliceBudgetDelta } =
       await import("../agent/loop");
     const policy = policyOfStage(work.stageInput);
-    const bounds = boundsUnder(policy, this.loopBounds(), DEFAULT_BOUNDS);
+    // M47: adaptive compute starts the loop at a cheap tier; static keeps
+    // the genome's own tier (the default, unchanged behaviour).
+    const { nextEscalation, startTier } = await import("../agent/escalation");
+    const bounds = boundsUnder(
+      {
+        ...policy,
+        genome: {
+          ...policy.genome,
+          computeTier: startTier(policy.genome, this.id),
+        },
+      },
+      this.loopBounds(),
+      DEFAULT_BOUNDS,
+    );
     const policyContext = await this.policyContext(context, policy);
+    const modelUse = modelUseUnder(policy);
     const { agentDecisionSchema } = await import("../agent/decision");
 
     let callIndex = 0;
@@ -619,6 +639,8 @@ export abstract class BaseArm implements AgentArm {
           requestId: `${work.runId}:${work.stageId}:${work.attemptNumber}:${callIndex}`,
           role,
           signal: input.signal,
+          // M48: only when the strategy evolved it.
+          ...(modelUse.sampling ? { sampling: modelUse.sampling } : {}),
           messages: [
             { role: "system", content: input.system },
             { role: "user", content: input.user },
@@ -792,6 +814,9 @@ export abstract class BaseArm implements AgentArm {
       },
       decide,
       bounds,
+      // M48: how the prompt is ordered and tools are described.
+      promptStyle: modelUse.promptStyle,
+      toolDescriptions: modelUse.toolDescriptions,
       resume: context.state.loopState as
         import("../agent/loop").LoopState | undefined,
       hypotheses: (taskModel?.assumptions ?? [])
@@ -1115,7 +1140,38 @@ export abstract class BaseArm implements AgentArm {
     // M41: the policy's team topology. The critic is the M26 path; the
     // M41 topologies form a team only while the draft is uncertain.
     const { topologyOf } = await import("../agent/team");
-    const topology = topologyOf(policy.genome);
+    let topology = topologyOf(policy.genome);
+    // M47: adaptive compute picks the rung after seeing the draft.
+    const escalation = nextEscalation({
+      genome: policy.genome,
+      armId: this.id,
+      verification:
+        result.state.kernel?.verificationState.status ?? "unverified",
+      openHypotheses:
+        result.state.kernel?.hypotheses.filter((h) => h.status === "OPEN")
+          .length ?? 0,
+      remainingCalls: Math.max(
+        0,
+        (bounds.maxModelCalls ?? DEFAULT_BOUNDS.maxModelCalls) -
+          result.state.modelCalls,
+      ),
+    });
+    if (escalation.reason !== "static compute") {
+      if (escalation.rung && topology === "single")
+        topology = escalation.topology;
+      context.state.compute = {
+        start: startTier(policy.genome, this.id),
+        escalated: escalation.rung,
+        reason: escalation.reason,
+        gainPerCall: Number(escalation.gainPerCall.toFixed(4)),
+      };
+      await runtime.activity(
+        escalation.rung ? "compute.escalated" : "compute.held",
+        escalation.reason,
+        { rung: escalation.rung },
+        "internal",
+      );
+    }
     let team: import("../agent/team").TeamOutcome | null = null;
     if (topology === "solver_critic")
       answer = await this.teamReview(context, {

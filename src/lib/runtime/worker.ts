@@ -9,6 +9,7 @@ import type {
 } from "../arms/types";
 import { MemoryOS } from "../memory/os";
 import { providerRefusalOf, refusalDelaySeconds } from "../models/provider";
+import { freeRoleModels } from "../models/free";
 import { UnoRouterProvider } from "../models/unorouter";
 import type { Verdict } from "../verification/engine";
 import {
@@ -220,6 +221,8 @@ export async function executeClaimedStage(input: {
     provider: stagePolicy.model
       ? new UnoRouterProvider({
           model: stagePolicy.model,
+          // M48: a model per role, from the free-model allowlist only.
+          roleModels: freeRoleModels(stagePolicy.genome.modelUse?.roles),
           maxRateLimitWaitSeconds: 60,
         })
       : new UnoRouterProvider(),

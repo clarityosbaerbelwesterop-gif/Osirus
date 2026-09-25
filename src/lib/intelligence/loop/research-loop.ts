@@ -1127,7 +1127,9 @@ async function advance(
         }
         if (cycle.capabilityId === "math.quantitative") {
           const round = await problemGeneratorRound(store, {
-            round: (await store.listGenerationRuns(200)).length,
+            // Monotonic: one round per UTC hour, never capped by how many
+            // generation runs a listing returns.
+            round: Math.floor(Date.now() / 3_600_000),
             perFamily: 1,
             cycleId: cycle.id,
           });
@@ -1156,6 +1158,11 @@ async function advance(
         const red = await redRound(store, {
           cycleId: cycle.id,
           level: await levelOf(store, cycle.capabilityId!),
+          sandbox:
+            ctx.sandbox && Date.now() < ctx.deadline - 60_000
+              ? ctx.sandbox
+              : undefined,
+          signal: ctx.signal,
         });
         notes.push(`red intelligence: ${red.stored} adversarial tasks`);
       }

@@ -35,6 +35,30 @@ export const PULSE_EXPECTATION: OidcExpectation = {
   audience: OIDC_AUDIENCE,
 };
 
+/**
+ * The M44–M48 runners. Their own audience, so a token minted for the
+ * scheduler tick is never accepted here and one minted here never reaches
+ * the tick. Each endpoint names the one workflow file it serves.
+ */
+export const RSI_AUDIENCE = "osirus-rsi";
+const RSI_EVENTS = ["schedule", "workflow_dispatch", "workflow_run"];
+
+export const RSI_LIVE_EXPECTATION: OidcExpectation = {
+  repository: PULSE_REPOSITORY,
+  workflow: ".github/workflows/rsi-live.yml",
+  ref: "refs/heads/main",
+  events: RSI_EVENTS,
+  audience: RSI_AUDIENCE,
+};
+
+export const SOFTWARE_RSI_EXPECTATION: OidcExpectation = {
+  repository: PULSE_REPOSITORY,
+  workflow: ".github/workflows/software-rsi.yml",
+  ref: "refs/heads/main",
+  events: RSI_EVENTS,
+  audience: RSI_AUDIENCE,
+};
+
 let cache: { keys: Jwk[]; at: number } | null = null;
 
 async function githubKeys(fetchImpl: typeof fetch): Promise<Jwk[]> {

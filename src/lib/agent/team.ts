@@ -21,11 +21,24 @@ export const TEAM_TOPOLOGIES = [
 ] as const;
 export type TeamTopology = (typeof TEAM_TOPOLOGIES)[number];
 
-/** What a genome runs. The M26 `critic: true` is the solver_critic topology. */
+/**
+ * What a genome runs. The M26 `critic: true` is the solver_critic topology;
+ * an explicit team wins over the M46 architecture's critic, which maps a
+ * specialist critic to solver_critic and an adversarial one to
+ * solver_adversary.
+ */
 export function topologyOf(genome: StrategyGenome | undefined): TeamTopology {
   const team = genome?.team;
   if (team?.topology) return team.topology;
-  return team?.critic ? "solver_critic" : "single";
+  if (team?.critic) return "solver_critic";
+  switch (genome?.architecture?.critic) {
+    case "specialist":
+      return "solver_critic";
+    case "adversarial":
+      return "solver_adversary";
+    default:
+      return "single";
+  }
 }
 
 /** A check a worker offers for its claim, run through the stage's tools. */

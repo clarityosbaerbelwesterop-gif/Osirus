@@ -28,6 +28,10 @@ export const MECHANISMS = [
   "compute_tier",
   "skill",
   "generated_tool",
+  // M46–M48: how Osirus is wired, how it spends compute, how it uses the model.
+  "architecture",
+  "adaptive_compute",
+  "prompt",
 ] as const;
 export type Mechanism = (typeof MECHANISMS)[number];
 
@@ -36,6 +40,12 @@ export function mechanismOf(
   hypothesis: Pick<Hypothesis, "intervention">,
 ): Mechanism {
   const change = hypothesis.intervention;
+  if (change.architecture) return "architecture";
+  if (change.compute) return "adaptive_compute";
+  if (change.modelUse)
+    return change.modelUse.roles || change.modelUse.sampling
+      ? "model"
+      : "prompt";
   if (change.tools?.include?.length) return "generated_tool";
   if (change.team) return "topology";
   if (change.computeTier) return "compute_tier";
