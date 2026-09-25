@@ -198,9 +198,13 @@ export function databaseApprovalGate(input: {
   actorId: string;
 }): ApprovalGate {
   return async ({ tool, context, request }) => {
+    // An approval covers one tool, one input and -- for tools someone else
+    // defines (MCP) -- one version of that tool's definition. Tools without
+    // a definition fingerprint keep the fingerprint they always had.
     const fingerprint = JSON.stringify({
       toolId: tool.id,
       input: request.input ?? null,
+      ...(request.definition ? { definition: request.definition } : {}),
     });
 
     const existing = await queryAs<{ status: string }>(
@@ -265,6 +269,7 @@ export function databaseApprovalGate(input: {
           title: tool.title,
           effect: tool.effect,
           summary: tool.summary,
+          ...(request.definition ? { definition: request.definition } : {}),
         },
         expiresInSeconds: 60 * 60,
       })

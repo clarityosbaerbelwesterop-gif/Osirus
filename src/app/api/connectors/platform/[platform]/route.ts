@@ -36,8 +36,11 @@ export async function POST(
     maxBytes: 2 * 1024,
   });
   if (!guard.ok) return guard.response;
-  if (guard.body.action === "check")
-    return json({ health: await checkPlatformHealth(guard.identity, id) });
+  if (guard.body.action === "check") {
+    const health = await checkPlatformHealth(guard.identity, id);
+    if (!health) return json({ error: "not_connected" }, 409);
+    return json({ health });
+  }
   try {
     const verified = await connectPlatform(
       guard.identity,

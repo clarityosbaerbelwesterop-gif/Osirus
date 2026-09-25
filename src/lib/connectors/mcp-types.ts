@@ -9,11 +9,14 @@ export type McpToolView = {
   enabled: boolean;
   reviewedAt: string | null;
   risk: "high";
+  /** The server's description tried to instruct the agent. Shown as a warning. */
+  flagged?: boolean;
 };
 
 export type McpServerView = {
   id: string;
   name: string;
+  /** The server URL with query values masked (they often carry keys). */
   url: string;
   hasToken: boolean;
   enabled: boolean;

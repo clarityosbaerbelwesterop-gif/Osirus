@@ -269,11 +269,14 @@ describe("mcp discovery", () => {
     expect(needsApproval(definition)).toBe(true);
   });
 
-  it("returns nothing rather than guessing when a server answers oddly", async () => {
-    const tools = await discoverTools({
-      server,
-      transport: async () => ({ unexpected: true }),
-    });
-    expect(tools).toEqual([]);
+  it("refuses rather than guessing when a server answers oddly", async () => {
+    // Not an empty list: a health check that read "no tools" here would
+    // delete every reviewed tool of a server that merely answered badly.
+    await expect(
+      discoverTools({
+        server,
+        transport: async () => ({ unexpected: true }),
+      }),
+    ).rejects.toThrow("mcp_invalid_response");
   });
 });

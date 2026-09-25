@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import type { ArmId } from "../arms/types";
 import { containsInjectionAttempt } from "../security/injection";
@@ -23,15 +24,22 @@ import type { ToolDefinition } from "./registry";
 
 export const MCP_NAMESPACE = "mcp";
 
+// One entry of tools/list. Parsed one by one: a single malformed or oversized
+// entry is dropped on its own instead of making the whole list look empty --
+// which would read as "the server removed every tool".
 const toolSchema = z.object({
   name: z.string().min(1).max(128),
-  description: z.string().max(4000).optional(),
+  description: z.string().optional(),
   inputSchema: z.unknown().optional(),
 });
 
 const listResponseSchema = z.object({
-  tools: z.array(toolSchema).max(256),
+  tools: z.array(z.unknown()),
+  nextCursor: z.string().max(1000).optional(),
 });
+
+const MAX_TOOLS = 256;
+const MAX_LIST_PAGES = 10;
 
 export type McpServer = {
   /** Stable identifier within the workspace; used in the namespaced tool id. */
@@ -50,7 +58,44 @@ export type DiscoveredTool = {
   parameters: string[];
   /** The raw description tried to address the model; shown as a warning. */
   flagged: boolean;
+  /**
+   * sha256 over the tool's name, raw description and full input schema. A
+   * person reviews a tool as it was at this fingerprint; any change to what
+   * the server says about the tool changes it and voids the review.
+   */
+  fingerprint: string;
 };
+
+/** JSON with object keys sorted, so equal values hash equally. */
+function canonicalJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+  if (value && typeof value === "object")
+    return `{${Object.keys(value as Record<string, unknown>)
+      .sort()
+      .map(
+        (key) =>
+          `${JSON.stringify(key)}:${canonicalJson((value as Record<string, unknown>)[key])}`,
+      )
+      .join(",")}}`;
+  return JSON.stringify(value ?? null);
+}
+
+/** See DiscoveredTool.fingerprint. */
+export function toolFingerprint(tool: {
+  name: string;
+  description?: string;
+  inputSchema?: unknown;
+}) {
+  return createHash("sha256")
+    .update(
+      canonicalJson({
+        name: tool.name,
+        description: tool.description ?? "",
+        inputSchema: tool.inputSchema ?? null,
+      }),
+    )
+    .digest("hex");
+}
 
 /** A description that tries to address the model rather than describe a tool. */
 export function injectionSuspected(raw: string | undefined) {
@@ -142,8 +187,11 @@ export function parseRpcResponse(
     } catch {
       payload = null;
     }
+    // A JSON-RPC answer belongs to the request with the same id.
+    if (payload && payload.id !== id) payload = null;
   }
-  if (!payload) throw new Error("mcp_invalid_response");
+  if (!payload || typeof payload !== "object")
+    throw new Error("mcp_invalid_response");
   if (payload.error)
     throw new Error(`mcp_error:${Number(payload.error.code) || "unknown"}`);
   return payload.result;
@@ -264,24 +312,51 @@ export const httpTransport: McpTransport = async ({
   return result;
 };
 
+/**
+ * tools/list, following pagination. A response that is not a tool list is an
+ * error (mcp_invalid_response), never an empty list.
+ */
+async function listRawTools(input: {
+  server: McpServer;
+  transport: McpTransport;
+  signal?: AbortSignal;
+}) {
+  const raw: unknown[] = [];
+  let cursor: string | undefined;
+  for (let page = 0; page < MAX_LIST_PAGES; page += 1) {
+    const result = await input.transport({
+      server: input.server,
+      method: "tools/list",
+      params: cursor ? { cursor } : {},
+      signal: input.signal,
+    });
+    const parsed = listResponseSchema.safeParse(result);
+    if (!parsed.success) throw new Error("mcp_invalid_response");
+    raw.push(...parsed.data.tools);
+    cursor = parsed.data.nextCursor;
+    if (!cursor || raw.length >= MAX_TOOLS) break;
+  }
+  return raw.slice(0, MAX_TOOLS);
+}
+
 export async function discoverTools(input: {
   server: McpServer;
   transport?: McpTransport;
   signal?: AbortSignal;
 }): Promise<DiscoveredTool[]> {
   const transport = input.transport ?? httpTransport;
-  const raw = await transport({
+  const raw = await listRawTools({
     server: input.server,
-    method: "tools/list",
-    params: {},
+    transport,
     signal: input.signal,
   });
-  const parsed = listResponseSchema.safeParse(raw);
-  if (!parsed.success) return [];
 
   const seen = new Set<string>();
   const tools: DiscoveredTool[] = [];
-  for (const tool of parsed.data.tools) {
+  for (const entry of raw) {
+    const parsed = toolSchema.safeParse(entry);
+    if (!parsed.success) continue;
+    const tool = parsed.data;
     const id = namespacedId(input.server.id, tool.name);
     if (seen.has(id)) continue;
     seen.add(id);
@@ -292,9 +367,60 @@ export async function discoverTools(input: {
       description: sanitizeDescription(tool.description),
       parameters: parameterNames(tool.inputSchema),
       flagged: injectionSuspected(tool.description),
+      fingerprint: toolFingerprint(tool),
     });
   }
   return tools;
+}
+
+export class McpToolChangedError extends Error {
+  constructor(readonly toolId: string) {
+    super(`mcp_tool_changed:${toolId}`);
+    this.name = "McpToolChangedError";
+  }
+}
+
+/**
+ * The tool as the server describes it right now, checked against the
+ * fingerprint it was reviewed at. Throws McpToolChangedError when it changed
+ * or disappeared.
+ */
+export async function assertToolUnchanged(input: {
+  tool: Pick<DiscoveredTool, "id" | "remoteName" | "fingerprint">;
+  server: McpServer;
+  transport: McpTransport;
+  signal?: AbortSignal;
+}) {
+  const raw = await listRawTools({
+    server: input.server,
+    transport: input.transport,
+    signal: input.signal,
+  });
+  const live = raw
+    .map((entry) => toolSchema.safeParse(entry))
+    .find(
+      (parsed) => parsed.success && parsed.data.name === input.tool.remoteName,
+    );
+  if (!live?.success || toolFingerprint(live.data) !== input.tool.fingerprint)
+    throw new McpToolChangedError(input.tool.id);
+}
+
+/** Text of an MCP tool result that reported isError, cut and cleaned. */
+function toolErrorText(result: unknown) {
+  const content = (result as { content?: unknown })?.content;
+  const text = Array.isArray(content)
+    ? content
+        .map((part) =>
+          typeof (part as { text?: unknown })?.text === "string"
+            ? (part as { text: string }).text
+            : "",
+        )
+        .join(" ")
+    : "";
+  return sanitizeDescription(text || "The tool reported an error.").slice(
+    0,
+    300,
+  );
 }
 
 /**
@@ -304,12 +430,19 @@ export async function discoverTools(input: {
  * the server advertised: validating against a schema the server wrote proves
  * only that the server agrees with itself. The approval gate is what actually
  * stands between the call and the outside world.
+ *
+ * The reviewed fingerprint travels with the definition: it is part of every
+ * approval request (so an approval is for this exact version of the tool),
+ * and right before tools/call the live definition is compared with it. A tool
+ * the server changed since it was reviewed is not called; onChanged lets the
+ * store switch it off until someone reviews it again.
  */
 export function toolFromDiscovery(input: {
   tool: DiscoveredTool;
   server: McpServer;
   arms: ArmId[];
   transport?: McpTransport;
+  onChanged?: (tool: DiscoveredTool) => Promise<void>;
 }): ToolDefinition<Record<string, unknown>, unknown> {
   const transport = input.transport ?? httpTransport;
   return {
@@ -321,13 +454,31 @@ export function toolFromDiscovery(input: {
     effect: "external",
     risk: "high",
     arms: input.arms,
+    definitionFingerprint: input.tool.fingerprint,
     inputSchema: z.record(z.string(), z.unknown()),
-    run: (args, context) =>
-      transport({
+    run: async (args, context) => {
+      try {
+        await assertToolUnchanged({
+          tool: input.tool,
+          server: input.server,
+          transport,
+          signal: context.signal,
+        });
+      } catch (error) {
+        if (error instanceof McpToolChangedError)
+          await input.onChanged?.(input.tool).catch(() => undefined);
+        throw error;
+      }
+      const result = await transport({
         server: input.server,
         method: "tools/call",
         params: { name: input.tool.remoteName, arguments: args },
         signal: context.signal,
-      }),
+      });
+      // MCP reports a failed tool run inside a successful response.
+      if ((result as { isError?: unknown })?.isError === true)
+        throw new Error(`mcp_tool_error: ${toolErrorText(result)}`);
+      return result;
+    },
   };
 }

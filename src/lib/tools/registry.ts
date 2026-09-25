@@ -59,6 +59,12 @@ export type ToolDefinition<Input = unknown, Output = unknown> = {
   risk: ToolRisk;
   /** Arms permitted to use the tool. An arm not listed cannot see it. */
   arms: ArmId[];
+  /**
+   * For tools defined by someone else (MCP): a hash of the definition a
+   * person reviewed. It is part of every approval request, so an approval
+   * given for one version of a tool never covers a changed one.
+   */
+  definitionFingerprint?: string;
   inputSchema: z.ZodType<Input>;
   run(input: Input, context: ToolContext): Promise<Output>;
 };
@@ -366,6 +372,9 @@ export class ToolRegistry {
         // The validated input, not the raw one: an approval should describe
         // the call that will actually be made.
         input: parsed.data as unknown,
+        ...(tool.definitionFingerprint
+          ? { definition: tool.definitionFingerprint }
+          : {}),
       };
       // No gate configured means no way to approve, which means the call does
       // not happen. Defaulting to "allowed" here would make the whole model
