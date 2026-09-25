@@ -150,8 +150,14 @@ export class MemoryIntelStore implements IntelStore {
             ...gap.evidence,
             experienceIds: union.slice(0, 500),
           },
+          // An addressed gap stays addressed unless new evidence arrives.
           status:
-            existing.status === "addressed" ? existing.status : gap.status,
+            existing.status === "addressed" &&
+            !ids(gap.evidence.experienceIds).some(
+              (id) => !ids(existing.evidence.experienceIds).includes(id),
+            )
+              ? existing.status
+              : gap.status,
         }
       : { ...clone(gap), id: randomUUID() };
     this.state.gaps.set(stored.id, stored);

@@ -41,6 +41,9 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: main
+          # Patched, model-written code runs in this workspace: it must not
+          # find a token in .git/config. Publishing authenticates on its own.
+          persist-credentials: false
       - name: Take a code hypothesis
         id: take
         run: |
@@ -68,22 +71,59 @@ jobs:
           python -m pip install --quiet sympy==1.14.0 numpy
       - name: Attempt one bounded improvement
         if: steps.take.outputs.status == '200'
+        # No GitHub token here. The model keys reach only the parent process;
+        # every command on the patched tree runs without any credential.
         env:
           OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "90"
           UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
           UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
           UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
           UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
-          GH_TOKEN: ${{ github.token }}
           RSI_EVAL: evals/software-rsi.eval.ts
           RSI_HYPOTHESIS_FILE: ${{ runner.temp }}/hypothesis.json
           RSI_REPORT: ${{ runner.temp }}/report.json
         run: npx vitest run --config vitest.rsi.config.ts
+      - name: Publish the draft pull request
+        if: steps.take.outputs.status == '200'
+        # Runs no project code: a clean tree, one patch to one allowlisted
+        # file, git and gh. Only here does the job hold a write token.
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          report="${RUNNER_TEMP}/report.json"
+          test -f "${report}" || exit 0
+          if [ "$(jq -r .outcome "${report}")" != "ready" ]; then echo "nothing to publish"; exit 0; fi
+          branch=$(jq -r .branch "${report}")
+          file=$(jq -r .hypothesis.file "${RUNNER_TEMP}/hypothesis.json")
+          [[ "${branch}" =~ ^rsi/[a-z0-9][a-z0-9._-]{2,60}$ ]] || { echo "refusing branch ${branch}"; exit 1; }
+          [[ "${file}" =~ ^src/lib/(agent|arms|research|context|memory|compute)/[A-Za-z0-9_-]+\.ts$|^src/lib/runtime/router-v2\.ts$ ]] || { echo "refusing ${file}"; exit 1; }
+          git reset --hard HEAD && git clean -fdq
+          touched=$(git apply --numstat "${RUNNER_TEMP}/patch.diff" | awk '{print $3}')
+          [ "${touched}" = "${file}" ] || { echo "patch touches ${touched}, expected ${file}"; exit 1; }
+          git -c user.name=osirus-software-rsi -c user.email=software-rsi@users.noreply.github.com checkout -b "${branch}"
+          git apply --index "${RUNNER_TEMP}/patch.diff"
+          git -c user.name=osirus-software-rsi -c user.email=software-rsi@users.noreply.github.com commit -q -F "${RUNNER_TEMP}/pr-title.txt"
+          gh auth setup-git
+          git push origin "${branch}"
+          gh label create software-rsi --force --color 5319e7 --description "Proposed by Osirus software RSI"
+          url=$(gh pr create --draft --base main --head "${branch}" --label software-rsi \
+            --title "$(cat "${RUNNER_TEMP}/pr-title.txt")" --body-file "${RUNNER_TEMP}/pr-body.md")
+          # Pull requests opened with the workflow token do not start CI.
+          gh workflow run ci.yml --ref "${branch}" || echo "could not dispatch CI"
+          jq --arg url "${url}" '.outcome = "pr_opened" | .prUrl = $url' "${report}" > "${report}.new"
+          mv "${report}.new" "${report}"
       - name: Report the attempt
         if: always() && steps.take.outputs.status == '200'
         run: |
           set -euo pipefail
           test -f "${RUNNER_TEMP}/report.json" || { echo "no report written"; exit 1; }
+          # A patch that was ready but not published is a failure to report.
+          if [ "$(jq -r .outcome "${RUNNER_TEMP}/report.json")" = "ready" ]; then
+            jq '.outcome = "failed" | .summary = ("publishing failed after: " + .summary)' \
+              "${RUNNER_TEMP}/report.json" > "${RUNNER_TEMP}/report.new"
+            mv "${RUNNER_TEMP}/report.new" "${RUNNER_TEMP}/report.json"
+          fi
           token=$(curl -sS --fail -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
             "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=osirus-rsi" | jq -r '.value')
           echo "::add-mask::${token}"

@@ -706,6 +706,11 @@ export async function hypothesize(ctx: RsiContext): Promise<PhaseResult> {
     ...(ctx.selfPlayArenas ?? SELF_PLAY_ARENAS),
     ...(ctx.redArenas ?? RED_ARENAS),
   ];
+  const known = new Map(
+    (
+      await ctx.intel.listArtifacts({ kind: "code_hypothesis", limit: 200 })
+    ).map((artifact) => [artifact.fingerprint, artifact]),
+  );
   for (const finding of findings) {
     if (!finding.mechanism) continue;
     const [file, symbol] = finding.mechanism.split(":") as [string, string];
@@ -722,24 +727,33 @@ export async function hypothesize(ctx: RsiContext): Promise<PhaseResult> {
       lane: "offline",
     };
     items.push(hypothesis);
+    const print = fingerprint(
+      "code_hypothesis",
+      finding.mechanism,
+      finding.origin,
+    );
+    // The same finding again: refresh the evidence, keep what the pipeline
+    // recorded (attempts, the daily limit, an open pull request's status).
+    const prior = known.get(print);
+    const levels = [
+      ...new Set([
+        ...((prior?.content.levels as number[] | undefined) ?? []),
+        ...finding.instances.map((id) => Number(/:L(\d+):/.exec(id)?.[1] ?? 1)),
+      ]),
+    ].sort();
     await ctx.intel.upsertArtifact({
       cycleId: null,
       kind: "code_hypothesis",
       capabilityId: finding.capabilityId,
       taskPattern: finding.origin,
       content: {
+        ...(prior?.content ?? {}),
         statement: hypothesis.statement,
         expected: hypothesis.expected,
         file,
         symbol,
         arena: finding.origin,
-        levels: [
-          ...new Set(
-            finding.instances.map((id) =>
-              Number(/:L(\d+):/.exec(id)?.[1] ?? 1),
-            ),
-          ),
-        ],
+        levels,
         failing: finding.instances.slice(0, 8),
         // Proposals in the trust root need the operator; the pipeline
         // never opens them on its own.
@@ -747,13 +761,9 @@ export async function hypothesize(ctx: RsiContext): Promise<PhaseResult> {
         rsiCycle: ctx.cycle.id,
       },
       evidence: { summary: finding.summary, source: finding.source },
-      support: finding.instances.length,
-      status: "proposed",
-      fingerprint: fingerprint(
-        "code_hypothesis",
-        finding.mechanism,
-        finding.origin,
-      ),
+      support: Math.max(prior?.support ?? 0, finding.instances.length),
+      status: prior?.status === "active" ? "active" : "proposed",
+      fingerprint: print,
     });
   }
   // Strategy hypotheses: for gaps of capabilities that have a strategy.

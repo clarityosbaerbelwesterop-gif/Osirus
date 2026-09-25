@@ -33,6 +33,8 @@ jobs:
       RSI_URL: https://osirus.vercel.app/api/rsi/live
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Take the open live order
         id: take
         run: |

@@ -46,7 +46,7 @@ verified outcomes. No model is trained, and no weight changes.
 ## Live calls
 
 By operator decision: about two calls an hour on the free model, 48 a day,
-at most 6 per cycle.
+at most 12 on one live order (enough for a champion/challenger pair).
 
 - The allowance accrues through the UTC day (`rsi/budget.ts`).
 - Calls are reserved before they are spent, then settled against actual use.

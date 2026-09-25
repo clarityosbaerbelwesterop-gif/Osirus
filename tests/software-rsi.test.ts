@@ -16,6 +16,7 @@ import {
 import type { LiveOrderContent } from "../src/lib/intelligence/rsi/phases";
 import { GUARDRAIL_CASES } from "../src/lib/intelligence/software-rsi/guardrails";
 import {
+  credentialFreeEnv,
   findSymbol,
   judgePatch,
   parses,
@@ -163,6 +164,28 @@ describe("software RSI pipeline", () => {
     expect(
       regressions([row("a", 3), row("b", 2)], [row("a", 3), row("b", 1)]),
     ).toEqual(["b L2 (2→1)"]);
+  });
+
+  it("runs patched code without a single credential", () => {
+    const env = credentialFreeEnv({ RSI_OUT: "x.json" }, {
+      PATH: "/usr/bin",
+      HOME: "/home/runner",
+      UNOROUTER_API_KEY_1: "k",
+      GH_TOKEN: "t",
+      GITHUB_TOKEN: "t",
+      ACTIONS_ID_TOKEN_REQUEST_TOKEN: "t",
+      ACTIONS_ID_TOKEN_REQUEST_URL: "https://x",
+      ACTIONS_RUNTIME_TOKEN: "t",
+      VERCEL_TOKEN: "t",
+      DATABASE_URL_SECRET: "x",
+      NODE_ENV: "test",
+    } as NodeJS.ProcessEnv);
+    expect(Object.keys(env).sort()).toEqual([
+      "HOME",
+      "NODE_ENV",
+      "PATH",
+      "RSI_OUT",
+    ]);
   });
 
   it("shows the model dev failures only, never the unseen seeds", () => {

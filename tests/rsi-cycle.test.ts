@@ -914,3 +914,62 @@ describe("live-call envelope", () => {
     expect((await reserveCalls(store, 3, at)).granted).toBe(0);
   });
 });
+
+describe("state the pipeline and the cycle share", () => {
+  it("keeps an attempted or opened code hypothesis's state when the finding recurs", async () => {
+    const now = () => T0;
+    const pulse = await seededPulse(T0 - 60_000);
+    const intel = new MemoryIntelStore();
+    const store = new MemoryRsiStore(now);
+    const broken: ChallengeArena = {
+      ...solverVsFalsifier,
+      id: "always_broken",
+      run: async () => ({ held: false, detail: "broken" }),
+    };
+    await slice(store, intel, pulse, now, { selfPlayArenas: [broken] });
+    const [first] = await intel.listArtifacts({ kind: "code_hypothesis" });
+    expect(first).toBeTruthy();
+    // The pipeline opened a pull request for it.
+    await intel.upsertArtifact({
+      ...first!,
+      content: {
+        ...first!.content,
+        attempts: 1,
+        lastAttemptAt: "2026-09-25T09:00:00Z",
+      },
+      status: "active",
+    });
+    const later = () => T0 + 2 * 3_600_000;
+    await slice(store, intel, pulse, later, { selfPlayArenas: [broken] });
+    const [again] = (
+      await intel.listArtifacts({ kind: "code_hypothesis" })
+    ).filter((entry) => entry.fingerprint === first!.fingerprint);
+    expect(again!.status).toBe("active");
+    expect(again!.content).toMatchObject({
+      attempts: 1,
+      lastAttemptAt: "2026-09-25T09:00:00Z",
+    });
+  });
+
+  it("reopens an addressed gap only when new evidence arrives", async () => {
+    const intel = new MemoryIntelStore();
+    const gap = {
+      capabilityId: "memory.context",
+      kind: "memory" as const,
+      summary: "arena L3: addFacts fails 2/4",
+      evidence: { experienceIds: ["a:1", "a:2"] },
+      support: 2,
+      status: "open" as const,
+    };
+    await intel.upsertGap(gap);
+    await intel.upsertGap({ ...gap, status: "addressed" });
+    // The same evidence again does not reopen it.
+    await intel.upsertGap(gap);
+    expect((await intel.listGaps())[0]!.status).toBe("addressed");
+    // A failure it has not seen before does.
+    await intel.upsertGap({ ...gap, evidence: { experienceIds: ["a:9"] } });
+    const [reopened] = await intel.listGaps();
+    expect(reopened!.status).toBe("open");
+    expect(reopened!.support).toBe(3);
+  });
+});

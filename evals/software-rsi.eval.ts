@@ -6,6 +6,7 @@ import { expect, it } from "vitest";
 import { arenaById } from "../src/lib/intelligence/generation/arenas";
 import type { CodeHypothesisContent } from "../src/lib/intelligence/rsi/exchange";
 import {
+  credentialFreeEnv,
   evidenceTable,
   findSymbol,
   judgePatch,
@@ -22,7 +23,6 @@ import {
   checkPatch,
   onAllowlist,
   parseUnifiedDiff,
-  RSI_LABEL,
   trustRootArea,
   validBranch,
 } from "../src/lib/intelligence/software-rsi/policy";
@@ -43,10 +43,15 @@ const model = process.env.RSI_MODEL ?? "deepseek-v4-pro-0813:free";
 const reportPath = process.env.RSI_REPORT ?? "software-rsi-report.json";
 const runId = process.env.GITHUB_RUN_ID ?? `local${Date.now()}`;
 
+// Everything the pipeline runs on the patched tree -- tests, typecheck,
+// lint, measurements -- executes model-written code, so it runs without a
+// single credential (credentialFreeEnv). The model call happens in this
+// process, before any patched module could load; publishing happens in a
+// later workflow step that runs no project code at all.
 function run(cmd: string, args: string[], env: Record<string, string> = {}) {
   const result = spawnSync(cmd, args, {
     encoding: "utf8",
-    env: { ...process.env, ...env },
+    env: credentialFreeEnv(env),
     maxBuffer: 64 * 1024 * 1024,
     timeout: 45 * 60 * 1000,
   });
@@ -94,7 +99,7 @@ it("attempts one bounded code improvement", async () => {
   const report = {
     id: taken.id,
     outcome: "no_improvement" as
-      "pr_opened" | "no_improvement" | "refused" | "failed",
+      "ready" | "pr_opened" | "no_improvement" | "refused" | "failed",
     prUrl: null as string | null,
     branch: null as string | null,
     summary: "",
@@ -247,7 +252,12 @@ it("attempts one bounded code improvement", async () => {
     }
     await writeFile(hypothesis.file, patched);
     run("npx", ["prettier", "--write", hypothesis.file]);
-    const diff = run("git", ["diff", "--unified=0", "--", hypothesis.file]).out;
+    // git runs no project code: it keeps the job's environment.
+    const diff = spawnSync(
+      "git",
+      ["diff", "--unified=0", "--", hypothesis.file],
+      { encoding: "utf8" },
+    ).stdout;
     const policy = checkPatch(parseUnifiedDiff(diff));
     if (!policy.allowed) {
       previous = {
@@ -360,68 +370,24 @@ it("attempts one bounded code improvement", async () => {
         model,
       }),
       ``,
-      `Unseen seeds: \`${holdoutSeeds.join("`, `")}\` (never shown to the model). Oracle: ${arena.verifier}.`,
+      `Unseen seeds: \`${holdoutSeeds.join("`, `")}\` (never shown to the model). Oracle: ${arena.verifier}. Every command on the patched tree ran without credentials.`,
     ].join("\n");
-    const bodyFile = join(process.env.RUNNER_TEMP ?? tmpdir(), "pr-body.md");
-    await writeFile(bodyFile, body);
-    const steps = [
-      run("git", ["checkout", "-b", branch]),
-      run("git", ["add", hypothesis.file]),
-      run("git", [
-        "-c",
-        "user.name=osirus-software-rsi",
-        "-c",
-        "user.email=software-rsi@users.noreply.github.com",
-        "commit",
-        "-m",
-        `rsi: ${hypothesis.symbol} holds more of ${arena.id} (${before.held}/${before.instances} → ${after.held}/${after.instances} unseen)`,
-      ]),
-      run("git", ["push", "origin", branch]),
-      run("gh", [
-        "label",
-        "create",
-        RSI_LABEL,
-        "--force",
-        "--color",
-        "5319e7",
-        "--description",
-        "Proposed by Osirus software RSI",
-      ]),
-    ];
-    const failed = steps.find(
-      (step) => !step.ok && !/already exists/.test(step.out),
+    // Hand the patch to the publish step: only the target file's diff,
+    // never whatever else the tree might hold after running patched code.
+    const patch = spawnSync("git", ["diff", "--", hypothesis.file], {
+      encoding: "utf8",
+    }).stdout;
+    const out = process.env.RUNNER_TEMP ?? tmpdir();
+    await writeFile(join(out, "patch.diff"), patch);
+    await writeFile(join(out, "pr-body.md"), body);
+    await writeFile(
+      join(out, "pr-title.txt"),
+      `rsi: ${hypothesis.symbol} holds more of ${arena.id} (${before.held}/${before.instances} → ${after.held}/${after.instances} unseen)`,
     );
-    if (failed) {
-      report.outcome = "failed";
-      report.summary = `could not publish the branch: ${failed.out.slice(-300)}`;
-      break;
-    }
-    const pr = run("gh", [
-      "pr",
-      "create",
-      "--draft",
-      "--base",
-      "main",
-      "--head",
-      branch,
-      "--label",
-      RSI_LABEL,
-      "--title",
-      `Software RSI: ${hypothesis.symbol} (${arena.id})`,
-      "--body-file",
-      bodyFile,
-    ]);
-    const url =
-      /https:\/\/github\.com\/\S+\/pull\/\d+/.exec(pr.out)?.[0] ?? null;
-    // Pull requests opened with the workflow token do not start CI on their
-    // own; start it explicitly on the branch.
-    run("gh", ["workflow", "run", "ci.yml", "--ref", branch]);
-    report.outcome = url ? "pr_opened" : "failed";
-    report.prUrl = url;
+    await writeFile(hypothesis.file, original);
+    report.outcome = "ready";
     report.branch = branch;
-    report.summary = url
-      ? `${before.held}/${before.instances} → ${after.held}/${after.instances} on unseen seeds; no regressions; all tests pass`
-      : `pull request not created: ${pr.out.slice(-300)}`;
+    report.summary = `${before.held}/${before.instances} → ${after.held}/${after.instances} on unseen seeds; no regressions; all tests pass`;
     break;
   }
   if (!accepted) {

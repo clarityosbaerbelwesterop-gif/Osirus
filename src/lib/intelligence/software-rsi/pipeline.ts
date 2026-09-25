@@ -6,6 +6,24 @@ import { z } from "zod";
 // The orchestration (processes, git, the pull request) lives in the Actions
 // runner; everything a decision rests on is here and tested.
 
+/**
+ * The environment for every command that runs patched, model-written code:
+ * no model keys, no GitHub or Vercel token, no OIDC request token, no runner
+ * token. Whatever the patch does, it has nothing to use.
+ */
+const CREDENTIAL =
+  /TOKEN|SECRET|PASSWORD|CREDENTIAL|_KEY$|_KEY_|^KEY|UNOROUTER|^GH_|ACTIONS_ID_TOKEN|ACTIONS_RUNTIME|ACTIONS_CACHE_URL|ACTIONS_RESULTS_URL|VERCEL/i;
+
+export function credentialFreeEnv(
+  extra: Record<string, string> = {},
+  source: NodeJS.ProcessEnv = process.env,
+): NodeJS.ProcessEnv {
+  const env = {} as NodeJS.ProcessEnv;
+  for (const [key, value] of Object.entries(source))
+    if (value !== undefined && !CREDENTIAL.test(key)) env[key] = value;
+  return { ...env, ...extra };
+}
+
 export type SymbolSpan = { start: number; end: number; text: string };
 
 /** The source range of a function, a class method (Class.method) or a const. */

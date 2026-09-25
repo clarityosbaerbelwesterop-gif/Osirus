@@ -465,7 +465,13 @@ export class PgIntelStore implements IntelStore {
                  (case when jsonb_typeof(osirus_intel.capability_gaps.evidence->'experienceIds') = 'array' then osirus_intel.capability_gaps.evidence->'experienceIds' else '[]'::jsonb end)
                  || (case when jsonb_typeof(excluded.evidence->'experienceIds') = 'array' then excluded.evidence->'experienceIds' else '[]'::jsonb end)) as t(id)
                limit 500) u)),
+         -- An addressed gap stays addressed unless new evidence arrives:
+         -- a failure it has not seen before reopens it.
          status = case when osirus_intel.capability_gaps.status = 'addressed'
+                        and not exists (
+                          select 1 from jsonb_array_elements_text(
+                            (case when jsonb_typeof(excluded.evidence->'experienceIds') = 'array' then excluded.evidence->'experienceIds' else '[]'::jsonb end)) as n(id)
+                           where not ((case when jsonb_typeof(osirus_intel.capability_gaps.evidence->'experienceIds') = 'array' then osirus_intel.capability_gaps.evidence->'experienceIds' else '[]'::jsonb end) ? n.id))
                        then osirus_intel.capability_gaps.status
                        else excluded.status end,
          updated_at = now()
