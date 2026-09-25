@@ -7,6 +7,8 @@ const TONE: Record<RoleStatus["state"], { label: string; tone: Tone }> = {
   available: { label: "Available", tone: "success" },
   busy: { label: "Busy", tone: "warning" },
   unavailable: { label: "Temporarily unavailable", tone: "danger" },
+  quota_exhausted: { label: "Quota exhausted", tone: "warning" },
+  configuration_error: { label: "Configuration problem", tone: "danger" },
   not_used: { label: "No recent use", tone: "neutral" },
   not_configured: { label: "Not configured", tone: "neutral" },
 };

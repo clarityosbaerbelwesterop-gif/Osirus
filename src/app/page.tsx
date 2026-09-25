@@ -62,6 +62,11 @@ export default async function HomePage() {
           <p>Every answer is checked against evidence before it is final.</p>
         </article>
       </section>
+      <footer className="landing-footer">
+        <Link href="/legal/impressum">Impressum</Link>
+        <Link href="/legal/privacy">Privacy</Link>
+        <Link href="/legal/terms">Terms</Link>
+      </footer>
     </main>
   );
 }

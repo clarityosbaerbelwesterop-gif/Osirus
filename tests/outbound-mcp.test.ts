@@ -161,6 +161,20 @@ describe("model status", () => {
         last_status: "failed",
         last_error: "insufficient_credit",
       }).state,
+    ).toBe("quota_exhausted");
+    expect(
+      roleState(true, {
+        calls: 3,
+        last_status: "failed",
+        last_error: "credential_rejected",
+      }).state,
+    ).toBe("configuration_error");
+    expect(
+      roleState(true, {
+        calls: 3,
+        last_status: "failed",
+        last_error: "provider_unavailable",
+      }).state,
     ).toBe("unavailable");
     expect(
       roleState(true, {

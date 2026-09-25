@@ -185,4 +185,111 @@ describe("UnoRouterProvider", () => {
 
     await expect(pending).rejects.toMatchObject({ code: "cancelled" });
   });
+
+  it("serves an unconfigured role on the verified free model (OSIRUS-02)", async () => {
+    vi.resetModules();
+    vi.stubEnv("UNOROUTER_BASE_URL", endpoint);
+    vi.stubEnv("UNOROUTER_API_KEY_1", "test-key-one");
+    // No STRONG model configured at all (the shared helper pins grok-4.6).
+    delete process.env.OSIRUS_MODEL_STRONG;
+    const providerModule = await import("../src/lib/models/unorouter");
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(
+          '{"choices":[{"message":{"content":"ok"}}],"usage":{"prompt_tokens":1}}',
+          { status: 200 },
+        ),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const provider = new providerModule.UnoRouterProvider();
+    await expect(
+      provider.complete({
+        requestId: "unconfigured-role",
+        role: "STRONG",
+        messages: [],
+      }),
+    ).resolves.toMatchObject({ text: "ok" });
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(body.model).toBe("deepseek-v4-pro-0813:free");
+    // Another model family: no provider-specific reasoning field is sent.
+    expect(body.reasoning_effort).toBeUndefined();
+  });
+
+  it("falls back to the free model when the configured one has no credit (OSIRUS-02)", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response("insufficient credit", { status: 402 }),
+      )
+      .mockResolvedValueOnce(
+        new Response('{"choices":[{"message":{"content":"free answer"}}]}', {
+          status: 200,
+        }),
+      );
+    vi.stubGlobal("fetch", fetchMock);
+    const UnoRouterProvider = await configuredProvider();
+    const provider = new UnoRouterProvider();
+    await expect(
+      provider.complete({
+        requestId: "no-credit",
+        role: "STRONG",
+        messages: [],
+      }),
+    ).resolves.toMatchObject({ text: "free answer" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string).model).toBe(
+      "grok-4.6",
+    );
+    expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string).model).toBe(
+      "deepseek-v4-pro-0813:free",
+    );
+  });
+
+  it("never sidesteps a rate limit with the free model", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() => new Response("slow", { status: 429 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const UnoRouterProvider = await configuredProvider();
+    const provider = new UnoRouterProvider({ maxRateLimitWaitSeconds: 0 });
+    await expect(
+      provider.complete({
+        requestId: "rate-limit-fallback",
+        role: "STRONG",
+        messages: [],
+      }),
+    ).rejects.toMatchObject({ code: "rate_limited" });
+    // Both attempts stayed on the configured model: a rate limit is waited
+    // out, not evaded by switching models.
+    expect(
+      fetchMock.mock.calls.every(
+        (call) => JSON.parse(call?.[1]?.body as string).model === "grok-4.6",
+      ),
+    ).toBe(true);
+  });
+
+  it("surfaces a rejected credential instead of papering over it", async () => {
+    // A fresh Response per call: the provider reads each body once.
+    const fetchMock = vi
+      .fn()
+      .mockImplementation(() => new Response("bad key", { status: 401 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const UnoRouterProvider = await configuredProvider();
+    const provider = new UnoRouterProvider();
+    await expect(
+      provider.complete({
+        requestId: "bad-credential",
+        role: "STRONG",
+        messages: [],
+      }),
+    ).rejects.toMatchObject({ code: "credential_rejected" });
+    // The free model was never tried: the credential is the problem, not the
+    // model, and a second model on the same key cannot fix it.
+    expect(
+      fetchMock.mock.calls.every(
+        (call) => JSON.parse(call?.[1]?.body as string).model === "grok-4.6",
+      ),
+    ).toBe(true);
+  });
 });

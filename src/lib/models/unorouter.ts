@@ -1,4 +1,5 @@
 import { env, serverKeys } from "../env";
+import { FREE_MODELS } from "./free";
 import type {
   ModelProvider,
   ModelRole,
@@ -133,19 +134,40 @@ export class UnoRouterProvider implements ModelProvider {
       VERIFY: env.OSIRUS_MODEL_VERIFY,
     };
     const model = models[role];
-    if (!model)
+    if (!model) {
+      // An unconfigured product role no longer kills the run: the verified
+      // free model stands in (OSIRUS-02). Pinned trial models above never
+      // reach this branch, so Foundry comparisons stay on their own models.
+      const fallback = FREE_MODELS[0];
+      if (fallback) return fallback;
       throw new ProviderError(
         `Model role ${role} is not configured`,
         "model_not_configured",
       );
+    }
     return model;
   }
 
-  private reasoningEffort(role: ModelRole) {
+  /**
+   * Whether a refusal of the configured model may be answered by the verified
+   * free model. A permanent refusal (no credit, unknown model) is a property
+   * of that model, not of the work; the free model consumes no credit, so
+   * using it is not evading a limit. A rejected credential must surface
+   * instead: another model on the same broken key cannot fix it.
+   */
+  private static fallbackEligible(error: unknown) {
+    return (
+      error instanceof ProviderError &&
+      (error.code === "insufficient_credit" ||
+        error.code === "model_not_configured")
+    );
+  }
+
+  private reasoningEffort(model: string) {
     // Grok 4.6 is Osirus's default high-reasoning model. Do not send a
     // provider-specific reasoning field to another selected model family
     // until its OpenAI-compatible contract has been verified.
-    return this.modelFor(role) === "grok-4.6"
+    return model === "grok-4.6"
       ? (env.OSIRUS_REASONING_EFFORT ?? "high")
       : undefined;
   }
@@ -211,11 +233,44 @@ export class UnoRouterProvider implements ModelProvider {
     signal?: AbortSignal;
     sampling?: Sampling;
   }) {
-    // A rate limit is waited out on the same key, as the provider asks, up to
-    // a ceiling -- never sidestepped by switching keys.
+    const primary = this.modelFor(input.role);
+    try {
+      return await this.requestWithModel(input, primary);
+    } catch (error) {
+      // Resilience floor (OSIRUS-02): a permanent refusal of the configured
+      // product model is answered once by the verified free model. A rate
+      // limit is never sidestepped this way, and the primary refusal is what
+      // the caller sees if the stand-in also fails -- it is the actionable
+      // one for operators.
+      if (
+        primary === FREE_MODELS[0] ||
+        !UnoRouterProvider.fallbackEligible(error) ||
+        !FREE_MODELS[0]
+      )
+        throw error;
+      try {
+        return await this.requestWithModel(input, FREE_MODELS[0]);
+      } catch {
+        throw error;
+      }
+    }
+  }
+
+  /** One model, with rate limits waited out on the same key, as asked. */
+  private async requestWithModel(
+    input: {
+      requestId: string;
+      role: ModelRole;
+      messages: unknown[];
+      stream: boolean;
+      signal?: AbortSignal;
+      sampling?: Sampling;
+    },
+    model: string,
+  ) {
     for (let attempt = 0; ; attempt += 1) {
       try {
-        return await this.requestOnce(input);
+        return await this.requestOnce({ ...input, model });
       } catch (error) {
         const wait =
           error instanceof ProviderError && error.code === "rate_limited"
@@ -235,6 +290,7 @@ export class UnoRouterProvider implements ModelProvider {
   private async requestOnce(input: {
     requestId: string;
     role: ModelRole;
+    model: string;
     messages: unknown[];
     stream: boolean;
     signal?: AbortSignal;
@@ -257,10 +313,10 @@ export class UnoRouterProvider implements ModelProvider {
             Accept: input.stream ? "text/event-stream" : "application/json",
           },
           body: JSON.stringify({
-            model: this.modelFor(input.role),
+            model: input.model,
             messages: input.messages,
             stream: input.stream,
-            reasoning_effort: this.reasoningEffort(input.role),
+            reasoning_effort: this.reasoningEffort(input.model),
             // M48: only when a strategy set them; otherwise the defaults.
             temperature: input.sampling?.temperature,
             top_p: input.sampling?.topP,
@@ -288,17 +344,26 @@ export class UnoRouterProvider implements ModelProvider {
             /insufficient|balance|credit|quota exceeded|billing|payment required/i.test(
               body,
             ));
+        // A model the provider does not serve is a configuration fact about
+        // that model, and the one refusal the free model may stand in for.
+        const unknownModel =
+          !rateLimited &&
+          !noCredit &&
+          (status === 404 ||
+            /model[^\n]{0,40}not[^\n]{0,20}(found|exist)/i.test(body));
         const error = new ProviderError(
           body || `Provider request failed with ${status}`,
           rateLimited
             ? "rate_limited"
             : noCredit
               ? "insufficient_credit"
-              : credentialFailure
-                ? "credential_rejected"
-                : retryable
-                  ? "provider_unavailable"
-                  : "provider_error",
+              : unknownModel
+                ? "model_not_configured"
+                : credentialFailure
+                  ? "credential_rejected"
+                  : retryable
+                    ? "provider_unavailable"
+                    : "provider_error",
           status,
           !noCredit && (retryable || credentialFailure),
           rateLimited ? rateLimitWaitMs(response.headers, body) : undefined,

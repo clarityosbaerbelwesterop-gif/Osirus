@@ -82,10 +82,34 @@ describe("labels", () => {
       "provider_error",
       '{"error":"insufficient balance for key sk-abc"}',
     );
-    expect(credit).toContain("temporarily unavailable");
+    expect(credit).toContain("free quota or credit is exhausted");
     expect(credit).not.toContain("sk-abc");
+    expect(credit).not.toContain("temporarily unavailable");
     expect(failureMessage("agent_loop_exhausted", "rate limited")).toContain(
       "limiting requests",
+    );
+  });
+
+  it("tells the truth about provider failures (OSIRUS-01)", () => {
+    // Quota exhaustion is permanent until the account changes; it must not
+    // be worded as a temporary outage.
+    const credit = failureMessage("provider_insufficient_credit");
+    expect(credit).toContain("quota or credit is exhausted");
+    expect(credit).not.toMatch(/temporarily/i);
+    // Credentials and configuration are operator problems.
+    expect(failureMessage("provider_credential_rejected")).toContain(
+      "operator",
+    );
+    expect(failureMessage("provider_model_not_configured")).toContain(
+      "operator",
+    );
+    // A real outage keeps the honest temporary wording.
+    expect(failureMessage("provider_provider_unavailable")).toContain(
+      "temporarily unavailable",
+    );
+    // Rate limiting is a wait, not a death.
+    expect(failureMessage("provider_rate_limited")).toContain(
+      "waits and retries",
     );
   });
 });

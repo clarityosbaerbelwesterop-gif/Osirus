@@ -30,7 +30,13 @@ const ROLE_LABEL: Record<ModelRoleId, string> = {
 };
 
 export type RoleState =
-  "available" | "busy" | "unavailable" | "not_used" | "not_configured";
+  | "available"
+  | "busy"
+  | "unavailable"
+  | "quota_exhausted"
+  | "configuration_error"
+  | "not_used"
+  | "not_configured";
 
 export type RoleStatus = {
   role: ModelRoleId;
@@ -100,6 +106,24 @@ export function roleState(
     return {
       state: "busy",
       message: "The provider is limiting requests. Runs wait and retry.",
+    };
+  // A permanent refusal is a state of the account, not an outage: say so
+  // instead of promising a recovery that will not happen on its own.
+  if (row.last_error === "insufficient_credit")
+    return {
+      state: "quota_exhausted",
+      message:
+        "Provider quota or credit exhausted. Retries keep failing until provider access is restored.",
+    };
+  if (
+    row.last_error === "credential_rejected" ||
+    row.last_error === "model_not_configured" ||
+    row.last_error === "provider_not_configured"
+  )
+    return {
+      state: "configuration_error",
+      message:
+        "Configuration problem (credentials or model setup). Retrying will not help.",
     };
   if (row.last_error && UNAVAILABLE.has(row.last_error))
     return { state: "unavailable", message: "Temporarily unavailable." };

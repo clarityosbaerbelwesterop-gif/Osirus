@@ -163,16 +163,23 @@ export function failureMessage(
   lastError?: string | null,
 ) {
   const text = `${failureClass ?? ""} ${lastError ?? ""}`.toLowerCase();
-  if (/insufficient_credit|balance|credit|402/.test(text))
-    return "The strong model is temporarily unavailable. The model provider declined the request.";
+  // A permanent refusal says the provider will not serve this deployment at
+  // all until something changes on the account: the message must not claim a
+  // temporary outage will fix it (OSIRUS-01).
+  if (/insufficient_credit|balance|credit|402|quota exceeded/.test(text))
+    return "The model provider declined the request because the account's free quota or credit is exhausted. This is not a temporary outage and no work was lost: the run can be retried once provider access is restored. If you keep seeing this, contact the operator.";
+  if (/credential_rejected|unauthorized|401|403/.test(text))
+    return "The model provider rejected the deployment's credentials. This needs an operator to fix; retrying will not help.";
+  if (/model_not_configured|provider_not_configured/.test(text))
+    return "The model runtime is missing a configuration value. This needs an operator to fix; retrying will not help.";
   if (/rate_limit|rate limited|rate-limit|429/.test(text))
-    return "The model provider is limiting requests right now. Try again in a few minutes.";
+    return "The model provider is limiting requests right now. The run waits and retries automatically; you can also try again in a few minutes.";
   if (
     /provider_unavailable|bad_response_status_code|unavailable|503|502/.test(
       text,
     )
   )
-    return "The strong model is temporarily unavailable.";
+    return "The model provider is temporarily unavailable. The run can be retried; no work was lost.";
   if (/timeout|timed out|wall_clock/.test(text))
     return "This step ran out of time.";
   if (/budget/.test(text)) return "This run reached its budget.";
