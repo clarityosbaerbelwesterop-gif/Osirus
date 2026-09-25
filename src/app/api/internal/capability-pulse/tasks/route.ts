@@ -1,30 +1,21 @@
-import { z } from "zod";
 import {
-  listPulseRegistrations,
-  parsePulseRegistration,
-  registerPulseTask,
-  unregisterPulseTask,
-} from "@/lib/agent/pulse/registry";
-import { preparePulseSuite } from "@/lib/agent/pulse/suite";
+  coverage,
+  pulseCatalog,
+  suiteVersion,
+} from "@/lib/agent/pulse/catalog";
+import { CAPABILITY_LANES } from "@/lib/agent/pulse/lanes";
+import { PgPulseStore } from "@/lib/agent/pulse/store";
 import { isOperator } from "@/lib/intelligence/production/operator";
-import { guardAction, guardWrite, json } from "@/lib/product/api";
+import { guardAction, json } from "@/lib/product/api";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-// Registration API for capability pulse tasks. Operators can list built-in
-// and registered tasks and add descriptors M35–M44 resolve to runners later.
-
-const registerSchema = z
-  .object({
-    id: z.string().min(1).max(120),
-    lane: z.string().min(1).max(40),
-    level: z.number().int().min(1).max(5),
-    ref: z.string().min(1).max(120),
-    title: z.string().min(1).max(200).optional(),
-    objective: z.string().min(1).max(2_000).optional(),
-  })
-  .strict();
+// The capability pulse, for operators: which tasks the suite has, which
+// families and levels it covers, the latest cycles and the baseline cells.
+// Tasks are code with their own graders, so there is nothing to register at
+// runtime; the old registration endpoint stored descriptors no runner ever
+// executed, and is gone.
 
 export async function GET(request: Request) {
   const guard = await guardAction(request, {
@@ -34,37 +25,26 @@ export async function GET(request: Request) {
   if (!guard.ok) return guard.response;
   if (!(await isOperator(guard.identity.userId)))
     return json({ error: "not_found" }, 404);
-  await preparePulseSuite();
-  return json({ tasks: listPulseRegistrations() });
-}
-
-export async function POST(request: Request) {
-  const guard = await guardWrite(request, {
-    schema: registerSchema,
-    route: "capability-pulse.tasks",
-    limit: 20,
-    maxBytes: 8 * 1024,
+  const specs = await pulseCatalog();
+  const version = suiteVersion(specs);
+  const store = new PgPulseStore();
+  const [cycles, baselines] = await Promise.all([
+    store.recentCycles(10).catch(() => []),
+    store.baselines(version).catch(() => []),
+  ]);
+  return json({
+    suiteVersion: version,
+    coverage: coverage(specs, CAPABILITY_LANES),
+    tasks: specs.map((spec) => ({
+      id: spec.id,
+      family: spec.family,
+      level: spec.level,
+      difficulty: spec.difficulty,
+      mode: spec.mode,
+      source: spec.source,
+      title: spec.title,
+    })),
+    cycles,
+    baselines,
   });
-  if (!guard.ok) return guard.response;
-  if (!(await isOperator(guard.identity.userId)))
-    return json({ error: "not_found" }, 404);
-  const parsed = parsePulseRegistration(guard.body);
-  if ("error" in parsed) return json({ error: parsed.error }, 400);
-  registerPulseTask(parsed);
-  await preparePulseSuite();
-  return json({ task: parsed }, 201);
-}
-
-export async function DELETE(request: Request) {
-  const guard = await guardAction(request, {
-    route: "capability-pulse.tasks",
-    limit: 20,
-  });
-  if (!guard.ok) return guard.response;
-  if (!(await isOperator(guard.identity.userId)))
-    return json({ error: "not_found" }, 404);
-  const id = new URL(request.url).searchParams.get("id");
-  if (!id) return json({ error: "id_required" }, 400);
-  unregisterPulseTask(id);
-  return json({ removed: id });
 }

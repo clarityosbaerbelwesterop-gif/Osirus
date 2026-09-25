@@ -56,7 +56,10 @@ function matches(supplied: string, expected: string) {
   return timingSafeEqual(a, b);
 }
 
-function authorized(request: Request) {
+/** The hourly pulse workflow sends a GitHub OIDC token in this header. */
+const OIDC_HEADER = "x-osirus-github-oidc";
+
+async function authorized(request: Request) {
   const expected = env.OSIRUS_SCHEDULER_SECRET;
   if (!expected) return false;
 
@@ -65,6 +68,14 @@ function authorized(request: Request) {
 
   const bearer = BEARER.exec(request.headers.get("authorization") ?? "");
   if (bearer?.[1]) return matches(bearer[1], expected);
+
+  // No shared secret: accept only a GitHub-signed token for this
+  // repository's pulse workflow on main (see security/github-oidc.ts).
+  const oidc = request.headers.get(OIDC_HEADER);
+  if (oidc && oidc.length < 8_192) {
+    const { verifyGithubOidc } = await import("@/lib/security/github-oidc");
+    return (await verifyGithubOidc(oidc)).ok;
+  }
 
   return false;
 }
@@ -80,7 +91,7 @@ async function tick(request: Request) {
       { status: 503 },
     );
   }
-  if (!authorized(request)) {
+  if (!(await authorized(request))) {
     return Response.json({ error: "unauthorized" }, { status: 401 });
   }
 
@@ -264,6 +275,7 @@ async function tick(request: Request) {
             cycleId: pulse.cycleId,
             tasksRun: pulse.tasksRun,
             completedCycle: pulse.completedCycle,
+            regressions: pulse.regressions.length,
             waiting: pulse.reason,
             chained: pulse.continueChain,
           }
@@ -272,6 +284,7 @@ async function tick(request: Request) {
             cycleId: null,
             tasksRun: 0,
             completedCycle: false,
+            regressions: 0,
             waiting: "error",
             chained: false,
           },

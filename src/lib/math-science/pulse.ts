@@ -276,7 +276,7 @@ async function falseCompletion(
   return result.status === "finished" && !claimHolds;
 }
 
-async function runPulseTask(task: PulseTask): Promise<PulseRecord> {
+export async function runPulseTask(task: PulseTask): Promise<PulseRecord> {
   const formalization = formalizeProblem(task.objective);
   const tools = new ToolRegistry();
   for (const tool of computeTools(async () => ComputeEngine.inProcess())) {

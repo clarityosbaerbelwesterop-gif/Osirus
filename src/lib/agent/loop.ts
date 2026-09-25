@@ -523,6 +523,28 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
       );
       for (const tool of described)
         state.disclosedSchemas[tool.id] = tool.schema;
+      // A schema request without a call: the disclosure is the step.
+      if (decision.action === "USE_TOOL" && !decision.toolId) {
+        consecutiveFailures = 0;
+        state.observations.push(
+          observe(
+            "loop.schemas",
+            described.length
+              ? `Schemas disclosed: ${described.map((tool) => tool.id).join(", ")}.`
+              : "No tool with those ids is available to this arm.",
+          ),
+        );
+        await record(
+          {
+            action: "USE_TOOL",
+            summary: decision.summary,
+            outcome: described.length ? "ok" : "error",
+            detail: `schemas:${described.map((tool) => tool.id).join(",")}`,
+          },
+          stepStartedAt,
+        );
+        continue;
+      }
     }
 
     switch (decision.action) {

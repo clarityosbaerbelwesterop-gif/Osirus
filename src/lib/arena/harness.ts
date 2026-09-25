@@ -341,9 +341,13 @@ export async function runArenaTask(
       verdicts.push(outcome.verdict.status);
     if (outcome?.kind === "BLOCKED") {
       notes.push(
-        `${key} failed: ${outcome.reason} (retry after ${outcome.retryAfterSeconds}s)`,
+        `${key} blocked: ${outcome.reason} (retry after ${outcome.retryAfterSeconds}s)`,
       );
-      status = "failed";
+      // A stage parked by a provider refusal says nothing about the agent:
+      // the task is an infrastructure error, not a capability failure.
+      status = /provider|rate_limit|credit|credential/i.test(outcome.reason)
+        ? "error"
+        : "failed";
       break;
     }
     if (outcome?.kind === "FAILED") {

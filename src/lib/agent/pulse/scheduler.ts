@@ -1,55 +1,60 @@
 import "server-only";
-import { getActivePulseCycle, getLastPulseCompletedAt } from "./state";
-import {
-  MAX_TASKS_PER_TICK,
-  PULSE_BUDGET_MS,
-  PULSE_INTERVAL_MS,
-  runPulseSlice,
-} from "./runner";
+import { feedRegressionExperience, productRegressions } from "../watchdog/rsi";
+import { pulseCatalog } from "./catalog";
+import { PULSE_BUDGET_MS, runPulseSlice } from "./runner";
+import { PgPulseStore } from "./store";
 import type { PulseTickReport } from "./types";
 
-// Hourly capability pulse inside the existing scheduler tick. One slice per
-// invocation; chained ticks finish a cycle without a second runtime.
+// The capability pulse inside the existing scheduler tick. State is in
+// Postgres (osirus_intel.pulse_*), so any instance continues any cycle.
+// Offline tasks only: a live coding loop on the free model outlasts a tick.
+// A chained tick is requested only while the day's continuation envelope
+// has room -- the same envelope the Foundry uses.
 
 export async function runCapabilityPulseTick(input: {
   owner: string;
   signal: AbortSignal;
 }): Promise<PulseTickReport> {
-  const idle = (reason: string): PulseTickReport => ({
-    ran: false,
-    reason,
-    cycleId: null,
-    tasksRun: 0,
-    completedCycle: false,
-    continueChain: false,
-  });
-
-  const active = getActivePulseCycle();
-  const last = getLastPulseCompletedAt();
-  if (!active && last && Date.now() - Date.parse(last) < PULSE_INTERVAL_MS)
-    return idle("pulse_not_due");
-
-  const slice = await runPulseSlice({
+  const store = new PgPulseStore();
+  const specs = await pulseCatalog();
+  const report = await runPulseSlice({
+    store,
+    owner: input.owner,
+    specs,
     deadline: Date.now() + PULSE_BUDGET_MS,
     signal: input.signal,
-    maxTasks: MAX_TASKS_PER_TICK,
+    modes: ["offline"],
+    onRegression: (regression, cycleId) =>
+      feedRegressionExperience(regression, cycleId),
   });
 
-  const busy =
-    !slice.completedCycle && slice.results.length > 0 && !input.signal.aborted;
+  if (report.completedCycle) {
+    const { PgIntelStore } = await import("../../intelligence/store/pg-store");
+    const intel = new PgIntelStore();
+    const product = await productRegressions({
+      pulse: store,
+      listExperience: (filter) => intel.listExperience(filter),
+    }).catch(() => []);
+    for (const regression of product)
+      await feedRegressionExperience(regression, report.cycleId);
+    report.regressions.push(...product);
+  }
 
-  return {
-    ran: slice.results.length > 0,
-    reason: slice.completedCycle
-      ? "cycle_completed"
-      : busy
-        ? "in_progress"
-        : slice.results.length
-          ? "slice_finished"
-          : null,
-    cycleId: slice.cycleId,
-    tasksRun: slice.results.length,
-    completedCycle: slice.completedCycle,
-    continueChain: busy,
-  };
+  if (report.continueChain) report.continueChain = await chainHasRoom();
+  return report;
+}
+
+/** Whether the day's chained-tick envelope has room for one more. */
+async function chainHasRoom() {
+  try {
+    const { PgIntelStore } = await import("../../intelligence/store/pg-store");
+    const store = new PgIntelStore();
+    const [settings, used] = await Promise.all([
+      store.settings(),
+      store.usage(),
+    ]);
+    return used.chained_ticks < settings.budgets.dailyChainedTicks;
+  } catch {
+    return false;
+  }
 }

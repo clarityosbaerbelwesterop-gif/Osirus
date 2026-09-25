@@ -437,3 +437,48 @@ describe("migration 015", () => {
     expect(sql).not.toMatch(/DROP TABLE|TRUNCATE|DELETE FROM/i);
   });
 });
+
+describe("migration 016", () => {
+  const sql = migration("016_capability_pulse.sql");
+
+  it("keeps pulse state system-written, operator-read, under forced RLS", () => {
+    for (const table of ["pulse_cycles", "pulse_results", "pulse_baselines"]) {
+      expect(sql, table).toContain(
+        `ALTER TABLE osirus_intel.${table} FORCE ROW LEVEL SECURITY;`,
+      );
+      expect(sql, table).toMatch(
+        new RegExp(
+          `CREATE POLICY ${table}_read ON osirus_intel\\.${table}[\\s\\S]*?osirus_intel\\.is_operator\\(\\)`,
+        ),
+      );
+      expect(sql, table).toMatch(
+        new RegExp(
+          `CREATE POLICY ${table}_write ON osirus_intel\\.${table}[\\s\\S]*?WITH CHECK \\(osirus\\.is_system\\(\\)\\)`,
+        ),
+      );
+    }
+    // Results are append-only.
+    expect(sql).toContain(
+      "GRANT SELECT, INSERT ON osirus_intel.pulse_results TO osirus_app;",
+    );
+  });
+
+  it("allows one running cycle and one result per task", () => {
+    expect(sql).toMatch(
+      /CREATE UNIQUE INDEX IF NOT EXISTS pulse_cycles_one_running_idx[\s\S]*?WHERE status = 'running'/,
+    );
+    expect(sql).toContain(
+      "CONSTRAINT pulse_results_task_key UNIQUE (cycle_id, task_id)",
+    );
+  });
+
+  it("stores only the canonical outcomes", async () => {
+    const { CAPABILITY_OUTCOMES } =
+      await import("../src/lib/verification/outcome");
+    const body = sql.slice(sql.indexOf("pulse_results_outcome_check"));
+    const allowed = [
+      ...body.slice(0, body.indexOf("]))")).matchAll(/'([A-Z_]+)'::text/g),
+    ].map((match) => match[1]);
+    expect(allowed).toEqual([...CAPABILITY_OUTCOMES]);
+  });
+});

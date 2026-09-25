@@ -1402,6 +1402,13 @@ const PULSE_RUNNERS: Array<() => Promise<PulseRecord>> = [
   multimodalL5,
 ];
 
+/** The M38 tasks one by one, in suite × level order, for the hourly pulse. */
+export const M38_PULSE_TASKS = PULSE_RUNNERS.map((run, index) => ({
+  suite: PULSE_SUITES[Math.floor(index / PULSE_LEVELS.length)]!,
+  level: PULSE_LEVELS[index % PULSE_LEVELS.length]!,
+  run,
+}));
+
 export async function runPulseSuite(filter?: {
   suite?: PulseSuite;
   level?: PulseLevel;

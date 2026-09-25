@@ -250,6 +250,9 @@ export type Experience = {
   verification: {
     verdicts: string[];
     check?: { passed: boolean; detail: string };
+    /** The canonical outcome (verification/outcome.ts) and why. */
+    capabilityOutcome?: import("../verification/outcome").CapabilityOutcome;
+    reason?: string;
   };
   outcome: ExperienceOutcome;
   failureClass: string | null;

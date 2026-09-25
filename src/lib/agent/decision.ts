@@ -75,7 +75,10 @@ export function decisionProblems(decision: AgentDecision): string[] {
   const problems: string[] = [];
   switch (decision.action) {
     case "USE_TOOL":
-      if (!decision.toolId) problems.push("USE_TOOL requires toolId.");
+      // Asking only for schemas is a complete request: the schemas are the
+      // step's result, and the call follows once the model has them.
+      if (!decision.toolId && !decision.requestSchemaFor?.length)
+        problems.push("USE_TOOL requires toolId.");
       break;
     case "RESPOND":
     case "FINISH":

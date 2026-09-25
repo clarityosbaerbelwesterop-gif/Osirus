@@ -52,3 +52,10 @@ describe("M38 capability pulse", () => {
     expect(record?.verifiedSuccess).toBe(true);
   }, 30_000);
 });
+
+describe("tool use L1 (found by the unified pulse)", () => {
+  it("discloses a schema asked for without a call, then finishes", async () => {
+    const [record] = await runPulseSuite({ suite: "TOOL_USE", level: 1 });
+    expect(record?.verifiedSuccess).toBe(true);
+  });
+});
