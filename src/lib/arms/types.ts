@@ -180,6 +180,8 @@ export type RuntimeStores = {
   missions?: () => import("../runtime/missions").MissionStore;
   /** Adds stages to the running graph (M39); osirus.run_stages when absent. */
   graph?: () => GraphAppender;
+  /** Generated tool candidates a policy names (M43); Foundry artifacts when absent. */
+  generatedTools?: () => import("../intelligence/synthesis/generated-tools").GeneratedToolLoader;
   /** Model-free probe that ends typed waits (M40); webhook deliveries when absent. */
   waitProbe?: () => import("../agent/long-horizon").WaitProbe;
 };

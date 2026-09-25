@@ -23,7 +23,12 @@ export type ToolTrust =
   /** A connector the workspace installed and granted. */
   | "connector"
   /** An MCP server discovered at runtime. Least trusted. */
-  | "mcp";
+  | "mcp"
+  /**
+   * M43: synthesized by the Foundry, named by the run's policy. Read-only,
+   * low risk, executed only in the isolated executor.
+   */
+  | "generated";
 
 export type ToolEffect =
   /** Observes without changing anything. */
@@ -186,6 +191,13 @@ export class ToolRegistry {
   ) {}
 
   register<Input, Output>(tool: ToolDefinition<Input, Output>) {
+    // Root of trust: a generated tool can never write, reach outside or
+    // carry more than low risk, whatever its artifact says.
+    if (
+      tool.trust === "generated" &&
+      (tool.effect !== "read" || tool.risk !== "low")
+    )
+      throw new Error(`generated_tool_must_be_read_only:${tool.id}`);
     if (this.tools.has(tool.id)) {
       throw new Error(`tool_already_registered:${tool.id}`);
     }

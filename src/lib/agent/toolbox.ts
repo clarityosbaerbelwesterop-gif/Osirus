@@ -62,6 +62,20 @@ export async function buildToolbox(
       actorId: identity.userId,
     });
 
+  // M43: generated tool candidates, only when the run's policy names them.
+  const { policyOfStage } = await import("../strategy/runtime");
+  const generatedIds =
+    policyOfStage(work.stageInput).genome.tools?.include ?? [];
+  if (generatedIds.length) {
+    const loader =
+      runtime.stores?.generatedTools?.() ??
+      (
+        await import("../intelligence/synthesis/generated-tools")
+      ).foundryToolLoader(options.armId);
+    for (const tool of await loader(generatedIds).catch(() => []))
+      if (!registry.has(tool.id)) registry.register(tool);
+  }
+
   // M40: external actions run at most once per run, across crashes.
   const { missionLedger } = await import("../arms/horizon-runtime");
   registry.useLedger(await missionLedger(context).catch(() => null));

@@ -10,6 +10,8 @@
 // let the built-in delivery tool push a new branch and open a pull request
 // without asking. That is reviewable and reversible; nothing else is relaxed.
 
+import type { ToolTrust } from "../tools/registry";
+
 export const ACTION_CLASSES = [
   "read",
   "workspace_write",
@@ -204,7 +206,7 @@ export function resolvePolicy(
 export function classifyTool(tool: {
   id: string;
   effect: "read" | "write" | "external";
-  trust: "builtin" | "connector" | "mcp";
+  trust: ToolTrust;
 }): ActionClass[] {
   if (tool.trust === "mcp" || tool.id.startsWith("mcp:")) return ["mcp_action"];
   if (tool.id === "git.deliver" && tool.trust === "builtin")
@@ -224,7 +226,7 @@ export function decide(
   tool: {
     id: string;
     effect: "read" | "write" | "external";
-    trust: "builtin" | "connector" | "mcp";
+    trust: ToolTrust;
   },
   builtinRequiresApproval: boolean,
 ): Decision {

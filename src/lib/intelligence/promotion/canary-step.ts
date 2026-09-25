@@ -82,6 +82,39 @@ export async function advanceCanaries(
         { ...evidence, reason: step.reason },
         0,
       );
+      // M43: what the rolled-back version carried that was synthesized is
+      // quarantined with the canary's evidence, and a repair goes on the
+      // agenda. The previous champion is already back in service.
+      const { quarantine, synthesizedParts } =
+        await import("../synthesis/quarantine");
+      const parts = synthesizedParts(version);
+      const candidates = parts.tools.length
+        ? await store.listArtifacts({ kind: "tool_candidate", limit: 200 })
+        : [];
+      for (const id of parts.tools) {
+        const artifact = candidates.find(
+          (entry) => String(entry.content.id) === id,
+        );
+        if (artifact)
+          await quarantine(store, {
+            target: { kind: "tool", artifact },
+            reason: `canary rollback: ${step.reason}`,
+            evidence,
+            strategyVersionId: version.id,
+            capabilityId: artifact.capabilityId,
+          }).catch(() => undefined);
+      }
+      for (const include of parts.skills) {
+        const [skillId, skillVersion] = include.split("@");
+        if (skillId && skillVersion)
+          await quarantine(store, {
+            target: { kind: "skill", skillId, version: skillVersion },
+            reason: `canary rollback: ${step.reason}`,
+            evidence,
+            strategyVersionId: version.id,
+            capabilityId: null,
+          }).catch(() => undefined);
+      }
     } else if (step.action === "activate") {
       for (const previous of versions.filter(
         (entry) =>

@@ -250,7 +250,10 @@ export abstract class BaseArm implements AgentArm {
 
   async selectSkills(context: ArmStageContext): Promise<RankedSkill[]> {
     const [available, outcomeWeights] = await Promise.all([
-      context.runtime.skills.loadEnabled(),
+      context.runtime.skills.loadEnabled({
+        include:
+          policyOfStage(context.work.stageInput).genome.skills?.include ?? [],
+      }),
       context.runtime.skills
         .outcomeWeights(context.work.workspaceId)
         .catch(() => ({}) as Record<string, number>),

@@ -43,6 +43,10 @@ export type HarnessOptions = {
   policy?: RuntimePolicy;
   /** Extra input every stage receives, e.g. a Foundry trial's hidden checks. */
   stageInput?: Record<string, unknown>;
+  /** Candidate skills a trial's policy names (M43), by "id@version". */
+  candidateSkills?: (include: string[]) => Promise<import("../skills").Skill[]>;
+  /** Generated tool candidates a trial's policy names (M43). */
+  generatedTools?: import("../intelligence/synthesis/generated-tools").GeneratedToolLoader;
   /** What ends a typed wait (M40); nothing is observable when absent. */
   waitProbe?: import("../agent/long-horizon").WaitProbe;
 };
@@ -260,10 +264,15 @@ export async function runArenaTask(
     // The real capability pack, so skill selection runs as in production;
     // with no history, every outcome weight is zero.
     skills: {
-      loadEnabled: async () =>
-        (await import("../skills/capability-pack")).osirusCapabilityPack.map(
+      loadEnabled: async (load: { include?: string[] } = {}) => [
+        ...(await import("../skills/capability-pack")).osirusCapabilityPack.map(
           (skill) => ({ ...skill, state: "enabled" as const }),
         ),
+        // M43: candidate skills a trial's policy names.
+        ...(load.include?.length && options.candidateSkills
+          ? await options.candidateSkills(load.include)
+          : []),
+      ],
       outcomeWeights: async () => ({}),
       recordSelection: async () => undefined,
       recordStageTelemetry: async () => undefined,
@@ -281,6 +290,9 @@ export async function runArenaTask(
       fixture: () => task.fixture ?? [],
       missions: () => missions,
       graph: () => graphAppender,
+      ...(options.generatedTools
+        ? { generatedTools: () => options.generatedTools! }
+        : {}),
       waitProbe: () =>
         options.waitProbe ?? (async () => ({ state: "unobservable" as const })),
       registry: () => {
