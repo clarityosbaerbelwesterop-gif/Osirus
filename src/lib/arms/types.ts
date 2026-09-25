@@ -1,3 +1,4 @@
+import type { WaitKind, WakeCondition } from "../agent/long-horizon";
 import { z } from "zod";
 import type { MemoryOS } from "../memory/os";
 import type { ModelProvider } from "../models/provider";
@@ -127,9 +128,12 @@ export type StageOutcome =
   /** Parked on something outside the engine. */
   | {
       kind: "WAITING";
-      reason: "approval" | "external";
+      /** "external" is the pre-M40 untyped wait; new waits are typed. */
+      reason: WaitKind | "external";
       output: Record<string, unknown>;
       approvalId?: string;
+      /** How the wait ends. Absent: only a release (approval) wakes it. */
+      wake?: WakeCondition;
     }
   /** Temporarily unable to proceed; try again after the delay. */
   | { kind: "BLOCKED"; reason: string; retryAfterSeconds: number }
@@ -172,6 +176,38 @@ export type RuntimeStores = {
   registry?: () => import("../tools/registry").ToolRegistry;
   /** Files a new workspace starts from when the objective names no repository. */
   fixture?: () => Array<{ path: string; content: string }>;
+  /** The run's mission state (M39); osirus.run_missions when absent. */
+  missions?: () => import("../runtime/missions").MissionStore;
+  /** Adds stages to the running graph (M39); osirus.run_stages when absent. */
+  graph?: () => GraphAppender;
+  /** Generated tool candidates a policy names (M43); Foundry artifacts when absent. */
+  generatedTools?: () => import("../intelligence/synthesis/generated-tools").GeneratedToolLoader;
+  /** Model-free probe that ends typed waits (M40); webhook deliveries when absent. */
+  waitProbe?: () => import("../agent/long-horizon").WaitProbe;
+};
+
+/** A node added to a running graph: depends on `after` or on other new nodes. */
+export type AppendedNode = {
+  key: string;
+  name: string;
+  capability: import("../runtime/types").Capability;
+  input: Record<string, unknown>;
+  dependsOn: string[];
+  retryPolicy?: Record<string, unknown>;
+  requiresVerification?: boolean;
+};
+
+export type GraphAppender = {
+  /**
+   * Insert `nodes` after the stage `afterStageId`. New roots depend on it;
+   * every stage that depended on it also waits for `tailKey`.
+   */
+  append(input: {
+    runId: string;
+    afterStageId: string;
+    nodes: AppendedNode[];
+    tailKey: string;
+  }): Promise<string[]>;
 };
 
 export type ArmRuntime = {

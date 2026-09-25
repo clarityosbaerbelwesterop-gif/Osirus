@@ -1,3 +1,4 @@
+import type { ArmId } from "../../arms/types";
 import type { SandboxDriver } from "../../sandbox/driver";
 import { detectGaps } from "../capabilities/gaps";
 import { remeasureAll, seedCapabilities } from "../capabilities/registry";
@@ -40,6 +41,8 @@ import {
 } from "../strategies/genomes";
 import {
   computeHypothesis,
+  estimateTopologies,
+  topologyHypothesis,
   estimateTiers,
   skillHypothesis,
 } from "../routing/value-of-compute";
@@ -678,16 +681,16 @@ async function advance(
         cycle.capabilityId!,
       ) as StrategyVersion["kind"];
       const limit = Math.max(1, (ctx.maxChallengers ?? 2) - 1);
+      // M42: a larger pool, ordered by the meta-policy and capped below.
+      const pool = (ctx.maxChallengers ?? 2) * 2;
       const hypotheses = settings.flags.strategyEvolution
         ? hypothesesFor(arm, gaps, champion!.genome, limit)
         : [];
+      const fromLibrary = hypotheses.length;
       // Evidence-driven proposals take the exploration slot before random
       // mutation: the value-of-compute estimate, then a verified skill
       // candidate from an earlier cycle.
-      if (
-        settings.flags.strategyEvolution &&
-        hypotheses.length < (ctx.maxChallengers ?? 2)
-      ) {
+      if (settings.flags.strategyEvolution && hypotheses.length < pool) {
         const versions = new Map(
           (await store.listVersions()).map((version) => [version.id, version]),
         );
@@ -700,11 +703,18 @@ async function advance(
           champion!.genome,
         );
         if (compute) hypotheses.push(compute);
+        // M41: value of delegation -- a measured team win, or the next
+        // unmeasured topology for this arm, as a paired trial.
+        if (hypotheses.length < pool) {
+          const team = topologyHypothesis(
+            estimateTopologies(experience, versions, cycle.capabilityId!),
+            champion!.genome,
+            arm as ArmId,
+          );
+          if (team) hypotheses.push(team);
+        }
       }
-      if (
-        settings.flags.skillEvolution &&
-        hypotheses.length < (ctx.maxChallengers ?? 2)
-      ) {
+      if (settings.flags.skillEvolution && hypotheses.length < pool) {
         const skill = skillHypothesis(
           await store.listArtifacts({ kind: "skill_candidate", limit: 50 }),
           arm,
@@ -713,10 +723,7 @@ async function advance(
         );
         if (skill) hypotheses.push(skill);
       }
-      if (
-        settings.flags.strategyEvolution &&
-        hypotheses.length < (ctx.maxChallengers ?? 2)
-      ) {
+      if (settings.flags.strategyEvolution && hypotheses.length < pool) {
         const explore = exploratoryMutation(
           arm,
           champion!.genome,
@@ -724,6 +731,34 @@ async function advance(
         );
         if (explore) hypotheses.push(explore);
       }
+      // M42: experience to hypothesis -- a telemetry weakness shared by
+      // several tasks proposes a bounded change, evaluated like any other.
+      if (settings.flags.strategyEvolution) {
+        const { hypothesesFromExperience } =
+          await import("../meta/meta-policy");
+        // Evidence from experience ranks right after the gap-targeted
+        // library entries, ahead of estimators and random exploration.
+        hypotheses.splice(
+          fromLibrary,
+          0,
+          ...hypothesesFromExperience({
+            arm: arm as ArmId,
+            experience: await store.listExperience({
+              capabilityId: cycle.capabilityId!,
+              limit: 500,
+            }),
+          }),
+        );
+      }
+      const { planHypotheses } = await import("../meta/foundry-meta");
+      const planned = await planHypotheses(store, {
+        capabilityId: cycle.capabilityId!,
+        cycleId: cycle.id,
+        pool: hypotheses,
+        limit: ctx.maxChallengers ?? 2,
+      });
+      hypotheses.splice(0, hypotheses.length, ...planned.hypotheses);
+      cycle.state.ablationId = planned.ablation?.id ?? null;
       cycle.state.hypotheses = hypotheses;
       await store.updateExperiment(experiment!.id, { hypotheses });
       if (!hypotheses.length) {
@@ -864,6 +899,36 @@ async function advance(
       });
       cycle.state.decision = decision;
       const champion = await store.getVersion(experiment!.championVersionId);
+      // M42: every conclusion updates the meta-policy; a multi-change
+      // winner leaves an ablation plan; an ablation names its cause.
+      if (champion) {
+        const { recordExperimentMeta } = await import("../meta/foundry-meta");
+        const ablation = cycle.state.ablationId
+          ? ((
+              await store.listArtifacts({
+                kind: "ablation_result",
+                capabilityId: cycle.capabilityId!,
+                limit: 20,
+              })
+            ).find((artifact) => artifact.id === cycle.state.ablationId) ??
+            null)
+          : null;
+        await recordExperimentMeta(store, {
+          cycleId: cycle.id,
+          capabilityId: cycle.capabilityId!,
+          champion,
+          challengers: (
+            await Promise.all(
+              experiment!.challengerVersionIds.map((id) =>
+                store.getVersion(id),
+              ),
+            )
+          ).filter((version): version is StrategyVersion => Boolean(version)),
+          hypotheses: experiment!.hypotheses ?? cycle.state.hypotheses ?? [],
+          decision,
+          ablation,
+        }).catch(() => undefined);
+      }
       for (const id of experiment!.challengerVersionIds) {
         const version = await store.getVersion(id);
         if (!version) continue;

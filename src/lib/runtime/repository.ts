@@ -684,6 +684,33 @@ export class RuntimeRepository {
     );
   }
 
+  /** Each stage's verdict with the arm and segment it belongs to (M39). */
+  async stageVerdicts(runId: string) {
+    const rows = await queryAs<{
+      ordinal: number;
+      verifier_status: string | null;
+      arm_id: string | null;
+      segment: number | null;
+      stage_kind: string | null;
+    }>(
+      this.actorId,
+      `select ordinal, verifier_status, input ->> 'armId' as arm_id,
+              (input ->> 'segment')::int as segment,
+              input ->> 'stageKind' as stage_kind
+         from osirus.run_stages
+        where run_id = $1::uuid
+        order by ordinal`,
+      [runId],
+    );
+    return rows.map((row) => ({
+      ordinal: Number(row.ordinal),
+      verdict: row.verifier_status,
+      armId: row.arm_id ?? "general",
+      segment: row.segment === null ? 0 : Number(row.segment),
+      kind: row.stage_kind ?? "",
+    }));
+  }
+
   async getSnapshot(runId: string): Promise<RunSnapshot> {
     const run = await this.getRun(runId);
     if (!run) throw new Error("run_not_found");
@@ -849,6 +876,7 @@ export class RuntimeRepository {
       settled: string | number;
       failed: string | number;
       waiting: string | number;
+      waiting_human: string | number;
       blocked_future: string | number;
     }>(
       this.actorId,
@@ -858,6 +886,11 @@ export class RuntimeRepository {
               ) as settled,
               count(*) filter (where status = 'failed') as failed,
               count(*) filter (where status = 'waiting') as waiting,
+              count(*) filter (
+                where status = 'waiting'
+                  and coalesce(output->>'waitingOn', 'approval')
+                      in ('approval', 'human')
+              ) as waiting_human,
               count(*) filter (
                 where status = 'blocked' and runnable_after > now()
               ) as blocked_future
@@ -871,6 +904,8 @@ export class RuntimeRepository {
       settled: Number(row?.settled ?? 0),
       failed: Number(row?.failed ?? 0),
       waiting: Number(row?.waiting ?? 0),
+      /** Waiting on a person (approval or question), not on the world. */
+      waitingHuman: Number(row?.waiting_human ?? 0),
       blockedFuture: Number(row?.blocked_future ?? 0),
     };
   }

@@ -568,6 +568,29 @@ async function finalizeRunCore(input: {
   }
 
   if (progress.total > 0 && progress.settled === progress.total) {
+    // M39: a mission that spans capabilities finishes on evidence for the
+    // whole contract, not on its last stage saying "done".
+    const gate = await missionGateFor(
+      repository,
+      input.identity,
+      input.runId,
+    ).catch(() => null);
+    if (gate?.status === "failed") {
+      await repository.transitionRun(input.runId, "failed", {
+        errorCode: "mission_incomplete",
+        errorMessage:
+          `The mission is not complete: ${gate.missing.slice(0, 4).join(" ")}`.slice(
+            0,
+            900,
+          ),
+      });
+      return {
+        status: "failed",
+        reason: "mission_incomplete",
+        settled: progress.settled,
+        total: progress.total,
+      };
+    }
     await repository.transitionRun(input.runId, "completed");
     // Learning happens where completion happens -- request, poll or
     // scheduler tick alike -- not only on the request path. Foundry trials
@@ -587,7 +610,10 @@ async function finalizeRunCore(input: {
     };
   }
 
-  if (progress.waiting > 0) {
+  // M40: only a person makes the run "waiting for approval". A run parked
+  // on CI, a deployment, an event or the clock is still running; it simply
+  // has nothing claimable until its wait ends.
+  if (progress.waitingHuman > 0) {
     if (run.status !== "waiting_for_approval") {
       await repository
         .transitionRun(input.runId, "waiting_for_approval")
@@ -603,7 +629,12 @@ async function finalizeRunCore(input: {
 
   return {
     status: "running",
-    reason: progress.blockedFuture > 0 ? "retry_scheduled" : "work_remaining",
+    reason:
+      progress.waiting > 0
+        ? "waiting_external"
+        : progress.blockedFuture > 0
+          ? "retry_scheduled"
+          : "work_remaining",
     settled: progress.settled,
     total: progress.total,
   };
@@ -777,4 +808,33 @@ export async function finalizeRun(input: {
     // The Foundry being unavailable must not touch a customer's run.
   }
   return completion;
+}
+
+/**
+ * The mission gate for a run whose mission spans more than one capability,
+ * or grew one while it ran. Single-capability runs keep their stage verdict.
+ * Records the outcome on the mission.
+ */
+async function missionGateFor(
+  repository: RuntimeRepository,
+  identity: RuntimeIdentity,
+  runId: string,
+) {
+  const { PgMissionStore, updateMission } = await import("./missions");
+  const { assessMissionGate } = await import("../agent/mission");
+  const { gateVerdicts } = await import("../arms/mission-runtime");
+  const store = new PgMissionStore(identity.userId);
+  const stored = await store.load(runId);
+  if (!stored) return null;
+  if (stored.state.nodes.length <= 1 && stored.state.switches.length === 0)
+    return null;
+  const gate = assessMissionGate(
+    stored.state,
+    gateVerdicts(await repository.stageVerdicts(runId)),
+  );
+  await updateMission(store, runId, (state) => ({
+    ...state,
+    outcome: gate.status,
+  })).catch(() => null);
+  return gate;
 }

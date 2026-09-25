@@ -36,12 +36,14 @@ const ALLOWED: Record<StrategyStatus, StrategyStatus[]> = {
   draft: ["experimental", "rejected"],
   experimental: ["verified", "rejected"],
   verified: ["champion", "rejected", "deprecated"],
-  champion: ["canary", "deprecated", "degraded"],
-  canary: ["active", "degraded", "champion"],
-  active: ["degraded", "deprecated"],
-  degraded: ["champion", "deprecated"],
+  champion: ["canary", "deprecated", "degraded", "quarantined"],
+  canary: ["active", "degraded", "champion", "quarantined"],
+  active: ["degraded", "deprecated", "quarantined"],
+  degraded: ["champion", "deprecated", "quarantined"],
   rejected: [],
   deprecated: [],
+  // M43: taken out of service with its evidence; only retirement follows.
+  quarantined: ["deprecated"],
 };
 
 export async function transition(

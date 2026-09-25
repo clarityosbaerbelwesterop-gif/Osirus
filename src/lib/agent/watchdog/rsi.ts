@@ -1,189 +1,246 @@
-import type { LoopResult, LoopState } from "../loop";
+import type { VerdictStatus } from "../../verification/engine";
 import {
-  allPulseBaselines,
-  loadPulseBaselines,
-  pulseBaselineFor,
-} from "../pulse/state";
-import type { CapabilityLane, CapabilityLevel } from "../pulse/lanes";
-import { laneKey } from "../pulse/lanes";
-import type { PulseBaselineCell } from "../pulse/types";
+  deriveOutcome,
+  type CapabilityOutcome,
+  type DerivedOutcome,
+} from "../../verification/outcome";
+import type { LoopResult } from "../loop";
+import { laneKey, type CapabilityLane } from "../pulse/lanes";
+import type { PulseStore } from "../pulse/store";
+import type { PulseRegression } from "../pulse/types";
+import {
+  assessCell,
+  confirmedRegression,
+  nextStreak,
+  WINDOW,
+  windowStats,
+} from "./window";
 
-// In-loop RSI watchdog: compare live loop outcomes to the latest pulse
-// baseline for a lane and feed regressions into experience. This does not
-// replace the agent loop; it observes it.
+// The RSI watchdog.
+//
+// It no longer draws a conclusion from one run. A loop's outcome is derived
+// from evidence and recorded (on the stage and in the product experience);
+// regressions are decided over windows of outcomes, when a pulse cycle
+// completes: the pulse's own cells, and product runs per family. A
+// confirmed regression becomes experience and a failure pattern the
+// Foundry's gap detector picks up. The watchdog never changes a policy.
 
-export type RsiRegression = {
-  lane: CapabilityLane;
-  level: CapabilityLevel;
-  kind: "verified_drop" | "success_drop" | "false_completion";
-  baselineRate: number;
-  observed: boolean;
-  summary: string;
-};
+const RESOLUTION_CLAIM =
+  /\b(all (tests|constraints|criteria) (pass|are met|are satisfied)|fully (fixed|done)|is fixed|completed successfully|shipped)\b/i;
 
-const MIN_BASELINE_SAMPLES = 1;
-
-export function detectRegression(input: {
-  lane: CapabilityLane;
-  level: CapabilityLevel;
-  verifiedSuccess: boolean;
-  success: boolean;
-  falseCompletion?: boolean;
-}): RsiRegression | null {
-  const baseline = pulseBaselineFor(input.lane, input.level);
-  if (!baseline || baseline.sampleCount < MIN_BASELINE_SAMPLES) return null;
-  if (input.falseCompletion && baseline.verifiedSuccessRate >= 0.75) {
-    return {
-      lane: input.lane,
-      level: input.level,
-      kind: "false_completion",
-      baselineRate: baseline.verifiedSuccessRate,
-      observed: true,
-      summary: `${input.lane} L${input.level} finished with a false completion while pulse baseline verified rate is ${baseline.verifiedSuccessRate}.`,
-    };
-  }
-  if (baseline.verifiedSuccessRate >= 0.5 && !input.verifiedSuccess) {
-    return {
-      lane: input.lane,
-      level: input.level,
-      kind: "verified_drop",
-      baselineRate: baseline.verifiedSuccessRate,
-      observed: false,
-      summary: `${input.lane} L${input.level} missed verified success; pulse baseline verified rate is ${baseline.verifiedSuccessRate}.`,
-    };
-  }
-  if (baseline.verifiedSuccessRate >= 0.75 && !input.success) {
-    return {
-      lane: input.lane,
-      level: input.level,
-      kind: "success_drop",
-      baselineRate: baseline.verifiedSuccessRate,
-      observed: false,
-      summary: `${input.lane} L${input.level} failed while pulse baseline verified rate is ${baseline.verifiedSuccessRate}.`,
-    };
-  }
-  return null;
-}
-
-export function gradeLoopOutcome(result: LoopResult) {
-  const finished = result.status === "finished";
+/** The canonical outcome of one loop, from what the loop itself recorded. */
+export function gradeLoopOutcome(result: LoopResult): DerivedOutcome {
+  const kernel = result.state.kernel;
+  const status = kernel?.verificationState.status;
+  const verdicts: VerdictStatus[] =
+    status === "verified"
+      ? ["verified"]
+      : status === "rejected"
+        ? ["rejected"]
+        : [];
+  const verifySteps = result.state.steps.filter(
+    (step) => step.action === "VERIFY",
+  );
+  const refusedFinish = result.state.observations.some((entry) =>
+    entry.includes("loop.finish_gate"),
+  );
   const answer = result.answer ?? "";
-  const verified =
-    finished &&
-    answer.length > 0 &&
-    !/i don't know|cannot determine|unable to/i.test(answer);
-  return {
-    success: finished,
-    verifiedSuccess: verified,
-    falseCompletion:
-      finished &&
-      result.state.steps.some(
-        (step) =>
-          step.action === "FINISH" && step.outcome === "ok" && !verified,
-      ),
-  };
+  return deriveOutcome({
+    infrastructureError: result.refusal
+      ? `provider:${result.refusal.code}`
+      : null,
+    finished: result.status === "finished" && answer.trim().length > 0,
+    claimedSuccess: RESOLUTION_CLAIM.test(answer),
+    verdicts,
+    finishGateRefused: refusedFinish && result.status !== "finished",
+    verifiedWithoutVerifier:
+      verifySteps.length > 0 &&
+      verifySteps.every((step) => /no verifier/i.test(step.detail ?? "")),
+    hypotheses: kernel
+      ? {
+          confirmed: kernel.hypotheses.filter((h) =>
+            ["SUPPORTED", "CONFIRMED"].includes(h.status),
+          ).length,
+          rejected: kernel.hypotheses.filter((h) => h.status === "REJECTED")
+            .length,
+          open: kernel.hypotheses.filter((h) => h.status === "OPEN").length,
+        }
+      : undefined,
+  });
 }
 
-export async function feedRegressionExperience(input: {
-  regression: RsiRegression;
-  runId?: string;
-}) {
+/** Product outcomes of a family, oldest first, from the experience rows. */
+export function productOutcomeOf(row: {
+  outcome: string;
+  verification: { capabilityOutcome?: CapabilityOutcome };
+}): CapabilityOutcome {
+  if (row.verification.capabilityOutcome)
+    return row.verification.capabilityOutcome;
+  switch (row.outcome) {
+    case "verified_success":
+      return "VERIFIED_SUCCESS";
+    case "success":
+      return "SUCCESS_UNVERIFIED";
+    case "false_completion":
+      return "FALSE_COMPLETION";
+    case "error":
+      return "INFRASTRUCTURE_FAILURE";
+    default:
+      return "REJECTED";
+  }
+}
+
+/** Product runs are not levelled; their windows live in this cell. */
+export const PRODUCT_SUITE = "product";
+const PRODUCT_LEVEL = 3 as const;
+
+const ARM_FAMILIES: Array<[string, CapabilityLane]> = [
+  ["arm.thinking", "THINKING"],
+  ["arm.general", "REASONING"],
+  ["arm.coding", "CODING"],
+  ["arm.research", "RESEARCH"],
+  ["arm.math_science", "MATH_SCIENCE"],
+  ["arm.building", "BUILDING"],
+];
+
+/** Windowed regressions over product runs, one cell per arm family. */
+export async function productRegressions(input: {
+  pulse: PulseStore;
+  listExperience: (filter: {
+    capabilityId: string;
+    source: "product";
+    since: string;
+    limit: number;
+  }) => Promise<
+    Array<{
+      outcome: string;
+      verification: { capabilityOutcome?: CapabilityOutcome };
+      createdAt: string;
+    }>
+  >;
+  now?: number;
+}): Promise<PulseRegression[]> {
+  const since = new Date(
+    (input.now ?? Date.now()) - 14 * 24 * 60 * 60 * 1000,
+  ).toISOString();
+  const regressions: PulseRegression[] = [];
+  for (const [capabilityId, family] of ARM_FAMILIES) {
+    const rows = await input.listExperience({
+      capabilityId,
+      source: "product",
+      since,
+      limit: WINDOW.reference + WINDOW.recent,
+    });
+    if (!rows.length) continue;
+    const observations = [...rows]
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .map((row) => ({ outcome: productOutcomeOf(row) }));
+    const assessment = assessCell(observations);
+    const previous = await input.pulse.baseline(
+      PRODUCT_SUITE,
+      family,
+      PRODUCT_LEVEL,
+    );
+    const streak = nextStreak(previous?.regressionStreak ?? 0, assessment);
+    const whole = windowStats(observations);
+    await input.pulse.saveBaseline({
+      suiteVersion: PRODUCT_SUITE,
+      family,
+      level: PRODUCT_LEVEL,
+      samples: whole.samples,
+      verified: whole.verified,
+      falseCompletions: whole.falseCompletions,
+      excluded: whole.excluded,
+      rate: whole.rate,
+      lower: whole.lower,
+      upper: whole.upper,
+      regressionStreak: streak,
+    });
+    if (assessment.signal && confirmedRegression(streak))
+      regressions.push({
+        family,
+        level: PRODUCT_LEVEL,
+        kind: assessment.signal,
+        referenceRate: assessment.reference.rate,
+        recentRate: assessment.recent.rate,
+        probabilityWorse: assessment.probabilityWorse,
+        streak,
+        source: "product",
+      });
+  }
+  return regressions;
+}
+
+/**
+ * A confirmed regression, as experience and a failure pattern for the
+ * Foundry. Only when the Intelligence Plane is on; best effort.
+ */
+export async function feedRegressionExperience(
+  regression: PulseRegression,
+  cycleId: string | null,
+) {
   try {
     const { PgIntelStore } = await import("../../intelligence/store/pg-store");
     const { fingerprint } = await import("../../intelligence/evals/random");
     const store = new PgIntelStore();
     const settings = await store.settings();
     if (!settings.flags.intelligencePlane) return;
+    const capabilityId = `pulse.${regression.family.toLowerCase()}`;
+    const summary = `${regression.source} ${laneKey(regression.family, regression.level)}: verified rate ${regression.referenceRate} → ${regression.recentRate} (P(worse) ${regression.probabilityWorse}, confirmed ${regression.streak}×).`;
     await store.insertExperience({
       source: "benchmark",
-      taskRef: input.runId ?? null,
+      taskRef: cycleId,
       taskType: "general",
-      capabilityIds: [`pulse.${input.regression.lane.toLowerCase()}`],
-      difficulty: input.regression.level,
+      capabilityIds: [capabilityId],
+      difficulty: regression.level,
       strategyVersionId: null,
       model: null,
       skills: [],
       tools: [],
-      trajectory: {
-        arm: input.regression.lane,
-        output: input.regression.summary,
-      },
+      trajectory: { arm: regression.family, output: summary },
       verification: {
         verdicts: ["regression"],
-        check: { passed: false, detail: input.regression.summary },
+        check: { passed: false, detail: summary },
+        capabilityOutcome: "REJECTED",
+        reason: regression.kind,
       },
       outcome: "failure",
-      failureClass: `rsi:${input.regression.kind}`,
+      failureClass: `rsi:${regression.kind}`,
       repairs: 0,
       costUsd: 0,
       tokens: 0,
       latencyMs: 0,
-      confidence: null,
+      confidence: regression.probabilityWorse,
       qualityScore: 0.8,
       fingerprint: fingerprint(
         "rsi",
-        input.regression.lane,
-        input.regression.level,
-        input.regression.kind,
-        input.runId ?? "anonymous",
+        regression.source,
+        regression.family,
+        regression.level,
+        regression.kind,
+        cycleId ?? "none",
       ),
       partition: null,
-      provenance: { kind: "rsi_watchdog", runId: input.runId ?? null },
+      provenance: { kind: "rsi_watchdog", source: regression.source },
     });
     await store.upsertArtifact({
       cycleId: null,
       kind: "failure_pattern",
-      capabilityId: `pulse.${input.regression.lane.toLowerCase()}`,
-      taskPattern: laneKey(input.regression.lane, input.regression.level),
-      content: {
-        lane: input.regression.lane,
-        level: input.regression.level,
-        kind: input.regression.kind,
-        baselineRate: input.regression.baselineRate,
-        summary: input.regression.summary,
-      },
-      evidence: { runId: input.runId ?? null },
-      support: 1,
+      capabilityId,
+      taskPattern: laneKey(regression.family, regression.level),
+      content: { ...regression, summary },
+      evidence: { cycleId },
+      support: regression.streak,
       status: "proposed",
       fingerprint: fingerprint(
         "rsi-pattern",
-        input.regression.lane,
-        input.regression.level,
-        input.regression.kind,
+        regression.source,
+        regression.family,
+        regression.level,
+        regression.kind,
       ),
     });
   } catch {
-    // Best effort: watchdog must never break the loop.
+    // The watchdog must never break the tick.
   }
-}
-
-export async function finalizeRsiWatchdog(input: {
-  lane: CapabilityLane;
-  level?: CapabilityLevel;
-  result: LoopResult;
-  runId: string;
-}) {
-  const level = input.level ?? 3;
-  const graded = gradeLoopOutcome(input.result);
-  const regression = detectRegression({
-    lane: input.lane,
-    level,
-    ...graded,
-  });
-  if (!regression) return null;
-  await feedRegressionExperience({ regression, runId: input.runId });
-  return regression;
-}
-
-export function exportPulseBaselines(): PulseBaselineCell[] {
-  return allPulseBaselines();
-}
-
-export function importPulseBaselines(cells: PulseBaselineCell[]) {
-  loadPulseBaselines(cells);
-}
-
-/** Track in-loop step pressure without mutating the loop. */
-export function trackLoopStep(_state: LoopState) {
-  return null;
 }

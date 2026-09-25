@@ -1,3 +1,4 @@
+import { actionKey } from "../agent/long-horizon";
 import { z } from "zod";
 import { containsInjectionAttempt } from "../security/injection";
 import type { ArmId } from "../arms/types";
@@ -22,7 +23,12 @@ export type ToolTrust =
   /** A connector the workspace installed and granted. */
   | "connector"
   /** An MCP server discovered at runtime. Least trusted. */
-  | "mcp";
+  | "mcp"
+  /**
+   * M43: synthesized by the Foundry, named by the run's policy. Read-only,
+   * low risk, executed only in the isolated executor.
+   */
+  | "generated";
 
 export type ToolEffect =
   /** Observes without changing anything. */
@@ -143,8 +149,34 @@ export type ToolAudit = (entry: {
   errorCode?: string | null;
 }) => Promise<void>;
 
+/**
+ * Durable record of side-effecting calls (M40), so a stage replayed after a
+ * crash, a lost lease or a redeploy does not repeat an irreversible action.
+ * Keyed by tool id and a stable hash of the validated input.
+ */
+export type ActionLedger = {
+  lookup(key: string): Promise<{
+    phase: "intent" | "done" | "failed";
+    summary: string;
+  } | null>;
+  record(entry: {
+    key: string;
+    toolId: string;
+    phase: "intent" | "done" | "failed";
+    irreversible: boolean;
+    summary: string;
+  }): Promise<void>;
+};
+
 export class ToolRegistry {
   private readonly tools = new Map<string, ToolDefinition>();
+  private ledger: ActionLedger | null = null;
+
+  /** Attach the run's action ledger; external calls then run at most once. */
+  useLedger(ledger: ActionLedger | null) {
+    this.ledger = ledger;
+    return this;
+  }
 
   constructor(
     private readonly options: {
@@ -159,6 +191,13 @@ export class ToolRegistry {
   ) {}
 
   register<Input, Output>(tool: ToolDefinition<Input, Output>) {
+    // Root of trust: a generated tool can never write, reach outside or
+    // carry more than low risk, whatever its artifact says.
+    if (
+      tool.trust === "generated" &&
+      (tool.effect !== "read" || tool.risk !== "low")
+    )
+      throw new Error(`generated_tool_must_be_read_only:${tool.id}`);
     if (this.tools.has(tool.id)) {
       throw new Error(`tool_already_registered:${tool.id}`);
     }
@@ -279,6 +318,46 @@ export class ToolRegistry {
       throw new ToolPermissionError(input.toolId, "policy_denied");
     }
 
+    // An external action (it leaves Osirus and cannot be taken back) runs
+    // at most once per run: a replay returns what was recorded, and a call
+    // that started but never recorded its end is not repeated blindly.
+    const ledgerKey =
+      this.ledger && tool.effect === "external"
+        ? actionKey(tool.id, parsed.data)
+        : null;
+    if (ledgerKey) {
+      const prior = await this.ledger!.lookup(ledgerKey).catch(() => null);
+      if (prior?.phase === "done") {
+        await this.options.audit?.({
+          context: input.context,
+          tool,
+          status: "completed",
+          inputMetadata: { effect: tool.effect, risk: tool.risk },
+          outputMetadata: { replayed: true },
+          latencyMs: Date.now() - startedAt,
+        });
+        return {
+          toolId: tool.id,
+          ok: true,
+          untrusted: true,
+          data: {
+            alreadyDone: true,
+            summary: prior.summary,
+          } as Output,
+          latencyMs: Date.now() - startedAt,
+        };
+      }
+      if (prior?.phase === "intent")
+        return {
+          toolId: tool.id,
+          ok: false,
+          untrusted: true,
+          error:
+            "action_outcome_unknown: this exact call started before an interruption and its result was never recorded. Check whether it took effect before repeating it with changed input.",
+          latencyMs: Date.now() - startedAt,
+        };
+    }
+
     if (decision === "ask") {
       const request = {
         toolId: tool.id,
@@ -315,9 +394,39 @@ export class ToolRegistry {
       }
     }
 
+    if (ledgerKey) {
+      // Fail closed: an irreversible call whose start cannot be recorded
+      // could not be told apart from a crash later, so it does not run.
+      const recorded = await this.ledger!.record({
+        key: ledgerKey,
+        toolId: tool.id,
+        phase: "intent",
+        irreversible: true,
+        summary: `${tool.id} started`,
+      }).then(
+        () => true,
+        () => false,
+      );
+      if (!recorded)
+        return {
+          toolId: tool.id,
+          ok: false,
+          untrusted: true,
+          error: "action_ledger_unavailable: the call was not made.",
+          latencyMs: Date.now() - startedAt,
+        };
+    }
     try {
       const data = (await tool.run(parsed.data, input.context)) as Output;
       const latencyMs = Date.now() - startedAt;
+      if (ledgerKey)
+        await this.ledger!.record({
+          key: ledgerKey,
+          toolId: tool.id,
+          phase: "done",
+          irreversible: true,
+          summary: JSON.stringify(data ?? null).slice(0, 400),
+        }).catch(() => undefined);
       await this.options.audit?.({
         context: input.context,
         tool,
@@ -341,6 +450,14 @@ export class ToolRegistry {
       const latencyMs = Date.now() - startedAt;
       const message =
         error instanceof Error ? error.message : "tool_call_failed";
+      if (ledgerKey)
+        await this.ledger!.record({
+          key: ledgerKey,
+          toolId: tool.id,
+          phase: "failed",
+          irreversible: true,
+          summary: message.slice(0, 400),
+        }).catch(() => undefined);
       await this.options.audit?.({
         context: input.context,
         tool,

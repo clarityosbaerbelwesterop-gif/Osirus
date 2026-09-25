@@ -1,5 +1,10 @@
 import { randomUUID } from "node:crypto";
 import type { ArmId } from "../../arms/types";
+import {
+  TEAM_TOPOLOGIES,
+  topologyOf,
+  type TeamTopology,
+} from "../../agent/team";
 import { COMPUTE_TIERS, type StrategyGenome } from "../../strategy/runtime";
 import type {
   Experience,
@@ -133,5 +138,135 @@ export function skillHypothesis(
     statement: `Skill candidate from ${String(candidate.content.source ?? "an earlier cycle")}: "${instruction.slice(0, 160)}"`,
     intervention: { directives: [...(champion.directives ?? []), instruction] },
     expected: "The verified skill carries over to this strategy's tasks.",
+  };
+}
+
+// ----- value of delegation (M41) --------------------------------------------
+
+export type TopologyEstimate = {
+  topology: TeamTopology;
+  n: number;
+  verified: number;
+  /** Posterior mean P(verified), Beta(1, 1) prior. */
+  p: number;
+  /** Posterior variance: how unsure the estimate still is. */
+  variance: number;
+  /** Mean tokens per judged run, where recorded: what a team costs. */
+  meanTokens: number | null;
+};
+
+export const MIN_TOPOLOGY_SAMPLES = 3;
+
+/** Verified rate per team topology for a capability, from judged trials. */
+export function estimateTopologies(
+  experience: Experience[],
+  versions: Map<string, StrategyVersion>,
+  capabilityId: string,
+): TopologyEstimate[] {
+  const rows = experience.filter(
+    (row) =>
+      row.source !== "product" &&
+      row.outcome !== "error" &&
+      row.capabilityIds.includes(capabilityId) &&
+      row.strategyVersionId &&
+      versions.has(row.strategyVersionId),
+  );
+  return TEAM_TOPOLOGIES.map((topology) => {
+    const mine = rows.filter(
+      (row) =>
+        topologyOf(versions.get(row.strategyVersionId!)?.genome) === topology,
+    );
+    const verified = mine.filter(
+      (row) => row.outcome === "verified_success",
+    ).length;
+    const a = verified + 1;
+    const b = mine.length - verified + 1;
+    const tokens = mine.map((row) => row.tokens).filter((value) => value > 0);
+    return {
+      topology,
+      n: mine.length,
+      verified,
+      p: a / (a + b),
+      variance: (a * b) / ((a + b) ** 2 * (a + b + 1)),
+      meanTokens: tokens.length
+        ? tokens.reduce((sum, value) => sum + value, 0) / tokens.length
+        : null,
+    };
+  });
+}
+
+/**
+ * Expected value of delegating to a team instead of one worker:
+ * (P_team - P_single), less a cost term per extra thousand tokens. A team
+ * is recommended only when both sides are measured and the gain clears the
+ * margin; the extra tokens have to buy verified results.
+ */
+export function delegationValue(
+  single: TopologyEstimate,
+  team: TopologyEstimate,
+  options: { costPerKTokens?: number; margin?: number } = {},
+) {
+  const extraKTokens =
+    Math.max(0, (team.meanTokens ?? 0) - (single.meanTokens ?? 0)) / 1000;
+  const gain =
+    team.p - single.p - (options.costPerKTokens ?? 0.01) * extraKTokens;
+  const measured =
+    single.n >= MIN_TOPOLOGY_SAMPLES && team.n >= MIN_TOPOLOGY_SAMPLES;
+  return {
+    gain,
+    extraKTokens,
+    measured,
+    worthwhile: measured && gain > (options.margin ?? 0.05),
+  };
+}
+
+/** The topology to try next for a capability, as a Foundry hypothesis. */
+export function topologyHypothesis(
+  estimates: TopologyEstimate[],
+  champion: StrategyGenome,
+  armOfCapability: ArmId,
+): Hypothesis | null {
+  const current = topologyOf(champion);
+  const here = estimates.find((entry) => entry.topology === current);
+  if (!here) return null;
+  // Exploit a measured win; otherwise explore the least-measured topology
+  // that fits the arm (discriminating tests need compute, a sandbox or a
+  // source), so each topology gets its paired comparison.
+  const fits: TeamTopology[] =
+    armOfCapability === "coding" || armOfCapability === "building"
+      ? ["solver_adversary", "parallel_solvers_judge"]
+      : armOfCapability === "research"
+        ? ["solver_adversary", "solver_critic"]
+        : ["parallel_solvers_judge", "solver_adversary", "solver_critic"];
+  const measuredWin = estimates
+    .filter(
+      (entry) => entry.topology !== current && fits.includes(entry.topology),
+    )
+    .map((entry) => ({ entry, value: delegationValue(here, entry) }))
+    .filter((row) => row.value.worthwhile)
+    .sort((a, b) => b.value.gain - a.value.gain)[0];
+  const explore = fits
+    .map((topology) => estimates.find((entry) => entry.topology === topology)!)
+    .filter(
+      (entry) =>
+        entry && entry.topology !== current && entry.n < MIN_TOPOLOGY_SAMPLES,
+    )
+    .sort((a, b) => a.n - b.n)[0];
+  const pick = measuredWin?.entry ?? explore;
+  if (!pick) return null;
+  return {
+    id: randomUUID(),
+    gap: "verification",
+    statement: measuredWin
+      ? `Value of delegation favours ${pick.topology}: ${pick.verified}/${pick.n} verified vs ${here.verified}/${here.n} with ${current}, gain ${measuredWin.value.gain.toFixed(2)} after ${measuredWin.value.extraKTokens.toFixed(1)}k extra tokens.`
+      : `Topology ${pick.topology} is unmeasured for this capability (${pick.n} judged runs); a paired trial measures whether it beats ${current}.`,
+    intervention: {
+      team: {
+        topology: pick.topology,
+        ...(pick.topology === "parallel_solvers_judge" ? { solvers: 2 } : {}),
+      },
+    },
+    expected:
+      "A team is kept only if its verified rate beats one worker by more than its extra tokens cost.",
   };
 }

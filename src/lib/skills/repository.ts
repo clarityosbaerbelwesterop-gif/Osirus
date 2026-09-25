@@ -109,7 +109,13 @@ async function ensureCapabilityPackSeeded() {
 export class SkillRepository {
   constructor(private readonly actorId: string) {}
 
-  async loadEnabled(): Promise<Skill[]> {
+  /**
+   * Skills a run may use. The product gets active skills at their pinned or
+   * newest active version (M43). A policy that names candidate versions
+   * ("skillId@version": a Foundry trial or a canary) also gets those; a
+   * quarantined skill or version is never loaded.
+   */
+  async loadEnabled(options: { include?: string[] } = {}): Promise<Skill[]> {
     await ensureCapabilityPackSeeded();
     const rows = await querySystem<SkillRow>(
       `select d.id, d.slug, d.name, d.category, d.description,
@@ -122,10 +128,23 @@ export class SkillRepository {
            select v.version, v.instruction
              from osirus.skill_versions v
             where v.skill_id = d.id
+              and v.status = 'active'
+              and (d.pinned_version is null or v.version = d.pinned_version)
             order by v.created_at desc
             limit 1
          ) latest on true
-        where d.enabled = true`,
+        where d.enabled = true and d.status = 'active'
+       union all
+       select d.id, d.slug, d.name, d.category, d.description,
+              d.activation_conditions, d.risk, d.tool_needs,
+              d.capability_affinity, d.estimated_context_cost,
+              d.priority, v.version, v.instruction
+         from osirus.skill_definitions d
+         join osirus.skill_versions v on v.skill_id = d.id
+        where d.id || '@' || v.version = any($1::text[])
+          and d.status <> 'quarantined'
+          and v.status in ('candidate', 'experimental', 'active')`,
+      [options.include ?? []],
     );
 
     return rows.map((row) => ({

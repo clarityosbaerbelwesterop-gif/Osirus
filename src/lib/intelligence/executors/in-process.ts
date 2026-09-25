@@ -84,6 +84,15 @@ export class InProcessExecutor implements TrialExecutor {
             0,
             6_000,
           ),
+          ...(run.mission
+            ? {
+                cognition: {
+                  hypotheses: run.mission.hypotheses,
+                  switches: run.mission.switches,
+                  planRevisions: run.mission.planRevisions,
+                },
+              }
+            : {}),
         },
       },
     };

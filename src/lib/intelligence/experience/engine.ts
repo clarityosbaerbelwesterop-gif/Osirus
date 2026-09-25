@@ -1,4 +1,5 @@
 import { derivedCapabilities } from "../capabilities/taxonomy";
+import { cognitiveTelemetry, configurationVector } from "../meta/telemetry";
 import { fingerprint, simhash } from "../evals/random";
 import type { IntelStore } from "../store/store";
 import type {
@@ -107,6 +108,21 @@ export async function recordTrialExperience(
       stages: result.trajectory?.stages,
       actions: actions.slice(0, 60),
       output: result.trajectory?.output?.slice(0, 6_000),
+      // M42: how the run reasoned, and the configuration it ran under, so
+      // credit can be assigned to one dimension at a time.
+      telemetry: cognitiveTelemetry({
+        actions,
+        verified: result.verified,
+        falseCompletion: result.falseCompletion,
+        tokens: result.tokens,
+        hypotheses: result.trajectory?.cognition?.hypotheses,
+        switches: result.trajectory?.cognition?.switches,
+      }),
+      configuration: configurationVector({
+        genome: input.version.genome,
+        model: input.model,
+        skills: [],
+      }),
     },
     verification: { verdicts: result.verdicts, check: result.check },
     outcome,

@@ -1,0 +1,45 @@
+name: Capability pulse (hourly tick)
+
+# Calls the existing scheduler tick once an hour, so the capability pulse
+# runs hourly although Vercel Cron on this plan fires daily. This is not a
+# second scheduler: it only knocks on the same /api/scheduler/tick the cron
+# uses, which decides what is due.
+#
+# No secret is stored in GitHub. The job asks GitHub for a short-lived OIDC
+# token for the audience "osirus-scheduler"; the tick accepts it only when
+# GitHub signed it for this repository, this workflow file, the main branch
+# and a scheduled or manual run.
+
+on:
+  schedule:
+    - cron: "7 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: osirus-capability-pulse
+  cancel-in-progress: false
+
+jobs:
+  tick:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Request an OIDC token and call the tick
+        env:
+          TICK_URL: https://osirus.vercel.app/api/scheduler/tick
+        run: |
+          set -euo pipefail
+          token=$(curl -sS --fail -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=osirus-scheduler" | jq -r '.value')
+          echo "::add-mask::${token}"
+          status=$(curl -sS -o response.json -w '%{http_code}' --max-time 320 \
+            -X POST -H "x-osirus-github-oidc: ${token}" "${TICK_URL}")
+          echo "HTTP ${status}"
+          # Counts only; the tick never returns tenant data.
+          jq '{runs, claimed, pulse, foundry}' response.json || cat response.json
+          test "${status}" = "200"

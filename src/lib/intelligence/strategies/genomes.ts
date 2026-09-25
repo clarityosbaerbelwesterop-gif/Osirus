@@ -1,3 +1,4 @@
+import { topologyOf } from "../../agent/team";
 import { randomUUID } from "node:crypto";
 import type { ArmId } from "../../arms/types";
 import {
@@ -212,6 +213,24 @@ const LIBRARY: LibraryEntry[] = [
     expected:
       "More complete answers; the team must beat one worker on the same tasks.",
   },
+  {
+    gap: "verification",
+    arm: "math_science",
+    statement:
+      "Solvers disagree on the number and the first draft wins by default; a recomputation settles which one is right.",
+    intervention: { team: { topology: "parallel_solvers_judge", solvers: 2 } },
+    expected:
+      "Fewer wrong numbers where drafts disagree; the extra solver has to pay for itself.",
+  },
+  {
+    gap: "verification",
+    arm: "coding",
+    statement:
+      "A change is declared done without the case that breaks it; an adversary with a test to run finds it.",
+    intervention: { team: { topology: "solver_adversary" } },
+    expected:
+      "Fewer false completions; only attacks a test confirms cause a revision.",
+  },
 ];
 
 function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
@@ -226,6 +245,15 @@ function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
       : {}),
     ...(base.research || patch.research
       ? { research: { ...base.research, ...patch.research } }
+      : {}),
+    ...(base.team || patch.team
+      ? { team: { ...base.team, ...patch.team } }
+      : {}),
+    ...(base.skills || patch.skills
+      ? { skills: { ...base.skills, ...patch.skills } }
+      : {}),
+    ...(base.tools || patch.tools
+      ? { tools: { ...base.tools, ...patch.tools } }
       : {}),
     ...(base.directives || patch.directives
       ? {
@@ -372,10 +400,15 @@ export async function buildChallengers(
 }
 
 /** The worker topology a genome actually runs. Knobs are not an architecture. */
-export type AgentArchitecture = "single_worker" | "solver_critic";
+export type AgentArchitecture =
+  | "single_worker"
+  | "solver_critic"
+  | "parallel_solvers_judge"
+  | "solver_adversary";
 
 export function architectureOf(genome: StrategyGenome): AgentArchitecture {
-  return genome.team?.critic ? "solver_critic" : "single_worker";
+  const topology = topologyOf(genome);
+  return topology === "single" ? "single_worker" : topology;
 }
 
 /** Whether a challenger changes the worker topology, not only a policy knob. */
@@ -401,7 +434,13 @@ export function describeGenome(genome: StrategyGenome) {
   if (genome.math?.computeFirst) parts.push("compute first");
   if (genome.math?.finalLine) parts.push("final line");
   if (genome.research?.citeEverySentence) parts.push("cite every sentence");
-  if (genome.team?.critic) parts.push("team: solver + critic");
+  const topology = topologyOf(genome);
+  if (topology === "solver_critic") parts.push("team: solver + critic");
+  if (topology === "parallel_solvers_judge")
+    parts.push(
+      `team: ${genome.team?.solvers ?? 2} solvers + discriminating test`,
+    );
+  if (topology === "solver_adversary") parts.push("team: solver + adversary");
   if (genome.contextTokens) parts.push(`context ${genome.contextTokens}`);
   if (genome.skills?.maxActive !== undefined)
     parts.push(`skills ${genome.skills.maxActive}`);

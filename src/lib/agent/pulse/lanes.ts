@@ -1,8 +1,10 @@
 import type { ArmId } from "../../arms/types";
 import type { Capability } from "../../runtime/types";
 
-// Capability lanes measured by the hourly pulse. Each lane spans L1–L5
-// difficulty; tasks register against a lane and level rather than an arm id.
+// Capability families measured by the pulse. Each family spans L1–L5
+// difficulty; a task belongs to one family, one level and one difficulty
+// class. The M34 lanes that merged two families are still accepted as
+// aliases, so older baselines and API callers keep working.
 
 export const CAPABILITY_LANES = [
   "THINKING",
@@ -10,10 +12,13 @@ export const CAPABILITY_LANES = [
   "CODING",
   "RESEARCH",
   "MATH_SCIENCE",
-  "BUILDING_COMPUTER",
+  "BUILDING",
+  "COMPUTER",
+  "TOOL_USE",
+  "MULTIMODAL",
   "MEMORY_CONTEXT",
-  "TOOL_MULTIMODAL",
-  "CROSS_DOMAIN_LONG_HORIZON",
+  "CROSS_DOMAIN",
+  "LONG_HORIZON",
 ] as const;
 
 export type CapabilityLane = (typeof CAPABILITY_LANES)[number];
@@ -21,8 +26,30 @@ export type CapabilityLane = (typeof CAPABILITY_LANES)[number];
 export const CAPABILITY_LEVELS = [1, 2, 3, 4, 5] as const;
 export type CapabilityLevel = (typeof CAPABILITY_LEVELS)[number];
 
+/** How a task is hard, independent of how hard it is. */
+export const DIFFICULTY_CLASSES = [
+  "DIRECT",
+  "COMPOSED",
+  "ADVERSARIAL",
+  "LONG_HORIZON",
+  "FRONTIER",
+] as const;
+export type DifficultyClass = (typeof DIFFICULTY_CLASSES)[number];
+
+const LEGACY_LANES: Record<string, CapabilityLane> = {
+  BUILDING_COMPUTER: "BUILDING",
+  TOOL_MULTIMODAL: "TOOL_USE",
+  CROSS_DOMAIN_LONG_HORIZON: "CROSS_DOMAIN",
+};
+
 export function isCapabilityLane(value: string): value is CapabilityLane {
   return (CAPABILITY_LANES as readonly string[]).includes(value);
+}
+
+/** A family name, or an M34 lane alias, as a family; null otherwise. */
+export function normalizeLane(value: string): CapabilityLane | null {
+  if (isCapabilityLane(value)) return value;
+  return LEGACY_LANES[value] ?? null;
 }
 
 export function isCapabilityLevel(value: number): value is CapabilityLevel {
@@ -40,9 +67,9 @@ export function laneForArm(armId: ArmId): CapabilityLane {
     case "math_science":
       return "MATH_SCIENCE";
     case "building":
-      return "BUILDING_COMPUTER";
+      return "BUILDING";
     case "general":
-      return "CROSS_DOMAIN_LONG_HORIZON";
+      return "REASONING";
     default:
       return "THINKING";
   }
@@ -58,11 +85,11 @@ export function laneForCapability(capability: Capability): CapabilityLane {
     case "data":
       return "MATH_SCIENCE";
     case "multimodal":
-      return "TOOL_MULTIMODAL";
+      return "MULTIMODAL";
     case "computer_use":
-      return "BUILDING_COMPUTER";
+      return "COMPUTER";
     case "general":
-      return "CROSS_DOMAIN_LONG_HORIZON";
+      return "REASONING";
     default:
       return "THINKING";
   }

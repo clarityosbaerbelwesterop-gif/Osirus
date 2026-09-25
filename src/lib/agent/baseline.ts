@@ -306,7 +306,7 @@ type ToolLog = Array<{
   result: ToolResult;
 }>;
 
-async function protocol(input: {
+export async function protocol(input: {
   objective: string;
   armId: ArmId;
   tools: ToolRegistry;
@@ -337,7 +337,7 @@ async function protocol(input: {
   return { result, latencyMs: Date.now() - started, tools };
 }
 
-async function falseCompletion(input: {
+export async function falseCompletion(input: {
   objective: string;
   armId: ArmId;
   tools: ToolRegistry;
@@ -363,7 +363,7 @@ async function falseCompletion(input: {
   return result.status === "finished" && !input.claimHolds;
 }
 
-function counts(result: LoopResult, latencyMs: number) {
+export function counts(result: LoopResult, latencyMs: number) {
   return {
     modelCalls: result.state.modelCalls,
     toolCalls: result.state.toolCalls,
@@ -1115,17 +1115,25 @@ async function memory(): Promise<BaselineRecord> {
   };
 }
 
+/** One runner per domain, so the pulse can run a single task at a time. */
+export const BASELINE_RUNNERS: Record<
+  BaselineDomain,
+  () => Promise<BaselineRecord>
+> = {
+  THINKING: thinking,
+  REASONING: reasoning,
+  CODING: coding,
+  RESEARCH: research,
+  MATH: math,
+  BUILDING: building,
+  COMPUTER: computer,
+  MEMORY: memory,
+};
+
 export async function runCapabilityBaseline(): Promise<BaselineRecord[]> {
-  return [
-    await thinking(),
-    await reasoning(),
-    await coding(),
-    await research(),
-    await math(),
-    await building(),
-    await computer(),
-    await memory(),
-  ];
+  const records: BaselineRecord[] = [];
+  for (const run of Object.values(BASELINE_RUNNERS)) records.push(await run());
+  return records;
 }
 
 export function formatBaselineMarkdown(records: BaselineRecord[]): string {

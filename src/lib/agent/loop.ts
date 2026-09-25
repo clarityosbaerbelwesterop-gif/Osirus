@@ -112,7 +112,12 @@ export type AgentStep = {
 };
 
 export type LoopStatus =
-  "finished" | "waiting_for_approval" | "yielded" | "exhausted" | "failed";
+  | "finished"
+  | "waiting_for_approval"
+  | "waiting"
+  | "yielded"
+  | "exhausted"
+  | "failed";
 
 export type LoopState = {
   steps: AgentStep[];
@@ -140,6 +145,8 @@ export type LoopResult = {
   answer: string | null;
   /** Set when the loop parked on an approval. */
   pendingApproval?: { toolId?: string; request: Record<string, unknown> };
+  /** Set when the loop parked on a typed wait (M40). */
+  pendingWait?: NonNullable<AgentDecision["wait"]>;
   reason: string;
   /** Set when the model provider refused the call (see providerRefusalOf). */
   refusal?: ProviderRefusal;
@@ -167,6 +174,10 @@ export type LoopHooks = {
   spawnWorker?: (task: {
     objective: string;
     capability?: string;
+    /** Why the running agent asked for it: the step's own summary. */
+    reason?: string;
+    /** The evidence the request rests on: the latest cited refs. */
+    evidence?: string[];
   }) => Promise<{ summary: string; output: string }>;
   retrieveMemory?: (query: string) => Promise<string[]>;
   createArtifact?: (artifact: {
@@ -523,6 +534,28 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
       );
       for (const tool of described)
         state.disclosedSchemas[tool.id] = tool.schema;
+      // A schema request without a call: the disclosure is the step.
+      if (decision.action === "USE_TOOL" && !decision.toolId) {
+        consecutiveFailures = 0;
+        state.observations.push(
+          observe(
+            "loop.schemas",
+            described.length
+              ? `Schemas disclosed: ${described.map((tool) => tool.id).join(", ")}.`
+              : "No tool with those ids is available to this arm.",
+          ),
+        );
+        await record(
+          {
+            action: "USE_TOOL",
+            summary: decision.summary,
+            outcome: described.length ? "ok" : "error",
+            detail: `schemas:${described.map((tool) => tool.id).join(",")}`,
+          },
+          stepStartedAt,
+        );
+        continue;
+      }
     }
 
     switch (decision.action) {
@@ -707,7 +740,11 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
           );
           continue;
         }
-        const worker = await input.hooks.spawnWorker(decision.workerTask!);
+        const worker = await input.hooks.spawnWorker({
+          ...decision.workerTask!,
+          reason: decision.summary,
+          evidence: ensureKernel(state, input).evidenceRefs.slice(-4),
+        });
         state.observations.push(
           observe("worker.result", `${worker.summary}\n${worker.output}`),
         );
@@ -848,6 +885,25 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
           answer: state.answer ?? null,
           pendingApproval: { request: { ...decision.approval } },
           reason: "agent_requested_approval",
+        };
+      }
+
+      case "WAIT": {
+        await record(
+          {
+            action: "WAIT",
+            summary: decision.summary,
+            outcome: "waiting",
+            detail: `${decision.wait!.kind}: ${decision.wait!.reason}`,
+          },
+          stepStartedAt,
+        );
+        return {
+          status: "waiting",
+          state,
+          answer: state.answer ?? null,
+          pendingWait: decision.wait!,
+          reason: `agent_wait:${decision.wait!.kind}`,
         };
       }
 

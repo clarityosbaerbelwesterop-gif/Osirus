@@ -304,10 +304,23 @@ describe("scheduler tick authorization", () => {
     // missing secret is treated as "no authentication required".
     expect(route).toContain("if (!env.OSIRUS_SCHEDULER_SECRET)");
     const guard = route.indexOf("if (!env.OSIRUS_SCHEDULER_SECRET)");
-    const authorize = route.indexOf("if (!authorized(request))");
+    const authorize = route.indexOf("if (!(await authorized(request)))");
     expect(guard).toBeGreaterThan(-1);
     expect(guard).toBeLessThan(authorize);
     expect(route).toContain("scheduler_not_configured");
+  });
+
+  it("accepts a GitHub OIDC token only as a third, verified path", () => {
+    // The shared secret is still checked first; the OIDC header is consulted
+    // only when neither secret form was sent, and only a verified token for
+    // this repository's pulse workflow passes (tests/github-oidc.test.ts).
+    const secret = route.indexOf(
+      "if (header) return matches(header, expected)",
+    );
+    const oidc = route.indexOf("verifyGithubOidc(oidc)");
+    expect(secret).toBeGreaterThan(-1);
+    expect(oidc).toBeGreaterThan(secret);
+    expect(route).toContain("return (await verifyGithubOidc(oidc)).ok;");
   });
 
   it("never falls back to same-origin checking", () => {

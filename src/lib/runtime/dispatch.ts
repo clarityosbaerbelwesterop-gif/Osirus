@@ -431,3 +431,95 @@ type WorkflowNodeInput = {
   workerKind: string;
   input: Record<string, unknown>;
 };
+
+/**
+ * Add stages to a running graph (M39 capability switching).
+ *
+ * The new stages get ordinals after every existing one. New roots depend on
+ * the stage that asked for them; every stage that already depended on that
+ * stage now also waits for the new tail, so the rest of the plan runs after
+ * the inserted capability, not beside it. One statement, like persistGraph:
+ * there is no moment in which a new stage is claimable without its edges.
+ */
+export async function appendStages(input: {
+  runId: string;
+  afterStageId: string;
+  nodes: Array<{
+    key: string;
+    name: string;
+    capability: string;
+    input: Record<string, unknown>;
+    dependsOn: string[];
+    retryPolicy?: Record<string, unknown>;
+    requiresVerification?: boolean;
+  }>;
+  tailKey: string;
+}): Promise<string[]> {
+  const payload = input.nodes.map((node, offset) => ({
+    key: node.key,
+    name: node.name,
+    capability: node.capability,
+    offset,
+    retry_policy: node.retryPolicy ?? { maxAttempts: 1, maxSlices: 64 },
+    requires_verification: node.requiresVerification ?? false,
+    input: node.input,
+    depends_on: node.dependsOn,
+  }));
+  const rows = await querySystem<{ key: string }>(
+    `with base as (
+       select coalesce(max(ordinal), -1) as top
+         from osirus.run_stages where run_id = $1::uuid
+     ),
+     spec as (
+       select * from jsonb_to_recordset($2::jsonb) as x(
+         key text, name text, capability text, "offset" integer,
+         retry_policy jsonb, requires_verification boolean,
+         input jsonb, depends_on jsonb
+       )
+     ),
+     inserted as (
+       insert into osirus.run_stages (
+         run_id, ordinal, name, capability, status, input,
+         retry_policy, failure_policy, requires_verification, worker_kind
+       )
+       select $1::uuid, base.top + 1 + spec."offset", spec.name,
+              spec.capability, 'pending', spec.input, spec.retry_policy,
+              'fail_run', spec.requires_verification, 'inline'
+         from spec cross join base
+       returning id, ordinal
+     ),
+     keyed as (
+       select spec.key, inserted.id
+         from spec cross join base
+         join inserted on inserted.ordinal = base.top + 1 + spec."offset"
+     ),
+     internal_edges as (
+       insert into osirus.run_stage_dependencies (run_id, stage_id, depends_on_stage_id)
+       select $1::uuid, child.id, parent.id
+         from spec
+         join keyed child on child.key = spec.key
+         cross join lateral jsonb_array_elements_text(spec.depends_on) as d(parent_key)
+         join keyed parent on parent.key = d.parent_key
+       returning 1
+     ),
+     root_edges as (
+       insert into osirus.run_stage_dependencies (run_id, stage_id, depends_on_stage_id)
+       select $1::uuid, keyed.id, $3::uuid
+         from spec join keyed on keyed.key = spec.key
+        where jsonb_array_length(spec.depends_on) = 0
+       returning 1
+     ),
+     rewired as (
+       insert into osirus.run_stage_dependencies (run_id, stage_id, depends_on_stage_id)
+       select distinct $1::uuid, d.stage_id, tail.id
+         from osirus.run_stage_dependencies d
+         join keyed tail on tail.key = $4
+        where d.run_id = $1::uuid and d.depends_on_stage_id = $3::uuid
+       on conflict do nothing
+       returning 1
+     )
+     select key from keyed`,
+    [input.runId, JSON.stringify(payload), input.afterStageId, input.tailKey],
+  );
+  return rows.map((row) => row.key);
+}

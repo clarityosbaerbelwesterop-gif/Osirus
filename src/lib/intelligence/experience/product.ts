@@ -2,8 +2,15 @@ import "server-only";
 import type { RuntimeIdentity } from "../../arms/types";
 import { queryAs } from "../../db/client";
 import { fingerprint } from "../evals/random";
+import type { VerdictStatus } from "../../verification/engine";
+import {
+  deriveOutcome,
+  excludedFailureClass,
+  toExperienceOutcome,
+} from "../../verification/outcome";
+import type { StrategyGenome } from "../../strategy/runtime";
+import { configurationVector } from "../meta/telemetry";
 import { PgIntelStore } from "../store/pg-store";
-import type { ExperienceOutcome } from "../types";
 
 // What a customer run teaches the Intelligence Plane: operational metrics
 // only. Which arm ran, under which strategy version and model, how it was
@@ -18,6 +25,8 @@ type StageRow = {
   arm_id: string | null;
   strategy_version_id: string | null;
   model: string | null;
+  assignment: string | null;
+  genome: StrategyGenome | null;
 };
 
 export async function captureProductExperience(input: {
@@ -43,11 +52,13 @@ export async function captureProductExperience(input: {
   // Foundry trials are recorded by the research loop, with their label.
   if (!run || Number(run.priority) < 0) return;
   if (run.status !== "completed" && run.status !== "failed") return;
-  const [stages, calls, tools] = await Promise.all([
+  const [stages, calls, tools, skills] = await Promise.all([
     as<StageRow>(
       `select name, verifier_status, input ->> 'armId' as arm_id,
               input -> 'policy' ->> 'strategyVersionId' as strategy_version_id,
-              input -> 'policy' ->> 'model' as model
+              input -> 'policy' ->> 'model' as model,
+              input -> 'policy' ->> 'assignment' as assignment,
+              input -> 'policy' -> 'genome' as genome
          from osirus.run_stages where run_id = $1::uuid order by ordinal`,
       [input.runId],
     ),
@@ -70,6 +81,12 @@ export async function captureProductExperience(input: {
         where run_id = $1::uuid limit 40`,
       [input.runId],
     ),
+    // M42: which skill versions the run actually selected.
+    as<{ skill: string }>(
+      `select distinct skill_id || '@' || coalesce(skill_version, '?') as skill
+         from osirus.skill_usage where run_id = $1::uuid limit 24`,
+      [input.runId],
+    ),
   ]);
   const verdicts = stages
     .map((stage) => stage.verifier_status)
@@ -80,14 +97,17 @@ export async function captureProductExperience(input: {
   const providerFailure = (calls[0]?.errors ?? []).some((code) =>
     /rate_limited|insufficient_credit|provider_|credential/.test(code),
   );
-  const outcome: ExperienceOutcome =
-    run.status === "completed"
-      ? verdicts.length > 0 && verdicts.every((v) => v === "verified")
-        ? "verified_success"
-        : "success"
-      : providerFailure
-        ? "error"
-        : "failure";
+  // The canonical outcome: a completed run whose verification rejected it
+  // told the customer "done" against the evidence.
+  const derived = deriveOutcome({
+    infrastructureError: providerFailure
+      ? `provider refusal: ${(calls[0]?.errors ?? []).join(",")}`
+      : null,
+    finished: run.status === "completed",
+    claimedSuccess: run.status === "completed",
+    verdicts: verdicts as VerdictStatus[],
+  });
+  const outcome = toExperienceOutcome(derived.outcome);
   const ended = run.completed_at ? Date.parse(run.completed_at) : Date.now();
   await store.insertExperience({
     source: "product",
@@ -100,12 +120,29 @@ export async function captureProductExperience(input: {
       null,
     model:
       stages.find((stage) => stage.model)?.model ?? calls[0]?.model ?? null,
-    skills: [],
+    skills: skills.map((row) => row.skill),
     tools: tools.map((tool) => tool.tool_name),
-    trajectory: { arm: arms.join("+"), stages: stages.map((s) => s.name) },
-    verification: { verdicts },
+    trajectory: {
+      arm: arms.join("+"),
+      stages: stages.map((s) => s.name),
+      // M42: the configuration the run served, for the online/offline
+      // bridge: product metrics weight the agenda, never train anything.
+      configuration: configurationVector({
+        genome: stages.find((stage) => stage.genome)?.genome ?? undefined,
+        model:
+          stages.find((stage) => stage.model)?.model ?? calls[0]?.model ?? null,
+        skills: skills.map((row) => row.skill),
+      }),
+    },
+    verification: {
+      verdicts,
+      capabilityOutcome: derived.outcome,
+      reason: derived.reason,
+    },
     outcome,
-    failureClass: run.status === "failed" ? (run.error_code ?? "failed") : null,
+    failureClass:
+      excludedFailureClass(derived.outcome, derived.reason) ??
+      (run.status === "failed" ? (run.error_code ?? "failed") : null),
     repairs: 0,
     costUsd: Number(calls[0]?.cost ?? 0),
     tokens: Number(calls[0]?.tokens ?? 0),
@@ -115,6 +152,10 @@ export async function captureProductExperience(input: {
     // Pseudonymous: one row per run, without the run's id.
     fingerprint: fingerprint("product", input.runId),
     partition: null,
-    provenance: { kind: "product_run_metrics" },
+    provenance: {
+      kind: "product_run_metrics",
+      assignment:
+        stages.find((stage) => stage.assignment)?.assignment ?? "champion",
+    },
   });
 }

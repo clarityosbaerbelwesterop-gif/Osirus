@@ -43,6 +43,26 @@ export const genomeSchema = z
         maxActive: z.number().int().min(0).max(12),
         maxP0: z.number().int().min(0).max(8),
         maxTokens: z.number().int().min(0).max(8000),
+        /**
+         * M43: candidate or experimental skill versions ("skillId@version")
+         * this policy may load. Only a trial or canary names them; the
+         * product loads active (or pinned) versions.
+         */
+        include: z
+          .array(z.string().regex(/^[\w.:-]{1,80}@[\w.-]{1,40}$/))
+          .max(4),
+      })
+      .partial()
+      .optional(),
+    /**
+     * M43: generated tool candidates this policy may use. Generated tools
+     * are read-only, low risk and run only in the isolated executor.
+     */
+    tools: z
+      .object({
+        include: z
+          .array(z.string().regex(/^gen\.[a-z0-9_]{2,40}@v\d{1,3}$/))
+          .max(4),
       })
       .partial()
       .optional(),
@@ -81,7 +101,26 @@ export const genomeSchema = z
      * revises it: Solver vs Critic, as a strategy the Foundry can test
      * against a single worker on the same tasks.
      */
-    team: z.object({ critic: z.boolean() }).partial().optional(),
+    team: z
+      .object({
+        critic: z.boolean(),
+        /**
+         * M41: the topology, when it is more than a critic. Parallel
+         * solvers settle disagreement by a discriminating test, never by
+         * vote; an adversary's attack counts only when its check confirms
+         * it. Absent: `critic` decides, and the default is one worker.
+         */
+        topology: z.enum([
+          "single",
+          "solver_critic",
+          "parallel_solvers_judge",
+          "solver_adversary",
+        ]),
+        /** Parallel solvers, including the first draft. */
+        solvers: z.number().int().min(2).max(3),
+      })
+      .partial()
+      .optional(),
   })
   .strict();
 

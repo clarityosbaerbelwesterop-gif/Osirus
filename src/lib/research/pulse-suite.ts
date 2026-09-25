@@ -96,7 +96,9 @@ export const RESEARCH_PULSE_TASKS: ResearchPulseTask[] = [
   },
 ];
 
-async function runTask(task: ResearchPulseTask): Promise<ResearchPulseResult> {
+export async function runResearchPulseTask(
+  task: ResearchPulseTask,
+): Promise<ResearchPulseResult> {
   const started = Date.now();
   switch (task.id) {
     case "research-l1-citation": {
@@ -397,7 +399,7 @@ export async function runResearchPulseSuite(
   const selected = levels
     ? RESEARCH_PULSE_TASKS.filter((task) => levels.includes(task.level))
     : RESEARCH_PULSE_TASKS;
-  return Promise.all(selected.map((task) => runTask(task)));
+  return Promise.all(selected.map((task) => runResearchPulseTask(task)));
 }
 
 export function formatPulseMarkdown(results: ResearchPulseResult[]) {

@@ -18,7 +18,7 @@ It measures capabilities, proposes and tests strategy changes, generates evaluat
 
 ## Becoming an operator
 
-Operators are rows in `osirus_intel.operators`, keyed by `osirus.users.id`. No route can create one. Add one with SQL as the database owner:
+Operators are rows in `osirus_intel.operators`, keyed by `osirus.users.id`. No route can create one. The person must have signed in once, so that their `osirus.users` row exists. Then add them with SQL as the database owner:
 
 ```sql
 insert into osirus_intel.operators (user_id) values ('<user uuid>');

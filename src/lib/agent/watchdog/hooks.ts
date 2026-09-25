@@ -1,8 +1,10 @@
 import type { LoopHooks, LoopResult } from "../loop";
 import type { CapabilityLane, CapabilityLevel } from "../pulse/lanes";
-import { finalizeRsiWatchdog, trackLoopStep } from "./rsi";
+import { gradeLoopOutcome } from "./rsi";
 
-// Merge RSI watchdog hooks into an arm's existing loop hooks.
+// The watchdog's place in an arm's loop. It observes; it concludes nothing
+// from a single run. The outcome it derives is returned for the stage to
+// record; regressions are decided over windows when a pulse cycle ends.
 
 export function withRsiWatchdogHooks(input: {
   lane: CapabilityLane;
@@ -10,14 +12,7 @@ export function withRsiWatchdogHooks(input: {
   runId: string;
   hooks?: LoopHooks;
 }): LoopHooks {
-  const prior = input.hooks ?? {};
-  return {
-    ...prior,
-    onStep: async (step) => {
-      await prior.onStep?.(step);
-      trackLoopStep({ steps: [step] } as never);
-    },
-  };
+  return input.hooks ?? {};
 }
 
 export async function afterAgentLoop(input: {
@@ -26,5 +21,5 @@ export async function afterAgentLoop(input: {
   result: LoopResult;
   runId: string;
 }) {
-  return finalizeRsiWatchdog(input);
+  return { lane: input.lane, ...gradeLoopOutcome(input.result) };
 }
