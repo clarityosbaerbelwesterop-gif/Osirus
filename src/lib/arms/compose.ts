@@ -5,6 +5,7 @@ import {
   type WorkflowGraph,
   type WorkflowNode,
 } from "../runtime/graph";
+import { createMission } from "../agent/mission";
 import { armFor } from "./registry";
 import type {
   AcceptanceContract,
@@ -132,4 +133,29 @@ export function composeWorkflow(input: {
       ],
     },
   };
+}
+
+/** The mission a composed workflow starts with: one node per capability. */
+export function missionFor(input: {
+  objective: string;
+  composition: ArmId[];
+  contract: AcceptanceContract;
+  analysis?: TaskAnalysis;
+}) {
+  const composition = input.composition.length
+    ? input.composition
+    : (["general"] as ArmId[]);
+  return createMission({
+    objective: input.objective,
+    successCriteria: input.contract.successCriteria,
+    requiredEvidence: input.contract.requiredEvidence,
+    deliverables: [],
+    nodes: composition.map((armId, index) => ({
+      key: `s${index}-${armId}`,
+      capability: armId,
+      prerequisites:
+        index > 0 ? [`s${index - 1}-${composition[index - 1]}`] : [],
+      requiredEvidence: input.contract.requiredEvidence,
+    })),
+  });
 }

@@ -434,6 +434,7 @@ describe("the unified pulse suite", () => {
       rows.find((row) => row.family === family)?.levels ?? [];
     for (const family of [
       "RESEARCH",
+      "CROSS_DOMAIN",
       "MATH_SCIENCE",
       "BUILDING",
       "COMPUTER",

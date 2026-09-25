@@ -167,6 +167,10 @@ export type LoopHooks = {
   spawnWorker?: (task: {
     objective: string;
     capability?: string;
+    /** Why the running agent asked for it: the step's own summary. */
+    reason?: string;
+    /** The evidence the request rests on: the latest cited refs. */
+    evidence?: string[];
   }) => Promise<{ summary: string; output: string }>;
   retrieveMemory?: (query: string) => Promise<string[]>;
   createArtifact?: (artifact: {
@@ -729,7 +733,11 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
           );
           continue;
         }
-        const worker = await input.hooks.spawnWorker(decision.workerTask!);
+        const worker = await input.hooks.spawnWorker({
+          ...decision.workerTask!,
+          reason: decision.summary,
+          evidence: ensureKernel(state, input).evidenceRefs.slice(-4),
+        });
         state.observations.push(
           observe("worker.result", `${worker.summary}\n${worker.output}`),
         );

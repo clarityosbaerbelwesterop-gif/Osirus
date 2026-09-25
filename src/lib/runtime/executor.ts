@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { composeWorkflow } from "../arms/compose";
+import { composeWorkflow, missionFor } from "../arms/compose";
 import { analyseTask } from "../arms/thinking";
 import type { ArmId, RuntimeIdentity, TaskAnalysis } from "../arms/types";
 import { UnoRouterProvider } from "../models/unorouter";
@@ -295,6 +295,21 @@ export async function planRuntimeRun(input: {
     runId: input.runId,
     graph: composed.graph,
   });
+
+  // One mission state for the whole run, whichever capabilities it spans.
+  // Missing (a database without migration 017) degrades to per-stage state.
+  const { PgMissionStore } = await import("./missions");
+  await new PgMissionStore(input.identity.userId)
+    .create(
+      input.runId,
+      missionFor({
+        objective: input.objective,
+        composition: decision.composition,
+        contract: composed.contract,
+        analysis: decision.analysis,
+      }),
+    )
+    .catch(() => false);
 
   await setBudget({
     runId: input.runId,

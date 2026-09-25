@@ -712,6 +712,18 @@ export abstract class BaseArm implements AgentArm {
       await import("../agent/watchdog/hooks");
     const pulseLane = laneForArm(this.id);
 
+    // The mission this stage belongs to: what earlier capabilities
+    // established, with provenance, and what they ruled out.
+    const { seedFromMission, reconcileLoop, requestCapability } =
+      await import("./mission-runtime");
+    const missionSeed = await seedFromMission(context, this.id).catch(
+      () => null,
+    );
+    const subObjective =
+      typeof work.stageInput.subObjective === "string"
+        ? work.stageInput.subObjective
+        : null;
+
     const result = await runAgentLoop({
       objective: work.objective,
       directives: [
@@ -730,6 +742,12 @@ export abstract class BaseArm implements AgentArm {
             ]
           : []),
         ...handoffContext(context),
+        ...(missionSeed?.context ?? []),
+        ...(subObjective
+          ? [
+              `[your part of the mission] ${subObjective}. The rest of the objective is handled by other capabilities of this mission.`,
+            ]
+          : []),
         ...policyContext,
         ...(toolbox.performance.length
           ? [
@@ -761,20 +779,37 @@ export abstract class BaseArm implements AgentArm {
                 ? 0.3
                 : 0.45,
           falsifiers: assumption.check ? [assumption.check] : [],
-        })),
+        }))
+        .concat(
+          (missionSeed?.hypotheses ?? []).map((hypothesis) => ({
+            statement: hypothesis.statement,
+            confidence: hypothesis.confidence ?? 0.5,
+            falsifiers: hypothesis.falsifiers ?? [],
+          })),
+        ),
       task: {
         deliverables: taskModel?.deliverable ? [taskModel.deliverable] : [],
         constraints: [
           ...(taskModel?.constraints ?? []),
           ...(routing.analysis?.constraints ?? []),
+          ...(missionSeed?.task.constraints ?? []),
         ],
+        // The mission's contract is checked at mission level (the mission
+        // gate); seeding it here would gate every stage's FINISH on it.
         successCriteria:
           taskModel?.successCriteria ?? routing.analysis?.successCriteria ?? [],
         unknowns: taskModel?.unknowns ?? routing.analysis?.unknowns ?? [],
-        assumptions: (taskModel?.assumptions ?? []).map(
-          (assumption) => assumption.statement,
-        ),
-        openQuestions: taskModel?.unknowns ?? routing.analysis?.unknowns ?? [],
+        knownFacts: missionSeed?.task.knownFacts ?? [],
+        assumptions: [
+          ...(taskModel?.assumptions ?? []).map(
+            (assumption) => assumption.statement,
+          ),
+          ...(missionSeed?.task.assumptions ?? []),
+        ],
+        openQuestions: [
+          ...(taskModel?.unknowns ?? routing.analysis?.unknowns ?? []),
+          ...(missionSeed?.task.openQuestions ?? []),
+        ],
         plan: (planGraph?.nodes ?? []).map((node) => ({
           id: node.id,
           title: node.title,
@@ -848,6 +883,15 @@ export abstract class BaseArm implements AgentArm {
             );
           },
           onToolResult: (entry) => toolbox.record(entry),
+          // The running agent found its capability is not enough: add the
+          // one the mission needs, after this stage, with the reason.
+          spawnWorker: (task) =>
+            requestCapability(context, this.id, {
+              capability: task.capability ?? "general",
+              objective: task.objective,
+              reason: task.reason ?? "",
+              evidence: task.evidence ?? [],
+            }),
           retrieveMemory: async (query) => {
             const bundle = await runtime.memory.retrieveBundle({
               workspaceId: work.workspaceId,
@@ -966,6 +1010,7 @@ export abstract class BaseArm implements AgentArm {
       };
     }
     delete context.state.loopState;
+    await reconcileLoop(context, this.id, result.state.kernel, missionSeed);
 
     let answer = result.answer;
     if (!answer && result.status === "exhausted") {
@@ -1283,8 +1328,18 @@ export abstract class BaseArm implements AgentArm {
     );
     // In a composed run, leave the next arm a typed handoff: what this
     // segment established and whether it was verified. Never a transcript.
+    // The verdict and the handoff's facts also land on the mission.
+    const { handoffFor } = await import("../agent/handoff");
+    const { reconcileVerdict } = await import("./mission-runtime");
+    await reconcileVerdict(
+      context,
+      this.id,
+      verdict.status,
+      context.work.stageInput.composed === true
+        ? handoffFor(this.id, context.state, verdict.status)
+        : null,
+    );
     if (context.work.stageInput.composed === true) {
-      const { handoffFor } = await import("../agent/handoff");
       const entry = handoffFor(this.id, context.state, verdict.status);
       context.state.handoff = [
         ...readState<unknown[]>(context, "handoff", []),
@@ -1420,6 +1475,49 @@ export abstract class BaseArm implements AgentArm {
       { summary: verdict.summary, criteria: contract.successCriteria.length },
     );
 
+    // The mission gate (M39): every capability node needs verified
+    // evidence, none may be rejected, and no contradiction between them may
+    // stay open. Short of that, the capability that fell short gets one
+    // bounded repair before the contract is checked again.
+    const { gateVerdicts, requestRepair, missionStoreOf } =
+      await import("./mission-runtime");
+    const { assessMissionGate } = await import("../agent/mission");
+    const stored = await missionStoreOf(context)
+      .load(context.work.runId)
+      .catch(() => null);
+    const repository = context.runtime.repository as {
+      stageVerdicts?: (
+        runId: string,
+      ) => Promise<import("./mission-runtime").StageVerdictRow[]>;
+    };
+    let gate: import("../agent/mission").MissionGate | null = null;
+    let repairing = false;
+    if (stored && repository.stageVerdicts) {
+      const rows = await repository
+        .stageVerdicts(context.work.runId)
+        .catch(() => []);
+      const entries = [
+        ...gateVerdicts(rows).filter((entry) => !entry.meta),
+        {
+          key: `meta-${String(context.work.stageInput.segment ?? "")}`,
+          capability: this.id,
+          verdict: verdict.status,
+          meta: true,
+        },
+      ];
+      gate = assessMissionGate(stored.state, entries);
+      if (gate.status !== "complete") {
+        const failing =
+          entries.find(
+            (entry) =>
+              !("meta" in entry && entry.meta) && entry.verdict !== "verified",
+          ) ?? null;
+        repairing = await requestRepair(context, gate, failing).catch(
+          () => false,
+        );
+      }
+    }
+
     return {
       kind: "COMPLETE",
       output: {
@@ -1427,6 +1525,9 @@ export abstract class BaseArm implements AgentArm {
         summary: verdict.summary,
         checks: verdict.checks,
         successCriteria: contract.successCriteria,
+        mission: gate
+          ? { status: gate.status, missing: gate.missing, repairing }
+          : null,
       },
       verdict,
     };

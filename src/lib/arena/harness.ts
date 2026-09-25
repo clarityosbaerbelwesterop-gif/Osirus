@@ -1,8 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { MemoryPlanRevisionStore } from "../agent/plan";
-import { composeWorkflow } from "../arms/compose";
+import { composeWorkflow, missionFor } from "../arms/compose";
 import { armFor } from "../arms/registry";
 import type {
+  GraphAppender,
   ArmId,
   ArmRuntime,
   ArmStageContext,
@@ -12,7 +13,10 @@ import { MemoryWorkspaceStore } from "../coding/store";
 import type { ModelProvider, Usage } from "../models/provider";
 import { MemoryEvidenceStore } from "../research/store";
 import { routeObjective } from "../runtime/router-v2";
-import { topologicalOrder } from "../runtime/graph";
+import type { WorkflowNode } from "../runtime/graph";
+import { MemoryMissionStore } from "../runtime/missions";
+import { assessMissionGate, handoffLoss } from "../agent/mission";
+import { gateVerdicts } from "../arms/mission-runtime";
 import type { SandboxDriver } from "../sandbox/driver";
 import { ToolRegistry, type ToolAudit } from "../tools/registry";
 import { isFalseCompletion, type TaskResult } from "./metrics";
@@ -81,6 +85,15 @@ function meteredProvider(
   return metered;
 }
 
+/** A stable stage id per node key within one harness run. */
+function stageIdFactory() {
+  const ids = new Map<string, string>();
+  return (key: string) => {
+    if (!ids.has(key)) ids.set(key, randomUUID());
+    return ids.get(key)!;
+  };
+}
+
 export async function runArenaTask(
   task: ArenaTask,
   options: HarnessOptions,
@@ -91,6 +104,13 @@ export async function runArenaTask(
     hiddenCheck: { exitCode: number | null; output: string } | null;
     diff: string;
     stages: string[];
+    mission: {
+      gate: import("../agent/mission").MissionGate | null;
+      switches: number;
+      planRevisions: number;
+      facts: number;
+      handoffLoss: number;
+    } | null;
     actions: Array<{ action: string; toolId?: string; outcome: string }>;
   }
 > {
@@ -124,6 +144,45 @@ export async function runArenaTask(
   const planStore = new MemoryPlanRevisionStore();
   const evidence = new MemoryEvidenceStore();
   const approvals = new Map<string, string>();
+  // The run's mission and its graph, in memory: the same mission code as
+  // production, so a capability switch or a mission gate behaves here as it
+  // does there.
+  const missions = new MemoryMissionStore();
+  const stageLog: Array<{
+    ordinal: number;
+    verdict: string | null;
+    armId: string;
+    segment: number;
+    kind: string;
+  }> = [];
+  const stageIds = new Map<string, string>();
+  const newStageId = stageIdFactory();
+  const stageIdOf = (key: string) => {
+    const id = newStageId(key);
+    stageIds.set(key, id);
+    return id;
+  };
+  let nodes = new Map<string, WorkflowNode>();
+  const graphAppender: GraphAppender = {
+    append: async (input) => {
+      const after = [...stageIds.entries()].find(
+        ([, id]) => id === input.afterStageId,
+      )?.[0];
+      if (!after) throw new Error("append_after_unknown_stage");
+      for (const node of nodes.values())
+        if (
+          node.dependsOn.includes(after) &&
+          !node.dependsOn.includes(input.tailKey)
+        )
+          node.dependsOn = [...node.dependsOn, input.tailKey];
+      for (const node of input.nodes)
+        nodes.set(node.key, {
+          ...node,
+          dependsOn: node.dependsOn.length ? node.dependsOn : [after],
+        } as WorkflowNode);
+      return input.nodes.map((node) => node.key);
+    },
+  };
 
   const provider = meteredProvider(options.provider, counters);
   const repository = {
@@ -146,6 +205,7 @@ export async function runArenaTask(
     approvalStatus: async (id: string) => approvals.get(id) ?? null,
     getSessionMessages: async () => [],
     getSnapshot: async () => ({ run: { id: runId }, stages: [], events: [] }),
+    stageVerdicts: async () => stageLog,
     appendEvent: async () => ({ id: randomUUID() }),
   };
 
@@ -212,6 +272,8 @@ export async function runArenaTask(
       plans: () => planStore,
       evidence: () => evidence,
       fixture: () => task.fixture ?? [],
+      missions: () => missions,
+      graph: () => graphAppender,
       registry: () => {
         const registry = new ToolRegistry({
           audit,
@@ -249,13 +311,32 @@ export async function runArenaTask(
   if (options.stageInput)
     for (const node of composed.graph.nodes)
       node.input = { ...node.input, ...options.stageInput };
-  const order = topologicalOrder(composed.graph);
-  const nodes = new Map(composed.graph.nodes.map((node) => [node.key, node]));
+  nodes = new Map(composed.graph.nodes.map((node) => [node.key, node]));
+  await missions.create(
+    runId,
+    missionFor({
+      objective: task.objective,
+      composition,
+      contract: composed.contract,
+    }),
+  );
+  const order: string[] = [];
+  const settled = new Set<string>();
   const state: Record<string, unknown> = {};
   const verdicts: string[] = [];
   let status: TaskResult["status"] = "completed";
 
-  for (const [ordinal, key] of order.entries()) {
+  // Stages run in dependency order, re-read after every stage: a stage may
+  // add capability nodes to the graph while the run is under way.
+  for (let ordinal = 0; ; ordinal += 1) {
+    const key = [...nodes.values()].find(
+      (node) =>
+        !settled.has(node.key) &&
+        node.dependsOn.every((dependency) => settled.has(dependency)),
+    )?.key;
+    if (!key || ordinal > 60) break;
+    order.push(key);
+    settled.add(key);
     const spent = {
       cost: (options.spent?.costUsd ?? 0) + counters.costUsd,
       tokens:
@@ -284,7 +365,7 @@ export async function runArenaTask(
         sliceCount: 0,
         handoff: {},
         runId,
-        stageId: randomUUID(),
+        stageId: stageIdOf(key),
         organizationId: identity.organizationId,
         workspaceId: identity.workspaceId,
         sessionId,
@@ -339,6 +420,16 @@ export async function runArenaTask(
     }
     if (outcome?.kind === "COMPLETE" && outcome.verdict)
       verdicts.push(outcome.verdict.status);
+    stageLog.push({
+      ordinal,
+      verdict:
+        outcome?.kind === "COMPLETE" && outcome.verdict
+          ? outcome.verdict.status
+          : null,
+      armId: String(node.input.armId ?? "general"),
+      segment: Number(node.input.segment ?? 0),
+      kind: String(node.input.stageKind ?? ""),
+    });
     if (outcome?.kind === "BLOCKED") {
       notes.push(
         `${key} blocked: ${outcome.reason} (retry after ${outcome.retryAfterSeconds}s)`,
@@ -371,6 +462,19 @@ export async function runArenaTask(
     } catch {
       notes.push("Workspace cleanup failed; it expires on its own.");
     }
+  }
+
+  // The same mission gate finalizeRun applies in production.
+  const storedMission = await missions.load(runId);
+  const missionGate =
+    storedMission &&
+    (storedMission.state.nodes.length > 1 ||
+      storedMission.state.switches.length > 0)
+      ? assessMissionGate(storedMission.state, gateVerdicts(stageLog))
+      : null;
+  if (status === "completed" && missionGate?.status === "failed") {
+    status = "failed";
+    notes.push(`mission_incomplete: ${missionGate.missing.join(" ")}`);
   }
 
   const answer = String(state.answer ?? messages.at(-1) ?? "");
@@ -417,6 +521,15 @@ export async function runArenaTask(
       null,
     diff: String(state.workspaceDiff ?? ""),
     stages: order,
+    mission: storedMission
+      ? {
+          gate: missionGate,
+          switches: storedMission.state.switches.length,
+          planRevisions: storedMission.state.planRevisions.length,
+          facts: storedMission.state.facts.length,
+          handoffLoss: handoffLoss(storedMission.state),
+        }
+      : null,
     actions: steps.map((step) => ({
       action: step.action,
       ...(step.toolId ? { toolId: step.toolId } : {}),

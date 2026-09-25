@@ -18,6 +18,7 @@ import type { PulseObservation, PulseTaskSpec } from "./types";
 //   M36 research   RESEARCH L1–L5 (evidence ledger, contradictions)
 //   M37 math       MATH_SCIENCE L1–L5 (recomputation, counterexamples)
 //   M38            BUILDING, COMPUTER, TOOL_USE, MULTIMODAL L1–L5
+//   M39 generalist CROSS_DOMAIN L1–L5, one mission across capabilities
 //   M35 coding     CODING L1–L4, live only: a coding loop on the free model
 //                  takes longer than one tick, so these run where a live
 //                  runner exists (CI), not inside the scheduler tick.
@@ -206,6 +207,46 @@ async function cognitionSpecs(): Promise<PulseTaskSpec[]> {
   }));
 }
 
+async function crossDomainSpecs(): Promise<PulseTaskSpec[]> {
+  const { CROSS_DOMAIN_TASKS } = await import("./cross-domain-suite");
+  return CROSS_DOMAIN_TASKS.map((task) => ({
+    id: `m39:cross_domain:l${task.level}`,
+    family: "CROSS_DOMAIN",
+    level: task.level,
+    difficulty: task.difficulty,
+    version: 1,
+    source: "M39 generalist",
+    mode: "offline",
+    title: `CROSS_DOMAIN L${task.level}`,
+    run: async () => {
+      const record = await task.run("mission");
+      const derived: DerivedOutcome = record.falseCompletion
+        ? {
+            outcome: "FALSE_COMPLETION",
+            reason: "mission declared done against its evidence",
+          }
+        : record.completedAs === "complete" && record.verifiedSuccess
+          ? {
+              outcome: "VERIFIED_SUCCESS",
+              reason: "mission gate: every node verified",
+            }
+          : record.completedAs === "partial"
+            ? {
+                outcome: "PARTIAL",
+                reason: "mission gate: some nodes unverified",
+              }
+            : { outcome: "REJECTED", reason: "mission gate: failed" };
+      return observe(record, derived, {
+        capabilities: record.capabilities,
+        handoffLoss: record.handoffLoss,
+        evidenceCoverage: record.evidenceCoverage,
+        switches: record.switches,
+        planRevisions: record.planRevisions,
+      });
+    },
+  }));
+}
+
 async function codingLiveSpecs(): Promise<PulseTaskSpec[]> {
   const { PULSE_CODING_TASKS } =
     await import("../../intelligence/pulse/coding-suite");
@@ -295,6 +336,7 @@ export async function pulseCatalog(): Promise<PulseTaskSpec[]> {
     researchSpecs(),
     mathSpecs(),
     m38Specs(),
+    crossDomainSpecs(),
     codingLiveSpecs(),
   ]);
   return groups.flat();

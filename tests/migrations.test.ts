@@ -482,3 +482,24 @@ describe("migration 016", () => {
     expect(allowed).toEqual([...CAPABILITY_OUTCOMES]);
   });
 });
+
+describe("migration 017", () => {
+  const sql = migration("017_missions.sql");
+
+  it("keeps a run's mission under the run's own access rules", () => {
+    expect(sql).toContain(
+      "ALTER TABLE osirus.run_missions FORCE ROW LEVEL SECURITY;",
+    );
+    expect(sql).toMatch(
+      /USING \(osirus\.is_system\(\) OR osirus\.can_access_run\(run_id\)\)/,
+    );
+    expect(sql).toMatch(
+      /WITH CHECK \(osirus\.is_system\(\) OR osirus\.can_manage_run\(run_id\)\)/,
+    );
+    // No DELETE: a mission goes when its run goes.
+    expect(sql).toContain(
+      "GRANT SELECT, INSERT, UPDATE ON osirus.run_missions TO osirus_app;",
+    );
+    expect(sql).toContain("REFERENCES osirus.runs(id) ON DELETE CASCADE");
+  });
+});

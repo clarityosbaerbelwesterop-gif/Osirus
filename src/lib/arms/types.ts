@@ -172,6 +172,34 @@ export type RuntimeStores = {
   registry?: () => import("../tools/registry").ToolRegistry;
   /** Files a new workspace starts from when the objective names no repository. */
   fixture?: () => Array<{ path: string; content: string }>;
+  /** The run's mission state (M39); osirus.run_missions when absent. */
+  missions?: () => import("../runtime/missions").MissionStore;
+  /** Adds stages to the running graph (M39); osirus.run_stages when absent. */
+  graph?: () => GraphAppender;
+};
+
+/** A node added to a running graph: depends on `after` or on other new nodes. */
+export type AppendedNode = {
+  key: string;
+  name: string;
+  capability: import("../runtime/types").Capability;
+  input: Record<string, unknown>;
+  dependsOn: string[];
+  retryPolicy?: Record<string, unknown>;
+  requiresVerification?: boolean;
+};
+
+export type GraphAppender = {
+  /**
+   * Insert `nodes` after the stage `afterStageId`. New roots depend on it;
+   * every stage that depended on it also waits for `tailKey`.
+   */
+  append(input: {
+    runId: string;
+    afterStageId: string;
+    nodes: AppendedNode[];
+    tailKey: string;
+  }): Promise<string[]>;
 };
 
 export type ArmRuntime = {

@@ -684,6 +684,33 @@ export class RuntimeRepository {
     );
   }
 
+  /** Each stage's verdict with the arm and segment it belongs to (M39). */
+  async stageVerdicts(runId: string) {
+    const rows = await queryAs<{
+      ordinal: number;
+      verifier_status: string | null;
+      arm_id: string | null;
+      segment: number | null;
+      stage_kind: string | null;
+    }>(
+      this.actorId,
+      `select ordinal, verifier_status, input ->> 'armId' as arm_id,
+              (input ->> 'segment')::int as segment,
+              input ->> 'stageKind' as stage_kind
+         from osirus.run_stages
+        where run_id = $1::uuid
+        order by ordinal`,
+      [runId],
+    );
+    return rows.map((row) => ({
+      ordinal: Number(row.ordinal),
+      verdict: row.verifier_status,
+      armId: row.arm_id ?? "general",
+      segment: row.segment === null ? 0 : Number(row.segment),
+      kind: row.stage_kind ?? "",
+    }));
+  }
+
   async getSnapshot(runId: string): Promise<RunSnapshot> {
     const run = await this.getRun(runId);
     if (!run) throw new Error("run_not_found");
