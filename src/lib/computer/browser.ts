@@ -6,6 +6,7 @@ import {
   type QaReport,
 } from "../coding/browser-qa";
 import type { SandboxHandle } from "../sandbox/driver";
+import { collectScreenshots, type ScreenshotCollection } from "./screenshots";
 import { BROWSER_SCRIPT } from "./script";
 
 // The computer/visual arm: a real browser inside the sandbox VM.
@@ -123,6 +124,12 @@ export class SandboxBrowser implements BrowserQa {
         shotDir: `${DIR}/shots`,
       }),
     ).toString("base64");
+    // Start from an empty folder so an image from an earlier session is
+    // never passed off as this one's.
+    await this.handle.runCommand({
+      cmd: "rm",
+      args: ["-rf", `${DIR}/shots`],
+    });
     await this.handle.runCommand({
       cmd: "mkdir",
       args: ["-p", `${DIR}/shots`],
@@ -146,6 +153,25 @@ export class SandboxBrowser implements BrowserQa {
     return JSON.parse(
       result.stdout.slice(marker + "OSIRUS_REPORT ".length),
     ) as BrowserSession;
+  }
+
+  /** Read the images the last session saved back out of the sandbox. */
+  async screenshots(
+    session: Pick<BrowserSession, "viewports">,
+  ): Promise<ScreenshotCollection> {
+    return collectScreenshots(this.handle, `${DIR}/shots`, session.viewports);
+  }
+
+  /** A QA run that also returns the images it took. */
+  async runWithScreenshots(
+    url: string,
+    expectations: { selectors?: string[]; texts?: string[] },
+  ): Promise<{ report: QaReport; screenshots: ScreenshotCollection }> {
+    const session = await this.session({ url, ...expectations });
+    return {
+      report: reportFrom(url, session, expectations),
+      screenshots: await this.screenshots(session),
+    };
   }
 
   async run(
