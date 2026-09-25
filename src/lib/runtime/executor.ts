@@ -6,6 +6,7 @@ import {
 } from "../arms/compose";
 import { analyseTask } from "../arms/thinking";
 import type { ArmId, RuntimeIdentity, TaskAnalysis } from "../arms/types";
+import { freeRoleModels } from "../models/free";
 import { UnoRouterProvider } from "../models/unorouter";
 import { recordingProvider } from "../models/recording";
 import { resolveProductPolicy } from "../strategy/resolve";
@@ -194,6 +195,8 @@ export async function planRuntimeRun(input: {
   const provider = input.policy?.model
     ? new UnoRouterProvider({
         model: input.policy.model,
+        // M48: a model per role, from the free-model allowlist only.
+        roleModels: freeRoleModels(input.policy.genome.modelUse?.roles),
         maxRateLimitWaitSeconds: 60,
       })
     : new UnoRouterProvider();

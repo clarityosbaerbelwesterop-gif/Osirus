@@ -167,10 +167,72 @@ export const genomeSchema = z
       })
       .partial()
       .optional(),
+    /**
+     * M48: how Osirus uses the model -- no training, no weights. Sampling,
+     * the order of the system prompt, how tools are described, how much of
+     * a handoff is passed on, a self-check before FINISH, and (from the
+     * free-model allowlist only) a model per role. Absent keys are today's
+     * behaviour.
+     */
+    modelUse: z
+      .object({
+        sampling: z
+          .object({
+            temperature: z.number().min(0).max(1.5),
+            topP: z.number().min(0.05).max(1),
+          })
+          .partial(),
+        promptStyle: z.enum(["contract_first", "task_first"]),
+        toolDescriptions: z.enum(["summary", "summary_with_inputs"]),
+        handoff: z.enum(["full", "compact"]),
+        critique: z.enum(["none", "self_check"]),
+        roles: z
+          .record(
+            z.enum([
+              "FAST",
+              "STRONG",
+              "THINKING",
+              "CODING",
+              "RESEARCH",
+              "MATH",
+              "VERIFY",
+            ]),
+            z.string().regex(/^[A-Za-z0-9._:/-]{1,120}$/),
+          )
+          .optional(),
+      })
+      .partial()
+      .optional(),
   })
   .strict();
 
 export type StrategyGenome = z.infer<typeof genomeSchema>;
+
+export type ModelUse = {
+  sampling: { temperature?: number; topP?: number } | undefined;
+  promptStyle: "contract_first" | "task_first";
+  toolDescriptions: "summary" | "summary_with_inputs";
+  handoff: "full" | "compact";
+  critique: "none" | "self_check";
+};
+
+export function modelUseUnder(
+  policy: Pick<RuntimePolicy, "genome"> | null | undefined,
+): ModelUse {
+  const use = policy?.genome.modelUse;
+  const sampling =
+    use?.sampling &&
+    (use.sampling.temperature !== undefined || use.sampling.topP !== undefined)
+      ? use.sampling
+      : undefined;
+  return {
+    sampling,
+    promptStyle: use?.promptStyle ?? "contract_first",
+    toolDescriptions: use?.toolDescriptions ?? "summary",
+    handoff: use?.handoff ?? "full",
+    critique: use?.critique ?? "none",
+  };
+}
 
 export type Architecture = {
   planning: "direct" | "planner_executor";
@@ -337,6 +399,10 @@ export function directivesUnder(policy: RuntimePolicy, armId: string) {
   if (armId === "research" && research?.citeEverySentence)
     out.push(
       "Every factual sentence carries a citation marker to a retrieved source; drop any sentence you cannot cite.",
+    );
+  if (policy.genome.modelUse?.critique === "self_check")
+    out.push(
+      "Before FINISH, re-derive the key result by a different route (recompute, re-read the source, re-run the check) and state what that check showed.",
     );
   return [...out, ...(policy.genome.directives ?? [])];
 }

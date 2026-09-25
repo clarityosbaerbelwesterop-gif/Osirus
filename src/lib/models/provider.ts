@@ -10,6 +10,12 @@ export type Usage = {
   cost?: number;
 };
 
+/**
+ * M48: sampling a strategy may evolve. Sent only when set; absent means the
+ * provider's defaults, exactly as before.
+ */
+export type Sampling = { temperature?: number; topP?: number };
+
 export type ModelStreamEvent =
   { type: "delta"; text: string } | { type: "usage"; usage: Usage };
 
@@ -19,12 +25,14 @@ export interface ModelProvider {
     role: ModelRole;
     messages: unknown[];
     signal?: AbortSignal;
+    sampling?: Sampling;
   }): AsyncIterable<ModelStreamEvent>;
   complete(input: {
     requestId: string;
     role: ModelRole;
     messages: unknown[];
     signal?: AbortSignal;
+    sampling?: Sampling;
   }): Promise<{ text: string; usage: Usage }>;
   structured<T>(input: {
     requestId: string;
@@ -32,6 +40,7 @@ export interface ModelProvider {
     messages: unknown[];
     validate: (value: unknown) => T;
     signal?: AbortSignal;
+    sampling?: Sampling;
   }): Promise<{ value: T; usage: Usage }>;
   /** The configured model identifier for a role. */
   modelId(role: ModelRole): string;

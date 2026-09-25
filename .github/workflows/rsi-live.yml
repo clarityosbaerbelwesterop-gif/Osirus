@@ -51,6 +51,13 @@ jobs:
           cache: npm
       - if: steps.take.outputs.status == '200'
         run: npm ci
+      - name: List the models the key can reach (IDs only, never the key)
+        # M48: a second free model is put on a role only once it is known to
+        # exist. Manual runs print the list; hourly runs skip it.
+        if: github.event_name == 'workflow_dispatch'
+        env:
+          UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+        run: node scripts/list-unorouter-models.mjs | head -60
       - name: Run the order on the free model
         if: steps.take.outputs.status == '200'
         env:

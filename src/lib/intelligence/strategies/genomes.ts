@@ -268,6 +268,51 @@ const LIBRARY: LibraryEntry[] = [
     intervention: { architecture: { evidence: "first" } },
     expected: "Fewer unsupported claims in compound tasks.",
   },
+  // M48: model-usage candidates. The same model, used differently.
+  ...(["coding", "math_science", "research"] as const).flatMap((arm) => [
+    {
+      gap: "verification" as const,
+      arm,
+      statement:
+        "The model finishes on its first derivation; asking it to re-derive the key result by another route before FINISH catches slips.",
+      intervention: { modelUse: { critique: "self_check" as const } },
+      expected: "Fewer false completions for one or two more steps.",
+    },
+    {
+      gap: "tool" as const,
+      arm,
+      statement:
+        "The model asks for tool schemas or calls tools with wrong fields; showing each tool's input fields up front avoids it.",
+      intervention: {
+        modelUse: { toolDescriptions: "summary_with_inputs" as const },
+      },
+      expected: "Fewer failed tool calls and schema requests.",
+    },
+    {
+      gap: "planning" as const,
+      arm,
+      statement:
+        "The task is buried under the contract; leading the prompt with it keeps the model on the objective.",
+      intervention: { modelUse: { promptStyle: "task_first" as const } },
+      expected: "Same or better verified rate; fewer off-objective steps.",
+    },
+    {
+      gap: "knowledge" as const,
+      arm,
+      statement:
+        "Sampling noise changes answers between runs; a low temperature makes derivations reproducible.",
+      intervention: { modelUse: { sampling: { temperature: 0.2 } } },
+      expected: "Fewer inconsistent answers on the same task.",
+    },
+  ]),
+  {
+    gap: "context",
+    arm: "coding",
+    statement:
+      "Full handoffs crowd the executor's context; compact ones keep the kind, verdict and first facts.",
+    intervention: { modelUse: { handoff: "compact" } },
+    expected: "Same verified rate at fewer tokens in compound runs.",
+  },
 ];
 
 function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
@@ -297,6 +342,9 @@ function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
       : {}),
     ...(base.compute || patch.compute
       ? { compute: { ...base.compute, ...patch.compute } }
+      : {}),
+    ...(base.modelUse || patch.modelUse
+      ? { modelUse: { ...base.modelUse, ...patch.modelUse } }
       : {}),
     ...(base.directives || patch.directives
       ? {
@@ -506,6 +554,14 @@ export function describeGenome(genome: StrategyGenome) {
   if (wiring?.planning === "planner_executor") parts.push("planner → executor");
   if (wiring?.memory === "late") parts.push("memory on demand");
   if (wiring?.evidence === "first") parts.push("evidence first");
+  const use = genome.modelUse;
+  if (use?.promptStyle === "task_first") parts.push("task-first prompt");
+  if (use?.toolDescriptions === "summary_with_inputs")
+    parts.push("tool inputs shown");
+  if (use?.handoff === "compact") parts.push("compact handoffs");
+  if (use?.critique === "self_check") parts.push("self-check before finish");
+  if (use?.sampling?.temperature !== undefined)
+    parts.push(`temperature ${use.sampling.temperature}`);
   if (genome.compute?.mode === "adaptive")
     parts.push(
       `adaptive compute${genome.compute.table ? ` (${Object.keys(genome.compute.table).join(", ")} learned)` : ""}`,
