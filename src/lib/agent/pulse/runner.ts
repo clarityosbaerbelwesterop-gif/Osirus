@@ -30,6 +30,14 @@ import type {
 // moves on, so one broken task cannot stall the pulse.
 
 export const PULSE_INTERVAL_MS = 60 * 60 * 1000;
+/**
+ * How much earlier than a full interval the next cycle may start. The
+ * hourly trigger (GitHub schedule at minute 7) starts a few minutes late by
+ * a different amount each hour; without slack, a tick that lands slightly
+ * less than an hour after the last cycle's start finds it "not due" and the
+ * pulse silently runs every other hour.
+ */
+export const PULSE_DUE_SLACK_MS = 15 * 60 * 1000;
 export const PULSE_BUDGET_MS = 45_000;
 export const PULSE_LEASE_SECONDS = 120;
 /** A running cycle older than this is abandoned and a new one starts. */
@@ -265,7 +273,7 @@ export async function runPulseSlice(
     for (const result of results)
       byOutcome[result.outcome] = (byOutcome[result.outcome] ?? 0) + 1;
     const nextDue = Math.max(
-      Date.parse(cycle.startedAt) + PULSE_INTERVAL_MS,
+      Date.parse(cycle.startedAt) + PULSE_INTERVAL_MS - PULSE_DUE_SLACK_MS,
       now() + 5 * 60 * 1000,
     );
     await input.store.completeCycle(
