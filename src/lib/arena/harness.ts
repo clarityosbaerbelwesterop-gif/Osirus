@@ -112,6 +112,11 @@ export async function runArenaTask(
       planRevisions: number;
       facts: number;
       handoffLoss: number;
+      hypotheses: {
+        confirmed: number;
+        rejected: number;
+        rejectedWithCounter: number;
+      };
     } | null;
     actions: Array<{ action: string; toolId?: string; outcome: string }>;
   }
@@ -532,6 +537,17 @@ export async function runArenaTask(
           planRevisions: storedMission.state.planRevisions.length,
           facts: storedMission.state.facts.length,
           handoffLoss: handoffLoss(storedMission.state),
+          hypotheses: {
+            confirmed: storedMission.state.hypotheses.filter(
+              (h) => h.status === "CONFIRMED" || h.status === "SUPPORTED",
+            ).length,
+            rejected: storedMission.state.hypotheses.filter(
+              (h) => h.status === "REJECTED",
+            ).length,
+            rejectedWithCounter: storedMission.state.hypotheses.filter(
+              (h) => h.status === "REJECTED" && h.counter.length > 0,
+            ).length,
+          },
         }
       : null,
     actions: steps.map((step) => ({

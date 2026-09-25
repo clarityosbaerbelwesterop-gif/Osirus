@@ -8,6 +8,8 @@ import {
   excludedFailureClass,
   toExperienceOutcome,
 } from "../../verification/outcome";
+import type { StrategyGenome } from "../../strategy/runtime";
+import { configurationVector } from "../meta/telemetry";
 import { PgIntelStore } from "../store/pg-store";
 
 // What a customer run teaches the Intelligence Plane: operational metrics
@@ -23,6 +25,8 @@ type StageRow = {
   arm_id: string | null;
   strategy_version_id: string | null;
   model: string | null;
+  assignment: string | null;
+  genome: StrategyGenome | null;
 };
 
 export async function captureProductExperience(input: {
@@ -48,11 +52,13 @@ export async function captureProductExperience(input: {
   // Foundry trials are recorded by the research loop, with their label.
   if (!run || Number(run.priority) < 0) return;
   if (run.status !== "completed" && run.status !== "failed") return;
-  const [stages, calls, tools] = await Promise.all([
+  const [stages, calls, tools, skills] = await Promise.all([
     as<StageRow>(
       `select name, verifier_status, input ->> 'armId' as arm_id,
               input -> 'policy' ->> 'strategyVersionId' as strategy_version_id,
-              input -> 'policy' ->> 'model' as model
+              input -> 'policy' ->> 'model' as model,
+              input -> 'policy' ->> 'assignment' as assignment,
+              input -> 'policy' -> 'genome' as genome
          from osirus.run_stages where run_id = $1::uuid order by ordinal`,
       [input.runId],
     ),
@@ -73,6 +79,12 @@ export async function captureProductExperience(input: {
     as<{ tool_name: string }>(
       `select distinct tool_name from osirus.tool_calls
         where run_id = $1::uuid limit 40`,
+      [input.runId],
+    ),
+    // M42: which skill versions the run actually selected.
+    as<{ skill: string }>(
+      `select distinct skill_id || '@' || coalesce(skill_version, '?') as skill
+         from osirus.skill_usage where run_id = $1::uuid limit 24`,
       [input.runId],
     ),
   ]);
@@ -108,9 +120,20 @@ export async function captureProductExperience(input: {
       null,
     model:
       stages.find((stage) => stage.model)?.model ?? calls[0]?.model ?? null,
-    skills: [],
+    skills: skills.map((row) => row.skill),
     tools: tools.map((tool) => tool.tool_name),
-    trajectory: { arm: arms.join("+"), stages: stages.map((s) => s.name) },
+    trajectory: {
+      arm: arms.join("+"),
+      stages: stages.map((s) => s.name),
+      // M42: the configuration the run served, for the online/offline
+      // bridge: product metrics weight the agenda, never train anything.
+      configuration: configurationVector({
+        genome: stages.find((stage) => stage.genome)?.genome ?? undefined,
+        model:
+          stages.find((stage) => stage.model)?.model ?? calls[0]?.model ?? null,
+        skills: skills.map((row) => row.skill),
+      }),
+    },
     verification: {
       verdicts,
       capabilityOutcome: derived.outcome,
@@ -129,6 +152,10 @@ export async function captureProductExperience(input: {
     // Pseudonymous: one row per run, without the run's id.
     fingerprint: fingerprint("product", input.runId),
     partition: null,
-    provenance: { kind: "product_run_metrics" },
+    provenance: {
+      kind: "product_run_metrics",
+      assignment:
+        stages.find((stage) => stage.assignment)?.assignment ?? "champion",
+    },
   });
 }

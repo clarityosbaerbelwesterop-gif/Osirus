@@ -43,6 +43,26 @@ export const genomeSchema = z
         maxActive: z.number().int().min(0).max(12),
         maxP0: z.number().int().min(0).max(8),
         maxTokens: z.number().int().min(0).max(8000),
+        /**
+         * M43: candidate or experimental skill versions ("skillId@version")
+         * this policy may load. Only a trial or canary names them; the
+         * product loads active (or pinned) versions.
+         */
+        include: z
+          .array(z.string().regex(/^[\w.:-]{1,80}@[\w.-]{1,40}$/))
+          .max(4),
+      })
+      .partial()
+      .optional(),
+    /**
+     * M43: generated tool candidates this policy may use. Generated tools
+     * are read-only, low risk and run only in the isolated executor.
+     */
+    tools: z
+      .object({
+        include: z
+          .array(z.string().regex(/^gen\.[a-z0-9_]{2,40}@v\d{1,3}$/))
+          .max(4),
       })
       .partial()
       .optional(),

@@ -503,3 +503,41 @@ describe("migration 017", () => {
     expect(sql).toContain("REFERENCES osirus.runs(id) ON DELETE CASCADE");
   });
 });
+
+describe("migration 018", () => {
+  const sql = migration("018_capability_synthesis.sql");
+
+  it("only widens CHECKs, so every existing row still satisfies them", () => {
+    const old012 = migration("012_intelligence_foundry.sql");
+    for (const name of [
+      "learning_artifacts_kind_check",
+      "learning_artifacts_status_check",
+      "generation_runs_kind_check",
+      "strategy_versions_status_check",
+    ]) {
+      const before = new RegExp(
+        `CONSTRAINT ${name} CHECK \\(\\w+ = ANY \\(ARRAY\\[([^\\]]+)\\]`,
+      ).exec(old012)?.[1];
+      const after = new RegExp(
+        `ADD CONSTRAINT ${name} CHECK \\(\\w+ = ANY \\(ARRAY\\[([^\\]]+)\\]`,
+      ).exec(sql)?.[1];
+      expect(before, name).toBeTruthy();
+      const values = (list: string) => list.match(/'[^']+'/g) ?? [];
+      for (const value of values(before!))
+        expect(values(after!), `${name} ${value}`).toContain(value);
+    }
+  });
+
+  it("adds skill lifecycle columns with defaults that keep today's behaviour", () => {
+    expect(sql).toContain(
+      "ALTER TABLE osirus.skill_definitions ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';",
+    );
+    expect(sql).toContain(
+      "ALTER TABLE osirus.skill_versions ADD COLUMN IF NOT EXISTS status text NOT NULL DEFAULT 'active';",
+    );
+    // No new grants, no policy changes, nothing dropped but CHECKs replaced.
+    expect(sql).not.toMatch(
+      /\bGRANT\b|\bCREATE POLICY\b|\bDROP TABLE\b|\bDROP COLUMN\b/,
+    );
+  });
+});

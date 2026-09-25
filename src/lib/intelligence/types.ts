@@ -108,7 +108,8 @@ export type StrategyStatus =
   | "active"
   | "degraded"
   | "rejected"
-  | "deprecated";
+  | "deprecated"
+  | "quarantined";
 
 export type StrategyVersion = {
   id: string;
@@ -152,6 +153,16 @@ export type TrialResult = {
     actions: Array<{ action: string; toolId?: string; outcome: string }>;
     /** The change it made (coding) or its final answer, capped. */
     output?: string;
+    /** M42: what the mission recorded about how the run reasoned. */
+    cognition?: {
+      hypotheses: {
+        confirmed: number;
+        rejected: number;
+        rejectedWithCounter: number;
+      };
+      switches: number;
+      planRevisions: number;
+    };
   };
 };
 
@@ -174,6 +185,10 @@ export type Hypothesis = {
   statement: string;
   intervention: Partial<StrategyGenome>;
   expected: string;
+  /** M42: set on an ablation variant; the winner's changed fields. */
+  ablationOf?: string[];
+  /** M42: where the hypothesis came from (library, estimator, experience). */
+  origin?: string;
 };
 
 export type ExperimentDecision = {
@@ -246,6 +261,10 @@ export type Experience = {
     actions?: Array<{ action: string; toolId?: string; outcome: string }>;
     /** The produced change or answer, capped; Foundry tasks only. */
     output?: string;
+    /** M42 cognitive telemetry (meta/telemetry.ts). */
+    telemetry?: import("./meta/telemetry").CognitiveTelemetry;
+    /** M42 configuration vector, for credit assignment. */
+    configuration?: Record<string, string>;
   };
   verification: {
     verdicts: string[];
@@ -278,7 +297,11 @@ export type ArtifactKind =
   | "curriculum_task"
   | "training_example"
   | "failure_pattern"
-  | "router_stat";
+  | "router_stat"
+  | "procedure"
+  | "tool_candidate"
+  | "meta_policy"
+  | "ablation_result";
 
 export type LearningArtifact = {
   id: string;
@@ -289,7 +312,7 @@ export type LearningArtifact = {
   content: Record<string, unknown>;
   evidence: Record<string, unknown>;
   support: number;
-  status: "proposed" | "active" | "superseded" | "rejected";
+  status: "proposed" | "active" | "superseded" | "rejected" | "quarantined";
   fingerprint: string;
 };
 
@@ -336,6 +359,8 @@ export type ResearchCycle = {
     experimentId?: string;
     gapIds?: string[];
     hypotheses?: Hypothesis[];
+    /** M42: the ablation plan this cycle's hypotheses test, if any. */
+    ablationId?: string | null;
     bestChallengerId?: string | null;
     decision?: ExperimentDecision;
     log?: Array<{ at: string; phase: CyclePhase; note: string }>;
@@ -354,7 +379,10 @@ export type GenerationRun = {
     | "red"
     | "mutation"
     | "dataset"
-    | "skill_evolution";
+    | "skill_evolution"
+    | "ablation"
+    | "procedure_mining"
+    | "tool_synthesis";
   config: Record<string, unknown>;
   produced: number;
   verified: number;

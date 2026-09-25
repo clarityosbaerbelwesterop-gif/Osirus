@@ -1,3 +1,4 @@
+import { changedFields } from "../meta/credit";
 import { describeGenome } from "../strategies/genomes";
 import { fingerprint } from "../evals/random";
 import type { IntelStore } from "../store/store";
@@ -166,6 +167,7 @@ export async function compileExperience(
             delta > 0 ? "improves" : delta < 0 ? "worsens" : "no_effect",
           probabilityBetter: comparison.probabilityBetter,
           signTestP: comparison.signTestP,
+          confounded: changedFields(input.champion.genome, version.genome),
         },
         evidence: {
           design: "paired champion/challenger on identical tasks",
@@ -175,10 +177,13 @@ export async function compileExperience(
         },
         support: comparison.tasks,
         // A supported effect is recorded as such only when it is clear; a
-        // small difference stays a proposal.
+        // small difference stays a proposal. M42: a challenger that changed
+        // several fields at once is confounded -- no single cause is named
+        // until an ablation isolates one (meta/foundry-meta.ts).
         status:
-          comparison.probabilityBetter >= 0.85 ||
-          comparison.probabilityBetter <= 0.15
+          changedFields(input.champion.genome, version.genome).length < 2 &&
+          (comparison.probabilityBetter >= 0.85 ||
+            comparison.probabilityBetter <= 0.15)
             ? "active"
             : "proposed",
         fingerprint: fingerprint("causal", version.id, comparison.partition),

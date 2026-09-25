@@ -249,6 +249,12 @@ function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
     ...(base.team || patch.team
       ? { team: { ...base.team, ...patch.team } }
       : {}),
+    ...(base.skills || patch.skills
+      ? { skills: { ...base.skills, ...patch.skills } }
+      : {}),
+    ...(base.tools || patch.tools
+      ? { tools: { ...base.tools, ...patch.tools } }
+      : {}),
     ...(base.directives || patch.directives
       ? {
           directives: [
