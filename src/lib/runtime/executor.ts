@@ -198,6 +198,9 @@ export async function planRuntimeRun(input: {
         // M48: a model per role, from the free-model allowlist only.
         roleModels: freeRoleModels(input.policy.genome.modelUse?.roles),
         maxRateLimitWaitSeconds: 60,
+        // M49: a strategy trial (Foundry / RSI) is P4 -- it yields free
+        // model capacity to user requests.
+        priority: "P4",
       })
     : new UnoRouterProvider();
 

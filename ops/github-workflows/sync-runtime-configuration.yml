@@ -1,0 +1,73 @@
+name: Sync runtime configuration
+
+on:
+  push:
+    branches: [main, build/m1-m5-production-gate]
+    paths:
+      - .github/workflows/sync-runtime-configuration.yml
+      - scripts/sync-vercel-runtime-env.mjs
+      - scripts/lib/vercel-env.mjs
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Vercel environment to synchronize
+        required: true
+        type: choice
+        default: both
+        options: [preview, production, both]
+      model_policy:
+        description: free-first (default; never needs paid credit) or configured-first
+        required: true
+        type: choice
+        default: free-first
+        options: [free-first, configured-first]
+      primary_model:
+        description: Optional exact model ID listed by /v1/models. Empty = verified free-model pool. A paid ID requires configured-first.
+        required: false
+        type: string
+      rotate_auth_cookie_secret:
+        description: Rotate the shared Neon Auth cookie secret (invalidates sessions)
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osirus-runtime-configuration
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    # Never expose deployment credentials to arbitrary pull-request code.
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/build/m1-m5-production-gate'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+      VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      NEON_AUTH_URL: ${{ secrets.NEON_AUTH_URL }}
+      NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}
+      UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+      UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
+      UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
+      # M49: free-model-first. The old grok-4.6 default (and the repository
+      # variable that pinned it) is gone: every role is rewritten to the
+      # verified free pool unless a dispatch explicitly names a listed model.
+      OSIRUS_MODEL_POLICY: ${{ inputs.model_policy || 'free-first' }}
+      OSIRUS_PRIMARY_MODEL: ${{ inputs.primary_model || '' }}
+      OSIRUS_SYNC_TARGET: ${{ inputs.target || 'both' }}
+      # Preview values provisioned by the Vercel-Neon integration are pinned to a
+      # git branch, so coverage has to be judged against the branch being synced.
+      OSIRUS_SYNC_GIT_BRANCH: ${{ github.ref_name }}
+      OSIRUS_ROTATE_AUTH_COOKIE_SECRET: ${{ inputs.rotate_auth_cookie_secret || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Synchronize GitHub runtime configuration to Vercel
+        run: node scripts/sync-vercel-runtime-env.mjs

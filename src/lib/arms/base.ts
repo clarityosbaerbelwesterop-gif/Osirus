@@ -1,3 +1,4 @@
+import { failureMetadata } from "../models/failure-report";
 import { buildFirstBrain } from "../context/builder";
 import {
   refusalDelaySeconds,
@@ -662,6 +663,7 @@ export abstract class BaseArm implements AgentArm {
             status: "failed",
             latencyMs: Date.now() - startedAt,
             errorCode: modelErrorCode(error, "decision_failed"),
+            responseMetadata: failureMetadata(error),
           })
           .catch(() => undefined);
         throw error;
@@ -1299,6 +1301,7 @@ export abstract class BaseArm implements AgentArm {
             status: "failed",
             latencyMs: Date.now() - startedAt,
             errorCode: modelErrorCode(error, "structured_call_failed"),
+            responseMetadata: failureMetadata(error),
           })
           .catch(() => undefined);
         throw error;
@@ -1403,6 +1406,7 @@ export abstract class BaseArm implements AgentArm {
           status: "failed",
           latencyMs: Date.now() - startedAt,
           errorCode: modelErrorCode(error, "model_call_failed"),
+          responseMetadata: failureMetadata(error),
         })
         .catch(() => undefined);
       throw error;
@@ -1414,7 +1418,14 @@ export abstract class BaseArm implements AgentArm {
       outputTokens: usage.outputTokens,
       cost: usage.cost,
       latencyMs: Date.now() - startedAt,
-      responseMetadata: { streamed: true, armId: this.id },
+      responseMetadata: {
+        streamed: true,
+        armId: this.id,
+        servedModel:
+          runtime.provider.servedModel?.(
+            `${work.runId}:${work.stageId}:${work.attemptNumber}`,
+          ) ?? null,
+      },
     });
 
     if (answer.trim().length === 0) {

@@ -1,10 +1,17 @@
 import { randomBytes } from "node:crypto";
 import {
+  branchPinnedRows,
   coversTargets,
+  FREE_POOL_SENTINEL,
   hasAnyValue,
-  isAllowedPrimaryModel,
+  MODEL_ROLE_KEYS,
   optionalSecret,
+  parseModelPolicy,
   parseTargetList,
+  rankFreeModels,
+  resolveRoleModel,
+  staleTargets,
+  UNOROUTER_KEY_NAMES,
   uncoveredTargets,
 } from "./lib/vercel-env.mjs";
 
@@ -39,22 +46,45 @@ async function vercelRequest(path, init = {}) {
   return response.json();
 }
 
-async function availableModelIds(apiKey) {
-  const response = await fetch("https://api.unorouter.com/v1/models", {
-    headers: { Authorization: `Bearer ${apiKey}` },
-  });
-  if (!response.ok) {
-    throw new Error(
-      `Unable to verify the configured UnoRouter model (${response.status})`,
-    );
+// Model IDs Osirus has previously run successfully (src/lib/models/free.ts).
+const KNOWN_FREE_MODELS = ["deepseek-v4-pro-0813:free"];
+
+/**
+ * GET /v1/models for one key. Returns the HTTP status and the listed IDs;
+ * never prints or returns the key, and never prints a response body.
+ */
+async function listModels(apiKey) {
+  try {
+    const response = await fetch("https://api.unorouter.com/v1/models", {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      signal: AbortSignal.timeout(15_000),
+    });
+    if (!response.ok) return { status: response.status, ids: new Set() };
+    const body = await response.json();
+    const models = Array.isArray(body?.data) ? body.data : [];
+    return {
+      status: response.status,
+      ids: new Set(
+        models
+          .map((model) => (typeof model?.id === "string" ? model.id : null))
+          .filter(Boolean),
+      ),
+    };
+  } catch {
+    return { status: "network_error", ids: new Set() };
   }
-  const body = await response.json();
-  const models = Array.isArray(body.data) ? body.data : [];
-  return new Set(
-    models
-      .map((model) => (typeof model?.id === "string" ? model.id : null))
-      .filter(Boolean),
-  );
+}
+
+/** The public catalog needs no key; failure only loses annotations. */
+async function publicCatalog() {
+  try {
+    const response = await fetch("https://api.unorouter.com/api/pricing", {
+      signal: AbortSignal.timeout(15_000),
+    });
+    return response.ok ? await response.json() : null;
+  } catch {
+    return null;
+  }
 }
 
 const teamId = required("VERCEL_TEAM_ID");
@@ -62,25 +92,53 @@ const projectId = required("VERCEL_PROJECT_ID");
 const neonAuthUrl = (
   optionalSecret(process.env.NEON_AUTH_URL) ?? DEFAULT_NEON_AUTH_URL
 ).replace(/\/$/, "");
-const unoRouterKeyOne = required("UNOROUTER_API_KEY_1");
-const unoRouterKeyTwo = required("UNOROUTER_API_KEY_2");
-const unoRouterKeyThree = required("UNOROUTER_API_KEY_3");
+// All three keys are required and all three are synced to every target.
+const unoRouterKeys = UNOROUTER_KEY_NAMES.map((name) => required(name));
 const targets = parseTargetList(process.env.OSIRUS_SYNC_TARGET);
 const syncGitBranch = process.env.OSIRUS_SYNC_GIT_BRANCH?.trim() || undefined;
-const primaryModel = (process.env.OSIRUS_PRIMARY_MODEL ?? "grok-4.6").trim();
+const modelPolicy = parseModelPolicy(process.env.OSIRUS_MODEL_POLICY);
 
-if (!isAllowedPrimaryModel(primaryModel)) {
-  throw new Error(
-    "OSIRUS_PRIMARY_MODEL must be Grok 4.6 or an exact UnoRouter-listed Opus 5 model ID",
+// Validate every key by its /v1/models status (label + status only). A key
+// problem is reported but does not stop the keys from being synced: the
+// runtime's credential failover depends on all three being present.
+const listings = [];
+for (const [index, key] of unoRouterKeys.entries()) {
+  const listing = await listModels(key);
+  listings.push(listing);
+  const freeCount = [...listing.ids].filter((id) => /:free$/i.test(id)).length;
+  console.log(
+    `KEY_${index + 1}: /v1/models HTTP ${listing.status}, ${listing.ids.size} models, ${freeCount} free`,
   );
 }
-
-const modelIds = await availableModelIds(unoRouterKeyOne);
-if (!modelIds.has(primaryModel)) {
-  throw new Error(
-    "OSIRUS_PRIMARY_MODEL is not available to the configured UnoRouter key",
+const firstValid = listings.find((listing) => listing.ids.size > 0);
+const listedIds = firstValid?.ids ?? new Set();
+const freeRanked = rankFreeModels(
+  listedIds,
+  await publicCatalog(),
+  KNOWN_FREE_MODELS,
+);
+const roleModel = firstValid
+  ? resolveRoleModel({
+      requested: process.env.OSIRUS_PRIMARY_MODEL,
+      policy: modelPolicy,
+      listedIds,
+    })
+  : FREE_POOL_SENTINEL;
+if (
+  process.env.OSIRUS_PRIMARY_MODEL?.trim() &&
+  roleModel === FREE_POOL_SENTINEL &&
+  modelPolicy === "free-first"
+)
+  console.log(
+    "Notice: OSIRUS_PRIMARY_MODEL is ignored under the free-first policy; every role is set to the verified free-model pool.",
   );
-}
+const [freePrimary, freeSecondary, freeTertiary] = freeRanked;
+console.log(
+  `Model policy: ${modelPolicy}; roles: ${roleModel}; free tiers: ${
+    [freePrimary, freeSecondary, freeTertiary].filter(Boolean).join(", ") ||
+    "none listed"
+  }.`,
+);
 
 const query = new URLSearchParams({ teamId });
 const existingResponse = await vercelRequest(
@@ -168,29 +226,24 @@ const variables = [
     value: "https://api.unorouter.com/v1/chat/completions",
     type: "plain",
   },
-  {
-    key: "UNOROUTER_API_KEY_1",
-    value: unoRouterKeyOne,
+  ...UNOROUTER_KEY_NAMES.map((key, index) => ({
+    key,
+    value: unoRouterKeys[index],
     type: "sensitive",
-  },
-  {
-    key: "UNOROUTER_API_KEY_2",
-    value: unoRouterKeyTwo,
-    type: "sensitive",
-  },
-  {
-    key: "UNOROUTER_API_KEY_3",
-    value: unoRouterKeyThree,
-    type: "sensitive",
-  },
-  ...["FAST", "STRONG", "THINKING", "CODING", "RESEARCH", "MATH", "VERIFY"].map(
-    (role) => ({
-      key: `OSIRUS_MODEL_${role}`,
-      value: primaryModel,
-      type: "plain",
-    }),
-  ),
-  ...(primaryModel === "grok-4.6"
+  })),
+  { key: "OSIRUS_MODEL_POLICY", value: modelPolicy, type: "plain" },
+  // Every role is rewritten -- this replaces the old grok-4.6 defaults. The
+  // pool sentinel means "verified free-model pool, discovered at runtime".
+  ...MODEL_ROLE_KEYS.map((key) => ({ key, value: roleModel, type: "plain" })),
+  // Preference hints only; the runtime re-verifies against /v1/models.
+  ...[
+    ["OSIRUS_FREE_MODEL_PRIMARY", freePrimary],
+    ["OSIRUS_FREE_MODEL_SECONDARY", freeSecondary],
+    ["OSIRUS_FREE_MODEL_TERTIARY", freeTertiary],
+  ]
+    .filter(([, value]) => Boolean(value))
+    .map(([key, value]) => ({ key, value, type: "plain" })),
+  ...(roleModel === "grok-4.6"
     ? [
         {
           key: "OSIRUS_REASONING_EFFORT",
@@ -244,6 +297,7 @@ const variables = [
   comment: "Managed by Osirus GitHub Actions runtime configuration sync",
 }));
 
+const syncStartedAt = Date.now() - 60_000; // tolerate clock skew
 const upsertQuery = new URLSearchParams({ teamId, upsert: "true" });
 await vercelRequest(
   `/v10/projects/${encodeURIComponent(projectId)}/env?${upsertQuery}`,
@@ -253,12 +307,54 @@ await vercelRequest(
   },
 );
 
+// Verify from Vercel itself -- names, targets and timestamps only, never
+// values -- that all three keys and every model role now cover every
+// requested target.
+const afterResponse = await vercelRequest(
+  `/v10/projects/${encodeURIComponent(projectId)}/env?${query}`,
+);
+const afterSync = Array.isArray(afterResponse.envs) ? afterResponse.envs : [];
+const verificationFailures = [];
+for (const key of [
+  ...UNOROUTER_KEY_NAMES,
+  ...MODEL_ROLE_KEYS,
+  "OSIRUS_MODEL_POLICY",
+]) {
+  const missing = uncoveredTargets(afterSync, key, targets, syncGitBranch);
+  const stale = staleTargets(
+    afterSync,
+    key,
+    targets,
+    syncStartedAt,
+    syncGitBranch,
+  );
+  const pinned = branchPinnedRows(afterSync, key).filter(
+    (branch) => branch !== syncGitBranch,
+  );
+  const states = targets.map((target) => {
+    if (missing.includes(target)) return `${target}=MISSING`;
+    if (stale.includes(target))
+      return `${target}=present (update not confirmed)`;
+    return `${target}=synced`;
+  });
+  console.log(
+    `${key}: ${states.join(" ")}${
+      pinned.length
+        ? ` [${pinned.length} branch-pinned preview row(s) override this for their branches]`
+        : ""
+    }`,
+  );
+  if (missing.length) verificationFailures.push(key);
+}
+
 console.log(
   `Synchronized ${variables.length} server-only runtime variables to ${targets.join(
     ", ",
   )}.`,
 );
-console.log(`Validated UnoRouter model: ${primaryModel}.`);
+console.log(
+  "Vercel applies environment changes to NEW deployments only: redeploy production and preview after this sync.",
+);
 console.log(
   cookieSecret
     ? "Provisioned the Neon Auth cookie secret without printing it."
@@ -274,3 +370,19 @@ console.log(
     ? "Provisioned the connector encryption key without printing it."
     : "Preserved the existing connector encryption key.",
 );
+
+if (verificationFailures.length) {
+  throw new Error(
+    `Vercel does not cover every target for: ${verificationFailures.join(", ")}`,
+  );
+}
+if (!firstValid) {
+  throw new Error(
+    "No UnoRouter key could list models; keys were synced, but the free-model pool cannot be verified. Run the provider diagnostics workflow.",
+  );
+}
+if (!freePrimary) {
+  throw new Error(
+    "No free chat model is listed for the configured key; Osirus cannot answer without paid credit.",
+  );
+}

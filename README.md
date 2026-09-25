@@ -162,10 +162,18 @@ dispatch — never on arbitrary pull-request code.
   web-runtime secret.
 - `DATABASE_URL` remains owned by the existing Vercel–Neon integration unless a
   GitHub `DATABASE_URL` secret is deliberately supplied.
-- The workflow validates the selected model against UnoRouter before syncing all
-  Osirus model roles. It defaults to `grok-4.6` with high reasoning. To select
-  Opus, set the repository variable `OSIRUS_PRIMARY_MODEL` to the exact,
-  currently available UnoRouter Opus 5 model ID, then dispatch the workflow.
+- Model policy is **free-model-first** (M49). Every `OSIRUS_MODEL_*` role is
+  written as `free`: the runtime discovers the verified free models from
+  `GET /v1/models` (annotated by the public catalog, never extended by it) and
+  serves each request from a bounded pool with health, per-model cooldowns
+  (Retry-After honoured), pacing and context-aware selection. Basic operation
+  never needs Grok, Opus or paid credit. A paid model is used only if a
+  dispatch names a listed ID with `model_policy=configured-first`. After the
+  upsert the workflow re-reads Vercel and fails unless all three keys and
+  every model role cover production and preview. See
+  `docs/provider-diagnostics.md` for the key audit and the safe three-key
+  diagnostics workflow (staged in `ops/github-workflows/` until a maintainer
+  with the `workflow` scope moves it into `.github/workflows/`), and `/api/readiness` for evidence-based readiness.
 - The Neon Auth cookie secret is created once in Vercel if absent and is never
   printed. Its rotation requires an explicit manual-dispatch confirmation because
   it invalidates active sessions; a partially configured target fails closed
