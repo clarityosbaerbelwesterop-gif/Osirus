@@ -25,6 +25,8 @@ import type { PulseObservation, PulseTaskSpec } from "./types";
 //                  fresh every hour, judged by independent oracles
 //   M45 software   SOFTWARE_RSI: the self-modification guardrails, attacked
 //                  hourly with patches they must refuse and one to accept
+//   M46 wiring     ARCHITECTURE_SEARCH: the default graph is today's; every
+//                  architecture variant yields the graph it claims
 //   M35 coding     CODING L1–L4, live only: a coding loop on the free model
 //                  takes longer than one tick, so these run where a live
 //                  runner exists (CI), not inside the scheduler tick.
@@ -495,6 +497,36 @@ async function softwareRsiSpecs(): Promise<PulseTaskSpec[]> {
   }));
 }
 
+async function architectureSpecs(): Promise<PulseTaskSpec[]> {
+  const { ARCHITECTURE_CHECKS } =
+    await import("../../intelligence/architecture/checks");
+  return ARCHITECTURE_CHECKS.map((entry) => ({
+    id: `m46:architecture:l${entry.level}`,
+    family: "ARCHITECTURE_SEARCH" as const,
+    level: entry.level,
+    difficulty: difficultyFor(entry.level),
+    version: 1,
+    source: "M46 architecture evolution",
+    mode: "offline" as const,
+    title: entry.title,
+    run: async () => {
+      const started = Date.now();
+      const result = entry.check();
+      return observe(
+        {
+          success: result.held,
+          verifiedSuccess: result.held,
+          latencyMs: Date.now() - started,
+          notes: result.detail,
+        },
+        result.held
+          ? { outcome: "VERIFIED_SUCCESS", reason: result.detail }
+          : { outcome: "REJECTED", reason: result.detail },
+      );
+    },
+  }));
+}
+
 /** Every task of the unified suite, offline and live. */
 export async function pulseCatalog(): Promise<PulseTaskSpec[]> {
   const groups = await Promise.all([
@@ -508,6 +540,7 @@ export async function pulseCatalog(): Promise<PulseTaskSpec[]> {
     teamSpecs(),
     selfPlaySpecs(),
     softwareRsiSpecs(),
+    architectureSpecs(),
     codingLiveSpecs(),
   ]);
   return groups.flat();

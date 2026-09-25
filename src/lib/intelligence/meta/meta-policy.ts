@@ -40,6 +40,7 @@ export function mechanismOf(
   hypothesis: Pick<Hypothesis, "intervention">,
 ): Mechanism {
   const change = hypothesis.intervention;
+  if (change.architecture) return "architecture";
   if (change.tools?.include?.length) return "generated_tool";
   if (change.team) return "topology";
   if (change.computeTier) return "compute_tier";

@@ -121,10 +121,49 @@ export const genomeSchema = z
       })
       .partial()
       .optional(),
+    /**
+     * M46: how Osirus is wired for a run, as a Foundry candidate. Every key
+     * absent means today's graph: no planner before the executor, memory
+     * retrieved up front, capabilities in routed order, no critic.
+     */
+    architecture: z
+      .object({
+        /** A thinking segment plans first and hands a typed contract on. */
+        planning: z.enum(["direct", "planner_executor"]),
+        /** Retrieve memory before planning, or only on demand in the loop. */
+        memory: z.enum(["early", "late"]),
+        /** Research in routed order, or evidence gathered first. */
+        evidence: z.enum(["as_routed", "first"]),
+        /** An independent reviewer of the draft, when no team is set. */
+        critic: z.enum(["none", "specialist", "adversarial"]),
+      })
+      .partial()
+      .optional(),
   })
   .strict();
 
 export type StrategyGenome = z.infer<typeof genomeSchema>;
+
+export type Architecture = {
+  planning: "direct" | "planner_executor";
+  memory: "early" | "late";
+  evidence: "as_routed" | "first";
+  critic: "none" | "specialist" | "adversarial";
+};
+
+/** Today's wiring; an absent key never changes the graph. */
+export const DEFAULT_ARCHITECTURE: Architecture = {
+  planning: "direct",
+  memory: "early",
+  evidence: "as_routed",
+  critic: "none",
+};
+
+export function architectureUnder(
+  policy: Pick<RuntimePolicy, "genome"> | null | undefined,
+): Architecture {
+  return { ...DEFAULT_ARCHITECTURE, ...(policy?.genome.architecture ?? {}) };
+}
 
 export type RuntimePolicy = {
   strategyVersionId: string | null;

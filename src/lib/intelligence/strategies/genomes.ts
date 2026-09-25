@@ -231,6 +231,43 @@ const LIBRARY: LibraryEntry[] = [
     expected:
       "Fewer false completions; only attacks a test confirms cause a revision.",
   },
+  // M46: architecture candidates. Same model, same tools: the wiring of
+  // Osirus is the variable.
+  ...(["coding", "math_science", "research"] as const).flatMap((arm) => [
+    {
+      gap: "planning" as const,
+      arm,
+      statement:
+        "The executor starts without a plan contract; a planner stage in front of it hands one over.",
+      intervention: { architecture: { planning: "planner_executor" as const } },
+      expected:
+        "More verified results on multi-step tasks; more calls per task.",
+    },
+    {
+      gap: "context" as const,
+      arm,
+      statement:
+        "Up-front memory retrieval crowds the context; retrieving on demand keeps it focused.",
+      intervention: { architecture: { memory: "late" as const } },
+      expected: "Same or better verified rate at fewer tokens.",
+    },
+    {
+      gap: "verification" as const,
+      arm,
+      statement:
+        "Drafts are finished without an independent review; an adversarial reviewer whose attacks must be confirmed by a check catches them.",
+      intervention: { architecture: { critic: "adversarial" as const } },
+      expected: "Fewer false completions.",
+    },
+  ]),
+  {
+    gap: "knowledge",
+    arm: "research",
+    statement:
+      "Evidence arrives after the other capabilities have committed; gathering it first grounds them.",
+    intervention: { architecture: { evidence: "first" } },
+    expected: "Fewer unsupported claims in compound tasks.",
+  },
 ];
 
 function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
@@ -254,6 +291,9 @@ function merge(base: StrategyGenome, patch: StrategyGenome): StrategyGenome {
       : {}),
     ...(base.tools || patch.tools
       ? { tools: { ...base.tools, ...patch.tools } }
+      : {}),
+    ...(base.architecture || patch.architecture
+      ? { architecture: { ...base.architecture, ...patch.architecture } }
       : {}),
     ...(base.directives || patch.directives
       ? {
@@ -335,6 +375,17 @@ export function exploratoryMutation(
     {
       statement: "Less retrieved memory reduces distraction.",
       intervention: { memory: { limit: random.pick([2, 4]) } },
+    },
+    {
+      statement: "A different wiring of the same capabilities may verify more.",
+      intervention: {
+        architecture: random.pick([
+          { planning: "planner_executor" as const },
+          { memory: "late" as const },
+          { critic: "specialist" as const },
+          { critic: "adversarial" as const },
+        ]),
+      },
     },
   ];
   if (arm === "coding")
@@ -448,5 +499,9 @@ export function describeGenome(genome: StrategyGenome) {
     parts.push(`memory ${genome.memory.limit}`);
   if (genome.directives?.length)
     parts.push(`${genome.directives.length} extra directive(s)`);
+  const wiring = genome.architecture;
+  if (wiring?.planning === "planner_executor") parts.push("planner → executor");
+  if (wiring?.memory === "late") parts.push("memory on demand");
+  if (wiring?.evidence === "first") parts.push("evidence first");
   return parts.length ? parts.join(", ") : "baseline";
 }

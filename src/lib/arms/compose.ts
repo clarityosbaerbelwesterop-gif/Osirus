@@ -7,6 +7,7 @@ import {
 } from "../runtime/graph";
 import { createMission } from "../agent/mission";
 import { armFor } from "./registry";
+import { DEFAULT_ARCHITECTURE, type Architecture } from "../strategy/runtime";
 import type {
   AcceptanceContract,
   ArmId,
@@ -30,6 +31,47 @@ export type ComposedWorkflow = {
   owners: Record<string, ArmId>;
 };
 
+/**
+ * M46: the capability order an architecture asks for. Planner-executor puts
+ * a thinking segment first (it hands the executor a typed plan contract);
+ * evidence-first moves research to the front. The default architecture
+ * returns the composition unchanged.
+ */
+export function architectComposition(
+  composition: ArmId[],
+  architecture: Architecture = DEFAULT_ARCHITECTURE,
+): ArmId[] {
+  let out = [...composition];
+  if (architecture.evidence === "first" && out.includes("research"))
+    out = ["research", ...out.filter((armId) => armId !== "research")];
+  if (architecture.planning === "planner_executor" && out[0] !== "thinking")
+    out = ["thinking", ...out.filter((armId) => armId !== "thinking")];
+  return out.slice(0, 4);
+}
+
+/**
+ * Drop the nodes an architecture does without, rewiring their dependants
+ * onto what they depended on, so the graph stays a valid DAG in order.
+ */
+function withoutStages(
+  nodes: WorkflowNode[],
+  drop: (node: WorkflowNode) => boolean,
+) {
+  const removed = new Map(
+    nodes.filter(drop).map((node) => [node.key, node.dependsOn]),
+  );
+  if (!removed.size) return nodes;
+  const resolve = (keys: string[]): string[] =>
+    keys.flatMap((key) =>
+      removed.has(key) ? resolve(removed.get(key)!) : [key],
+    );
+  return nodes
+    .filter((node) => !removed.has(node.key))
+    .map((node) =>
+      defineNode({ ...node, dependsOn: [...new Set(resolve(node.dependsOn))] }),
+    );
+}
+
 function prefixed(index: number, armId: ArmId, key: string) {
   return `s${index}-${armId}-${key}`;
 }
@@ -38,6 +80,8 @@ export function composeWorkflow(input: {
   objective: string;
   composition: ArmId[];
   analysis?: TaskAnalysis;
+  /** M46: the policy's architecture; absent means today's graph. */
+  architecture?: Architecture;
 }): ComposedWorkflow {
   const composition = input.composition.length
     ? input.composition
@@ -116,7 +160,19 @@ export function composeWorkflow(input: {
     );
   }
 
-  const graph = { nodes };
+  // Late memory: no retrieval stage up front; the loop searches memory on
+  // demand through its memory.search tool.
+  const graph = {
+    nodes:
+      input.architecture?.memory === "late"
+        ? withoutStages(
+            nodes,
+            (node) => node.input.stageKind === "retrieve_memory",
+          )
+        : nodes,
+  };
+  for (const key of Object.keys(owners))
+    if (!graph.nodes.some((node) => node.key === key)) delete owners[key];
   validateGraph(graph);
 
   return {

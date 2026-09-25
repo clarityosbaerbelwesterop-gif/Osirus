@@ -90,6 +90,7 @@ export const FAMILY_CAPABILITY: Record<string, string> = {
   LONG_HORIZON: "planning.long_horizon",
   SELF_PLAY: "reasoning.falsification",
   SOFTWARE_RSI: "security.adversarial",
+  ARCHITECTURE_SEARCH: "reasoning.planning",
 };
 
 const FAMILY_GAP: Record<string, GapKind> = {
@@ -107,6 +108,7 @@ const FAMILY_GAP: Record<string, GapKind> = {
   LONG_HORIZON: "planning",
   SELF_PLAY: "verification",
   SOFTWARE_RSI: "verification",
+  ARCHITECTURE_SEARCH: "planning",
 };
 
 const HOUR = 3_600_000;
