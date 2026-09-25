@@ -69,6 +69,9 @@ function authorized(request: Request) {
   return false;
 }
 
+/** Matches the settings ceiling for dailyChainedTicks; stops every chain. */
+const MAX_CHAIN = 288;
+
 async function tick(request: Request) {
   if (!env.OSIRUS_SCHEDULER_SECRET) {
     // Unconfigured means unavailable, never open.
@@ -219,10 +222,13 @@ async function tick(request: Request) {
   // day's continuation envelope. A tick that moved nothing (every Foundry
   // stage parked on a provider refusal, say) ends the chain; the daily cron
   // starts the next one.
+  // The chain number is a hard backstop as well: even if the day's ledger
+  // could not be charged, no chain outlives the largest daily envelope.
   const chained =
-    (Boolean(foundry?.continueChain) &&
+    chain < MAX_CHAIN &&
+    ((Boolean(foundry?.continueChain) &&
       (claimed > 0 || (foundry?.step?.progressed ?? 0) > 0)) ||
-    Boolean(pulse?.continueChain);
+      Boolean(pulse?.continueChain));
   if (chained)
     after(async () => {
       const { chargeChainedTick } =
