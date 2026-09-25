@@ -7,6 +7,7 @@ import {
 } from "../src/lib/agent/pulse/catalog";
 import { CAPABILITY_LANES, normalizeLane } from "../src/lib/agent/pulse/lanes";
 import {
+  PULSE_DUE_SLACK_MS,
   PULSE_INTERVAL_MS,
   PULSE_LEASE_SECONDS,
   runPulseSlice,
@@ -373,7 +374,12 @@ describe("durable pulse runner", () => {
       });
     expect((await run()).completedCycle).toBe(true);
     expect((await run()).reason).toBe("pulse_not_due");
-    time.advance(PULSE_INTERVAL_MS);
+    // Half an hour later: still not due.
+    time.advance(30 * 60 * 1000);
+    expect((await run()).reason).toBe("pulse_not_due");
+    // The hourly trigger lands a few minutes early relative to the last
+    // start (schedule jitter): the cycle is due, not skipped for an hour.
+    time.advance(PULSE_INTERVAL_MS - 30 * 60 * 1000 - PULSE_DUE_SLACK_MS);
     expect((await run()).completedCycle).toBe(true);
 
     // A cycle nobody finished: a newer tick abandons it and starts afresh.
