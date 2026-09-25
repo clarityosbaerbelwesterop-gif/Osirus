@@ -5,6 +5,7 @@ import { MemoryIntelStore } from "../src/lib/intelligence/store/memory-store";
 import {
   analyzeSource,
   isolationHolds,
+  permissionFlag,
   runIsolated,
 } from "../src/lib/intelligence/synthesis/isolation";
 import { generatedToolDefinition } from "../src/lib/intelligence/synthesis/generated-tools";
@@ -124,6 +125,13 @@ describe("static analysis and isolation", () => {
     for (const [name, source] of Object.entries(bad))
       expect(analyzeSource(source).ok, name).toBe(false);
     expect(analyzeSource(IBAN_SOURCE)).toMatchObject({ ok: true });
+  });
+
+  it("picks the permission flag the running Node accepts", () => {
+    expect(permissionFlag("24.21.0")).toBe("--permission");
+    expect(permissionFlag("22.13.0")).toBe("--permission");
+    expect(permissionFlag("22.12.0")).toBe("--experimental-permission");
+    expect(permissionFlag("20.18.0")).toBe("--experimental-permission");
   });
 
   it("isolates execution: no host globals, no code generation, time and pollution bounded", async () => {

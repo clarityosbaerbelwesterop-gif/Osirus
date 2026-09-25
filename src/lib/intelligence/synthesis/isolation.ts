@@ -291,6 +291,18 @@ process.stdin.on("end", () => {
 `;
 
 /**
+ * The permission-model flag of the Node that runs us: stable `--permission`
+ * from 22.13 (Node 24 rejects the old name as a bad option), experimental
+ * before that.
+ */
+export function permissionFlag(version = process.versions.node) {
+  const [major = 0, minor = 0] = version.split(".").map(Number);
+  return major > 22 || (major === 22 && minor >= 13)
+    ? "--permission"
+    : "--experimental-permission";
+}
+
+/**
  * Run a generated tool's source on inputs, isolated. Every failure is a
  * result, never a throw into the caller: a candidate cannot take down the
  * Foundry that is testing it.
@@ -309,7 +321,7 @@ export async function runIsolated(
     const child = spawn(
       process.execPath,
       [
-        "--experimental-permission",
+        permissionFlag(),
         "--max-old-space-size=64",
         "--no-warnings",
         "-e",
