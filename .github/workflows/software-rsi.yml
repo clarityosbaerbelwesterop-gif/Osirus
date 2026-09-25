@@ -1,0 +1,94 @@
+name: Software RSI (draft pull requests)
+
+# Software self-improvement (M45). After each hourly pulse (and on
+# dispatch) the job asks production for one code hypothesis: a
+# deterministic Osirus mechanism that failed its generated oracle, outside
+# the protected trust root and on the path allowlist. Production hands out
+# at most one a day per hypothesis, with a few free-model calls reserved.
+#
+# The pipeline (evals/software-rsi.eval.ts) asks the free model for a
+# bounded patch, enforces the path policy and static rules, runs the
+# typecheck, lint and the whole test suite, and compares the patch with the
+# current code on seeds the model never saw, plus every other arena for
+# regressions. Only a strict, regression-free improvement becomes a DRAFT
+# pull request on an rsi/* branch, labelled software-rsi. Nothing merges:
+# the operator decides. The job never pushes to main.
+
+on:
+  workflow_run:
+    workflows: ["Capability pulse (hourly tick)"]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
+  actions: write
+  id-token: write
+
+concurrency:
+  group: osirus-software-rsi
+  cancel-in-progress: false
+
+jobs:
+  improve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    env:
+      RSI_URL: https://osirus.vercel.app/api/rsi/software
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Take a code hypothesis
+        id: take
+        run: |
+          set -euo pipefail
+          token=$(curl -sS --fail -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=osirus-rsi" | jq -r '.value')
+          echo "::add-mask::${token}"
+          status=$(curl -sS -o "${RUNNER_TEMP}/hypothesis.json" -w '%{http_code}' --max-time 60 \
+            -H "x-osirus-github-oidc: ${token}" "${RSI_URL}")
+          echo "HTTP ${status}"
+          echo "status=${status}" >> "${GITHUB_OUTPUT}"
+      - uses: actions/setup-node@v4
+        if: steps.take.outputs.status == '200'
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v5
+        if: steps.take.outputs.status == '200'
+        with:
+          python-version: "3.12"
+      - if: steps.take.outputs.status == '200'
+        run: |
+          npm ci
+          npx playwright install --with-deps chromium
+          python -m pip install --quiet sympy==1.14.0 numpy
+      - name: Attempt one bounded improvement
+        if: steps.take.outputs.status == '200'
+        env:
+          OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "90"
+          UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
+          UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+          UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
+          UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
+          GH_TOKEN: ${{ github.token }}
+          RSI_EVAL: evals/software-rsi.eval.ts
+          RSI_HYPOTHESIS_FILE: ${{ runner.temp }}/hypothesis.json
+          RSI_REPORT: ${{ runner.temp }}/report.json
+        run: npx vitest run --config vitest.rsi.config.ts
+      - name: Report the attempt
+        if: always() && steps.take.outputs.status == '200'
+        run: |
+          set -euo pipefail
+          test -f "${RUNNER_TEMP}/report.json" || { echo "no report written"; exit 1; }
+          token=$(curl -sS --fail -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=osirus-rsi" | jq -r '.value')
+          echo "::add-mask::${token}"
+          status=$(curl -sS -o response.json -w '%{http_code}' --max-time 60 -X POST \
+            -H "content-type: application/json" -H "x-osirus-github-oidc: ${token}" \
+            --data-binary "@${RUNNER_TEMP}/report.json" "${RSI_URL}")
+          echo "HTTP ${status}"; cat response.json
+          test "${status}" = "200"

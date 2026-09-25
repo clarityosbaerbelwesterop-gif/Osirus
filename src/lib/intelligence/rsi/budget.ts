@@ -3,23 +3,27 @@ import { today, type IntelStore } from "../store/store";
 // The cycle's own live-call envelope, on top of the Foundry governor.
 //
 // By operator decision the free model is spent at about two calls an hour
-// on live self-improvement: 48 a day, never more than 6 in one cycle, and
-// never ahead of the clock (the allowance accrues through the UTC day, so a
-// burst at 00:05 cannot spend the whole day). Everything else a cycle does
+// on live self-improvement: 48 a day, never ahead of the clock (the
+// allowance accrues through the UTC day, so a burst at 00:05 cannot spend
+// the whole day), and never more than 12 on one live order -- enough for a
+// champion/challenger pair on the same task, so orders run every few hours
+// rather than a useless fragment every hour. Everything else a cycle does
 // is deterministic and costs no model call. When the envelope is spent the
 // cycle still runs: evaluation, generation, red attacks, compilation and
 // failure analysis continue offline.
 
 export const RSI_DAILY_CALLS = 48;
 export const RSI_CALLS_PER_HOUR = 2;
-export const RSI_MAX_CALLS_PER_CYCLE = 6;
+export const RSI_MAX_CALLS_PER_ORDER = 12;
+/** An order opens only when a pair can plausibly finish. */
+export const RSI_MIN_CALLS_PER_ORDER = 8;
 
 export type RsiBudget = {
   day: string;
   used: number;
   /** Calls accrued so far today, capped by the daily envelope. */
   accrued: number;
-  /** What one cycle (or one live order) may reserve now. */
+  /** What one live order or code attempt may reserve now. */
   available: number;
 };
 
@@ -39,7 +43,7 @@ export async function rsiBudget(
     day,
     used,
     accrued,
-    available: Math.max(0, Math.min(RSI_MAX_CALLS_PER_CYCLE, accrued - used)),
+    available: Math.max(0, Math.min(RSI_MAX_CALLS_PER_ORDER, accrued - used)),
   };
 }
 

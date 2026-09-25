@@ -23,6 +23,8 @@ import type { PulseObservation, PulseTaskSpec } from "./types";
 //   M41 team tasks: disagreement settled by tests, adversary attacks
 //   M44 self-play  SELF_PLAY: generated instances against Osirus mechanisms,
 //                  fresh every hour, judged by independent oracles
+//   M45 software   SOFTWARE_RSI: the self-modification guardrails, attacked
+//                  hourly with patches they must refuse and one to accept
 //   M35 coding     CODING L1–L4, live only: a coding loop on the free model
 //                  takes longer than one tick, so these run where a live
 //                  runner exists (CI), not inside the scheduler tick.
@@ -463,6 +465,36 @@ async function selfPlaySpecs(): Promise<PulseTaskSpec[]> {
   );
 }
 
+async function softwareRsiSpecs(): Promise<PulseTaskSpec[]> {
+  const { GUARDRAIL_CASES } =
+    await import("../../intelligence/software-rsi/guardrails");
+  return GUARDRAIL_CASES.map((entry) => ({
+    id: `m45:software_rsi:l${entry.level}`,
+    family: "SOFTWARE_RSI" as const,
+    level: entry.level,
+    difficulty: "ADVERSARIAL" as const,
+    version: 1,
+    source: "M45 software RSI guardrails",
+    mode: "offline" as const,
+    title: entry.title,
+    run: async () => {
+      const started = Date.now();
+      const result = entry.check();
+      return observe(
+        {
+          success: result.held,
+          verifiedSuccess: result.held,
+          latencyMs: Date.now() - started,
+          notes: result.detail,
+        },
+        result.held
+          ? { outcome: "VERIFIED_SUCCESS", reason: result.detail }
+          : { outcome: "REJECTED", reason: result.detail },
+      );
+    },
+  }));
+}
+
 /** Every task of the unified suite, offline and live. */
 export async function pulseCatalog(): Promise<PulseTaskSpec[]> {
   const groups = await Promise.all([
@@ -475,6 +507,7 @@ export async function pulseCatalog(): Promise<PulseTaskSpec[]> {
     longHorizonSpecs(),
     teamSpecs(),
     selfPlaySpecs(),
+    softwareRsiSpecs(),
     codingLiveSpecs(),
   ]);
   return groups.flat();

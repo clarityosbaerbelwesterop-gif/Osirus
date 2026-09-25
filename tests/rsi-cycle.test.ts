@@ -311,14 +311,25 @@ describe("self-play with independent verifiers", () => {
     expect(again.duplicates).toBe(4);
   });
 
-  it("finds the weaknesses a fixed suite missed (and records them as failures)", async () => {
-    const round = await playArena(solverVsFalsifier, {
-      seed: "h9",
-      level: 4,
-      count: 4,
-    });
-    expect(round.failed).toBeGreaterThan(0);
-    expect(round.failures[0]!.detail).toMatch(/true value/);
+  it("records a mechanism's failures with the instances that expose them", async () => {
+    // A mechanism broken by construction (it ignores its input). Tests never
+    // pin a real Osirus defect as expected behaviour: that would block the
+    // very repair the software-RSI pipeline exists to make.
+    const broken: ChallengeArena = {
+      ...solverVsFalsifier,
+      id: "broken_mechanism",
+      run: async (instance) => ({
+        held: instance.level < 3,
+        detail: `ignores level ${instance.level}`,
+      }),
+    };
+    const round = await playArena(broken, { seed: "h9", level: 4, count: 4 });
+    expect(round.failed).toBe(4);
+    expect(round.failures[0]!.id).toMatch(/^broken_mechanism:h9:L4:/);
+    expect(round.failures[0]!.detail).toBe("ignores level 4");
+    expect(
+      (await playArena(broken, { seed: "h9", level: 2, count: 4 })).failed,
+    ).toBe(0);
   });
 
   it("raises difficulty after two clean rounds and explores after a confirmed failure", () => {
@@ -877,21 +888,21 @@ describe("live experiments, promotion and rollback", () => {
       now: () => T0,
       model: "m:free",
     });
-    expect(spent.note).toMatch(/envelope spent/);
+    expect(spent.note).toMatch(/offline work only/);
   });
 });
 
 describe("live-call envelope", () => {
-  it("accrues two calls an hour up to 48 and never lets a cycle take more than 6", async () => {
+  it("accrues two calls an hour up to 48 and never lets one order take more than 12", async () => {
     expect(accruedCalls(new Date("2026-09-25T00:10:00Z"))).toBe(2);
     expect(accruedCalls(new Date("2026-09-25T23:10:00Z"))).toBe(48);
     const store = new MemoryIntelStore();
     const at = new Date("2026-09-25T10:10:00Z");
-    expect((await rsiBudget(store, at)).available).toBe(6);
-    const first = await reserveCalls(store, 10, at);
-    expect(first.granted).toBe(6);
+    expect((await rsiBudget(store, at)).available).toBe(12);
+    const first = await reserveCalls(store, 20, at);
+    expect(first.granted).toBe(12);
     await settleCalls(store, {
-      reserved: 6,
+      reserved: 12,
       spent: 4,
       tokens: 900,
       day: first.budget.day,

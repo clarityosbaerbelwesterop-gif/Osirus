@@ -40,7 +40,7 @@ import {
   type ArenaRound,
   type ChallengeArena,
 } from "../generation/challenges";
-import { rsiBudget } from "./budget";
+import { RSI_MIN_CALLS_PER_ORDER, rsiBudget } from "./budget";
 import type {
   RsiCycle,
   RsiFinding,
@@ -89,6 +89,7 @@ export const FAMILY_CAPABILITY: Record<string, string> = {
   CROSS_DOMAIN: "reasoning.cross_domain",
   LONG_HORIZON: "planning.long_horizon",
   SELF_PLAY: "reasoning.falsification",
+  SOFTWARE_RSI: "security.adversarial",
 };
 
 const FAMILY_GAP: Record<string, GapKind> = {
@@ -105,6 +106,7 @@ const FAMILY_GAP: Record<string, GapKind> = {
   CROSS_DOMAIN: "verification",
   LONG_HORIZON: "planning",
   SELF_PLAY: "verification",
+  SOFTWARE_RSI: "verification",
 };
 
 const HOUR = 3_600_000;
@@ -869,6 +871,7 @@ export type LiveEvidence = {
 };
 
 const ORDER_TTL_MS = 12 * HOUR;
+const TAKEN_TTL_MS = 6 * HOUR;
 
 export async function openOrders(intel: IntelStore) {
   return (await intel.listArtifacts({ kind: "live_order", limit: 50 })).filter(
@@ -881,21 +884,29 @@ export async function openOrders(intel: IntelStore) {
 
 export async function experiment(ctx: RsiContext): Promise<PhaseResult> {
   const orders = await openOrders(ctx.intel);
-  // An order nobody took in time expires; it spent nothing.
+  // An order nobody took in time expires (it spent nothing); one taken but
+  // never reported expires too -- its reservation stays charged, because
+  // the calls may have been spent.
+  let live = orders;
   for (const order of orders) {
     const content = order.content as LiveOrderContent;
     const created = Date.parse(String(order.evidence.createdAt ?? 0));
-    if (content.state === "open" && ctx.now() - created > ORDER_TTL_MS)
-      await ctx.intel.upsertArtifact({
-        ...order,
-        content: { ...content, state: "expired" },
-        status: "superseded",
-      });
+    const taken = Date.parse(content.takenAt ?? "") || created;
+    const stale =
+      (content.state === "open" && ctx.now() - created > ORDER_TTL_MS) ||
+      (content.state === "taken" && ctx.now() - taken > TAKEN_TTL_MS);
+    if (!stale) continue;
+    await ctx.intel.upsertArtifact({
+      ...order,
+      content: { ...content, state: "expired" },
+      status: "superseded",
+    });
+    live = live.filter((entry) => entry !== order);
   }
-  const live = (ctx.cycle.state.hypotheses?.items ?? []).find(
+  const hypothesis = (ctx.cycle.state.hypotheses?.items ?? []).find(
     (item) => item.lane === "live",
   );
-  const pending = orders.some((order) =>
+  const pending = live.some((order) =>
     ["open", "taken"].includes((order.content as LiveOrderContent).state),
   );
   const note = (text: string, order: string | null = null) => ({
@@ -910,14 +921,14 @@ export async function experiment(ctx: RsiContext): Promise<PhaseResult> {
     note: text,
   });
   if (pending) return note("a live order is still out; no new one");
-  if (!live) return note("no live hypothesis this cycle");
+  if (!hypothesis) return note("no live hypothesis this cycle");
   const budget = await rsiBudget(ctx.intel, new Date(ctx.now()));
-  if (budget.available < 2)
+  if (budget.available < RSI_MIN_CALLS_PER_ORDER)
     return note(
-      `live envelope spent (${budget.used}/${budget.accrued} today): offline work only`,
+      `live envelope: ${budget.used}/${budget.accrued} calls used today, ${budget.available} free (an order needs ${RSI_MIN_CALLS_PER_ORDER}): offline work only`,
     );
-  const strategy = strategyForCapability(live.capabilityId);
-  if (!strategy) return note(`no strategy owns ${live.capabilityId}`);
+  const strategy = strategyForCapability(hypothesis.capabilityId);
+  if (!strategy) return note(`no strategy owns ${hypothesis.capabilityId}`);
   const champion = (await ctx.intel.listVersions(strategy.id)).find(
     (version) => version.status === "champion",
   );
@@ -960,7 +971,7 @@ export async function experiment(ctx: RsiContext): Promise<PhaseResult> {
     capabilityId: strategy.capabilityId,
     strategyId: strategy.id,
     model: ctx.model,
-    hypothesis: live,
+    hypothesis,
     champion: {
       versionId: champion.id,
       genome: champion.genome as Record<string, unknown>,
@@ -968,7 +979,7 @@ export async function experiment(ctx: RsiContext): Promise<PhaseResult> {
     challenger: {
       genome: {
         ...(champion.genome as Record<string, unknown>),
-        ...(live.intervention ?? {}),
+        ...(hypothesis.intervention ?? {}),
       },
     },
     tasks: chosen.map((task) => ({
@@ -981,7 +992,7 @@ export async function experiment(ctx: RsiContext): Promise<PhaseResult> {
       family: task.capabilityId,
       spec: task.spec,
     })),
-    calls: Math.max(budget.available, 2),
+    calls: budget.available,
     state: "open",
     evidence: null,
   };
@@ -997,7 +1008,7 @@ export async function experiment(ctx: RsiContext): Promise<PhaseResult> {
     fingerprint: fingerprint("live_order", orderId),
   });
   return note(
-    `live order ${orderId.slice(0, 8)}: ${live.statement.slice(0, 80)} on ${chosen.length} tasks + ${benchmark.length} raw-vs-Osirus pairs`,
+    `live order ${orderId.slice(0, 8)}: ${hypothesis.statement.slice(0, 80)} on ${chosen.length} tasks + ${benchmark.length} raw-vs-Osirus pairs`,
     orderId,
   );
 }

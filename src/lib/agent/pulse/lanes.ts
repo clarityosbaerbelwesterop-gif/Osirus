@@ -21,6 +21,7 @@ export const CAPABILITY_LANES = [
   "LONG_HORIZON",
   // M44–M47: Osirus measuring its own improvement machinery.
   "SELF_PLAY",
+  "SOFTWARE_RSI",
 ] as const;
 
 export type CapabilityLane = (typeof CAPABILITY_LANES)[number];
