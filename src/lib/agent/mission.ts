@@ -1,5 +1,6 @@
 import type { Handoff } from "./handoff";
 import type { ActionEntry, MissionGoal, MissionWait } from "./long-horizon";
+import type { BlackboardEntry } from "./team";
 import type { HypothesisSeed, TaskSeed, TaskState } from "./task-state";
 
 // One mission, one cognition state.
@@ -121,6 +122,8 @@ export type MissionState = {
   actions?: ActionEntry[];
   lastActiveAt?: string | null;
   nextWake?: string | null;
+  /** M41 shared team blackboard: structured claims and tests, per stage. */
+  blackboard?: Array<BlackboardEntry & { stageKey: string }>;
 };
 
 const MAX_FACTS = 60;

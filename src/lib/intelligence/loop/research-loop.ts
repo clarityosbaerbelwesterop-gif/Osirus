@@ -1,3 +1,4 @@
+import type { ArmId } from "../../arms/types";
 import type { SandboxDriver } from "../../sandbox/driver";
 import { detectGaps } from "../capabilities/gaps";
 import { remeasureAll, seedCapabilities } from "../capabilities/registry";
@@ -40,6 +41,8 @@ import {
 } from "../strategies/genomes";
 import {
   computeHypothesis,
+  estimateTopologies,
+  topologyHypothesis,
   estimateTiers,
   skillHypothesis,
 } from "../routing/value-of-compute";
@@ -700,6 +703,16 @@ async function advance(
           champion!.genome,
         );
         if (compute) hypotheses.push(compute);
+        // M41: value of delegation -- a measured team win, or the next
+        // unmeasured topology for this arm, as a paired trial.
+        if (hypotheses.length < (ctx.maxChallengers ?? 2)) {
+          const team = topologyHypothesis(
+            estimateTopologies(experience, versions, cycle.capabilityId!),
+            champion!.genome,
+            arm as ArmId,
+          );
+          if (team) hypotheses.push(team);
+        }
       }
       if (
         settings.flags.skillEvolution &&

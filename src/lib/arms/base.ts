@@ -1109,11 +1109,36 @@ export abstract class BaseArm implements AgentArm {
       };
     }
 
-    if (policy.genome.team?.critic)
+    // M41: the policy's team topology. The critic is the M26 path; the
+    // M41 topologies form a team only while the draft is uncertain.
+    const { topologyOf } = await import("../agent/team");
+    const topology = topologyOf(policy.genome);
+    let team: import("../agent/team").TeamOutcome | null = null;
+    if (topology === "solver_critic")
       answer = await this.teamReview(context, {
         answer,
         observations: result.state.observations.slice(-6),
       });
+    else if (topology !== "single") {
+      const { teamStage } = await import("./team-runtime");
+      const formed = await teamStage(context, {
+        topology,
+        solvers: policy.genome.team?.solvers,
+        draft: answer,
+        observations: result.state.observations.slice(-6),
+        kernel: result.state.kernel,
+        registry: toolbox.registry,
+        toolContext: {
+          runId: work.runId,
+          stageId: work.stageId,
+          armId: this.id,
+          organizationId: identity.organizationId,
+          workspaceId: identity.workspaceId,
+        },
+      });
+      answer = formed.answer;
+      team = formed.outcome;
+    }
 
     await runtime.emitDelta(answer);
     const assistantMessageId = await runtime.repository.createMessage({
@@ -1128,6 +1153,16 @@ export abstract class BaseArm implements AgentArm {
         armId: this.id,
         agentLoop: true,
         steps: result.state.steps.length,
+        ...(team
+          ? {
+              team: {
+                topology: team.topology,
+                resolution: team.resolution,
+                testsRun: team.testsRun,
+                disputes: team.disputes,
+              },
+            }
+          : {}),
       },
     });
     await runtime.activity("model.completed", "Answer ready", {

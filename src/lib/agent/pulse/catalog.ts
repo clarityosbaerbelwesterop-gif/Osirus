@@ -20,6 +20,7 @@ import type { PulseObservation, PulseTaskSpec } from "./types";
 //   M38            BUILDING, COMPUTER, TOOL_USE, MULTIMODAL L1–L5
 //   M39 generalist CROSS_DOMAIN L1–L5, one mission across capabilities
 //   M40 LONG_HORIZON L1–L5: crashes, typed waits, stale facts, replans
+//   M41 team tasks: disagreement settled by tests, adversary attacks
 //   M35 coding     CODING L1–L4, live only: a coding loop on the free model
 //                  takes longer than one tick, so these run where a live
 //                  runner exists (CI), not inside the scheduler tick.
@@ -284,6 +285,39 @@ async function longHorizonSpecs(): Promise<PulseTaskSpec[]> {
   }));
 }
 
+async function teamSpecs(): Promise<PulseTaskSpec[]> {
+  const { TEAM_TASKS } = await import("./team-suite");
+  return TEAM_TASKS.map((task) => ({
+    id: `m41:team:${task.family.toLowerCase()}:l${task.level}`,
+    family: task.family,
+    level: task.level,
+    difficulty: task.difficulty,
+    version: 1,
+    source: "M41 collective",
+    mode: "offline",
+    title: `TEAM ${task.family} L${task.level}`,
+    run: async () => {
+      const record = await task.run();
+      const derived: DerivedOutcome = record.verifiedSuccess
+        ? {
+            outcome: "VERIFIED_SUCCESS",
+            reason: `team settled by ${record.resolution}`,
+          }
+        : {
+            outcome: "FALSE_COMPLETION",
+            reason: `team kept a wrong answer (${record.resolution})`,
+          };
+      return observe({ ...record, success: record.verifiedSuccess }, derived, {
+        topology: record.topology,
+        resolution: record.resolution,
+        testsRun: record.testsRun,
+        singleVerified: record.single.verified,
+        majority: record.majority,
+      });
+    },
+  }));
+}
+
 async function codingLiveSpecs(): Promise<PulseTaskSpec[]> {
   const { PULSE_CODING_TASKS } =
     await import("../../intelligence/pulse/coding-suite");
@@ -375,6 +409,7 @@ export async function pulseCatalog(): Promise<PulseTaskSpec[]> {
     m38Specs(),
     crossDomainSpecs(),
     longHorizonSpecs(),
+    teamSpecs(),
     codingLiveSpecs(),
   ]);
   return groups.flat();

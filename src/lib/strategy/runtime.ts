@@ -81,7 +81,26 @@ export const genomeSchema = z
      * revises it: Solver vs Critic, as a strategy the Foundry can test
      * against a single worker on the same tasks.
      */
-    team: z.object({ critic: z.boolean() }).partial().optional(),
+    team: z
+      .object({
+        critic: z.boolean(),
+        /**
+         * M41: the topology, when it is more than a critic. Parallel
+         * solvers settle disagreement by a discriminating test, never by
+         * vote; an adversary's attack counts only when its check confirms
+         * it. Absent: `critic` decides, and the default is one worker.
+         */
+        topology: z.enum([
+          "single",
+          "solver_critic",
+          "parallel_solvers_judge",
+          "solver_adversary",
+        ]),
+        /** Parallel solvers, including the first draft. */
+        solvers: z.number().int().min(2).max(3),
+      })
+      .partial()
+      .optional(),
   })
   .strict();
 
