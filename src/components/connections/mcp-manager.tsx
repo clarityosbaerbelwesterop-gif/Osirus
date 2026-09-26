@@ -382,6 +382,11 @@ function ServerCard({ server }: { server: McpServerView }) {
                     </p>
                   ) : null}
                   <Badge tone="danger">High risk · asks every time</Badge>
+                  {tool.flagged ? (
+                    <Badge tone="warning">
+                      Description tried to instruct the agent
+                    </Badge>
+                  ) : null}
                 </div>
                 <label className="switch">
                   <input

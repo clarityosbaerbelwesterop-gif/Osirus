@@ -19,9 +19,12 @@ export class OutboundBlockedError extends Error {
 
 function ipv4Private(address: string) {
   const parts = address.split(".").map(Number);
-  if (parts.length !== 4 || parts.some((part) => !Number.isInteger(part)))
+  if (
+    parts.length !== 4 ||
+    parts.some((part) => !Number.isInteger(part) || part < 0 || part > 255)
+  )
     return true;
-  const [a, b] = parts as [number, number, number, number];
+  const [a, b, c] = parts as [number, number, number, number];
   return (
     a === 0 ||
     a === 10 ||
@@ -30,29 +33,92 @@ function ipv4Private(address: string) {
     (a === 169 && b === 254) ||
     (a === 172 && b >= 16 && b <= 31) ||
     (a === 192 && b === 0) ||
+    (a === 192 && b === 88 && c === 99) ||
     (a === 192 && b === 168) ||
     (a === 198 && (b === 18 || b === 19)) ||
+    (a === 198 && b === 51 && c === 100) ||
+    (a === 203 && b === 0 && c === 113) ||
     a >= 224
   );
 }
 
-/** Loopback, private, link-local, CGNAT, multicast and reserved ranges. */
+/**
+ * An IPv6 address as eight 16-bit groups, or null when it is not one.
+ * Handles "::" compression and a dotted IPv4 tail ("::ffff:127.0.0.1").
+ */
+function ipv6Groups(address: string): number[] | null {
+  let value = address.toLowerCase().split("%")[0]!;
+  const tail = value.match(/:(\d+\.\d+\.\d+\.\d+)$/);
+  if (tail) {
+    const octets = tail[1]!.split(".").map(Number);
+    if (octets.some((octet) => !(octet >= 0 && octet <= 255))) return null;
+    value =
+      value.slice(0, -tail[1]!.length) +
+      ((octets[0]! << 8) | octets[1]!).toString(16) +
+      ":" +
+      ((octets[2]! << 8) | octets[3]!).toString(16);
+  }
+  const halves = value.split("::");
+  if (halves.length > 2) return null;
+  const head = halves[0] ? halves[0].split(":") : [];
+  const rest = halves.length === 2 && halves[1] ? halves[1].split(":") : [];
+  const missing = 8 - head.length - rest.length;
+  if (halves.length === 1 ? missing !== 0 : missing < 1) return null;
+  const groups = [...head, ...Array<string>(missing).fill("0"), ...rest].map(
+    (group) => (/^[0-9a-f]{1,4}$/.test(group) ? parseInt(group, 16) : NaN),
+  );
+  return groups.some(Number.isNaN) ? null : groups;
+}
+
+const embeddedIpv4 = (high: number, low: number) =>
+  `${high >> 8}.${high & 0xff}.${low >> 8}.${low & 0xff}`;
+
+function ipv6Private(address: string) {
+  const g = ipv6Groups(address);
+  if (!g) return true;
+  const zeroPrefix = (count: number) =>
+    g.slice(0, count).every((group) => group === 0);
+  // Unspecified and loopback.
+  if (zeroPrefix(7) && (g[7] === 0 || g[7] === 1)) return true;
+  // Addresses that carry an IPv4 address and reach it: IPv4-mapped
+  // (::ffff:a.b.c.d), IPv4-compatible (::a.b.c.d), IPv4-translated
+  // (::ffff:0:a.b.c.d) and NAT64 (64:ff9b::a.b.c.d). The URL parser writes
+  // these in hex ("[::ffff:7f00:1]"), so they are judged by the IPv4 inside.
+  if (zeroPrefix(5) && g[5] === 0xffff)
+    return ipv4Private(embeddedIpv4(g[6]!, g[7]!));
+  if (zeroPrefix(6)) return ipv4Private(embeddedIpv4(g[6]!, g[7]!));
+  if (zeroPrefix(4) && g[4] === 0xffff && g[5] === 0)
+    return ipv4Private(embeddedIpv4(g[6]!, g[7]!));
+  if (g[0] === 0x64 && g[1] === 0xff9b) return true;
+  // 6to4 (2002::/16) embeds an IPv4 address in groups 1-2; Teredo
+  // (2001:0::/32) tunnels to an arbitrary one. Neither is a normal server.
+  if (g[0] === 0x2002) return true;
+  if (g[0] === 0x2001 && g[1] === 0) return true;
+  // Documentation (2001:db8::/32) and discard (100::/64).
+  if (g[0] === 0x2001 && g[1] === 0xdb8) return true;
+  if (g[0] === 0x100 && g[1] === 0 && g[2] === 0 && g[3] === 0) return true;
+  const first = g[0]!;
+  return (
+    // Unique local fc00::/7.
+    (first & 0xfe00) === 0xfc00 ||
+    // Link-local fe80::/10 and the deprecated site-local fec0::/10.
+    (first & 0xffc0) === 0xfe80 ||
+    (first & 0xffc0) === 0xfec0 ||
+    // Multicast ff00::/8.
+    (first & 0xff00) === 0xff00
+  );
+}
+
+/**
+ * Loopback, private, link-local, CGNAT, multicast, documentation and reserved
+ * ranges, in IPv4 and IPv6, including IPv6 forms that embed an IPv4 address.
+ * Anything that does not parse as an IP address counts as private.
+ */
 export function isPrivateAddress(address: string) {
   const family = isIP(address);
   if (family === 4) return ipv4Private(address);
-  if (family !== 6) return true;
-  const value = address.toLowerCase();
-  const mapped = value.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-  if (mapped) return ipv4Private(mapped[1]!);
-  return (
-    value === "::" ||
-    value === "::1" ||
-    /^f[cd]/.test(value) ||
-    /^fe[89ab]/.test(value) ||
-    /^ff/.test(value) ||
-    value.startsWith("64:ff9b:") ||
-    value.startsWith("2001:db8")
-  );
+  if (family === 6) return ipv6Private(address);
+  return true;
 }
 
 const BLOCKED_HOSTS = /(^|\.)(localhost|local|internal|localdomain|home|lan)$/i;
@@ -68,7 +134,8 @@ export function checkOutboundUrl(raw: string): URL {
   if (url.protocol !== "https:") throw new OutboundBlockedError("not_https");
   if (url.username || url.password)
     throw new OutboundBlockedError("credentials_in_url");
-  const host = url.hostname.replace(/^\[|\]$/g, "");
+  // A trailing dot is the same name ("localhost." is localhost).
+  const host = url.hostname.replace(/^\[|\]$/g, "").replace(/\.+$/, "");
   if (!host || BLOCKED_HOSTS.test(host))
     throw new OutboundBlockedError("private_host");
   if (isIP(host) && isPrivateAddress(host))
@@ -137,6 +204,13 @@ export async function outboundFetch(
     redirect: "manual",
     signal,
     dispatcher: agent,
+  }).catch((error: unknown) => {
+    // A refusal at connect time (the DNS answer was private, e.g. after a
+    // rebinding) arrives wrapped as "fetch failed". Surface it as the block
+    // it is, so it is reported and recorded as one.
+    const cause = (error as { cause?: unknown })?.cause;
+    if (cause instanceof OutboundBlockedError) throw cause;
+    throw error;
   });
   if (response.status >= 300 && response.status < 400)
     throw new OutboundBlockedError("redirect_not_followed");

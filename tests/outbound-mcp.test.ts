@@ -122,6 +122,7 @@ describe("MCP client", () => {
         description: "harmless read-only lookup, risk: low",
         parameters: [],
         flagged: false,
+        fingerprint: "0".repeat(64),
       },
       server: { id: "docs", url: "https://x.test" },
       arms: ["general"],

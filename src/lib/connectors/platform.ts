@@ -335,14 +335,38 @@ async function credential(identity: ProductIdentity, id: PlatformId) {
   return decryptSecret(row.credential_reference);
 }
 
-/** A live check against the provider, recorded as the connection's health. */
+/** A health error a person can read. Never derived from the token. */
+function healthError(name: string, error: unknown) {
+  const message = error instanceof Error ? error.message : "";
+  const status = message.startsWith("provider_rejected:")
+    ? Number(message.split(":")[1])
+    : null;
+  if (status === 401 || status === 403)
+    return `${name} no longer accepts this token. It may have expired or been revoked.`;
+  if (status) return `${name} answered with HTTP ${status}.`;
+  if (/abort|timeout/i.test(message)) return `${name} did not answer in time.`;
+  return `${name} could not be reached.`;
+}
+
+/**
+ * A live check against the provider, recorded as the connection's health.
+ * Null when the platform is not connected: there is nothing to check, and a
+ * failed health row for a connection that does not exist would be noise.
+ */
 export async function checkPlatformHealth(
   identity: ProductIdentity,
   id: PlatformId,
 ) {
+  if (!connectorKeyConfigured()) return null;
+  let token: string;
+  try {
+    token = await credential(identity, id);
+  } catch {
+    return null;
+  }
   const startedAt = Date.now();
   try {
-    await PROVIDERS[id].verify(await credential(identity, id));
+    await PROVIDERS[id].verify(token);
     const result = { ok: true, latencyMs: Date.now() - startedAt, error: null };
     await recordHealth(identity, id, result);
     return result;
@@ -350,7 +374,7 @@ export async function checkPlatformHealth(
     const result = {
       ok: false,
       latencyMs: Date.now() - startedAt,
-      error: error instanceof Error ? error.message : "check_failed",
+      error: healthError(PROVIDERS[id].name, error),
     };
     await recordHealth(identity, id, result);
     return result;
