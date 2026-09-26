@@ -7,6 +7,7 @@ import {
 import type { SandboxHandle } from "../sandbox/driver";
 import type { ToolDefinition } from "../tools/registry";
 import { SandboxBrowser, type BrowserAction } from "./browser";
+import type { ScreenshotCollection } from "./screenshots";
 
 // computer.inspect: look at the app running in the workspace the way a user
 // would. It opens a page served inside the sandbox (localhost only -- it
@@ -26,7 +27,15 @@ const action = z.discriminatedUnion("type", [
   z.object({ type: z.literal("wait"), selector: z.string().min(1).max(200) }),
 ]);
 
-export function computerTools(handle: () => SandboxHandle): ToolDefinition[] {
+export type ScreenshotSink = (
+  url: string,
+  collection: ScreenshotCollection,
+) => Promise<string[]>;
+
+export function computerTools(
+  handle: () => SandboxHandle,
+  options: { onScreenshots?: ScreenshotSink } = {},
+): ToolDefinition[] {
   let browser: SandboxBrowser | null = null;
   return [
     {
@@ -66,6 +75,23 @@ export function computerTools(handle: () => SandboxHandle): ToolDefinition[] {
           texts: request.expectText,
         });
         const evidenceRefs = evidenceRefsForBrowser(url, session);
+        // The pictures go to the run as artifacts, never into the model's
+        // context: the tool result only says which ones were saved.
+        let screenshotsSaved: string[] = [];
+        let screenshotsUnavailable: string | null = null;
+        if (options.onScreenshots) {
+          const collection = await browser
+            .screenshots(session)
+            .catch(() => null);
+          if (collection) {
+            screenshotsSaved = await options
+              .onScreenshots(url, collection)
+              .catch(() => []);
+            if (!screenshotsSaved.length)
+              screenshotsUnavailable =
+                collection.failures[0]?.detail ?? "No screenshots were saved.";
+          } else screenshotsUnavailable = "Screenshots could not be read.";
+        }
         return {
           url,
           status: session.status,
@@ -88,6 +114,8 @@ export function computerTools(handle: () => SandboxHandle): ToolDefinition[] {
             summary: oav.verify.summary,
           },
           evidenceRefs,
+          screenshotsSaved,
+          screenshotsUnavailable,
           groundingSummary: formatObserveActVerify(oav),
         };
       },

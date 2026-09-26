@@ -777,7 +777,13 @@ export class RuntimeRepository {
       ),
       queryAs<Record<string, unknown>>(
         this.actorId,
-        `select id, kind, title, content_type, content, provenance, created_at
+        // Image bytes stay out of the snapshot the workbench polls; they are
+        // fetched once, on demand, through getArtifactImage.
+        `select id, kind, title, content_type,
+                case when content_type like 'image/%'
+                     then content - 'data'
+                     else content end as content,
+                provenance, created_at
            from osirus.artifacts
           where run_id = $1::uuid
           order by created_at`,
@@ -821,6 +827,29 @@ export class RuntimeRepository {
         createdAt: new Date(message.created_at).toISOString(),
       })),
     };
+  }
+
+  /**
+   * The bytes of one image artifact, read under the caller's row-level
+   * security. Null when it does not exist, is not theirs, or is not an image.
+   */
+  async getArtifactImage(
+    runId: string,
+    artifactId: string,
+  ): Promise<{ contentType: string; data: string } | null> {
+    const rows = await queryAs<{ content_type: string; data: string | null }>(
+      this.actorId,
+      `select content_type, content ->> 'data' as data
+         from osirus.artifacts
+        where id = $1::uuid
+          and run_id = $2::uuid
+          and content_type like 'image/%'
+        limit 1`,
+      [artifactId, runId],
+    );
+    const row = rows[0];
+    if (!row?.data) return null;
+    return { contentType: row.content_type, data: row.data };
   }
 
   /** The run-level state a resuming worker rebuilds its context from. */
