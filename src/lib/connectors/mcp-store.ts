@@ -24,6 +24,11 @@ import type { McpServerView, McpToolView } from "./mcp-types";
 // needs an approval. If a server changes a tool's description after it was
 // reviewed, the tool is switched off until someone reviews it again -- a
 // server cannot quietly turn an approved tool into a different one.
+//
+// "Changes" means the whole definition: name, description and the full input
+// schema, hashed into a fingerprint kept in input_schema (jsonb, so no schema
+// migration). The fingerprint is re-checked on every health check and again
+// right before every call; approvals are bound to it as well.
 
 const ALL_ARMS: ArmId[] = [
   "general",
@@ -56,10 +61,30 @@ type ToolRow = {
   server_id: string;
   name: string;
   description: string;
-  input_schema: { parameters?: string[] } | null;
+  input_schema: {
+    parameters?: string[];
+    fingerprint?: string;
+    flagged?: boolean;
+  } | null;
   enabled: boolean;
   reviewed_at: Date | string | null;
 };
+
+/**
+ * The URL as shown to people: query values masked, because MCP servers often
+ * take an API key as a query parameter and the page must not echo it back.
+ */
+export function displayUrl(raw: string) {
+  try {
+    const url = new URL(raw);
+    for (const key of [...new Set(url.searchParams.keys())])
+      url.searchParams.set(key, "***");
+    url.hash = "";
+    return url.toString().replaceAll("%2A%2A%2A", "***");
+  } catch {
+    return "(invalid URL)";
+  }
+}
 
 const iso = (value: Date | string | null) =>
   value ? new Date(value).toISOString() : null;
@@ -129,7 +154,7 @@ export async function listMcpServers(
     return {
       id: server.id,
       name: server.name,
-      url: server.url,
+      url: displayUrl(server.url),
       hasToken: Boolean(server.credential_reference),
       enabled: server.enabled,
       status: server.status,
@@ -150,6 +175,7 @@ export async function listMcpServers(
         enabled: tool.enabled,
         reviewedAt: iso(tool.reviewed_at),
         risk: "high" as const,
+        ...(tool.input_schema?.flagged ? { flagged: true } : {}),
       })),
     };
   });
@@ -282,6 +308,11 @@ export async function checkMcpServer(identity: ProductIdentity, id: string) {
       if (tool.flagged) flagged += 1;
       const previous = byName.get(tool.remoteName);
       byName.delete(tool.remoteName);
+      const stored = JSON.stringify({
+        parameters: tool.parameters,
+        fingerprint: tool.fingerprint,
+        flagged: tool.flagged,
+      });
       if (!previous) {
         added += 1;
         await queryAs(
@@ -296,24 +327,39 @@ export async function checkMcpServer(identity: ProductIdentity, id: string) {
             row.id,
             tool.remoteName,
             tool.description,
-            JSON.stringify({ parameters: tool.parameters }),
+            stored,
           ],
         );
-      } else if (previous.description !== tool.description) {
-        changed += 1;
-        await queryAs(
-          identity.userId,
-          `update osirus.mcp_server_tools
-              set description = $2, input_schema = $3::jsonb,
-                  enabled = false, reviewed_at = null, reviewed_by = null
-            where id = $1::uuid`,
-          [
-            previous.id,
-            tool.description,
-            JSON.stringify({ parameters: tool.parameters }),
-          ],
-        );
+        continue;
       }
+      const known = previous.input_schema?.fingerprint;
+      // Rows from before fingerprints: what the reviewer saw was the
+      // description and the parameter names. If both are unchanged the
+      // fingerprint is recorded and the review stands; otherwise it is void.
+      const legacyUnchanged =
+        !known &&
+        previous.description === tool.description &&
+        JSON.stringify(previous.input_schema?.parameters ?? []) ===
+          JSON.stringify(tool.parameters);
+      if (known === tool.fingerprint || legacyUnchanged) {
+        if (!known)
+          await queryAs(
+            identity.userId,
+            `update osirus.mcp_server_tools set input_schema = $2::jsonb
+              where id = $1::uuid`,
+            [previous.id, stored],
+          );
+        continue;
+      }
+      changed += 1;
+      await queryAs(
+        identity.userId,
+        `update osirus.mcp_server_tools
+            set description = $2, input_schema = $3::jsonb,
+                enabled = false, reviewed_at = null, reviewed_by = null
+          where id = $1::uuid`,
+        [previous.id, tool.description, stored],
+      );
     }
     const removed = [...byName.values()];
     for (const tool of removed) {
@@ -380,7 +426,41 @@ export async function checkMcpServer(identity: ProductIdentity, id: string) {
   }
 }
 
-/** Enabled, reviewed tools on enabled servers, as registry definitions. */
+/** Switch off a tool whose definition changed after it was reviewed. */
+async function voidReview(
+  identity: Pick<ProductIdentity, "userId" | "workspaceId">,
+  serverId: string,
+  toolName: string,
+) {
+  const rows = await queryAs<{ organization_id: string }>(
+    identity.userId,
+    `update osirus.mcp_server_tools
+        set enabled = false, reviewed_at = null, reviewed_by = null
+      where server_id = $1::uuid and name = $2 and workspace_id = $3::uuid
+      returning organization_id`,
+    [serverId, toolName, identity.workspaceId],
+  );
+  if (rows[0])
+    await recordSecurityEvent(
+      {
+        userId: identity.userId,
+        organizationId: rows[0].organization_id,
+        workspaceId: identity.workspaceId,
+      },
+      {
+        kind: "tool_denied",
+        severity: "warning",
+        summary: `The MCP tool "${toolName.slice(0, 80)}" changed after it was reviewed. It was not run and is switched off until someone reviews it again.`,
+        detail: { tool: toolName.slice(0, 128) },
+      },
+    );
+}
+
+/**
+ * Enabled, reviewed tools on enabled servers, as registry definitions. A
+ * tool without a recorded fingerprint (reviewed before fingerprints existed
+ * and not checked since) is not offered until the server is checked again.
+ */
 export async function mcpToolsForWorkspace(
   identity: Pick<ProductIdentity, "userId" | "workspaceId">,
 ): Promise<ToolDefinition[]> {
@@ -389,6 +469,7 @@ export async function mcpToolsForWorkspace(
       tool_name: string;
       tool_description: string;
       parameters: string[] | null;
+      fingerprint: string | null;
     }
   >(
     identity.userId,
@@ -396,7 +477,8 @@ export async function mcpToolsForWorkspace(
             s.server_name, s.server_version, s.last_checked_at, s.last_ok_at,
             s.last_latency_ms, s.last_error,
             t.name as tool_name, t.description as tool_description,
-            coalesce((select array_agg(value) from jsonb_array_elements_text(t.input_schema -> 'parameters')), '{}') as parameters
+            coalesce((select array_agg(value) from jsonb_array_elements_text(t.input_schema -> 'parameters')), '{}') as parameters,
+            t.input_schema ->> 'fingerprint' as fingerprint
        from osirus.mcp_server_tools t
        join osirus.mcp_servers s on s.id = t.server_id
       where t.workspace_id = $1::uuid
@@ -404,20 +486,24 @@ export async function mcpToolsForWorkspace(
         and s.enabled`,
     [identity.workspaceId],
   );
-  return rows.map((row) => {
-    const server = toServer(row);
-    const tools = toolFromDiscovery({
-      tool: {
-        id: namespacedId(server.id, row.tool_name),
-        serverId: server.id,
-        remoteName: row.tool_name,
-        description: row.tool_description,
-        parameters: row.parameters ?? [],
-        flagged: false,
-      },
-      server,
-      arms: ALL_ARMS,
+  return rows
+    .filter((row) => Boolean(row.fingerprint))
+    .map((row) => {
+      const server = toServer(row);
+      const tool = toolFromDiscovery({
+        tool: {
+          id: namespacedId(server.id, row.tool_name),
+          serverId: server.id,
+          remoteName: row.tool_name,
+          description: row.tool_description,
+          parameters: row.parameters ?? [],
+          flagged: false,
+          fingerprint: row.fingerprint!,
+        },
+        server,
+        arms: ALL_ARMS,
+        onChanged: () => voidReview(identity, row.id, row.tool_name),
+      });
+      return tool as ToolDefinition;
     });
-    return tools as ToolDefinition;
-  });
 }

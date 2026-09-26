@@ -59,6 +59,7 @@ const ERRORS: Record<string, string> = {
   not_configured: "Connections are not set up on this deployment yet.",
   provider_unreachable: "The provider could not be reached. Try again.",
   rate_limited: "Too many attempts. Wait a minute and try again.",
+  not_connected: "This connection is no longer active. Reload the page.",
 };
 
 export function PlatformCard({ data }: { data: PlatformCardData }) {

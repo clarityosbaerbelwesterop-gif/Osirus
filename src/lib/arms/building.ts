@@ -218,6 +218,11 @@ export class BuildingArm extends CodingArm {
     const probes = contractProbes(contract);
     const handle = session.workspace.handle;
     let report: QaReport;
+    const { unavailableCollection } = await import("../computer/screenshots");
+    let screenshots = unavailableCollection(
+      "no_sandbox",
+      "No sandbox workspace with a browser was available for this run, so the check ran over HTTP and took no pictures.",
+    );
     const hostedUrl = handle.startBackground
       ? handle.previewUrl(PREVIEW_PORT)
       : null;
@@ -249,12 +254,17 @@ export class BuildingArm extends CodingArm {
       // browser cannot start there, the HTTP check runs and says so.
       const { SandboxBrowser } = await import("../computer/browser");
       try {
-        report = await new SandboxBrowser(handle).run(
+        const captured = await new SandboxBrowser(handle).runWithScreenshots(
           `http://127.0.0.1:${PREVIEW_PORT}/`,
           probes,
         );
-        report = { ...report, url: hostedUrl };
+        report = { ...captured.report, url: hostedUrl };
+        screenshots = captured.screenshots;
       } catch (error) {
+        screenshots = unavailableCollection(
+          "no_browser",
+          `The browser could not start in the sandbox (${error instanceof Error ? error.message.slice(0, 160) : "unknown"}).`,
+        );
         report = await browserQa().run(hostedUrl, probes);
         report = {
           ...report,
@@ -273,6 +283,21 @@ export class BuildingArm extends CodingArm {
         await served.close();
       }
     }
+    const { persistScreenshots } = await import("../computer/screenshots");
+    const screenshotRefs = await persistScreenshots({
+      url: report.url,
+      collection: screenshots,
+      producedBy: `${this.id}.qa_preview`,
+      stageId: context.work.stageId,
+      write: (shot) =>
+        context.runtime.repository.createArtifact({
+          organizationId: context.identity.organizationId,
+          workspaceId: context.identity.workspaceId,
+          sessionId: context.work.sessionId,
+          runId: context.work.runId,
+          ...shot,
+        }),
+    });
     context.state.qaReport = report;
     const { verificationArtifactFromQa } =
       await import("../building/verification-artifact");
@@ -290,6 +315,10 @@ export class BuildingArm extends CodingArm {
         failed: failed.map((check) => check.id),
         consoleErrors: report.consoleErrors.slice(0, 5),
         evidenceRefs: artifact.evidenceRefs,
+        screenshots: screenshotRefs.length,
+        screenshotsUnavailable: screenshotRefs.length
+          ? null
+          : (screenshots.failures[0]?.reason ?? null),
       },
       "user",
     );

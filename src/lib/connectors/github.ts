@@ -113,17 +113,35 @@ export async function connectGithub(
   if (!looksLikeGithubToken(input.token)) throw new Error("token_malformed");
   const verified = await verifyGithubToken(input.token);
   const sealed = encryptSecret(input.token);
+  // One statement, so it is one transaction: the installation and its grant
+  // land together or not at all. (Two statements used to leave an active
+  // installation without a grant when the second one failed -- and it always
+  // failed: $3 was used as a uuid column and as text without casts, and
+  // Postgres refuses a parameter with two deduced types (42P08). Every
+  // GitHub connection ended up "connected" with no usable read grant.)
   const rows = await queryAs<{ id: string }>(
     identity.userId,
-    `insert into osirus.connector_installations
-       (organization_id, workspace_id, connector_id, status, configuration,
-        credential_reference, installed_by)
-     values ($1, $2, 'github', 'active', $3::jsonb, $4, $5)
-     on conflict (organization_id, workspace_id, connector_id) do update set
-       status = 'active',
-       configuration = excluded.configuration,
-       credential_reference = excluded.credential_reference
-     returning id`,
+    `with installation as (
+       insert into osirus.connector_installations
+         (organization_id, workspace_id, connector_id, status, configuration,
+          credential_reference, installed_by)
+       values ($1::uuid, $2::uuid, 'github', 'active', $3::jsonb, $4, $5::uuid)
+       on conflict (organization_id, workspace_id, connector_id) do update set
+         status = 'active',
+         configuration = excluded.configuration,
+         credential_reference = excluded.credential_reference
+       returning id
+     ), revoked as (
+       update osirus.connector_grants set revoked_at = now()
+        where connector_installation_id in (select id from installation)
+          and revoked_at is null
+     )
+     insert into osirus.connector_grants
+       (connector_installation_id, organization_id, workspace_id, granted_by,
+        grantee_type, grantee_id, scopes)
+     select id, $1::uuid, $2::uuid, $5::uuid, 'workspace', $2::text, $6::jsonb
+       from installation
+     returning connector_installation_id as id`,
     [
       identity.organizationId,
       identity.workspaceId,
@@ -133,27 +151,10 @@ export async function connectGithub(
       }),
       sealed,
       identity.userId,
-    ],
-  );
-  const installationId = rows[0]!.id;
-  await queryAs(
-    identity.userId,
-    `with revoked as (
-       update osirus.connector_grants set revoked_at = now()
-        where connector_installation_id = $1 and revoked_at is null
-     )
-     insert into osirus.connector_grants
-       (connector_installation_id, organization_id, workspace_id, granted_by,
-        grantee_type, grantee_id, scopes)
-     values ($1, $2, $3, $4, 'workspace', $3::text, $5::jsonb)`,
-    [
-      installationId,
-      identity.organizationId,
-      identity.workspaceId,
-      identity.userId,
       JSON.stringify([...new Set<GithubScope>(["repo:read", ...input.scopes])]),
     ],
   );
+  if (!rows[0]) throw new Error("connect_failed");
   return { login: verified.login };
 }
 

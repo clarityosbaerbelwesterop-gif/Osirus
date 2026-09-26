@@ -4,6 +4,7 @@ import {
   Activity,
   Brain,
   FileText,
+  ImageOff,
   ListChecks,
   Puzzle,
   ShieldCheck,
@@ -331,15 +332,11 @@ export function ArtifactsPanel({
       {snapshot.artifacts.length ? (
         <ul className="rows">
           {snapshot.artifacts.map((artifact, index) => (
-            <li key={str(artifact, "id") ?? String(index)} className="row-item">
-              <FileText size={15} aria-hidden="true" className="tone-muted" />
-              <div>
-                <p>{str(artifact, "title") ?? "Artifact"}</p>
-                <p className="subtle">
-                  {(str(artifact, "kind") ?? "artifact").replace(/_/g, " ")}
-                </p>
-              </div>
-            </li>
+            <ArtifactRow
+              key={str(artifact, "id") ?? String(index)}
+              artifact={artifact}
+              runId={snapshot.run.id}
+            />
           ))}
         </ul>
       ) : null}
@@ -360,5 +357,65 @@ export function ArtifactsPanel({
         </section>
       ) : null}
     </div>
+  );
+}
+
+function ArtifactRow({
+  artifact,
+  runId,
+}: {
+  artifact: Record<string, unknown>;
+  runId: string;
+}) {
+  const id = str(artifact, "id");
+  const title = str(artifact, "title") ?? "Artifact";
+  const kind = str(artifact, "kind") ?? "artifact";
+  const content = obj(artifact, "content");
+  if (
+    id &&
+    kind === "screenshot" &&
+    str(artifact, "content_type") === "image/png"
+  ) {
+    const viewport = content ? str(content, "viewport") : null;
+    const src = `/api/runtime/${runId}/artifacts/${id}`;
+    return (
+      <li className="row-item wb-shot">
+        <a href={src} target="_blank" rel="noopener noreferrer">
+          {/* eslint-disable-next-line @next/next/no-img-element -- private, auth-gated bytes */}
+          <img
+            src={src}
+            alt={`Screenshot of the app at ${viewport ?? "unknown"} width`}
+            loading="lazy"
+            decoding="async"
+          />
+        </a>
+        <p className="subtle">{title}</p>
+      </li>
+    );
+  }
+  if (kind === "screenshot-unavailable") {
+    const failures = content ? list(content, "failures") : [];
+    const first = failures[0] as Record<string, unknown> | undefined;
+    return (
+      <li className="row-item">
+        <ImageOff size={15} aria-hidden="true" className="tone-muted" />
+        <div>
+          <p>{title}</p>
+          <p className="subtle">
+            {(first && str(first, "detail")) ??
+              "The run could not take screenshots."}
+          </p>
+        </div>
+      </li>
+    );
+  }
+  return (
+    <li className="row-item">
+      <FileText size={15} aria-hidden="true" className="tone-muted" />
+      <div>
+        <p>{title}</p>
+        <p className="subtle">{kind.replace(/_/g, " ")}</p>
+      </div>
+    </li>
   );
 }
