@@ -13,15 +13,19 @@ export function publicRuntimeErrorMessage(error: unknown) {
       return "Run cancelled.";
     case "rate_limited":
       return "The model provider is busy. Please try again shortly.";
+    case "capacity_deferred":
+      return "Model capacity is reserved for interactive requests right now. This work resumes automatically.";
     case "timeout":
       return "The model request timed out. Please try again.";
     case "provider_not_configured":
     case "model_not_configured":
       return "The model runtime is not configured.";
     case "credential_rejected":
+      return "The model provider rejected the deployment's credentials. An operator needs to fix this.";
     case "provider_unavailable":
+      return "The model provider is temporarily unavailable. Please try again later.";
     case "insufficient_credit":
-      return "The strong model is temporarily unavailable. Please try again later.";
+      return "The model provider declined the request: the account's free quota or credit is exhausted.";
     case "invalid_stream":
     case "invalid_json":
       return "The model returned an unusable response. Please try again.";
