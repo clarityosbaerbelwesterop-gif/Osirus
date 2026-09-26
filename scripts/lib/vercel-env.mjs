@@ -102,6 +102,20 @@ export function resolveRoleModel({ requested, policy, listedIds }) {
   return model;
 }
 
+/**
+ * Heuristics used only when the public catalog does not describe a model.
+ * The key's /v1/models lists image, embedding and classifier models with a
+ * ":free" suffix too (2026-09-26: 108 free IDs, many of them Stable Diffusion
+ * checkpoints), so an unannotated ID is never trusted for chat on its suffix
+ * alone: known non-chat families are dropped, known chat families rank first,
+ * and the tiers written to Vercel are only models that answered a chat probe.
+ * Keep in sync with src/lib/models/free-registry.ts.
+ */
+export const NON_CHAT_ID =
+  /(embed|whisper|tts|speech|transcri|rerank|flux|sdxl|diffusion|image|moderation|guard-only|safeguard|(^|[-_/])bge|realistic|reality|dreamshaper|deliberate|juggernaut|anything-v|pony|animerge|photography|albedobase|amponyxl|fustercluck)/i;
+export const CHAT_FAMILY =
+  /(^|[-_/.])(gpt|gemini|gemma|glm|llama|qwen|qwq|deepseek|mistral|mixtral|magistral|ministral|codestral|devstral|grok|claude|command|phi|granite|kimi|k2|minimax|hermes|nemotron|olmo|internlm|ernie|hunyuan|sonar|jamba|reka|lfm|ling|dots|axon|allam|laguna|leanstral)/i;
+
 const NON_CHAT_MODES = new Set([
   "embedding",
   "image",
@@ -154,16 +168,13 @@ export function rankFreeModels(listedIds, catalogBody, known = []) {
       if (endpoints && !endpoints.includes("openai")) continue;
       if (entry.online === false) continue;
       if (/(^|,)Deprecated(,|$)/.test(entry.tags ?? "")) continue;
-    } else if (
-      /(embed|whisper|tts|speech|transcri|rerank|flux|sdxl|image|moderation)/i.test(
-        id,
-      )
-    ) {
+    } else if (NON_CHAT_ID.test(id)) {
       continue;
     }
     candidates.push({
       id,
       known: known.indexOf(id),
+      family: annotated || CHAT_FAMILY.test(id) ? 0 : 1,
       tools: annotated?.metadata?.supportsTools === true ? 0 : 1,
       context: Number(annotated?.metadata?.contextWindow) || 0,
     });
@@ -171,11 +182,104 @@ export function rankFreeModels(listedIds, catalogBody, known = []) {
   candidates.sort(
     (a, b) =>
       (a.known < 0 ? Infinity : a.known) - (b.known < 0 ? Infinity : b.known) ||
+      a.family - b.family ||
       a.tools - b.tools ||
       b.context - a.context ||
       a.id.localeCompare(b.id),
   );
   return candidates.map((c) => c.id);
+}
+
+/**
+ * One tiny chat completion against a listed free model: does it answer as a
+ * chat model right now? Returns the HTTP status and a category only -- never
+ * the key, never the reply text. One call per model; a 429 is not retried.
+ */
+export async function probeChatModel({
+  endpoint,
+  apiKey,
+  id,
+  fetchImpl = fetch,
+  timeoutMs = 25_000,
+}) {
+  const started = Date.now();
+  try {
+    const response = await fetchImpl(endpoint, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: id,
+        messages: [{ role: "user", content: "Reply with the single word OK." }],
+        max_tokens: 16,
+        stream: false,
+      }),
+      signal: AbortSignal.timeout(timeoutMs),
+    });
+    const latencyMs = Date.now() - started;
+    if (response.status === 429)
+      return {
+        id,
+        status: 429,
+        ok: false,
+        category: "rate_limited",
+        latencyMs,
+      };
+    if (!response.ok)
+      return {
+        id,
+        status: response.status,
+        ok: false,
+        category: response.status >= 500 ? "unavailable" : "rejected",
+        latencyMs,
+      };
+    const body = await response.json().catch(() => null);
+    const text = body?.choices?.[0]?.message?.content;
+    const ok = typeof text === "string" && text.trim().length > 0;
+    return {
+      id,
+      status: response.status,
+      ok,
+      category: ok ? "answered" : "empty",
+      latencyMs,
+    };
+  } catch {
+    return {
+      id,
+      status: "network_error",
+      ok: false,
+      category: "unavailable",
+      latencyMs: Date.now() - started,
+    };
+  }
+}
+
+/**
+ * The free tiers to write: models that answered a probe first, then models
+ * that exist but were rate-limited at probe time. A model that rejected the
+ * chat request (not a chat model, unknown) is never a tier.
+ */
+export async function verifiedFreeTiers({
+  ranked,
+  probe,
+  want = 3,
+  maxProbes = 8,
+}) {
+  const probes = [];
+  for (const id of ranked.slice(0, maxProbes)) {
+    const result = await probe(id);
+    probes.push(result);
+    if (probes.filter((entry) => entry.ok).length >= want) break;
+  }
+  const tiers = [
+    ...probes.filter((entry) => entry.ok),
+    ...probes.filter((entry) => entry.category === "rate_limited"),
+  ]
+    .map((entry) => entry.id)
+    .slice(0, want);
+  return { tiers, probes };
 }
 
 /**

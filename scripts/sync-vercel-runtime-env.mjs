@@ -8,11 +8,13 @@ import {
   optionalSecret,
   parseModelPolicy,
   parseTargetList,
+  probeChatModel,
   rankFreeModels,
   resolveRoleModel,
   staleTargets,
   UNOROUTER_KEY_NAMES,
   uncoveredTargets,
+  verifiedFreeTiers,
 } from "./lib/vercel-env.mjs";
 
 const api = "https://api.vercel.com";
@@ -132,7 +134,28 @@ if (
   console.log(
     "Notice: OSIRUS_PRIMARY_MODEL is ignored under the free-first policy; every role is set to the verified free-model pool.",
   );
-const [freePrimary, freeSecondary, freeTertiary] = freeRanked;
+// Tiers are only models that answer as chat models now: /v1/models also
+// lists image and embedding models as ":free". One tiny call per probed
+// model, on the first key that could list models; a 429 is not retried.
+const probeKey = firstValid
+  ? unoRouterKeys[listings.indexOf(firstValid)]
+  : null;
+const { tiers: verifiedTiers, probes } = probeKey
+  ? await verifiedFreeTiers({
+      ranked: freeRanked,
+      probe: (id) =>
+        probeChatModel({
+          endpoint: "https://api.unorouter.com/v1/chat/completions",
+          apiKey: probeKey,
+          id,
+        }),
+    })
+  : { tiers: [], probes: [] };
+for (const probe of probes)
+  console.log(
+    `Chat probe ${probe.id}: HTTP ${probe.status} ${probe.category} (${probe.latencyMs} ms)`,
+  );
+const [freePrimary, freeSecondary, freeTertiary] = verifiedTiers;
 console.log(
   `Model policy: ${modelPolicy}; roles: ${roleModel}; free tiers: ${
     [freePrimary, freeSecondary, freeTertiary].filter(Boolean).join(", ") ||
@@ -383,6 +406,6 @@ if (!firstValid) {
 }
 if (!freePrimary) {
   throw new Error(
-    "No free chat model is listed for the configured key; Osirus cannot answer without paid credit.",
+    "No listed free model answered a chat probe; Osirus cannot answer without paid credit or another free model.",
   );
 }

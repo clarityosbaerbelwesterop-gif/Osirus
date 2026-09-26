@@ -25,12 +25,10 @@ never printed.
 
 Run it:
 
-1. The workflow must exist in `.github/workflows/` on the default branch
-   before GitHub lets anyone dispatch it. The M49 branch could not push it
-   there (the pushing token lacks the `workflow` scope), so it is staged at
-   `ops/github-workflows/provider-diagnostics.yml`. A maintainer with that
-   scope moves it into `.github/workflows/` on main (see
-   `ops/github-workflows/README.md`).
+1. The workflow is in `.github/workflows/provider-diagnostics.yml`. It also
+   sends one tiny chat request to up to 10 listed free models to check which
+   of them answer as chat models; only the ID, HTTP status, a category and the
+   latency are recorded, never the reply.
 2. `gh workflow run provider-diagnostics.yml --repo clarityosbaerbelwesterop-gif/Osirus`
    (or Actions → "Provider diagnostics" → Run workflow).
 3. Read the job summary, or download the `provider-diagnostics` artifact

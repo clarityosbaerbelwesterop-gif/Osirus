@@ -7,12 +7,15 @@ import {
   MODEL_ROLE_KEYS,
   optionalSecret,
   parseModelPolicy,
+  probeChatModel,
   rankFreeModels,
   resolveRoleModel,
   staleTargets,
   UNOROUTER_KEY_NAMES,
   parseTargetList,
   uncoveredTargets,
+  verifiedFreeTiers,
+  type ChatProbe,
   type VercelEnvironmentRow,
 } from "../scripts/lib/vercel-env.mjs";
 import {
@@ -325,5 +328,112 @@ describe("target list parsing", () => {
     expect(parseTargetList("production")).toEqual(["production"]);
     expect(parseTargetList("preview")).toEqual(["preview"]);
     expect(() => parseTargetList("staging")).toThrow(/preview, production/);
+  });
+});
+
+// IDs from the key's real /v1/models listing on 2026-09-26: image and
+// embedding models carry ":free" too.
+const LISTED_2026_09_26 = [
+  "absolutereality:free",
+  "albedobase-xl-31:free",
+  "anything-v5:free",
+  "bge-multilingual-gemma2:free",
+  "cyberrealistic-pony:free",
+  "deliberate:free",
+  "diffusiongemma-26b-a4b-it:free",
+  "dreamshaper:free",
+  "flux.1-schnell:free",
+  "gemini-3.6-flash:free",
+  "gemini-embedding-001:free",
+  "glm-4.7-flash:free",
+  "gpt-4o:free",
+  "gpt-oss-safeguard-20b:free",
+  "jina-embeddings-v3:free",
+  "juggernaut-xl:free",
+  "lorellm:free",
+  "grok-4.6",
+];
+
+describe("free chat tiers without the catalog", () => {
+  it("drops image, embedding and classifier models and ranks chat families first", () => {
+    const ranked = rankFreeModels(LISTED_2026_09_26, null);
+    expect(ranked.slice(0, 3).sort()).toEqual([
+      "gemini-3.6-flash:free",
+      "glm-4.7-flash:free",
+      "gpt-4o:free",
+    ]);
+    for (const id of [
+      "absolutereality:free",
+      "albedobase-xl-31:free",
+      "anything-v5:free",
+      "bge-multilingual-gemma2:free",
+      "cyberrealistic-pony:free",
+      "deliberate:free",
+      "diffusiongemma-26b-a4b-it:free",
+      "dreamshaper:free",
+      "flux.1-schnell:free",
+      "gemini-embedding-001:free",
+      "gpt-oss-safeguard-20b:free",
+      "jina-embeddings-v3:free",
+      "juggernaut-xl:free",
+      "grok-4.6",
+    ])
+      expect(ranked).not.toContain(id);
+    // An unknown family is kept, but only after every known chat family.
+    expect(ranked.at(-1)).toBe("lorellm:free");
+  });
+
+  it("writes only models that answered a probe, then rate-limited ones", async () => {
+    const outcome: Record<string, ChatProbe["category"]> = {
+      "a:free": "rejected",
+      "b:free": "rate_limited",
+      "c:free": "answered",
+      "d:free": "answered",
+    };
+    const { tiers, probes } = await verifiedFreeTiers({
+      ranked: ["a:free", "b:free", "c:free", "d:free", "e:free"],
+      probe: async (id) => ({
+        id,
+        status: outcome[id] === "answered" ? 200 : 429,
+        ok: outcome[id] === "answered",
+        category: outcome[id] ?? "unavailable",
+        latencyMs: 1,
+      }),
+      want: 2,
+    });
+    expect(tiers).toEqual(["c:free", "d:free"]);
+    // It stops once enough models answered: e was never called.
+    expect(probes.map((probe) => probe.id)).toEqual([
+      "a:free",
+      "b:free",
+      "c:free",
+      "d:free",
+    ]);
+  });
+
+  it("classifies a probe from the status and reply, never keeping the text", async () => {
+    const reply = (status: number, body: unknown) =>
+      (async () =>
+        new Response(JSON.stringify(body), {
+          status,
+        })) as unknown as typeof fetch;
+    const probe = (status: number, body: unknown) =>
+      probeChatModel({
+        endpoint: "https://api.unorouter.com/v1/chat/completions",
+        apiKey: "test-key-not-real",
+        id: "gpt-4o:free",
+        fetchImpl: reply(status, body),
+      });
+    const answered = await probe(200, {
+      choices: [{ message: { content: "OK" } }],
+    });
+    expect(answered).toMatchObject({ ok: true, category: "answered" });
+    expect(JSON.stringify(answered)).not.toContain('OK"');
+    expect(await probe(429, {})).toMatchObject({ category: "rate_limited" });
+    expect(await probe(400, {})).toMatchObject({ category: "rejected" });
+    expect(await probe(200, { choices: [] })).toMatchObject({
+      ok: false,
+      category: "empty",
+    });
   });
 });

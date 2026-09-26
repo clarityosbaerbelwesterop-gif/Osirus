@@ -12,6 +12,11 @@ import {
   pickUsage,
   renderMarkdown,
 } from "./lib/provider-diagnostics.mjs";
+import {
+  probeChatModel,
+  rankFreeModels,
+  verifiedFreeTiers,
+} from "./lib/vercel-env.mjs";
 
 const API = "https://api.unorouter.com";
 const labels = ["KEY_1", "KEY_2", "KEY_3"];
@@ -73,12 +78,50 @@ for (const [index, label] of labels.entries()) {
   });
 }
 
+// Which listed free models answer as chat models right now: one tiny call
+// per probed model on the first key that listed models, never retried. Only
+// the ID, HTTP status, category and latency are recorded, never the reply.
+const listedBy = results.find((entry) => entry.models.status === 200);
+let probes = [];
+if (listedBy) {
+  const key =
+    process.env[`UNOROUTER_API_KEY_${labels.indexOf(listedBy.label) + 1}`];
+  const catalog = await fetch(`${API}/api/pricing`, {
+    signal: AbortSignal.timeout(20_000),
+  })
+    .then((response) => (response.ok ? response.json() : null))
+    .catch(() => null);
+  ({ probes } = await verifiedFreeTiers({
+    ranked: rankFreeModels(listedBy.models.freeModelIds, catalog),
+    probe: (id) =>
+      probeChatModel({
+        endpoint: `${API}/v1/chat/completions`,
+        apiKey: key,
+        id,
+      }),
+    want: 5,
+    maxProbes: 10,
+  }));
+}
+
 const report = {
   runAt: new Date().toISOString(),
   keys: results,
   differences: keyDifferences(results),
+  chatProbes: probes,
 };
-const markdown = renderMarkdown(report);
+const markdown = [
+  renderMarkdown(report),
+  "",
+  "## Chat probes (one call per model, no reply text kept)",
+  "",
+  "| Model | HTTP | Result | Latency |",
+  "| ----- | ---- | ------ | ------- |",
+  ...probes.map(
+    (probe) =>
+      `| \`${probe.id}\` | ${probe.status} | ${probe.category} | ${probe.latencyMs} ms |`,
+  ),
+].join("\n");
 writeFileSync("provider-diagnostics.json", JSON.stringify(report, null, 2));
 writeFileSync("provider-diagnostics.md", markdown);
 if (process.env.GITHUB_STEP_SUMMARY)

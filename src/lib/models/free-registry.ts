@@ -176,9 +176,18 @@ export function parseCatalog(body: unknown): Map<string, CatalogEntry> {
   return entries;
 }
 
-/** Heuristic used only when the catalog is unavailable. */
-const NON_CHAT_ID =
-  /(embed|whisper|tts|speech|transcri|rerank|flux|sdxl|diffusion-xl|image|moderation|guard-only)/i;
+/**
+ * Heuristics used only when the catalog does not describe a model. The key's
+ * /v1/models lists image, embedding and classifier models with a ":free"
+ * suffix too (2026-09-26: 108 free IDs, many Stable Diffusion checkpoints), so
+ * without the catalog known non-chat families are dropped and known chat
+ * families rank ahead of unknown IDs. Keep in sync with
+ * scripts/lib/vercel-env.mjs.
+ */
+export const NON_CHAT_ID =
+  /(embed|whisper|tts|speech|transcri|rerank|flux|sdxl|diffusion|image|moderation|guard-only|safeguard|(^|[-_/])bge|realistic|reality|dreamshaper|deliberate|juggernaut|anything-v|pony|animerge|photography|albedobase|amponyxl|fustercluck)/i;
+export const CHAT_FAMILY =
+  /(^|[-_/.])(gpt|gemini|gemma|glm|llama|qwen|qwq|deepseek|mistral|mixtral|magistral|ministral|codestral|devstral|grok|claude|command|phi|granite|kimi|k2|minimax|hermes|nemotron|olmo|internlm|ernie|hunyuan|sonar|jamba|reka|lfm|ling|dots|axon|allam|laguna|leanstral)/i;
 
 export function isFreeId(id: string) {
   return /:free$/i.test(id);
@@ -280,6 +289,7 @@ export function buildFreeRegistry(
       preferredIndex >= 0 ? preferredIndex : Number.MAX_SAFE_INTEGER,
       candidate.lastSuccessAt ? 0 : 1,
       knownIndex >= 0 ? knownIndex : Number.MAX_SAFE_INTEGER,
+      catalog?.has(candidate.id) || CHAT_FAMILY.test(candidate.id) ? 0 : 1,
       candidate.supportsTools === true ? 0 : 1,
       // Larger context first; unknown context last.
       -(candidate.contextLength ?? 0),

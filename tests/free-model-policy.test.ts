@@ -648,3 +648,33 @@ describe("readiness", () => {
     expect(await cache.get(collect, Date.now())).toBe(2);
   });
 });
+
+describe("the runtime pool without the catalog", () => {
+  it("keeps image and embedding models out and puts chat families first", () => {
+    const registry = buildFreeRegistry({
+      listedByKey: [
+        {
+          label: "KEY_1",
+          models: parseModelList({
+            data: [
+              "absolutereality:free",
+              "anything-v5:free",
+              "dreamshaper:free",
+              "gemini-embedding-001:free",
+              "diffusiongemma-26b-a4b-it:free",
+              "lorellm:free",
+              "glm-4.7-flash:free",
+              "gpt-4o:free",
+            ].map((id) => ({ id })),
+          }),
+        },
+      ],
+      catalog: null,
+    });
+    expect(registry.map((candidate) => candidate.id)).toEqual([
+      "glm-4.7-flash:free",
+      "gpt-4o:free",
+      "lorellm:free",
+    ]);
+  });
+});

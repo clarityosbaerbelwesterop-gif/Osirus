@@ -53,6 +53,32 @@ export function rankFreeModels(
   known?: readonly string[],
 ): string[];
 
+export const NON_CHAT_ID: RegExp;
+export const CHAT_FAMILY: RegExp;
+
+export type ChatProbe = {
+  id: string;
+  status: number | "network_error";
+  ok: boolean;
+  category: "answered" | "empty" | "rate_limited" | "unavailable" | "rejected";
+  latencyMs: number;
+};
+
+export function probeChatModel(input: {
+  endpoint: string;
+  apiKey: string;
+  id: string;
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+}): Promise<ChatProbe>;
+
+export function verifiedFreeTiers(input: {
+  ranked: string[];
+  probe: (id: string) => Promise<ChatProbe>;
+  want?: number;
+  maxProbes?: number;
+}): Promise<{ tiers: string[]; probes: ChatProbe[] }>;
+
 export function staleTargets(
   environments: VercelEnvironmentRow[],
   key: string,
