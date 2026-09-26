@@ -321,6 +321,34 @@
   margin-top: 3px;
 }
 
+/* Screenshots from a run: a thumbnail that opens the full image. */
+
+.row-item.wb-shot {
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--space-1);
+}
+
+.wb-shot a {
+  display: block;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-surface-sunken);
+}
+
+.wb-shot a:focus-visible {
+  outline: 2px solid var(--color-accent-border);
+  outline-offset: 2px;
+}
+
+.wb-shot img {
+  display: block;
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  object-position: top;
+}
+
 /* Checks */
 
 .checks {

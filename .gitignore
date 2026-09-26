@@ -9,3 +9,5 @@ playwright-report
 test-results
 test-results-prod
 .vercel
+/provider-diagnostics.json
+/provider-diagnostics.md

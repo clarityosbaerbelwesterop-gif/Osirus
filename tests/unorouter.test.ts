@@ -2,15 +2,35 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 
 const endpoint = "https://api.unorouter.example/v1/chat/completions";
 
+/**
+ * A provider class bound to a pre-seeded free pool (no discovery fetch), with
+ * a configured paid model tried first (OSIRUS_MODEL_POLICY=configured-first)
+ * so the paid-primary behaviours stay covered. The free-first default is
+ * covered in free-model-policy.test.ts.
+ */
 async function configuredProvider() {
   vi.resetModules();
   vi.stubEnv("UNOROUTER_BASE_URL", endpoint);
   vi.stubEnv("UNOROUTER_API_KEY_1", "test-key-one");
   vi.stubEnv("UNOROUTER_API_KEY_2", "test-key-two");
   vi.stubEnv("OSIRUS_MODEL_STRONG", "grok-4.6");
+  vi.stubEnv("OSIRUS_MODEL_POLICY", "configured-first");
   vi.stubEnv("OSIRUS_REASONING_EFFORT", "high");
   const providerModule = await import("../src/lib/models/unorouter");
-  return providerModule.UnoRouterProvider;
+  const runtimeModule = await import("../src/lib/models/model-runtime");
+  const registry = await import("../src/lib/models/free-registry");
+  const runtime = new runtimeModule.ModelRuntime({ minIntervalMs: 0 });
+  runtime.pool.replace([registry.emptyCandidate("deepseek-v4-pro-0813:free")]);
+  class Bound extends providerModule.UnoRouterProvider {
+    constructor(
+      options: ConstructorParameters<
+        typeof providerModule.UnoRouterProvider
+      >[0] = {},
+    ) {
+      super({ runtime, discover: false, ...options });
+    }
+  }
+  return Bound;
 }
 
 async function collect<T>(stream: AsyncIterable<T>) {
@@ -193,6 +213,12 @@ describe("UnoRouterProvider", () => {
     // No STRONG model configured at all (the shared helper pins grok-4.6).
     delete process.env.OSIRUS_MODEL_STRONG;
     const providerModule = await import("../src/lib/models/unorouter");
+    const runtimeModule = await import("../src/lib/models/model-runtime");
+    const registry = await import("../src/lib/models/free-registry");
+    const runtime = new runtimeModule.ModelRuntime({ minIntervalMs: 0 });
+    runtime.pool.replace([
+      registry.emptyCandidate("deepseek-v4-pro-0813:free"),
+    ]);
     const fetchMock = vi
       .fn()
       .mockResolvedValue(
@@ -202,7 +228,10 @@ describe("UnoRouterProvider", () => {
         ),
       );
     vi.stubGlobal("fetch", fetchMock);
-    const provider = new providerModule.UnoRouterProvider();
+    const provider = new providerModule.UnoRouterProvider({
+      runtime,
+      discover: false,
+    });
     await expect(
       provider.complete({
         requestId: "unconfigured-role",

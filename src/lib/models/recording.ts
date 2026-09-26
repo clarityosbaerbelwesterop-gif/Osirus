@@ -1,3 +1,4 @@
+import { failureMetadata } from "./failure-report";
 import type { ModelProvider, ModelRole, Usage } from "./provider";
 
 // A provider wrapper that writes each structured or plain completion to
@@ -91,7 +92,10 @@ export function recordingProvider(
             status: errorCode(error) === "cancelled" ? "cancelled" : "failed",
             latencyMs: Date.now() - startedAt,
             errorCode: errorCode(error),
-            responseMetadata: { purpose: scope.purpose },
+            responseMetadata: {
+              purpose: scope.purpose,
+              ...failureMetadata(error),
+            },
           })
           .catch(() => undefined);
       throw error;
@@ -103,6 +107,7 @@ export function recordingProvider(
     complete: (input) => record(input.role, () => provider.complete(input)),
     structured: (input) => record(input.role, () => provider.structured(input)),
     modelId: (role) => provider.modelId(role),
+    servedModel: (requestId) => provider.servedModel?.(requestId),
     capabilities: () => provider.capabilities(),
     healthCheck: () => provider.healthCheck(),
     cancel: (id) => provider.cancel(id),

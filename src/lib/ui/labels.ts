@@ -162,24 +162,59 @@ export function failureMessage(
   failureClass: string | null | undefined,
   lastError?: string | null,
 ) {
-  const text = `${failureClass ?? ""} ${lastError ?? ""}`.toLowerCase();
-  // A permanent refusal says the provider will not serve this deployment at
-  // all until something changes on the account: the message must not claim a
-  // temporary outage will fix it (OSIRUS-01).
-  if (/insufficient_credit|balance|credit|402|quota exceeded/.test(text))
-    return "The model provider declined the request because the account's free quota or credit is exhausted. This is not a temporary outage and no work was lost: the run can be retried once provider access is restored. If you keep seeing this, contact the operator.";
-  if (/credential_rejected|unauthorized|401|403/.test(text))
-    return "The model provider rejected the deployment's credentials. This needs an operator to fix; retrying will not help.";
-  if (/model_not_configured|provider_not_configured/.test(text))
-    return "The model runtime is missing a configuration value. This needs an operator to fix; retrying will not help.";
-  if (/rate_limit|rate limited|rate-limit|429/.test(text))
+  // The failure class names the failure that actually stopped the step. It
+  // is classified on its own first: the error text may mention an earlier,
+  // superseded failure (e.g. the primary model's credit refusal before the
+  // free fallback was rate limited), and that must not win (M49 section 9).
+  // Provider categories outrank generic step outcomes: a loop that ran out
+  // because every call was rate limited was stopped by the rate limit.
+  const byClass = classifyFailureText(failureClass ?? "");
+  if (byClass?.provider) return byClass.message;
+  const byError = classifyFailureText(lastError ?? "");
+  if (byError?.provider) return byError.message;
+  return byClass?.message ?? byError?.message ?? "This step failed.";
+}
+
+function classifyFailureText(
+  raw: string,
+): { message: string; provider: boolean } | null {
+  const provider = providerFailureText(raw);
+  if (provider) return { message: provider, provider: true };
+  const generic = genericFailureText(raw);
+  return generic ? { message: generic, provider: false } : null;
+}
+
+function providerFailureText(raw: string): string | null {
+  const text = raw.toLowerCase();
+  if (!text.trim()) return null;
+  // Rate limits and outages are checked before credit: a report line such as
+  // "Primary x: insufficient_credit / Fallback y: rate_limited" ends in a
+  // transient failure and must be described as one.
+  if (/capacity_deferred/.test(text))
+    return "Model capacity is reserved for interactive requests right now. This work resumes automatically.";
+  if (/rate_limit|rate limited|rate-limit|\b429\b/.test(text))
     return "The model provider is limiting requests right now. The run waits and retries automatically; you can also try again in a few minutes.";
   if (
-    /provider_unavailable|bad_response_status_code|unavailable|503|502/.test(
+    /provider_unavailable|bad_response_status_code|unavailable|\b503\b|\b502\b/.test(
       text,
     )
   )
     return "The model provider is temporarily unavailable. The run can be retried; no work was lost.";
+  // A permanent refusal says the provider will not serve this deployment at
+  // all until something changes on the account: the message must not claim a
+  // temporary outage will fix it (OSIRUS-01).
+  if (/insufficient_credit|balance|credit|\b402\b|quota exceeded/.test(text))
+    return "The model provider declined the request because the account's free quota or credit is exhausted. This is not a temporary outage and no work was lost: the run can be retried once provider access is restored. If you keep seeing this, contact the operator.";
+  if (/credential_rejected|unauthorized|\b401\b|\b403\b/.test(text))
+    return "The model provider rejected the deployment's credentials. This needs an operator to fix; retrying will not help.";
+  if (/model_not_configured|provider_not_configured/.test(text))
+    return "The model runtime is missing a configuration value. This needs an operator to fix; retrying will not help.";
+  return null;
+}
+
+function genericFailureText(raw: string): string | null {
+  const text = raw.toLowerCase();
+  if (!text.trim()) return null;
   if (/timeout|timed out|wall_clock/.test(text))
     return "This step ran out of time.";
   if (/budget/.test(text)) return "This run reached its budget.";
@@ -188,7 +223,7 @@ export function failureMessage(
   if (/agent_loop_exhausted|bound_reached/.test(text))
     return "Osirus could not finish this step within its limits.";
   if (/cancel/.test(text)) return "This step was cancelled.";
-  return "This step failed.";
+  return null;
 }
 
 export function humanize(id: string) {

@@ -450,7 +450,26 @@ export class CodingArm extends BaseArm {
               github.githubCredential(identity, "repo:write"),
             openPullRequest: github.openPullRequest,
           }),
-          ...computerTools(() => session.workspace.handle),
+          ...computerTools(() => session.workspace.handle, {
+            onScreenshots: async (url, collection) => {
+              const { persistScreenshots } =
+                await import("../computer/screenshots");
+              return persistScreenshots({
+                url,
+                collection,
+                producedBy: `${this.id}.computer_inspect`,
+                stageId: context.work.stageId,
+                write: (shot) =>
+                  context.runtime.repository.createArtifact({
+                    organizationId: context.identity.organizationId,
+                    workspaceId: context.identity.workspaceId,
+                    sessionId: context.work.sessionId,
+                    runId: context.work.runId,
+                    ...shot,
+                  }),
+              });
+            },
+          }),
         ],
       ],
     });

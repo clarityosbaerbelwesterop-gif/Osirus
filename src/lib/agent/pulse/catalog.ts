@@ -371,7 +371,8 @@ export async function runLiveCodingTask(
       expect: { verdicts: ["verified"] },
     },
     {
-      provider: provider ?? new UnoRouterProvider(),
+      // M49: capability probes are P3 and pause while users need capacity.
+      provider: provider ?? new UnoRouterProvider({ priority: "P3" }),
       sandbox: () => resolveSandbox(),
       signal,
       stageInput: task.hiddenChecks ? { hiddenChecks: task.hiddenChecks } : {},
