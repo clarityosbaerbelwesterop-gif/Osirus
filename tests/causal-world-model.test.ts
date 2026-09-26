@@ -67,8 +67,11 @@ const runState = {
 
 describe("Memory OS II temporal model", () => {
   it("decays older items but never below the floor", () => {
-    const recent = temporalDecay(new Date());
-    const old = temporalDecay("2020-01-01T00:00:00.000Z");
+    // One clock for both calls: two new Date() calls a millisecond apart
+    // made "recent" 0.99999... and failed CI on main (run 36247835885).
+    const now = new Date();
+    const recent = temporalDecay(now, now);
+    const old = temporalDecay("2020-01-01T00:00:00.000Z", now);
     expect(recent).toBe(1);
     expect(old).toBeGreaterThan(0);
     expect(old).toBeLessThan(recent);
