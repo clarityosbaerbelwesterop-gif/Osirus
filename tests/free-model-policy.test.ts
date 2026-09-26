@@ -576,6 +576,27 @@ describe("capacity priority scheduler (protect user chat from RSI)", () => {
     expect(s.admit("P4", calm).admitted).toBe(true);
   });
 
+  it("discovers the pool before admitting P3/P4 on a fresh instance", async () => {
+    // A cold serverless instance has an empty pool, which reads as scarce:
+    // without discovery first, the pulse and RSI would be deferred forever.
+    const { providerModule, runtimeModule, route } = await setup();
+    const cold = new runtimeModule.ModelRuntime({ minIntervalMs: 0 });
+    route((call) =>
+      call.url.endsWith("/models")
+        ? new Response(
+            JSON.stringify({ data: [{ id: "glm-4.7-flash:free" }] }),
+            { status: 200 },
+          )
+        : ok(),
+    );
+    const rsi = new providerModule.UnoRouterProvider({
+      runtime: cold,
+      priority: "P4",
+    });
+    expect((await rsi.admission()).admitted).toBe(true);
+    expect(cold.pool.ids()).toEqual(["glm-4.7-flash:free"]);
+  });
+
   it("defers an RSI request without spending a model call, as a transient refusal", async () => {
     const { provider, runtime, calls, route } = await setup();
     route(() => ok());

@@ -243,8 +243,13 @@ describe("the runners' exchange with production", () => {
     await withHypothesis(store, true, "src/lib/tools/registry.ts");
     expect(await takeCodeHypothesis(store, T)).toBeNull();
     await withHypothesis(store);
-    const taken = (await takeCodeHypothesis(store, T))!;
+    // While chat needs the free models, RSI gets nothing and reserves nothing.
+    expect(await takeCodeHypothesis(store, T, async () => false)).toBeNull();
+    expect((await store.usage("2026-09-25")).rsi_model_calls ?? 0).toBe(0);
+    const taken = (await takeCodeHypothesis(store, T, async () => true))!;
     expect(taken.hypothesis.symbol).toBe("normalizeClaim");
+    // The server names the free model the runner must use.
+    expect(taken.model).toMatch(/:free$/);
     expect(taken.calls).toBe(3);
     expect((await store.usage("2026-09-25")).rsi_model_calls).toBe(3);
     // Not again within the day.
@@ -321,6 +326,8 @@ describe("the runners' exchange with production", () => {
     expect(await takeLiveOrder(store, T)).toBeNull();
     expect((await store.usage("2026-09-25")).rsi_model_calls).toBe(31);
     await store.addUsage("rsi_model_calls", -10, "2026-09-25");
+    expect(await takeLiveOrder(store, T, async () => false)).toBeNull();
+    expect((await store.usage("2026-09-25")).rsi_model_calls).toBe(21);
     const taken = (await takeLiveOrder(store, T))!;
     expect(taken.reserved).toBe(11);
     const evidence = (taskId: string) =>

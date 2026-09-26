@@ -40,7 +40,6 @@ import { UnoRouterProvider } from "../src/lib/models/unorouter";
 // model never saw, or that makes any other arena worse, or breaks any test,
 // is reported as "no verified improvement" and leaves no branch behind.
 
-const model = process.env.RSI_MODEL ?? "deepseek-v4-pro-0813:free";
 const reportPath = process.env.RSI_REPORT ?? "software-rsi-report.json";
 const runId = process.env.GITHUB_RUN_ID ?? `local${Date.now()}`;
 
@@ -95,8 +94,17 @@ it("attempts one bounded code improvement", async () => {
         process.env.RSI_HYPOTHESIS_FILE ?? "hypothesis.json",
         "utf8",
       )),
-  ) as { id: string; calls: number; hypothesis: CodeHypothesisContent };
+  ) as {
+    id: string;
+    calls: number;
+    hypothesis: CodeHypothesisContent;
+    model?: string;
+  };
   const { hypothesis } = taken;
+  // The server names the probe-verified free model (M49); RSI_MODEL only
+  // overrides it for a local run.
+  const model =
+    process.env.RSI_MODEL ?? taken.model ?? "deepseek-v4-pro-0813:free";
   const report = {
     id: taken.id,
     outcome: "no_improvement" as

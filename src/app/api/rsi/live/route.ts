@@ -2,6 +2,13 @@ import { RSI_LIVE_EXPECTATION } from "@/lib/security/github-oidc";
 import { authorizeRsiCaller, boundedJson } from "@/lib/security/rsi-callers";
 
 export const dynamic = "force-dynamic";
+
+/** RSI is P4: it waits while chat needs the free models (M49). */
+async function rsiAdmission() {
+  const { UnoRouterProvider } = await import("@/lib/models/unorouter");
+  const admission = await new UnoRouterProvider({ priority: "P4" }).admission();
+  return admission.admitted;
+}
 export const runtime = "nodejs";
 
 // The live lane of the Recursive Intelligence Cycle. The rsi-live workflow
@@ -18,7 +25,11 @@ export async function GET(request: Request) {
   if (refused) return refused;
   const { PgIntelStore } = await import("@/lib/intelligence/store/pg-store");
   const { takeLiveOrder } = await import("@/lib/intelligence/rsi/exchange");
-  const order = await takeLiveOrder(new PgIntelStore());
+  const order = await takeLiveOrder(
+    new PgIntelStore(),
+    new Date(),
+    rsiAdmission,
+  );
   if (!order) return new Response(null, { status: 204 });
   return Response.json({ order }, { headers: { "Cache-Control": "no-store" } });
 }
