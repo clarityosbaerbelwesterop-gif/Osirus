@@ -13,6 +13,7 @@ import {
   parses,
   patchPrompt,
   patchProposalSchema,
+  proposalFailure,
   regressions,
   type PatchProposal,
   spliceSymbol,
@@ -39,7 +40,6 @@ import { UnoRouterProvider } from "../src/lib/models/unorouter";
 // model never saw, or that makes any other arena worse, or breaks any test,
 // is reported as "no verified improvement" and leaves no branch behind.
 
-const model = process.env.RSI_MODEL ?? "deepseek-v4-pro-0813:free";
 const reportPath = process.env.RSI_REPORT ?? "software-rsi-report.json";
 const runId = process.env.GITHUB_RUN_ID ?? `local${Date.now()}`;
 
@@ -94,12 +94,26 @@ it("attempts one bounded code improvement", async () => {
         process.env.RSI_HYPOTHESIS_FILE ?? "hypothesis.json",
         "utf8",
       )),
-  ) as { id: string; calls: number; hypothesis: CodeHypothesisContent };
+  ) as {
+    id: string;
+    calls: number;
+    hypothesis: CodeHypothesisContent;
+    model?: string;
+  };
   const { hypothesis } = taken;
+  // The server names the probe-verified free model (M49); RSI_MODEL only
+  // overrides it for a local run.
+  const model =
+    process.env.RSI_MODEL ?? taken.model ?? "deepseek-v4-pro-0813:free";
   const report = {
     id: taken.id,
     outcome: "no_improvement" as
-      "ready" | "pr_opened" | "no_improvement" | "refused" | "failed",
+      | "ready"
+      | "pr_opened"
+      | "no_improvement"
+      | "refused"
+      | "failed"
+      | "infrastructure_failure",
     prUrl: null as string | null,
     branch: null as string | null,
     summary: "",
@@ -234,12 +248,13 @@ it("attempts one bounded code improvement", async () => {
         proposal = response.value;
       } catch (error) {
         report.spent.modelCalls += 1;
-        previous = {
-          reasons: [
-            `no valid proposal: ${error instanceof Error ? error.message.slice(0, 200) : "error"}`,
-          ],
-          replacement: "",
-        };
+        const failure = proposalFailure(error);
+        if (failure.infrastructure) {
+          report.outcome = "infrastructure_failure";
+          report.summary = `stopped by the provider, nothing learned about the code: ${failure.reason}`;
+          break;
+        }
+        previous = { reasons: [failure.reason], replacement: "" };
         continue;
       }
     const patched = spliceSymbol(original, span, proposal.replacement);
@@ -398,7 +413,11 @@ it("attempts one bounded code improvement", async () => {
         : "no attempt was made";
   }
   await finish();
-  expect(["pr_opened", "no_improvement", "refused", "failed"]).toContain(
-    report.outcome,
-  );
+  expect([
+    "pr_opened",
+    "no_improvement",
+    "refused",
+    "failed",
+    "infrastructure_failure",
+  ]).toContain(report.outcome);
 });

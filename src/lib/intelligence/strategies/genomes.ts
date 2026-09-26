@@ -27,6 +27,8 @@ export const STRATEGY_SEEDS: Array<{
   id: string;
   kind: ArmId;
   capabilityId: string;
+  /** Capability prefixes this strategy also owns, beyond its own id's. */
+  owns?: string[];
   description: string;
 }> = [
   {
@@ -47,11 +49,33 @@ export const STRATEGY_SEEDS: Array<{
     capabilityId: "research.citations",
     description: "How the research arm answers with cited sources.",
   },
+  {
+    // The capabilities the hourly cycle (M44) measures are answered by the
+    // general arm. Without a strategy of their own, their gaps could never
+    // become a live experiment.
+    id: "general.reasoning",
+    kind: "general",
+    capabilityId: "reasoning.planning",
+    owns: ["reasoning.", "planning.", "memory."],
+    description:
+      "How the general arm reasons, plans and keeps context on tasks with one checkable answer.",
+  },
 ];
+
+type StrategySeed = (typeof STRATEGY_SEEDS)[number];
+
+/** Whether a strategy answers for a capability. */
+export function strategyOwns(seed: StrategySeed, capabilityId: string) {
+  return (
+    seed.capabilityId === capabilityId ||
+    (seed.owns ?? []).some((prefix) => capabilityId.startsWith(prefix))
+  );
+}
 
 export function strategyForCapability(capabilityId: string) {
   return (
     STRATEGY_SEEDS.find((seed) => seed.capabilityId === capabilityId) ??
+    STRATEGY_SEEDS.find((seed) => strategyOwns(seed, capabilityId)) ??
     STRATEGY_SEEDS.find((seed) =>
       capabilityId.startsWith(seed.id.split(".")[0]!),
     ) ??
@@ -233,33 +257,37 @@ const LIBRARY: LibraryEntry[] = [
   },
   // M46: architecture candidates. Same model, same tools: the wiring of
   // Osirus is the variable.
-  ...(["coding", "math_science", "research"] as const).flatMap((arm) => [
-    {
-      gap: "planning" as const,
-      arm,
-      statement:
-        "The executor starts without a plan contract; a planner stage in front of it hands one over.",
-      intervention: { architecture: { planning: "planner_executor" as const } },
-      expected:
-        "More verified results on multi-step tasks; more calls per task.",
-    },
-    {
-      gap: "context" as const,
-      arm,
-      statement:
-        "Up-front memory retrieval crowds the context; retrieving on demand keeps it focused.",
-      intervention: { architecture: { memory: "late" as const } },
-      expected: "Same or better verified rate at fewer tokens.",
-    },
-    {
-      gap: "verification" as const,
-      arm,
-      statement:
-        "Drafts are finished without an independent review; an adversarial reviewer whose attacks must be confirmed by a check catches them.",
-      intervention: { architecture: { critic: "adversarial" as const } },
-      expected: "Fewer false completions.",
-    },
-  ]),
+  ...(["coding", "math_science", "research", "general"] as const).flatMap(
+    (arm) => [
+      {
+        gap: "planning" as const,
+        arm,
+        statement:
+          "The executor starts without a plan contract; a planner stage in front of it hands one over.",
+        intervention: {
+          architecture: { planning: "planner_executor" as const },
+        },
+        expected:
+          "More verified results on multi-step tasks; more calls per task.",
+      },
+      {
+        gap: "context" as const,
+        arm,
+        statement:
+          "Up-front memory retrieval crowds the context; retrieving on demand keeps it focused.",
+        intervention: { architecture: { memory: "late" as const } },
+        expected: "Same or better verified rate at fewer tokens.",
+      },
+      {
+        gap: "verification" as const,
+        arm,
+        statement:
+          "Drafts are finished without an independent review; an adversarial reviewer whose attacks must be confirmed by a check catches them.",
+        intervention: { architecture: { critic: "adversarial" as const } },
+        expected: "Fewer false completions.",
+      },
+    ],
+  ),
   {
     gap: "knowledge",
     arm: "research",
@@ -269,42 +297,44 @@ const LIBRARY: LibraryEntry[] = [
     expected: "Fewer unsupported claims in compound tasks.",
   },
   // M48: model-usage candidates. The same model, used differently.
-  ...(["coding", "math_science", "research"] as const).flatMap((arm) => [
-    {
-      gap: "verification" as const,
-      arm,
-      statement:
-        "The model finishes on its first derivation; asking it to re-derive the key result by another route before FINISH catches slips.",
-      intervention: { modelUse: { critique: "self_check" as const } },
-      expected: "Fewer false completions for one or two more steps.",
-    },
-    {
-      gap: "tool" as const,
-      arm,
-      statement:
-        "The model asks for tool schemas or calls tools with wrong fields; showing each tool's input fields up front avoids it.",
-      intervention: {
-        modelUse: { toolDescriptions: "summary_with_inputs" as const },
+  ...(["coding", "math_science", "research", "general"] as const).flatMap(
+    (arm) => [
+      {
+        gap: "verification" as const,
+        arm,
+        statement:
+          "The model finishes on its first derivation; asking it to re-derive the key result by another route before FINISH catches slips.",
+        intervention: { modelUse: { critique: "self_check" as const } },
+        expected: "Fewer false completions for one or two more steps.",
       },
-      expected: "Fewer failed tool calls and schema requests.",
-    },
-    {
-      gap: "planning" as const,
-      arm,
-      statement:
-        "The task is buried under the contract; leading the prompt with it keeps the model on the objective.",
-      intervention: { modelUse: { promptStyle: "task_first" as const } },
-      expected: "Same or better verified rate; fewer off-objective steps.",
-    },
-    {
-      gap: "knowledge" as const,
-      arm,
-      statement:
-        "Sampling noise changes answers between runs; a low temperature makes derivations reproducible.",
-      intervention: { modelUse: { sampling: { temperature: 0.2 } } },
-      expected: "Fewer inconsistent answers on the same task.",
-    },
-  ]),
+      {
+        gap: "tool" as const,
+        arm,
+        statement:
+          "The model asks for tool schemas or calls tools with wrong fields; showing each tool's input fields up front avoids it.",
+        intervention: {
+          modelUse: { toolDescriptions: "summary_with_inputs" as const },
+        },
+        expected: "Fewer failed tool calls and schema requests.",
+      },
+      {
+        gap: "planning" as const,
+        arm,
+        statement:
+          "The task is buried under the contract; leading the prompt with it keeps the model on the objective.",
+        intervention: { modelUse: { promptStyle: "task_first" as const } },
+        expected: "Same or better verified rate; fewer off-objective steps.",
+      },
+      {
+        gap: "knowledge" as const,
+        arm,
+        statement:
+          "Sampling noise changes answers between runs; a low temperature makes derivations reproducible.",
+        intervention: { modelUse: { sampling: { temperature: 0.2 } } },
+        expected: "Fewer inconsistent answers on the same task.",
+      },
+    ],
+  ),
   {
     gap: "context",
     arm: "coding",

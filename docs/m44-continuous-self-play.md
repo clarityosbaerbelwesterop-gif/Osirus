@@ -51,6 +51,24 @@ at most 12 on one live order (enough for a champion/challenger pair).
 - The allowance accrues through the UTC day (`rsi/budget.ts`).
 - Calls are reserved before they are spent, then settled against actual use.
 - When the envelope is spent, the cycle continues offline.
+- **Chat comes first (M49).** RSI is priority P4. The live-order and
+  code-hypothesis endpoints hand out nothing while users hold model
+  capacity or the free models are rate-limited, and the runners try again on
+  the next tick.
+- **The model** is `OSIRUS_FREE_MODEL_PRIMARY`, which the runtime sync writes
+  only from a free model that answered a chat probe. The earlier hard-coded
+  `deepseek-v4-pro-0813:free` stopped answering on 2026-09-25.
+
+### Which hypothesis gets the live order
+
+- **Why this rule exists.** In production (2026-09-25/26) no live order opened in 6 cycles. The only live hypotheses targeted `coding.debug`, whose tasks need a sandbox. The capabilities the cycle actually measures (`reasoning.*`, `planning.*`, `memory.*`) had no strategy, so their gaps never became hypotheses.
+- **New strategy.** The general arm now has a strategy of its own, `general.reasoning` (`strategies/genomes.ts`), which owns those capabilities. The M46 architecture and M48 model-use candidates apply to it.
+- **How the experiment phase picks.** It takes the first live hypothesis that can be tested now:
+  - a strategy with a champion;
+  - label-verified tasks of the hypothesis's own capability;
+  - tasks the live lane can check without a sandbox.
+
+  A hypothesis that fails these checks is passed over; it does not block the others.
 
 ## Arenas (`src/lib/intelligence/generation/arenas.ts`)
 

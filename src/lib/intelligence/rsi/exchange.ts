@@ -2,6 +2,7 @@ import { z } from "zod";
 import { fingerprint } from "../evals/random";
 import { onAllowlist } from "../software-rsi/policy";
 import type { IntelStore } from "../store/store";
+import { rsiModel } from "./model";
 import type { LearningArtifact } from "../types";
 import { reserveCalls, settleCalls } from "./budget";
 import type { LiveEvidence, LiveOrderContent } from "./phases";
@@ -20,7 +21,19 @@ const HOUR = 3_600_000;
 const CODE_ATTEMPT_INTERVAL_MS = 24 * HOUR;
 const CODE_CALLS = 3;
 
-export async function takeLiveOrder(intel: IntelStore, now = new Date()) {
+/**
+ * Asks the model runtime whether P4 work may use free capacity now. Chat
+ * comes first (M49): while users hold capacity or the free models are
+ * rate-limited, the RSI runners get nothing and try again next tick.
+ */
+export type RsiAdmission = () => Promise<boolean>;
+
+export async function takeLiveOrder(
+  intel: IntelStore,
+  now = new Date(),
+  admit?: RsiAdmission,
+) {
+  if (admit && !(await admit())) return null;
   const orders = await intel.listArtifacts({ kind: "live_order", limit: 50 });
   const order = orders.find(
     (artifact) => (artifact.content as LiveOrderContent).state === "open",
@@ -188,7 +201,12 @@ export type CodeHypothesisContent = {
  * its file on the allowlist, not attempted in the last day, and model calls
  * reserved for it.
  */
-export async function takeCodeHypothesis(intel: IntelStore, now = new Date()) {
+export async function takeCodeHypothesis(
+  intel: IntelStore,
+  now = new Date(),
+  admit?: RsiAdmission,
+) {
+  if (admit && !(await admit())) return null;
   const candidates = (
     await intel.listArtifacts({ kind: "code_hypothesis", limit: 100 })
   )
@@ -220,12 +238,25 @@ export async function takeCodeHypothesis(intel: IntelStore, now = new Date()) {
     ...chosen,
     content: next as unknown as Record<string, unknown>,
   });
-  return { id: chosen.fingerprint, calls: granted, hypothesis: next };
+  return {
+    id: chosen.fingerprint,
+    calls: granted,
+    hypothesis: next,
+    model: rsiModel(),
+  };
 }
 
 export const codeReportSchema = z.object({
   id: z.string().min(8).max(80),
-  outcome: z.enum(["pr_opened", "no_improvement", "refused", "failed"]),
+  // infrastructure_failure: the provider stopped the attempt. It is not a
+  // result about the code, never "no improvement".
+  outcome: z.enum([
+    "pr_opened",
+    "no_improvement",
+    "refused",
+    "failed",
+    "infrastructure_failure",
+  ]),
   prUrl: z
     .string()
     .regex(/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+$/)

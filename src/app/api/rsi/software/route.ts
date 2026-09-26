@@ -2,6 +2,13 @@ import { SOFTWARE_RSI_EXPECTATION } from "@/lib/security/github-oidc";
 import { authorizeRsiCaller, boundedJson } from "@/lib/security/rsi-callers";
 
 export const dynamic = "force-dynamic";
+
+/** RSI is P4: it waits while chat needs the free models (M49). */
+async function rsiAdmission() {
+  const { UnoRouterProvider } = await import("@/lib/models/unorouter");
+  const admission = await new UnoRouterProvider({ priority: "P4" }).admission();
+  return admission.admitted;
+}
 export const runtime = "nodejs";
 
 // Software RSI (M45). The software-rsi workflow takes one code hypothesis a
@@ -20,7 +27,11 @@ export async function GET(request: Request) {
   const { PgIntelStore } = await import("@/lib/intelligence/store/pg-store");
   const { takeCodeHypothesis } =
     await import("@/lib/intelligence/rsi/exchange");
-  const taken = await takeCodeHypothesis(new PgIntelStore());
+  const taken = await takeCodeHypothesis(
+    new PgIntelStore(),
+    new Date(),
+    rsiAdmission,
+  );
   if (!taken) return new Response(null, { status: 204 });
   return Response.json(taken, { headers: { "Cache-Control": "no-store" } });
 }

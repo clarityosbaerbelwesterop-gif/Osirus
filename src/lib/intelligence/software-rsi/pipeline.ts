@@ -166,6 +166,30 @@ export function judgePatch(input: {
   return { improved: reasons.length === 0, reasons };
 }
 
+/**
+ * Why a proposal request produced no proposal. A malformed answer is the
+ * model's: the next attempt may do better. Anything else (a rate limit, no
+ * credit, a timeout, an outage) is the provider's: it says nothing about the
+ * code, and asking again only spends more of a scarce free quota.
+ */
+export function proposalFailure(error: unknown): {
+  infrastructure: boolean;
+  reason: string;
+} {
+  const code =
+    error instanceof Error && "code" in error
+      ? String((error as { code: unknown }).code)
+      : null;
+  const message =
+    error instanceof Error ? error.message.slice(0, 200) : "error";
+  if (code === null || code === "invalid_json")
+    return { infrastructure: false, reason: `no valid proposal: ${message}` };
+  return {
+    infrastructure: true,
+    reason: `provider ${code}: ${message}`,
+  };
+}
+
 /** The prompt for one attempt. Dev failures only: holdout seeds stay unseen. */
 export function patchPrompt(input: {
   file: string;

@@ -439,13 +439,26 @@ export class UnoRouterProvider implements ModelProvider {
     );
   }
 
+  /**
+   * Whether work at this priority may use free-model capacity now. Discovery
+   * runs first: a fresh instance has an empty pool, which reads as "scarce"
+   * and would defer every P3/P4 caller forever.
+   */
+  async admission(priority: CapacityPriority = this.options.priority ?? "P0") {
+    const runtime = this.runtime();
+    await this.ensurePool(runtime);
+    return runtime.capacity.admit(priority, runtime.capacitySignal(Date.now()));
+  }
+
   private async request(input: RequestInput) {
     const runtime = this.runtime();
     const priority = this.options.priority ?? "P0";
-    const admission = runtime.capacity.admit(
-      priority,
-      runtime.capacitySignal(Date.now()),
-    );
+    // Only P3/P4 can be deferred for an empty pool; a user's request is
+    // never held up by discovery here (route() discovers, cancellably).
+    const admission =
+      priority === "P3" || priority === "P4"
+        ? await this.admission(priority)
+        : runtime.capacity.admit(priority, runtime.capacitySignal(Date.now()));
     if (!admission.admitted) {
       // Transient by design: the caller keeps its offline work and asks
       // again later; user requests keep the free capacity meanwhile.

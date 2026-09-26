@@ -92,3 +92,13 @@ push) exercised every step on `normalizeClaim`:
 
 The proof of M45 is a run of the workflow on the free model; the final
 report states its outcome.
+
+## First production runs (2026-09-25)
+
+- **The two attempts** targeted `routeObjective` at 18:29 UTC and `addFacts` at 22:13 UTC.
+- **How they ended.** The free model refused both: "All providers for model deepseek-v4-pro-0813:free are busy right now (they hit their rate limit)".
+- **No proof yet.** No proposal was ever judged, so M45 is still unproven.
+- **What was wrong.** Both attempts were recorded as `no_improvement`, and the loop asked the busy provider again.
+- **The fix.** `proposalFailure` in `software-rsi/pipeline.ts` separates the two cases:
+  - **Malformed answer** (`invalid_json`, a schema mismatch): the next attempt may do better, so the loop tries again.
+  - **Provider failure** (a rate limit, no credit, a timeout, an outage): the attempt stops at once and is reported as `infrastructure_failure`. It is never a result about the code, and it spends no further calls.
