@@ -44,6 +44,11 @@ export interface ModelProvider {
   }): Promise<{ value: T; usage: Usage }>;
   /** The configured model identifier for a role. */
   modelId(role: ModelRole): string;
+  /**
+   * M49: the model that actually served a request (the free pool may pick a
+   * different verified free model than modelId() predicted).
+   */
+  servedModel?(requestId: string): string | undefined;
   capabilities(): Promise<Record<string, unknown>>;
   healthCheck(): Promise<boolean>;
   cancel(id: string): Promise<void>;
@@ -65,7 +70,13 @@ export type ProviderRefusal = {
   retryAfterMs: number | null;
 };
 
-const TRANSIENT_REFUSALS = new Set(["rate_limited", "provider_unavailable"]);
+// capacity_deferred (M49): the capacity scheduler held a P2-P4 caller back
+// so user requests keep the scarce free capacity. It clears on its own.
+const TRANSIENT_REFUSALS = new Set([
+  "rate_limited",
+  "provider_unavailable",
+  "capacity_deferred",
+]);
 const PERMANENT_REFUSALS = new Set([
   "insufficient_credit",
   "credential_rejected",

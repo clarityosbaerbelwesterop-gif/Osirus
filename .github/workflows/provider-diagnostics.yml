@@ -1,0 +1,39 @@
+name: Provider diagnostics
+
+# M49 section 4: measure all three UnoRouter keys safely. Manual only; never
+# runs on pull-request code. Output is limited to the allowed fields (label,
+# HTTP status, total_granted, total_used, total_available, unlimited_quota,
+# model_limits_enabled, expires_at, model counts, free model IDs, differences
+# between keys). Keys are read from secrets and never printed.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osirus-provider-diagnostics
+  cancel-in-progress: false
+
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+      UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
+      UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Measure keys (allowed fields only)
+        run: node scripts/provider-diagnostics.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: provider-diagnostics
+          path: |
+            provider-diagnostics.json
+            provider-diagnostics.md
+          retention-days: 30

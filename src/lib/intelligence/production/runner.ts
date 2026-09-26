@@ -62,8 +62,15 @@ export async function runFoundryTick(input: {
     // Label checks and mutants run our own fixture code, in the sandbox.
     sandbox: () => resolveSandbox(),
     maxChallengers: 2,
-    productModels: [env.OSIRUS_MODEL_STRONG, env.OSIRUS_MODEL_CODING].filter(
-      (model): model is string => Boolean(model),
+    // M49: under the free-first policy the product runs on the verified free
+    // pool; "free"/"auto" role values are pool sentinels, not model IDs.
+    productModels: [
+      env.OSIRUS_MODEL_STRONG,
+      env.OSIRUS_MODEL_CODING,
+      env.OSIRUS_FREE_MODEL_PRIMARY,
+    ].filter(
+      (model): model is string =>
+        Boolean(model) && !/^(free|auto|free-first)$/i.test(model ?? ""),
     ),
   });
   const chain = await allowsContinuation(store, await store.settings());
