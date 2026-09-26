@@ -45,7 +45,12 @@ import {
 import { MemoryRsiStore } from "../src/lib/intelligence/rsi/store";
 import { RSI_PHASES, type RsiCycle } from "../src/lib/intelligence/rsi/types";
 import { MemoryIntelStore } from "../src/lib/intelligence/store/memory-store";
-import type { Experience } from "../src/lib/intelligence/types";
+import {
+  hypothesesFor,
+  seedStrategies,
+  strategyForCapability,
+} from "../src/lib/intelligence/strategies/genomes";
+import type { EvalTask, Experience } from "../src/lib/intelligence/types";
 import type { SandboxDriver } from "../src/lib/sandbox/driver";
 
 const T0 = Date.parse("2026-09-25T10:05:00Z");
@@ -855,10 +860,10 @@ describe("live experiments, promotion and rollback", () => {
     const intel = new MemoryIntelStore();
     const store = new MemoryRsiStore(() => T0);
     const pulse = await seededPulse(T0 - 60_000);
+    // Spend the day's accrued allowance first: the cycle opens no order.
+    await intel.addUsage("rsi_model_calls", 48, "2026-09-25");
     await slice(store, intel, pulse, () => T0);
     const cycle = store.all()[0]!;
-    // Spend the day's accrued allowance: no order.
-    await intel.addUsage("rsi_model_calls", 48, "2026-09-25");
     const withLive = {
       ...cycle,
       state: {
@@ -889,6 +894,116 @@ describe("live experiments, promotion and rollback", () => {
       model: "m:free",
     });
     expect(spent.note).toMatch(/offline work only/);
+  });
+
+  it("passes over a live hypothesis it cannot test and opens the order for one it can", async () => {
+    // Production had only coding.debug hypotheses (no sandbox-free tasks)
+    // and reasoning tasks without a strategy, so no order ever opened.
+    expect(strategyForCapability("reasoning.falsification")?.id).toBe(
+      "general.reasoning",
+    );
+    expect(strategyForCapability("memory.context")?.kind).toBe("general");
+    expect(
+      hypothesesFor(
+        "general",
+        [
+          {
+            id: "g",
+            capabilityId: "reasoning.planning",
+            kind: "planning",
+            summary: "s",
+            evidence: {},
+            support: 2,
+            status: "open",
+          } as never,
+        ],
+        {},
+        4,
+      ).length,
+    ).toBeGreaterThan(0);
+    const intel = new MemoryIntelStore();
+    const pulse = await seededPulse(T0 - 60_000);
+    await seedStrategies(intel, "m:free");
+    const cycle: RsiCycle = {
+      id: "cycle-live",
+      phases: [...RSI_PHASES],
+      cursor: 0,
+      status: "running",
+      leaseOwner: null,
+      leaseExpiresAt: null,
+      state: {},
+      startedAt: new Date(T0).toISOString(),
+      completedAt: null,
+      nextDueAt: null,
+      summary: {},
+    };
+    const task = (
+      partition: "dev" | "holdout",
+      index: number,
+    ): Omit<EvalTask, "id"> => ({
+      suite: "rsi.planning",
+      capabilityId: "reasoning.planning",
+      partition,
+      difficulty: {} as EvalTask["difficulty"],
+      difficultyScore: 1,
+      spec: {
+        kind: "general",
+        objective: `Order the steps ${index}`,
+        verify: { kind: "includes", all: [`step-${index}`], none: [] },
+        composition: ["general"],
+      } as unknown as EvalTask["spec"],
+      generator: "curriculum",
+      fingerprint: `planning-${partition}-${index}`,
+      parentId: null,
+      labelVerified: true,
+      labelEvidence: {},
+    });
+    await intel.insertTasks([
+      task("dev", 1),
+      task("dev", 2),
+      task("holdout", 3),
+    ]);
+    const live = (capabilityId: string, id: string) => ({
+      id,
+      class: "strategy" as const,
+      capabilityId,
+      gap: "planning" as const,
+      statement: "s",
+      expected: "e",
+      intervention: { modelUse: { promptStyle: "task_first" } },
+      origin: "library",
+      lane: "live" as const,
+    });
+    const opened = await experiment({
+      intel,
+      pulse,
+      cycle: {
+        ...cycle,
+        state: {
+          ...cycle.state,
+          hypotheses: {
+            items: [
+              live("coding.debug", "h-coding"),
+              live("reasoning.planning", "h-planning"),
+            ],
+          },
+        },
+      },
+      previous: null,
+      now: () => T0,
+      model: "m:free",
+    });
+    expect(opened.note).toMatch(/^live order/);
+    const [order] = await intel.listArtifacts({ kind: "live_order" });
+    const content = order!.content as unknown as LiveOrderContent;
+    expect(content.strategyId).toBe("general.reasoning");
+    expect(content.capabilityId).toBe("reasoning.planning");
+    expect(content.hypothesis.id).toBe("h-planning");
+    expect(content.tasks.map((entry) => entry.partition).sort()).toEqual([
+      "dev",
+      "dev",
+      "holdout",
+    ]);
   });
 });
 

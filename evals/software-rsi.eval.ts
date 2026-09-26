@@ -13,6 +13,7 @@ import {
   parses,
   patchPrompt,
   patchProposalSchema,
+  proposalFailure,
   regressions,
   type PatchProposal,
   spliceSymbol,
@@ -99,7 +100,12 @@ it("attempts one bounded code improvement", async () => {
   const report = {
     id: taken.id,
     outcome: "no_improvement" as
-      "ready" | "pr_opened" | "no_improvement" | "refused" | "failed",
+      | "ready"
+      | "pr_opened"
+      | "no_improvement"
+      | "refused"
+      | "failed"
+      | "infrastructure_failure",
     prUrl: null as string | null,
     branch: null as string | null,
     summary: "",
@@ -234,12 +240,13 @@ it("attempts one bounded code improvement", async () => {
         proposal = response.value;
       } catch (error) {
         report.spent.modelCalls += 1;
-        previous = {
-          reasons: [
-            `no valid proposal: ${error instanceof Error ? error.message.slice(0, 200) : "error"}`,
-          ],
-          replacement: "",
-        };
+        const failure = proposalFailure(error);
+        if (failure.infrastructure) {
+          report.outcome = "infrastructure_failure";
+          report.summary = `stopped by the provider, nothing learned about the code: ${failure.reason}`;
+          break;
+        }
+        previous = { reasons: [failure.reason], replacement: "" };
         continue;
       }
     const patched = spliceSymbol(original, span, proposal.replacement);
@@ -398,7 +405,11 @@ it("attempts one bounded code improvement", async () => {
         : "no attempt was made";
   }
   await finish();
-  expect(["pr_opened", "no_improvement", "refused", "failed"]).toContain(
-    report.outcome,
-  );
+  expect([
+    "pr_opened",
+    "no_improvement",
+    "refused",
+    "failed",
+    "infrastructure_failure",
+  ]).toContain(report.outcome);
 });

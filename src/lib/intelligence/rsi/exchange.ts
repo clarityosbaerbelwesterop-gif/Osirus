@@ -225,7 +225,15 @@ export async function takeCodeHypothesis(intel: IntelStore, now = new Date()) {
 
 export const codeReportSchema = z.object({
   id: z.string().min(8).max(80),
-  outcome: z.enum(["pr_opened", "no_improvement", "refused", "failed"]),
+  // infrastructure_failure: the provider stopped the attempt. It is not a
+  // result about the code, never "no improvement".
+  outcome: z.enum([
+    "pr_opened",
+    "no_improvement",
+    "refused",
+    "failed",
+    "infrastructure_failure",
+  ]),
   prUrl: z
     .string()
     .regex(/^https:\/\/github\.com\/[\w.-]+\/[\w.-]+\/pull\/\d+$/)

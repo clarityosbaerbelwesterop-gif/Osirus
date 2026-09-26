@@ -21,6 +21,7 @@ import {
   judgePatch,
   parses,
   patchPrompt,
+  proposalFailure,
   regressions,
   spliceSymbol,
 } from "../src/lib/intelligence/software-rsi/pipeline";
@@ -32,6 +33,7 @@ import {
 } from "../src/lib/intelligence/software-rsi/policy";
 import { MemoryIntelStore } from "../src/lib/intelligence/store/memory-store";
 import type { ModelProvider } from "../src/lib/models/provider";
+import { ProviderError } from "../src/lib/models/unorouter";
 import {
   checkClaims,
   PULSE_EXPECTATION,
@@ -484,5 +486,47 @@ describe("raw model vs Osirus", () => {
         gap: 0.5,
       },
     ]);
+  });
+});
+
+describe("an attempt the provider stopped", () => {
+  // Production, 2026-09-25: both attempts hit "All providers for model
+  // deepseek-v4-pro-0813:free are busy" and were recorded as no_improvement.
+  it("is an infrastructure failure, not a result about the code", () => {
+    const busy = new ProviderError(
+      'All providers for model "deepseek-v4-pro-0813:free" are busy right now',
+      "rate_limited",
+      429,
+      true,
+    );
+    expect(proposalFailure(busy).infrastructure).toBe(true);
+    expect(proposalFailure(busy).reason).toMatch(/^provider rate_limited/);
+    for (const code of ["insufficient_credit", "timeout", "provider_error"])
+      expect(proposalFailure(new ProviderError("x", code)).infrastructure).toBe(
+        true,
+      );
+  });
+
+  it("lets the model try again after a malformed answer", () => {
+    expect(
+      proposalFailure(new ProviderError("no JSON", "invalid_json"))
+        .infrastructure,
+    ).toBe(false);
+    expect(proposalFailure(new Error("schema mismatch")).infrastructure).toBe(
+      false,
+    );
+  });
+
+  it("is reported as such to the cycle", () => {
+    const report = {
+      id: "hypothesis-1",
+      outcome: "infrastructure_failure",
+      prUrl: null,
+      branch: null,
+      summary: "stopped by the provider",
+      measurements: null,
+      spent: { modelCalls: 1, tokens: 0 },
+    };
+    expect(codeReportSchema.safeParse(report).success).toBe(true);
   });
 });

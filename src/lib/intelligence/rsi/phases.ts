@@ -22,11 +22,14 @@ import { adaptiveComputeHypothesis } from "../routing/value-of-compute";
 import {
   hypothesesFor,
   seedStrategies,
+  STRATEGY_SEEDS,
   strategyForCapability,
+  strategyOwns,
 } from "../strategies/genomes";
 import type { IntelStore } from "../store/store";
 import type {
   CapabilityGap,
+  EvalTask,
   GapKind,
   Hypothesis,
   LearningArtifact,
@@ -833,7 +836,8 @@ export async function hypothesize(ctx: RsiContext): Promise<PhaseResult> {
       pool,
       policy,
       ctx.cycle.id,
-    ).slice(0, 2))
+    ).slice(0, 2)) {
+      if (items.some((item) => item.id === hypothesis.id)) continue;
       items.push({
         id: hypothesis.id,
         class: MECHANISM_CLASS[mechanismOf(hypothesis)] ?? "strategy",
@@ -845,6 +849,7 @@ export async function hypothesize(ctx: RsiContext): Promise<PhaseResult> {
         origin: hypothesis.origin ?? "library",
         lane: "live",
       });
+    }
   }
   return {
     state: { ...ctx.cycle.state, hypotheses: { items } },
@@ -933,7 +938,7 @@ export async function experiment(ctx: RsiContext): Promise<PhaseResult> {
     });
     live = live.filter((entry) => entry !== order);
   }
-  const hypothesis = (ctx.cycle.state.hypotheses?.items ?? []).find(
+  const candidates = (ctx.cycle.state.hypotheses?.items ?? []).filter(
     (item) => item.lane === "live",
   );
   const pending = live.some((order) =>
@@ -951,41 +956,66 @@ export async function experiment(ctx: RsiContext): Promise<PhaseResult> {
     note: text,
   });
   if (pending) return note("a live order is still out; no new one");
-  if (!hypothesis) return note("no live hypothesis this cycle");
+  if (!candidates.length) return note("no live hypothesis this cycle");
   const budget = await rsiBudget(ctx.intel, new Date(ctx.now()));
   if (budget.available < RSI_MIN_CALLS_PER_ORDER)
     return note(
       `live envelope: ${budget.used}/${budget.accrued} calls used today, ${budget.available} free (an order needs ${RSI_MIN_CALLS_PER_ORDER}): offline work only`,
     );
-  const strategy = strategyForCapability(hypothesis.capabilityId);
-  if (!strategy) return note(`no strategy owns ${hypothesis.capabilityId}`);
-  const champion = (await ctx.intel.listVersions(strategy.id)).find(
-    (version) => version.status === "champion",
-  );
-  if (!champion) return note(`no champion for ${strategy.id}`);
-  const tasks = (
-    await ctx.intel.listTasks({
-      capabilityId: strategy.capabilityId,
-      limit: 400,
-    })
-  ).filter(
-    (task) =>
-      task.labelVerified &&
-      task.spec.verify.kind !== "tests" &&
-      (task.partition === "dev" || task.partition === "holdout"),
-  );
-  const pick = (partition: string, count: number) =>
-    tasks
-      .filter((task) => task.partition === partition)
-      .sort((a, b) =>
-        fingerprint(ctx.cycle.id, a.id).localeCompare(
-          fingerprint(ctx.cycle.id, b.id),
-        ),
-      )
-      .slice(0, count);
-  const chosen = [...pick("dev", 2), ...pick("holdout", 1)];
-  if (!chosen.length)
-    return note(`no verified tasks for ${strategy.capabilityId} yet`);
+  // The first live hypothesis that can be tested now: it needs a strategy
+  // with a champion, and label-verified tasks of its own capability that the
+  // live lane can check without a sandbox. One that cannot is passed over,
+  // not allowed to block the others.
+  const skipped: string[] = [];
+  let found: {
+    hypothesis: RsiHypothesis;
+    strategy: NonNullable<ReturnType<typeof strategyForCapability>>;
+    champion: StrategyVersion;
+    chosen: EvalTask[];
+  } | null = null;
+  for (const hypothesis of candidates) {
+    const strategy = strategyForCapability(hypothesis.capabilityId);
+    if (!strategy) {
+      skipped.push(`no strategy owns ${hypothesis.capabilityId}`);
+      continue;
+    }
+    const champion = (await ctx.intel.listVersions(strategy.id)).find(
+      (version) => version.status === "champion",
+    );
+    if (!champion) {
+      skipped.push(`no champion for ${strategy.id}`);
+      continue;
+    }
+    const tasks = (
+      await ctx.intel.listTasks({
+        capabilityId: hypothesis.capabilityId,
+        limit: 400,
+      })
+    ).filter(
+      (task) =>
+        task.labelVerified &&
+        task.spec.verify.kind !== "tests" &&
+        (task.partition === "dev" || task.partition === "holdout"),
+    );
+    const pick = (partition: string, count: number) =>
+      tasks
+        .filter((task) => task.partition === partition)
+        .sort((a, b) =>
+          fingerprint(ctx.cycle.id, a.id).localeCompare(
+            fingerprint(ctx.cycle.id, b.id),
+          ),
+        )
+        .slice(0, count);
+    const chosen = [...pick("dev", 2), ...pick("holdout", 1)];
+    if (!chosen.length) {
+      skipped.push(`no verified tasks for ${hypothesis.capabilityId} yet`);
+      continue;
+    }
+    found = { hypothesis, strategy, champion, chosen };
+    break;
+  }
+  if (!found) return note([...new Set(skipped)].join("; "));
+  const { hypothesis, strategy, champion, chosen } = found;
   const benchmark = (await ctx.intel.listTasks({ limit: 400 }))
     .filter(
       (task) =>
@@ -998,7 +1028,7 @@ export async function experiment(ctx: RsiContext): Promise<PhaseResult> {
   const content: LiveOrderContent = {
     orderId,
     rsiCycle: ctx.cycle.id,
-    capabilityId: strategy.capabilityId,
+    capabilityId: hypothesis.capabilityId,
     strategyId: strategy.id,
     model: ctx.model,
     hypothesis,
@@ -1029,7 +1059,7 @@ export async function experiment(ctx: RsiContext): Promise<PhaseResult> {
   await ctx.intel.upsertArtifact({
     cycleId: null,
     kind: "live_order",
-    capabilityId: strategy.capabilityId,
+    capabilityId: hypothesis.capabilityId,
     taskPattern: strategy.id,
     content: content as unknown as Record<string, unknown>,
     evidence: { createdAt: new Date(ctx.now()).toISOString() },
@@ -1231,12 +1261,13 @@ export async function decidePhase(ctx: RsiContext): Promise<PhaseResult> {
     for (const event of recent) {
       const version = await ctx.intel.getVersion(event.strategyVersionId);
       if (!version || version.status !== "champion") continue;
-      const capability = strategyForCapability(
-        version.strategyId,
-      )?.capabilityId;
-      const hit = regressions.some(
-        (regression) => FAMILY_CAPABILITY[regression.family] === capability,
+      const seed = STRATEGY_SEEDS.find(
+        (entry) => entry.id === version.strategyId,
       );
+      const hit = regressions.some((regression) => {
+        const capability = FAMILY_CAPABILITY[regression.family];
+        return Boolean(seed && capability && strategyOwns(seed, capability));
+      });
       if (!hit) continue;
       await transition(ctx.intel, version, "quarantined", {
         reason: "pulse regression after promotion",
