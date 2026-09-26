@@ -94,12 +94,21 @@ test("email journey: account, session, Hallo, MCP, sign out", async ({
       .filter((packet) => packet.kind === "error")
       .map((packet) => packet.message);
     if (errors.length) console.log(`Run errors: ${errors.join(" | ")}`);
-    const snapshot = (await (
-      await send(page, `/api/runtime/${runIdHeader}`)
-    ).json()) as {
+    // The stream can close while durable stages still run: poll the
+    // snapshot until the run ends, as the chat UI does.
+    type Snapshot = {
       run?: { status?: string };
       messages?: Array<{ role: string; content: string }>;
     };
+    const terminal = new Set(["completed", "failed", "cancelled", "blocked"]);
+    let snapshot: Snapshot = {};
+    for (let tries = 0; tries < 48; tries += 1) {
+      snapshot = (await (
+        await send(page, `/api/runtime/${runIdHeader}`)
+      ).json()) as Snapshot;
+      if (terminal.has(snapshot.run?.status ?? "")) break;
+      await page.waitForTimeout(5_000);
+    }
     const answer = (snapshot.messages ?? []).find(
       (message) => message.role === "assistant",
     );
