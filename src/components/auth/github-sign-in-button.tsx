@@ -20,6 +20,9 @@ export function GitHubSignInButton() {
       const result = await authClient.signIn.social({
         provider: "github",
         callbackURL: "/app",
+        // A failed round trip comes back here with ?error=<code>, which the
+        // sign-in page explains, instead of stranding the person elsewhere.
+        errorCallbackURL: "/auth/sign-in",
       });
       if (result.error) {
         setError("GitHub sign-in could not be started. Please try again.");

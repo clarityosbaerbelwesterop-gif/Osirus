@@ -1,0 +1,41 @@
+name: Production journey
+
+# The issue #26 merge gate, run against the live deployment: sign-in and
+# session, "Hallo" answered, MCP add/check/remove, sign-out, plus how far
+# "Continue with GitHub" gets without a GitHub account. Manual only. Each run
+# creates one throwaway account (journey-<run id>@example.com); nothing secret
+# is logged.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osirus-prod-journey
+  cancel-in-progress: false
+
+jobs:
+  journey:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install --with-deps chromium
+      - name: Run the journey against production
+        env:
+          PROD_BASE_URL: https://osirus.vercel.app
+        run: npx playwright test --config playwright.prod.config.ts
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: prod-journey-screenshots
+          path: test-results-prod/**/*.png
+          retention-days: 7

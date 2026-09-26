@@ -1,53 +1,26 @@
-"use client";
+import { redirect } from "next/navigation";
+import { auth, authConfigured } from "@/lib/auth/server";
+import { oauthErrorMessage } from "@/lib/auth/oauth-errors";
+import { SignInForm } from "./sign-in-form";
 
-import Link from "next/link";
-import { useActionState } from "react";
-import { GitHubSignInButton } from "@/components/auth/github-sign-in-button";
-import { OsirusMark } from "@/components/shell/osirus-mark";
-import { signInWithEmail } from "./actions";
+type SignInPageProps = {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+};
 
-export default function SignInPage() {
-  const [state, action, pending] = useActionState(signInWithEmail, null);
+/** Someone who is already signed in goes straight to their workspace. */
+async function signedIn() {
+  if (!authConfigured) return false;
+  try {
+    const { data } = await auth.getSession();
+    return Boolean(data?.user);
+  } catch {
+    return false;
+  }
+}
 
-  return (
-    <main className="auth-page">
-      <form action={action} className="auth-card">
-        <p className="auth-brand">
-          <OsirusMark size={24} />
-          Osirus
-        </p>
-        <h1>Sign in</h1>
-        <p className="auth-lede">Continue into your Osirus workspace.</p>
-        <label>
-          Email
-          <input name="email" type="email" autoComplete="email" required />
-        </label>
-        <label>
-          Password
-          <input
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            required
-          />
-        </label>
-        {state?.error ? (
-          <p className="form-error" role="alert">
-            {state.error}
-          </p>
-        ) : null}
-        <button
-          type="submit"
-          className="btn btn-primary auth-submit"
-          disabled={pending}
-        >
-          {pending ? "Signing in…" : "Sign in"}
-        </button>
-        <GitHubSignInButton />
-        <p className="auth-footer">
-          New to Osirus? <Link href="/auth/sign-up">Create an account</Link>
-        </p>
-      </form>
-    </main>
-  );
+export default async function SignInPage({ searchParams }: SignInPageProps) {
+  const params = await searchParams;
+  const oauthError = oauthErrorMessage(params.error);
+  if (!oauthError && (await signedIn())) redirect("/app");
+  return <SignInForm oauthError={oauthError} />;
 }
