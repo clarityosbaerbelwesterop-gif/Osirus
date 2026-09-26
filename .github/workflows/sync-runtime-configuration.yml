@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/sync-runtime-configuration.yml
       - scripts/sync-vercel-runtime-env.mjs
+      - scripts/lib/vercel-env.mjs
   workflow_dispatch:
     inputs:
       target:
@@ -14,8 +15,14 @@ on:
         type: choice
         default: both
         options: [preview, production, both]
+      model_policy:
+        description: free-first (default; never needs paid credit) or configured-first
+        required: true
+        type: choice
+        default: free-first
+        options: [free-first, configured-first]
       primary_model:
-        description: Exact UnoRouter model ID (Grok 4.6 or an available Opus 5 ID)
+        description: Optional exact model ID listed by /v1/models. Empty = verified free-model pool. A paid ID requires configured-first.
         required: false
         type: string
       rotate_auth_cookie_secret:
@@ -47,7 +54,11 @@ jobs:
       UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
       UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
       UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
-      OSIRUS_PRIMARY_MODEL: ${{ inputs.primary_model || vars.OSIRUS_PRIMARY_MODEL || 'grok-4.6' }}
+      # M49: free-model-first. The old grok-4.6 default (and the repository
+      # variable that pinned it) is gone: every role is rewritten to the
+      # verified free pool unless a dispatch explicitly names a listed model.
+      OSIRUS_MODEL_POLICY: ${{ inputs.model_policy || 'free-first' }}
+      OSIRUS_PRIMARY_MODEL: ${{ inputs.primary_model || '' }}
       OSIRUS_SYNC_TARGET: ${{ inputs.target || 'both' }}
       # Preview values provisioned by the Vercel-Neon integration are pinned to a
       # git branch, so coverage has to be judged against the branch being synced.

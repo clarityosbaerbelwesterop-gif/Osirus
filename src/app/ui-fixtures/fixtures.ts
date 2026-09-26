@@ -877,6 +877,7 @@ export function modelStatusFixture(): RoleStatus[] {
         sharesStrong: false,
         failureCategory: "insufficient_credit",
         lastFailureAt: new Date(now - 5 * 60_000).toISOString(),
+        lastFailureSummary: null,
       },
     },
     {
@@ -893,6 +894,7 @@ export function modelStatusFixture(): RoleStatus[] {
         sharesStrong: false,
         failureCategory: null,
         lastFailureAt: null,
+        lastFailureSummary: null,
       },
     },
     {
@@ -909,6 +911,7 @@ export function modelStatusFixture(): RoleStatus[] {
         sharesStrong: true,
         failureCategory: null,
         lastFailureAt: null,
+        lastFailureSummary: null,
       },
     },
     {
@@ -925,6 +928,7 @@ export function modelStatusFixture(): RoleStatus[] {
         sharesStrong: false,
         failureCategory: null,
         lastFailureAt: null,
+        lastFailureSummary: null,
       },
     },
   ];

@@ -53,6 +53,12 @@ export type RoleStatus = {
     sharesStrong: boolean;
     failureCategory: string | null;
     lastFailureAt: string | null;
+    /**
+     * M49: every model attempt behind the last failure, e.g. "Primary
+     * grok-4.6: insufficient_credit / Fallback x:free: rate_limited".
+     * Model IDs and categories only.
+     */
+    lastFailureSummary: string | null;
   };
 };
 
@@ -64,6 +70,11 @@ const UNAVAILABLE = new Set([
   "provider_not_configured",
 ]);
 
+/**
+ * What serves a role. Under the default free-first policy a configured paid
+ * model is not used (M49), so a role with no usable explicit model is served
+ * by the verified free pool whenever the provider itself is configured.
+ */
 export function configuredModel(role: ModelRoleId) {
   const map: Record<ModelRoleId, string | undefined> = {
     STRONG: env.OSIRUS_MODEL_STRONG,
@@ -74,7 +85,23 @@ export function configuredModel(role: ModelRoleId) {
     MATH: env.OSIRUS_MODEL_MATH,
     VERIFY: env.OSIRUS_MODEL_VERIFY,
   };
-  return map[role] ?? null;
+  const value = map[role]?.trim();
+  const explicit =
+    value && !["free", "auto", "free-first"].includes(value.toLowerCase())
+      ? value
+      : null;
+  if (
+    explicit &&
+    (/:free$/i.test(explicit) || env.OSIRUS_MODEL_POLICY === "configured-first")
+  )
+    return explicit;
+  const providerConfigured = Boolean(
+    env.UNOROUTER_BASE_URL &&
+    (env.UNOROUTER_API_KEY_1 ||
+      env.UNOROUTER_API_KEY_2 ||
+      env.UNOROUTER_API_KEY_3),
+  );
+  return providerConfigured ? "verified free-model pool" : null;
 }
 
 type CallRow = {
@@ -86,6 +113,7 @@ type CallRow = {
   last_error: string | null;
   last_failure_at: Date | string | null;
   last_failure_code: string | null;
+  last_failure_summary?: string | null;
 };
 
 /** Pure: the state and message for one role from its recent calls. */
@@ -137,7 +165,8 @@ export async function modelStatus(
   const rows = await queryAs<CallRow>(
     identity.userId,
     `with recent as (
-       select logical_role, status, error_code, created_at
+       select logical_role, status, error_code, created_at,
+              response_metadata->>'failureSummary' as failure_summary
          from osirus.model_calls
         where workspace_id = $1::uuid
           and created_at > now() - interval '24 hours'
@@ -154,7 +183,10 @@ export async function modelStatus(
             max(r.created_at) filter (where r.status = 'failed') as last_failure_at,
             (select error_code from recent x
               where x.logical_role = r.logical_role and x.status = 'failed'
-              order by created_at desc limit 1) as last_failure_code
+              order by created_at desc limit 1) as last_failure_code,
+            (select failure_summary from recent x
+              where x.logical_role = r.logical_role and x.status = 'failed'
+              order by created_at desc limit 1) as last_failure_summary
        from recent r
       group by r.logical_role`,
     [identity.workspaceId],
@@ -183,6 +215,7 @@ export async function modelStatus(
               sharesStrong: role === "THINKING" && !env.OSIRUS_MODEL_THINKING,
               failureCategory: row?.last_failure_code ?? null,
               lastFailureAt: iso(row?.last_failure_at ?? null),
+              lastFailureSummary: row?.last_failure_summary ?? null,
             },
           }
         : {}),

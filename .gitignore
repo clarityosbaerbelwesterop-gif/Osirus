@@ -8,3 +8,5 @@ coverage
 playwright-report
 test-results
 .vercel
+/provider-diagnostics.json
+/provider-diagnostics.md
