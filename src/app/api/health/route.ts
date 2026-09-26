@@ -20,11 +20,9 @@ export async function GET(request: Request) {
     }
   }
 
-  const provider = Boolean(
-    env.UNOROUTER_BASE_URL &&
-    serverKeys().length > 0 &&
-    env.OSIRUS_MODEL_STRONG,
-  );
+  // Configuration only (M49: free-model-first, so no model role is
+  // required). Not a readiness probe: see /api/readiness for evidence.
+  const provider = Boolean(env.UNOROUTER_BASE_URL && serverKeys().length > 0);
   // Reported, not gated. Hosted execution being unconfigured is a capability
   // the deployment lacks, not a fault: runs still work, and anything needing
   // execution comes back unverified rather than claiming it ran. Folding it

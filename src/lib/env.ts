@@ -19,6 +19,16 @@ const schema = z.object({
   OSIRUS_MODEL_RESEARCH: z.string().min(1).optional(),
   OSIRUS_MODEL_MATH: z.string().min(1).optional(),
   OSIRUS_MODEL_VERIFY: z.string().min(1).optional(),
+  // M49: free-model-first by default. "configured-first" tries a configured
+  // (possibly paid) role model before the verified free pool.
+  OSIRUS_MODEL_POLICY: z
+    .enum(["free-first", "configured-first"])
+    .default("free-first"),
+  // Preference hints written by the runtime sync from /v1/models. The
+  // runtime still discovers and verifies; an unlisted hint is ignored.
+  OSIRUS_FREE_MODEL_PRIMARY: z.string().min(1).optional(),
+  OSIRUS_FREE_MODEL_SECONDARY: z.string().min(1).optional(),
+  OSIRUS_FREE_MODEL_TERTIARY: z.string().min(1).optional(),
   OSIRUS_REASONING_EFFORT: z
     .enum(["low", "medium", "high", "xhigh"])
     .optional(),

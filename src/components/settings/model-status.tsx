@@ -18,6 +18,7 @@ const CATEGORY: Record<string, string> = {
   provider_unavailable: "Provider unavailable (5xx or upstream failure)",
   credential_rejected: "Provider rejected the credentials",
   rate_limited: "Rate limited",
+  capacity_deferred: "Deferred to keep capacity for user requests",
   timeout: "Timed out",
   model_not_configured: "Model role not configured",
   invalid_json: "Unusable response (invalid JSON)",
@@ -94,6 +95,11 @@ export function ModelStatusTable({ roles }: { roles: RoleStatus[] }) {
                             ) : (
                               ""
                             )}
+                          </div>
+                        ) : null}
+                        {role.admin.lastFailureSummary ? (
+                          <div className="mono">
+                            {role.admin.lastFailureSummary}
                           </div>
                         ) : null}
                       </div>
