@@ -8,11 +8,22 @@ name: Rouge evaluation
 on:
   workflow_dispatch:
     inputs:
-      core:
-        description: Exact UnoRouter model ID of the core to evaluate
+      mode:
+        description: foundation = raw core vs Rouge; core-selection = tournament of candidate cores
         required: true
+        type: choice
+        default: foundation
+        options: [foundation, core-selection]
+      core:
+        description: (foundation) exact UnoRouter model ID of the core to evaluate
+        required: false
         type: string
         default: grok-4.6
+      candidates:
+        description: (core-selection) comma-separated core IDs; empty = the default list
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -24,7 +35,7 @@ concurrency:
 jobs:
   evaluate:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,7 +45,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - name: Raw core vs Rouge (metadata only)
+      - name: Evaluate (metadata only)
         env:
           UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
           UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
@@ -42,8 +53,9 @@ jobs:
           UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
           OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "60"
           ROUGE_EVAL_CORE: ${{ inputs.core }}
+          ROUGE_CANDIDATES: ${{ inputs.candidates }}
           ROUGE_EVIDENCE: ${{ runner.temp }}/rouge-eval.json
-          RSI_EVAL: evals/rouge-foundation.eval.ts
+          RSI_EVAL: ${{ inputs.mode == 'core-selection' && 'evals/rouge-core-selection.eval.ts' || 'evals/rouge-foundation.eval.ts' }}
         run: npx vitest run --config vitest.rsi.config.ts
       - uses: actions/upload-artifact@v4
         if: always()
