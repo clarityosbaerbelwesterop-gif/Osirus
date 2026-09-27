@@ -70,7 +70,18 @@ async function evaluate(core: string): Promise<Result> {
   };
   const latencies: number[] = [];
   let consecutiveRefusals = 0;
+  // A core that cannot finish the set within its budget is not a core
+  // Rouge can lean on interactively: the tasks it did not reach count as
+  // unanswered, which makes it ineligible.
+  const deadline =
+    Date.now() + (Number(process.env.ROUGE_CORE_BUDGET_MS) || 12 * 60_000);
   for (const task of CORE_TASKS) {
+    if (Date.now() > deadline) {
+      result.stoppedEarly = true;
+      if (!result.refusalCodes.includes("time_budget"))
+        result.refusalCodes.push("time_budget");
+      break;
+    }
     const family = (result.byFamily[task.family] ??= { correct: 0, total: 0 });
     family.total += 1;
     try {
@@ -133,7 +144,7 @@ it(
       .split(",")
       .map((id) => id.trim())
       .filter(Boolean);
-    const parallel = Math.max(1, Number(process.env.ROUGE_PARALLEL) || 4);
+    const parallel = Math.max(1, Number(process.env.ROUGE_PARALLEL) || 6);
     const results: Result[] = [];
     // Each core is reported the moment it finishes, and the evidence file is
     // rewritten then too: a run cut short by the job's time limit still
