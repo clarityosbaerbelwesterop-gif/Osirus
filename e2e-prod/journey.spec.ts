@@ -98,25 +98,36 @@ test("email journey: account, session, Hallo, MCP, sign out", async ({
     // snapshot until the run ends, as the chat UI does.
     type Snapshot = {
       run?: { status?: string };
+      stages?: Array<{ capability?: string }>;
       messages?: Array<{ role: string; content: string }>;
     };
     const terminal = new Set(["completed", "failed", "cancelled", "blocked"]);
     let snapshot: Snapshot = {};
-    for (let tries = 0; tries < 48; tries += 1) {
+    // Every two seconds, as the chat UI polls: the poll also resumes a run
+    // whose request ended.
+    for (let tries = 0; tries < 90; tries += 1) {
       snapshot = (await (
         await send(page, `/api/runtime/${runIdHeader}`)
       ).json()) as Snapshot;
       if (terminal.has(snapshot.run?.status ?? "")) break;
-      await page.waitForTimeout(5_000);
+      await page.waitForTimeout(2_000);
     }
-    const answer = (snapshot.messages ?? []).find(
+    const seconds = Math.round((Date.now() - started) / 1000);
+    const answers = (snapshot.messages ?? []).filter(
       (message) => message.role === "assistant",
     );
+    const capabilities = [
+      ...new Set((snapshot.stages ?? []).map((stage) => stage.capability)),
+    ];
     console.log(
-      `Run ${snapshot.run?.status}; answer ${answer?.content?.trim() ? `present (${answer.content.length} chars)` : "missing"}; ${Math.round((Date.now() - started) / 1000)} s`,
+      `Run ${snapshot.run?.status}; ${answers.length} answer(s)${answers[0]?.content?.trim() ? ` (${answers[0].content.length} chars)` : ""}; ${snapshot.stages?.length ?? 0} stages (${capabilities.join(", ")}); ${seconds} s`,
     );
     expect(snapshot.run?.status).toBe("completed");
-    expect(answer?.content?.trim().length ?? 0).toBeGreaterThan(0);
+    // A greeting is one task for one arm, answered once.
+    expect(capabilities).toEqual(["general"]);
+    expect(answers).toHaveLength(1);
+    expect(answers[0]?.content?.trim().length ?? 0).toBeGreaterThan(0);
+    expect(seconds).toBeLessThan(60);
   });
 
   await test.step("an MCP server can be added, checked and removed", async () => {

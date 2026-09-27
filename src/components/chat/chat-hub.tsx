@@ -79,6 +79,10 @@ export function ChatHub(props: {
       ),
   );
   const [cancelling, setCancelling] = useState(false);
+  // True while this page reads a run's event stream. The stream carries the
+  // run's progress itself; polling alongside it would only replace the
+  // streamed draft with the stored messages mid-answer.
+  const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [failedObjective, setFailedObjective] = useState<string | null>(null);
   const [resumed, setResumed] = useState(
@@ -119,8 +123,14 @@ export function ChatHub(props: {
     async (runId: string) => {
       const response = await fetch(`/api/runtime/${runId}`, {
         cache: "no-store",
-      });
-      if (!response.ok) return;
+      }).catch(() => null);
+      if (response?.status === 404) {
+        // Gone or not ours: stop polling it rather than ask forever.
+        setActiveRunId((current) => (current === runId ? null : current));
+        setRunning(false);
+        return;
+      }
+      if (!response?.ok) return;
       applySnapshot((await response.json()) as RunSnapshot);
     },
     [applySnapshot],
@@ -130,15 +140,28 @@ export function ChatHub(props: {
     const runId = props.initialRunId ?? props.initialSnapshotRunId;
     if (!runId) return;
     const initial = window.setTimeout(() => void refreshRun(runId), 0);
-    if (!props.initialRunId) {
-      return () => window.clearTimeout(initial);
-    }
-    const timer = window.setInterval(() => void refreshRun(runId), 2000);
-    return () => {
-      window.clearTimeout(initial);
-      window.clearInterval(timer);
-    };
+    return () => window.clearTimeout(initial);
   }, [props.initialRunId, props.initialSnapshotRunId, refreshRun]);
+
+  // Every unfinished run this page shows is polled until it ends -- one that
+  // was open when the page loaded, one picked from the sidebar, and one this
+  // page started whose request ended before the run did. The poll is also
+  // what resumes a run nobody is driving, so a run that is not polled can
+  // stop halfway and never finish.
+  useEffect(() => {
+    if (!activeRunId || streaming) return;
+    const runId = activeRunId;
+    // One poll at a time: a slow answer must not stack requests behind it.
+    let inFlight = false;
+    const timer = window.setInterval(() => {
+      if (inFlight) return;
+      inFlight = true;
+      void refreshRun(runId).finally(() => {
+        inFlight = false;
+      });
+    }, 2000);
+    return () => window.clearInterval(timer);
+  }, [activeRunId, streaming, refreshRun]);
 
   useEffect(() => {
     if (!nearBottom.current) return;
@@ -213,12 +236,17 @@ export function ChatHub(props: {
             ];
           });
           return;
-        case "done":
-          setRunning(false);
-          setCancelling(false);
-          setActiveRunId(null);
+        case "done": {
+          // `done` ends this request, not necessarily the run: a run that
+          // outlives its request comes back `running` and continues in the
+          // background. Keep it active so the poll above follows it.
+          const finished = terminalStatuses.has(packet.status);
+          setRunning(!finished);
+          if (finished) setCancelling(false);
+          setActiveRunId(finished ? null : packet.runId);
           void refreshRun(packet.runId);
           return;
+        }
         case "error":
           setError(packet.message);
           setRunning(false);
@@ -297,6 +325,8 @@ export function ChatHub(props: {
 
       const controller = new AbortController();
       streamAbort.current = controller;
+      setStreaming(true);
+      let startedRunId: string | null = null;
       try {
         const attachmentIds = regenerate
           ? []
@@ -337,7 +367,10 @@ export function ChatHub(props: {
             `/app?session=${headerSession}`,
           );
         }
-        if (headerRun) setActiveRunId(headerRun);
+        if (headerRun) {
+          startedRunId = headerRun;
+          setActiveRunId(headerRun);
+        }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder();
@@ -362,7 +395,11 @@ export function ChatHub(props: {
           reader.releaseLock();
         }
       } catch (requestError) {
-        if (!controller.signal.aborted) {
+        if (startedRunId && !controller.signal.aborted) {
+          // The connection dropped, not the run: it is durable and the poll
+          // picks it up from here.
+          void refreshRun(startedRunId);
+        } else if (!controller.signal.aborted) {
           setError(
             requestError instanceof Error
               ? requestError.message
@@ -373,11 +410,13 @@ export function ChatHub(props: {
         }
       } finally {
         streamAbort.current = null;
+        setStreaming(false);
       }
     },
     [
       applyPacket,
       attachments,
+      refreshRun,
       running,
       sessionId,
       shell.sessions,

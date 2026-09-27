@@ -52,5 +52,14 @@ export async function POST(
   if (!run) return Response.json({ error: "not_found" }, { status: 404 });
 
   abortLocalRun(parsed.data.runId);
-  return Response.json({ runId: parsed.data.runId, status: run.status });
+  // A worker holding the run acknowledges the cancel itself. With none left
+  // -- the request that drove it has ended -- close it here, or it would
+  // stay `cancelling` until a scheduler tick that may be hours away.
+  const settled =
+    run.status === "cancelling" &&
+    (await repository.settleCancellationWithoutWorker(parsed.data.runId));
+  return Response.json({
+    runId: parsed.data.runId,
+    status: settled ? "cancelled" : run.status,
+  });
 }

@@ -47,6 +47,77 @@ const list = (value: unknown) => (Array.isArray(value) ? value : []);
 const text = (value: unknown) =>
   typeof value === "string" ? value.slice(0, 200) : null;
 
+const NEON_API = "https://console.neon.tech/api/v2";
+
+/**
+ * Refuse a pasted value that is a credential, but not the kind this
+ * platform's management API takes -- before it is sent anywhere. Without
+ * this a Supabase project key or a Neon connection string comes back only
+ * as "the provider did not accept this token", which does not say what to
+ * paste instead.
+ */
+export function wrongTokenKind(id: PlatformId, token: string) {
+  const value = token.trim();
+  if (id === "supabase" && /^(eyJ|sb_secret_|sb_publishable_)/.test(value))
+    return "supabase_project_key";
+  if (id === "neon" && /^postgres(ql)?:\/\//i.test(value))
+    return "neon_connection_string";
+  return null;
+}
+
+function assertTokenKind(id: PlatformId, token: string) {
+  const kind = wrongTokenKind(id, token);
+  if (kind) throw new Error(`wrong_token_kind:${kind}`);
+}
+
+const credentialRefused = (error: unknown) =>
+  error instanceof Error &&
+  /^provider_rejected:(401|403|404)$/.test(error.message);
+
+/**
+ * Neon projects a key can see.
+ *
+ * Neon has three kinds of API key. A personal key reaches every
+ * organization its user belongs to, but `GET /projects` without `org_id`
+ * lists only projects outside any organization -- so its organizations are
+ * listed and asked one by one. Organization and project-scoped keys cannot
+ * read `/users/me` at all and list their own projects without `org_id`.
+ */
+async function neonProjects(token: string, limit: number) {
+  const organizations = await getJson(
+    `${NEON_API}/users/me/organizations`,
+    token,
+  )
+    .then((body) =>
+      list(body.organizations)
+        .map((entry) => text((entry as Record<string, unknown>).id))
+        .filter((id): id is string => Boolean(id))
+        .slice(0, 5),
+    )
+    .catch(() => [] as string[]);
+  const pages = await Promise.allSettled(
+    [null, ...organizations].map((orgId) =>
+      getJson(
+        `${NEON_API}/projects?limit=${limit}${orgId ? `&org_id=${encodeURIComponent(orgId)}` : ""}`,
+        token,
+      ),
+    ),
+  );
+  const seen = new Map<string, Record<string, unknown>>();
+  for (const page of pages) {
+    if (page.status !== "fulfilled") continue;
+    for (const entry of list(page.value.projects)) {
+      const project = entry as Record<string, unknown>;
+      const id = text(project.id);
+      if (id && !seen.has(id)) seen.set(id, project);
+    }
+  }
+  if (seen.size === 0 && pages.every((page) => page.status === "rejected")) {
+    throw (pages[0] as PromiseRejectedResult).reason;
+  }
+  return [...seen.values()].slice(0, limit);
+}
+
 const readTool = (
   input: Pick<ToolDefinition, "id" | "title" | "summary"> & {
     arms?: ToolDefinition["arms"];
@@ -121,11 +192,27 @@ export const PROVIDERS: Record<PlatformId, Provider> = {
     id: "neon",
     name: "Neon",
     verify: async (token) => {
-      const body = await getJson(
-        "https://console.neon.tech/api/v2/users/me",
-        token,
+      assertTokenKind("neon", token);
+      try {
+        const body = await getJson(`${NEON_API}/users/me`, token);
+        return {
+          account: text(body.email) ?? text(body.name) ?? "Neon account",
+        };
+      } catch (error) {
+        // Organization and project-scoped keys are refused here by design;
+        // an invalid key is refused by the project listing below as well.
+        if (!credentialRefused(error)) throw error;
+      }
+      const body = await getJson(`${NEON_API}/projects?limit=10`, token);
+      const projects = list(body.projects);
+      const org = text(
+        (projects[0] as Record<string, unknown> | undefined)?.org_id,
       );
-      return { account: text(body.email) ?? text(body.name) ?? "Neon account" };
+      return {
+        account: org
+          ? `Organization ${org} (${projects.length} project${projects.length === 1 ? "" : "s"})`
+          : `Neon API key (${projects.length} project${projects.length === 1 ? "" : "s"})`,
+      };
     },
     tools: (token) => [
       readTool({
@@ -136,18 +223,12 @@ export const PROVIDERS: Record<PlatformId, Provider> = {
         arms: ["building", "coding", "thinking", "general", "math_science"],
         run: async () => {
           const credential = await token();
-          const body = await getJson(
-            "https://console.neon.tech/api/v2/projects?limit=10",
-            credential,
-          );
-          const projects = list(body.projects).slice(0, 10) as Array<
-            Record<string, unknown>
-          >;
+          const projects = await neonProjects(credential, 10);
           return {
             projects: await Promise.all(
               projects.map(async (project) => {
                 const branches = await getJson(
-                  `https://console.neon.tech/api/v2/projects/${encodeURIComponent(String(project.id))}/branches`,
+                  `${NEON_API}/projects/${encodeURIComponent(String(project.id))}/branches`,
                   credential,
                 ).catch(() => ({ branches: [] }));
                 return {
@@ -175,6 +256,7 @@ export const PROVIDERS: Record<PlatformId, Provider> = {
     id: "supabase",
     name: "Supabase",
     verify: async (token) => {
+      assertTokenKind("supabase", token);
       const body = await fetch("https://api.supabase.com/v1/projects", {
         headers: { authorization: `Bearer ${token}` },
         signal: AbortSignal.timeout(10_000),

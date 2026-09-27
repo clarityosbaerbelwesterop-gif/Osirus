@@ -31,27 +31,48 @@ export type PlatformCardData = {
 
 const INFO: Record<
   PlatformCardData["id"],
-  { icon: React.ReactNode; text: string; capability: string; tokenHint: string }
+  {
+    icon: React.ReactNode;
+    text: string;
+    capability: string;
+    tokenHint: string;
+    /** What to do when the provider refuses the token. */
+    rejected: string;
+  }
 > = {
   vercel: {
     icon: <Cloud size={20} />,
     text: "Lets Osirus see your deployments: which project, which commit, whether it is ready or failed.",
     capability: "List deployments (read only)",
     tokenHint: "Create one at vercel.com → Account Settings → Tokens.",
+    rejected:
+      "Vercel did not accept this token. Create a new one under Account Settings → Tokens and paste it whole.",
   },
   neon: {
     icon: <Database size={20} />,
     text: "Lets Osirus see your Neon projects and branches. It runs no query against your databases.",
     capability: "List projects and branches (read only)",
-    tokenHint: "Create one at console.neon.tech → Account settings → API keys.",
+    tokenHint:
+      "A Neon API key (starts with napi_): console.neon.tech → Account settings → API keys, or your organization's Settings → API keys.",
+    rejected:
+      "Neon did not accept this key. Paste an API key from Account settings → API keys or your organization's Settings → API keys, not a database password or connection string.",
   },
   supabase: {
     icon: <Layers size={20} />,
     text: "Lets Osirus see your Supabase projects, their region and status.",
     capability: "List projects (read only)",
     tokenHint:
-      "Create one at supabase.com/dashboard → Account → Access tokens.",
+      "A personal access token (starts with sbp_): supabase.com/dashboard/account/tokens.",
+    rejected:
+      "Supabase did not accept this token. Create a personal access token at supabase.com/dashboard/account/tokens.",
   },
+};
+
+const WRONG_KIND: Record<string, string> = {
+  supabase_project_key:
+    "This is a project API key (anon, service_role or sb_ key). Osirus needs a personal access token (starts with sbp_) from supabase.com/dashboard/account/tokens.",
+  neon_connection_string:
+    "This is a database connection string. Osirus needs a Neon API key (starts with napi_) from Account settings → API keys; it never connects to your database.",
 };
 
 const ERRORS: Record<string, string> = {
@@ -87,8 +108,15 @@ export function PlatformCard({ data }: { data: PlatformCardData }) {
     if (!response?.ok) {
       const result = (await response?.json().catch(() => ({}))) as {
         error?: string;
+        kind?: string;
       };
-      setError(ERRORS[result?.error ?? ""] ?? "That did not work.");
+      setError(
+        result?.error === "wrong_token_kind"
+          ? (WRONG_KIND[result.kind ?? ""] ?? info.rejected)
+          : result?.error === "token_rejected"
+            ? info.rejected
+            : (ERRORS[result?.error ?? ""] ?? "That did not work."),
+      );
       return false;
     }
     router.refresh();

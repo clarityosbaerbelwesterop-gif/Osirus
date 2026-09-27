@@ -53,6 +53,7 @@ const { checkGithubHealth, healthSummary } =
 const {
   checkPlatformHealth,
   connectPlatform,
+  disconnectPlatform,
   platformStatuses,
   platformToolsForWorkspace,
 } = await import("../src/lib/connectors/platform");
@@ -83,6 +84,10 @@ type ProviderCall = {
 
 const provider = {
   valid: new Set<string>(),
+  /** Neon organization keys: no /users/me, projects of their org only. */
+  neonOrgKeys: new Set<string>(),
+  /** Neon personal keys whose user belongs to organization org-cert. */
+  neonOrgMembers: new Set<string>(),
   calls: [] as ProviderCall[],
   down: false,
 };
@@ -114,6 +119,32 @@ async function providerFetch(input: RequestInfo | URL, init?: RequestInit) {
   if (!token || !provider.valid.has(token))
     return json({ message: "Bad credentials" }, 401);
   const route = `${url.host}${url.pathname}`;
+  if (provider.neonOrgKeys.has(token)) {
+    if (route === "console.neon.tech/api/v2/projects")
+      return json({
+        projects: [
+          {
+            id: "proj-org",
+            name: "org project",
+            region_id: "aws-eu-central-1",
+            org_id: "org-cert",
+          },
+        ],
+      });
+    if (route.startsWith("console.neon.tech/api/v2/users/me"))
+      return json({ message: "not allowed for organization API keys" }, 404);
+  }
+  if (provider.neonOrgMembers.has(token)) {
+    if (route === "console.neon.tech/api/v2/users/me/organizations")
+      return json({ organizations: [{ id: "org-cert", name: "Cert" }] });
+    if (
+      route === "console.neon.tech/api/v2/projects" &&
+      url.searchParams.get("org_id") === "org-cert"
+    )
+      return json({
+        projects: [{ id: "proj-2", name: "team", org_id: "org-cert" }],
+      });
+  }
   switch (route) {
     case "api.github.com/user":
       return json({ login: "cert-octocat" }, 200, { "x-oauth-scopes": "" });
@@ -687,5 +718,92 @@ describe("webhook endpoints", () => {
         endpoint.id,
       ]),
     ).toHaveLength(0);
+  });
+});
+
+describe("platform keys of the wrong kind or scope", () => {
+  let carol: TestIdentity;
+  beforeAll(async () => {
+    carol = await db.seedTenant("carol");
+  });
+  it("connects a Neon organization key, which cannot read /users/me", async () => {
+    const token = mint("napi_");
+    provider.neonOrgKeys.add(token);
+    const me = { ...carol };
+    await expect(connectPlatform(me, "neon", token)).resolves.toEqual({
+      account: "Organization org-cert (1 project)",
+    });
+    const tools = await platformToolsForWorkspace(me);
+    const registry = new ToolRegistry();
+    registry.register(tools.find((tool) => tool.id === "neon.projects")!);
+    const used = await registry.invoke({
+      toolId: "neon.projects",
+      rawInput: {},
+      context: toolContext(me),
+    });
+    expect(used.ok).toBe(true);
+    expect(used.data).toMatchObject({ projects: [{ id: "proj-org" }] });
+    await disconnectPlatform(me, "neon");
+  });
+
+  it("lists a personal Neon key's organization projects too", async () => {
+    const token = mint("napi_");
+    provider.neonOrgMembers.add(token);
+    const me = { ...carol };
+    await connectPlatform(me, "neon", token);
+    const tools = await platformToolsForWorkspace(me);
+    const registry = new ToolRegistry();
+    registry.register(tools.find((tool) => tool.id === "neon.projects")!);
+    const used = await registry.invoke({
+      toolId: "neon.projects",
+      rawInput: {},
+      context: toolContext(me),
+    });
+    expect(used.ok).toBe(true);
+    const ids = (used.data as { projects: Array<{ id: string }> }).projects.map(
+      (project) => project.id,
+    );
+    expect(ids.sort()).toEqual(["proj-1", "proj-2"]);
+    await disconnectPlatform(me, "neon");
+  });
+
+  it("names the right token when a Supabase project key or a Neon connection string is pasted", async () => {
+    provider.calls.length = 0;
+    const me = { ...carol };
+    const jwt = `eyJ${randomBytes(24).toString("base64url")}`;
+    const secret = `sb_secret_${randomBytes(16).toString("hex")}`;
+    const url = `postgresql://owner:${randomBytes(8).toString("hex")}@ep-cert.eu-central-1.aws.neon.tech/neondb`;
+    minted.push(jwt, secret, url);
+    await expect(connectPlatform(me, "supabase", jwt)).rejects.toThrow(
+      "wrong_token_kind:supabase_project_key",
+    );
+    await expect(connectPlatform(me, "supabase", secret)).rejects.toThrow(
+      "wrong_token_kind:supabase_project_key",
+    );
+    await expect(connectPlatform(me, "neon", url)).rejects.toThrow(
+      "wrong_token_kind:neon_connection_string",
+    );
+    // Refused before anything was sent anywhere.
+    expect(provider.calls).toEqual([]);
+
+    holder.session = { identity: me };
+    const response = await platformRoute.POST(
+      new Request("https://osirus.test/api/connectors/platform/supabase", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://osirus.test",
+        },
+        body: JSON.stringify({ action: "connect", token: jwt }),
+      }),
+      { params: Promise.resolve({ platform: "supabase" }) },
+    );
+    expect(response.status).toBe(400);
+    const body = await response.text();
+    expect(JSON.parse(body)).toEqual({
+      error: "wrong_token_kind",
+      kind: "supabase_project_key",
+    });
+    expect(body).not.toContain(jwt);
   });
 });

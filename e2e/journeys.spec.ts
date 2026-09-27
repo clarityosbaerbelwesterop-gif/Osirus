@@ -416,3 +416,53 @@ test("7. attach a CSV, send it with the question, remove another file", async ({
     0,
   );
 });
+
+test("8. a run that outlives its request is followed until it finishes", async ({
+  page,
+}) => {
+  // The request slice ends while the run still works ("Continuing in the
+  // background"). The page must keep polling -- the poll is also what
+  // resumes the run on the server -- and show the answer when it lands.
+  let polls = 0;
+  const running = (): RunSnapshot => {
+    const snapshot = chatSnapshot();
+    snapshot.run.status = "running";
+    snapshot.messages = snapshot.messages.slice(0, 1);
+    return snapshot;
+  };
+  await mockApis(page, {
+    runSnapshot: () => {
+      polls += 1;
+      return polls < 3 ? running() : chatSnapshot();
+    },
+  });
+  await page.route("**/api/runtime", (route) =>
+    route.fulfill({
+      status: 200,
+      headers: {
+        "content-type": "text/event-stream",
+        "X-Osirus-Session-Id": SESSION,
+        "X-Osirus-Run-Id": RUN,
+      },
+      body: [
+        frame({ kind: "started", runId: RUN, sessionId: SESSION }),
+        frame({ kind: "done", runId: RUN, status: "running" }),
+      ].join(""),
+    }),
+  );
+
+  await openSurface(page, "chat-empty");
+  const composer = page.getByRole("textbox", { name: "Message Osirus" });
+  await composer.fill(QUESTION);
+  await composer.press("Enter");
+
+  await expect(
+    page.getByText("readers see a snapshot and never block writers"),
+  ).toBeVisible({ timeout: 15_000 });
+  expect(polls).toBeGreaterThanOrEqual(3);
+  await expect(composer).toBeEnabled();
+  // Finished runs are not polled any further.
+  const settled = polls;
+  await page.waitForTimeout(2_500);
+  expect(polls).toBe(settled);
+});
