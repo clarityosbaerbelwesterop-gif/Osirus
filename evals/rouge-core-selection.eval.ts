@@ -135,9 +135,29 @@ it(
       .filter(Boolean);
     const parallel = Math.max(1, Number(process.env.ROUGE_PARALLEL) || 4);
     const results: Result[] = [];
+    // Each core is reported the moment it finishes, and the evidence file is
+    // rewritten then too: a run cut short by the job's time limit still
+    // leaves every finished core's result behind.
+    const finished = (result: Result) => {
+      results.push(result);
+      console.log(
+        `core done: ${result.core} correct ${result.correct}/${result.total} strict ${result.strict}/${result.total} refused ${result.refused} errors ${result.errors} median ${result.medianLatencyMs ?? "-"} ms${result.stoppedEarly ? " (stopped early)" : ""}`,
+      );
+      if (process.env.ROUGE_EVIDENCE)
+        writeFileSync(
+          process.env.ROUGE_EVIDENCE,
+          JSON.stringify(
+            { milestone: "M56.1", partial: true, results },
+            null,
+            2,
+          ),
+        );
+    };
     for (let i = 0; i < candidates.length; i += parallel) {
-      results.push(
-        ...(await Promise.all(candidates.slice(i, i + parallel).map(evaluate))),
+      await Promise.all(
+        candidates
+          .slice(i, i + parallel)
+          .map((core) => evaluate(core).then(finished)),
       );
     }
 
