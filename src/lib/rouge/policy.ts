@@ -33,6 +33,20 @@ export const rougePolicySchema = z.object({
   }),
   /** Whether an interactive answer may come from a substitute model. */
   allowCoreSubstitute: z.boolean(),
+  /**
+   * The cognitive kernel (M57). Off in p0, the foundation baseline every
+   * kernel change is measured against.
+   */
+  kernel: z
+    .object({
+      /** Hold answers to the shape the person fixed ("number only"). */
+      contracts: z.boolean(),
+      /** Repair rounds for a draft that broke its contract. */
+      repairRounds: z.number().int().min(0).max(2),
+      /** Answer small talk at quick effort, without deliberation. */
+      quickSmallTalk: z.boolean(),
+    })
+    .default({ contracts: false, repairRounds: 0, quickSmallTalk: false }),
 });
 
 export type RougePolicy = z.infer<typeof rougePolicySchema>;
@@ -47,7 +61,21 @@ export const DEFAULT_CORE = "grok-4.6";
  */
 export const MEASURED_SUBSTITUTES: readonly string[] = [];
 
+/**
+ * The policy interactive Rouge runs. p1 turns the M57 kernel on; it became
+ * the default only after measuring against p0 and the raw core (see
+ * docs/rouge/architecture.md, "M57").
+ */
 export function defaultPolicy(core = DEFAULT_CORE): RougePolicy {
+  return rougePolicySchema.parse({
+    ...foundationPolicy(core),
+    version: "p1",
+    kernel: { contracts: true, repairRounds: 1, quickSmallTalk: true },
+  });
+}
+
+/** p0: the foundation alone. The baseline for every kernel measurement. */
+export function foundationPolicy(core = DEFAULT_CORE): RougePolicy {
   return rougePolicySchema.parse({
     version: "p0",
     core,

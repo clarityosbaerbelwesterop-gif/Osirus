@@ -8,6 +8,8 @@ import {
   versionOf,
   type RougePolicy,
 } from "./policy";
+import { checkContract, describeContract } from "./kernel/contract";
+import { understand, type AnswerContract } from "./kernel/understand";
 import { NO_TELEMETRY, type RougeTelemetrySink } from "./telemetry";
 import {
   RougeError,
@@ -107,12 +109,32 @@ export class RougeRuntime {
     const request = { ...parsed.data, signal: input.signal };
     const foundation = this.options.foundation;
     const version = this.version;
-    const effort = this.effortFor(request);
+    const kernel = this.policy.kernel;
+    const kernelOn = kernel.contracts || kernel.quickSmallTalk;
+    // M57: understand the request before spending a call on it.
+    const understanding = kernelOn
+      ? understand(request.messages.at(-1)!.content)
+      : null;
+    const autoEffort = !request.effort || request.effort === "auto";
+    const effort: RougeEffort =
+      kernel.quickSmallTalk && understanding?.smallTalk && autoEffort
+        ? "quick"
+        : this.effortFor(request);
     const reasoning = reasoningFor(
       this.policy,
       effort,
       foundation.core.reasoningLevels,
     );
+    const contract: AnswerContract =
+      kernel.contracts && understanding
+        ? understanding.contract
+        : { kind: "free" };
+    const contractText = describeContract(contract);
+    // A reply with a fixed shape is checked before anyone sees it.
+    const buffered = contract.kind !== "free";
+    let contractMet: boolean | null = buffered ? false : null;
+    let repairs = 0;
+    let answeredBy = request.requestId;
     const allowSubstitute =
       this.options.allowCoreSubstitute ?? this.policy.allowCoreSubstitute;
 
@@ -122,7 +144,9 @@ export class RougeRuntime {
     const usage: RougeUsage = { inputTokens: 0, outputTokens: 0, cost: null };
     const coreOf = (): RougeCoreServed => {
       const served =
-        foundation.servedModel(request.requestId) ?? foundation.core.id;
+        foundation.servedModel(answeredBy) ??
+        foundation.servedModel(request.requestId) ??
+        foundation.core.id;
       return {
         requested: foundation.core.id,
         served,
@@ -150,6 +174,9 @@ export class RougeRuntime {
           firstTokenMs: firstTokenAt === null ? null : firstTokenAt - started,
           outcome,
           errorCode: code,
+          ...(kernelOn
+            ? { contract: contract.kind, contractMet, repairs }
+            : {}),
         }),
       ).catch(() => undefined);
 
@@ -158,17 +185,32 @@ export class RougeRuntime {
       label:
         effort === "deep" || effort === "ultra"
           ? "Thinking deeply"
-          : "Thinking",
+          : buffered
+            ? "Working it out"
+            : "Thinking",
+    };
+
+    const system = [
+      identityInstruction({
+        version,
+        foundation: foundation.core.id,
+        now: new Date(started),
+      }),
+      ...(contractText
+        ? [`Required reply format for this message: ${contractText}`]
+        : []),
+    ].join("\n");
+    const addUsage = (event: { usage: RougeUsage }) => {
+      usage.inputTokens += event.usage.inputTokens;
+      usage.outputTokens += event.usage.outputTokens;
+      if (event.usage.cost !== null)
+        usage.cost = (usage.cost ?? 0) + event.usage.cost;
     };
 
     try {
       for await (const event of foundation.stream({
         requestId: request.requestId,
-        system: identityInstruction({
-          version,
-          foundation: foundation.core.id,
-          now: new Date(started),
-        }),
+        system,
         messages: request.messages,
         reasoning,
         allowSubstitute,
@@ -178,13 +220,57 @@ export class RougeRuntime {
           if (!event.text) continue;
           if (firstTokenAt === null) firstTokenAt = this.now();
           text += event.text;
-          yield event;
+          if (!buffered) yield event;
         } else {
-          usage.inputTokens += event.usage.inputTokens;
-          usage.outputTokens += event.usage.outputTokens;
-          if (event.usage.cost !== null)
-            usage.cost = (usage.cost ?? 0) + event.usage.cost;
+          addUsage(event);
         }
+      }
+
+      if (buffered) {
+        let verdict = checkContract(contract, text);
+        while (!verdict.ok && repairs < kernel.repairRounds) {
+          // Self-correction: one short round with the reason stated. The
+          // draft stays the answer unless the repair meets the contract.
+          repairs += 1;
+          yield { type: "status", label: "Refining" };
+          const repairId = `${request.requestId}:repair-${repairs}`;
+          let repaired = "";
+          try {
+            for await (const event of foundation.stream({
+              requestId: repairId,
+              system,
+              messages: [
+                ...request.messages,
+                { role: "assistant", content: text },
+                {
+                  role: "user",
+                  content: `Your reply did not follow the required format: ${verdict.reason}. ${contractText} Reply again with only that.`,
+                },
+              ],
+              reasoning: reasoningFor(
+                this.policy,
+                "quick",
+                foundation.core.reasoningLevels,
+              ),
+              allowSubstitute,
+              signal: request.signal,
+            })) {
+              if (event.type === "delta") repaired += event.text;
+              else addUsage(event);
+            }
+          } catch (error) {
+            if (request.signal?.aborted) throw error;
+            break; // keep the draft
+          }
+          const next = checkContract(contract, repaired);
+          if (next.ok) {
+            text = repaired;
+            answeredBy = repairId;
+          }
+          verdict = next;
+        }
+        contractMet = verdict.ok;
+        if (text.trim()) yield { type: "delta", text };
       }
     } catch (error) {
       const code = errorCode(error, request.signal);
@@ -213,6 +299,9 @@ export class RougeRuntime {
       usage,
       latencyMs: this.now() - started,
       firstTokenMs: firstTokenAt === null ? null : firstTokenAt - started,
+      ...(kernelOn
+        ? { kernel: { contract: contract.kind, contractMet, repairs } }
+        : {}),
     };
     yield { type: "done", response };
   }

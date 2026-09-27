@@ -9,13 +9,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: foundation = raw core vs Rouge; core-selection = tournament of candidate cores
+        description: foundation = raw core vs Rouge; core-selection = tournament of candidate cores; kernel = raw vs Rouge p0 vs Rouge p1 (dev + holdout)
         required: true
         type: choice
         default: foundation
-        options: [foundation, core-selection]
+        options: [foundation, core-selection, kernel]
       core:
-        description: (foundation) exact UnoRouter model ID of the core to evaluate
+        description: (foundation, kernel) exact UnoRouter model ID of the core to evaluate
         required: false
         type: string
         default: grok-4.6
@@ -55,7 +55,7 @@ jobs:
           ROUGE_EVAL_CORE: ${{ inputs.core }}
           ROUGE_CANDIDATES: ${{ inputs.candidates }}
           ROUGE_EVIDENCE: ${{ runner.temp }}/rouge-eval.json
-          RSI_EVAL: ${{ inputs.mode == 'core-selection' && 'evals/rouge-core-selection.eval.ts' || 'evals/rouge-foundation.eval.ts' }}
+          RSI_EVAL: ${{ inputs.mode == 'core-selection' && 'evals/rouge-core-selection.eval.ts' || inputs.mode == 'kernel' && 'evals/rouge-kernel.eval.ts' || 'evals/rouge-foundation.eval.ts' }}
         run: npx vitest run --config vitest.rsi.config.ts
       - uses: actions/upload-artifact@v4
         if: always()

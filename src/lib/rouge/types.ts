@@ -75,6 +75,12 @@ export type RougeResponse = {
   latencyMs: number;
   /** Time to the first streamed token; null when nothing streamed. */
   firstTokenMs: number | null;
+  /** What the kernel did (M57); absent under the foundation policy. */
+  kernel?: {
+    contract: string;
+    contractMet: boolean | null;
+    repairs: number;
+  };
 };
 
 /**

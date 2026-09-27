@@ -9,6 +9,7 @@ import {
 import { UnoRouterFoundation } from "../src/lib/rouge/foundations/unorouter";
 import {
   defaultPolicy,
+  foundationPolicy,
   identityInstruction,
   reasoningFor,
   versionOf,
@@ -91,7 +92,8 @@ describe("Rouge runtime (M56)", () => {
     let clock = 1_000;
     const rouge = new RougeRuntime({
       foundation,
-      policy: defaultPolicy("grok-4.6"),
+      // M56 behaviour: the foundation alone (p0), no kernel.
+      policy: foundationPolicy("grok-4.6"),
       telemetry,
       now: () => (clock += 10),
     });

@@ -24,6 +24,10 @@ export type RougeTelemetryRecord = {
   firstTokenMs: number | null;
   outcome: "completed" | "failed" | "cancelled";
   errorCode: string | null;
+  /** Kernel (M57): the answer's contract kind, whether it held, repairs spent. */
+  contract?: string;
+  contractMet?: boolean | null;
+  repairs?: number;
 };
 
 export interface RougeTelemetrySink {
