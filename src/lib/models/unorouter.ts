@@ -188,6 +188,19 @@ export type UnoRouterOptions = {
    * Foundry. P3/P4 are deferred while free capacity is scarce.
    */
   priority?: CapacityPriority;
+  /**
+   * Rouge (M56): the reasoning effort for this provider's requests, instead
+   * of the OSIRUS_REASONING_EFFORT default. Sent only to a model whose
+   * reasoning contract is verified.
+   */
+  reasoningEffort?: "low" | "medium" | "high" | "xhigh";
+  /**
+   * Rouge (M56): false keeps every request on the pinned model -- a refusal
+   * (no credit, unknown model, outage) surfaces instead of being answered by
+   * the free pool. A comparison of one core against Rouge on that core must
+   * never be served by a different model.
+   */
+  fallback?: boolean;
   /** Tests: the shared runtime (pool, key health, capacity) to use. */
   runtime?: ModelRuntime;
   /** Tests: skip /v1/models discovery and use the runtime's pool as is. */
@@ -355,6 +368,7 @@ export class UnoRouterProvider implements ModelProvider {
    * the same broken key cannot fix it.
    */
   private fallbackEligible(error: ProviderError, pinned: boolean) {
+    if (this.options.fallback === false) return false;
     if (
       error.code === "insufficient_credit" ||
       error.code === "model_not_configured"
@@ -370,7 +384,7 @@ export class UnoRouterProvider implements ModelProvider {
     // Only Grok 4.6's OpenAI-compatible reasoning contract is verified. Do
     // not send a provider-specific reasoning field to another model family.
     return model === "grok-4.6"
-      ? (env.OSIRUS_REASONING_EFFORT ?? "high")
+      ? (this.options.reasoningEffort ?? env.OSIRUS_REASONING_EFFORT ?? "high")
       : undefined;
   }
 
