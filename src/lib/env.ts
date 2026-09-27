@@ -29,6 +29,9 @@ const schema = z.object({
   OSIRUS_FREE_MODEL_PRIMARY: z.string().min(1).optional(),
   OSIRUS_FREE_MODEL_SECONDARY: z.string().min(1).optional(),
   OSIRUS_FREE_MODEL_TERTIARY: z.string().min(1).optional(),
+  // Rouge 1 (M56): the foundation core. Unset means grok-4.6. A different
+  // core is a migration decision made on evaluations, never a silent switch.
+  ROUGE_CORE_MODEL: z.string().min(1).max(120).optional(),
   OSIRUS_REASONING_EFFORT: z
     .enum(["low", "medium", "high", "xhigh"])
     .optional(),

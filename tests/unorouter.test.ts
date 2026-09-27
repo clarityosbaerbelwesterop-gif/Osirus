@@ -275,6 +275,27 @@ describe("UnoRouterProvider", () => {
     );
   });
 
+  it("keeps a pinned core on its own model when fallback is off (Rouge evaluations)", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValue(new Response("insufficient credit", { status: 402 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const UnoRouterProvider = await configuredProvider();
+    const provider = new UnoRouterProvider({
+      model: "grok-4.6",
+      fallback: false,
+      reasoningEffort: "xhigh",
+    });
+    await expect(
+      provider.complete({ requestId: "pinned", role: "STRONG", messages: [] }),
+    ).rejects.toMatchObject({ code: "insufficient_credit" });
+    // Only the core was asked; the free pool never answered for it.
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    const body = JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string);
+    expect(body.model).toBe("grok-4.6");
+    expect(body.reasoning_effort).toBe("xhigh");
+  });
+
   it("never sidesteps a rate limit with the free model", async () => {
     const fetchMock = vi
       .fn()

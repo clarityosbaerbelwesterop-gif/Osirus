@@ -1,0 +1,54 @@
+name: Rouge evaluation
+
+# Rouge 1 against its raw foundation core, on the same core, with
+# substitution forbidden (M56 onward). It spends model calls, so it runs
+# only when dispatched. The logs are public: the runner prints metadata
+# (outcome, served model, tokens, latency), never prompts or answers.
+
+on:
+  workflow_dispatch:
+    inputs:
+      core:
+        description: Exact UnoRouter model ID of the core to evaluate
+        required: true
+        type: string
+        default: grok-4.6
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osirus-rouge-eval
+  cancel-in-progress: false
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Raw core vs Rouge (metadata only)
+        env:
+          UNOROUTER_BASE_URL: https://api.unorouter.com/v1/chat/completions
+          UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
+          UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
+          UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
+          OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "60"
+          ROUGE_EVAL_CORE: ${{ inputs.core }}
+          ROUGE_EVIDENCE: ${{ runner.temp }}/rouge-eval.json
+          RSI_EVAL: evals/rouge-foundation.eval.ts
+        run: npx vitest run --config vitest.rsi.config.ts
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: rouge-eval
+          path: ${{ runner.temp }}/rouge-eval.json
+          if-no-files-found: ignore
+          retention-days: 30
