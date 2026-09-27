@@ -152,16 +152,46 @@ The core changes only when the third run beats the second on the
 certification suite with no regression in any domain. The switch is a policy
 version (`RougePolicy.core`) plus `ROUGE_CORE_MODEL`, never a silent change.
 
-## 6. Blocking decisions for the owner
+## 6. Owner decisions (2026-09-27)
 
-1. **Grok 4.6 credit.** All three keys have a balance of 0, so Rouge on
-   Grok 4.6 cannot be measured or used. Either add credit (a paid decision
-   for the owner) or run Rouge's development on a verified free core, for
-   example `nemotron-3-ultra-550b-a55b:free`. The second option keeps every
-   result labelled with that core, and Grok numbers wait until credit
-   exists.
-2. **Teacher access.** Opus 5.5 as teacher needs a legitimately obtained
-   API credential. None is configured.
+The owner decided two things.
+
+1. **Teacher.** The Claude development session is the teacher, trainer and
+   designer. It writes Rouge's policies, tasks, verifiers and training
+   material directly into this repository. Everything it writes goes
+   through the same gates as everything else:
+   - code-checked tasks;
+   - independent verifiers;
+   - blind holdouts before promotion.
+
+   Its lessons are labelled `teacher: claude-session`. An Opus 5.5 API
+   teacher (M64) is added only if a legitimate credential is configured.
+
+2. **Core when Grok 4.6 cannot answer.** Rouge uses a similarly strong or
+   stronger core, chosen by measurement, not by reputation. This works
+   through the **core ladder** (M56.1):
+   - Grok 4.6 is asked first.
+   - When it refuses before answering (no credit, unknown model, outage,
+     rate limit), the measured substitutes answer in order.
+   - A core without credit is skipped for 10 minutes, then asked again.
+   - Every substituted answer is labelled with the core that served it.
+   - Evaluations never leave the named core.
+
+   The order of the substitutes comes from the core selection tournament:
+   - `rouge-eval.yml` with `mode=core-selection`;
+   - 21 teacher-written, code-checked tasks across 9 families;
+   - to be eligible, a core must answer every task and get at least 80%
+     right.
+
+   The result is recorded in `MEASURED_SUBSTITUTES`, with the run it came
+   from.
+
+Live results so far (M56 foundation eval, substitution forbidden):
+
+| Run         | Core                              | Raw   | Rouge | Notes                                                                                                                                   |
+| ----------- | --------------------------------- | ----- | ----- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 36321530627 | `grok-4.6`                        | —     | —     | `insufficient_credit` on raw and Rouge; stopped after 2 calls                                                                           |
+| 36321535200 | `nemotron-3-ultra-550b-a55b:free` | 2 / 2 | 2 / 2 | Served core = named core. Rouge adds about 190 input tokens (identity) and wrote longer replies to "number only" prompts: an M62 target |
 
 ## 7. M56 as delivered
 

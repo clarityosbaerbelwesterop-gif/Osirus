@@ -39,6 +39,14 @@ export type RougePolicy = z.infer<typeof rougePolicySchema>;
 
 export const DEFAULT_CORE = "grok-4.6";
 
+/**
+ * Substitute cores, in order, for when the requested core cannot answer
+ * (Grok 4.6 without credit). Filled only from the core selection tournament
+ * (evals/rouge-core-selection.eval.ts); never from a guess. Empty means no
+ * substitute: a refused core is reported as refused.
+ */
+export const MEASURED_SUBSTITUTES: readonly string[] = [];
+
 export function defaultPolicy(core = DEFAULT_CORE): RougePolicy {
   return rougePolicySchema.parse({
     version: "p0",

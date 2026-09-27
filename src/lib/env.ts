@@ -32,6 +32,9 @@ const schema = z.object({
   // Rouge 1 (M56): the foundation core. Unset means grok-4.6. A different
   // core is a migration decision made on evaluations, never a silent switch.
   ROUGE_CORE_MODEL: z.string().min(1).max(120).optional(),
+  // Comma-separated substitute cores, in order, overriding the measured
+  // list. Each must be a model the tournament evaluated.
+  ROUGE_SUBSTITUTE_CORES: z.string().min(1).max(1000).optional(),
   OSIRUS_REASONING_EFFORT: z
     .enum(["low", "medium", "high", "xhigh"])
     .optional(),
