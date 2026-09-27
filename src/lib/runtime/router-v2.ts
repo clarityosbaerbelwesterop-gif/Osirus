@@ -1,6 +1,9 @@
 import type { ArmId, TaskAnalysis } from "../arms/types";
 import { routableArms } from "../arms/registry";
+import { isSmallTalk } from "./small-talk";
 import type { Capability } from "./types";
+
+export { isSmallTalk };
 
 // Capability routing.
 //
@@ -91,7 +94,7 @@ export function ambiguityOf(
   return null;
 }
 
-function compositionFromSegments(objective: string): {
+export function compositionFromSegments(objective: string): {
   composition: ArmId[];
   perSegment: Array<{ segment: string; armId: ArmId; score: number }>;
 } {
@@ -133,6 +136,17 @@ export async function routeObjective(
   objective: string,
   options: { classify?: Classifier } = {},
 ): Promise<RoutingDecision> {
+  if (isSmallTalk(objective)) {
+    return {
+      primary: "general",
+      composition: ["general"],
+      capabilities: ["general"],
+      confidence: 0.9,
+      escalated: false,
+      reason: "Conversational message; answering directly.",
+    };
+  }
+
   const candidates = scoreCandidates(objective);
   const { composition, perSegment } = compositionFromSegments(objective);
   const heuristicPrimary = candidates[0]?.armId ?? "general";
@@ -179,7 +193,14 @@ export async function routeObjective(
         ),
       ),
     ];
-    const resolved = ordered.length > 0 ? ordered : [heuristicPrimary];
+    // A task the classifier itself calls simple is one task: one arm, one
+    // answer. Several arms on a simple task produce several answers to it.
+    const resolved =
+      ordered.length === 0
+        ? [heuristicPrimary]
+        : analysis.complexity === "low"
+          ? ordered.slice(0, 1)
+          : ordered;
     return {
       primary: resolved[0] ?? "general",
       composition: resolved,

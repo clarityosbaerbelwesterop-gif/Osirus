@@ -44,6 +44,11 @@ export type ClaimedWork = {
   ordinal: number;
   stageInput: Record<string, unknown>;
   requiresVerification: boolean;
+  /**
+   * The stage's retry ceiling (retry_policy.maxAttempts, at least 1). Absent
+   * for in-memory work (arena trials), where every failure may be retried.
+   */
+  maxAttempts?: number;
 };
 
 type ClaimRow = {
@@ -65,6 +70,7 @@ type ClaimRow = {
   ordinal: number;
   stage_input: Record<string, unknown> | null;
   requires_verification: boolean;
+  retry_policy: Record<string, unknown> | null;
 };
 
 /**
@@ -101,7 +107,8 @@ export async function claimNextStage(input: {
             s.capability,
             s.ordinal,
             s.input as stage_input,
-            s.requires_verification
+            s.requires_verification,
+            s.retry_policy
        from claimed c
        join osirus.run_stages s on s.id = c.stage_id
        join osirus.runs r on r.id = c.run_id`,
@@ -128,7 +135,36 @@ export async function claimNextStage(input: {
     ordinal: row.ordinal,
     stageInput: row.stage_input ?? {},
     requiresVerification: row.requires_verification,
+    maxAttempts: Math.max(
+      1,
+      Number(
+        (row.retry_policy as { maxAttempts?: unknown } | null)?.maxAttempts,
+      ) || 1,
+    ),
   };
+}
+
+/**
+ * Milliseconds until this run's next parked stage becomes claimable, or null
+ * when nothing is parked. A stage parked for a short retry (a transient model
+ * failure, a provider asking to wait) is worth waiting for in the same worker:
+ * ending the slice instead leaves the run with no driver until a poll or the
+ * next scheduler tick.
+ */
+export async function nextRetryInMs(runId: string): Promise<number | null> {
+  const rows = await querySystem<{ ms: string | number | null }>(
+    `select extract(epoch from (min(s.runnable_after) - now())) * 1000 as ms
+       from osirus.run_stages s
+       join osirus.runs r on r.id = s.run_id
+      where s.run_id = $1::uuid
+        and s.status = 'blocked'
+        and s.runnable_after > now()
+        and r.cancel_requested = false
+        and r.status not in ('completed', 'failed', 'cancelled', 'cancelling')`,
+    [runId],
+  );
+  const ms = rows[0]?.ms;
+  return ms === null || ms === undefined ? null : Math.max(0, Number(ms));
 }
 
 /**

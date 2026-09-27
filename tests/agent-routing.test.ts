@@ -7,6 +7,7 @@ import type { TaskAnalysis } from "../src/lib/arms/types";
 import {
   ambiguityOf,
   capabilitiesFor,
+  isSmallTalk,
   routeObjective,
   scoreCandidates,
   segmentObjective,
@@ -101,6 +102,69 @@ describe("capability routing", () => {
     expect(decision.escalated).toBe(false);
     expect(decision.primary).toBeTruthy();
     expect(decision.reason).toMatch(/Classification failed/);
+  });
+
+  it("answers greetings and small talk directly, without a classifier call", async () => {
+    // Production run f1221607: "Hallo" went to the classifier, came back as
+    // general + coding + research, and produced two identical answers.
+    for (const objective of [
+      "Hallo",
+      "hi",
+      "Hallo Osirus!",
+      "danke",
+      "Vielen Dank :)",
+      "Wie geht's dir?",
+      "Guten Morgen",
+      "thank you",
+      "ok",
+    ]) {
+      let called = 0;
+      const decision = await routeObjective(objective, {
+        classify: async () => {
+          called += 1;
+          throw new Error("should not be reached");
+        },
+      });
+      expect(decision.composition, objective).toEqual(["general"]);
+      expect(called, objective).toBe(0);
+    }
+  });
+
+  it("does not mistake a short task for small talk", () => {
+    for (const objective of [
+      "Baue mir eine Todo App",
+      "Hallo, kannst du mir eine Website bauen?",
+      "hi, fix the failing build",
+      "Recherchiere Neon Preise",
+      "na klar, mach weiter",
+      "",
+    ]) {
+      expect(isSmallTalk(objective), objective).toBe(false);
+    }
+  });
+
+  it("keeps one arm when the classifier itself calls the task simple", async () => {
+    const analysis: TaskAnalysis = {
+      objective: "unclear",
+      successCriteria: ["An answer"],
+      constraints: [],
+      unknowns: [],
+      capabilities: ["general", "coding", "research"],
+      complexity: "low",
+      risk: "low",
+      requiredEvidence: [],
+      proposedStages: [],
+      parallelGroups: [],
+      verifierRequirements: [],
+    };
+    const simple = await routeObjective("hmm", {
+      classify: async () => analysis,
+    });
+    expect(simple.composition).toEqual(["general"]);
+    const harder = await routeObjective("hmm", {
+      classify: async () => ({ ...analysis, complexity: "high" }),
+    });
+    expect(harder.composition).toEqual(["general", "coding", "research"]);
   });
 
   it("maps arms back to capabilities without duplicates", () => {

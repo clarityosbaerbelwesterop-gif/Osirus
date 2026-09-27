@@ -52,6 +52,14 @@ export async function POST(
     const message = error instanceof Error ? error.message : "";
     if (message === "connector_key_not_configured")
       return json({ error: "not_configured" }, 409);
+    if (message.startsWith("wrong_token_kind:"))
+      return json(
+        {
+          error: "wrong_token_kind",
+          kind: message.slice("wrong_token_kind:".length),
+        },
+        400,
+      );
     if (message.startsWith("provider_rejected"))
       return json({ error: "token_rejected" }, 400);
     return json({ error: "provider_unreachable" }, 502);

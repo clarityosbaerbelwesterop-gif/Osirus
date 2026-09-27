@@ -22,7 +22,7 @@ export const INTERACTION_STATES = [
   "success",
 ] as const;
 
-export const buildContractSchema = z.object({
+const strictContractSchema = z.object({
   product: z.string().min(3).max(200),
   audience: z.string().max(200).optional(),
   stack: z
@@ -82,6 +82,229 @@ export const buildContractSchema = z.object({
       "The page declares its language",
     ]),
 });
+
+// Free models return the right content in a slightly wrong shape often
+// enough to fail builds on it: a flow as a sentence instead of an object, an
+// id in Title Case, a path without its slash, "mobile" for "phone". Those are
+// repaired here before strict validation. Nothing is invented: a value that
+// is missing stays missing and still fails, and an acceptance probe is never
+// made up -- a screen without one is still rejected by contractProblems.
+
+type Loose = Record<string, unknown>;
+
+const isRecord = (value: unknown): value is Loose =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Lower-kebab id from any label; null when nothing usable is left. */
+export function slugId(value: unknown) {
+  if (typeof value !== "string") return null;
+  let slug = value
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  if (!slug) return null;
+  if (!/^[a-z]/.test(slug)) slug = `x-${slug}`;
+  return slug.slice(0, 40).replace(/-+$/, "");
+}
+
+function clip(value: unknown, max: number) {
+  return typeof value === "string" ? value.trim().slice(0, max) : value;
+}
+
+function text(value: unknown) {
+  if (typeof value === "string") return value;
+  if (isRecord(value)) {
+    for (const key of ["text", "name", "title", "description", "step"]) {
+      if (typeof value[key] === "string") return value[key] as string;
+    }
+  }
+  return value;
+}
+
+function list(value: unknown) {
+  if (value === undefined || value === null) return value;
+  return Array.isArray(value) ? value : [value];
+}
+
+function withId(entry: Loose): Loose {
+  const name = entry.name ?? entry.title;
+  const id = slugId(entry.id) ?? slugId(name);
+  return {
+    ...entry,
+    ...(id ? { id } : {}),
+    ...(name !== undefined ? { name: clip(name, 120) } : {}),
+  };
+}
+
+function normalizeFlow(flow: unknown) {
+  if (typeof flow === "string") {
+    const name = flow.trim();
+    return { id: slugId(name), name: name.slice(0, 120), steps: [name] };
+  }
+  if (!isRecord(flow)) return flow;
+  const entry = withId(flow);
+  const steps = list(entry.steps);
+  return {
+    ...entry,
+    ...(Array.isArray(steps)
+      ? {
+          steps: steps
+            .map((step) => clip(text(step), 200))
+            .filter((step) => step !== "")
+            .slice(0, 10),
+        }
+      : {}),
+  };
+}
+
+function normalizeComponent(component: unknown) {
+  if (typeof component === "string") {
+    const name = component.trim();
+    return { id: slugId(name), name: name.slice(0, 120), responsibility: "" };
+  }
+  if (!isRecord(component)) return component;
+  const entry = withId(component);
+  return {
+    ...entry,
+    ...(entry.responsibility === undefined &&
+    typeof entry.description === "string"
+      ? { responsibility: entry.description }
+      : {}),
+    ...(typeof entry.responsibility === "string"
+      ? { responsibility: clip(entry.responsibility, 300) }
+      : {}),
+  };
+}
+
+const STATES = new Set<string>(INTERACTION_STATES);
+
+function normalizeScreen(screen: unknown) {
+  if (!isRecord(screen)) return screen;
+  const entry = withId(screen);
+  const path =
+    typeof entry.path === "string" && entry.path && !entry.path.startsWith("/")
+      ? `/${entry.path}`
+      : entry.path;
+  const components = list(entry.components);
+  const states = list(entry.states);
+  const acceptance = isRecord(entry.acceptance)
+    ? {
+        ...entry.acceptance,
+        ...(entry.acceptance.texts !== undefined
+          ? { texts: list(entry.acceptance.texts) }
+          : {}),
+        ...(entry.acceptance.selectors !== undefined
+          ? { selectors: list(entry.acceptance.selectors) }
+          : {}),
+      }
+    : entry.acceptance;
+  return {
+    ...entry,
+    path,
+    ...(typeof entry.purpose === "string"
+      ? { purpose: clip(entry.purpose, 300) }
+      : {}),
+    ...(Array.isArray(components)
+      ? {
+          components: components.map((component) =>
+            slugId(
+              isRecord(component)
+                ? (component.id ?? component.name)
+                : component,
+            ),
+          ),
+        }
+      : {}),
+    ...(Array.isArray(states)
+      ? {
+          states: [
+            ...new Set(
+              states
+                .map((state) => String(state).toLowerCase().trim())
+                .filter((state) => STATES.has(state)),
+            ),
+          ],
+        }
+      : {}),
+    ...(acceptance !== undefined ? { acceptance } : {}),
+  };
+}
+
+const DEVICE: Record<string, "phone" | "ipad" | "desktop"> = {
+  phone: "phone",
+  mobile: "phone",
+  smartphone: "phone",
+  ipad: "ipad",
+  tablet: "ipad",
+  desktop: "desktop",
+  laptop: "desktop",
+};
+
+const STACK: Record<string, string> = {
+  "static-html": "static-html",
+  static: "static-html",
+  html: "static-html",
+  "html/css/js": "static-html",
+  "vite-react": "vite-react",
+  react: "vite-react",
+  vite: "vite-react",
+  next: "next",
+  nextjs: "next",
+  "next.js": "next",
+  existing: "existing",
+};
+
+/** Repair the shape of a model-written contract; see the note above. */
+export function normalizeContract(raw: unknown): unknown {
+  if (!isRecord(raw)) return raw;
+  const flows = list(raw.userFlows ?? raw.flows);
+  const components = list(raw.components);
+  const screens = list(raw.screens);
+  const responsive = list(raw.responsive);
+  const stack =
+    typeof raw.stack === "string"
+      ? STACK[raw.stack.toLowerCase().trim()]
+      : undefined;
+  const { flows: _flows, ...rest } = raw;
+  void _flows;
+  return {
+    ...rest,
+    ...(typeof raw.product === "string"
+      ? { product: clip(raw.product, 200) }
+      : {}),
+    ...(typeof raw.audience === "string"
+      ? { audience: clip(raw.audience, 200) }
+      : {}),
+    stack,
+    ...(Array.isArray(screens)
+      ? { screens: screens.map(normalizeScreen) }
+      : {}),
+    ...(Array.isArray(flows)
+      ? { userFlows: flows.map(normalizeFlow).slice(0, 6) }
+      : {}),
+    ...(Array.isArray(components)
+      ? { components: components.map(normalizeComponent) }
+      : {}),
+    ...(Array.isArray(responsive)
+      ? {
+          responsive: [
+            ...new Set(
+              responsive
+                .map((device) => DEVICE[String(device).toLowerCase().trim()])
+                .filter(Boolean),
+            ),
+          ],
+        }
+      : {}),
+  };
+}
+
+export const buildContractSchema = z.preprocess(
+  normalizeContract,
+  strictContractSchema,
+);
 export type BuildContract = z.infer<typeof buildContractSchema>;
 
 /** Contract-level problems: dangling component ids, duplicate paths. */

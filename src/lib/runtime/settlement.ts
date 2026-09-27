@@ -97,7 +97,12 @@ export function budgetStopReason(
  * mapping is the whole contract between a worker and the claim scan, and it
  * has to be testable without a database.
  */
-export function settlementFor(outcome: StageOutcome, now = Date.now()) {
+export function settlementFor(
+  outcome: StageOutcome,
+  now = Date.now(),
+  /** False on the stage's last allowed attempt: a failure is then final. */
+  attemptsLeft = true,
+) {
   switch (outcome.kind) {
     case "COMPLETE":
       return {
@@ -148,11 +153,15 @@ export function settlementFor(outcome: StageOutcome, now = Date.now()) {
         attemptStatus: "failed" as const,
         // A retryable failure parks the stage in blocked so the next claim is
         // a fresh attempt. `failed` is terminal by design and means exhausted.
-        stageStatus: outcome.retryable
-          ? ("blocked" as const)
-          : ("failed" as const),
+        // On the last allowed attempt a retryable failure is final too:
+        // parking it as blocked left the run "running" with a dead stage
+        // until some later claim noticed (production, 2026-09-27).
+        stageStatus:
+          outcome.retryable && attemptsLeft
+            ? ("blocked" as const)
+            : ("failed" as const),
         output: null,
-        retryDelaySeconds: outcome.retryable ? 5 : 0,
+        retryDelaySeconds: outcome.retryable && attemptsLeft ? 5 : 0,
         failureClass: outcome.failureClass,
         lastError: outcome.error,
       };

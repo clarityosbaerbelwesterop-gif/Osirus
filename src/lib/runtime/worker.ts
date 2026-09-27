@@ -17,6 +17,7 @@ import {
   claimNextStage,
   finishAttempt,
   heartbeatAttempt,
+  nextRetryInMs,
   type BudgetOutcome,
   type ClaimedWork,
 } from "./dispatch";
@@ -59,6 +60,21 @@ const HEARTBEAT_DIVISOR = 3;
 
 /** Refuse to start another stage with less than this left before the deadline. */
 const STAGE_HEADROOM_MS = 20_000;
+/** The longest a worker waits in place for a parked stage's retry. */
+const MAX_RETRY_WAIT_MS = 30_000;
+
+function pause(ms: number, signal: AbortSignal) {
+  return new Promise<void>((resolve) => {
+    if (signal.aborted) return resolve();
+    const timer = setTimeout(done, ms);
+    function done() {
+      clearTimeout(timer);
+      signal.removeEventListener("abort", done);
+      resolve();
+    }
+    signal.addEventListener("abort", done, { once: true });
+  });
+}
 
 export type SliceResult = {
   claimed: number;
@@ -326,7 +342,11 @@ export async function executeClaimedStage(input: {
     });
   }
 
-  const settlement = settlementFor(outcome);
+  const settlement = settlementFor(
+    outcome,
+    Date.now(),
+    work.maxAttempts === undefined || work.attemptNumber < work.maxAttempts,
+  );
   const settled = await finishAttempt({
     attemptId: work.attemptId,
     leaseToken: work.leaseToken,
@@ -458,6 +478,19 @@ export async function driveSlices(input: DriveInput): Promise<SliceResult> {
       runId: input.runId,
     });
     if (!work) {
+      // A stage parked for a short retry is this worker's to pick up again.
+      // Ending the slice here would leave the run with no driver at all.
+      const retryIn = input.runId
+        ? await nextRetryInMs(input.runId).catch(() => null)
+        : null;
+      if (
+        retryIn !== null &&
+        retryIn <= MAX_RETRY_WAIT_MS &&
+        Date.now() + retryIn + STAGE_HEADROOM_MS < input.deadlineAt
+      ) {
+        await pause(retryIn + 250, input.signal);
+        continue;
+      }
       result.idle = result.claimed === 0;
       break;
     }

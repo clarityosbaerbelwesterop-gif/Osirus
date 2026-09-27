@@ -320,12 +320,30 @@ export class RuntimeRepository {
     content: string;
     metadata?: Record<string, unknown>;
   }) {
+    // An answer a run already gave is not given twice. A stage that is
+    // retried or re-claimed after writing its answer, or two segments that
+    // reach the same answer, would otherwise show the user the same reply
+    // twice.
     const rows = await queryAs<{ id: string }>(
       this.actorId,
-      `insert into osirus.messages
-         (organization_id, workspace_id, session_id, run_id, role, content, metadata)
-       values ($1::uuid, $2::uuid, $3::uuid, $4::uuid, $5, $6, $7::jsonb)
-       returning id`,
+      `with existing as (
+         select id
+           from osirus.messages
+          where $5 = 'assistant'
+            and run_id = $4::uuid
+            and role = 'assistant'
+            and content = $6
+          limit 1
+       ), inserted as (
+         insert into osirus.messages
+           (organization_id, workspace_id, session_id, run_id, role, content, metadata)
+         select $1::uuid, $2::uuid, $3::uuid, $4::uuid, $5, $6, $7::jsonb
+          where not exists (select 1 from existing)
+         returning id
+       )
+       select id from inserted
+       union all
+       select id from existing`,
       [
         input.organizationId,
         input.workspaceId,
@@ -480,6 +498,63 @@ export class RuntimeRepository {
       [runId],
     );
     return rows[0] ?? null;
+  }
+
+  /**
+   * Finish a cancellation nobody is left to acknowledge.
+   *
+   * A cancel request only asks the worker holding the run to stop. When no
+   * attempt holds a live lease -- the request that drove it has ended, and
+   * no poll or tick has one -- nothing ever would, and the run would sit in
+   * `cancelling` forever. With no live worker there is nobody to race, so
+   * the run, its open stages and its dead attempts are closed together.
+   * Returns true only when this call made the run `cancelled`.
+   */
+  async settleCancellationWithoutWorker(runId: string) {
+    const rows = await queryAs<{ id: string }>(
+      this.actorId,
+      `with live as (
+         select 1
+           from osirus.run_attempts
+          where run_id = $1::uuid
+            and status = any(array['claimed','running']::text[])
+            and (
+              lease_expires_at > now()
+              or (lease_expires_at is null
+                  and started_at > now() - interval '10 minutes')
+            )
+          limit 1
+       ), run as (
+         update osirus.runs
+            set status = 'cancelled',
+                cancel_requested = true,
+                completed_at = now()
+          where id = $1::uuid
+            and status = 'cancelling'
+            and not exists (select 1 from live)
+          returning id
+       ), stages as (
+         update osirus.run_stages
+            set status = 'cancelled',
+                completed_at = now(),
+                runnable_after = null
+          where run_id in (select id from run)
+            and status = any(array['pending','running','waiting','blocked']::text[])
+          returning id
+       ), attempts as (
+         update osirus.run_attempts
+            set status = 'cancelled',
+                completed_at = now(),
+                lease_expires_at = null
+          where run_id in (select id from run)
+            and status = any(array['created','claimed','running']::text[])
+          returning id
+       )
+       -- Data-modifying CTEs always run to completion, read or not.
+       select id from run`,
+      [runId],
+    );
+    return rows.length > 0;
   }
 
   async isCancellationRequested(runId: string) {
