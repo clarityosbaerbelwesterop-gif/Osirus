@@ -11,6 +11,10 @@ name: Rouge GPU session
 # RUNPOD_API_KEY, HF_TOKEN; variable ROUGE_HF_REPO. They are never printed.
 
 on:
+  # A push only probes the public API schema (no key, no cost).
+  push:
+    branches: ["rouge/native-model-*"]
+    paths: [".github/workflows/rouge-gpu.yml"]
   workflow_dispatch:
     inputs:
       task:
@@ -40,7 +44,7 @@ concurrency:
 
 jobs:
   probe:
-    if: ${{ inputs.task == 'probe' }}
+    if: ${{ github.event_name == 'push' || inputs.task == 'probe' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
