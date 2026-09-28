@@ -121,6 +121,10 @@ def check(spec: dict, response: str) -> bool:
         return "," not in text
     if kind == "python_tests":
         return run_python_tests(_code(text), spec["tests"], spec.get("timeout", 10.0))
+    if kind == "ifeval":
+        from .ifeval import check as ifeval_check
+
+        return ifeval_check(spec, text)
     raise ValueError(f"unknown check type {kind!r}")
 
 

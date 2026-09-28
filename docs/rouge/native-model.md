@@ -2,7 +2,7 @@
 
 **Osirus is the agent. Rouge 1 is the model.**
 
-Rouge 1 is **one trained open-weight model with its own checkpoints**. It is
+Rouge 1 is one trained open-weight model with its own checkpoints. It is
 not an external model wrapped in more calls, routers, fallbacks or runtime
 stages.
 
@@ -10,100 +10,126 @@ stages.
 USER → ROUGE 1 CHECKPOINT → ANSWER
 ```
 
-Reasoning inside the model is fine. The intelligence must increasingly live
-**in the weights**.
+The intelligence must increasingly live **in the weights**.
 
-## Identity
+## Base and identity
 
-- **Base.** Rouge 1 is based on **Qwen3.5-397B-A17B**. The base stays
-  Qwen's work.
-- **The pin.** Revision `8472618112abcbd45acbcdc58436aff4233c23f7`,
-  Apache-2.0, recorded in
-  `training/rouge/manifests/base-qwen3.5-397b-a17b.json` (94 shard hashes,
-  tokenizer, config).
-- **One lineage.** The base is not switched casually. Rouge 1 is a single
-  lineage.
-- **Correct description:** "Rouge 1, based on Qwen3.5-397B-A17B".
+- **Base.** Rouge 1 v1 is based on **Qwen/Qwen3.5-27B**, pinned at revision
+  `fc05daec18b0a78c049392ed2e771dde82bdf654`. The pin is in
+  `models/rouge-1/base.json`: Apache-2.0, 11 shard hashes, tokenizer, chat
+  template and config.
+- **Why 27B.** It is large enough to be serious and small enough for one
+  GPU (QLoRA). The 397B plan was withdrawn by the owner and remains in git
+  history only.
+- **One lineage.** Checkpoints follow one line from the pinned base:
+
+  ```
+  Qwen3.5-27B → rouge-1-sft-001 → rouge-1-reasoning-001 → rouge-1-context-001 → … → Rouge 1
+  ```
+
+- **Correct description:** "Rouge 1, based on Qwen3.5-27B".
 - **Never claim** that Rouge was pretrained from scratch, that its
   parameters are infinite, or that it has a context length a checkpoint has
   not passed.
-- **What becomes Rouge's own after training:**
-  - its checkpoints;
-  - its data mixture;
-  - its post-training, behaviour, context training and reasoning training;
-  - its evaluation history and version lineage.
-- **No substitute weights.** No other model's weights may answer while
-  identifying as Rouge 1. Hardware replicas of the same checkpoint may.
+
+## Where things live
+
+| Thing                                                              | Location                                                                                                                                                       |
+| ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Base weights                                                       | The original Hugging Face repository, at the pinned revision (immutable source)                                                                                |
+| Rouge checkpoint weights                                           | A dedicated Rouge model repository (Hugging Face, Xet-backed), created when the first checkpoint exists                                                        |
+| Training code, configs, dataset registry, manifests, eval, reports | This repository (`training/rouge/`, `models/rouge-1/`)                                                                                                         |
+| Checkpoint manifests                                               | `training/rouge/checkpoints/`: sha256 of every file, parent, run, code commit, environment lock, data version, hyperparameters, seed, steps, loss, evaluations |
+
+No weights ever enter this Git repository.
 
 ## The unit of progress
 
-**A new checkpoint that measurably beats its parent.**
+**A new checkpoint whose weights differ from its parent and measurably
+beat it.**
 
-A new TypeScript class, provider, router, retry or runtime stage is not
-Rouge intelligence progress. Checkpoint names:
+- The comparison uses the same inference settings and the same hidden eval
+  set.
+- Wins **and** regressions are reported.
+- If Rouge is worse, that is said, and the next candidate changes data or
+  config.
 
-```
-rouge-1-base → rouge-1-sft-001 → rouge-1-reasoning-002 → rouge-1-context-003 → … → rouge-1-rc1 → rouge-1
-```
+A new TypeScript class, router or runtime stage is not Rouge progress.
 
-**Every checkpoint has a manifest** (`training/rouge/rouge_train/checkpoints.py`):
+## M58: definition of done
 
-- parent;
-- run id, code commit and environment lock hash;
-- hardware;
-- dataset registry version, mixture and tokens;
-- hyperparameters and seed;
-- storage URI;
-- sha256 of every file;
-- evaluations.
+M58 is **not** complete because training code exists. It completes when
+`rouge-1-sft-001` exists and all of the following hold:
 
-**Promotion rule.**
+1. Its weights provably differ from the base (`merge.weight_delta`).
+2. Its manifest records:
+   - base revision;
+   - dataset revision;
+   - training and LoRA configuration;
+   - seed, steps and loss;
+   - checkpoint hashes.
+3. It has been compared with the base on the hidden eval set, with wins and
+   regressions reported.
 
-- It needs a held-out gain on at least one target suite.
-- It allows no regression beyond a stated tolerance on the guard suites.
-- The candidate and its parent must be measured on the same suite
-  versions.
-- Dev-split scores never count.
+**Status:**
 
-**Where things live.** Weights live in object storage and never in Git.
+| Item                             | State                                                                                                                                                              |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Pipeline                         | Built and tested                                                                                                                                                   |
+| CI smoke run                     | Tiny model of the base's architecture with the real tokenizer: data → template → forward/backward → LoRA → checkpoint → resume → merge → reload → inference → eval |
+| In-house generators              | Built                                                                                                                                                              |
+| Open-source SFT mixture          | Being assembled                                                                                                                                                    |
+| Single-GPU sizing and exact cost | In `compute-plan.md`                                                                                                                                               |
+| **The real run**                 | **Waits for the owner's approval.** Recommended: 1× H100 80 GB, about $16–27                                                                                       |
 
-## Rules carried over
+## Rules
+
+**Data**
 
 - Benchmarks used for claims never train Rouge.
-- Data is split into train, dev, holdout and adversarial sets. Contamination
-  is checked before every data build.
+- Train, dev, holdout and adversarial splits are kept apart, and
+  decontamination runs before every build.
 - Every sample has provenance.
-- Datasets need verified licences at a pinned revision. Teacher-model
-  outputs are used only when that model's terms permit training on them.
-- **Claude's role:** research, training and evaluation engineer; dataset
-  designer; reviewer.
-  - Claude is not Rouge's runtime brain.
-  - There is no industrial distillation of Claude outputs unless
-    Anthropic's current terms explicitly allow it.
-- **No paid compute without the owner's approval** (`compute-plan.md`).
+- Licences are verified at a pinned revision.
+- Teacher-model outputs are used only when that model's terms permit
+  training on them.
 
-## Milestones (re-planned)
+**Claude's role:** research and training engineer, dataset designer,
+evaluation designer and reviewer.
 
-| Milestone | Scope                                                                                                                                                                                                                                                                                                                                                              |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **M58**   | Training foundation. Done in this branch: pinned base manifest, checkpoint manifests with lineage and promotion rules, dataset registry with licence gates, seed control, weight verification, CI for all of it, and the compute plan. Next: a tiny same-architecture smoke training run in CI (compute plan, step A), then a stack decision on the first GPU day. |
-| **M59**   | **rouge-1-sft-001**: an approved SFT mixture covering reasoning, math, science, code, research, writing, instruction following, multilingual and German, long-form synthesis and multimodal. LoRA, then a merged checkpoint after validation. Compared with base.                                                                                                  |
-| **M60**   | **Reasoning post-training**: verified tasks (math, logic, code, program execution, constraints) with rejection sampling, DPO, and GRPO where justified. The verifier scores; the runtime never solves for the model.                                                                                                                                               |
-| **M61**   | **Character and response quality in the weights**: precise, direct, curious, honest about uncertainty, strong in German and English, trained through preference post-training. No giant system prompt.                                                                                                                                                             |
-| **M62**   | **Curriculum and data engine**: open datasets, verified synthetic and self-generated tasks, execution-verified code, consented feedback only, all with provenance and splits.                                                                                                                                                                                      |
-| **M63**   | **Model-native self-improvement**: checkpoint → evaluation → weakness → curriculum → candidate training → blind evaluation → promote or reject. It changes weights, not prompts.                                                                                                                                                                                   |
-| **M64**   | **Reasoning RL** with verifiable rewards: execution, formal checking, known answers or an independent verifier. No self-grading.                                                                                                                                                                                                                                   |
-| **M65**   | **Model-native long context**: 262k → 512k → 1M → 2M, through RoPE/YaRN scaling, long-context continued pretraining and SFT, and progressive lengths. A length is claimed only after the checkpoint passes it.                                                                                                                                                     |
-| **M66**   | **Multimodal**: preserve and improve the base's native vision (images, screenshots, charts, documents, UI, diagrams). One model, no bolted-on vision model.                                                                                                                                                                                                        |
-| **M67**   | **Coding and science specialisation**, verified by execution and deterministic checks.                                                                                                                                                                                                                                                                             |
-| **M68**   | **Continual training**: experience → verified dataset → candidate job → evaluation → checkpoint → canary → promotion. Triggered by data, compute and a measured weakness, never by a timer.                                                                                                                                                                        |
-| **M69**   | **Rouge Model Lab**: compares Qwen base, checkpoint N−1 and checkpoint N on reasoning, coding, science, knowledge, writing, multilingual, vision, long context, instruction following, hallucination and calibration.                                                                                                                                              |
-| **M70**   | **Rouge 1 RC**: one canonical checkpoint with a model card, architecture manifest, data summary, licence notice, context specification, benchmark and safety reports, and a deployment recipe.                                                                                                                                                                     |
-| **M71**   | **AI mode integration**: in ChatHub, AI = Rouge 1 and Agent = Osirus.                                                                                                                                                                                                                                                                                              |
-| **M72**   | **Design and animations**: streaming, thinking states, context meter, multimodal input. No visible chain of thought.                                                                                                                                                                                                                                               |
-| **M73**   | **Polish, security and performance**: serving, rate limits, GPU failure, checkpoint rollback.                                                                                                                                                                                                                                                                      |
-| **M74**   | **Stripe, domain, legal and search.**                                                                                                                                                                                                                                                                                                                              |
-| **M75**   | **Release**: real screenshots, real methodology, no fake frontier claims.                                                                                                                                                                                                                                                                                          |
+- Claude is not Rouge's runtime brain.
+- Claude writes no training responses. The generators compute them.
+- There is no Claude-output distillation unless Anthropic's terms
+  explicitly allow it.
 
-The M56/M57 runtime is legacy research. See
-[`legacy-runtime.md`](legacy-runtime.md).
+**Compute:** no paid compute without the owner's explicit approval, and no
+cluster or recurring GPU infrastructure.
+
+**Context:** SFT starts at 4k–8k tokens. The steps after that are 16k, 32k,
+64k, 128k and 262k. Anything towards 512k, 1M or 2M is research, and only
+after Rouge training itself works.
+
+## Roadmap
+
+| Milestone | Scope                                                       |
+| --------- | ----------------------------------------------------------- |
+| M58       | Real training foundation and the first Rouge SFT checkpoint |
+| M59       | Reasoning post-training                                     |
+| M60       | Response and instruction intelligence                       |
+| M61       | Preference training                                         |
+| M62       | Verified data flywheel                                      |
+| M63       | Reasoning RL with verifiable rewards                        |
+| M64       | Coding and science specialisation                           |
+| M65       | Long-context training                                       |
+| M66       | Multimodal improvement                                      |
+| M67       | Continual model improvement                                 |
+| M68       | Model-native self-improvement pipeline                      |
+| M69       | Advanced post-training                                      |
+| M70       | Rouge 1 RC benchmark certification                          |
+| M71       | AI mode integration (ChatHub: AI = Rouge 1, Agent = Osirus) |
+| M72       | Design and animations                                       |
+| M73       | Polish, security and performance                            |
+| M74       | Stripe, domain, legal and search                            |
+| M75       | Release                                                     |
+
+The M56/M57 runtime is legacy research: [`legacy-runtime.md`](legacy-runtime.md).

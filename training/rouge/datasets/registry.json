@@ -1,6 +1,6 @@
 {
   "schema": "rouge.data-registry/1",
-  "version": "2026-09-28.2",
+  "version": "2026-09-28.3",
   "note": "Candidates are not trainable until approved: licence verified against the source at a pinned revision, and any teacher-model outputs covered by terms that permit training. training/rouge/scripts/dataset_licenses.py reads the Hub metadata on a CI runner.",
   "datasets": [
     {
@@ -24,7 +24,7 @@
       "id": "tulu-3-sft-mixture",
       "source": "hf:allenai/tulu-3-sft-mixture",
       "license": "ODC-BY-1.0",
-      "status": "candidate",
+      "status": "approved",
       "role": "train",
       "domains": [
         "instruction-following",
@@ -34,19 +34,19 @@
         "multilingual"
       ],
       "stage": "sft",
-      "review": "mixture of sources; each subset's own licence and generator must be checked before approval",
       "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
       "licenseVerified": {
         "at": "2026-09-28",
-        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "evidence": "rouge-data.yml probe run 36455654821 (card licence, revision, row fields) + rouge-training.yml run 36452042422",
         "hubLicense": "odc-by"
-      }
+      },
+      "filters": "only human-written subsets: oasst1 (Apache-2.0), Aya (Apache-2.0), SciRIFF (ODC-BY); every GPT-generated subset and the hard-coded Tulu identity subset are excluded"
     },
     {
       "id": "nemotron-post-training-v1",
       "source": "hf:nvidia/Nemotron-Post-Training-Dataset-v1",
       "license": "CC-BY-4.0",
-      "status": "candidate",
+      "status": "approved",
       "role": "train",
       "domains": [
         "reasoning",
@@ -57,72 +57,76 @@
       ],
       "stage": "sft",
       "teacherOutputs": {
-        "model": "per-subset (open-weight reasoning models)",
-        "termsPermitTraining": null
+        "model": "Qwen3-235B-A22B (Apache-2.0), DeepSeek-R1-0528 (MIT); per-row `generator` field, other generators excluded",
+        "termsPermitTraining": true
       },
       "revision": "74e23eb6f830fef4a9e96a92f6f6262214cbb9a8",
       "licenseVerified": {
         "at": "2026-09-28",
-        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "evidence": "rouge-data.yml probe run 36455654821 (card licence, revision, row fields) + rouge-training.yml run 36452042422",
         "hubLicense": "cc-by-4.0"
-      }
+      },
+      "filters": "splits math, stem, code only; the chat split is excluded because its prompts come from lmsys-chat-1m, which has its own licence terms"
     },
     {
       "id": "open-math-reasoning",
       "source": "hf:nvidia/OpenMathReasoning",
       "license": "CC-BY-4.0",
-      "status": "candidate",
+      "status": "approved",
       "role": "train",
       "domains": ["math", "reasoning"],
       "stage": "reasoning",
       "teacherOutputs": {
-        "model": "open-weight reasoning models (per dataset card)",
-        "termsPermitTraining": null
+        "model": "DeepSeek-R1 (MIT), QwQ-32B (Apache-2.0); per-row generation_model, others excluded",
+        "termsPermitTraining": true
       },
       "revision": "d3d08664755704f422af97d43a7ff0ded4bd95df",
       "licenseVerified": {
         "at": "2026-09-28",
-        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "evidence": "rouge-data.yml probe run 36455654821 (card licence, revision, row fields) + rouge-training.yml run 36452042422",
         "hubLicense": "cc-by-4.0"
-      }
+      },
+      "filters": "split cot, problem_type has_answer_extracted"
     },
     {
       "id": "open-code-reasoning",
       "source": "hf:nvidia/OpenCodeReasoning",
       "license": "CC-BY-4.0",
-      "status": "candidate",
+      "status": "approved",
       "role": "train",
       "domains": ["code", "reasoning"],
       "stage": "reasoning",
       "teacherOutputs": {
-        "model": "open-weight reasoning models (per dataset card)",
-        "termsPermitTraining": null
+        "model": "DeepSeek-R1 (MIT)",
+        "termsPermitTraining": true
       },
       "revision": "20a1ca19c0d050fe9057fc08339d6b370ec1c67a",
       "licenseVerified": {
         "at": "2026-09-28",
-        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "evidence": "rouge-data.yml probe run 36455654821 (card licence, revision, row fields) + rouge-training.yml run 36452042422",
         "hubLicense": "cc-by-4.0"
-      }
+      },
+      "filters": "config split_0 (inputs inlined)"
     },
     {
       "id": "openr1-math-220k",
       "source": "hf:open-r1/OpenR1-Math-220k",
       "license": "Apache-2.0",
-      "status": "candidate",
+      "status": "approved",
       "role": "train",
       "domains": ["math", "reasoning"],
       "stage": "reasoning",
       "teacherOutputs": {
         "model": "DeepSeek-R1 (MIT)",
-        "termsPermitTraining": null
+        "termsPermitTraining": true
       },
       "revision": "e4e141ec9dea9f8326f4d347be56105859b2bd68",
       "licenseVerified": {
         "at": "2026-09-28",
-        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "evidence": "rouge-data.yml probe run 36455654821 (card licence, revision, row fields) + rouge-training.yml run 36452042422",
         "hubLicense": "apache-2.0"
-      }
+      },
+      "filters": "config default; only generations marked correct by math-verify and complete"
     },
     {
       "id": "ultrafeedback-binarized",
@@ -146,27 +150,87 @@
     },
     {
       "id": "rouge-verified-tasks",
-      "source": "generator:evals/rouge/m57-benchmark.ts (train seed namespace only)",
+      "source": "generator:training/rouge/rouge_train/generators.py (train seed namespace)",
       "license": "generated-in-house",
-      "status": "candidate",
+      "status": "approved",
       "role": "train",
       "domains": [
         "math",
-        "logic",
-        "program-execution",
-        "constraint-satisfaction"
+        "structured-output",
+        "uncertainty",
+        "identity",
+        "german"
       ],
       "stage": "reasoning",
-      "review": "prompts and answers are computed by code; train seeds are disjoint from dev and holdout seeds, and the contamination check runs before every build"
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "generated by code in this repository; no model output"
+      }
     },
     {
-      "id": "rouge-m57-holdout",
-      "source": "generator:evals/rouge/m57-benchmark.ts (fresh random holdout seeds)",
+      "id": "rouge-eval-generated",
+      "source": "generator:training/rouge/rouge_train/generators.py (eval seed namespace)",
       "license": "generated-in-house",
       "status": "candidate",
       "role": "eval-only",
-      "domains": ["math", "logic", "program-execution"],
+      "domains": ["reasoning", "format", "german"],
       "stage": "evaluation"
+    },
+    {
+      "id": "mgsm",
+      "source": "hf:juletxara/mgsm",
+      "revision": "b2f13d426afe3be8d69a7e739b36724db8b66bbc",
+      "license": "CC-BY-SA-4.0",
+      "status": "candidate",
+      "role": "eval-only",
+      "domains": ["math", "german", "english"],
+      "stage": "evaluation",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-data.yml probe run 36455654821 (card licence, revision, row fields) + rouge-training.yml run 36452042422",
+        "hubLicense": "cc-by-sa-4.0"
+      }
+    },
+    {
+      "id": "mbpp",
+      "source": "hf:google-research-datasets/mbpp",
+      "revision": "4bb6404fdc6cacfda99d4ac4205087b89d32030c",
+      "license": "CC-BY-4.0",
+      "status": "candidate",
+      "role": "eval-only",
+      "domains": ["code"],
+      "stage": "evaluation",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-data.yml probe run 36455654821 (card licence, revision, row fields) + rouge-training.yml run 36452042422",
+        "hubLicense": "cc-by-4.0"
+      }
+    },
+    {
+      "id": "ifeval",
+      "source": "hf:google/IFEval",
+      "revision": "966cd89545d6b6acfd7638bc708b98261ca58e84",
+      "license": "Apache-2.0",
+      "status": "candidate",
+      "role": "eval-only",
+      "domains": ["instruction-following"],
+      "stage": "evaluation",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-data.yml probe run 36455654821 (card licence, revision, row fields) + rouge-training.yml run 36452042422",
+        "hubLicense": "apache-2.0"
+      }
+    },
+    {
+      "id": "nemotron-post-training-v2",
+      "source": "hf:nvidia/Nemotron-Post-Training-Dataset-v2",
+      "revision": "5c89e01dd720ae0f4058445ed49c5fb68a03c76e",
+      "license": "CC-BY-4.0",
+      "status": "candidate",
+      "role": "train",
+      "domains": ["multilingual", "german", "reasoning"],
+      "stage": "sft",
+      "review": "gated on the Hub: needs an owner Hugging Face token and accepted terms before it can be read"
     }
   ]
 }

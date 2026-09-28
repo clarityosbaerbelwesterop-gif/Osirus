@@ -100,3 +100,23 @@ class MaskingTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class IfevalTest(unittest.TestCase):
+    def test_supported_instructions_are_checked_strictly(self):
+        from rouge_train import ifeval
+
+        spec = {"instructions": [
+            {"id": "punctuation:no_comma", "kwargs": {}},
+            {"id": "length_constraints:number_words", "kwargs": {"relation": "at least", "num_words": 5}},
+            {"id": "startend:end_checker", "kwargs": {"end_phrase": "Is there anything else I can help with?"}},
+        ]}
+        good = "This answer has no commas at all. Is there anything else I can help with?"
+        self.assertTrue(ifeval.check(spec, good))
+        self.assertFalse(ifeval.check(spec, good.replace("no commas", "no, commas")))
+        self.assertTrue(ifeval.check_one("detectable_format:number_bullet_lists", {"num_bullets": 2}, "* a\n* b"))
+        self.assertTrue(ifeval.check_one("detectable_format:json_format", {}, '```json\n{"a": 1}\n```'))
+        self.assertTrue(ifeval.check_one("change_case:english_capital", {}, "ALL CAPS"))
+        self.assertFalse(ifeval.check_one("keywords:forbidden_words", {"forbidden_words": ["foo"]}, "a Foo b"))
+        with self.assertRaises(KeyError):
+            ifeval.check_one("language:response_language", {"language": "sw"}, "x")

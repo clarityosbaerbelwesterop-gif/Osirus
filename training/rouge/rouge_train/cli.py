@@ -1,0 +1,156 @@
+"""Command line for a Rouge training session on a GPU host.
+
+    python -m rouge_train.cli verify  --base /models/Qwen3.5-27B
+    python -m rouge_train.cli train   --config configs/sft-001.json
+    python -m rouge_train.cli merge   --config configs/sft-001.json --out /ckpt/rouge-1-sft-001
+    python -m rouge_train.cli generate --model /models/Qwen3.5-27B --items eval.jsonl --out base.jsonl
+    python -m rouge_train.cli generate --model /ckpt/rouge-1-sft-001 --items eval.jsonl --out rouge.jsonl
+    python -m rouge_train.cli compare --items eval.jsonl --base base.jsonl --rouge rouge.jsonl --out report.json
+    python -m rouge_train.cli manifest --config configs/sft-001.json --merged /ckpt/rouge-1-sft-001 \
+        --report report.json --storage hf://<owner>/rouge-1 --out checkpoints/
+
+Every step writes JSON next to its outputs; `manifest` turns them into the
+checkpoint manifest that enters the repository (never the weights).
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+from pathlib import Path
+
+
+def _read_jsonl(path: str) -> list[dict]:
+    return [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(prog="rouge_train")
+    sub = parser.add_subparsers(dest="command", required=True)
+    p = sub.add_parser("verify")
+    p.add_argument("--base", required=True)
+    p = sub.add_parser("train")
+    p.add_argument("--config", required=True)
+    p = sub.add_parser("merge")
+    p.add_argument("--config", required=True)
+    p.add_argument("--out", required=True)
+    p = sub.add_parser("generate")
+    p.add_argument("--model", required=True)
+    p.add_argument("--items", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--backend", default="vllm", choices=["vllm", "transformers"])
+    p.add_argument("--max-new-tokens", type=int, default=2048)
+    p.add_argument("--thinking", action="store_true")
+    p = sub.add_parser("compare")
+    p.add_argument("--items", required=True)
+    p.add_argument("--base", required=True)
+    p.add_argument("--rouge", required=True)
+    p.add_argument("--out", required=True)
+    p = sub.add_parser("manifest")
+    p.add_argument("--config", required=True)
+    p.add_argument("--merged", required=True)
+    p.add_argument("--report", required=True)
+    p.add_argument("--storage", required=True)
+    p.add_argument("--out", required=True)
+    args = parser.parse_args()
+
+    if args.command == "verify":
+        from .manifest import load_base, verify_download
+
+        result = verify_download(Path(args.base), load_base())
+        print(json.dumps(result.__dict__ | {"ok": result.ok}, indent=1))
+        raise SystemExit(0 if result.ok else 1)
+
+    if args.command == "train":
+        from .config import RunConfig
+        from .train import train
+
+        report = train(RunConfig.load(args.config))
+        print(json.dumps({k: v for k, v in report.items() if k not in ("losses", "config", "adapter_files")}, indent=1))
+        return
+
+    if args.command == "merge":
+        from .config import RunConfig
+        from .merge import merge, weight_delta
+
+        config = RunConfig.load(args.config)
+        result = merge(config, Path(config.output_dir) / "adapter", args.out)
+        result["weight_delta"] = weight_delta(Path(config.base_path), Path(args.out))
+        (Path(args.out).parent / f"{Path(args.out).name}.merge.json").write_text(json.dumps(result, indent=1))
+        print(json.dumps(result["weight_delta"], indent=1))
+        return
+
+    if args.command == "generate":
+        from .evaluate import generate
+
+        items = _read_jsonl(args.items)
+        settings = {"backend": args.backend, "max_new_tokens": args.max_new_tokens, "temperature": 0.0, "seed": 0, "enable_thinking": args.thinking}
+        responses = generate(args.model, items, settings)
+        Path(args.out).write_text("\n".join(json.dumps({"id": i["id"], "response": r}, ensure_ascii=False) for i, r in zip(items, responses)) + "\n")
+        (Path(args.out).with_suffix(".settings.json")).write_text(json.dumps(settings | {"model": args.model}, indent=1))
+        return
+
+    if args.command == "compare":
+        from .evaluate import compare, score
+
+        items = _read_jsonl(args.items)
+        base = {r["id"]: r["response"] for r in _read_jsonl(args.base)}
+        rouge = {r["id"]: r["response"] for r in _read_jsonl(args.rouge)}
+        base_scores = score(items, [base[i["id"]] for i in items])
+        rouge_scores = score(items, [rouge[i["id"]] for i in items])
+        result = compare(items, base_scores, rouge_scores)
+        Path(args.out).write_text(json.dumps(result, indent=1))
+        for category, row in result.items():
+            print(f"{category:12} n={row['n']:4} base={row['base']:4} rouge={row['rouge']:4} wins={row['wins']:3} regressions={row['regressions']:3} p={row['mcnemar_p']:.4f}")
+        return
+
+    if args.command == "manifest":
+        from . import checkpoints
+        from .config import RunConfig
+        from .manifest import base_ref, load_base
+        from .train import environment
+
+        config = RunConfig.load(args.config)
+        train_report = json.loads((Path(config.output_dir) / "train-report.json").read_text())
+        env = train_report.get("environment") or environment()
+        manifest = checkpoints.create(
+            name=config.name,
+            parent=base_ref(load_base()),
+            kind="merged",
+            weights_dir=Path(args.merged),
+            run={
+                "id": f"{config.name}-{train_report['steps']}steps",
+                "code_commit": env["code_commit"],
+                "environment_lock_sha256": env["environment_lock_sha256"],
+                "hardware": env["hardware"],
+                "libraries": env.get("libraries"),
+                "steps": train_report["steps"],
+                "first_loss": train_report["first_loss"],
+                "final_loss": train_report["final_loss"],
+                "adapter_files": train_report["adapter_files"],
+            },
+            data={
+                "registry_version": json.loads((Path(__file__).resolve().parent.parent / "datasets" / "registry.json").read_text())["version"],
+                "mixture": Path(config.train_file).name,
+                "tokens": train_report["tokens"],
+                "stats": train_report["data"],
+            },
+            hyperparameters={k: v for k, v in train_report["config"].items() if k not in ("output_dir", "stop_after")},
+            seed=config.seed,
+            storage_uri=args.storage,
+        )
+        comparison = json.loads(Path(args.report).read_text())
+        for category, row in comparison.items():
+            checkpoints.add_evaluation(
+                manifest, suite=f"rouge-eval.{category}", version="v0", split="holdout",
+                metrics={"score": row["rouge"] / max(1, row["n"]), "base_score": row["base"] / max(1, row["n"]),
+                         "wins": row["wins"], "regressions": row["regressions"], "n": row["n"]},
+                run=args.report,
+            )
+        path = checkpoints.save(manifest, Path(args.out))
+        print(path)
+        return
+
+
+if __name__ == "__main__":
+    main()

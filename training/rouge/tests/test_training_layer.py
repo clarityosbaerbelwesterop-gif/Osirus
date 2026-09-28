@@ -151,9 +151,15 @@ class CheckpointTest(unittest.TestCase):
 
 
 class RegistryTest(unittest.TestCase):
-    def test_registry_is_valid_and_nothing_is_trainable_yet(self):
+    def test_registry_is_valid_and_only_approved_training_data_is_trainable(self):
         loaded = registry.load()
-        self.assertEqual(registry.trainable(loaded), [])
+        trainable = {e["id"] for e in registry.trainable(loaded)}
+        self.assertIn("rouge-verified-tasks", trainable)
+        self.assertNotIn("ultrafeedback-binarized", trainable)
+        self.assertNotIn("smoltalk", trainable)
+        eval_only = {e["id"] for e in loaded["datasets"] if e["role"] == "eval-only"}
+        self.assertTrue({"mgsm", "mbpp", "ifeval"} <= eval_only)
+        self.assertFalse(trainable & eval_only)
 
     def test_approval_requires_licence_evidence_revision_and_teacher_terms(self):
         entry = {

@@ -1,51 +1,63 @@
-# Rouge 1 training (M58+)
+# Rouge 1 training
 
-Rouge 1 is **one model lineage**: a derivative of **Qwen3.5-397B-A17B**,
-pinned at revision `8472618112abcbd45acbcdc58436aff4233c23f7` (Apache-2.0),
-with its own trained checkpoints. The rest of Osirus is the agent. This
-directory is the model.
+Rouge 1 is one model lineage: a derivative of **Qwen/Qwen3.5-27B**, pinned
+in [`models/rouge-1/base.json`](../../models/rouge-1/base.json), with its
+own trained checkpoints.
 
 - Definition and milestones: [`docs/rouge/native-model.md`](../../docs/rouge/native-model.md).
-- Compute plan: [`docs/rouge/compute-plan.md`](../../docs/rouge/compute-plan.md).
+- Cost: [`docs/rouge/compute-plan.md`](../../docs/rouge/compute-plan.md).
 
-**No weights in Git, ever.**
-
-- Git holds code, configs, dataset registry and manifests, checkpoint
-  manifests (sha256, parent, run, data version, hyperparameters,
-  evaluations) and reports.
-- Weights live in object storage and are verified against their manifest
-  before every use.
+**No weights in Git.**
 
 ## Layout
 
-| Path                                                                  | What                                                                                                                    |
-| --------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
-| `manifests/`                                                          | The pinned base: revision, licence, config, sha256 of all 94 shards and every small file                                |
-| `rouge_train/`                                                        | Stdlib-only core, tested in CI: base verification, checkpoint manifests, lineage and promotion, dataset registry, seeds |
-| `scripts/`                                                            | `base_manifest.py` (runs on CI), `verify_weights.py` (runs on the GPU host), `dataset_licenses.py` (runs on CI)         |
-| `data/`                                                               | `registry.json`: every dataset with its licence, revision, role (train or eval-only) and approval status                |
-| `configs/`                                                            | Run recipes: `sft-001.json` (draft), `lab-v0.json` (baseline evaluation)                                                |
-| `checkpoints/`                                                        | Checkpoint manifests, one JSON per checkpoint (empty until the first trained checkpoint)                                |
-| `evaluation/`                                                         | Model Lab: base vs N−1 vs N on held-out suites                                                                          |
-| `sft/`, `preference/`, `reasoning/`, `rl/`, `context/`, `multimodal/` | Stage plans for M59–M66 (code arrives with each stage)                                                                  |
+| Path                                   | What                                                                                                                                            |
+| -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| `rouge_train/config.py`                | Run configuration (one JSON describes a run completely)                                                                                         |
+| `rouge_train/data.py`                  | JSONL conversations → base chat template → token ids, assistant-only labels (character offsets); too long or no assistant → dropped and counted |
+| `rouge_train/modeling.py`              | Base loading (BF16 or 4-bit NF4 QLoRA), gradient checkpointing, LoRA on all LM projections, chunked output-head loss                            |
+| `rouge_train/train.py`                 | Training loop with exact checkpoint/resume (adapter, optimiser, scheduler, RNG, data cursor)                                                    |
+| `rouge_train/merge.py`                 | Adapter → canonical BF16 checkpoint; carries base-only tensors (MTP); `weight_delta` proves the weights changed                                 |
+| `rouge_train/evaluate.py`              | Generation (vLLM or transformers) and code-only checks; base-vs-Rouge comparison with wins, regressions and McNemar                             |
+| `rouge_train/generators.py`            | In-house SFT and eval data, computed by code, English and German; decontamination                                                               |
+| `rouge_train/checkpoints.py`           | Checkpoint manifests, lineage, promotion rule                                                                                                   |
+| `rouge_train/registry.py`, `datasets/` | Dataset registry with licence and teacher-terms gates; probe and build on a runner                                                              |
+| `rouge_train/cli.py`                   | verify / train / merge / generate / compare / manifest on the GPU host                                                                          |
+| `rouge_train/smoke.py`                 | The whole path on a tiny random model of the base architecture. **The tiny model is not Rouge.**                                                |
+| `scripts/`                             | `base_manifest.py`, `fetch_tokenizer.py`, `verify_weights.py`, `size_qlora.py`, `dataset_licenses.py`                                           |
+| `configs/sft-001.json`                 | The `rouge-1-sft-001` run: QLoRA r = 32, 8k sequences, 1 GPU                                                                                    |
+| `checkpoints/`                         | Checkpoint manifests (none yet)                                                                                                                 |
 
 ## Checks
 
 ```sh
-python3 -m unittest discover -s training/rouge/tests -v
+python3 -m unittest discover -s training/rouge/tests          # stdlib parts
+pip install -r training/rouge/requirements-smoke.txt           # CPU stack
+python -m rouge_train.smoke --workdir /tmp/rouge-smoke         # from training/rouge
 ```
 
-These also run in `.github/workflows/rouge-training.yml`, together with a
-metadata-only licence read of every registered Hub dataset.
+In CI, `.github/workflows/rouge-training.yml` runs the unit tests and the
+smoke run with the pinned, hash-verified Qwen3.5-27B tokenizer.
+`.github/workflows/rouge-data.yml` probes and builds the training data.
 
-## Rules
+## A training session (after owner approval)
 
-1. **Verify before use.** A run starts only on a base verified against the
-   manifest (`scripts/verify_weights.py`).
-2. **Approved data only.** A run uses only `approved` registry entries.
-   `eval-only` data never trains.
-3. **Record every checkpoint.** Every checkpoint gets a manifest
-   (`rouge_train/checkpoints.py`).
-4. **Promote only on held-out evidence.** Promotion needs a held-out
-   improvement over the parent and no guard regression.
-5. **Ask before spending.** No paid compute without the owner's approval.
+Run these on one GPU host, with `requirements-gpu.txt` installed and
+`training/rouge` as the working directory:
+
+1. **Download and check the base.** Download the pinned revision to
+   `/workspace/models/Qwen3.5-27B`, then check every hash:
+   `python -m rouge_train.cli verify --base /workspace/models/Qwen3.5-27B`.
+2. **Fetch the data.** Put the built data (artifact of `rouge-data.yml`)
+   in `/workspace/data/rouge-sft-v0/` and check it against its manifest.
+3. **Train:** `python -m rouge_train.cli train --config configs/sft-001.json`.
+   The run is resumable: rerun the same command after an interruption.
+4. **Merge:** `python -m rouge_train.cli merge --config configs/sft-001.json --out /workspace/ckpt/rouge-1-sft-001`.
+5. **Evaluate both models**, with the same settings and the same hidden
+   eval set: run `generate` for the base and for `rouge-1-sft-001`, then
+   `compare`.
+6. **Record and publish:**
+   - write the manifest with `python -m rouge_train.cli manifest …` into
+     `checkpoints/`;
+   - upload the weights to the Rouge model repository;
+   - commit the manifest and the report.
