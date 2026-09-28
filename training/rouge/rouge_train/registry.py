@@ -1,7 +1,7 @@
 """The dataset registry: nothing trains Rouge without provenance (M58/M62).
 
 Every dataset or generator that may feed a Rouge training run is an entry in
-training/rouge/data/registry.json. An entry is only usable for training
+training/rouge/datasets/registry.json. An entry is only usable for training
 when it is approved: its licence is in the allowlist and was verified
 against the source at a pinned revision, and -- if it contains another
 model's outputs -- that model's terms permit training on them. Evaluation
@@ -13,7 +13,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-REGISTRY = Path(__file__).resolve().parent.parent / "data" / "registry.json"
+REGISTRY = Path(__file__).resolve().parent.parent / "datasets" / "registry.json"
 
 # Licences under which training a commercial derivative model is permitted.
 # Attribution (CC-BY, ODC-BY) is honoured in the model card.

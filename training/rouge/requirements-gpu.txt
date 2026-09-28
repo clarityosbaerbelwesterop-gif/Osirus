@@ -1,0 +1,16 @@
+# Single-GPU QLoRA host for Qwen3.5-27B. The exact environment is locked on
+# the host (pip freeze, sha256 into every run and checkpoint manifest); these
+# are the versions available on PyPI when the pipeline was written.
+torch==2.14.0
+transformers==5.17.0
+peft==0.21.0
+bitsandbytes==0.50.2
+# Fused Gated DeltaNet and causal-conv kernels; without them transformers
+# falls back to (correct but slow) PyTorch reference code.
+flash-linear-attention==0.5.2
+causal-conv1d
+safetensors
+accelerate
+tokenizers
+# Fast evaluation generation (optional backend of rouge_train.evaluate).
+vllm

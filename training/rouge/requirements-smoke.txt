@@ -1,0 +1,7 @@
+# CPU smoke run (CI). Versions the smoke run was developed and passed with.
+torch==2.14.0
+transformers==5.17.0
+peft==0.21.0
+safetensors
+accelerate
+tokenizers

@@ -1,6 +1,6 @@
 """The pinned base model, and checking a download against it.
 
-The base manifest (training/rouge/manifests/) records the exact Hub revision
+The base manifest (models/rouge-1/base.json) records the exact Hub revision
 and the sha256 of every file. Before any training or evaluation run, the
 downloaded base is verified against it: a run on unverified weights is not a
 Rouge run.
@@ -14,8 +14,8 @@ from pathlib import Path
 
 from .hashing import sha256_file
 
-MANIFESTS = Path(__file__).resolve().parent.parent / "manifests"
-BASE_MANIFEST = MANIFESTS / "base-qwen3.5-397b-a17b.json"
+REPO_ROOT = Path(__file__).resolve().parents[3]
+BASE_MANIFEST = REPO_ROOT / "models" / "rouge-1" / "base.json"
 
 
 def load_base(path: Path = BASE_MANIFEST) -> dict:

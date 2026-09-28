@@ -18,7 +18,7 @@ from rouge_train.seeds import seed_everything  # noqa: E402
 class BaseManifestTest(unittest.TestCase):
     def test_pinned_base_is_exact_and_apache(self):
         base = manifest.load_base()
-        self.assertEqual(base["source"]["repo"], "Qwen/Qwen3.5-397B-A17B")
+        self.assertEqual(base["source"]["repo"], "Qwen/Qwen3.5-27B")
         self.assertRegex(base["source"]["revision"], r"^[0-9a-f]{40}$")
         self.assertEqual(base["license"]["spdx"], "Apache-2.0")
         shards = [f for f in base["files"] if f["path"].endswith(".safetensors")]
@@ -27,11 +27,12 @@ class BaseManifestTest(unittest.TestCase):
         self.assertEqual(sum(f["size"] for f in shards), base["weights"]["bytes"])
         text = base["config"]["text_config"]
         self.assertEqual(text["max_position_embeddings"], 262144)
-        self.assertEqual(text["num_experts"], 512)
-        self.assertEqual(text["layer_types"].count("full_attention"), 15)
+        self.assertEqual(text["num_hidden_layers"], 64)
+        self.assertEqual(text["layer_types"].count("full_attention"), 16)
+        self.assertTrue(all(base["tokenizer"]["files"].values()))
         self.assertEqual(
             manifest.base_ref(base),
-            f"base:Qwen/Qwen3.5-397B-A17B@{base['source']['revision']}",
+            f"base:Qwen/Qwen3.5-27B@{base['source']['revision']}",
         )
 
     def test_download_verification_catches_missing_and_changed_files(self):
