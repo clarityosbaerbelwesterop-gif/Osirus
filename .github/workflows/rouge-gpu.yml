@@ -1,0 +1,65 @@
+name: Rouge GPU session
+
+# One ephemeral GPU session for a pre-registered Rouge experiment, launched
+# and watched from GitHub Actions (RunPod REST API):
+#   probe: read RunPod's public API schema (no key, no cost);
+#   run:   stage the dataset in the private Rouge model repository, rent ONE
+#          pod, run training/rouge/scripts/gpu_session.sh on it, follow its
+#          phases, and delete the pod on every exit path (success, failure,
+#          cancel, time limit, price above the cap).
+# Paid compute: dispatched only after the owner's approval. Secrets:
+# RUNPOD_API_KEY, HF_TOKEN; variable ROUGE_HF_REPO. They are never printed.
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        type: choice
+        options: [probe, run]
+        default: probe
+      experiment:
+        default: rouge-1-exp-001
+      max_hours:
+        description: hard wall-clock limit for the pod (hours)
+        default: "4.5"
+      max_price:
+        description: highest accepted price per hour (USD)
+        default: "3.30"
+      cloud:
+        type: choice
+        options: [SECURE, COMMUNITY]
+        default: SECURE
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: rouge-gpu
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    if: ${{ inputs.task == 'probe' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: RunPod REST schema for pod creation (public)
+        run: |
+          curl -sSfL https://rest.runpod.io/v1/openapi.json -o openapi.json
+          python3 - <<'EOF'
+          import json
+          spec = json.load(open("openapi.json"))
+          print("paths:", sorted(spec.get("paths", {})))
+          post = spec["paths"]["/pods"]["post"]
+          body = post["requestBody"]["content"]["application/json"]["schema"]
+          def resolve(schema):
+              ref = schema.get("$ref")
+              return resolve(spec["components"]["schemas"][ref.split("/")[-1]]) if ref else schema
+          schema = resolve(body)
+          for name, field in schema.get("properties", {}).items():
+              field = resolve(field)
+              enum = field.get("enum") or (field.get("items") or {}).get("enum")
+              print(f"{name}: {field.get('type')} default={field.get('default')!r}" + (f" enum[:12]={enum[:12]}" if enum else ""))
+          print("required:", schema.get("required"))
+          EOF
