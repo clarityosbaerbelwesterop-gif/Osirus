@@ -5,10 +5,10 @@ torch==2.14.0
 transformers==5.17.0
 peft==0.21.0
 bitsandbytes==0.50.2
-# Fused Gated DeltaNet and causal-conv kernels; without them transformers
-# falls back to (correct but slow) PyTorch reference code.
+# Fused Gated DeltaNet kernels (Triton); without them transformers falls
+# back to (correct but slow) PyTorch reference code. The short causal
+# convolution runs in PyTorch (causal-conv1d needs a CUDA compiler build).
 flash-linear-attention==0.5.2
-causal-conv1d
 safetensors
 accelerate
 tokenizers

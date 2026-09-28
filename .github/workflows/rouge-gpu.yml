@@ -67,3 +67,84 @@ jobs:
               print(f"{name}: {field.get('type')} default={field.get('default')!r}" + (f" enum[:12]={enum[:12]}" if enum else ""))
           print("required:", schema.get("required"))
           EOF
+
+  run:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    env:
+      EXPERIMENT: ${{ inputs.experiment }}
+      MAX_HOURS: ${{ inputs.max_hours }}
+      MAX_PRICE: ${{ inputs.max_price }}
+      CLOUD: ${{ inputs.cloud }}
+      RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      ROUGE_HF_REPO: ${{ vars.ROUGE_HF_REPO }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Required secrets and variable (names only)
+        run: |
+          missing=""
+          [ -n "$RUNPOD_API_KEY" ] || missing="$missing RUNPOD_API_KEY(secret)"
+          [ -n "$HF_TOKEN" ] || missing="$missing HF_TOKEN(secret)"
+          [ -n "$ROUGE_HF_REPO" ] || missing="$missing ROUGE_HF_REPO(variable)"
+          if [ -n "$missing" ]; then echo "missing:$missing"; exit 1; fi
+          test -f "training/rouge/experiments/$EXPERIMENT.json"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install -q huggingface_hub hf_xet
+      - name: Locate the built dataset
+        id: data
+        run: |
+          python3 - >> "$GITHUB_OUTPUT" <<'PY'
+          import json, os
+          exp = json.load(open(f"training/rouge/experiments/{os.environ['EXPERIMENT']}.json"))
+          manifest = json.load(open(exp["data"]["manifest"]))
+          print(f"name={manifest['name']}")
+          print(f"artifact={manifest['build']['artifact']}")
+          print(f"run_id={manifest['build']['run_id']}")
+          print(f"manifest={exp['data']['manifest']}")
+          PY
+      - uses: actions/download-artifact@v4
+        with:
+          name: ${{ steps.data.outputs.artifact }}
+          run-id: ${{ steps.data.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/data
+      - name: Stage the dataset in the private Rouge repository (hash-checked)
+        env:
+          DATA_NAME: ${{ steps.data.outputs.name }}
+          MANIFEST: ${{ steps.data.outputs.manifest }}
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os
+          from huggingface_hub import HfApi
+          manifest = json.load(open(os.environ["MANIFEST"]))
+          folder = os.path.join(os.environ["RUNNER_TEMP"], "data")
+          for part in ("train", "eval"):
+              path = os.path.join(folder, manifest[part]["file"])
+              digest = hashlib.sha256(open(path, "rb").read()).hexdigest()
+              assert digest == manifest[part]["sha256"], f"{part} differs from the committed manifest"
+          api = HfApi()
+          api.create_repo(os.environ["ROUGE_HF_REPO"], private=True, exist_ok=True)
+          api.upload_folder(repo_id=os.environ["ROUGE_HF_REPO"], folder_path=folder, path_in_repo=f"data/{os.environ['DATA_NAME']}",
+                            allow_patterns=["*.jsonl", "manifest.json"], commit_message=f"data: {os.environ['DATA_NAME']}")
+          print("dataset staged, hashes match the committed manifest")
+          PY
+      - name: Rent one GPU pod
+        run: |
+          python3 training/rouge/scripts/runpod_session.py create --experiment "$EXPERIMENT" --state "$RUNNER_TEMP/pod.json" \
+            --max-hours "$MAX_HOURS" --max-price "$MAX_PRICE" --cloud "$CLOUD"
+      - name: Follow the session
+        run: |
+          python3 training/rouge/scripts/runpod_session.py watch --experiment "$EXPERIMENT" --state "$RUNNER_TEMP/pod.json" \
+            --max-hours "$MAX_HOURS"
+      - name: Delete the pod (always)
+        if: ${{ always() }}
+        run: python3 training/rouge/scripts/runpod_session.py delete --state "$RUNNER_TEMP/pod.json"
+      - name: Result
+        if: ${{ always() }}
+        run: python3 training/rouge/scripts/runpod_session.py report --experiment "$EXPERIMENT"

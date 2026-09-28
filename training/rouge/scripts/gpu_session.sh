@@ -10,6 +10,8 @@
 # Environment (secrets live only on the host, never in Git or logs):
 #   HF_TOKEN        Hugging Face token with write access to ROUGE_HF_REPO
 #   ROUGE_HF_REPO   private model repository for Rouge checkpoints (owner/name)
+#   DATA_FROM_HF=1  take the built dataset from ROUGE_HF_REPO/data/<name>/
+#                   (staged there by .github/workflows/rouge-gpu.yml); else:
 #   GH_TOKEN        GitHub token with read access to this repository's Actions
 #                   artifacts (the built dataset)
 #   RUNPOD_POD_ID   set by RunPod; when present the pod stops itself at exit
@@ -26,16 +28,25 @@ ROUGE="$REPO_ROOT/training/rouge"
 PREREG="$ROUGE/experiments/$EXP.json"
 WORK="${WORK:-/workspace}"
 SESSION="$WORK/sessions/$EXP"
+HF_PREFIX="${HF_PREFIX:-$EXP/session}"  # where reports go in ROUGE_HF_REPO
 mkdir -p "$SESSION"
 
-: "${HF_TOKEN:?HF_TOKEN is required}" "${ROUGE_HF_REPO:?ROUGE_HF_REPO is required}" "${GH_TOKEN:?GH_TOKEN is required}"
+: "${HF_TOKEN:?HF_TOKEN is required}" "${ROUGE_HF_REPO:?ROUGE_HF_REPO is required}"
+[[ "${DATA_FROM_HF:-0}" == "1" ]] || : "${GH_TOKEN:?GH_TOKEN is required unless DATA_FROM_HF=1}"
 export HF_TOKEN
 
 stop_pod() {
   local status=$?
   echo "session exit status $status"
   if [[ -n "${RUNPOD_POD_ID:-}" && "${KEEP_POD:-0}" != "1" ]]; then
-    runpodctl stop pod "$RUNPOD_POD_ID" || echo "WARNING: could not stop pod $RUNPOD_POD_ID -- stop it by hand"
+    if command -v runpodctl >/dev/null; then
+      runpodctl stop pod "$RUNPOD_POD_ID" && return
+    fi
+    if [[ -n "${RUNPOD_API_KEY:-}" ]]; then
+      curl -sS -o /dev/null -X POST -H "Authorization: Bearer $RUNPOD_API_KEY" \
+        "https://rest.runpod.io/v1/pods/$RUNPOD_POD_ID/stop" && return
+    fi
+    echo "WARNING: could not stop pod $RUNPOD_POD_ID -- the launcher deletes it"
   fi
 }
 trap stop_pod EXIT
@@ -52,6 +63,10 @@ data["phases"].append({"phase": name, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", 
 json.dump(data, open(path, "w"), indent=1)
 EOF
   echo "== $1 $(date -u +%H:%M:%S)"
+  # Progress for the launcher that watches this session.
+  if command -v hf >/dev/null; then
+    hf upload "$ROUGE_HF_REPO" "$SESSION/session.json" "$HF_PREFIX/status.json" --quiet >/dev/null 2>&1 || true
+  fi
 }
 
 field() { python3 -c "import json,sys; d=json.load(open(sys.argv[1])); [d:=d[k] for k in sys.argv[2].split('.')]; print(d)" "$1" "$2"; }
@@ -71,14 +86,29 @@ phase start
 nvidia-smi --query-gpu=name,memory.total --format=csv,noheader | tee "$SESSION/gpu.txt"
 
 phase prepare
+# torch wheels bundle CUDA: use the CUDA 13 build where the driver supports
+# it, the CUDA 12.8 build otherwise.
+cuda_major="$(nvidia-smi | sed -n 's/.*CUDA Version: \([0-9]*\).*/\1/p' | head -1)"
+torch_pin="$(grep -E '^torch==' "$ROUGE/requirements-gpu.txt")"
+if [[ "${cuda_major:-0}" -ge 13 ]]; then
+  python3 -m pip install -q "$torch_pin"
+else
+  python3 -m pip install -q --index-url https://download.pytorch.org/whl/cu128 "$torch_pin"
+fi
 python3 -m pip install -q -r "$ROUGE/requirements-gpu.txt"
 python3 -m venv "$WORK/venv-eval" && "$WORK/venv-eval/bin/pip" install -q -r "$ROUGE/requirements-eval.txt"
 hf download "$BASE_REPO" --revision "$BASE_REV" --local-dir "$BASE_DIR" --quiet
 (cd "$ROUGE" && python3 -m rouge_train.cli verify --base "$BASE_DIR" > "$SESSION/verify-base.json")
 mkdir -p "$DATA_DIR"
-curl -sSfL -H "Authorization: Bearer $GH_TOKEN" -o "$SESSION/data.zip" \
-  "https://api.github.com/repos/clarityosbaerbelwesterop-gif/Osirus/actions/artifacts/$ARTIFACT_ID/zip"
-unzip -oq "$SESSION/data.zip" -d "$DATA_DIR"
+if [[ "${DATA_FROM_HF:-0}" == "1" ]]; then
+  DATA_NAME="$(field "$DATA_MANIFEST" name)"
+  hf download "$ROUGE_HF_REPO" --include "data/$DATA_NAME/*" --local-dir "$WORK/hf-data" --quiet
+  cp "$WORK/hf-data/data/$DATA_NAME/"*.jsonl "$DATA_DIR/"
+else
+  curl -sSfL -H "Authorization: Bearer $GH_TOKEN" -o "$SESSION/data.zip" \
+    "https://api.github.com/repos/clarityosbaerbelwesterop-gif/Osirus/actions/artifacts/$ARTIFACT_ID/zip"
+  python3 -m zipfile -e "$SESSION/data.zip" "$DATA_DIR"
+fi
 (cd "$ROUGE" && python3 -m rouge_train.cli verify-data --data "$DATA_DIR" --manifest "$DATA_MANIFEST")
 
 phase train
@@ -105,7 +135,7 @@ phase save
   --storage "hf://$ROUGE_HF_REPO/$EXP" --out "$SESSION/checkpoints" | tee "$SESSION/manifest-path.txt")
 hf repo create "$ROUGE_HF_REPO" --private --exist-ok >/dev/null 2>&1 || true
 hf upload "$ROUGE_HF_REPO" "$RUN_DIR/adapter" "$EXP/adapter" --quiet
-hf upload "$ROUGE_HF_REPO" "$SESSION" "$EXP/session" --exclude "*.zip" --quiet
+hf upload "$ROUGE_HF_REPO" "$SESSION" "$HF_PREFIX" --exclude "*.zip" --quiet
 
 phase stop
 echo "done: $(grep -m1 '^verdict' "$SESSION/compare.txt" || echo 'verdict missing')"
