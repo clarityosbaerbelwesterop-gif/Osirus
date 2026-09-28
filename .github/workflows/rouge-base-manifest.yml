@@ -1,0 +1,59 @@
+name: Rouge base-model manifest
+
+# Pins Rouge 1's base model (M58): exact Hub revision, every file's size and
+# sha256, the licence and the architecture config. Public metadata and small
+# text files only -- never weights -- so it is safe on a public repository
+# and needs no secrets. The manifest is printed and kept as an artifact; it
+# is committed to training/rouge/manifests/ by hand after review.
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: Hugging Face model repository
+        required: true
+        type: string
+        default: Qwen/Qwen3.5-397B-A17B
+      revision:
+        description: branch, tag or commit to pin
+        required: true
+        type: string
+        default: main
+  push:
+    branches: ["rouge/native-model-*"]
+    paths:
+      - .github/workflows/rouge-base-manifest.yml
+      - training/rouge/scripts/base_manifest.py
+
+permissions:
+  contents: read
+
+jobs:
+  manifest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build manifest (metadata only)
+        env:
+          REPO: ${{ inputs.repo || 'Qwen/Qwen3.5-397B-A17B' }}
+          REVISION: ${{ inputs.revision || 'main' }}
+        run: |
+          python3 training/rouge/scripts/base_manifest.py "$REPO" "$REVISION" \
+            > "$RUNNER_TEMP/base-manifest.json" 2> "$RUNNER_TEMP/README.md"
+          echo "=== MANIFEST BEGIN ==="
+          python3 -c "import json,sys; m=json.load(open(sys.argv[1])); m.pop('files'); print(json.dumps(m, indent=1))" "$RUNNER_TEMP/base-manifest.json"
+          echo "=== FILES ==="
+          python3 -c "import json,sys; [print(f['path'], f['size'], f['sha256'] or ('blob:'+str(f['gitBlob']))) for f in json.load(open(sys.argv[1]))['files']]" "$RUNNER_TEMP/base-manifest.json"
+          echo "=== README ==="
+          cat "$RUNNER_TEMP/README.md"
+          echo "=== MANIFEST END ==="
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rouge-base-manifest
+          path: |
+            ${{ runner.temp }}/base-manifest.json
+            ${{ runner.temp }}/README.md
+          retention-days: 90
