@@ -50,6 +50,7 @@ def main() -> None:
     p.add_argument("--base", required=True)
     p.add_argument("--rouge", required=True)
     p.add_argument("--out", required=True)
+    p.add_argument("--prereg", help="experiments/<name>.json: apply its pre-registered decision rule")
     p = sub.add_parser("manifest")
     p.add_argument("--config", required=True)
     p.add_argument("--merged", required=True)
@@ -117,9 +118,18 @@ def main() -> None:
         base_scores = score(items, [base[i["id"]] for i in items])
         rouge_scores = score(items, [rouge[i["id"]] for i in items])
         result = compare(items, base_scores, rouge_scores)
-        Path(args.out).write_text(json.dumps(result, indent=1))
         for category, row in result.items():
-            print(f"{category:12} n={row['n']:4} base={row['base']:4} rouge={row['rouge']:4} wins={row['wins']:3} regressions={row['regressions']:3} p={row['mcnemar_p']:.4f}")
+            print(f"{category:16} n={row['n']:4} base={row['base']:4} rouge={row['rouge']:4} wins={row['wins']:3} regressions={row['regressions']:3} p={row['mcnemar_p']:.4f}")
+        if args.prereg:
+            from .evaluate import verdict
+            from .hashing import sha256_file
+
+            prereg = json.loads(Path(args.prereg).read_text())
+            if sha256_file(Path(args.items)) != prereg["eval"]["sha256"]:
+                raise SystemExit("eval set differs from the pre-registered one")
+            result["verdict"] = verdict(items, base_scores, rouge_scores, prereg["decision"])
+            print(f"verdict: {result['verdict']['result']}")
+        Path(args.out).write_text(json.dumps(result, indent=1))
         return
 
     if args.command == "manifest":
@@ -160,6 +170,8 @@ def main() -> None:
         )
         comparison = json.loads(Path(args.report).read_text())
         for category, row in comparison.items():
+            if category == "verdict":
+                continue
             checkpoints.add_evaluation(
                 manifest, suite=f"rouge-eval.{category}", version="v0", split="holdout",
                 metrics={"score": row["rouge"] / max(1, row["n"]), "base_score": row["base"] / max(1, row["n"]),

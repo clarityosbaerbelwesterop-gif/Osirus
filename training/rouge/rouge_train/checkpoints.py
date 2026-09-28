@@ -24,10 +24,12 @@ SCHEMA = "rouge.checkpoint/1"
 
 # rouge-1-sft-001, rouge-1-reasoning-002, rouge-1-context-003, rouge-1-rc1,
 # rouge-1. The stage says what training produced it; the number is global
-# and increasing within the lineage.
-STAGES = ("base", "sft", "reasoning", "pref", "rl", "context", "mm", "code", "science")
+# and increasing within the lineage. `exp` checkpoints are recipe
+# experiments; `edge` checkpoints are quantised (GGUF) derivatives of a
+# lineage checkpoint for local inference -- never another base model.
+STAGES = ("base", "exp", "sft", "reasoning", "pref", "rl", "context", "mm", "code", "science", "edge")
 NAME = re.compile(rf"^rouge-1(?:-(?:{'|'.join(STAGES)})-\d{{3}}|-rc\d+)?$")
-KINDS = ("adapter", "merged", "full")
+KINDS = ("adapter", "merged", "full", "gguf")
 STATUSES = ("candidate", "promoted", "rejected", "archived")
 HOLDOUT_SPLITS = ("holdout", "adversarial")
 

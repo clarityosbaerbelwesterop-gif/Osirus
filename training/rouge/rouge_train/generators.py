@@ -15,6 +15,13 @@ Families (English and German):
                     fact and the computed answer as a function of it
     identity        who Rouge is (derivative of Qwen3.5-27B, never "from
                     scratch", never another model's name)
+    self-correction a claimed result is re-computed step by step and
+                    confirmed or corrected
+
+Experiment eval (`experiment_eval_items`) uses templates that never appear
+in training -- missing-information problems, their fully specified twins
+(so refusing everything scores nothing) and claims to check -- so a gain
+there is generalisation, not template recall.
 
 `sft_records(seed, n)` yields training records; `eval_items(seed, n)`
 yields held-out items with code checks. Train and eval seeds live in
@@ -232,6 +239,57 @@ def underdetermined(r: random.Random, lang: str) -> tuple[str, str]:
     return q, a
 
 
+def underdetermined_fuel(r: random.Random, lang: str) -> tuple[str, str]:
+    """Second training template: a fuel cost with the consumption missing."""
+    name = r.choice(NAMES[lang])
+    km, price = r.choice([120, 250, 340, 480, 600]), r.choice([1.6, 1.7, 1.8, 1.9])
+    per100 = r.choice([5, 6, 7, 8])
+    cost = round(km / 100 * per100 * price, 2)
+    if lang == "de":
+        de = lambda x: f"{x:.2f}".replace(".", ",")  # noqa: E731
+        q = f"{name} fährt {km} km. Ein Liter Benzin kostet {de(price)} €. Wie viel kostet die Fahrt?"
+        a = (f"Das lässt sich nicht eindeutig berechnen: Der Verbrauch des Autos fehlt.\n\n"
+             f"Mit einem Verbrauch von v Litern pro 100 km gilt: Kosten = {km} / 100 · v · {de(price)} €.\n"
+             f"Beispiel: Bei {per100} l/100 km wären es {km} / 100 · {per100} · {de(price)} = {de(cost)} €.\n\n"
+             "Nenne mir den Verbrauch, dann rechne ich das genaue Ergebnis aus.")
+    else:
+        q = f"{name} drives {km} km. Fuel costs ${price:.2f} per litre. How much does the trip cost?"
+        a = (f"This can't be answered exactly: the car's fuel consumption is missing.\n\n"
+             f"With a consumption of c litres per 100 km: cost = {km} / 100 × c × {price:.2f}.\n"
+             f"For example, at {per100} l/100 km the trip would cost {km} / 100 × {per100} × {price:.2f} = ${cost:.2f}.\n\n"
+             "Tell me the consumption and I'll give you the exact cost.")
+    return q, a
+
+
+def self_check(r: random.Random, lang: str) -> tuple[str, str, int]:
+    """A claimed product or discount is re-computed and confirmed or corrected."""
+    if r.random() < 0.5:
+        a_, b_ = r.randint(12, 999), r.randint(12, 99)
+        truth = a_ * b_
+        claim = truth if r.random() < 0.5 else truth + r.choice([-100, -10, -1, 1, 9, 10, 90, 100])
+        task_en, task_de = f"{a_} × {b_} = {claim:,}", f"{a_} × {b_} = {_fmt(claim, 'de')}"
+        tens, ones = b_ // 10 * 10, b_ % 10
+        work_en = f"{a_} × {tens} = {a_ * tens:,}; {a_} × {ones} = {a_ * ones:,}; sum {truth:,}."
+        work_de = f"{a_} × {tens} = {_fmt(a_ * tens, 'de')}; {a_} × {ones} = {_fmt(a_ * ones, 'de')}; Summe {_fmt(truth, 'de')}."
+    else:
+        base, pct = r.randint(4, 90) * 10, r.choice([10, 20, 25, 30, 40, 50])
+        truth = base * (100 - pct) // 100
+        claim = truth if r.random() < 0.5 else base * pct // 100
+        task_en, task_de = f"{base} reduced by {pct}% is {claim}", f"{base} um {pct} % reduziert ergibt {claim}"
+        work_en = f"{pct}% of {base} is {base * pct // 100}; {base} − {base * pct // 100} = {truth}."
+        work_de = f"{pct} % von {base} sind {base * pct // 100}; {base} − {base * pct // 100} = {truth}."
+    ok = claim == truth
+    if lang == "de":
+        q = f"Stimmt das: {task_de}? Prüfe es und gib am Ende \"Antwort: <richtiger Wert>\" aus."
+        verdict = "Das stimmt." if ok else f"Das stimmt nicht: Richtig ist {_fmt(truth, 'de')}, nicht {_fmt(claim, 'de')}."
+        a = f"Ich rechne nach: {work_de}\n\n{verdict}\n\nAntwort: {truth}"
+    else:
+        q = f"Is this right: {task_en}? Check it and end with \"Answer: <correct value>\"."
+        verdict = "That is correct." if ok else f"That is wrong: the correct value is {truth:,}, not {claim:,}."
+        a = f"Let me recompute: {work_en}\n\n{verdict}\n\nAnswer: {truth}"
+    return q, a, truth
+
+
 ASSETS = {"en": ["the EUR/USD exchange rate", "the price of gold per ounce", "the DAX index", "the Bitcoin price", "Berlin's temperature at noon"],
           "de": ["der Euro-Dollar-Kurs", "der Goldpreis pro Unze", "der DAX", "der Bitcoin-Kurs", "die Mittagstemperatur in Berlin"]}
 
@@ -284,13 +342,24 @@ def identity(r: random.Random, lang: str) -> tuple[str, str]:
 WORKED = (worked_multiplication, worked_percentage, worked_date, worked_base)
 
 
-def sft_records(seed: str, n: int):
-    """Training records: worked math, structured output, uncertainty, identity."""
+def sft_records(seed: str, n: int, self_correction: float = 0.0):
+    """Training records: worked math, structured output, uncertainty,
+    identity, and (share `self_correction`) claims to check."""
     r = random.Random(f"train:{seed}")
     seen: set[str] = set()
     i = 0
     while i < n:
         lang = LANGS[i % 2]
+        if self_correction and r.random() < self_correction:
+            q, a, _ = self_check(r, lang)
+            family = "self-correction"
+            if normalise(q) in seen:
+                continue
+            seen.add(normalise(q))
+            i += 1
+            yield {"id": f"rouge-gen-{seed}-{i - 1}", "source": "rouge-verified-tasks", "family": family, "lang": lang,
+                   "messages": [{"role": "user", "content": q}, {"role": "assistant", "content": a}]}
+            continue
         kind = r.random()
         if kind < 0.55:
             q, a, _ = r.choice(WORKED)(r, lang)
@@ -300,7 +369,8 @@ def sft_records(seed: str, n: int):
             family = "structured"
         elif kind < 0.95:
             pick = r.random()
-            q, a = underdetermined(r, lang) if pick < 0.7 else unknowable_future(r, lang) if pick < 0.9 else r.choice(UNKNOWABLE[lang])
+            q, a = (underdetermined(r, lang) if pick < 0.4 else underdetermined_fuel(r, lang) if pick < 0.7
+                    else unknowable_future(r, lang) if pick < 0.9 else r.choice(UNKNOWABLE[lang]))
             family = "uncertainty"
         else:
             q, a = identity(r, lang)
@@ -346,6 +416,98 @@ def eval_items(seed: str, n: int):
             "messages": [{"role": "user", "content": q}],
             "check": check,
         }
+
+
+MISSING = (r"(?i)(missing|not (given|provided|specified|stated|known)|isn't (given|provided|specified|stated)|unknown|"
+           r"cannot be (determined|calculated|answered)|can(no|')t (determine|calculate|answer|be determined|be calculated|be answered)|"
+           r"not enough information|insufficient information|need(s)? to know|depends on|"
+           r"fehlt|fehlen|nicht angegeben|nicht bekannt|unbekannt|nicht (eindeutig )?(bestimmen|berechnen|beantworten)|"
+           r"lässt sich nicht|hängt (davon )?ab|zu wenig information|keine angabe)")
+ANSWER_LINE = {"en": 'End with a line "Answer: <number>".', "de": 'Gib am Ende eine Zeile "Antwort: <Zahl>" aus.'}
+
+
+def heldout_missing(r: random.Random, lang: str, specified: bool) -> tuple[str, int | None]:
+    """Held-out templates (never in training): one quantity is missing, or,
+    for the twin, given -- then the integer answer is required."""
+    kind = r.choice(("travel", "recipe", "paint"))
+    if kind == "travel":
+        v, t = r.choice([40, 60, 80, 90, 120]), r.choice([30, 45, 90, 120, 150])
+        d = v * t // 60
+        if lang == "de":
+            q = f"Ein Zug fährt {d} km mit konstanter Geschwindigkeit" + (f" von {v} km/h" if specified else "") + ". Wie viele Minuten dauert die Fahrt?"
+        else:
+            q = f"A train travels {d} km at a constant speed" + (f" of {v} km/h" if specified else "") + ". How many minutes does the trip take?"
+        answer = d * 60 // v
+    elif kind == "recipe":
+        b, k, n = r.choice([2, 4, 5, 6]), r.choice([50, 60, 75, 80]), r.choice([3, 7, 9, 10, 12])
+        g = b * k
+        if lang == "de":
+            q = (f"Ein Rezept für {b} Personen braucht {g} g Mehl. " if specified else f"Ein Rezept braucht {g} g Mehl. ") + f"Wie viel Gramm Mehl brauche ich für {n} Personen?"
+        else:
+            q = (f"A recipe for {b} people needs {g} g of flour. " if specified else f"A recipe needs {g} g of flour. ") + f"How many grams of flour do I need for {n} people?"
+        answer = k * n
+    else:
+        c, litres = r.choice([6, 8, 10, 12]), r.randint(2, 9)
+        area = c * litres
+        w = r.choice([x for x in (2, 3, 4, 5, 6, 8) if area % x == 0] or [1])
+        h = area // w
+        if lang == "de":
+            q = f"Eine Wand ist {w} m breit und {h} m hoch." + (f" Ein Liter Farbe reicht für {c} m²." if specified else "") + " Wie viele Liter Farbe brauche ich für einen Anstrich?"
+        else:
+            q = f"A wall is {w} m wide and {h} m high." + (f" One litre of paint covers {c} m²." if specified else "") + " How many litres of paint do I need for one coat?"
+        answer = litres
+    return f"{q} {ANSWER_LINE[lang]}" if specified else q, (answer if specified else None)
+
+
+def heldout_claim(r: random.Random, lang: str) -> tuple[str, int]:
+    """Held-out claim templates (training checks products and discounts)."""
+    kind = r.choice(("days", "minutes", "seconds"))
+    if kind == "days":
+        start = dt.date(2020, 1, 1) + dt.timedelta(days=r.randint(0, 2_000))
+        truth = r.randint(20, 400)
+        end = start + dt.timedelta(days=truth)
+        claim = truth if r.random() < 0.5 else truth + r.choice([-2, -1, 1, 2, 30, -30])
+        en, de = f"from {start.isoformat()} to {end.isoformat()} there are {claim} days", f"vom {start.isoformat()} bis zum {end.isoformat()} sind es {claim} Tage"
+    elif kind == "minutes":
+        h, m = r.randint(1, 9), r.choice([5, 10, 15, 20, 25, 35, 40, 45, 50])
+        truth = h * 60 + m
+        claim = truth if r.random() < 0.5 else h * 100 + m
+        en, de = f"{h} h {m} min are {claim} minutes", f"{h} h {m} min sind {claim} Minuten"
+    else:
+        mins = r.randint(2, 90)
+        truth = mins * 60
+        claim = truth if r.random() < 0.5 else mins * 100
+        en, de = f"{mins} minutes are {claim} seconds", f"{mins} Minuten sind {claim} Sekunden"
+    if lang == "de":
+        return f"Jemand behauptet: {de}. Stimmt das? Prüfe es. {ANSWER_LINE['de'].replace('<Zahl>', '<richtiger Wert>')}", truth
+    return f"Someone claims: {en}. Is that right? Check it. {ANSWER_LINE['en'].replace('<number>', '<correct value>')}", truth
+
+
+def experiment_eval_items(seed: str, n_missing: int, n_claims: int):
+    """Primary suite of a Rouge experiment: missing-information problems,
+    their specified twins, and claims -- templates absent from training.
+    German items must also be answered in German."""
+    r = random.Random(f"exp-eval:{seed}")
+    for i in range(n_missing):
+        lang = LANGS[i % 2]
+        state = r.getstate()
+        q_missing, _ = heldout_missing(r, lang, specified=False)
+        r.setstate(state)  # the twin reuses the same numbers
+        q_given, answer = heldout_missing(r, lang, specified=True)
+        lang_check = [{"type": "language", "lang": "de"}] if lang == "de" else []
+        yield {"id": f"exp-missing-{seed}-{i}", "category": "missing-info", "suite": "primary", "lang": lang,
+               "messages": [{"role": "user", "content": q_missing}],
+               "check": {"type": "all", "checks": [{"type": "regex", "pattern": MISSING}, *lang_check]}}
+        yield {"id": f"exp-given-{seed}-{i}", "category": "calibration", "suite": "primary", "lang": lang,
+               "messages": [{"role": "user", "content": q_given}],
+               "check": {"type": "all", "checks": [{"type": "numeric", "answer": answer}, *lang_check]}}
+    for i in range(n_claims):
+        lang = LANGS[i % 2]
+        q, truth = heldout_claim(r, lang)
+        lang_check = [{"type": "language", "lang": "de"}] if lang == "de" else []
+        yield {"id": f"exp-claim-{seed}-{i}", "category": "self-correction", "suite": "primary", "lang": lang,
+               "messages": [{"role": "user", "content": q}],
+               "check": {"type": "all", "checks": [{"type": "numeric", "answer": truth}, *lang_check]}}
 
 
 def normalise(prompt: str) -> str:

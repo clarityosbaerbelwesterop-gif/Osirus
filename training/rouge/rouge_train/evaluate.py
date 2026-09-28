@@ -40,14 +40,27 @@ def final_answer(text: str) -> str:
     return re.sub(r"[*`$]", "", line).strip().rstrip(".")
 
 
-def _number(text: str):
-    match = re.search(r"-?\d[\d,]*(?:\.\d+)?", final_answer(text))
-    if not match:
-        return None
+NUMBER = re.compile(r"-?\d{1,3}(?:[ \u202f\u00a0]\d{3})+(?:[.,]\d+)?|-?\d[\d.,]*")
+
+
+def parse_number(token: str):
+    """English and German notation: 3,600 / 3.600 / 3 600 / 2.5 / 2,5."""
+    token = re.sub(r"[ \u202f\u00a0]", "", token).rstrip(".,")
+    if re.fullmatch(r"-?\d{1,3}(\.\d{3})+(,\d+)?", token):  # German thousands
+        token = token.replace(".", "").replace(",", ".")
+    elif re.fullmatch(r"-?\d{1,3}(,\d{3})+(\.\d+)?", token):  # English thousands
+        token = token.replace(",", "")
+    elif re.fullmatch(r"-?\d+,\d+", token):  # German decimal comma
+        token = token.replace(",", ".")
     try:
-        return float(match.group().replace(",", ""))
+        return float(token)
     except ValueError:
         return None
+
+
+def _number(text: str):
+    match = NUMBER.search(final_answer(text))
+    return parse_number(match.group()) if match else None
 
 
 def _words(text: str) -> list[str]:
@@ -210,3 +223,35 @@ def compare(items: list[dict], base: list[bool], rouge: list[bool], seed: int = 
     per["overall"]["diff"] = sum(deltas) / max(1, len(deltas))
     per["overall"]["ci95"] = [means[int(0.025 * len(means))], means[int(0.975 * len(means)) - 1]]
     return per
+
+
+def verdict(items: list[dict], base: list[bool], rouge: list[bool], rule: dict) -> dict:
+    """Apply a pre-registered decision rule (experiments/<name>.json).
+
+    PASS needs both:
+    - the primary suite improves: Rouge > base with McNemar p < alpha;
+    - no guard category regresses: a drop of `guard_max_drop` or more, or
+      any drop with p < alpha, fails the experiment.
+    Report-only categories are listed, never decisive.
+    """
+    alpha, max_drop = rule["alpha"], rule["guard_max_drop"]
+
+    def summary(idx: list[int]) -> dict:
+        wins = sum(1 for i in idx if rouge[i] and not base[i])
+        losses = sum(1 for i in idx if base[i] and not rouge[i])
+        n = len(idx)
+        return {"n": n, "base": sum(base[i] for i in idx), "rouge": sum(rouge[i] for i in idx), "wins": wins,
+                "regressions": losses, "delta": (wins - losses) / max(1, n), "mcnemar_p": mcnemar_exact(wins, losses)}
+
+    primary = summary([i for i, item in enumerate(items) if item.get("suite") == "primary"])
+    primary_ok = primary["n"] > 0 and primary["rouge"] > primary["base"] and primary["mcnemar_p"] < alpha
+    guards = {}
+    for category in sorted({item["category"] for item in items if item.get("suite") == "guard"}):
+        row = summary([i for i, item in enumerate(items) if item.get("suite") == "guard" and item["category"] == category])
+        row["regressed"] = row["delta"] <= -max_drop or (row["delta"] < 0 and row["mcnemar_p"] < alpha)
+        guards[category] = row
+    report = {category: summary([i for i, item in enumerate(items) if item.get("suite") == "report" and item["category"] == category])
+              for category in sorted({item["category"] for item in items if item.get("suite") == "report"})}
+    passed = primary_ok and not any(row["regressed"] for row in guards.values())
+    return {"result": "PASS" if passed else "FAIL", "primary": primary, "primary_improved": primary_ok,
+            "guards": guards, "report_only": report, "rule": rule}

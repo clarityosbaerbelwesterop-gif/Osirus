@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
-"""Build rouge-sft-v0 (training mixture) and rouge-eval-v0 (hidden eval set).
+"""Build a Rouge training mixture and its hidden eval set, per recipe.
+
+Recipes:
+    sft-v0   the full first mixture (18k conversations, 8k tokens, reasoning
+             traces kept)
+    exp-001  the smallest credible experiment: ~9k verified conversations,
+             4k tokens, answers without reasoning traces (non-thinking
+             mode), self-correction, and a pre-registered eval whose
+             primary suite uses templates that never appear in training
 
 Runs on a CI runner with Hub access (rouge-data.yml, task=build). Every
 training source must be `approved` in datasets/registry.json and is read at
@@ -38,7 +46,8 @@ GERMAN = {
     "der", "die", "das", "und", "ist", "nicht", "mit", "ein", "eine", "zu", "auf", "für", "ich", "sie", "es", "wir", "auch", "sich", "von", "den", "dass", "wie", "wird",
 }
 
-QUOTAS = {
+QUOTAS: dict = {}  # set from the recipe in main()
+SFT_V0_QUOTAS = {
     "nemotron-math": 2500,
     "nemotron-stem": 2500,
     "openr1-math": 1500,
@@ -58,6 +67,26 @@ MAX_RECORD_CHARS = 40_000
 # Nemotron v1 "code" is not used: 150,001 rows scanned in build v1 gave one
 # usable record (70% over length, 30% repeated prompts); its prompts are the
 # OpenCodeReasoning set, which is read directly instead.
+RECIPES = {
+    "sft-v0": {"quotas": SFT_V0_QUOTAS, "max_tokens": 7500, "strip_thinking": False,
+               "generated": {"seed": "sft-v0", "self_correction": 0.0}},
+    "exp-001": {
+        "quotas": {
+            "nemotron-math": 800, "nemotron-stem": 800, "openr1-math": 1000, "openmath-cot": 600, "opencode": 800,
+            "tulu-oasst1": 1500, "tulu-oasst1-de": 800, "tulu-sciriff": 400, "aya-de": 1500, "oasst2-de": 1500,
+            "rouge-generated": 1800,
+        },
+        # 4k training sequences: content plus template stays below 4,096.
+        "max_tokens": 3800,
+        # Non-thinking mode: the answer after a reasoning trace is kept, the
+        # trace is dropped (reasoning post-training is M59).
+        "strip_thinking": True,
+        "generated": {"seed": "exp-001", "self_correction": 0.3},
+    },
+}
+RECIPE = "sft-v0"
+STRIP_THINKING = False
+MIN_ANSWER_CHARS = 80  # stripped answers shorter than this carry no solution
 ALLOWED_GENERATORS = ("Qwen3-235B-A22B", "DeepSeek-R1")
 ALLOWED_OPENMATH = ("DeepSeek-R1", "QwQ-32B")
 
@@ -99,7 +128,11 @@ def clean_messages(messages: list[dict]) -> list[dict] | None:
     out = []
     for message in messages:
         role, content = message.get("role"), (message.get("content") or "").strip()
-        if role not in ("system", "user", "assistant") or not content:
+        if role == "assistant" and STRIP_THINKING and "</think>" in content:
+            content = content.rsplit("</think>", 1)[1].strip()
+            if len(content) < MIN_ANSWER_CHARS:
+                return None
+        if role not in ("system", "user", "assistant") or not content or (STRIP_THINKING and "<think>" in content):
             return None
         out.append({"role": role, "content": content})
     if len(out) < 2 or out[-1]["role"] != "assistant" or not any(m["role"] == "user" for m in out):
@@ -242,7 +275,8 @@ def build_train(reg: dict, stats: dict) -> list[dict]:
         return ({"id": f"oasst2-{row['message_id']}", "messages": messages, "meta": {"turns": len(chain)}}, None) if messages else (None, "shape")
     records += take("oasst2-de", tree.shuffle(seed=SEED), adapt_oasst2, QUOTAS["oasst2-de"], len(tree), stats)
 
-    generated = list(generators.sft_records("sft-v0", QUOTAS["rouge-generated"]))
+    spec = RECIPES[RECIPE]["generated"]
+    generated = list(generators.sft_records(spec["seed"], QUOTAS["rouge-generated"], spec["self_correction"]))
     for record in generated:
         record["source"] = "rouge-generated"
         record["meta"] = {"family": record.pop("family"), "lang": record.pop("lang")}
@@ -263,7 +297,7 @@ def build_eval(reg: dict, stats: dict) -> list[dict]:
         for row in rng.sample(rows, 100):
             prompt = row["question"].split(":", 1)[-1].strip()
             suffix = "Gib am Ende eine Zeile \"Antwort: <Zahl>\" aus." if lang == "de" else 'End with a line "Answer: <number>".'
-            items.append({"id": f"mgsm-{lang}-{len(items)}", "category": category, "source": "mgsm",
+            items.append({"id": f"mgsm-{lang}-{len(items)}", "category": category, "source": "mgsm", "suite": "guard",
                           "messages": [{"role": "user", "content": f"{prompt}\n\n{suffix}"}],
                           "check": {"type": "numeric", "answer": row["answer_number"]}})
 
@@ -274,7 +308,7 @@ def build_eval(reg: dict, stats: dict) -> list[dict]:
     for row in rng.sample(rows, 100):
         tests = "\n".join(row["test_imports"] + row["test_list"])
         prompt = f"{row['prompt']}\nYour code should pass these tests:\n{tests}\nReturn the complete Python code in one ```python block."
-        items.append({"id": f"mbpp-{row['task_id']}", "category": "coding", "source": "mbpp",
+        items.append({"id": f"mbpp-{row['task_id']}", "category": "coding", "source": "mbpp", "suite": "guard",
                       "messages": [{"role": "user", "content": prompt}], "check": {"type": "python_tests", "tests": tests}})
 
     repo, rev = pinned(reg, "ifeval")
@@ -283,17 +317,32 @@ def build_eval(reg: dict, stats: dict) -> list[dict]:
     stats["ifeval"] = {"total": len(rows), "supported": len(supported)}
     for row in rng.sample(supported, min(200, len(supported))):
         instructions = [{"id": i, "kwargs": {k: v for k, v in (kw or {}).items() if v is not None}} for i, kw in zip(row["instruction_id_list"], row["kwargs"])]
-        items.append({"id": f"ifeval-{row['key']}", "category": "instruction", "source": "ifeval",
+        items.append({"id": f"ifeval-{row['key']}", "category": "instruction", "source": "ifeval", "suite": "guard",
                       "messages": [{"role": "user", "content": row["prompt"]}], "check": {"type": "ifeval", "instructions": instructions}})
 
-    for item in generators.eval_items("eval-v0", 150):
-        item["source"] = "rouge-eval-generated"
-        item.pop("lang", None)
-        items.append(item)
+    if RECIPE == "sft-v0":
+        for item in generators.eval_items("eval-v0", 150):
+            item["source"] = "rouge-eval-generated"
+            item["suite"] = "report"
+            item.pop("lang", None)
+            items.append(item)
+    else:
+        # Primary suite: held-out templates (missing information and its
+        # specified twin, claims to check), English and German.
+        for item in generators.experiment_eval_items(RECIPE, 80, 120):
+            item["source"] = "rouge-eval-generated"
+            items.append(item)
+        for item in generators.eval_items(f"{RECIPE}-format", 30):
+            if item["category"] in ("format", "german"):
+                item["source"] = "rouge-eval-generated"
+                item["suite"] = "report"
+                item.pop("lang", None)
+                items.append(item)
     for i, (q, lang) in enumerate([("Who are you?", "en"), ("Which model are you based on?", "en"), ("Wer bist du?", "de"), ("Auf welchem Modell basierst du?", "de")]):
-        items.append({"id": f"identity-{i}", "category": "identity", "source": "rouge-eval-generated",
+        items.append({"id": f"identity-{i}", "category": "identity", "source": "rouge-eval-generated", "suite": "report",
                       "messages": [{"role": "user", "content": q}], "check": {"type": "contains_all", "terms": ["Rouge"]}})
     stats["eval_by_category"] = dict(Counter(i["category"] for i in items))
+    stats["eval_by_suite"] = dict(Counter(i["suite"] for i in items))
     return items
 
 
@@ -329,11 +378,14 @@ def code_commit() -> str | None:
 
 
 def main() -> None:
-    global TOKENIZER
+    global TOKENIZER, QUOTAS, MAX_TOKENS, STRIP_THINKING, RECIPE
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True)
     parser.add_argument("--tokenizer", help="tokenizer.json of the pinned base (fetched if absent)")
+    parser.add_argument("--recipe", default="sft-v0", choices=sorted(RECIPES))
     args = parser.parse_args()
+    RECIPE = args.recipe
+    QUOTAS, MAX_TOKENS, STRIP_THINKING = RECIPES[RECIPE]["quotas"], RECIPES[RECIPE]["max_tokens"], RECIPES[RECIPE]["strip_thinking"]
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     reg = registry.load()
@@ -373,7 +425,9 @@ def main() -> None:
 
     manifest = {
         "schema": "rouge.dataset-manifest/1",
-        "name": "rouge-sft-v0",
+        "name": "rouge-sft-v0" if RECIPE == "sft-v0" else f"rouge-{RECIPE}",
+        "recipe": RECIPE,
+        "strip_thinking": STRIP_THINKING,
         "registry_version": reg["version"],
         "code_commit": code_commit(),
         "max_tokens": MAX_TOKENS,
@@ -384,11 +438,12 @@ def main() -> None:
                   "by_source": dict(Counter(r["source"] for r in final)),
                   "german": sum(is_german(r) for r in final)},
         "eval": {"file": "eval.jsonl", "sha256": write("eval.jsonl", eval_items), "items": len(eval_items),
-                 "by_category": dict(Counter(i["category"] for i in eval_items))},
+                 "by_category": dict(Counter(i["category"] for i in eval_items)),
+                 "by_suite": dict(Counter(i["suite"] for i in eval_items))},
         "stats": stats,
     }
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1, ensure_ascii=False))
-    samples = ["# rouge-sft-v0 samples\n"]
+    samples = [f"# {manifest['name']} samples\n"]
     for source in sorted({r["source"] for r in final}):
         for record in [r for r in final if r["source"] == source][:2]:
             samples.append(f"## {source} — {record['id']}\n")

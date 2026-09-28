@@ -75,7 +75,7 @@ def make_checkpoint(tmp: Path, name: str, parent: str) -> dict:
 
 class CheckpointTest(unittest.TestCase):
     def test_names_follow_the_lineage_scheme(self):
-        for good in ("rouge-1", "rouge-1-sft-001", "rouge-1-reasoning-002", "rouge-1-context-003", "rouge-1-rc1"):
+        for good in ("rouge-1", "rouge-1-sft-001", "rouge-1-reasoning-002", "rouge-1-context-003", "rouge-1-rc1", "rouge-1-exp-001", "rouge-1-edge-001"):
             self.assertEqual(checkpoints.check_name(good), good)
         for bad in ("rouge-2-sft-001", "rouge-1-sft-1", "rouge-1-magic-001", "Rouge-1"):
             with self.assertRaises(checkpoints.ManifestError):

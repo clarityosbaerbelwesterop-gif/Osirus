@@ -39,6 +39,26 @@ class CheckerTest(unittest.TestCase):
         self.assertEqual(result["overall"]["regressed_ids"], ["1"])
 
 
+    def test_numbers_in_english_and_german_notation(self):
+        for text, value in [("Answer: 3,600", 3600), ("Antwort: 3.600 Sekunden", 3600), ("Antwort: 2,5", 2.5), ("Answer: 2.5", 2.5)]:
+            self.assertTrue(evaluate.check({"type": "numeric", "answer": value}, text), text)
+
+    def test_preregistered_verdict(self):
+        rule = {"alpha": 0.05, "guard_max_drop": 0.05}
+        items = [{"id": f"p{i}", "category": "missing-info", "suite": "primary"} for i in range(40)]
+        items += [{"id": f"g{i}", "category": "coding", "suite": "guard"} for i in range(40)]
+        base = [False] * 40 + [True] * 40
+        better = [True] * 30 + [False] * 10 + [True] * 40
+        self.assertEqual(evaluate.verdict(items, base, better, rule)["result"], "PASS")
+        # A primary gain does not pass when a guard regresses by 5 points.
+        broken = [True] * 30 + [False] * 10 + [True] * 38 + [False] * 2
+        result = evaluate.verdict(items, base, broken, rule)
+        self.assertEqual(result["result"], "FAIL")
+        self.assertTrue(result["guards"]["coding"]["regressed"])
+        # No primary gain: FAIL even without regressions.
+        self.assertEqual(evaluate.verdict(items, base, base, rule)["result"], "FAIL")
+
+
 class ConfigTest(unittest.TestCase):
     def test_rejects_unknown_keys_and_bad_values(self):
         with tempfile.TemporaryDirectory() as tmp:

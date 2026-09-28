@@ -19,6 +19,11 @@ on:
         type: choice
         options: [probe, build]
         default: probe
+      recipe:
+        description: data recipe (datasets/build.py)
+        type: choice
+        options: [exp-001, sft-v0]
+        default: exp-001
 
 permissions:
   contents: read
@@ -40,10 +45,12 @@ jobs:
         run: python training/rouge/datasets/probe.py
       - name: Build SFT mixture and eval set
         if: ${{ inputs.task == 'build' }}
-        run: python training/rouge/datasets/build.py --out "$RUNNER_TEMP/rouge-data"
+        env:
+          RECIPE: ${{ inputs.recipe }}
+        run: python training/rouge/datasets/build.py --recipe "$RECIPE" --out "$RUNNER_TEMP/rouge-data"
       - uses: actions/upload-artifact@v4
         if: ${{ inputs.task == 'build' }}
         with:
-          name: rouge-sft-data
+          name: rouge-${{ inputs.recipe }}-data
           path: ${{ runner.temp }}/rouge-data
           retention-days: 90
