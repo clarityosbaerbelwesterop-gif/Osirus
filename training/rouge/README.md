@@ -11,22 +11,25 @@ own trained checkpoints.
 
 ## Layout
 
-| Path                                   | What                                                                                                                                             |
-| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `rouge_train/config.py`                | Run configuration (one JSON describes a run completely)                                                                                          |
-| `rouge_train/data.py`                  | JSONL conversations → base chat template → token ids, assistant-only labels (character offsets); too long or no assistant → dropped and counted  |
-| `rouge_train/modeling.py`              | Base loading (BF16 or 4-bit NF4 QLoRA), gradient checkpointing, LoRA on all LM projections, chunked output-head loss                             |
-| `rouge_train/train.py`                 | Training loop with exact checkpoint/resume (adapter, optimiser, scheduler, RNG, data cursor)                                                     |
-| `rouge_train/merge.py`                 | Adapter → canonical BF16 checkpoint; carries base-only tensors (MTP); `weight_delta` proves the weights changed                                  |
-| `rouge_train/evaluate.py`              | Generation (vLLM or transformers) and code-only checks; base-vs-Rouge comparison with wins, regressions and McNemar                              |
-| `rouge_train/generators.py`            | In-house SFT and eval data, computed by code, English and German; decontamination                                                                |
-| `rouge_train/checkpoints.py`           | Checkpoint manifests, lineage, promotion rule                                                                                                    |
-| `rouge_train/registry.py`, `datasets/` | Dataset registry with licence and teacher-terms gates; probe and build on a runner; `datasets/manifests/` holds the hashes of each built dataset |
-| `rouge_train/cli.py`                   | verify / verify-data / train / merge / generate / compare / manifest on the GPU host                                                             |
-| `rouge_train/smoke.py`                 | The whole path on a tiny random model of the base architecture. **The tiny model is not Rouge.**                                                 |
-| `scripts/`                             | `base_manifest.py`, `fetch_tokenizer.py`, `verify_weights.py`, `size_qlora.py`, `dataset_licenses.py`                                            |
-| `configs/sft-001.json`                 | The `rouge-1-sft-001` run: QLoRA r = 32, 8k sequences, 1 GPU, 11 h cost guard                                                                    |
-| `checkpoints/`                         | Checkpoint manifests (none yet)                                                                                                                  |
+| Path                                   | What                                                                                                                                                                                       |
+| -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `rouge_train/config.py`                | Run configuration (one JSON describes a run completely)                                                                                                                                    |
+| `rouge_train/data.py`                  | JSONL conversations → base chat template → token ids, assistant-only labels (character offsets); too long or no assistant → dropped and counted                                            |
+| `rouge_train/modeling.py`              | Base loading (BF16 or 4-bit NF4 QLoRA), gradient checkpointing, LoRA on all LM projections, chunked output-head loss                                                                       |
+| `rouge_train/train.py`                 | Training loop with exact checkpoint/resume (adapter, optimiser, scheduler, RNG, data cursor)                                                                                               |
+| `rouge_train/merge.py`                 | Adapter → canonical BF16 checkpoint; carries base-only tensors (MTP); `weight_delta` proves the weights changed                                                                            |
+| `rouge_train/evaluate.py`              | Generation (vLLM or transformers) and code-only checks; base-vs-Rouge comparison with wins, regressions and McNemar                                                                        |
+| `rouge_train/generators.py`            | In-house SFT and eval data, computed by code, English and German; decontamination                                                                                                          |
+| `rouge_train/checkpoints.py`           | Checkpoint manifests, lineage, promotion rule                                                                                                                                              |
+| `rouge_train/registry.py`, `datasets/` | Dataset registry with licence and teacher-terms gates; probe and build on a runner; `datasets/manifests/` holds the hashes of each built dataset                                           |
+| `rouge_train/cli.py`                   | verify / verify-data / train / merge / generate / compare / manifest on the GPU host                                                                                                       |
+| `rouge_train/smoke.py`                 | The whole path on a tiny random model of the base architecture. **The tiny model is not Rouge.**                                                                                           |
+| `scripts/`                             | `base_manifest.py`, `fetch_tokenizer.py`, `verify_weights.py`, `size_qlora.py`, `size_edge.py`, `dataset_licenses.py`, `gpu_session.sh` (one ephemeral GPU session, stops the pod on exit) |
+| `configs/exp-001.json`                 | The first run `rouge-1-exp-001`: QLoRA r = 16, 4k sequences, 1 GPU, 3 h cost guard                                                                                                         |
+| `configs/sft-001.json`                 | Scaling after a PASS: QLoRA r = 32, 8k sequences, 1 GPU, 11 h cost guard                                                                                                                   |
+| `experiments/`                         | Pre-registered experiments: eval hash, decision rule, next step for PASS and FAIL                                                                                                          |
+| `rouge_train/edge.py`, `serve/`        | Rouge Edge (GGUF, quantisation, measurements) and Rouge Server (OpenAI-compatible, vLLM or llama-server)                                                                                   |
+| `checkpoints/`                         | Checkpoint manifests (none yet)                                                                                                                                                            |
 
 ## Checks
 
@@ -42,25 +45,28 @@ smoke run with the pinned, hash-verified Qwen3.5-27B tokenizer.
 
 ## A training session (after owner approval)
 
-Run these on one GPU host, with `requirements-gpu.txt` installed and
-`training/rouge` as the working directory:
+One command on a freshly rented single-GPU host, from the repository root:
 
-1. **Download and check the base.** Download the pinned revision to
-   `/workspace/models/Qwen3.5-27B`, then check every hash:
-   `python -m rouge_train.cli verify --base /workspace/models/Qwen3.5-27B`.
-2. **Fetch and check the data.** Download the `rouge-sft-data` artifact of
-   the `rouge-data.yml` run named in
-   [`datasets/manifests/rouge-sft-v0.json`](datasets/manifests/rouge-sft-v0.json)
-   into `/workspace/data/rouge-sft-v0/`, then check both files' hashes:
-   `python -m rouge_train.cli verify-data --data /workspace/data/rouge-sft-v0 --manifest datasets/manifests/rouge-sft-v0.json`.
-3. **Train:** `python -m rouge_train.cli train --config configs/sft-001.json`.
-   The run is resumable: rerun the same command after an interruption.
-4. **Merge:** `python -m rouge_train.cli merge --config configs/sft-001.json --out /workspace/ckpt/rouge-1-sft-001`.
-5. **Evaluate both models**, with the same settings and the same hidden
-   eval set: run `generate` for the base and for `rouge-1-sft-001`, then
-   `compare`.
-6. **Record and publish:**
-   - write the manifest with `python -m rouge_train.cli manifest …` into
-     `checkpoints/`;
-   - upload the weights to the Rouge model repository;
-   - commit the manifest and the report.
+```sh
+HF_TOKEN=… ROUGE_HF_REPO=<owner>/rouge-1 GH_TOKEN=… \
+  training/rouge/scripts/gpu_session.sh rouge-1-exp-001
+```
+
+It runs `START → PREPARE → TRAIN → EVALUATE → SAVE → STOP`:
+
+1. **Prepare.**
+   - Install the training environment, and vLLM in a separate environment.
+   - Download the pinned base and check every hash.
+   - Download the built dataset (Actions artifact) and check it against its
+     committed manifest.
+2. **Train** with the experiment's config. The cost guard stops a run whose
+   projected time exceeds its budget, and the run is resumable.
+3. **Merge** into BF16 and prove the weight change (`weight_delta`).
+4. **Evaluate** base and candidate on the pre-registered eval set:
+   - identical settings for both models;
+   - `compare --prereg` refuses any other eval set and prints PASS or FAIL.
+5. **Save.**
+   - Write the checkpoint manifest.
+   - Upload the adapter and the session reports to the private Rouge model
+     repository.
+6. **Stop.** The pod stops itself on every exit path.

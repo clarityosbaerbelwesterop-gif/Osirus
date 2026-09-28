@@ -12,5 +12,8 @@ causal-conv1d
 safetensors
 accelerate
 tokenizers
-# Fast evaluation generation (optional backend of rouge_train.evaluate).
-vllm
+# Base download and checkpoint upload (the `hf` command line).
+huggingface_hub
+hf_xet
+# Evaluation runs vLLM in its own environment (requirements-eval.txt), so
+# its torch pin never changes the training environment.

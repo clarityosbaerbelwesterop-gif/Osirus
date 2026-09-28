@@ -6,6 +6,9 @@ Rouge 1 v1 is trained from **Qwen/Qwen3.5-27B**, pinned at
 
 **Scope.**
 
+- **Compute is ephemeral.** A GPU is rented only for an actual weight
+  update, for one session (`START → PREPARE → TRAIN → EVALUATE → SAVE →
+STOP`, `training/rouge/scripts/gpu_session.sh`), and stops itself.
 - **No datacenter, no cluster, no recurring GPU infrastructure.** The first
   Rouge checkpoint is one QLoRA job on **one** GPU.
 - **Nothing is rented without explicit owner approval.**
@@ -79,7 +82,51 @@ overhead:**
   It is also the smallest single GPU that can evaluate the model in
   unquantised BF16 (55 GB of weights).
 
-## 3. Time and cost of `rouge-1-sft-001`
+## 3. The first run: `rouge-1-exp-001`
+
+**Purpose.** Prove the recipe, not train the final Rouge 1. The run
+produces the cheapest real weight change that can show a measurable,
+generalising gain over the base on a pre-registered blind eval
+(`training/rouge/experiments/rouge-1-exp-001.json`).
+
+| #   | Item                       | Value                                                                                                                                                                                                                |
+| --- | -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Experiment                 | One QLoRA SFT pass on the pinned base, non-thinking mode; then merge, then blind comparison with the base                                                                                                            |
+| 2   | Training examples          | **9,056** verified conversations (`rouge-exp-001`): math/science 3,598, coding 800, English human 1,499, German human 1,432, in-house computed 1,727 (uncertainty, self-correction, format, identity)                |
+| 3   | Tokens                     | **4,808,438** in total (mean 531, median 417, p95 1,353); 1 epoch                                                                                                                                                    |
+| 4   | Sequence length            | 4,096 (every record ≤ 3,800 tokens)                                                                                                                                                                                  |
+| 5   | QLoRA                      | NF4 double-quant base; LoRA r = 16, α = 32, dropout 0.05 on 10 projection types in all 64 layers (400 modules, 109M trainable parameters); lr 1e-4, 3% warmup, paged 8-bit AdamW; micro-batch 1 × 16 = **566 steps** |
+| 6   | Expected VRAM              | ~29 GB peak for a 4k sequence (calculated), ~22–24 GB typical: fits 40, 48 and 80 GB GPUs; 24 GB does not                                                                                                            |
+| 7   | Wall-clock (1× H100 80 GB) | training ~1.3–1.9 h (short sequences, ~700–1,000 tokens/s assumed) + setup, download and check ~25 min + merge ~25 min + eval of both models ~20 min + save ~10 min ≈ **2.7–3.3 h**, with 20% margin **≈ 3.2–3.9 h** |
+| 8   | Cost                       | **$7–12** at $1.99–2.99/h; approval asked **up to $15** (prepaid credit = hard ceiling); the 3 h cost guard stops a slower-than-planned run                                                                          |
+| 9   | Checkpoint                 | `rouge-1-exp-001`: LoRA adapter (~0.2 GB safetensors) + checkpoint manifest (base revision, data hashes, config, seed, steps, loss, sha256 of adapter and merged weights, `weight_delta`)                            |
+| 10  | Proof that training helped | Pre-registered blind eval, 796 items, BF16, greedy, same settings for both models, code checks only: PASS needs a primary-suite gain (McNemar p < 0.05) and no guard regression (≥ 5 points, or significant)         |
+
+**Why these numbers.**
+
+- **Small but credible.** 9k examples and 4.8M tokens are enough to move a
+  27B model's behaviour measurably.
+- **Primary suite = generalisation.** Its templates never appear in
+  training, so a gain there is not template recall. The fully specified
+  twins make "always refuse" score nothing.
+- **Guards catch damage.** MGSM (en/de), MBPP and IFEval catch general
+  skills that the recipe would break.
+- **Non-thinking mode.** It keeps sequences short and cheap. Reasoning
+  training is M59.
+
+**Alternatives (not recommended):**
+
+- **A100 80 GB:** ~5.5–7 h, $8–11. Slower, no cheaper.
+- **L40S 48 GB:** ~$6–7. But the base does not fit in BF16 for the eval,
+  and FP8 would change the pre-registered settings.
+
+**Merged weights are not uploaded for an experiment.** The adapter plus the
+pinned base reproduce them exactly. Their hashes are in the manifest.
+
+## 4. After a PASS: scaling to `rouge-1-sft-001`
+
+**Not requested now.** This applies only after `rouge-1-exp-001` passes.
+The cost is then re-estimated from exp-001's **measured** throughput.
 
 **Workload (measured, not estimated).** The built dataset `rouge-sft-v0`
 ([`training/rouge/datasets/manifests/rouge-sft-v0.json`](../../training/rouge/datasets/manifests/rouge-sft-v0.json)):
@@ -160,7 +207,7 @@ It trains on less data, so the recommendation stays the full set.
 4. A Hugging Face token with write access to the Rouge model repository is
    available as a secret on the GPU host. It is never committed.
 
-## 4. Later stages (not now)
+## 5. Later stages (not now)
 
 **Sequence length.**
 

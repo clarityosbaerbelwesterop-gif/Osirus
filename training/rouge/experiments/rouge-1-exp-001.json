@@ -1,0 +1,49 @@
+{
+  "schema": "rouge.experiment/1",
+  "name": "rouge-1-exp-001",
+  "status": "pre-registered",
+  "registered": "2026-09-28",
+  "question": "Does the Rouge post-training recipe produce a measurable, generalising improvement over the pinned base, without breaking general skills?",
+  "parent": "base:Qwen/Qwen3.5-27B@fc05daec18b0a78c049392ed2e771dde82bdf654",
+  "checkpoint": {
+    "name": "rouge-1-exp-001",
+    "kind": "adapter",
+    "contents": "LoRA adapter (safetensors, r=16) + checkpoint manifest; the merged BF16 weights are produced by rouge_train.merge and their sha256 recorded, so weight change is proven (merge.weight_delta) without storing 55 GB"
+  },
+  "data": {
+    "manifest": "training/rouge/datasets/manifests/rouge-exp-001.json",
+    "train_sha256": "ee9c84b2771987c464edf87d368a5d7b1f5ac2e0e817d5641c7c0321388edf0a",
+    "records": 9056,
+    "tokens": 4808438
+  },
+  "config": "training/rouge/configs/exp-001.json",
+  "eval": {
+    "file": "eval.jsonl",
+    "sha256": "f08f0dbd6d1b2c9a079247a8247c5e5904979d97814360ce332dfd7e40b91fcd",
+    "items": 796,
+    "suites": {
+      "primary": "280 items from templates that never appear in training: 80 missing-information problems, their 80 fully specified twins (refusing everything scores nothing) and 120 claims to check; half German, where the answer must also be German",
+      "guard": "500 items: MGSM en 100, MGSM de 100, MBPP 100 (unit tests executed), IFEval 200 (strict, supported instructions)",
+      "report": "16 items, never decisive: identity 4, format 12"
+    },
+    "settings": {
+      "backend": "vllm",
+      "dtype": "bfloat16",
+      "temperature": 0.0,
+      "seed": 0,
+      "max_new_tokens": 1536,
+      "enable_thinking": false
+    },
+    "blind": "Scoring is code only (numeric answers, regexes, executed unit tests, IFEval checkers); no model judges. Base and candidate run with identical settings on the same items, and the scorer does not know which model produced a response. The eval hash is fixed here before any training; cli compare --prereg refuses a different eval set."
+  },
+  "decision": {
+    "alpha": 0.05,
+    "guard_max_drop": 0.05,
+    "rule": "PASS if the primary suite improves (candidate > base, McNemar exact p < 0.05) AND no guard category drops by 5 points or more, or by any amount with p < 0.05. Otherwise FAIL."
+  },
+  "next": {
+    "PASS": "scale the recipe: rouge-1-sft-001 with the same recipe on more data and steps; convert the checkpoint to Rouge Edge (GGUF) and measure it",
+    "FAIL": "change data, loss or hyperparameters and register rouge-1-exp-002; the same recipe does not get more compute"
+  },
+  "result": null
+}

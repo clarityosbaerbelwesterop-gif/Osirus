@@ -1,0 +1,72 @@
+{
+  "schema": "rouge.dataset-manifest-summary/1",
+  "name": "rouge-exp-001",
+  "recipe": "exp-001",
+  "note": "Summary of the build manifest.json. The data is the rouge-exp-001-data artifact of the run below (retention 90 days), never committed. Check a download with: python -m rouge_train.cli verify-data --data <dir> --manifest datasets/manifests/rouge-exp-001.json",
+  "build": {
+    "workflow": ".github/workflows/rouge-data.yml",
+    "run_id": 36468290990,
+    "job_id": 109083808885,
+    "code_commit": "d6e0476",
+    "artifact": "rouge-exp-001-data",
+    "artifact_id": 10991226282,
+    "artifact_zip_sha256": "c7eb50859fe54eea0c5b90e2f660fc6d9dff4aa4761c7895717fca6478c14e54",
+    "built_at": "2026-09-28T18:57:50Z"
+  },
+  "registry_version": "2026-09-28.4",
+  "tokenizer": "Qwen/Qwen3.5-27B@fc05daec18b0a78c049392ed2e771dde82bdf654",
+  "max_tokens": 3800,
+  "strip_thinking": true,
+  "train": {
+    "file": "train.jsonl",
+    "sha256": "ee9c84b2771987c464edf87d368a5d7b1f5ac2e0e817d5641c7c0321388edf0a",
+    "records": 9056,
+    "german": 2147,
+    "tokens": { "total": 4808438, "mean": 531, "p50": 417, "p95": 1353 },
+    "by_source": {
+      "rouge-generated": 1727,
+      "tulu-oasst1": 1499,
+      "oasst2-de": 1035,
+      "openr1-math": 1000,
+      "nemotron-math": 800,
+      "nemotron-stem": 800,
+      "opencode": 800,
+      "openmath-cot": 598,
+      "tulu-sciriff": 400,
+      "tulu-oasst1-de": 206,
+      "aya-de": 191
+    },
+    "coverage": {
+      "reasoning and math": "openr1-math (answers verified), openmath-cot (extracted answers), nemotron-math, in-house worked math",
+      "science": "nemotron-stem, tulu-sciriff",
+      "coding": "opencode",
+      "instruction following and writing": "tulu-oasst1 (human), in-house structured output",
+      "German": "oasst2-de, tulu-oasst1-de, aya-de (all human-written), in-house German tasks",
+      "uncertainty": "in-house missing-information problems and unknowable questions",
+      "self-correction": "in-house claims to re-compute and confirm or correct"
+    }
+  },
+  "eval": {
+    "file": "eval.jsonl",
+    "sha256": "f08f0dbd6d1b2c9a079247a8247c5e5904979d97814360ce332dfd7e40b91fcd",
+    "items": 796,
+    "by_suite": { "primary": 280, "guard": 500, "report": 16 },
+    "by_category": {
+      "missing-info": 80,
+      "calibration": 80,
+      "self-correction": 120,
+      "reasoning": 100,
+      "german": 106,
+      "coding": 100,
+      "instruction": 200,
+      "format": 6,
+      "identity": 4
+    }
+  },
+  "filters": {
+    "deduplicated_across_sources": 164,
+    "decontaminated_exact": 6,
+    "decontaminated_prefix_120": 68,
+    "dropped_too_long_after_read": 0
+  }
+}

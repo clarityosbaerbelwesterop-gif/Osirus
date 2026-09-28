@@ -1,0 +1,4 @@
+# Evaluation environment on the GPU host (separate venv): vLLM generation
+# for base-vs-Rouge comparisons and Rouge Server. rouge_train.evaluate itself
+# needs only the standard library.
+vllm
