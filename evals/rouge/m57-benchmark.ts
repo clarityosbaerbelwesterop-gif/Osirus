@@ -29,12 +29,16 @@ export const FAMILIES = [
 
 export type Family = (typeof FAMILIES)[number];
 
+export type Tier = 0 | 1;
+
 /** "no_answer": nothing in the reply could be read as an answer. */
 export type Verdict = "correct" | "wrong" | "no_answer";
 
 export type BenchTask = {
   id: string;
   family: Family;
+  /** 0 = hard, 1 = harder. Tasks alternate, so every family spans both. */
+  tier: Tier;
   prompt: string;
   /** The computed answer, for tests; never printed by the eval. */
   expected: string;
@@ -132,16 +136,21 @@ const numeric =
   };
 
 // --- families --------------------------------------------------------------
+//
+// Difficulty is set so a strong core is usually but not always right: the
+// first development run (seed m57-dev-1, easier settings) found the raw
+// core right on every task it answered, which leaves nothing to measure.
 
-function arithmetic(r: Rng) {
-  const a = int(r, 10_000, 99_999);
-  const b = int(r, 10_000, 99_999);
-  const c = int(r, 1_000, 9_999);
-  const d = int(r, 1_000, 9_999);
-  const e = int(r, 100, 9_999);
-  const value = a * b - c * d + e;
+const big = (n: bigint) => n.toLocaleString("en-US");
+
+function arithmetic(r: Rng, tier: Tier) {
+  const digits = tier ? [7, 7, 6, 6, 4, 4] : [6, 6, 5, 5, 4, 3];
+  const [a, b, c, d, e, f] = digits.map((n) =>
+    BigInt(int(r, 10 ** (n - 1), 10 ** n - 1)),
+  ) as [bigint, bigint, bigint, bigint, bigint, bigint];
+  const value = Number(a * b - c * d + e * f);
   return {
-    prompt: `Compute exactly: ${fmt(a)} × ${fmt(b)} − ${fmt(c)} × ${fmt(d)} + ${fmt(e)}. ${FORMAT}`,
+    prompt: `Compute exactly: ${big(a)} × ${big(b)} − ${big(c)} × ${big(d)} + ${big(e)} × ${big(f)}. ${FORMAT}`,
     expected: String(value),
     check: numeric(value),
   };
@@ -205,13 +214,24 @@ export function dateIn(segment: string): string | null {
   return `${parts.year}-${String(m).padStart(2, "0")}-${parts.day.padStart(2, "0")}`;
 }
 
-function dateOffset(r: Rng) {
-  const start = randomDate(r, 1995, 2045);
-  const days = int(r, 150, 4_000) * (r() < 0.3 ? -1 : 1);
-  const target = new Date(start.getTime() + days * DAY_MS);
+function dateOffset(r: Rng, tier: Tier) {
+  const start = randomDate(r, 1700, 2300);
+  const before = r() < 0.35;
+  let days: number;
+  let phrase: string;
+  if (tier) {
+    const weeks = int(r, 1_500, 5_000);
+    const extra = int(r, 1, 6);
+    days = weeks * 7 + extra;
+    phrase = `${fmt(weeks)} weeks and ${extra} day${extra === 1 ? "" : "s"}`;
+  } else {
+    days = int(r, 2_000, 12_000);
+    phrase = `${fmt(days)} days`;
+  }
+  const target = new Date(start.getTime() + (before ? -days : days) * DAY_MS);
   const expected = iso(target);
   return {
-    prompt: `What is the date ${fmt(Math.abs(days))} days ${days < 0 ? "before" : "after"} ${spoken(start)}? Give it as YYYY-MM-DD. ${FORMAT}`,
+    prompt: `In the proleptic Gregorian calendar, what is the date ${phrase} ${before ? "before" : "after"} ${spoken(start)}? Give it as YYYY-MM-DD. ${FORMAT}`,
     expected,
     check: (reply: string): Verdict => {
       const segment = answerSegment(reply);
@@ -222,8 +242,8 @@ function dateOffset(r: Rng) {
   };
 }
 
-function weekday(r: Rng) {
-  const date = randomDate(r, 1600, 2400);
+function weekday(r: Rng, tier: Tier) {
+  const date = tier ? randomDate(r, 1000, 9999) : randomDate(r, 1600, 2400);
   const expected = WEEKDAYS[date.getUTCDay()]!;
   const past = date.getTime() < Date.UTC(2026, 0, 1);
   return {
@@ -358,25 +378,32 @@ const WORDS = [
 
 const COUNTED = ["e", "r", "s", "t", "n", "a", "o", "i", "l", "c"];
 
-function letterCount(r: Rng) {
+function letterCount(r: Rng, tier: Tier) {
   for (;;) {
-    const words = Array.from({ length: int(r, 10, 14) }, () => pick(r, WORDS));
+    const words = Array.from(
+      { length: tier ? int(r, 26, 36) : int(r, 16, 22) },
+      () => pick(r, WORDS),
+    );
     const text = words.join(" ");
-    const letter = pick(r, COUNTED);
-    const count = [...text].filter((ch) => ch === letter).length;
-    if (count < 6) continue;
+    const [first, second] = shuffled(r, COUNTED) as [string, string];
+    const letters = tier ? [first, second] : [first];
+    const count = [...text].filter((ch) => letters.includes(ch)).length;
+    if (count < 8) continue;
+    const asked = tier
+      ? `How many times in total do the letters "${first}" and "${second}" occur in the following text?`
+      : `How many times does the letter "${first}" occur in the following text?`;
     return {
-      prompt: `How many times does the letter "${letter}" occur in the following text? Text: "${text}". ${FORMAT}`,
+      prompt: `${asked} Text: "${text}". ${FORMAT}`,
       expected: String(count),
       check: numeric(count),
     };
   }
 }
 
-function modpow(r: Rng) {
-  const base = int(r, 3, 97);
-  const exponent = int(r, 150, 999);
-  const modulus = int(r, 1_000, 9_999);
+function modpow(r: Rng, tier: Tier) {
+  const base = tier ? int(r, 100, 999) : int(r, 3, 97);
+  const exponent = tier ? int(r, 100_000, 999_999) : int(r, 1_000, 9_999);
+  const modulus = tier ? int(r, 10_000, 99_999) : int(r, 1_000, 9_999);
   let result = 1n;
   let b = BigInt(base) % BigInt(modulus);
   let e = BigInt(exponent);
@@ -388,14 +415,14 @@ function modpow(r: Rng) {
   }
   const value = Number(result);
   return {
-    prompt: `What is the remainder when ${base}^${exponent} is divided by ${fmt(modulus)}? ${FORMAT}`,
+    prompt: `What is the remainder when ${base}^${fmt(exponent)} is divided by ${fmt(modulus)}? ${FORMAT}`,
     expected: String(value),
     check: numeric(value),
   };
 }
 
-function baseConversion(r: Rng) {
-  const n = int(r, 2_000_000, 90_000_000);
+function baseConversion(r: Rng, tier: Tier) {
+  const n = tier ? int(r, 1e11, 9e12) : int(r, 1e8, 1e10);
   const base = int(r, 3, 9);
   const expected = n.toString(base);
   return {
@@ -416,17 +443,32 @@ function baseConversion(r: Rng) {
 
 // Knights always tell the truth, knaves always lie. Puzzles are generated
 // from a hidden assignment and kept only if exactly one assignment fits.
-const ISLANDERS = ["Ava", "Ben", "Cleo", "Dev", "Eli"];
+const ISLANDERS = ["Ava", "Ben", "Cleo", "Dev", "Eli", "Fay"];
+const COUNT_WORDS = [
+  "zero",
+  "one",
+  "two",
+  "three",
+  "four",
+  "five",
+  "six",
+  "seven",
+];
 
-type Statement = { text: string; holds: (knight: boolean[]) => boolean };
+export type Statement = {
+  text: string;
+  holds: (knight: boolean[]) => boolean;
+};
 
-function statementFor(r: Rng, speaker: number): Statement {
-  const others = ISLANDERS.map((_, i) => i).filter((i) => i !== speaker);
-  const [x, y] = shuffled(r, others) as [number, number];
-  const X = ISLANDERS[x]!;
-  const Y = ISLANDERS[y]!;
-  const n = int(r, 1, 4);
-  const count = (k: boolean[]) => k.filter(Boolean).length;
+function statementFor(r: Rng, speaker: number, size: number): Statement {
+  const others = Array.from({ length: size }, (_, i) => i).filter(
+    (i) => i !== speaker,
+  );
+  const [x, y, z] = shuffled(r, others) as [number, number, number];
+  const [X, Y, Z] = [ISLANDERS[x]!, ISLANDERS[y]!, ISLANDERS[z]!];
+  const n = int(r, 1, size - 1);
+  const m = int(r, 0, 3);
+  const count = (k: boolean[]) => k.slice(0, size).filter(Boolean).length;
   return pick(r, [
     { text: `${X} is a knight.`, holds: (k: boolean[]) => k[x]! },
     { text: `${X} is a knave.`, holds: (k: boolean[]) => !k[x] },
@@ -447,51 +489,61 @@ function statementFor(r: Rng, speaker: number): Statement {
       holds: (k: boolean[]) => k[x] !== k[y],
     },
     {
-      text: `Exactly ${n} of us five ${n === 1 ? "is a knight" : "are knights"}.`,
+      text: `Exactly ${COUNT_WORDS[n]} of us ${COUNT_WORDS[size]} ${n === 1 ? "is a knight" : "are knights"}.`,
       holds: (k: boolean[]) => count(k) === n,
     },
     {
       text: `If ${X} is a knight, then so is ${Y}.`,
       holds: (k: boolean[]) => !k[x] || k[y]!,
     },
+    {
+      text: `Exactly ${COUNT_WORDS[m]} of ${X}, ${Y} and ${Z} ${m === 1 ? "is a knight" : "are knights"}.`,
+      holds: (k: boolean[]) => [k[x], k[y], k[z]].filter(Boolean).length === m,
+    },
+    {
+      text: `${X} is a knight or ${Y} is a knave, but not both.`,
+      holds: (k: boolean[]) => k[x] !== !k[y],
+    },
   ]);
 }
 
 export function knightsSolutions(statements: Statement[]) {
+  const size = statements.length;
   const solutions: boolean[][] = [];
-  for (let mask = 0; mask < 1 << ISLANDERS.length; mask += 1) {
-    const k = ISLANDERS.map((_, i) => Boolean(mask & (1 << i)));
+  for (let mask = 0; mask < 1 << size; mask += 1) {
+    const k = Array.from({ length: size }, (_, i) => Boolean(mask & (1 << i)));
     if (statements.every((s, i) => s.holds(k) === k[i])) solutions.push(k);
   }
   return solutions;
 }
 
-function knights(r: Rng) {
+function knights(r: Rng, tier: Tier) {
+  const size = tier ? 6 : 5;
+  const names = ISLANDERS.slice(0, size);
   for (;;) {
-    const hidden = ISLANDERS.map(() => r() < 0.5);
+    const hidden = names.map(() => r() < 0.5);
     if (hidden.every(Boolean) || !hidden.some(Boolean)) continue;
-    const statements = ISLANDERS.map((_, speaker) => {
+    const statements = names.map((_, speaker) => {
       for (let tries = 0; tries < 100; tries += 1) {
-        const s = statementFor(r, speaker);
+        const s = statementFor(r, speaker, size);
         if (s.holds(hidden) === hidden[speaker]) return s;
       }
       return null;
     });
     if (statements.some((s) => s === null)) continue;
-    const solutions = knightsSolutions(statements as Statement[]);
-    if (solutions.length !== 1) continue;
-    const expectedNames = ISLANDERS.filter((_, i) => hidden[i]);
-    const lines = ISLANDERS.map(
-      (name, i) => `${name} says: "${statements[i]!.text}"`,
-    ).join("\n");
+    if (knightsSolutions(statements as Statement[]).length !== 1) continue;
+    const expectedNames = names.filter((_, i) => hidden[i]);
+    const lines = names
+      .map((name, i) => `${name} says: "${statements[i]!.text}"`)
+      .join("\n");
     return {
-      prompt: `On an island, knights always tell the truth and knaves always lie. Each of the five islanders Ava, Ben, Cleo, Dev and Eli is either a knight or a knave.\n${lines}\nWhich of them are knights? List the knights' names, separated by commas. ${FORMAT}`,
+      prompt: `On an island, knights always tell the truth and knaves always lie. Each of the ${COUNT_WORDS[size]} islanders ${names.slice(0, -1).join(", ")} and ${names.at(-1)} is either a knight or a knave.\n${lines}\nWhich of them are knights? List the knights' names, separated by commas. ${FORMAT}`,
       expected: expectedNames.join(", "),
       check: (reply: string): Verdict => {
         const segment = answerSegment(reply);
         if (!segment) return "no_answer";
         const scope = segment.split(/knaves?\b/i)[0]!;
-        const named = ISLANDERS.filter((name) =>
+        const named = names.filter((name) =>
           new RegExp(`\\b${name}\\b`, "i").test(scope),
         );
         if (!named.length) return "no_answer";
@@ -503,12 +555,20 @@ function knights(r: Rng) {
   }
 }
 
-// A race of six. Clues are true of a hidden finishing order and are added
-// until exactly one order fits, then pruned while it still does.
-const RUNNERS = ["Ada", "Bo", "Cy", "Di", "Ed", "Flo"];
-const ORDINALS = ["first", "second", "third", "fourth", "fifth", "sixth"];
+// A race. Clues are true of a hidden finishing order and are added until
+// exactly one order fits, then pruned while it still does.
+const RUNNERS = ["Ada", "Bo", "Cy", "Di", "Ed", "Flo", "Gus"];
+const ORDINALS = [
+  "first",
+  "second",
+  "third",
+  "fourth",
+  "fifth",
+  "sixth",
+  "seventh",
+];
 
-type Clue = { text: string; holds: (pos: number[]) => boolean };
+export type Clue = { text: string; holds: (pos: number[]) => boolean };
 
 function permutations(n: number): number[][] {
   if (n === 1) return [[0]];
@@ -520,7 +580,6 @@ function permutations(n: number): number[][] {
     ]),
   );
 }
-const ORDERS = permutations(RUNNERS.length); // order[k] = runner in place k
 
 function positionsOf(order: number[]) {
   const pos: number[] = [];
@@ -528,81 +587,87 @@ function positionsOf(order: number[]) {
   return pos;
 }
 
-function clueFor(r: Rng, hidden: number[]): Clue {
-  const x = int(r, 0, RUNNERS.length - 1);
-  let y = int(r, 0, RUNNERS.length - 2);
+const ALL_POSITIONS = new Map<number, number[][]>();
+function allPositions(size: number) {
+  if (!ALL_POSITIONS.has(size))
+    ALL_POSITIONS.set(size, permutations(size).map(positionsOf));
+  return ALL_POSITIONS.get(size)!;
+}
+
+function clueFor(r: Rng, truth: number[]): Clue {
+  const size = truth.length;
+  const x = int(r, 0, size - 1);
+  let y = int(r, 0, size - 2);
   if (y >= x) y += 1;
   const X = RUNNERS[x]!;
   const Y = RUNNERS[y]!;
   const kind = int(r, 0, 5);
-  const truth = hidden;
-  if (kind === 0) {
-    const [a, b, A, B] = truth[x]! < truth[y]! ? [x, y, X, Y] : [y, x, Y, X];
+  const [a, b, A, B] = truth[x]! < truth[y]! ? [x, y, X, Y] : [y, x, Y, X];
+  if (kind === 0)
     return {
       text: `${A} finished ahead of ${B}.`,
       holds: (p) => p[a]! < p[b]!,
     };
-  }
-  if (kind === 1 && Math.abs(truth[x]! - truth[y]!) === 1) {
-    const [a, b, A, B] = truth[x]! > truth[y]! ? [x, y, X, Y] : [y, x, Y, X];
+  if (kind === 1 && truth[b]! - truth[a]! === 1)
     return {
-      text: `${A} finished directly behind ${B}.`,
-      holds: (p) => p[a]! === p[b]! + 1,
+      text: `${B} finished directly behind ${A}.`,
+      holds: (p) => p[b]! === p[a]! + 1,
     };
-  }
   if (kind === 2) {
-    const gap = Math.abs(truth[x]! - truth[y]!) - 1;
+    const gap = truth[b]! - truth[a]! - 1;
     return {
       text: `Exactly ${gap} runner${gap === 1 ? "" : "s"} finished between ${X} and ${Y}.`,
       holds: (p) => Math.abs(p[x]! - p[y]!) - 1 === gap,
     };
   }
-  if (kind === 3 && truth[x]! > 0 && truth[x]! < RUNNERS.length - 1) {
+  if (kind === 3 && truth[x]! > 0 && truth[x]! < size - 1)
     return {
       text: `${X} was neither first nor last.`,
-      holds: (p) => p[x]! > 0 && p[x]! < RUNNERS.length - 1,
+      holds: (p) => p[x]! > 0 && p[x]! < size - 1,
     };
-  }
   if (kind === 4) {
-    let place = int(r, 0, RUNNERS.length - 2);
+    let place = int(r, 0, size - 2);
     if (place >= truth[x]!) place += 1;
     return {
       text: `${X} did not finish ${ORDINALS[place]}.`,
       holds: (p) => p[x] !== place,
     };
   }
-  const [a, b, A, B] = truth[x]! < truth[y]! ? [x, y, X, Y] : [y, x, Y, X];
   return { text: `${B} did not beat ${A}.`, holds: (p) => p[a]! < p[b]! };
 }
 
-export function orderingSolutions(clues: Clue[]) {
-  return ORDERS.map(positionsOf).filter((pos) =>
-    clues.every((c) => c.holds(pos)),
-  );
+export function orderingSolutions(clues: Clue[], size: number) {
+  return allPositions(size).filter((pos) => clues.every((c) => c.holds(pos)));
 }
 
-function ordering(r: Rng) {
+function ordering(r: Rng, tier: Tier) {
+  const size = tier ? 7 : 6;
+  const names = RUNNERS.slice(0, size);
   for (;;) {
-    const hidden = positionsOf(pick(r, ORDERS));
+    const hidden = pick(r, allPositions(size));
     const clues: Clue[] = [];
-    for (let i = 0; i < 40 && orderingSolutions(clues).length !== 1; i += 1)
+    for (
+      let i = 0;
+      i < 60 && orderingSolutions(clues, size).length !== 1;
+      i += 1
+    )
       clues.push(clueFor(r, hidden));
-    if (orderingSolutions(clues).length !== 1) continue;
+    if (orderingSolutions(clues, size).length !== 1) continue;
     // Prune clues that are not needed: a minimal set is a harder puzzle.
     for (const clue of shuffled(r, clues)) {
       const without = clues.filter((c) => c !== clue);
-      if (orderingSolutions(without).length === 1)
+      if (orderingSolutions(without, size).length === 1)
         clues.splice(clues.indexOf(clue), 1);
     }
-    const place = int(r, 0, RUNNERS.length - 1);
-    const expected = RUNNERS[hidden.indexOf(place)]!;
+    const place = int(r, 0, size - 1);
+    const expected = names[hidden.indexOf(place)]!;
     return {
-      prompt: `Six runners -- Ada, Bo, Cy, Di, Ed and Flo -- finished a race with no ties.\n${clues.map((c) => `- ${c.text}`).join("\n")}\nWho finished ${ORDINALS[place]}? ${FORMAT}`,
+      prompt: `${COUNT_WORDS[size]![0]!.toUpperCase()}${COUNT_WORDS[size]!.slice(1)} runners -- ${names.slice(0, -1).join(", ")} and ${names.at(-1)} -- finished a race with no ties.\n${clues.map((c) => `- ${c.text}`).join("\n")}\nWho finished ${ORDINALS[place]}? ${FORMAT}`,
       expected,
       check: (reply: string): Verdict => {
         const segment = answerSegment(reply);
         if (!segment) return "no_answer";
-        const named = RUNNERS.filter((name) =>
+        const named = names.filter((name) =>
           new RegExp(`\\b${name}\\b`, "i").test(segment),
         );
         if (!named.length) return "no_answer";
@@ -629,9 +694,16 @@ const X_UPDATES: Update[] = [
   { code: "x = y // 2 + x", run: (x, y) => [pyDiv(y, 2) + x, y] },
   { code: "x = x - 3 * i", run: (x, y, i) => [x - 3 * i, y] },
   { code: "x = (x + y) // 3", run: (x, y) => [pyDiv(x + y, 3), y] },
+  {
+    code: "x = (x * 7 + i) % 101",
+    run: (x, y, i) => [pyMod(x * 7 + i, 101), y],
+  },
 ];
 const Y_UPDATES: Update[] = [
-  { code: "y = 3 * y - i", run: (x, y, i) => [x, 3 * y - i] },
+  {
+    code: "y = (3 * y - i) % 997",
+    run: (x, y, i) => [x, pyMod(3 * y - i, 997)],
+  },
   { code: "y = y + x % 7", run: (x, y) => [x, y + pyMod(x, 7)] },
   { code: "y = y // 2 - x", run: (x, y) => [x, pyDiv(y, 2) - x] },
   { code: "y = y - i * i", run: (x, y, i) => [x, y - i * i] },
@@ -646,11 +718,11 @@ const FINALS = [
   },
 ];
 
-function trace(r: Rng) {
+function trace(r: Rng, tier: Tier) {
   for (;;) {
     const x0 = int(r, -20, 40);
     const y0 = int(r, -20, 40);
-    const n = int(r, 7, 12);
+    const n = tier ? int(r, 20, 30) : int(r, 12, 18);
     const k = int(r, 3, 5);
     const m = int(r, 2, 4);
     const first = pick(r, X_UPDATES);
@@ -694,19 +766,18 @@ function trace(r: Rng) {
   }
 }
 
-function listOps(r: Rng) {
+function listOps(r: Rng, tier: Tier) {
   for (;;) {
-    const size = int(r, 14, 18);
-    const values = Array.from({ length: size }, () => int(r, 1, 60));
+    const size = tier ? int(r, 30, 40) : int(r, 20, 26);
+    const values = Array.from({ length: size }, () => int(r, 1, 99));
     // Make sure some numbers repeat.
-    for (let i = 0; i < 3; i += 1)
+    for (let i = 0; i < 4; i += 1)
       values[int(r, 0, size - 1)] = pick(r, values);
     const counts = new Map<number, number>();
     for (const v of values) counts.set(v, (counts.get(v) ?? 0) + 1);
-    const variant = int(r, 0, 1);
     let value: number;
     let instruction: string;
-    if (variant === 0) {
+    if (int(r, 0, 1) === 0) {
       const kept = values
         .filter((v) => counts.get(v) === 1)
         .sort((a, b) => b - a);
@@ -730,19 +801,20 @@ function listOps(r: Rng) {
   }
 }
 
-const GENERATORS: Record<Family, (r: Rng) => Omit<BenchTask, "id" | "family">> =
-  {
-    arithmetic,
-    "date-offset": dateOffset,
-    weekday,
-    "letter-count": letterCount,
-    modpow,
-    "base-conversion": baseConversion,
-    knights,
-    ordering,
-    trace,
-    "list-ops": listOps,
-  };
+type Generated = Omit<BenchTask, "id" | "family" | "tier">;
+
+const GENERATORS: Record<Family, (r: Rng, tier: Tier) => Generated> = {
+  arithmetic,
+  "date-offset": dateOffset,
+  weekday,
+  "letter-count": letterCount,
+  modpow,
+  "base-conversion": baseConversion,
+  knights,
+  ordering,
+  trace,
+  "list-ops": listOps,
+};
 
 /** Every task depends only on (seed, family, index): order-independent. */
 export function generateBenchmark(
@@ -750,10 +822,14 @@ export function generateBenchmark(
   perFamily: number,
 ): BenchTask[] {
   return FAMILIES.flatMap((family) =>
-    Array.from({ length: perFamily }, (_, index) => ({
-      id: `${family}-${index + 1}`,
-      family,
-      ...GENERATORS[family](rngOf(`${seed}:${family}:${index}`)),
-    })),
+    Array.from({ length: perFamily }, (_, index) => {
+      const tier = (index % 2) as Tier;
+      return {
+        id: `${family}-${index + 1}`,
+        family,
+        tier,
+        ...GENERATORS[family](rngOf(`${seed}:${family}:${index}`), tier),
+      };
+    }),
   );
 }

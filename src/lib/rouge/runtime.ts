@@ -295,6 +295,7 @@ export class RougeRuntime {
         answeredBy = `${request.requestId}:${thought.answeredBy}`;
         cognition = {
           mode: thought.mode,
+          taskModel: thought.modelSource,
           taskKind: thought.taskModel?.kind ?? null,
           difficulty: thought.taskModel?.difficulty ?? null,
           approaches: thought.approaches,

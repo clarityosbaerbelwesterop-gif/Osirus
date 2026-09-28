@@ -53,6 +53,8 @@ export type Thought = {
   finalAnswer: string;
   mode: "direct" | "search";
   taskModel: TaskModel | null;
+  /** Whether the task model came from the core or the fallback. */
+  modelSource: "parsed" | "fallback";
   approaches: number;
   confidence: number | null;
   adjudicated: boolean;
@@ -134,14 +136,14 @@ export async function think(input: {
     conversation,
     "quick",
   ).catch(() => "");
-  const taskModel =
-    parseTaskModel(modelText) ?? fallbackTaskModel(lastUser(conversation));
+  const parsed = parseTaskModel(modelText);
+  const taskModel = parsed ?? fallbackTaskModel(lastUser(conversation));
+  const modelSource = parsed ? "parsed" : "fallback";
   const brief = briefing(taskModel);
 
   const search =
-    taskModel.needsReasoning &&
-    SEARCH_KINDS.has(taskModel.kind) &&
-    config.candidates >= 2;
+    config.candidates >= 2 &&
+    (!parsed || (taskModel.needsReasoning && SEARCH_KINDS.has(taskModel.kind)));
 
   if (!search) {
     status("Thinking");
@@ -159,6 +161,7 @@ export async function think(input: {
       finalAnswer: input.shortAnswer ? extractFinal(text) : text,
       mode: "direct",
       taskModel,
+      modelSource,
       approaches: 0,
       confidence: null,
       adjudicated: false,
@@ -288,6 +291,7 @@ export async function think(input: {
       finalAnswer: final,
       mode: "search",
       taskModel,
+      modelSource,
       approaches: approaches.length,
       confidence: agreement.confidence,
       adjudicated,
@@ -312,6 +316,7 @@ export async function think(input: {
     finalAnswer: final,
     mode: "search",
     taskModel,
+    modelSource,
     approaches: approaches.length,
     confidence: agreement.confidence,
     adjudicated,

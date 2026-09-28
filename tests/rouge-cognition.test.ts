@@ -180,6 +180,14 @@ describe("task model", () => {
     expect(parseTaskModel("no json at all")).toBeNull();
   });
 
+  it("finds the task model among reasoning, braces in prose and trailing commas", () => {
+    const text = `<think>maybe {kind: code}?</think>\nSets like {1, 2} matter.\n${modelJson().replace(/}$/, ",}")}\nDone.`;
+    expect(parseTaskModel(text)).toMatchObject({
+      kind: "computation",
+      difficulty: 2,
+    });
+  });
+
   it("pads approaches with distinct general ones", () => {
     const model = parseTaskModel(modelJson())!;
     const three = approachesFor(model, 3);
@@ -354,13 +362,18 @@ describe("thinking (M57 kernel)", () => {
     await expect(run()).rejects.toMatchObject({ code: "insufficient_credit" });
   });
 
-  it("falls back to one direct answer when the task model is unusable", async () => {
+  it("still deliberates when the task model is unusable", async () => {
     const { run, fake } = thinkWith({
       model: "I cannot do JSON",
-      direct: "391",
+      solve: "FINAL ANSWER: 391",
+      synthesis: "391",
     });
-    expect(await run()).toMatchObject({ mode: "direct", text: "391" });
-    expect(fake.seen.map((s) => s.step)).toEqual(["model", "direct"]);
+    expect(await run()).toMatchObject({
+      mode: "search",
+      modelSource: "fallback",
+      finalAnswer: "391",
+    });
+    expect(fake.seen.filter((s) => s.step === "solve")).toHaveLength(3);
   });
 
   it("thinks harder on request: deep solvers, ultra checks", async () => {

@@ -90,7 +90,7 @@ describe("M57 benchmark generation", () => {
       (t) => t.family === "trace",
     )!;
     expect(trace.prompt).toContain("x = -13");
-    expect(trace.expected).toBe("0");
+    expect(trace.expected).toBe("344");
   });
 
   it("stays out of Rouge: nothing in src/ imports the benchmark", () => {

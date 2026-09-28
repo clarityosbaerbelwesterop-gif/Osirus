@@ -48,11 +48,19 @@ import { paired } from "./rouge/stats";
 // ROUGE_M57_SET          dev | holdout (default holdout)
 // ROUGE_M57_SEED         holdout seed (default: random)
 // ROUGE_M57_PER_FAMILY   tasks per family (default 3 dev, 6 holdout)
-// ROUGE_M57_SC           self-consistency samples (default 5; 0 = off)
-// ROUGE_M57_CONCURRENCY  model calls in flight at once (default 10)
-// ROUGE_M57_PARALLEL     tasks in flight at once (default 4)
-// ROUGE_M57_BUDGET_MS    no new task starts after this (default 55 min)
+// ROUGE_M57_SIDES        comma-separated sides (default raw,rouge,sc);
+//                        "raw" alone calibrates difficulty on dev
+// ROUGE_M57_SC           self-consistency samples (default 5)
+// ROUGE_M57_CONCURRENCY  model calls in flight at once (default 4)
+// ROUGE_M57_PARALLEL     tasks in flight at once (default 2)
+// ROUGE_M57_BUDGET_MS    no new task starts after this (default 300 min)
 // ROUGE_EVIDENCE         where to write the JSON evidence
+//
+// The free core is tightly rate limited. A rate limit or outage is
+// infrastructure, not capability, so every side retries it the same way
+// (honouring Retry-After, on the same key) before a call counts as failed.
+// The first development run, without retries, lost half of its raw calls
+// to rate limits and could not be scored.
 
 type Side = "raw" | "sc" | "rouge";
 type Outcome = Verdict | "failed";
@@ -63,9 +71,43 @@ type TaskResult = {
   outcome: Record<Side, Outcome | null>;
   failure: Partial<Record<Side, string>>;
   calls: Record<Side, number>;
+  retries: Record<Side, number>;
   latencyMs: Record<Side, number | null>;
   cognition: RougeCognition | null;
+  tier: number;
 };
+
+const RETRYABLE = new Set([
+  "rate_limited",
+  "provider_unavailable",
+  "timeout",
+  "capacity_deferred",
+]);
+const MAX_RETRIES = 6;
+
+const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/** Honour Retry-After when given; otherwise back off 20 s, 40 s, ... 180 s. */
+function backoffMs(error: unknown, attempt: number) {
+  const asked = (error as { retryAfterMs?: number })?.retryAfterMs;
+  const base = Math.min(180_000, 20_000 * 2 ** attempt);
+  return Math.max(asked ?? 0, base) + Math.floor(Math.random() * 5_000);
+}
+
+const retryable = (error: unknown) =>
+  RETRYABLE.has((error as { code?: string })?.code ?? "");
+
+async function withRetry<T>(job: () => Promise<T>, onRetry: () => void) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return await job();
+    } catch (error) {
+      if (!retryable(error) || attempt >= MAX_RETRIES) throw error;
+      onRetry();
+      await sleep(backoffMs(error, attempt));
+    }
+  }
+}
 
 /** Caps model calls in flight across every side. */
 class Limiter {
@@ -90,10 +132,16 @@ class Limiter {
   }
 }
 
+/**
+ * The core behind Rouge, with the same call cap and the same retries as the
+ * raw sides. A call is retried only before it produced any output: an
+ * answer is never stitched together from two attempts.
+ */
 class LimitedFoundation implements FoundationAdapter {
   constructor(
     private readonly inner: FoundationAdapter,
     private readonly limiter: Limiter,
+    private readonly onRetry: (requestId: string) => void,
   ) {}
   get core() {
     return this.inner.core;
@@ -102,11 +150,24 @@ class LimitedFoundation implements FoundationAdapter {
     return this.inner.servedModel(requestId);
   }
   async *stream(call: FoundationCall) {
-    await this.limiter.acquire();
-    try {
-      yield* this.inner.stream(call);
-    } finally {
-      this.limiter.release();
+    for (let attempt = 0; ; attempt += 1) {
+      let started = false;
+      let failure: unknown = null;
+      await this.limiter.acquire();
+      try {
+        for await (const event of this.inner.stream(call)) {
+          started = true;
+          yield event;
+        }
+        return;
+      } catch (error) {
+        if (started || !retryable(error) || attempt >= MAX_RETRIES) throw error;
+        failure = error;
+      } finally {
+        this.limiter.release();
+      }
+      this.onRetry(call.requestId);
+      await sleep(backoffMs(failure, attempt));
     }
   }
 }
@@ -135,13 +196,20 @@ it(
       set === "dev" ? "m57-dev-1" : process.env.ROUGE_M57_SEED || randomUUID();
     const perFamily =
       Number(process.env.ROUGE_M57_PER_FAMILY) || (set === "dev" ? 3 : 6);
-    const samples = Math.max(0, Number(process.env.ROUGE_M57_SC ?? 5));
-    const limiter = new Limiter(
-      Math.max(1, Number(process.env.ROUGE_M57_CONCURRENCY) || 10),
+    const sides = new Set(
+      (process.env.ROUGE_M57_SIDES || "raw,rouge,sc")
+        .split(",")
+        .map((side) => side.trim()),
     );
-    const parallel = Math.max(1, Number(process.env.ROUGE_M57_PARALLEL) || 4);
+    const samples = sides.has("sc")
+      ? Math.max(2, Number(process.env.ROUGE_M57_SC) || 5)
+      : 0;
+    const limiter = new Limiter(
+      Math.max(1, Number(process.env.ROUGE_M57_CONCURRENCY) || 4),
+    );
+    const parallel = Math.max(1, Number(process.env.ROUGE_M57_PARALLEL) || 2);
     const deadline =
-      Date.now() + (Number(process.env.ROUGE_M57_BUDGET_MS) || 55 * 60_000);
+      Date.now() + (Number(process.env.ROUGE_M57_BUDGET_MS) || 300 * 60_000);
 
     const tasks = generateBenchmark(seed, perFamily);
 
@@ -159,9 +227,15 @@ it(
     }
 
     const spec = coreSpec(core);
+    // Rouge's retries, per task: request ids are "m57:rouge:<task>:...".
+    const rougeRetries = new Map<string, number>();
     const foundation = new LimitedFoundation(
       new UnoRouterFoundation(spec, { priority: "P1" }),
       limiter,
+      (requestId) => {
+        const task = requestId.split(":")[2] ?? "";
+        rougeRetries.set(task, (rougeRetries.get(task) ?? 0) + 1);
+      },
     );
     const rouge = new RougeRuntime({
       foundation,
@@ -170,27 +244,33 @@ it(
     });
     // The raw core, exactly as a caller without Rouge would use it: no
     // system prompt, the reasoning level Rouge's "standard" maps to.
-    const rawCall = (requestId: string, prompt: string) =>
-      limiter.run(async () => {
-        const provider = new UnoRouterProvider({
-          model: core,
-          fallback: false,
-          priority: "P1",
-          reasoningEffort: spec.reasoningLevels.length ? "medium" : undefined,
-        });
-        const result = await provider.complete({
-          requestId,
-          role: "STRONG",
-          messages: [{ role: "user", content: prompt }],
-        });
-        // Integrity: the named core answered, nobody else.
-        const served = provider.servedModel?.(requestId);
-        if (served && served !== core)
-          throw Object.assign(new Error("substituted"), {
-            code: "substituted",
-          });
-        return result.text;
-      });
+    const rawCall = (requestId: string, prompt: string, onRetry: () => void) =>
+      withRetry(
+        () =>
+          limiter.run(async () => {
+            const provider = new UnoRouterProvider({
+              model: core,
+              fallback: false,
+              priority: "P1",
+              reasoningEffort: spec.reasoningLevels.length
+                ? "medium"
+                : undefined,
+            });
+            const result = await provider.complete({
+              requestId,
+              role: "STRONG",
+              messages: [{ role: "user", content: prompt }],
+            });
+            // Integrity: the named core answered, nobody else.
+            const served = provider.servedModel?.(requestId);
+            if (served && served !== core)
+              throw Object.assign(new Error("substituted"), {
+                code: "substituted",
+              });
+            return result.text;
+          }),
+        onRetry,
+      );
 
     const runTask = async (task: BenchTask): Promise<TaskResult> => {
       const result: TaskResult = {
@@ -199,16 +279,20 @@ it(
         outcome: { raw: null, sc: null, rouge: null },
         failure: {},
         calls: { raw: 1, sc: samples, rouge: 0 },
+        retries: { raw: 0, sc: 0, rouge: 0 },
         latencyMs: { raw: null, sc: null, rouge: null },
         cognition: null,
+        tier: task.tier,
       };
       const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
       const raw = (async () => {
+        if (!sides.has("raw")) return;
         const started = Date.now();
         try {
           const text = await rawCall(
             `m57:raw:${task.id}:${stamp}`,
             task.prompt,
+            () => (result.retries.raw += 1),
           );
           result.outcome.raw = task.check(text);
           result.latencyMs.raw = Date.now() - started;
@@ -222,12 +306,14 @@ it(
         const started = Date.now();
         const replies = await Promise.all(
           Array.from({ length: samples }, (_, i) =>
-            rawCall(`m57:sc${i}:${task.id}:${stamp}`, task.prompt).catch(
-              (error: unknown) => {
-                result.failure.sc = refusalCode(error);
-                return null;
-              },
-            ),
+            rawCall(
+              `m57:sc${i}:${task.id}:${stamp}`,
+              task.prompt,
+              () => (result.retries.sc += 1),
+            ).catch((error: unknown) => {
+              result.failure.sc = refusalCode(error);
+              return null;
+            }),
           ),
         );
         const answered = replies.filter(
@@ -252,6 +338,7 @@ it(
         result.latencyMs.sc = Date.now() - started;
       })();
       const kernel = (async () => {
+        if (!sides.has("rouge")) return;
         try {
           const response = await rouge.respond({
             requestId: `m57:rouge:${task.id}:${stamp}`,
@@ -275,6 +362,7 @@ it(
         }
       })();
       await Promise.all([raw, sc, kernel]);
+      result.retries.rouge = rougeRetries.get(task.id) ?? 0;
       return result;
     };
 
@@ -300,9 +388,10 @@ it(
         results.push(r);
         const c = r.cognition;
         console.log(
-          `task ${r.id}: raw ${mark(r.outcome.raw)} sc ${mark(r.outcome.sc)} rouge ${mark(r.outcome.rouge)}` +
-            ` | rouge ${c ? `${c.mode} kind=${c.taskKind} d=${c.difficulty} conf=${c.confidence?.toFixed(2) ?? "-"}${c.adjudicated ? " adjudicated" : ""}${c.verified ? " verified" : ""}${c.corrected ? " corrected" : ""}` : "-"} calls ${r.calls.rouge}` +
+          `task ${r.id} t${r.tier}: raw ${mark(r.outcome.raw)} sc ${mark(r.outcome.sc)} rouge ${mark(r.outcome.rouge)}` +
+            ` | rouge ${c ? `${c.mode} tm=${c.taskModel} kind=${c.taskKind} d=${c.difficulty} conf=${c.confidence?.toFixed(2) ?? "-"}${c.adjudicated ? " adjudicated" : ""}${c.verified ? " verified" : ""}${c.corrected ? " corrected" : ""}` : "-"} calls ${r.calls.rouge}` +
             ` | ms raw ${r.latencyMs.raw ?? "-"} sc ${r.latencyMs.sc ?? "-"} rouge ${r.latencyMs.rouge ?? "-"}` +
+            ` | retries raw ${r.retries.raw} sc ${r.retries.sc} rouge ${r.retries.rouge}` +
             (Object.keys(r.failure).length
               ? ` | failures ${JSON.stringify(r.failure)}`
               : ""),
@@ -358,6 +447,7 @@ it(
         noAnswer: done.filter((r) => r.outcome[s] === "no_answer").length,
         failed: done.filter((r) => r.outcome[s] === "failed").length,
         of: done.length,
+        retries: done.reduce((sum, r) => sum + r.retries[s], 0),
         meanCalls: done.length
           ? Number(
               (
@@ -372,11 +462,33 @@ it(
         ),
       };
     };
-    const summary = (
-      samples
-        ? (["raw", "sc", "rouge"] as Side[])
-        : (["raw", "rouge"] as Side[])
-    ).map(side);
+    const summary = (["raw", "sc", "rouge"] as Side[])
+      .filter((s) => sides.has(s))
+      .map(side);
+    // Difficulty per family and tier, from whatever each side answered:
+    // this is what a dev calibration run is read for.
+    const accuracy = FAMILIES.flatMap((family) =>
+      [0, 1].map((tier) => {
+        const rows = results.filter(
+          (r) => r.family === family && r.tier === tier,
+        );
+        const rate = (s: Side) => {
+          const done = rows.filter(
+            (r) => r.outcome[s] !== null && r.outcome[s] !== "failed",
+          );
+          return done.length
+            ? `${done.filter((r) => right(r, s)).length}/${done.length}`
+            : "-";
+        };
+        return {
+          family,
+          tier,
+          raw: rate("raw"),
+          sc: rate("sc"),
+          rouge: rate("rouge"),
+        };
+      }),
+    );
 
     // The gate, fixed before any holdout run (docs/rouge/architecture.md):
     const coverage = vsRaw.length / tasks.length;
@@ -402,7 +514,9 @@ it(
       skipped,
       selfConsistencySamples: samples,
       at: new Date().toISOString(),
+      sides: [...sides],
       summary,
+      accuracy,
       rougeVsRaw,
       rougeVsSc,
       byFamily,
@@ -421,6 +535,7 @@ it(
     );
     console.table(summary);
     console.table(byFamily);
+    console.table(accuracy);
     const pct = (x: number) => `${(x * 100).toFixed(1)} pp`;
     console.log(
       `Rouge vs raw: ${pct(rougeVsRaw.diff)} (95% CI ${pct(rougeVsRaw.ci95[0])} .. ${pct(rougeVsRaw.ci95[1])}), rouge-only ${rougeVsRaw.aOnly}, raw-only ${rougeVsRaw.bOnly}, McNemar p=${rougeVsRaw.pValue.toFixed(4)}, n=${rougeVsRaw.n}`,
@@ -433,5 +548,5 @@ it(
       `Gate: ${JSON.stringify(gate)} => ${passed ? "PASSED" : "NOT PASSED"}`,
     );
   },
-  70 * 60_000,
+  (Number(process.env.ROUGE_M57_BUDGET_MS) || 300 * 60_000) + 40 * 60_000,
 );

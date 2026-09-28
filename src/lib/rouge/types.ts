@@ -88,6 +88,8 @@ export type RougeResponse = {
 /** What deliberation did for one answer. Metadata only, never content. */
 export type RougeCognition = {
   mode: "direct" | "search";
+  /** "fallback" when the core's task model could not be read. */
+  taskModel: "parsed" | "fallback";
   taskKind: string | null;
   difficulty: number | null;
   approaches: number;

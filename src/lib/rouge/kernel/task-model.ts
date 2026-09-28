@@ -76,13 +76,41 @@ function kindOf(value: unknown): (typeof TASK_KINDS)[number] {
   return KIND_ALIASES[kind] ?? "analysis";
 }
 
+/**
+ * The task-model object in a reply: prose, fences and reasoning around it
+ * are tolerated. Balanced objects are tried from the last one back, so a
+ * brace in earlier text cannot break the parse.
+ */
 function jsonIn(text: string): unknown {
-  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i)?.[1];
-  const source = fenced ?? text;
-  const start = source.indexOf("{");
-  const end = source.lastIndexOf("}");
-  if (start < 0 || end <= start) throw new Error("no JSON object");
-  return JSON.parse(source.slice(start, end + 1));
+  const source = text.replace(/<think>[\s\S]*?<\/think>/gi, "");
+  const candidates: string[] = [];
+  for (let start = 0; start < source.length; start += 1) {
+    if (source[start] !== "{") continue;
+    let depth = 0;
+    let inString = false;
+    for (let i = start; i < source.length; i += 1) {
+      const ch = source[i];
+      if (inString) {
+        if (ch === "\\") i += 1;
+        else if (ch === '"') inString = false;
+      } else if (ch === '"') inString = true;
+      else if (ch === "{") depth += 1;
+      else if (ch === "}" && --depth === 0) {
+        candidates.push(source.slice(start, i + 1));
+        start = i;
+        break;
+      }
+    }
+  }
+  for (const candidate of candidates.reverse()) {
+    try {
+      const value = JSON.parse(candidate.replace(/,\s*([}\]])/g, "$1"));
+      if (value && typeof value === "object" && "kind" in value) return value;
+    } catch {
+      // try the next candidate
+    }
+  }
+  throw new Error("no task model object");
 }
 
 /** Parse a model-written task model; tolerant of fences and prose around it. */
@@ -128,7 +156,11 @@ export function parseTaskModel(text: string): TaskModel | null {
   }
 }
 
-/** Used when the task model cannot be built: assume it is worth thinking about. */
+/**
+ * Used when the task model cannot be built. Rouge then assumes the task is
+ * worth deliberating on: a failed analysis must not quietly downgrade a
+ * hard question to one unchecked call.
+ */
 export function fallbackTaskModel(goal: string): TaskModel {
   return {
     kind: "analysis",

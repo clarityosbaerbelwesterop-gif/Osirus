@@ -35,6 +35,11 @@ on:
         required: false
         type: string
         default: ""
+      sides:
+        description: (capability) sides to run; "raw" alone calibrates difficulty
+        required: false
+        type: string
+        default: raw,rouge,sc
 
 permissions:
   contents: read
@@ -46,7 +51,9 @@ concurrency:
 jobs:
   evaluate:
     runs-on: ubuntu-latest
-    timeout-minutes: 75
+    # The capability gate runs every side on a rate-limited free core, with
+    # retries: it needs hours, not minutes.
+    timeout-minutes: ${{ inputs.mode == 'capability' && 350 || 75 }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -67,6 +74,7 @@ jobs:
           ROUGE_CANDIDATES: ${{ inputs.candidates }}
           ROUGE_M57_SET: ${{ inputs.set }}
           ROUGE_M57_PER_FAMILY: ${{ inputs.per_family }}
+          ROUGE_M57_SIDES: ${{ inputs.sides }}
           ROUGE_EVIDENCE: ${{ runner.temp }}/rouge-eval.json
           RSI_EVAL: ${{ inputs.mode == 'core-selection' && 'evals/rouge-core-selection.eval.ts' || inputs.mode == 'kernel' && 'evals/rouge-kernel.eval.ts' || inputs.mode == 'capability' && 'evals/rouge-m57.eval.ts' || 'evals/rouge-foundation.eval.ts' }}
         run: npx vitest run --config vitest.rsi.config.ts
