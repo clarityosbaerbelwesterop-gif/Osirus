@@ -81,41 +81,65 @@ overhead:**
 
 ## 3. Time and cost of `rouge-1-sft-001`
 
-**Workload.** About 20k examples (the owner's 10k–50k range), capped at 8k
-tokens each, averaging about 1.5k tokens. That is **~30M tokens, 1 epoch**.
+**Workload (measured, not estimated).** The built dataset `rouge-sft-v0`
+([`training/rouge/datasets/manifests/rouge-sft-v0.json`](../../training/rouge/datasets/manifests/rouge-sft-v0.json)):
+
+- 18,224 conversations, each at most 7,500 tokens with the pinned tokenizer;
+- **49,080,674 tokens** in total (mean 2,693, median 2,098, p95 7,017);
+- 1 epoch = **1,139 optimizer steps** of 16 sequences.
+
+Every token passes forward and backward; the loss counts assistant tokens
+only.
 
 **Compute.** QLoRA with gradient checkpointing costs about 6 × 27.4B ≈
 **164 GFLOP per token**: forward, recomputed forward, and backward through
-the activations. NF4 dequantisation lowers the achieved throughput.
-Throughput assumes the fused DeltaNet kernels (`flash-linear-attention`)
-are installed; without them it is several times slower.
+the activations. For 49.1M tokens that is **≈ 8.1 × 10¹⁸ FLOP**. NF4
+dequantisation lowers the achieved throughput. The throughput assumes the
+fused DeltaNet kernels (`flash-linear-attention`) are installed; without
+them it is several times slower.
 
-| GPU (1×)   | Dense BF16 peak | Assumed utilisation | ≈ tokens/s | Training 30M tokens | Price / h (Sep 2026)                                                |
-| ---------- | --------------- | ------------------- | ---------- | ------------------- | ------------------------------------------------------------------- |
-| H100 80 GB | ~989 TFLOPS     | 25%                 | ~1,500     | **~5.6 h**          | $1.99 (RunPod community) – $2.99 (RunPod secure, SXM); Lambda $3.29 |
-| A100 80 GB | ~312 TFLOPS     | 30%                 | ~570       | ~14.6 h             | $1.39 – 1.59 (RunPod)                                               |
-| L40S 48 GB | ~181 TFLOPS     | 30%                 | ~330       | ~25 h               | $0.79 (RunPod community)                                            |
+| GPU (1×)   | Dense BF16 peak | Assumed utilisation | ≈ tokens/s | Training 49.1M tokens | Price / h (Sep 2026)                                                |
+| ---------- | --------------- | ------------------- | ---------- | --------------------- | ------------------------------------------------------------------- |
+| H100 80 GB | ~989 TFLOPS     | 25%                 | ~1,500     | **~9.1 h**            | $1.99 (RunPod community) – $2.99 (RunPod secure, SXM); Lambda $3.29 |
+| A100 80 GB | ~312 TFLOPS     | 30%                 | ~570       | ~24 h                 | $1.39 – 1.59 (RunPod)                                               |
+| L40S 48 GB | ~181 TFLOPS     | 30%                 | ~330       | ~41 h                 | $0.79 (RunPod community)                                            |
 
 **Whole job on one GPU**, including:
 
 - the 55.6 GB download and sha256 check (~15 min);
 - training;
 - the adapter merge into BF16 (~20–30 min, needs ≥ 128 GB host RAM);
-- base-versus-Rouge evaluation with vLLM (~1 h for both models);
-- a 20% margin for setup and a restart.
+- base-versus-Rouge evaluation with vLLM (~1 h for both models on an H100);
+- the 55.6 GB checkpoint upload (~30 min);
+- a 20% margin for setup and a restart;
+- a ≥ 250 GB volume for about one day (~$1).
 
 | Option                          | Node time | **Expected cost**            |
 | ------------------------------- | --------- | ---------------------------- |
-| **1× H100 80 GB (recommended)** | ~8–9 h    | **$16 – 27** ($1.99–2.99/h)  |
-| 1× A100 80 GB                   | ~18–20 h  | $25 – 32                     |
-| 1× L40S 48 GB                   | ~28–30 h  | ~$23 + eval on FP8, not BF16 |
+| **1× H100 80 GB (recommended)** | ~13–14 h  | **$28 – 42** ($1.99–2.99/h)  |
+| 1× A100 80 GB                   | ~32 h     | $45 – 52                     |
+| 1× L40S 48 GB                   | ~54 h     | ~$43 + eval on FP8, not BF16 |
 
-**Recommendation: one H100 80 GB for about $16–27 in total.**
+**Recommendation: one H100 80 GB, expected $28–42, approved up to $45.**
 
-- It is the fastest route.
+- It is the fastest route and costs no more than the slower GPUs.
 - It gives headroom for 16k sequences.
 - It can evaluate base and Rouge both in unquantised BF16 on the same
   hardware.
+
+**Cost guards (in code and in the account).**
+
+- `configs/sft-001.json` sets `max_train_hours: 11`. After 20 optimizer
+  steps the run projects its training time from measured throughput. Above
+  11 h it saves a resumable checkpoint and stops with the projection in
+  `metrics.jsonl`, so a slower-than-planned GPU cannot run up the bill.
+  Continuing needs a new decision. The CI smoke run tests this guard.
+- RunPod is prepaid: a $45 credit is a hard ceiling for the whole job.
+- The pod is stopped as soon as the checkpoint is uploaded and verified.
+
+**Cheaper variant, if wanted.** A 30M-token subset (about 11k
+conversations) needs ~5.6 h of training: about $19–28 on the same H100.
+It trains on less data, so the recommendation stays the full set.
 
 **Storage.**
 
@@ -130,7 +154,8 @@ are installed; without them it is several times slower.
 
 1. The CI smoke run is green: the real tokenizer and training path on a
    tiny model.
-2. The SFT dataset is built and its manifest reviewed.
+2. The SFT dataset is built and its manifest reviewed (done: `rouge-sft-v0`,
+   18,224 conversations, sha256 in the manifest).
 3. The owner approves the exact provider, GPU and cost.
 4. A Hugging Face token with write access to the Rouge model repository is
    available as a secret on the GPU host. It is never committed.

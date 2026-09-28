@@ -56,6 +56,11 @@ class RunConfig:
     keep_checkpoints: int = 2
     # Stop after this many optimizer steps in this process (tests resume).
     stop_after: int | None = None
+    # Cost guard: after `budget_check_step` optimizer steps, the run projects
+    # its total training time from measured throughput; above this many
+    # hours it saves a resumable checkpoint and stops with the projection.
+    max_train_hours: float | None = None
+    budget_check_step: int = 20
 
     @classmethod
     def load(cls, path: str | Path) -> "RunConfig":
@@ -78,6 +83,8 @@ class RunConfig:
             raise ValueError("optimizer must be adamw or paged_adamw_8bit")
         if self.max_seq_len < 16 or self.micro_batch_size < 1 or self.grad_accum < 1:
             raise ValueError("invalid batch or sequence settings")
+        if self.max_train_hours is not None and (self.max_train_hours <= 0 or self.budget_check_step < 1):
+            raise ValueError("max_train_hours must be positive and budget_check_step >= 1")
 
     def to_dict(self) -> dict:
         return asdict(self)

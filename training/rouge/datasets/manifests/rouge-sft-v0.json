@@ -1,0 +1,65 @@
+{
+ "schema": "rouge.dataset-manifest-summary/1",
+ "name": "rouge-sft-v0",
+ "note": "Summary of the build manifest.json. The data itself is the rouge-sft-data artifact of the run below (retention 90 days) and is never committed. Check a download with: python -m rouge_train.cli verify-data --data <dir> --manifest datasets/manifests/rouge-sft-v0.json",
+ "build": {
+  "workflow": ".github/workflows/rouge-data.yml",
+  "run_id": 36458743136,
+  "job_id": 109051666557,
+  "code_commit": "8884694",
+  "artifact": "rouge-sft-data",
+  "artifact_id": 10986969450,
+  "artifact_zip_sha256": "22495cc0c4626663ca9a0d6fb41b82ec1985ad246a38c6598d1913cbff7a20aa",
+  "built_at": "2026-09-28T17:46:00Z"
+ },
+ "registry_version": "2026-09-28.4",
+ "tokenizer": "Qwen/Qwen3.5-27B@fc05daec18b0a78c049392ed2e771dde82bdf654 (tokenizer.json sha256 pinned in models/rouge-1/base.json)",
+ "max_tokens": 7500,
+ "train": {
+  "file": "train.jsonl",
+  "sha256": "2b2344b3a3ead3797a2817d9bd187f134b95619e45990da1eb824819b9a3adaf",
+  "records": 18224,
+  "german": 2632,
+  "tokens": {"total": 49080674, "mean": 2693, "p50": 2098, "p95": 7017},
+  "by_source": {
+   "opencode": 3000,
+   "rouge-generated": 2812,
+   "nemotron-stem": 2500,
+   "nemotron-math": 2500,
+   "tulu-oasst1": 2496,
+   "openr1-math": 1500,
+   "openmath-cot": 1183,
+   "oasst2-de": 1036,
+   "tulu-sciriff": 800,
+   "tulu-oasst1-de": 206,
+   "aya-de": 191
+  }
+ },
+ "eval": {
+  "file": "eval.jsonl",
+  "sha256": "4a6a64a496e08d17e778f553b5e570da2e3da9b29839da86bb54d8c6bd16b902",
+  "items": 654,
+  "by_category": {"reasoning": 190, "german": 130, "coding": 100, "instruction": 200, "format": 30, "identity": 4},
+  "sources": "MGSM en/de, MBPP, IFEval (468 of 541 instructions supported, 200 used), in-house generated items (eval seed namespace), identity"
+ },
+ "filters": {
+  "deduplicated_across_sources": 182,
+  "decontaminated_exact": 6,
+  "decontaminated_prefix_120": 183,
+  "dropped_too_long_after_read": 0,
+  "read_time_rejections": {
+   "nemotron-math": {"scanned": 28980, "too-long": 26274, "duplicate-prompt": 205},
+   "nemotron-stem": {"scanned": 15640, "too-long": 2268, "duplicate-prompt": 10871},
+   "openr1-math": {"scanned": 3138, "too-long": 651, "unverified": 986},
+   "openmath-cot": {"scanned": 3178, "no-answer": 1286, "too-long": 683, "duplicate-prompt": 8},
+   "opencode": {"scanned": 9612, "too-long": 5831, "duplicate-prompt": 780},
+   "aya-de": {"scanned": 202362, "not-german": 202121, "duplicate-prompt": 41, "short": 9},
+   "oasst2-de": {"scanned": 128575, "not-german-assistant": 125106, "not-top-ranked": 2270, "duplicate-prompt": 1}
+  }
+ },
+ "known_limits": [
+  "91% of Nemotron math traces exceed 7,500 tokens, so the math records kept are biased towards shorter solutions; long-reasoning data belongs to rouge-1-reasoning-001 (M59) at 16k+.",
+  "Human-written German is capped by what permissive sources contain: all 191 German Aya records, 1,036 rank-0 German OASST2 conversations, 206 German OASST1 conversations. The rest of the German share is computed in-house data.",
+  "No Claude or other restricted-terms model output is in the mixture; teacher outputs come only from DeepSeek-R1, Qwen3-235B-A22B and QwQ-32B (permissive terms, see registry.json)."
+ ]
+}

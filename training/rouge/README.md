@@ -25,7 +25,7 @@ own trained checkpoints.
 | `rouge_train/cli.py`                   | verify / verify-data / train / merge / generate / compare / manifest on the GPU host                                                             |
 | `rouge_train/smoke.py`                 | The whole path on a tiny random model of the base architecture. **The tiny model is not Rouge.**                                                 |
 | `scripts/`                             | `base_manifest.py`, `fetch_tokenizer.py`, `verify_weights.py`, `size_qlora.py`, `dataset_licenses.py`                                            |
-| `configs/sft-001.json`                 | The `rouge-1-sft-001` run: QLoRA r = 32, 8k sequences, 1 GPU                                                                                     |
+| `configs/sft-001.json`                 | The `rouge-1-sft-001` run: QLoRA r = 32, 8k sequences, 1 GPU, 11 h cost guard                                                                    |
 | `checkpoints/`                         | Checkpoint manifests (none yet)                                                                                                                  |
 
 ## Checks

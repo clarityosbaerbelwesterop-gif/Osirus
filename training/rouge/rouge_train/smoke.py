@@ -150,7 +150,7 @@ def run(workdir: Path, tokenizer_path: str | None, vocab_size: int | None = None
     tokenizer.save_pretrained(base_dir)
     train_path, eval_path = smoke_data(workdir)
 
-    def config(name: str, stop_after=None) -> RunConfig:
+    def config(name: str, stop_after=None, max_train_hours=None) -> RunConfig:
         return RunConfig(
             name="rouge-1-sft-001", base_path=str(base_dir), tokenizer_path=str(tok_dir),
             train_file=str(train_path), eval_file=str(eval_path), output_dir=str(workdir / name),
@@ -158,7 +158,7 @@ def run(workdir: Path, tokenizer_path: str | None, vocab_size: int | None = None
             quantization="none", dtype="float32", gradient_checkpointing=True,
             max_seq_len=256, micro_batch_size=4, grad_accum=2, learning_rate=2e-2,
             warmup_ratio=0.05, epochs=12, loss_chunk_tokens=16, save_every=5, log_every=1,
-            stop_after=stop_after,
+            stop_after=stop_after, max_train_hours=max_train_hours, budget_check_step=3,
         )
 
     straight = train(config("run-straight"))
@@ -166,6 +166,11 @@ def run(workdir: Path, tokenizer_path: str | None, vocab_size: int | None = None
     assert first["status"] == "stopped", first
     resumed = train(config("run-resumed"))
     assert resumed["resumed_from"] == "step-000007", resumed["resumed_from"]
+    # The cost guard stops a run whose projected time exceeds its budget,
+    # leaving a resumable checkpoint.
+    guarded = train(config("run-guarded", max_train_hours=1e-9))
+    assert guarded["status"] == "over-budget" and guarded["step"] == 3, guarded
+    assert (workdir / "run-guarded" / "checkpoints" / "step-000003").is_dir()
 
     from safetensors.torch import load_file
 

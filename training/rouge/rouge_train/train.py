@@ -206,11 +206,22 @@ def train(config: RunConfig) -> dict:
                 log.flush()
             last = state["step"] == total_steps
             stopping = config.stop_after is not None and steps_this_process >= config.stop_after
+            projection = None
+            if config.max_train_hours is not None and steps_this_process == config.budget_check_step and not last:
+                elapsed = time.time() - started
+                hours = elapsed / steps_this_process * (total_steps - state["step"] + steps_this_process) / 3600
+                projection = {"step": state["step"], "elapsed_s": round(elapsed, 1), "projected_total_h": round(hours, 3),
+                              "max_train_hours": config.max_train_hours, "over": hours > config.max_train_hours}
+                log.write(json.dumps({"budget_check": projection}) + "\n")
+                log.flush()
+                stopping = stopping or projection["over"]
             if state["step"] % config.save_every == 0 or last or stopping:
                 _save_checkpoint(model, optimizer, scheduler, state, output, config.keep_checkpoints)
             if stopping and not last:
                 log.close()
-                return {"status": "stopped", "step": state["step"], "resumed_from": resumed_from}
+                over = projection is not None and projection["over"]
+                return {"status": "over-budget" if over else "stopped", "step": state["step"],
+                        "resumed_from": resumed_from, "budget_check": projection}
         if state["cursor"] >= len(micro):
             state["epoch"] += 1
             state["cursor"] = 0

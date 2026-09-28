@@ -6,7 +6,11 @@
   "eval_file": "/workspace/data/rouge-sft-v0/eval.jsonl",
   "output_dir": "/workspace/runs/rouge-1-sft-001",
   "seed": 20260928,
-  "lora": { "rank": 32, "alpha": 64, "dropout": 0.05 },
+  "lora": {
+    "rank": 32,
+    "alpha": 64,
+    "dropout": 0.05
+  },
   "quantization": "4bit",
   "dtype": "bfloat16",
   "gradient_checkpointing": true,
@@ -22,5 +26,7 @@
   "loss_chunk_tokens": 1024,
   "save_every": 100,
   "log_every": 10,
-  "keep_checkpoints": 2
+  "keep_checkpoints": 2,
+  "max_train_hours": 11.0,
+  "budget_check_step": 20
 }

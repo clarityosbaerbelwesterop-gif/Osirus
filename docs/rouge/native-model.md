@@ -73,14 +73,13 @@ M58 is **not** complete because training code exists. It completes when
 
 **Status:**
 
-| Item                             | State                                                                                                                                                              |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Pipeline                         | Built and tested                                                                                                                                                   |
-| CI smoke run                     | Tiny model of the base's architecture with the real tokenizer: data → template → forward/backward → LoRA → checkpoint → resume → merge → reload → inference → eval |
-| In-house generators              | Built                                                                                                                                                              |
-| Open-source SFT mixture          | Being assembled                                                                                                                                                    |
-| Single-GPU sizing and exact cost | In `compute-plan.md`                                                                                                                                               |
-| **The real run**                 | **Waits for the owner's approval.** Recommended: 1× H100 80 GB, about $16–27                                                                                       |
+| Item                             | State                                                                                                                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Pipeline                         | Built and tested; records base revision, dataset hashes, config, LoRA, seed, steps, loss and checkpoint hashes                                                                  |
+| CI smoke run                     | Tiny model of the base's architecture with the real tokenizer: data → template → forward/backward → LoRA → checkpoint → resume → cost guard → merge → reload → inference → eval |
+| SFT dataset `rouge-sft-v0`       | Built: 18,224 conversations, 49.1M tokens, 2,632 German; hidden eval 654 items ([manifest](../../training/rouge/datasets/manifests/rouge-sft-v0.json))                          |
+| Single-GPU sizing and exact cost | In `compute-plan.md`                                                                                                                                                            |
+| **The real run**                 | **Waits for the owner's approval.** Recommended: 1× H100 80 GB, expected $28–42, approved up to $45                                                                             |
 
 ## Rules
 
