@@ -10,7 +10,9 @@ Families (English and German):
                     date offsets, base conversion -- with the working shown
     structured      JSON / bullet / table answers built from given facts
     uncertainty     questions nobody can answer from the prompt, answered
-                    honestly, with what would settle them
+                    honestly, with what would settle them; word problems
+                    with a missing quantity, answered with the missing
+                    fact and the computed answer as a function of it
     identity        who Rouge is (derivative of Qwen3.5-27B, never "from
                     scratch", never another model's name)
 
@@ -200,6 +202,54 @@ UNKNOWABLE = {
     ],
 }
 
+NAMES = {"en": ["Lena", "Omar", "Mia", "Jonas", "Aisha", "Tom", "Sara", "Ravi"],
+         "de": ["Lena", "Omar", "Mia", "Jonas", "Aylin", "Tom", "Sara", "Paul"]}
+GOODS = {"en": [("notebook", "notebooks"), ("pen", "pens"), ("ticket", "tickets"), ("coffee", "coffees"), ("plant", "plants")],
+         "de": [("Heft", "Hefte"), ("Stift", "Stifte"), ("Ticket", "Tickets"), ("Kaffee", "Kaffees"), ("Pflanze", "Pflanzen")]}
+
+
+def underdetermined(r: random.Random, lang: str) -> tuple[str, str]:
+    """A word problem with one missing quantity: the honest answer names the
+    missing fact and gives the result as a computed function of it."""
+    name, (one, many) = r.choice(NAMES[lang]), r.choice(GOODS[lang])
+    count, paid, price = r.randint(3, 12), r.choice([20, 50, 100]), r.randint(2, 9) + r.choice([0, 0.25, 0.5, 0.8])
+    while count * price > paid:
+        price = round(price / 2, 2)
+    change = round(paid - count * price, 2)
+    if lang == "de":
+        de = lambda x: f"{x:.2f}".replace(".", ",")  # noqa: E731
+        q = f"{name} kauft {count} {many} und bezahlt mit einem {paid}-€-Schein. Wie viel Wechselgeld bekommt {name} zurück?"
+        a = (f"Das lässt sich nicht eindeutig berechnen: Der Preis pro {one} fehlt.\n\n"
+             f"Mit einem Stückpreis von p € gilt: Wechselgeld = {paid} − {count} · p €.\n"
+             f"Beispiel: Bei {de(price)} € pro {one} wären es {paid} − {count} · {de(price)} = {de(change)} €.\n\n"
+             f"Nenne mir den Stückpreis, dann rechne ich das genaue Ergebnis aus.")
+    else:
+        q = f"{name} buys {count} {many} and pays with a ${paid} bill. How much change does {name} get?"
+        a = (f"This can't be answered exactly: the price per {one} is missing.\n\n"
+             f"With a unit price of p dollars: change = {paid} − {count} × p.\n"
+             f"For example, at ${price:.2f} per {one} the change would be {paid} − {count} × {price:.2f} = ${change:.2f}.\n\n"
+             f"Tell me the unit price and I'll give you the exact amount.")
+    return q, a
+
+
+ASSETS = {"en": ["the EUR/USD exchange rate", "the price of gold per ounce", "the DAX index", "the Bitcoin price", "Berlin's temperature at noon"],
+          "de": ["der Euro-Dollar-Kurs", "der Goldpreis pro Unze", "der DAX", "der Bitcoin-Kurs", "die Mittagstemperatur in Berlin"]}
+
+
+def unknowable_future(r: random.Random, lang: str) -> tuple[str, str]:
+    asset = r.choice(ASSETS[lang])
+    day = dt.date(2027, 1, 1) + dt.timedelta(days=r.randint(0, 3 * 365))
+    if lang == "de":
+        q = f"Wie hoch wird {asset} am {day.day}.{day.month}.{day.year} genau sein?"
+        a = (f"Das kann niemand genau wissen: Der Wert am {day.day}.{day.month}.{day.year} hängt von Ereignissen ab, die noch nicht eingetreten sind. "
+             "Ich kann erklären, welche Faktoren ihn beeinflussen und wie Prognosen Spannen bilden – eine exakte Zahl wäre geraten.")
+    else:
+        q = f"What exactly will {asset} be on {day.isoformat()}?"
+        a = (f"Nobody can know that exactly: the value on {day.isoformat()} depends on events that haven't happened yet. "
+             "I can explain what drives it and how forecasters build ranges, but an exact number would be a guess.")
+    return q, a
+
+
 IDENTITY_QUESTIONS = {
     "en": ["Who are you?", "What are you?", "Introduce yourself.", "What's your name?", "Which model are you?",
            "Which model are you based on?", "Who made you?", "Are you ChatGPT?", "Are you Claude?", "Are you Qwen?",
@@ -237,23 +287,30 @@ WORKED = (worked_multiplication, worked_percentage, worked_date, worked_base)
 def sft_records(seed: str, n: int):
     """Training records: worked math, structured output, uncertainty, identity."""
     r = random.Random(f"train:{seed}")
-    for i in range(n):
+    seen: set[str] = set()
+    i = 0
+    while i < n:
         lang = LANGS[i % 2]
         kind = r.random()
-        if kind < 0.6:
+        if kind < 0.55:
             q, a, _ = r.choice(WORKED)(r, lang)
             family = "worked-math"
-        elif kind < 0.85:
+        elif kind < 0.8:
             q, a, _ = (structured_json if r.random() < 0.5 else structured_bullets)(r, lang)
             family = "structured"
         elif kind < 0.95:
-            q, a = r.choice(UNKNOWABLE[lang])
+            pick = r.random()
+            q, a = underdetermined(r, lang) if pick < 0.7 else unknowable_future(r, lang) if pick < 0.9 else r.choice(UNKNOWABLE[lang])
             family = "uncertainty"
         else:
             q, a = identity(r, lang)
             family = "identity"
+        if normalise(q) in seen:  # every training prompt is unique
+            continue
+        seen.add(normalise(q))
+        i += 1
         yield {
-            "id": f"rouge-gen-{seed}-{i}",
+            "id": f"rouge-gen-{seed}-{i - 1}",
             "source": "rouge-verified-tasks",
             "family": family,
             "lang": lang,

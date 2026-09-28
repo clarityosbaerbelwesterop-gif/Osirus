@@ -209,6 +209,9 @@ class GeneratorTest(unittest.TestCase):
         families = {r["family"] for r in train}
         self.assertEqual(families, {"worked-math", "structured", "uncertainty", "identity"})
         self.assertEqual({r["lang"] for r in train}, {"en", "de"})
+        # Every training prompt is unique: no record is a repeat to memorise.
+        prompts = [generators.normalise(r["messages"][0]["content"]) for r in train]
+        self.assertEqual(len(prompts), len(set(prompts)))
         for record in train:
             answer = record["messages"][1]["content"]
             if record["family"] == "identity":
@@ -218,6 +221,14 @@ class GeneratorTest(unittest.TestCase):
                     self.assertRegex(answer, r"^No\b|rather than|not ")
                 self.assertNotRegex(answer, r"(?i)\bI (was|am) (pre)?trained from scratch")
             question = record["messages"][0]["content"]
+            change = re.match(r"\w+ (?:buys|kauft) (\d+) .* (?:\$|)(\d+)(?:-€-Schein| bill)", question)
+            if change:
+                # The missing unit price is named, and the worked example is exact.
+                self.assertRegex(answer, r"price per|Preis pro")
+                count, paid = int(change.group(1)), int(change.group(2))
+                example = re.search(r"(\d+[.,]\d{2}) = \$?(\d+[.,]\d{2})", answer)
+                price, rest = (float(x.replace(",", ".")) for x in example.groups())
+                self.assertAlmostEqual(paid - count * price, rest, places=2)
             product = re.match(r"(?:Compute|Berechne) ([\d.,]+) × ([\d.,]+)", question)
             if product:
                 a, b = (int(re.sub(r"[.,]", "", x)) for x in product.groups())

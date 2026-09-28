@@ -19,8 +19,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import random
 import re
+import subprocess
 import sys
 from collections import Counter
 from pathlib import Path
@@ -39,10 +41,9 @@ GERMAN = {
 QUOTAS = {
     "nemotron-math": 2500,
     "nemotron-stem": 2500,
-    "nemotron-code": 2500,
     "openr1-math": 1500,
     "openmath-cot": 1200,
-    "opencode": 1500,
+    "opencode": 3000,
     "tulu-oasst1": 2500,
     "tulu-oasst1-de": 800,
     "tulu-sciriff": 800,
@@ -50,11 +51,29 @@ QUOTAS = {
     "oasst2-de": 1500,
     "rouge-generated": 3000,
 }
-# Assistant turns longer than this are skipped at read time (about 6.5k
-# tokens), so quotas fill with records that fit the 8k training window.
-MAX_ANSWER_CHARS = 24_000
+# Records are measured with the pinned tokenizer at read time, so quotas
+# fill with records that fit the 8k training window. Anything longer than
+# this many characters is skipped before tokenising (it cannot fit).
+MAX_RECORD_CHARS = 40_000
+# Nemotron v1 "code" is not used: 150,001 rows scanned in build v1 gave one
+# usable record (70% over length, 30% repeated prompts); its prompts are the
+# OpenCodeReasoning set, which is read directly instead.
 ALLOWED_GENERATORS = ("Qwen3-235B-A22B", "DeepSeek-R1")
 ALLOWED_OPENMATH = ("DeepSeek-R1", "QwQ-32B")
+
+
+TOKENIZER = None  # the pinned base tokenizer, loaded in main()
+
+
+def n_tokens(record: dict) -> int:
+    """Tokens of a record: contents plus 8 per message for the template."""
+    return sum(len(TOKENIZER.encode(m["content"]).ids) + 8 for m in record["messages"])
+
+
+def prompt_key(record: dict) -> str:
+    """Deduplication key: every user turn, normalised. Multi-turn
+    conversations that share an opening are different conversations."""
+    return generators.normalise("\n".join(m["content"] for m in record["messages"] if m["role"] == "user"))
 
 
 def german(text: str) -> bool:
@@ -98,10 +117,10 @@ def take(name: str, rows, adapt, quota: int, max_scan: int, stats: dict):
         if record is None:
             reasons[reason] += 1
             continue
-        if sum(len(m["content"]) for m in record["messages"] if m["role"] == "assistant") > MAX_ANSWER_CHARS:
+        if sum(len(m["content"]) for m in record["messages"]) > MAX_RECORD_CHARS or n_tokens(record) > MAX_TOKENS:
             reasons["too-long"] += 1
             continue
-        prompt = generators.normalise(next(m["content"] for m in record["messages"] if m["role"] == "user"))
+        prompt = prompt_key(record)
         if prompt in prompts:
             reasons["duplicate-prompt"] += 1
             continue
@@ -117,7 +136,7 @@ def build_train(reg: dict, stats: dict) -> list[dict]:
     records: list[dict] = []
 
     repo, rev = pinned(reg, "nemotron-post-training-v1")
-    for split in ("math", "stem", "code"):
+    for split in ("math", "stem"):
         def adapt(row):
             if not str(row.get("generator", "")).startswith(ALLOWED_GENERATORS):
                 return None, "generator"
@@ -176,8 +195,9 @@ def build_train(reg: dict, stats: dict) -> list[dict]:
             bucket = "tulu-sciriff"
         else:
             continue
-        if len(buckets[bucket]) < QUOTAS[bucket]:
-            buckets[bucket].append({"id": f"tulu-{row['id']}", "source": bucket, "messages": messages, "meta": {"tulu_source": source}})
+        record = {"id": f"tulu-{row['id']}", "source": bucket, "messages": messages, "meta": {"tulu_source": source}}
+        if len(buckets[bucket]) < QUOTAS[bucket] and sum(len(m["content"]) for m in messages) <= MAX_RECORD_CHARS and n_tokens(record) <= MAX_TOKENS:
+            buckets[bucket].append(record)
     for bucket, rows in buckets.items():
         stats[bucket] = {"kept": len(rows), "quota": QUOTAS[bucket], "scanned_tulu_rows": scanned}
         print(f"{bucket}: kept {len(rows)}/{QUOTAS[bucket]}", flush=True)
@@ -277,13 +297,11 @@ def build_eval(reg: dict, stats: dict) -> list[dict]:
     return items
 
 
-def token_filter(records: list[dict], tokenizer_file: Path, stats: dict) -> list[dict]:
-    from tokenizers import Tokenizer
-
-    tok = Tokenizer.from_file(str(tokenizer_file))
+def token_filter(records: list[dict], stats: dict) -> list[dict]:
+    """Final length gate (every source is already measured at read time)."""
     kept, lengths = [], []
     for record in records:
-        n = sum(len(tok.encode(m["content"]).ids) + 8 for m in record["messages"])
+        n = n_tokens(record)
         if n <= MAX_TOKENS:
             record["meta"]["approx_tokens"] = n
             kept.append(record)
@@ -295,7 +313,23 @@ def token_filter(records: list[dict], tokenizer_file: Path, stats: dict) -> list
     return kept
 
 
+def is_german(record: dict) -> bool:
+    if record["meta"].get("lang"):
+        return record["meta"]["lang"] == "de"
+    return german(" ".join(m["content"] for m in record["messages"] if m["role"] == "assistant"))
+
+
+def code_commit() -> str | None:
+    if os.environ.get("GITHUB_SHA"):
+        return os.environ["GITHUB_SHA"]
+    try:
+        return subprocess.run(["git", "rev-parse", "HEAD"], capture_output=True, text=True, check=True, cwd=HERE).stdout.strip()
+    except (OSError, subprocess.CalledProcessError):
+        return None
+
+
 def main() -> None:
+    global TOKENIZER
     parser = argparse.ArgumentParser()
     parser.add_argument("--out", required=True)
     parser.add_argument("--tokenizer", help="tokenizer.json of the pinned base (fetched if absent)")
@@ -307,16 +341,17 @@ def main() -> None:
 
     tokenizer_file = Path(args.tokenizer) if args.tokenizer else out / "tokenizer" / "tokenizer.json"
     if not tokenizer_file.exists():
-        import subprocess
-
         subprocess.run([sys.executable, str(HERE.parent / "scripts" / "fetch_tokenizer.py"), str(tokenizer_file.parent)], check=True)
 
+    from tokenizers import Tokenizer
+
+    TOKENIZER = Tokenizer.from_file(str(tokenizer_file))
     eval_items = build_eval(reg, stats)
     train = build_train(reg, stats)
 
     seen, unique = set(), []
     for record in train:
-        key = generators.normalise(next(m["content"] for m in record["messages"] if m["role"] == "user"))
+        key = prompt_key(record)
         if key in seen:
             continue
         seen.add(key)
@@ -328,7 +363,7 @@ def main() -> None:
     final = [r for r in clean if generators.normalise(next(m["content"] for m in r["messages"] if m["role"] == "user"))[:120] not in prefixes]
     stats["decontaminated_exact"] = removed
     stats["decontaminated_prefix"] = len(clean) - len(final)
-    final = token_filter(final, tokenizer_file, stats)
+    final = token_filter(final, stats)
     random.Random(SEED).shuffle(final)
 
     def write(name: str, rows: list[dict]) -> str:
@@ -340,11 +375,14 @@ def main() -> None:
         "schema": "rouge.dataset-manifest/1",
         "name": "rouge-sft-v0",
         "registry_version": reg["version"],
+        "code_commit": code_commit(),
+        "max_tokens": MAX_TOKENS,
         "seed": SEED,
         "sources": {e["id"]: {"source": e["source"], "revision": e.get("revision"), "license": e["license"], "role": e["role"]}
                     for e in reg["datasets"] if e["status"] == "approved" or e["role"] == "eval-only"},
         "train": {"file": "train.jsonl", "sha256": write("train.jsonl", final), "records": len(final),
-                  "by_source": dict(Counter(r["source"] for r in final))},
+                  "by_source": dict(Counter(r["source"] for r in final)),
+                  "german": sum(is_german(r) for r in final)},
         "eval": {"file": "eval.jsonl", "sha256": write("eval.jsonl", eval_items), "items": len(eval_items),
                  "by_category": dict(Counter(i["category"] for i in eval_items))},
         "stats": stats,
