@@ -15,7 +15,7 @@ import urllib.error
 import urllib.request
 from pathlib import Path
 
-REGISTRY = Path(__file__).resolve().parent.parent / "data" / "registry.json"
+REGISTRY = Path(__file__).resolve().parent.parent / "datasets" / "registry.json"
 
 
 def main() -> None:

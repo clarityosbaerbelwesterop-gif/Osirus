@@ -1,246 +1,160 @@
-# Rouge 1 — compute plan (M58)
+# Rouge 1 — compute plan (M58, single GPU)
 
-Rouge 1 is a derivative of **Qwen3.5-397B-A17B**, pinned at revision
-`8472618112abcbd45acbcdc58436aff4233c23f7`. The pin is in
-`training/rouge/manifests/base-qwen3.5-397b-a17b.json`, taken from GitHub
-Actions run 36450878053.
+Rouge 1 v1 is trained from **Qwen/Qwen3.5-27B**, pinned at
+`fc05daec18b0a78c049392ed2e771dde82bdf654`. The pin lives in
+`models/rouge-1/base.json`.
 
-This plan estimates what each kind of work needs. **No paid compute is
-bought without the owner's approval.** GitHub Actions and Vercel cannot
-train or serve this model; every figure below assumes rented datacenter
-GPUs.
+**Scope.**
+
+- **No datacenter, no cluster, no recurring GPU infrastructure.** The first
+  Rouge checkpoint is one QLoRA job on **one** GPU.
+- **Nothing is rented without explicit owner approval.**
+- The earlier 397B / multi-node plan is withdrawn (owner correction,
+  2026-09-28). It remains in git history only.
 
 **How to read the numbers.**
 
-- Architecture figures are **exact**: they come from the pinned
-  `config.json` and model card.
-- Throughput and cost are **estimates** from first principles, with the
-  assumptions stated next to them.
-- Prices are **planning ranges**, not quotes. They are re-quoted from the
-  chosen provider before any approval request.
+- **Exact:** the architecture and the parameter counts. They come from the
+  pinned config, and the parameters are counted by instantiating the model
+  on the meta device (`training/rouge/scripts/size_qlora.py`).
+- **Estimates:** memory and time. Nothing has run on a GPU yet. The first
+  run records the real peak memory and throughput next to these estimates.
+- **Planning prices:** public list prices from September 2026 (sources at
+  the end). They are re-checked on the day of rental.
 
-## 1. The model, as pinned
+## 1. The base
 
-| Property             | Value (source: pinned config / model card)                                                                |
-| -------------------- | --------------------------------------------------------------------------------------------------------- |
-| Licence              | Apache-2.0 (LICENSE sha256 `bbedc3fd…`), not gated                                                        |
-| Parameters           | 397B total, 17B activated (LM); 403.4B in safetensors including the vision encoder and MTP                |
-| Weights              | 94 BF16 safetensors shards, 806.8 GB, every shard's sha256 pinned                                         |
-| Layers               | 60 = 15 × (3 × Gated DeltaNet → MoE, 1 × Gated Attention → MoE)                                           |
-| MoE                  | 512 experts, 10 routed + 1 shared per token, expert FFN 1024 wide                                         |
-| Attention            | 15 full-attention layers: 32 query heads, **2 KV heads**, head dim 256; 45 linear (Gated DeltaNet) layers |
-| Vision               | 27-layer ViT encoder, early-fusion multimodal                                                             |
-| Context              | 262,144 tokens natively; model card: YaRN factor 4 → about 1,010,000 tokens (inference-time scaling)      |
-| Serving (model card) | vLLM / SGLang main branch, tensor parallel 8, MTP speculative decoding supported                          |
+| Property  | Value                                                                                              |
+| --------- | -------------------------------------------------------------------------------------------------- |
+| Licence   | Apache-2.0 (LICENSE sha256 `50cbab8a…`), not gated                                                 |
+| Weights   | 11 BF16 safetensors shards, 55.6 GB, every shard's sha256 pinned                                   |
+| Model     | `Qwen3_5ForConditionalGeneration`: dense 27B language model plus a 27-layer vision encoder         |
+| Layers    | 64 = 16 × (3 × Gated DeltaNet → FFN, 1 × Gated Attention → FFN); hidden 5120, FFN 17408            |
+| Attention | 24 query heads, 4 KV heads, head dim 256 (16 layers); DeltaNet with 16 QK / 48 V heads (48 layers) |
+| Context   | 262,144 native; the model card says it extends to ~1,010,000 with YaRN at inference                |
 
-**What the architecture means for cost.**
+**Parameter counts (exact, as loaded):**
 
-- **Cheap to hold long contexts.** Only 15 of the 60 layers keep a KV
-  cache, with 2 KV heads each. That is 30 KiB per token:
+- 27,356,728,560 in total;
+- 24.33B in the LoRA-target linear layers;
+- embedding and output head 1.27B each;
+- vision 0.46B.
 
-  | Context | KV cache per sequence |
-  | ------- | --------------------- |
-  | 262k    | 7.5 GiB               |
-  | 1M      | 30 GiB                |
-  | 2M      | 60 GiB                |
+The multi-token-prediction head is not loaded for training. The merge
+carries it over unchanged (see `rouge_train/merge.py`).
 
-  The 45 DeltaNet layers keep a fixed 180 MiB state per sequence.
+## 2. Single-GPU QLoRA memory
 
-- **Expensive to compute over long contexts.** The full-attention layers
-  still cost quadratic FLOPs. At 2M tokens they cost about 15 times the
-  parameters' own compute per token. §6 covers this.
-- **Heavy to hold the weights.** The weights alone are 807 GB in BF16, so
-  one inference or LoRA replica needs a full 8-GPU node of H200 or B200.
+**Setup.**
 
-## 2. Hardware reference
+- 4-bit NF4 with double quantisation for every language-model linear layer.
+- Embedding, output head, norms and vision stay BF16.
+- Gradient checkpointing.
+- Chunked output-head loss: at most 1,024 positions of FP32 logits at once,
+  instead of the full 248k × sequence.
+- Micro-batch 1, paged 8-bit AdamW for the adapter.
 
-| GPU      | Memory | Dense BF16 peak | Planning price / GPU-hour |
-| -------- | ------ | --------------- | ------------------------- |
-| H100 SXM | 80 GB  | ~989 TFLOPS     | $2.0 – 3.0                |
-| H200 SXM | 141 GB | ~989 TFLOPS     | $2.5 – 4.0                |
-| B200     | 180 GB | ~2,250 TFLOPS   | $4.0 – 6.0                |
+| Item                                | Size                                    |
+| ----------------------------------- | --------------------------------------- |
+| Quantised weights (NF4 + BF16 rest) | **18.6 GB**                             |
+| LoRA r = 16, trainable              | 109M parameters, ~1.1 GB with optimiser |
+| LoRA r = 64, trainable              | 435M parameters, ~4.4 GB with optimiser |
 
-**Throughput assumptions.**
+**Estimated peak memory, including about 3 GB of CUDA and allocator
+overhead:**
 
-- Fine-grained MoE training (512 small experts) runs at low model FLOPs
-  utilisation. The plan assumes **15% (conservative) to 30% (well-tuned)
-  MFU**.
-- Training compute per token is 6 × 17B active parameters for full tuning,
-  plus attention.
-- For LoRA it is about 4 × 17B, because the frozen weights need no weight
-  gradients.
+| Sequence length | r = 16  | r = 64  |
+| --------------- | ------- | ------- |
+| 2,048           | 26.8 GB | 30.0 GB |
+| 4,096           | 28.8 GB | 32.0 GB |
+| 8,192           | 32.8 GB | 36.1 GB |
+| 16,384          | 40.9 GB | 44.2 GB |
 
-## 3. Inference and evaluation
+**Conclusions** (calculated, not yet measured):
 
-| Setup                     | Fits?                                    | Notes                                                                                                 |
-| ------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| 8 × H200 (1,128 GB), BF16 | Yes: 807 GB weights, about 250 GB for KV | The model card's reference setup (TP = 8)                                                             |
-| 8 × B200 (1,440 GB), BF16 | Yes, with ample KV headroom              | Needed for many concurrent 1M+ contexts                                                               |
-| 8 × H100 (640 GB), BF16   | **No**                                   | —                                                                                                     |
-| 8 × H100, FP8 (~404 GB)   | Yes                                      | Only if an official FP8 checkpoint exists (unverified) or we quantise; must be evaluated against BF16 |
+- **24 GB GPUs are not enough.**
+- **One 48 GB GPU** (L40S, RTX 6000 Ada, A6000) fits 4k–8k sequences with
+  margin. At 16k it fits only r ≤ 32.
+- **One 80 GB GPU** (A100 / H100) fits everything up to 16k comfortably.
+  It is also the smallest single GPU that can evaluate the model in
+  unquantised BF16 (55 GB of weights).
 
-- **Evaluation runs** on one node: base versus candidate, about 3–6 hours
-  per suite set. That is about **$60–200 per comparison** on 8 × H200.
-- **Product serving**, dedicated 24/7 on one 8 × H200 node, costs about
-  **$14,600 – 23,400 per month**. That is not justified at launch traffic.
+## 3. Time and cost of `rouge-1-sft-001`
 
-  Cheaper routes, each verified before M71:
-  1. A provider that serves this exact base with our own LoRA adapter,
-     charging per token. The Rouge weights are then the pinned base plus
-     our adapter.
-  2. Our own node, reserved only when traffic justifies it.
+**Workload.** About 20k examples (the owner's 10k–50k range), capped at 8k
+tokens each, averaging about 1.5k tokens. That is **~30M tokens, 1 epoch**.
 
-  Rule for both: no other model's weights ever answer as Rouge 1.
+**Compute.** QLoRA with gradient checkpointing costs about 6 × 27.4B ≈
+**164 GFLOP per token**: forward, recomputed forward, and backward through
+the activations. NF4 dequantisation lowers the achieved throughput.
+Throughput assumes the fused DeltaNet kernels (`flash-linear-attention`)
+are installed; without them it is several times slower.
 
-## 4. Parameter-efficient tuning (LoRA / QLoRA)
+| GPU (1×)   | Dense BF16 peak | Assumed utilisation | ≈ tokens/s | Training 30M tokens | Price / h (Sep 2026)                                                |
+| ---------- | --------------- | ------------------- | ---------- | ------------------- | ------------------------------------------------------------------- |
+| H100 80 GB | ~989 TFLOPS     | 25%                 | ~1,500     | **~5.6 h**          | $1.99 (RunPod community) – $2.99 (RunPod secure, SXM); Lambda $3.29 |
+| A100 80 GB | ~312 TFLOPS     | 30%                 | ~570       | ~14.6 h             | $1.39 – 1.59 (RunPod)                                               |
+| L40S 48 GB | ~181 TFLOPS     | 30%                 | ~330       | ~25 h               | $0.79 (RunPod community)                                            |
 
-**LoRA** (BF16 base frozen):
+**Whole job on one GPU**, including:
 
-- **Memory.** The 807 GB base plus adapter and optimiser state plus
-  activations.
-  - One **8 × H200** node fits, with sequence length up to 32k and
-    activation checkpointing.
-  - 16 × H100 also fits.
-- **Targets.**
-  - Attention projections in all 60 layers: the Gated Attention layers'
-    q/k/v/o and the DeltaNet layers' input and output projections.
-  - The shared expert.
-  - Not the 512 routed experts: rank-64 LoRA on every routed expert would
-    add about 7.5B trainable parameters.
-- **Throughput.** The theoretical bound at 15–30% MFU is 15–30k tokens/s
-  per node. Small expert matrices and expert-parallel communication will
-  cost part of that, so the plan assumes **3–10k tokens/s** until measured.
-- **Cost per 100M training tokens:** about 3–9 GPU-node-hours, which is
-  **$60–290**. Add the base download of 807 GB (0.5–1 h), merge and
-  evaluation.
+- the 55.6 GB download and sha256 check (~15 min);
+- training;
+- the adapter merge into BF16 (~20–30 min, needs ≥ 128 GB host RAM);
+- base-versus-Rouge evaluation with vLLM (~1 h for both models);
+- a 20% margin for setup and a restart.
 
-**QLoRA** (4-bit base, about 212 GB):
+| Option                          | Node time | **Expected cost**            |
+| ------------------------------- | --------- | ---------------------------- |
+| **1× H100 80 GB (recommended)** | ~8–9 h    | **$16 – 27** ($1.99–2.99/h)  |
+| 1× A100 80 GB                   | ~18–20 h  | $25 – 32                     |
+| 1× L40S 48 GB                   | ~28–30 h  | ~$23 + eval on FP8, not BF16 |
 
-- It could fit on 4 × H100.
-- Tooling risk is high: 4-bit quantisation of fused MoE expert tensors and
-  the DeltaNet kernels must be supported by the pinned library versions.
-- QLoRA also trains against a quantised base, so the merged BF16 checkpoint
-  must be re-evaluated.
-- Kept as a fallback, not the plan.
+**Recommendation: one H100 80 GB for about $16–27 in total.**
 
-## 5. Full-parameter tuning and continued pretraining
+- It is the fastest route.
+- It gives headroom for 16k sequences.
+- It can evaluate base and Rouge both in unquantised BF16 on the same
+  hardware.
 
-**Memory.** Mixed-precision AdamW needs about 16 bytes per parameter:
-BF16 weights and gradients, plus FP32 master weights and two moments. That
-is **6.45 TB**, sharded across GPUs with expert and data parallelism.
+**Storage.**
 
-- The minimum is about 54 × H200 at 120 GB usable each.
-- The plan is **64 × H200 (8 nodes)**, or 128 × H100.
-- A resumable checkpoint (weights plus optimiser) is about **7.3 TB**.
+- The merged checkpoint is 55.6 GB, the adapter about 0.2–1 GB.
+- The checkpoint goes to a dedicated Rouge model repository on the Hugging
+  Face Hub (Xet-backed): a private repo at no cost within the free storage
+  tier, or on the owner's plan.
+- Only the manifest (hashes, lineage, config, evaluations) enters the Osirus
+  repository.
 
-**Throughput** (64 × H200, 16k sequences):
+**Before rental, all of these are needed:**
 
-| MFU | Tokens/s | Hours per 1B tokens |
-| --- | -------- | ------------------- |
-| 15% | ~83k     | 3.3                 |
-| 30% | ~166k    | 1.7                 |
+1. The CI smoke run is green: the real tokenizer and training path on a
+   tiny model.
+2. The SFT dataset is built and its manifest reviewed.
+3. The owner approves the exact provider, GPU and cost.
+4. A Hugging Face token with write access to the Rouge model repository is
+   available as a secret on the GPU host. It is never committed.
 
-**Cost.** 64 × H200 at $2.5–4.0 per GPU-hour is $160–256 per hour.
+## 4. Later stages (not now)
 
-| Work                  | Tokens | Cost        |
-| --------------------- | ------ | ----------- |
-| Full tuning           | 1B     | ~$270 – 850 |
-| Continued pretraining | 20B    | ~$5k – 17k  |
-| Continued pretraining | 100B   | ~$27k – 85k |
+**Sequence length.**
 
-**When it is justified.** Full tuning is justified only once LoRA
-checkpoints plateau on measured weaknesses. Every full-tuning run is a
-separate owner approval.
+- SFT starts at 4k–8k.
+- 16k is the next step on the same GPU.
+- 32k and 64k need an 80 GB GPU with context-parallel-free tricks (smaller
+  loss chunks, CPU offload). They are measured before they are claimed.
+- 128k–262k training and anything towards 512k / 1M / 2M is research after
+  Rouge training itself works. The base already handles 262k natively.
 
-## 6. Long-context training (262k → 512k → 1M → 2M)
+**Bigger runs.** Reasoning post-training, preference training and RL are
+each costed separately when their data exists. Each is a separate approval.
 
-**Step 0 costs nothing to train.** Measure first:
+## Sources
 
-- The model card already supports YaRN factor 4 (up to about 1.01M tokens)
-  at inference time.
-- Test at 128k, 262k, 512k and 1M on one 8 × H200 node:
-  - single-needle and multi-needle retrieval;
-  - cross-document reasoning;
-  - timeline reconstruction;
-  - contradictions;
-  - long-code navigation;
-  - position sweeps (beginning, middle, end).
-- Cost: a few node-hours, about **$100–250**.
-- Rouge claims only the context length its checkpoint passes.
-
-**Training beyond it.** This needs YaRN factor 8 or re-tuned RoPE, plus
-long-context continued pretraining and SFT.
-
-Compute per token at context L: 102 GFLOP for the parameters, plus the
-full-attention term (≈ 0.74 MFLOP × L).
-
-| Context | GFLOP / token | Seconds per sequence (64 × H200, 15–30% MFU) | Hours per 1B tokens |
-| ------- | ------------- | -------------------------------------------- | ------------------- |
-| 262k    | ~295          | —                                            | —                   |
-| 1M      | ~875          | 48 – 97                                      | 13 – 26             |
-| 2M      | ~1,650        | 182 – 364                                    | 24 – 48             |
-
-**Cost.** Training on 1B tokens of 2M-token sequences costs about
-**$3.8k – 12k**. A staged curriculum (512k → 1M → 2M, a few hundred million
-tokens per stage) costs about **$5k – 20k** in total.
-
-**Technical requirements:**
-
-- **Context parallelism.** One 2M-token sequence holds about 1 TB of
-  checkpointed activations, so it must be split across at least 16 GPUs.
-- **Kernels.** Context-parallel support for the Gated DeltaNet
-  (chunked-scan state passing) is the main technical risk. It must be
-  verified in the chosen framework before any rental.
-
-## 7. Storage
-
-| Item                             | Size      | Planning cost               |
-| -------------------------------- | --------- | --------------------------- |
-| Pinned base (BF16)               | 807 GB    | ~$16 / month object storage |
-| LoRA adapter checkpoint          | ~1 – 5 GB | negligible                  |
-| Merged derivative checkpoint     | 807 GB    | ~$16 / month each           |
-| Full-tuning resumable checkpoint | ~7.3 TB   | ~$150 / month each          |
-
-- Keep every promoted checkpoint, and only the last two resumable
-  checkpoints.
-- Egress is charged per provider: prefer training and serving in the
-  region where the weights are stored.
-- Nothing large goes into Git. The repository keeps manifests only, with
-  sha256, parent, run, data version, hyperparameters and evaluations.
-
-## 8. Training stack (to be confirmed on the first GPU day)
-
-Candidates, in order of fit for a hybrid DeltaNet MoE:
-
-1. **Megatron-Core with expert parallelism**, through ms-swift or
-   Megatron-Bridge (Hugging Face ↔ Megatron checkpoint conversion). This is
-   the natural fit for 512-expert MoE, LoRA and long-context context
-   parallelism.
-2. **Transformers + PEFT + TRL on FSDP2 / DeepSpeed ZeRO-3.** It is simpler,
-   but with no expert parallelism it gathers weights on every step. That is
-   acceptable for a first small SFT, poor at scale.
-3. **vLLM / SGLang** for evaluation and serving. The model card requires
-   their main branches for Qwen3.5.
-
-Library versions are locked on the GPU host (`pip freeze` into the run
-manifest, with the lock's sha256 in every checkpoint manifest). Nothing is
-pinned here that has not been installed and run.
-
-## 9. Cheapest realistic path to the first Rouge checkpoint
-
-| Step | What                                                                                                                                                                                         | Compute                     | Estimate       | Needs approval |
-| ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- | -------------- | -------------- |
-| A    | Smoke-train a tiny, randomly initialised model of the **same architecture class** through the exact training code path (LoRA targets, save, manifest, merge, reload) on a CI runner          | CPU (GitHub Actions)        | $0             | No             |
-| B    | Download the pinned base and verify every sha256 (`scripts/verify_weights.py`). Serve it with vLLM and measure **rouge-1-base** on the Rouge Lab v0 suites, including the YaRN context sweep | 1 × 8 × H200, about 6–8 h   | **$120 – 260** | **Yes**        |
-| C    | **rouge-1-sft-001**: LoRA on 50–100M tokens of approved SFT data, 1 epoch. Then merge, evaluate against base on the same held-out suites, and make the promotion decision                    | 1 × 8 × H200, about 10–14 h | **$250 – 560** | **Yes**        |
-
-Steps A–C total about **$400 – 800**. That buys one measured, reproducible
-Rouge checkpoint with a full manifest and a base-versus-Rouge comparison on
-held-out suites.
-
-**Before B.** The owner chooses a provider, and the price is re-quoted.
-Candidates are hourly 8 × H200 or B200 nodes, such as Lambda, RunPod,
-CoreWeave or Nebius. Each needs storage in the same region.
-
-**Before C.** At least 50M tokens of registry entries must be `approved`:
-licence verified at a pinned revision, and teacher terms checked.
+- [Runpod pricing vs Thunder Compute (2026)](https://www.thundercompute.com/blog/runpod-pricing-vs-thunder-compute)
+- [H100 rental prices across 15+ providers (2026)](https://intuitionlabs.ai/articles/h100-rental-prices-cloud-comparison)
+- [Runpod H100 pricing 2026 (Spheron)](https://www.spheron.network/blog/runpod-h100-pricing-2026/)
+- [Lambda Labs GPU pricing 2026](https://www.synpixcloud.com/blog/lambda-labs-gpu-pricing-2026)
+- [RunPod pricing in 2026 (Flexprice)](https://flexprice.io/blog/runprod-pricing-guide-with-gpu-costs)
+- [Runpod L40S](https://www.runpod.io/gpu-models/l40s)
+- [Runpod pricing](https://www.runpod.io/pricing)

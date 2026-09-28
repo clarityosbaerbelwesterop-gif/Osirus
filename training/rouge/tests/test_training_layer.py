@@ -190,3 +190,41 @@ class SeedTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GeneratorTest(unittest.TestCase):
+    def test_generated_data_is_correct_disjoint_and_reproducible(self):
+        import re
+
+        from rouge_train import evaluate, generators
+
+        train = list(generators.sft_records("s1", 400))
+        self.assertEqual(train, list(generators.sft_records("s1", 400)))
+        families = {r["family"] for r in train}
+        self.assertEqual(families, {"worked-math", "structured", "uncertainty", "identity"})
+        self.assertEqual({r["lang"] for r in train}, {"en", "de"})
+        for record in train:
+            answer = record["messages"][1]["content"]
+            if record["family"] == "identity":
+                self.assertIn("Qwen3.5-27B", answer)
+                self.assertNotIn("from scratch", answer.replace("not pretrained from scratch", ""))
+            question = record["messages"][0]["content"]
+            product = re.match(r"(?:Compute|Berechne) ([\d.,]+) × ([\d.,]+)", question)
+            if product:
+                a, b = (int(re.sub(r"[.,]", "", x)) for x in product.groups())
+                self.assertTrue(evaluate.check({"type": "numeric", "answer": a * b}, answer.replace(".", "")))
+
+        items = list(generators.eval_items("e1", 100))
+        eval_prompts = {i["messages"][0]["content"] for i in items}
+        big = list(generators.sft_records("s1", 5000))
+        clean, removed = generators.decontaminate(big, eval_prompts)
+        self.assertEqual(len(clean) + removed, len(big))
+        self.assertFalse({r["messages"][0]["content"] for r in clean} & eval_prompts)
+        # The generators' spaces are large: collisions are rare, not routine.
+        self.assertLess(removed, 5)
+        for item in items:
+            check = item["check"]
+            if check["type"] == "numeric":
+                self.assertTrue(evaluate.check(check, f"Answer: {check['answer']}"))
+            elif check["type"] == "regex":
+                self.assertTrue(evaluate.check(check, check["pattern"].replace("\\b", "")))
