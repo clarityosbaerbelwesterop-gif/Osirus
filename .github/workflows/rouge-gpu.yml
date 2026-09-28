@@ -7,8 +7,12 @@ name: Rouge GPU session
 #          pod, run training/rouge/scripts/gpu_session.sh on it, follow its
 #          phases, and delete the pod on every exit path (success, failure,
 #          cancel, time limit, price above the cap).
-# Paid compute: dispatched only after the owner's approval. Secrets:
-# RUNPOD_API_KEY, HF_TOKEN; variable ROUGE_HF_REPO. They are never printed.
+# Paid compute: the owner is asked before every run (cap 15 EUR per session;
+# worst case = max_hours x max_price <= 15 USD is enforced). The run job uses
+# the protected environment "rouge-gpu": with the owner as required reviewer
+# nothing starts -- and no secret is readable -- until the owner approves
+# the run in GitHub. Secrets RUNPOD_API_KEY, HF_TOKEN; variable
+# ROUGE_HF_REPO (environment or repository level). Never printed.
 
 on:
   # A push only probes the public API schema (no key, no cost).
@@ -71,6 +75,7 @@ jobs:
   run:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'run' }}
     runs-on: ubuntu-latest
+    environment: rouge-gpu
     timeout-minutes: 350
     env:
       EXPERIMENT: ${{ inputs.experiment }}

@@ -32,6 +32,9 @@ from pathlib import Path
 API = "https://rest.runpod.io/v1"
 IMAGE = "nvidia/cuda:12.8.1-base-ubuntu24.04"
 STARTUP_HOURS = 25 / 60  # no first phase by then: give up (the pod is deleted)
+# Owner's cap: at most 15 EUR per session. RunPod bills USD; 15 USD stays
+# below 15 EUR while 1 EUR >= 1 USD. Worst case = hard limit x price cap.
+BUDGET_USD = 15.0
 REPO_URL = "https://github.com/clarityosbaerbelwesterop-gif/Osirus"
 START = (
     "set -e; export DEBIAN_FRONTEND=noninteractive; "
@@ -66,6 +69,9 @@ def h100_types() -> list[str]:
 
 
 def create(args) -> None:
+    worst = args.max_hours * args.max_price
+    if worst > BUDGET_USD:
+        raise SystemExit(f"worst case {worst:.2f} USD (limit {args.max_hours} h x cap {args.max_price} USD/h) exceeds the owner's budget of {BUDGET_USD} USD")
     gpus = h100_types()
     if not gpus:
         raise SystemExit("no H100 GPU type in RunPod's API schema")

@@ -45,5 +45,10 @@
     "PASS": "scale the recipe: rouge-1-sft-001 with the same recipe on more data and steps; convert the checkpoint to Rouge Edge (GGUF) and measure it",
     "FAIL": "change data, loss or hyperparameters and register rouge-1-exp-002; the same recipe does not get more compute"
   },
-  "result": null
+  "result": null,
+  "budget": {
+    "owner_cap": "15 EUR per session",
+    "enforced": "worst case = hard limit (4.5 h) x price cap (3.30 USD/h) = 14.85 USD <= 15 USD; prepaid RunPod credit",
+    "approval": "the owner is contacted before every paid run; the run job waits for the owner's approval in the protected GitHub environment rouge-gpu"
+  }
 }
