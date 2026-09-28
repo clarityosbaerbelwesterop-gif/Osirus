@@ -246,3 +246,115 @@ same on it. What M56 measures is integrity:
 - effort maps as specified;
 - refusals are reported honestly;
 - the identity instruction adds a fixed token overhead.
+
+## 8. M57 cognitive kernel
+
+M57 is not done when the code is. It is done when a blind benchmark on the
+same core shows that Rouge is measurably more capable than the raw core.
+
+### What the kernel does (policy p2, `src/lib/rouge/kernel/`)
+
+1. **Task model** (`task-model.ts`). One quick call analyses the task before
+   anything is solved:
+   - its kind (computation, logic, code, knowledge, analysis, writing,
+     conversation);
+   - the goal, the givens and the constraints;
+   - the pitfalls a careful solver could still fall into;
+   - a difficulty from 1 to 5;
+   - two or three genuinely different approaches.
+2. **Approach search** (`cognition.ts`). Computation, logic and code tasks go
+   to independent solvers, one approach each, in parallel. Each solver is
+   briefed with the task model and ends with a committed `FINAL ANSWER`.
+3. **Uncertainty** (`answers.ts`). Rouge measures how far the approaches
+   agree. Formatting differences such as `1,234` against `1234` do not count
+   as disagreement.
+4. **Metacognition.**
+   - When the approaches disagree, an adjudicator re-derives the answer, audits
+     each attempt and names the first error in each wrong one. It never goes
+     by the majority.
+   - When the approaches agree on a task of difficulty 4 or more, a verifier
+     checks the answer by an independent method. A dissent overturns the
+     answer only if a fresh solver agrees with the verifier.
+5. **Synthesis.** One clean answer, with no attempts, solvers or checks shown.
+   When the person fixed a short answer ("number only"), the checked answer
+   itself is the reply. The M57 contract check and its one repair round still
+   guard the final shape.
+
+Conversation, writing and open questions are answered in one call, briefed
+by the task model. Small talk and `effort: quick` skip the kernel entirely.
+
+Streaming shows activity labels only: "Understanding the task", "Exploring 3
+approaches", "Cross-checking the approaches", "Verifying", "Writing the
+answer". Telemetry records what the kernel did: mode, task kind, difficulty,
+approaches, confidence, adjudicated, verified, corrected and calls. It never
+records content.
+
+The policies:
+
+| Policy | What it does                                                       |
+| ------ | ------------------------------------------------------------------ |
+| p0     | The foundation alone: the baseline                                 |
+| p1     | Answer contracts and quick small talk, one call                    |
+| p2     | p1 plus deliberation; the default only if it passes the gate below |
+
+### The capability gate (`evals/rouge-m57.eval.ts`, `rouge-eval.yml` mode `capability`)
+
+**Sides.** Every task is answered by three sides, all on the same core with
+substitution forbidden:
+
+- **raw**: one call, with the task as the only message and no system prompt;
+- **sc**: self-consistency, meaning five raw samples and a majority vote over
+  the answers as the checker reads them. This is the strongest simple
+  baseline at a similar call budget, so a gain over raw cannot be put down to
+  "more calls" alone;
+- **rouge**: Rouge p2.
+
+**Tasks** (`evals/rouge/m57-benchmark.ts`). Ten families: exact arithmetic,
+date offsets, weekdays, letter counts, modular powers, base conversion,
+knights and knaves, race orderings, Python program tracing, and list
+operations.
+
+- Every task is generated from a seed and every answer is computed by code.
+- No task is written by hand and no model judges an answer.
+- The puzzles are generated with a solver and kept only if exactly one
+  solution fits.
+- The trace, date and weekday answers were checked against CPython.
+- The checker is lenient about format, because it measures whether the
+  answer is right. It reads every side the same way.
+
+**Blindness.**
+
+- `dev` uses the fixed seed `m57-dev-1`. It is for calibration and debugging
+  only and can never pass the gate.
+- `holdout` uses a fresh random seed on every run. The seed is recorded in
+  the evidence only after the run.
+- Nothing in `src/` imports the benchmark (a test enforces this). The
+  kernel's prompts are general-purpose and name no task family.
+- A holdout seed is used once. If the kernel changes after a holdout run, the
+  next run needs a new seed.
+
+**Contamination.** A holdout task may not equal:
+
+- any development task;
+- any core-selection task;
+- any M57 contract-holdout task.
+
+The eval asserts this.
+
+**Gate.** Fixed before the first holdout run. It is decided on the holdout,
+comparing Rouge with raw on the tasks both completed. All of the following
+must hold:
+
+1. At least 90% of the tasks completed on both sides.
+2. The lower bound of the 95% paired-bootstrap interval of the accuracy
+   difference is above 0.
+3. McNemar's exact test gives p < 0.05.
+4. At least 3 of the 10 families improved.
+5. No family lost more than one task.
+
+**Reporting.** Rouge against self-consistency is always reported next to the
+gate, so the gain can be attributed honestly: to structure, or to extra
+samples.
+
+Logs are public and hold metadata only: per-task verdicts, calls, latencies
+and kernel metadata. They never hold a prompt or an answer.
