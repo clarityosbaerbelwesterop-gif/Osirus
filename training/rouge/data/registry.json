@@ -1,12 +1,12 @@
 {
   "schema": "rouge.data-registry/1",
-  "version": "2026-09-28.1",
+  "version": "2026-09-28.2",
   "note": "Candidates are not trainable until approved: licence verified against the source at a pinned revision, and any teacher-model outputs covered by terms that permit training. training/rouge/scripts/dataset_licenses.py reads the Hub metadata on a CI runner.",
   "datasets": [
     {
       "id": "smoltalk",
       "source": "hf:HuggingFaceTB/smoltalk",
-      "license": "Apache-2.0",
+      "license": "unconfirmed",
       "status": "candidate",
       "role": "train",
       "domains": [
@@ -16,7 +16,9 @@
         "math",
         "code"
       ],
-      "stage": "sft"
+      "stage": "sft",
+      "revision": "5feaf2fd3ffca7c237fc38d1861bc30365d48ffa",
+      "review": "the Hub card at this revision declares no licence (run 36452042422); not approvable until the licence is confirmed from the publisher"
     },
     {
       "id": "tulu-3-sft-mixture",
@@ -32,7 +34,13 @@
         "multilingual"
       ],
       "stage": "sft",
-      "review": "mixture of sources; each subset's own licence and generator must be checked before approval"
+      "review": "mixture of sources; each subset's own licence and generator must be checked before approval",
+      "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "hubLicense": "odc-by"
+      }
     },
     {
       "id": "nemotron-post-training-v1",
@@ -51,6 +59,12 @@
       "teacherOutputs": {
         "model": "per-subset (open-weight reasoning models)",
         "termsPermitTraining": null
+      },
+      "revision": "74e23eb6f830fef4a9e96a92f6f6262214cbb9a8",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "hubLicense": "cc-by-4.0"
       }
     },
     {
@@ -64,6 +78,12 @@
       "teacherOutputs": {
         "model": "open-weight reasoning models (per dataset card)",
         "termsPermitTraining": null
+      },
+      "revision": "d3d08664755704f422af97d43a7ff0ded4bd95df",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "hubLicense": "cc-by-4.0"
       }
     },
     {
@@ -77,6 +97,12 @@
       "teacherOutputs": {
         "model": "open-weight reasoning models (per dataset card)",
         "termsPermitTraining": null
+      },
+      "revision": "20a1ca19c0d050fe9057fc08339d6b370ec1c67a",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "hubLicense": "cc-by-4.0"
       }
     },
     {
@@ -90,6 +116,12 @@
       "teacherOutputs": {
         "model": "DeepSeek-R1 (MIT)",
         "termsPermitTraining": null
+      },
+      "revision": "e4e141ec9dea9f8326f4d347be56105859b2bd68",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "hubLicense": "apache-2.0"
       }
     },
     {
@@ -104,7 +136,13 @@
         "model": "includes GPT-4 completions and GPT-4 ratings",
         "termsPermitTraining": false
       },
-      "review": "rejected: OpenAI's terms restrict using outputs to develop competing models"
+      "review": "rejected: OpenAI's terms restrict using outputs to develop competing models",
+      "revision": "3949bf5f8c17c394422ccfab0c31ea9c20bdeb85",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-training.yml run 36452042422 (Hub API cardData.license, 2026-09-28)",
+        "hubLicense": "mit"
+      }
     },
     {
       "id": "rouge-verified-tasks",
