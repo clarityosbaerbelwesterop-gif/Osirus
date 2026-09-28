@@ -141,8 +141,38 @@ def check(spec: dict, response: str) -> bool:
     raise ValueError(f"unknown check type {kind!r}")
 
 
+def _chat_openai(base_url: str, model: str, messages: list[dict], settings: dict) -> str:
+    """One chat completion from an OpenAI-compatible server: Rouge Server
+    (vLLM / SGLang) or Rouge Edge (llama.cpp llama-server)."""
+    import os
+    import urllib.request
+
+    body = {
+        "model": model, "messages": messages, "temperature": settings.get("temperature", 0.0),
+        "max_tokens": settings["max_new_tokens"], "seed": settings.get("seed", 0),
+        "chat_template_kwargs": {"enable_thinking": settings.get("enable_thinking", False)},
+    }
+    headers = {"Content-Type": "application/json"}
+    if os.environ.get("ROUGE_API_KEY"):
+        headers["Authorization"] = f"Bearer {os.environ['ROUGE_API_KEY']}"
+    request = urllib.request.Request(f"{base_url.rstrip('/')}/chat/completions", json.dumps(body).encode(), headers)
+    with urllib.request.urlopen(request, timeout=settings.get("timeout", 600)) as response:
+        return json.loads(response.read())["choices"][0]["message"].get("content") or ""
+
+
 def generate(model_path: str, items: list[dict], settings: dict) -> list[str]:
-    """Responses from one model; identical settings for every model compared."""
+    """Responses from one model; identical settings for every model compared.
+
+    Backends: `vllm` (offline engine), `transformers`, and `openai` -- any
+    OpenAI-compatible endpoint at settings["base_url"], so Rouge Server and
+    Rouge Edge are scored by the same harness as the training host.
+    """
+    if settings.get("backend") == "openai":
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=settings.get("concurrency", 8)) as pool:
+            return list(pool.map(lambda item: _chat_openai(settings["base_url"], model_path, item["messages"], settings), items))
+
     if settings.get("backend") == "vllm":
         from vllm import LLM, SamplingParams
 

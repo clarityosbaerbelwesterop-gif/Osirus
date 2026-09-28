@@ -6,7 +6,8 @@
     python -m rouge_train.cli merge   --config configs/sft-001.json --out /ckpt/rouge-1-sft-001
     python -m rouge_train.cli generate --model /models/Qwen3.5-27B --items eval.jsonl --out base.jsonl
     python -m rouge_train.cli generate --model /ckpt/rouge-1-sft-001 --items eval.jsonl --out rouge.jsonl
-    python -m rouge_train.cli compare --items eval.jsonl --base base.jsonl --rouge rouge.jsonl --out report.json
+    python -m rouge_train.cli generate --backend openai --base-url http://127.0.0.1:8000/v1 --model rouge-1 --items eval.jsonl --out server.jsonl
+    python -m rouge_train.cli compare --items eval.jsonl --base base.jsonl --rouge rouge.jsonl --out report.json --prereg experiments/rouge-1-exp-001.json
     python -m rouge_train.cli manifest --config configs/sft-001.json --merged /ckpt/rouge-1-sft-001 \
         --report report.json --storage hf://<owner>/rouge-1 --out checkpoints/
 
@@ -42,7 +43,9 @@ def main() -> None:
     p.add_argument("--model", required=True)
     p.add_argument("--items", required=True)
     p.add_argument("--out", required=True)
-    p.add_argument("--backend", default="vllm", choices=["vllm", "transformers"])
+    p.add_argument("--backend", default="vllm", choices=["vllm", "transformers", "openai"])
+    p.add_argument("--base-url", help="OpenAI-compatible endpoint for --backend openai (--model is the served name)")
+    p.add_argument("--concurrency", type=int, default=8)
     p.add_argument("--max-new-tokens", type=int, default=2048)
     p.add_argument("--thinking", action="store_true")
     p = sub.add_parser("compare")
@@ -104,6 +107,10 @@ def main() -> None:
 
         items = _read_jsonl(args.items)
         settings = {"backend": args.backend, "max_new_tokens": args.max_new_tokens, "temperature": 0.0, "seed": 0, "enable_thinking": args.thinking}
+        if args.backend == "openai":
+            if not args.base_url:
+                raise SystemExit("--backend openai needs --base-url")
+            settings |= {"base_url": args.base_url, "concurrency": args.concurrency}
         responses = generate(args.model, items, settings)
         Path(args.out).write_text("\n".join(json.dumps({"id": i["id"], "response": r}, ensure_ascii=False) for i, r in zip(items, responses)) + "\n")
         (Path(args.out).with_suffix(".settings.json")).write_text(json.dumps(settings | {"model": args.model}, indent=1))
