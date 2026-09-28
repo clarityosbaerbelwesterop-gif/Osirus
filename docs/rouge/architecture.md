@@ -193,6 +193,28 @@ Live results so far (M56 foundation eval, substitution forbidden):
 | 36321530627 | `grok-4.6`                        | —     | —     | `insufficient_credit` on raw and Rouge; stopped after 2 calls                                                                           |
 | 36321535200 | `nemotron-3-ultra-550b-a55b:free` | 2 / 2 | 2 / 2 | Served core = named core. Rouge adds about 190 input tokens (identity) and wrote longer replies to "number only" prompts: an M62 target |
 
+### Core selection tournament (run 36324746302, 2026-09-27)
+
+The tournament ran 21 teacher-written, code-checked tasks across 9 families. Each core ran through Rouge with substitution forbidden and had a 12-minute budget.
+
+| Core                              | Correct | Strict | Median | Result                                |
+| --------------------------------- | ------- | ------ | ------ | ------------------------------------- |
+| `nemotron-3-ultra-550b-a55b:free` | 21/21   | 21/21  | 8.7 s  | **Eligible: the measured substitute** |
+| `laguna-s-2.1:free`               | 16/21   | 16/21  | 2.0 s  | Below 80%                             |
+| `k2-horizon:free`                 | 13/21   | 13/21  | 60.9 s | Hit the time budget                   |
+| `gemini-3.6-flash:free`           | 11/21   | 11/21  | 60.6 s | Hit the time budget                   |
+| `qwen3.6-plus:free`               | 10/21   | 10/21  | 60.6 s | Hit the time budget                   |
+| `mimo-v2.6-pro:free`              | 3/21    | 3/21   | —      | `provider_unavailable`                |
+| `kimi-k3:free`                    | 2/21    | 2/21   | —      | `rate_limited`, unavailable           |
+| `grok-4.6`                        | 0/21    | 0/21   | —      | `insufficient_credit`                 |
+| `deepseek-v4-pro:free`            | 0/21    | 0/21   | —      | `provider_unavailable`                |
+| `glm-5.3-flash-thinking:free`     | 0/21    | 0/21   | —      | `provider_unavailable`                |
+| `step-3.7-flash:free`             | 0/21    | 0/21   | —      | `provider_unavailable`                |
+
+`MEASURED_SUBSTITUTES` is `["nemotron-3-ultra-550b-a55b:free"]`. Grok 4.6 is still asked first. The substitute answers only while Grok refuses, and every answer it gives is labelled with the model that served it.
+
+These tasks are easy for a strong core. That is fine for choosing a core, but it cannot show what Rouge adds. The M57 benchmark uses harder, procedurally generated blind tasks for that.
+
 ## 7. M56 as delivered
 
 - `src/lib/rouge/*`:
