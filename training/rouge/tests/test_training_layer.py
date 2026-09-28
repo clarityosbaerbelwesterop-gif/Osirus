@@ -213,7 +213,10 @@ class GeneratorTest(unittest.TestCase):
             answer = record["messages"][1]["content"]
             if record["family"] == "identity":
                 self.assertIn("Qwen3.5-27B", answer)
-                self.assertNotIn("from scratch", answer.replace("not pretrained from scratch", ""))
+                # "From scratch" may only appear as a denial.
+                if "from scratch" in answer:
+                    self.assertRegex(answer, r"^No\b|rather than|not ")
+                self.assertNotRegex(answer, r"(?i)\bI (was|am) (pre)?trained from scratch")
             question = record["messages"][0]["content"]
             product = re.match(r"(?:Compute|Berechne) ([\d.,]+) × ([\d.,]+)", question)
             if product:

@@ -1,6 +1,6 @@
 {
   "schema": "rouge.data-registry/1",
-  "version": "2026-09-28.3",
+  "version": "2026-09-28.4",
   "note": "Candidates are not trainable until approved: licence verified against the source at a pinned revision, and any teacher-model outputs covered by terms that permit training. training/rouge/scripts/dataset_licenses.py reads the Hub metadata on a CI runner.",
   "datasets": [
     {
@@ -236,21 +236,33 @@
       "id": "aya-dataset",
       "source": "hf:CohereForAI/aya_dataset",
       "license": "Apache-2.0",
-      "status": "candidate",
+      "status": "approved",
       "role": "train",
       "domains": ["multilingual", "german", "writing"],
       "stage": "sft",
-      "review": "human-written prompts and completions; German rows only"
+      "revision": "f9ea04583f02a8f86404ff6c58bf75fe637df8a2",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-data.yml probe run 36456987182 (card licence, revision, row fields)",
+        "hubLicense": "apache-2.0"
+      },
+      "filters": "config default, split train, language == German, target >= 20 characters"
     },
     {
       "id": "oasst2",
       "source": "hf:OpenAssistant/oasst2",
       "license": "Apache-2.0",
-      "status": "candidate",
+      "status": "approved",
       "role": "train",
       "domains": ["conversation", "german", "writing"],
       "stage": "sft",
-      "review": "human-written conversation trees; top-ranked German assistant replies with their prompts"
+      "revision": "179dd21fc55192153d94adb0e0ce8f69e222bf75",
+      "licenseVerified": {
+        "at": "2026-09-28",
+        "evidence": "rouge-data.yml probe run 36456987182 (card licence, revision, row fields)",
+        "hubLicense": "apache-2.0"
+      },
+      "filters": "split train; German assistant replies with rank 0, review passed, not deleted, not synthetic; the conversation path to the root as context"
     }
   ]
 }

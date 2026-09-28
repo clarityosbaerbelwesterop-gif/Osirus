@@ -37,18 +37,22 @@ GERMAN = {
 }
 
 QUOTAS = {
-    "nemotron-math": 3000,
-    "nemotron-stem": 3000,
+    "nemotron-math": 2500,
+    "nemotron-stem": 2500,
     "nemotron-code": 2500,
-    "openr1-math": 2000,
-    "openmath-cot": 1500,
+    "openr1-math": 1500,
+    "openmath-cot": 1200,
     "opencode": 1500,
-    "tulu-oasst1": 1500,
+    "tulu-oasst1": 2500,
     "tulu-oasst1-de": 800,
-    "tulu-aya-de": 800,
-    "tulu-sciriff": 500,
+    "tulu-sciriff": 800,
+    "aya-de": 1500,
+    "oasst2-de": 1500,
     "rouge-generated": 3000,
 }
+# Assistant turns longer than this are skipped at read time (about 6.5k
+# tokens), so quotas fill with records that fit the 8k training window.
+MAX_ANSWER_CHARS = 24_000
 ALLOWED_GENERATORS = ("Qwen3-235B-A22B", "DeepSeek-R1")
 ALLOWED_OPENMATH = ("DeepSeek-R1", "QwQ-32B")
 
@@ -85,7 +89,7 @@ def clean_messages(messages: list[dict]) -> list[dict] | None:
 
 
 def take(name: str, rows, adapt, quota: int, max_scan: int, stats: dict):
-    kept, scanned, reasons = [], 0, Counter()
+    kept, scanned, reasons, prompts = [], 0, Counter(), set()
     for row in rows:
         scanned += 1
         if scanned > max_scan or len(kept) >= quota:
@@ -94,6 +98,14 @@ def take(name: str, rows, adapt, quota: int, max_scan: int, stats: dict):
         if record is None:
             reasons[reason] += 1
             continue
+        if sum(len(m["content"]) for m in record["messages"] if m["role"] == "assistant") > MAX_ANSWER_CHARS:
+            reasons["too-long"] += 1
+            continue
+        prompt = generators.normalise(next(m["content"] for m in record["messages"] if m["role"] == "user"))
+        if prompt in prompts:
+            reasons["duplicate-prompt"] += 1
+            continue
+        prompts.add(prompt)
         record["source"] = name
         kept.append(record)
     stats[name] = {"kept": len(kept), "scanned": scanned, "quota": quota, "rejected": dict(reasons)}
@@ -114,7 +126,7 @@ def build_train(reg: dict, stats: dict) -> list[dict]:
                 return None, "shape"
             return {"id": f"nemotron-{row['uuid']}", "messages": messages,
                     "meta": {"generator": row["generator"], "reasoning": row.get("reasoning"), "split": split}}, None
-        records += take(f"nemotron-{split}", stream(repo, rev, None, split), adapt, QUOTAS[f"nemotron-{split}"], 40 * QUOTAS[f"nemotron-{split}"], stats)
+        records += take(f"nemotron-{split}", stream(repo, rev, None, split), adapt, QUOTAS[f"nemotron-{split}"], 60 * QUOTAS[f"nemotron-{split}"], stats)
 
     repo, rev = pinned(reg, "openr1-math-220k")
     def adapt_openr1(row):
@@ -146,7 +158,7 @@ def build_train(reg: dict, stats: dict) -> list[dict]:
 
     repo, rev = pinned(reg, "tulu-3-sft-mixture")
     tulu_sources: Counter = Counter()
-    buckets = {"tulu-oasst1": [], "tulu-oasst1-de": [], "tulu-aya-de": [], "tulu-sciriff": []}
+    buckets = {"tulu-oasst1": [], "tulu-oasst1-de": [], "tulu-sciriff": []}
     scanned = 0
     for row in stream(repo, rev, None, "train", buffer=20000):
         scanned += 1
@@ -160,10 +172,6 @@ def build_train(reg: dict, stats: dict) -> list[dict]:
         text = " ".join(m["content"] for m in messages)
         if "oasst1" in source:
             bucket = "tulu-oasst1-de" if german(text) else "tulu-oasst1"
-        elif "aya" in source:
-            if not german(text):
-                continue
-            bucket = "tulu-aya-de"
         elif "sciriff" in source:
             bucket = "tulu-sciriff"
         else:
@@ -175,6 +183,44 @@ def build_train(reg: dict, stats: dict) -> list[dict]:
         print(f"{bucket}: kept {len(rows)}/{QUOTAS[bucket]}", flush=True)
         records += rows
     stats["tulu_sources_seen"] = dict(tulu_sources.most_common(40))
+
+    from datasets import load_dataset
+
+    repo, rev = pinned(reg, "aya-dataset")
+    aya = load_dataset(repo, "default", split="train", revision=rev)
+    def adapt_aya(row):
+        if row["language"] != "German":
+            return None, "language"
+        if len((row["targets"] or "").strip()) < 20:
+            return None, "short"
+        messages = clean_messages([{"role": "user", "content": row["inputs"]}, {"role": "assistant", "content": row["targets"]}])
+        key = hashlib.sha256((row["inputs"] + row["targets"]).encode()).hexdigest()[:16]
+        return ({"id": f"aya-{key}", "messages": messages, "meta": {"annotation": row["annotation_type"]}}, None) if messages else (None, "shape")
+    records += take("aya-de", aya.shuffle(seed=SEED), adapt_aya, QUOTAS["aya-de"], len(aya), stats)
+
+    repo, rev = pinned(reg, "oasst2")
+    tree = load_dataset(repo, split="train", revision=rev)
+    by_id = {row["message_id"]: row for row in tree}
+    def path_to_root(row):
+        chain = [row]
+        while chain[-1]["parent_id"]:
+            parent = by_id.get(chain[-1]["parent_id"])
+            if parent is None:
+                return None
+            chain.append(parent)
+        return list(reversed(chain))
+    def adapt_oasst2(row):
+        if row["role"] != "assistant" or row["lang"] != "de":
+            return None, "not-german-assistant"
+        if row["rank"] != 0 or row["deleted"] or row["synthetic"] or row["review_result"] is False:
+            return None, "not-top-ranked"
+        chain = path_to_root(row)
+        if not chain or len(chain) > 6:
+            return None, "path"
+        roles = {"prompter": "user", "assistant": "assistant"}
+        messages = clean_messages([{"role": roles[m["role"]], "content": m["text"]} for m in chain])
+        return ({"id": f"oasst2-{row['message_id']}", "messages": messages, "meta": {"turns": len(chain)}}, None) if messages else (None, "shape")
+    records += take("oasst2-de", tree.shuffle(seed=SEED), adapt_oasst2, QUOTAS["oasst2-de"], len(tree), stats)
 
     generated = list(generators.sft_records("sft-v0", QUOTAS["rouge-generated"]))
     for record in generated:
