@@ -1,0 +1,134 @@
+{
+  "schema": "rouge.data-registry/1",
+  "version": "2026-09-28.1",
+  "note": "Candidates are not trainable until approved: licence verified against the source at a pinned revision, and any teacher-model outputs covered by terms that permit training. training/rouge/scripts/dataset_licenses.py reads the Hub metadata on a CI runner.",
+  "datasets": [
+    {
+      "id": "smoltalk",
+      "source": "hf:HuggingFaceTB/smoltalk",
+      "license": "Apache-2.0",
+      "status": "candidate",
+      "role": "train",
+      "domains": [
+        "instruction-following",
+        "conversation",
+        "writing",
+        "math",
+        "code"
+      ],
+      "stage": "sft"
+    },
+    {
+      "id": "tulu-3-sft-mixture",
+      "source": "hf:allenai/tulu-3-sft-mixture",
+      "license": "ODC-BY-1.0",
+      "status": "candidate",
+      "role": "train",
+      "domains": [
+        "instruction-following",
+        "math",
+        "code",
+        "safety",
+        "multilingual"
+      ],
+      "stage": "sft",
+      "review": "mixture of sources; each subset's own licence and generator must be checked before approval"
+    },
+    {
+      "id": "nemotron-post-training-v1",
+      "source": "hf:nvidia/Nemotron-Post-Training-Dataset-v1",
+      "license": "CC-BY-4.0",
+      "status": "candidate",
+      "role": "train",
+      "domains": [
+        "reasoning",
+        "math",
+        "code",
+        "science",
+        "instruction-following"
+      ],
+      "stage": "sft",
+      "teacherOutputs": {
+        "model": "per-subset (open-weight reasoning models)",
+        "termsPermitTraining": null
+      }
+    },
+    {
+      "id": "open-math-reasoning",
+      "source": "hf:nvidia/OpenMathReasoning",
+      "license": "CC-BY-4.0",
+      "status": "candidate",
+      "role": "train",
+      "domains": ["math", "reasoning"],
+      "stage": "reasoning",
+      "teacherOutputs": {
+        "model": "open-weight reasoning models (per dataset card)",
+        "termsPermitTraining": null
+      }
+    },
+    {
+      "id": "open-code-reasoning",
+      "source": "hf:nvidia/OpenCodeReasoning",
+      "license": "CC-BY-4.0",
+      "status": "candidate",
+      "role": "train",
+      "domains": ["code", "reasoning"],
+      "stage": "reasoning",
+      "teacherOutputs": {
+        "model": "open-weight reasoning models (per dataset card)",
+        "termsPermitTraining": null
+      }
+    },
+    {
+      "id": "openr1-math-220k",
+      "source": "hf:open-r1/OpenR1-Math-220k",
+      "license": "Apache-2.0",
+      "status": "candidate",
+      "role": "train",
+      "domains": ["math", "reasoning"],
+      "stage": "reasoning",
+      "teacherOutputs": {
+        "model": "DeepSeek-R1 (MIT)",
+        "termsPermitTraining": null
+      }
+    },
+    {
+      "id": "ultrafeedback-binarized",
+      "source": "hf:HuggingFaceH4/ultrafeedback_binarized",
+      "license": "MIT",
+      "status": "rejected",
+      "role": "train",
+      "domains": ["preference"],
+      "stage": "preference",
+      "teacherOutputs": {
+        "model": "includes GPT-4 completions and GPT-4 ratings",
+        "termsPermitTraining": false
+      },
+      "review": "rejected: OpenAI's terms restrict using outputs to develop competing models"
+    },
+    {
+      "id": "rouge-verified-tasks",
+      "source": "generator:evals/rouge/m57-benchmark.ts (train seed namespace only)",
+      "license": "generated-in-house",
+      "status": "candidate",
+      "role": "train",
+      "domains": [
+        "math",
+        "logic",
+        "program-execution",
+        "constraint-satisfaction"
+      ],
+      "stage": "reasoning",
+      "review": "prompts and answers are computed by code; train seeds are disjoint from dev and holdout seeds, and the contamination check runs before every build"
+    },
+    {
+      "id": "rouge-m57-holdout",
+      "source": "generator:evals/rouge/m57-benchmark.ts (fresh random holdout seeds)",
+      "license": "generated-in-house",
+      "status": "candidate",
+      "role": "eval-only",
+      "domains": ["math", "logic", "program-execution"],
+      "stage": "evaluation"
+    }
+  ]
+}

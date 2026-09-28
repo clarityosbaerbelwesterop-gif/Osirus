@@ -1,0 +1,8 @@
+# Weights never enter Git: they live in object storage, pinned by manifest.
+*.safetensors
+*.bin
+*.pt
+*.pth
+*.gguf
+*.ckpt
+__pycache__/

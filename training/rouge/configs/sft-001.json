@@ -1,0 +1,61 @@
+{
+  "schema": "rouge.run-recipe/1",
+  "name": "rouge-1-sft-001",
+  "status": "draft (not run; needs owner approval for compute and approved data)",
+  "milestone": "M59",
+  "parent": "base:Qwen/Qwen3.5-397B-A17B@8472618112abcbd45acbcdc58436aff4233c23f7",
+  "method": "lora",
+  "lora": {
+    "rank": 64,
+    "alpha": 128,
+    "dropout": 0.05,
+    "targets": [
+      "gated-attention q/k/v/o projections (15 full-attention layers)",
+      "gated-deltanet input and output projections (45 linear-attention layers)",
+      "shared expert (60 layers)"
+    ],
+    "excluded": [
+      "512 routed experts (rank-64 LoRA on each would add about 7.5B trainable parameters)",
+      "router",
+      "vision encoder (frozen in sft-001; M66 trains multimodal)"
+    ],
+    "targetResolution": "module names are resolved from the model's named_modules on the GPU host and recorded in the run manifest"
+  },
+  "optimiser": {
+    "name": "adamw",
+    "lr": 1e-4,
+    "betas": [0.9, 0.999],
+    "weightDecay": 0.0,
+    "schedule": "cosine",
+    "warmupRatio": 0.03
+  },
+  "sequence": { "maxTokens": 32768, "packing": true },
+  "batchTokens": 1048576,
+  "epochs": 1,
+  "seed": 20260928,
+  "precision": "bf16",
+  "hardware": "1 x 8 x H200 (compute-plan.md, step C)",
+  "data": {
+    "registryVersion": "2026-09-28.1",
+    "targetTokens": 75000000,
+    "mixture": {
+      "reasoning-math-science": 0.3,
+      "code": 0.2,
+      "instruction-following-writing": 0.2,
+      "multilingual-german": 0.15,
+      "long-form-synthesis": 0.1,
+      "multimodal": 0.05
+    },
+    "requirement": "only registry entries with status=approved; the mixture is rebalanced to what is approved and recorded"
+  },
+  "chatTemplate": "the base's chat_template.jinja (sha256 a4aee8af...), thinking mode kept",
+  "evaluation": "configs/lab-v0.json on held-out splits; compared against rouge-1-base",
+  "promotion": {
+    "targets": { "lab-v0.instruction-following": "v0", "lab-v0.german": "v0" },
+    "guards": {
+      "lab-v0.verified-reasoning": ["v0", 0.01],
+      "lab-v0.knowledge": ["v0", 0.01],
+      "lab-v0.long-context": ["v0", 0.02]
+    }
+  }
+}

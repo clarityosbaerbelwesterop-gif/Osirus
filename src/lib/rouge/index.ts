@@ -1,3 +1,10 @@
+// Rouge model-system prototype (M56-M57): LEGACY RESEARCH.
+//
+// Rouge 1 is now a trained model -- a derivative of Qwen3.5-397B-A17B with
+// its own checkpoints (docs/rouge/native-model.md, training/rouge/). This
+// runtime (external cores, substitution ladder, multi-call kernel) stays for
+// its useful parts -- the /api/rouge endpoint, telemetry, evaluation
+// tooling -- and is not where Rouge's intelligence is built.
 import { env } from "../env";
 import type { CapacityPriority } from "../models/capacity";
 import { coreSpec } from "./foundation";

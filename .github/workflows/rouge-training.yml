@@ -1,0 +1,29 @@
+name: Rouge training layer
+
+# Checks the Rouge 1 training layer (training/rouge): the pinned base
+# manifest, checkpoint manifests and promotion rules, the dataset registry.
+# No GPU, no weights, no secrets. On dispatch it also reads each registry
+# dataset's licence and revision from the Hub (public metadata only).
+
+on:
+  push:
+    branches: ["rouge/native-model-*"]
+    paths: ["training/rouge/**", ".github/workflows/rouge-training.yml"]
+  pull_request:
+    paths: ["training/rouge/**", ".github/workflows/rouge-training.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - run: python3 -m unittest discover -s training/rouge/tests -v
+      - name: Dataset licences (metadata only)
+        run: python3 training/rouge/scripts/dataset_licenses.py

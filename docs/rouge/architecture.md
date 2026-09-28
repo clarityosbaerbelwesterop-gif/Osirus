@@ -1,5 +1,13 @@
 # Rouge 1 — architecture plan (M56–M75)
 
+> **Superseded (2026-09-28).** Rouge 1 is now a trained model: a derivative
+> of Qwen3.5-397B-A17B with its own checkpoints. See
+> [`native-model.md`](native-model.md) and
+> [`compute-plan.md`](compute-plan.md). This document records the M56–M57
+> model-system prototype, which is kept as **legacy research**
+> ([`legacy-runtime.md`](legacy-runtime.md)). Its milestone plan from M58
+> onward no longer applies.
+
 Rouge 1 is a model system: a foundation model plus Rouge's own cognition,
 managed context, memory, verification and learned policies. Its initial
 foundation core is Grok 4.6, reached through UnoRouter. Rouge does not own,

@@ -1,0 +1,43 @@
+{
+  "schema": "rouge.lab-suite/1",
+  "name": "lab-v0",
+  "status": "draft; first run measures rouge-1-base (compute-plan.md, step B)",
+  "serving": "vLLM or SGLang main branch, tensor parallel 8, BF16, the base's recommended sampling (thinking: temperature 0.6, top_p 0.95, top_k 20)",
+  "rules": [
+    "every suite is evaluation-only and never enters training data",
+    "published benchmark results are kept separate from Rouge's own reproductions",
+    "generated suites draw a fresh random seed per run, recorded after the run",
+    "a checkpoint is compared only with others measured on the same suite versions"
+  ],
+  "suites": [
+    {
+      "id": "verified-reasoning",
+      "version": "v0",
+      "source": "evals/rouge/m57-benchmark.ts generators (10 families, fresh holdout seed)",
+      "metric": "exact match by computed checker",
+      "note": "at the ceiling for strong cores (legacy-runtime.md); kept as a regression guard, not a target"
+    },
+    {
+      "id": "long-context",
+      "version": "v0",
+      "source": "in-house generated: single and multi-needle, cross-document, timeline, contradictions, long-code navigation, position sweep",
+      "lengths": [131072, 262144, 524288, 1048576],
+      "note": "524288 and above use the model card's YaRN setting; no length is claimed before it passes"
+    },
+    {
+      "id": "instruction-following",
+      "version": "v0",
+      "source": "IFEval-style verifiable instructions (dataset and licence to be verified before use)"
+    },
+    {
+      "id": "german",
+      "version": "v0",
+      "source": "German instruction-following and writing tasks with verifiable constraints (in-house)"
+    },
+    {
+      "id": "knowledge",
+      "version": "v0",
+      "source": "a published multiple-choice benchmark with a permissive licence (to be selected and verified)"
+    }
+  ]
+}
