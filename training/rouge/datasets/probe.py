@@ -20,6 +20,8 @@ CANDIDATES = [
     "nvidia/OpenMathReasoning",
     "nvidia/OpenCodeReasoning",
     "allenai/tulu-3-sft-mixture",
+    "CohereForAI/aya_dataset",
+    "OpenAssistant/oasst2",
     # evaluation-only candidates
     "google-research-datasets/mbpp",
     "juletxara/mgsm",

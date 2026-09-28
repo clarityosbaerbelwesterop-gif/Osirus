@@ -231,6 +231,26 @@
       "domains": ["multilingual", "german", "reasoning"],
       "stage": "sft",
       "review": "gated on the Hub: needs an owner Hugging Face token and accepted terms before it can be read"
+    },
+    {
+      "id": "aya-dataset",
+      "source": "hf:CohereForAI/aya_dataset",
+      "license": "Apache-2.0",
+      "status": "candidate",
+      "role": "train",
+      "domains": ["multilingual", "german", "writing"],
+      "stage": "sft",
+      "review": "human-written prompts and completions; German rows only"
+    },
+    {
+      "id": "oasst2",
+      "source": "hf:OpenAssistant/oasst2",
+      "license": "Apache-2.0",
+      "status": "candidate",
+      "role": "train",
+      "domains": ["conversation", "german", "writing"],
+      "stage": "sft",
+      "review": "human-written conversation trees; top-ranked German assistant replies with their prompts"
     }
   ]
 }
