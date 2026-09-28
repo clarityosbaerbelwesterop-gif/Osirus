@@ -9,11 +9,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: foundation = raw core vs Rouge; core-selection = tournament of candidate cores; kernel = raw vs Rouge p0 vs Rouge p1 (dev + holdout)
+        description: foundation = raw core vs Rouge; core-selection = tournament of candidate cores; kernel = raw vs Rouge p0 vs Rouge p1 (dev + holdout); capability = M57 gate, raw vs self-consistency vs Rouge p2 on generated tasks
         required: true
         type: choice
         default: foundation
-        options: [foundation, core-selection, kernel]
+        options: [foundation, core-selection, kernel, capability]
       core:
         description: (foundation, kernel) exact UnoRouter model ID of the core to evaluate
         required: false
@@ -21,6 +21,17 @@ on:
         default: grok-4.6
       candidates:
         description: (core-selection) comma-separated core IDs; empty = the default list
+        required: false
+        type: string
+        default: ""
+      set:
+        description: (capability) dev = fixed calibration seed; holdout = fresh random seed, the only set that can pass the gate
+        required: false
+        type: choice
+        default: holdout
+        options: [holdout, dev]
+      per_family:
+        description: (capability) tasks per family; empty = 3 dev, 6 holdout
         required: false
         type: string
         default: ""
@@ -54,8 +65,10 @@ jobs:
           OSIRUS_RATE_LIMIT_MAX_WAIT_SECONDS: "60"
           ROUGE_EVAL_CORE: ${{ inputs.core }}
           ROUGE_CANDIDATES: ${{ inputs.candidates }}
+          ROUGE_M57_SET: ${{ inputs.set }}
+          ROUGE_M57_PER_FAMILY: ${{ inputs.per_family }}
           ROUGE_EVIDENCE: ${{ runner.temp }}/rouge-eval.json
-          RSI_EVAL: ${{ inputs.mode == 'core-selection' && 'evals/rouge-core-selection.eval.ts' || inputs.mode == 'kernel' && 'evals/rouge-kernel.eval.ts' || 'evals/rouge-foundation.eval.ts' }}
+          RSI_EVAL: ${{ inputs.mode == 'core-selection' && 'evals/rouge-core-selection.eval.ts' || inputs.mode == 'kernel' && 'evals/rouge-kernel.eval.ts' || inputs.mode == 'capability' && 'evals/rouge-m57.eval.ts' || 'evals/rouge-foundation.eval.ts' }}
         run: npx vitest run --config vitest.rsi.config.ts
       - uses: actions/upload-artifact@v4
         if: always()

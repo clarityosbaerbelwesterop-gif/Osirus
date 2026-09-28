@@ -7,7 +7,7 @@ import {
 } from "../src/lib/rouge/foundation";
 import { checkContract } from "../src/lib/rouge/kernel/contract";
 import { contractOf, understand } from "../src/lib/rouge/kernel/understand";
-import { defaultPolicy, foundationPolicy } from "../src/lib/rouge/policy";
+import { contractPolicy, foundationPolicy } from "../src/lib/rouge/policy";
 import { RougeRuntime } from "../src/lib/rouge/runtime";
 import { MemoryTelemetry } from "../src/lib/rouge/telemetry";
 import type { RougeStreamEvent } from "../src/lib/rouge/types";
@@ -46,7 +46,7 @@ async function run(foundation: Scripted, content: string) {
   const telemetry = new MemoryTelemetry();
   const rouge = new RougeRuntime({
     foundation,
-    policy: defaultPolicy("grok-4.6"),
+    policy: contractPolicy("grok-4.6"),
     telemetry,
   });
   const events: RougeStreamEvent[] = [];
@@ -239,7 +239,7 @@ describe("the kernel at work (M57)", () => {
 
   it("leaves an explicit effort alone, even for small talk", async () => {
     const foundation = new Scripted(["Hi."]);
-    const rouge = new RougeRuntime({ foundation, policy: defaultPolicy() });
+    const rouge = new RougeRuntime({ foundation, policy: contractPolicy() });
     const response = await rouge.respond({ ...ask("hi"), effort: "deep" });
     expect(response.effort).toBe("deep");
   });

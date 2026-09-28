@@ -8,11 +8,13 @@ import {
   versionOf,
   type RougePolicy,
 } from "./policy";
+import { think, type CoreCall, type Thought } from "./kernel/cognition";
 import { checkContract, describeContract } from "./kernel/contract";
 import { understand, type AnswerContract } from "./kernel/understand";
 import { NO_TELEMETRY, type RougeTelemetrySink } from "./telemetry";
 import {
   RougeError,
+  type RougeCognition,
   type RougeCoreServed,
   type RougeEffort,
   type RougeRequest,
@@ -23,13 +25,17 @@ import {
 
 // RougeRuntime (M56): one request in, one coherent answer out.
 //
-// M56 is the foundation only: identity, effort policy, the foundation call,
-// honest core accounting and telemetry. The cognitive kernel (M57), the
-// effort controller (M58), managed context (M59/M60), memory (M61) and the
-// verifier (M63) plug in here as later milestones -- each measured against
-// the raw core before it stays.
+// M56 is the foundation: identity, effort policy, the foundation call,
+// honest core accounting and telemetry. M57 adds the cognitive kernel
+// (kernel/cognition.ts): under p2 a reasoning task is modelled, attacked by
+// independent approaches, cross-checked and synthesised before anyone sees
+// an answer. The effort controller (M58), managed context (M59/M60), memory
+// (M61) and the verifier (M63) plug in here as later milestones -- each
+// measured against the raw core before it stays.
 
 const MAX_MESSAGES = 200;
+/** Contracts whose whole reply is the checked answer: no synthesis call. */
+const SHORT_CONTRACTS = new Set(["number", "fraction", "word", "words"]);
 const MAX_MESSAGE_CHARS = 200_000;
 
 const requestSchema = z.object({
@@ -130,11 +136,20 @@ export class RougeRuntime {
         ? understanding.contract
         : { kind: "free" };
     const contractText = describeContract(contract);
+    // Deliberation (p2) for everything but small talk and "quick": a
+    // greeting or a request for speed is answered in one call.
+    const deliberate =
+      kernel.cognition !== null &&
+      !understanding?.smallTalk &&
+      effort !== "quick";
     // A reply with a fixed shape is checked before anyone sees it.
     const buffered = contract.kind !== "free";
     let contractMet: boolean | null = buffered ? false : null;
     let repairs = 0;
     let answeredBy = request.requestId;
+    let cognition: RougeCognition | null = null;
+    /** Every foundation call this request made, for honest core accounting. */
+    const callIds: string[] = [];
     const allowSubstitute =
       this.options.allowCoreSubstitute ?? this.policy.allowCoreSubstitute;
 
@@ -146,13 +161,23 @@ export class RougeRuntime {
       const served =
         foundation.servedModel(answeredBy) ??
         foundation.servedModel(request.requestId) ??
+        callIds.map((id) => foundation.servedModel(id)).find(Boolean) ??
         foundation.core.id;
-      return {
-        requested: foundation.core.id,
-        served,
-        substituted: served !== foundation.core.id,
-      };
+      // One substituted step makes the whole answer substituted: it was not
+      // the requested core's work alone.
+      const substituted =
+        served !== foundation.core.id ||
+        callIds.some((id) => {
+          const model = foundation.servedModel(id);
+          return model !== undefined && model !== foundation.core.id;
+        });
+      return { requested: foundation.core.id, served, substituted };
     };
+    const servedAny = () =>
+      Boolean(
+        foundation.servedModel(request.requestId) ||
+        callIds.some((id) => foundation.servedModel(id)),
+      );
     const record = (
       outcome: "completed" | "failed" | "cancelled",
       code: string | null,
@@ -177,25 +202,28 @@ export class RougeRuntime {
           ...(kernelOn
             ? { contract: contract.kind, contractMet, repairs }
             : {}),
+          ...(cognition ? { cognition } : {}),
         }),
       ).catch(() => undefined);
 
-    yield {
-      type: "status",
-      label:
-        effort === "deep" || effort === "ultra"
-          ? "Thinking deeply"
-          : buffered
-            ? "Working it out"
-            : "Thinking",
-    };
+    if (!deliberate)
+      yield {
+        type: "status",
+        label:
+          effort === "deep" || effort === "ultra"
+            ? "Thinking deeply"
+            : buffered
+              ? "Working it out"
+              : "Thinking",
+      };
 
+    const identity = identityInstruction({
+      version,
+      foundation: foundation.core.id,
+      now: new Date(started),
+    });
     const system = [
-      identityInstruction({
-        version,
-        foundation: foundation.core.id,
-        now: new Date(started),
-      }),
+      identity,
       ...(contractText
         ? [`Required reply format for this message: ${contractText}`]
         : []),
@@ -208,21 +236,92 @@ export class RougeRuntime {
     };
 
     try {
-      for await (const event of foundation.stream({
-        requestId: request.requestId,
-        system,
-        messages: request.messages,
-        reasoning,
-        allowSubstitute,
-        signal: request.signal,
-      })) {
-        if (event.type === "delta") {
-          if (!event.text) continue;
-          if (firstTokenAt === null) firstTokenAt = this.now();
-          text += event.text;
-          if (!buffered) yield event;
-        } else {
-          addUsage(event);
+      if (deliberate) {
+        // Deliberation runs as one job; its activity labels are streamed as
+        // they happen, and nothing of its content leaves before it is done.
+        const callCore: CoreCall = async (step) => {
+          const callId = `${request.requestId}:${step.id}`;
+          callIds.push(callId);
+          let out = "";
+          for await (const event of foundation.stream({
+            requestId: callId,
+            system: step.system,
+            messages: step.messages,
+            reasoning: reasoningFor(
+              this.policy,
+              step.effort,
+              foundation.core.reasoningLevels,
+            ),
+            allowSubstitute,
+            signal: request.signal,
+          })) {
+            if (event.type === "delta") out += event.text;
+            else addUsage(event);
+          }
+          return out;
+        };
+        const labels: string[] = [];
+        let wake: (() => void) | null = null;
+        let settled = false;
+        const job: Promise<Thought> = think({
+          conversation: request.messages,
+          identity,
+          contractText,
+          shortAnswer: SHORT_CONTRACTS.has(contract.kind),
+          effort,
+          config: kernel.cognition!,
+          call: callCore,
+          status: (label) => {
+            labels.push(label);
+            wake?.();
+          },
+        }).finally(() => {
+          settled = true;
+          wake?.();
+        });
+        job.catch(() => undefined);
+        for (;;) {
+          while (labels.length)
+            yield { type: "status", label: labels.shift()! };
+          if (settled) break;
+          await new Promise<void>((resolve) => {
+            wake = resolve;
+            if (labels.length || settled) resolve();
+          });
+          wake = null;
+        }
+        const thought = await job;
+        text = thought.text;
+        answeredBy = `${request.requestId}:${thought.answeredBy}`;
+        cognition = {
+          mode: thought.mode,
+          taskKind: thought.taskModel?.kind ?? null,
+          difficulty: thought.taskModel?.difficulty ?? null,
+          approaches: thought.approaches,
+          confidence: thought.confidence,
+          adjudicated: thought.adjudicated,
+          verified: thought.verified,
+          corrected: thought.corrected,
+          calls: thought.calls,
+        };
+      } else {
+        callIds.push(request.requestId);
+        for await (const event of foundation.stream({
+          requestId: request.requestId,
+          system,
+          messages: request.messages,
+          reasoning,
+          allowSubstitute,
+          signal: request.signal,
+        })) {
+          if (event.type === "delta") {
+            if (!event.text) continue;
+            if (firstTokenAt === null) firstTokenAt = this.now();
+            text += event.text;
+            if (!buffered) yield event;
+          } else {
+            addUsage(event);
+          }
         }
       }
 
@@ -234,6 +333,7 @@ export class RougeRuntime {
           repairs += 1;
           yield { type: "status", label: "Refining" };
           const repairId = `${request.requestId}:repair-${repairs}`;
+          callIds.push(repairId);
           let repaired = "";
           try {
             for await (const event of foundation.stream({
@@ -270,11 +370,14 @@ export class RougeRuntime {
           verdict = next;
         }
         contractMet = verdict.ok;
-        if (text.trim()) yield { type: "delta", text };
+      }
+      if ((buffered || deliberate) && text.trim()) {
+        firstTokenAt ??= this.now();
+        yield { type: "delta", text };
       }
     } catch (error) {
       const code = errorCode(error, request.signal);
-      const core = foundation.servedModel(request.requestId) ? coreOf() : null;
+      const core = servedAny() ? coreOf() : null;
       await record(code === "cancelled" ? "cancelled" : "failed", code, core);
       if (error instanceof RougeError) throw error;
       throw new RougeError(
@@ -300,7 +403,14 @@ export class RougeRuntime {
       latencyMs: this.now() - started,
       firstTokenMs: firstTokenAt === null ? null : firstTokenAt - started,
       ...(kernelOn
-        ? { kernel: { contract: contract.kind, contractMet, repairs } }
+        ? {
+            kernel: {
+              contract: contract.kind,
+              contractMet,
+              repairs,
+              ...(cognition ? { cognition } : {}),
+            },
+          }
         : {}),
     };
     yield { type: "done", response };

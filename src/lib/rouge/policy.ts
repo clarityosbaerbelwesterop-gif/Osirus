@@ -12,7 +12,7 @@ import type { RougeEffort, RougeVersion } from "./types";
 
 export const ROUGE_NAME = "Rouge 1";
 /** Bumped when Rouge's own code changes how answers are produced. */
-export const ROUGE_RELEASE = "1.0.0-m56";
+export const ROUGE_RELEASE = "1.0.0-m57";
 
 const effortLevel = z.enum(["low", "medium", "high", "xhigh"]);
 
@@ -45,8 +45,27 @@ export const rougePolicySchema = z.object({
       repairRounds: z.number().int().min(0).max(2),
       /** Answer small talk at quick effort, without deliberation. */
       quickSmallTalk: z.boolean(),
+      /**
+       * Deliberation (M57, p2): task model, independent approaches,
+       * agreement as uncertainty, adjudication and verification, synthesis.
+       * Null answers in one call.
+       */
+      cognition: z
+        .object({
+          candidates: z.number().int().min(2).max(5),
+          adjudicate: z.boolean(),
+          verifyHard: z.boolean(),
+          verifyFrom: z.number().int().min(1).max(5),
+        })
+        .nullable()
+        .default(null),
     })
-    .default({ contracts: false, repairRounds: 0, quickSmallTalk: false }),
+    .default({
+      contracts: false,
+      repairRounds: 0,
+      quickSmallTalk: false,
+      cognition: null,
+    }),
 });
 
 export type RougePolicy = z.infer<typeof rougePolicySchema>;
@@ -62,15 +81,43 @@ export const DEFAULT_CORE = "grok-4.6";
 export const MEASURED_SUBSTITUTES: readonly string[] = [];
 
 /**
- * The policy interactive Rouge runs. p1 turns the M57 kernel on; it became
- * the default only after measuring against p0 and the raw core (see
- * docs/rouge/architecture.md, "M57").
+ * The policy interactive Rouge runs: p2, the M57 cognitive kernel. It is the
+ * default only because it beat the raw core on the blind same-core benchmark
+ * (docs/rouge/architecture.md, "M57 capability gate").
  */
 export function defaultPolicy(core = DEFAULT_CORE): RougePolicy {
+  return cognitivePolicy(core);
+}
+
+/** p1: answer contracts and quick small talk, one call per answer. */
+export function contractPolicy(core = DEFAULT_CORE): RougePolicy {
   return rougePolicySchema.parse({
     ...foundationPolicy(core),
     version: "p1",
-    kernel: { contracts: true, repairRounds: 1, quickSmallTalk: true },
+    kernel: {
+      contracts: true,
+      repairRounds: 1,
+      quickSmallTalk: true,
+      cognition: null,
+    },
+  });
+}
+
+/** p2: p1 plus deliberation -- the cognitive kernel. */
+export function cognitivePolicy(core = DEFAULT_CORE): RougePolicy {
+  const p1 = contractPolicy(core);
+  return rougePolicySchema.parse({
+    ...p1,
+    version: "p2",
+    kernel: {
+      ...p1.kernel,
+      cognition: {
+        candidates: 3,
+        adjudicate: true,
+        verifyHard: true,
+        verifyFrom: 4,
+      },
+    },
   });
 }
 
