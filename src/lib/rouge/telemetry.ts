@@ -1,5 +1,5 @@
 import type { ReasoningLevel } from "./foundation";
-import type { RougeEffort, RougeVersion } from "./types";
+import type { RougeCognition, RougeEffort, RougeVersion } from "./types";
 
 // Rouge telemetry (M56): one record per request, and never its content.
 //
@@ -24,6 +24,12 @@ export type RougeTelemetryRecord = {
   firstTokenMs: number | null;
   outcome: "completed" | "failed" | "cancelled";
   errorCode: string | null;
+  /** Kernel (M57): the answer's contract kind, whether it held, repairs spent. */
+  contract?: string;
+  contractMet?: boolean | null;
+  repairs?: number;
+  /** Deliberation metadata (p2). */
+  cognition?: RougeCognition;
 };
 
 export interface RougeTelemetrySink {

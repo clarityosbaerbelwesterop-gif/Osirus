@@ -75,6 +75,31 @@ export type RougeResponse = {
   latencyMs: number;
   /** Time to the first streamed token; null when nothing streamed. */
   firstTokenMs: number | null;
+  /** What the kernel did (M57); absent under the foundation policy. */
+  kernel?: {
+    contract: string;
+    contractMet: boolean | null;
+    repairs: number;
+    /** Deliberation (p2); absent when the answer took one call. */
+    cognition?: RougeCognition;
+  };
+};
+
+/** What deliberation did for one answer. Metadata only, never content. */
+export type RougeCognition = {
+  mode: "direct" | "search";
+  /** "fallback" when the core's task model could not be read. */
+  taskModel: "parsed" | "fallback";
+  taskKind: string | null;
+  difficulty: number | null;
+  approaches: number;
+  /** Share of independent approaches behind the answer; null when direct. */
+  confidence: number | null;
+  adjudicated: boolean;
+  verified: boolean;
+  /** The checked answer differs from the leading first attempt. */
+  corrected: boolean;
+  calls: number;
 };
 
 /**

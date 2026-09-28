@@ -12,7 +12,7 @@ import type { RougeEffort, RougeVersion } from "./types";
 
 export const ROUGE_NAME = "Rouge 1";
 /** Bumped when Rouge's own code changes how answers are produced. */
-export const ROUGE_RELEASE = "1.0.0-m56";
+export const ROUGE_RELEASE = "1.0.0-m57";
 
 const effortLevel = z.enum(["low", "medium", "high", "xhigh"]);
 
@@ -33,6 +33,39 @@ export const rougePolicySchema = z.object({
   }),
   /** Whether an interactive answer may come from a substitute model. */
   allowCoreSubstitute: z.boolean(),
+  /**
+   * The cognitive kernel (M57). Off in p0, the foundation baseline every
+   * kernel change is measured against.
+   */
+  kernel: z
+    .object({
+      /** Hold answers to the shape the person fixed ("number only"). */
+      contracts: z.boolean(),
+      /** Repair rounds for a draft that broke its contract. */
+      repairRounds: z.number().int().min(0).max(2),
+      /** Answer small talk at quick effort, without deliberation. */
+      quickSmallTalk: z.boolean(),
+      /**
+       * Deliberation (M57, p2): task model, independent approaches,
+       * agreement as uncertainty, adjudication and verification, synthesis.
+       * Null answers in one call.
+       */
+      cognition: z
+        .object({
+          candidates: z.number().int().min(2).max(5),
+          adjudicate: z.boolean(),
+          verifyHard: z.boolean(),
+          verifyFrom: z.number().int().min(1).max(5),
+        })
+        .nullable()
+        .default(null),
+    })
+    .default({
+      contracts: false,
+      repairRounds: 0,
+      quickSmallTalk: false,
+      cognition: null,
+    }),
 });
 
 export type RougePolicy = z.infer<typeof rougePolicySchema>;
@@ -52,7 +85,50 @@ export const MEASURED_SUBSTITUTES: readonly string[] = [
   "nemotron-3-ultra-550b-a55b:free",
 ];
 
+/**
+ * The policy interactive Rouge runs: p1. p2, the M57 cognitive kernel,
+ * becomes the default only after it beats the raw core on the blind
+ * same-core benchmark (docs/rouge/architecture.md, "M57 capability gate").
+ * Until then it runs only where it is asked for, as in the gate itself.
+ */
 export function defaultPolicy(core = DEFAULT_CORE): RougePolicy {
+  return contractPolicy(core);
+}
+
+/** p1: answer contracts and quick small talk, one call per answer. */
+export function contractPolicy(core = DEFAULT_CORE): RougePolicy {
+  return rougePolicySchema.parse({
+    ...foundationPolicy(core),
+    version: "p1",
+    kernel: {
+      contracts: true,
+      repairRounds: 1,
+      quickSmallTalk: true,
+      cognition: null,
+    },
+  });
+}
+
+/** p2: p1 plus deliberation -- the cognitive kernel. */
+export function cognitivePolicy(core = DEFAULT_CORE): RougePolicy {
+  const p1 = contractPolicy(core);
+  return rougePolicySchema.parse({
+    ...p1,
+    version: "p2",
+    kernel: {
+      ...p1.kernel,
+      cognition: {
+        candidates: 3,
+        adjudicate: true,
+        verifyHard: true,
+        verifyFrom: 4,
+      },
+    },
+  });
+}
+
+/** p0: the foundation alone. The baseline for every kernel measurement. */
+export function foundationPolicy(core = DEFAULT_CORE): RougePolicy {
   return rougePolicySchema.parse({
     version: "p0",
     core,

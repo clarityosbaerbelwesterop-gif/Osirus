@@ -29,7 +29,7 @@ export type CoreTask = {
   strict: (text: string) => boolean;
 };
 
-const bare = (text: string) =>
+export const bare = (text: string) =>
   text
     .trim()
     .replace(/^```[a-z]*\s*|\s*```$/gi, "")
@@ -37,9 +37,11 @@ const bare = (text: string) =>
     .trim();
 
 /** The number appears as a whole number token (so 12 does not match -12). */
-function number(answer: string): Pick<CoreTask, "correct" | "strict"> {
+export function number(answer: string): Pick<CoreTask, "correct" | "strict"> {
   const escaped = answer.replace(/[-.]/g, (c) => `\\${c}`);
-  const pattern = new RegExp(`(^|[^\\d.\\-])${escaped}(?![\\d])`);
+  // Not part of a larger number: no digit, and no decimal continuation
+  // ("3" must not match "3.5").
+  const pattern = new RegExp(`(^|[^\\d.\\-])${escaped}(?![\\d]|[.,]\\d)`);
   return {
     correct: (text) =>
       pattern.test(` ${text.replace(/(\d),(\d{3})/g, "$1$2")}`),
@@ -47,7 +49,7 @@ function number(answer: string): Pick<CoreTask, "correct" | "strict"> {
   };
 }
 
-function word(answer: string): Pick<CoreTask, "correct" | "strict"> {
+export function word(answer: string): Pick<CoreTask, "correct" | "strict"> {
   const pattern = new RegExp(`\\b${answer}\\b`, "i");
   return {
     correct: (text) => pattern.test(text),
