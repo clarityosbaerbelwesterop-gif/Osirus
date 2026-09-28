@@ -40,6 +40,16 @@ on:
         required: false
         type: string
         default: raw,rouge,sc
+      families:
+        description: (capability) comma-separated families; empty = all ten
+        required: false
+        type: string
+        default: ""
+      seed:
+        description: (capability, holdout) reuse a recorded seed, e.g. for a later shard or baseline; empty = fresh random
+        required: false
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -75,6 +85,8 @@ jobs:
           ROUGE_M57_SET: ${{ inputs.set }}
           ROUGE_M57_PER_FAMILY: ${{ inputs.per_family }}
           ROUGE_M57_SIDES: ${{ inputs.sides }}
+          ROUGE_M57_FAMILIES: ${{ inputs.families }}
+          ROUGE_M57_SEED: ${{ inputs.seed }}
           ROUGE_EVIDENCE: ${{ runner.temp }}/rouge-eval.json
           RSI_EVAL: ${{ inputs.mode == 'core-selection' && 'evals/rouge-core-selection.eval.ts' || inputs.mode == 'kernel' && 'evals/rouge-kernel.eval.ts' || inputs.mode == 'capability' && 'evals/rouge-m57.eval.ts' || 'evals/rouge-foundation.eval.ts' }}
         run: npx vitest run --config vitest.rsi.config.ts

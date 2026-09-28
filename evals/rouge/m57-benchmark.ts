@@ -816,13 +816,20 @@ const GENERATORS: Record<Family, (r: Rng, tier: Tier) => Generated> = {
   "list-ops": listOps,
 };
 
-/** Every task depends only on (seed, family, index): order-independent. */
+/**
+ * Every task depends only on (seed, family, index), so it is the same task
+ * whatever else is drawn. Tasks come interleaved -- every family's first
+ * task, then every family's second -- so a run cut short by its time budget
+ * still covers every family (the second development run, ordered by family,
+ * never reached the last five).
+ */
 export function generateBenchmark(
   seed: string,
   perFamily: number,
+  families: readonly Family[] = FAMILIES,
 ): BenchTask[] {
-  return FAMILIES.flatMap((family) =>
-    Array.from({ length: perFamily }, (_, index) => {
+  return Array.from({ length: perFamily }, (_, index) =>
+    families.map((family) => {
       const tier = (index % 2) as Tier;
       return {
         id: `${family}-${index + 1}`,
@@ -831,5 +838,5 @@ export function generateBenchmark(
         ...GENERATORS[family](rngOf(`${seed}:${family}:${index}`), tier),
       };
     }),
-  );
+  ).flat();
 }

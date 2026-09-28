@@ -50,6 +50,7 @@ import { paired } from "./rouge/stats";
 // ROUGE_M57_PER_FAMILY   tasks per family (default 3 dev, 6 holdout)
 // ROUGE_M57_SIDES        comma-separated sides (default raw,rouge,sc);
 //                        "raw" alone calibrates difficulty on dev
+// ROUGE_M57_FAMILIES     comma-separated families (default all)
 // ROUGE_M57_SC           self-consistency samples (default 5)
 // ROUGE_M57_CONCURRENCY  model calls in flight at once (default 4)
 // ROUGE_M57_PARALLEL     tasks in flight at once (default 2)
@@ -211,7 +212,15 @@ it(
     const deadline =
       Date.now() + (Number(process.env.ROUGE_M57_BUDGET_MS) || 300 * 60_000);
 
-    const tasks = generateBenchmark(seed, perFamily);
+    const families = process.env.ROUGE_M57_FAMILIES
+      ? FAMILIES.filter((family) =>
+          process.env
+            .ROUGE_M57_FAMILIES!.split(",")
+            .map((name) => name.trim())
+            .includes(family),
+        )
+      : FAMILIES;
+    const tasks = generateBenchmark(seed, perFamily, families);
 
     // Contamination: no holdout task may equal a development or teacher
     // task, or repeat within the set.
