@@ -1,6 +1,7 @@
 """Command line for a Rouge training session on a GPU host.
 
     python -m rouge_train.cli verify  --base /models/Qwen3.5-27B
+    python -m rouge_train.cli verify-data --data /data/rouge-sft-v0 --manifest datasets/manifests/rouge-sft-v0.json
     python -m rouge_train.cli train   --config configs/sft-001.json
     python -m rouge_train.cli merge   --config configs/sft-001.json --out /ckpt/rouge-1-sft-001
     python -m rouge_train.cli generate --model /models/Qwen3.5-27B --items eval.jsonl --out base.jsonl
@@ -29,6 +30,9 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("verify")
     p.add_argument("--base", required=True)
+    p = sub.add_parser("verify-data")
+    p.add_argument("--data", required=True, help="directory with train.jsonl and eval.jsonl")
+    p.add_argument("--manifest", required=True, help="the dataset manifest committed in this repository")
     p = sub.add_parser("train")
     p.add_argument("--config", required=True)
     p = sub.add_parser("merge")
@@ -60,6 +64,20 @@ def main() -> None:
         result = verify_download(Path(args.base), load_base())
         print(json.dumps(result.__dict__ | {"ok": result.ok}, indent=1))
         raise SystemExit(0 if result.ok else 1)
+
+    if args.command == "verify-data":
+        from .hashing import sha256_file
+
+        expected = json.loads(Path(args.manifest).read_text())
+        result = {}
+        for part in ("train", "eval"):
+            path = Path(args.data) / expected[part]["file"]
+            actual = sha256_file(path) if path.exists() else None
+            result[part] = {"file": str(path), "expected": expected[part]["sha256"], "actual": actual,
+                            "ok": actual == expected[part]["sha256"]}
+        ok = all(r["ok"] for r in result.values())
+        print(json.dumps(result | {"ok": ok}, indent=1))
+        raise SystemExit(0 if ok else 1)
 
     if args.command == "train":
         from .config import RunConfig
@@ -132,6 +150,7 @@ def main() -> None:
             data={
                 "registry_version": json.loads((Path(__file__).resolve().parent.parent / "datasets" / "registry.json").read_text())["version"],
                 "mixture": Path(config.train_file).name,
+                "revision": train_report.get("dataset"),
                 "tokens": train_report["tokens"],
                 "stats": train_report["data"],
             },

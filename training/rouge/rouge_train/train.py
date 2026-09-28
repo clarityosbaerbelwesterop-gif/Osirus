@@ -30,7 +30,7 @@ import torch
 
 from . import data as data_module
 from .config import RunConfig
-from .hashing import hash_tree
+from .hashing import hash_tree, sha256_file
 from .modeling import attach_lora, causal_lm_loss, load_base, trainable_parameters
 from .seeds import seed_everything
 
@@ -234,12 +234,28 @@ def train(config: RunConfig) -> dict:
         "total_parameters": total,
         "lora_targets": len(targets),
         "data": stats.__dict__,
+        "dataset": _dataset_revision(config),
         "adapter_files": hash_tree(final),
         "environment": environment(),
         "config": config.to_dict(),
     }
     (output / "train-report.json").write_text(json.dumps(report, indent=1))
     return report
+
+
+def _dataset_revision(config: RunConfig) -> dict:
+    """The exact data this run saw: file hashes plus the build manifest that
+    sits next to the training file (name, code commit, counts)."""
+    revision = {"train_file": Path(config.train_file).name, "train_sha256": sha256_file(Path(config.train_file))}
+    if config.eval_file and Path(config.eval_file).exists():
+        revision |= {"eval_file": Path(config.eval_file).name, "eval_sha256": sha256_file(Path(config.eval_file))}
+    built = Path(config.train_file).with_name("manifest.json")
+    if built.exists():
+        manifest = json.loads(built.read_text())
+        revision |= {"name": manifest.get("name"), "code_commit": manifest.get("code_commit"),
+                     "manifest_sha256": sha256_file(built),
+                     "matches_manifest": manifest.get("train", {}).get("sha256") == revision["train_sha256"]}
+    return revision
 
 
 def _save_checkpoint(model, optimizer, scheduler, state, output: Path, keep: int) -> None:
