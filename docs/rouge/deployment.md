@@ -13,6 +13,17 @@ rouge-1-<stage>-NNN (BF16, canonical)
 
 ## What is proven and what is calculated
 
+Evidence:
+
+- CI run `36469389709` (commit `07eee3c`):
+  - **Linux:** checkpoint 4/4; F16, Q8_0, Q6_K, Q5_K_M and Q4_K_M each 4/4
+    through llama-server. KL divergence against F16: Q8_0 0.0003, Q4_K_M
+    0.0025.
+  - **macos-14 (Metal):** F16 scores like the checkpoint.
+  - **iOS:** `libllama.a` built for arm64 with Metal (5.6 MB).
+- These are tiny-model numbers. Its 248k-token embedding dominates the
+  file size, so its bits per weight say nothing about the 27B.
+
 | Claim                                                                                                                                  | Status                                                                                        |
 | -------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
 | llama.cpp converts the Qwen3.5 architecture (`Qwen3_5ForConditionalGeneration` → `qwen35`, MTP head exported for speculative decoding) | **Verified** in the pinned llama.cpp (`f1ea206`)                                              |
