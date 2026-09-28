@@ -78,7 +78,12 @@ export const DEFAULT_CORE = "grok-4.6";
  * (evals/rouge-core-selection.eval.ts); never from a guess. Empty means no
  * substitute: a refused core is reported as refused.
  */
-export const MEASURED_SUBSTITUTES: readonly string[] = [];
+export const MEASURED_SUBSTITUTES: readonly string[] = [
+  // Core selection tournament, rouge-eval.yml run 36324746302 (2026-09-27):
+  // 21/21 correct and 21/21 instruction-exact, median 8.7 s -- the only
+  // candidate of 11 that answered every task with at least 80% right.
+  "nemotron-3-ultra-550b-a55b:free",
+];
 
 /**
  * The policy interactive Rouge runs: p2, the M57 cognitive kernel. It is the
