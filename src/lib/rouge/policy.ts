@@ -86,12 +86,13 @@ export const MEASURED_SUBSTITUTES: readonly string[] = [
 ];
 
 /**
- * The policy interactive Rouge runs: p2, the M57 cognitive kernel. It is the
- * default only because it beat the raw core on the blind same-core benchmark
- * (docs/rouge/architecture.md, "M57 capability gate").
+ * The policy interactive Rouge runs: p1. p2, the M57 cognitive kernel,
+ * becomes the default only after it beats the raw core on the blind
+ * same-core benchmark (docs/rouge/architecture.md, "M57 capability gate").
+ * Until then it runs only where it is asked for, as in the gate itself.
  */
 export function defaultPolicy(core = DEFAULT_CORE): RougePolicy {
-  return cognitivePolicy(core);
+  return contractPolicy(core);
 }
 
 /** p1: answer contracts and quick small talk, one call per answer. */

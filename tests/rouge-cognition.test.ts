@@ -17,7 +17,11 @@ import {
   fallbackTaskModel,
   parseTaskModel,
 } from "../src/lib/rouge/kernel/task-model";
-import { cognitivePolicy, defaultPolicy } from "../src/lib/rouge/policy";
+import {
+  cognitivePolicy,
+  contractPolicy,
+  defaultPolicy,
+} from "../src/lib/rouge/policy";
 import { RougeRuntime } from "../src/lib/rouge/runtime";
 import { MemoryTelemetry } from "../src/lib/rouge/telemetry";
 import type { RougeMessage, RougeStreamEvent } from "../src/lib/rouge/types";
@@ -426,8 +430,9 @@ const byStep = (call: FoundationCall) => {
 };
 
 describe("Rouge p2 at run time", () => {
-  it("is the default policy", () => {
-    expect(defaultPolicy("grok-4.6")).toEqual(cognitivePolicy("grok-4.6"));
+  it("is not the default until it passes the capability gate", () => {
+    expect(defaultPolicy("grok-4.6")).toEqual(contractPolicy("grok-4.6"));
+    expect(defaultPolicy().kernel.cognition).toBeNull();
     expect(cognitivePolicy().version).toBe("p2");
   });
 

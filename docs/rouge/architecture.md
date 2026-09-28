@@ -252,6 +252,15 @@ same on it. What M56 measures is integrity:
 M57 is not done when the code is. It is done when a blind benchmark on the
 same core shows that Rouge is measurably more capable than the raw core.
 
+**Status (2026-09-28):** the kernel is merged at the owner's request, and p1
+stays the default.
+
+- The first development run could not be scored: rate limits hit, and the
+  raw core got every task it answered right.
+- The benchmark was made harder and retries were added.
+- p2 becomes the default only after it passes a holdout run. M57 stays open
+  until then, and M58 does not start.
+
 ### What the kernel does (policy p2, `src/lib/rouge/kernel/`)
 
 1. **Task model** (`task-model.ts`). One quick call analyses the task before
