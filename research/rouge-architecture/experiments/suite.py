@@ -243,6 +243,7 @@ def report(args) -> None:
             "params": rs[0]["params"], "params_active": rs[0]["params_active"],
             "flops": s(lambda r: r["flops_per_example"]), "train_flops": s(lambda r: r["train_flops"]),
             "state_bytes": rs[0]["memory"]["at_max_ood"]["state"], "kv_bytes": rs[0]["memory"]["at_max_ood"]["kv"],
+            "total_bytes": rs[0]["memory"]["at_max_ood"]["state"] + rs[0]["memory"]["at_max_ood"]["kv"],
             "peak_rss_mb": s(lambda r: r["peak_rss_mb"]), "latency_ms": s(lambda r: r["latency_ms_per_example"]),
             "train_seconds": s(lambda r: r["train_seconds"]), "cpu_core_seconds": s(lambda r: r["cpu_core_seconds"]),
             "sample_efficiency": s(lambda r: r["sample_efficiency"]),

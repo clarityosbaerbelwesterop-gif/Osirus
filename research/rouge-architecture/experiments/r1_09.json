@@ -1,0 +1,126 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.09",
+ "title": "Cheaper state reads: one gated cross-attention write per token instead of the full cell",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.03 (PARTIAL: memory works, read is expensive), R1.01 lesson 5 (9x FLOPs at equal parameters)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "Does replacing the per-token cell (O(M d^2)) by a gated cross-attention write (O(d^2 + M d)) keep rouge-mem's capability and recall while cutting inference FLOPs to <= 1/3?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "rouge-mem": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2
+   },
+   "rouge-cheap": {
+    "kind": "rouge-mem",
+    "d": 104,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "read_mode": "write"
+   }
+  },
+  "gate": {
+   "checks": {
+    "C1_flops": {
+     "left": "rouge-cheap:flops",
+     "op": "<=",
+     "right": "rouge-mem:flops",
+     "times": 0.33
+    },
+    "C2_capability": {
+     "left": "rouge-cheap:dev.all",
+     "op": ">=",
+     "right": "rouge-mem:dev.all",
+     "plus": -0.03
+    },
+    "C3_recall": {
+     "left": "rouge-cheap:ood.recall",
+     "op": ">=",
+     "right": "rouge-mem:ood.recall",
+     "plus": -0.05
+    },
+    "C4_near_transformer": {
+     "left": "rouge-cheap:flops",
+     "op": "<=",
+     "right": "transformer:flops",
+     "times": 1.5
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "C1_flops",
+      "C2_capability",
+      "C3_recall"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "C1_flops"
+     ],
+     "any": [
+      "C2_capability",
+      "C3_recall"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 300000000000000.0
+ },
+ "predictions": {
+  "C1-C3": "gating as written in the gate; C4 (within 1.5x of the Transformer's FLOPs) is reported",
+  "local_measurement": "untrained: rouge-mem 96.9 MFLOP/example, rouge-cheap 15.6 MFLOP (d 104; 6.2x fewer), Transformer 22.8 MFLOP",
+  "params": "rouge-cheap d=104 (~221k) to stay parameter-matched with rouge-mem (218k)"
+ },
+ "prior_art": "Perceiver cross-attention reads (2107.14795), gated RNN updates, linear-attention writes (2006.16236)",
+ "not_claimed": "All mechanisms are prior art (see docs/rouge/research/prior-art.md); only the measurement is new."
+}

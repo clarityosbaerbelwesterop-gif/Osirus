@@ -31,7 +31,7 @@ from prototypes.rouge_r101 import Rouge
 
 
 class RougeMem(Rouge):
-    def __init__(self, vocab: int, memory_slots: int = 32, read_k: int = 2, **kwargs):
+    def __init__(self, vocab: int, memory_slots: int = 32, read_k: int = 2, read_mode: str = "cell", window: int = 0, **kwargs):
         super().__init__(vocab, **kwargs)
         d = self.d
         self.content = nn.Linear(2 * d, d)
@@ -40,6 +40,30 @@ class RougeMem(Rouge):
         self.query = nn.Linear(d, d)
         self.read_out = nn.Linear(d, d)
         self.memory_slots, self.read_k = memory_slots, read_k
+        # R1.09: "write" replaces the full cell per input token by one gated
+        # cross-attention write into the slots (O(d^2 + M d) instead of
+        # O(M d^2)); thinking still uses the cell.
+        self.read_mode = read_mode
+        if read_mode == "write":
+            self.wk, self.wv, self.wg = nn.Linear(d, d), nn.Linear(d, d), nn.Linear(d, d)
+        # R1.11: an exact window of the last `window` token embeddings, read by
+        # attention at every think step (local exactness at W x d memory).
+        self.window = window
+        if window:
+            self.win_q, self.win_k, self.win_v = nn.Linear(d, d), nn.Linear(d, d), nn.Linear(d, d)
+
+    def read_token(self, state, u):
+        """Per-token state update: the full cell, or a cheap gated write."""
+        if self.read_mode == "cell":
+            return self.step(state, u)
+        a = F.softmax((state @ self.wk(u)[:, :, None]).squeeze(-1) / self.d ** 0.5, -1)   # (B, M)
+        delta = a[:, :, None] * (torch.sigmoid(self.wg(u)) * self.wv(u))[:, None, :]
+        return self.norm(state + delta)
+
+    def read_window(self, keys, values, valid, x):
+        scores = (keys @ self.win_q(x)[:, :, None]).squeeze(-1) / self.d ** 0.5
+        att = F.softmax(scores.masked_fill(~valid, float("-inf")), -1)
+        return (att[:, :, None] * values).sum(1)
 
     def write(self, memory, prev, cur, live):
         c = self.content(torch.cat([prev, cur], -1))
@@ -65,10 +89,16 @@ class RougeMem(Rouge):
         prev = torch.zeros(b, self.d)
         for i in range(t):
             live = i < lengths
-            state = torch.where(live[:, None, None], self.step(state, u[:, i]), state)
+            state = torch.where(live[:, None, None], self.read_token(state, u[:, i]), state)
             memory = self.write(memory, prev, u[:, i], live)
             prev = torch.where(live[:, None], u[:, i], prev)
         read_state = state
+        if self.window:
+            # the last `window` real tokens of every sequence (earlier positions are masked out)
+            pos = (lengths[:, None] - self.window + torch.arange(self.window)[None, :])
+            valid = pos >= 0
+            win = u[torch.arange(b)[:, None], pos.clamp(min=0)] * valid[:, :, None]
+            wk, wv = self.win_k(win), self.win_v(win)
         think = self.think_token.expand(b, -1)
         if self.inject:
             think = think + u[torch.arange(b), lengths - 1]
@@ -77,6 +107,8 @@ class RougeMem(Rouge):
         steps, remainder, mixed = torch.zeros(b), torch.zeros(b), torch.zeros_like(state)
         for n in range(limit if self.halting else self.think_steps):
             x = think + self.read(memory, think + state.mean(1))
+            if self.window:
+                x = x + self.read_window(wk, wv, valid, think + state.mean(1))
             state = self.step(state, x)
             if not self.halting:
                 continue
@@ -90,6 +122,8 @@ class RougeMem(Rouge):
             remainder = torch.where(stop, 1 - acc, remainder)
             acc = torch.where(running, acc + p, acc)
             running = running & ~stop
+            if not running.any():  # every example has halted: executed FLOPs follow the halting
+                break
         if not self.halting:
             mixed, steps = state, torch.full((b,), float(self.think_steps))
             remainder = torch.zeros(b)
@@ -101,3 +135,6 @@ class RougeMem(Rouge):
     def state_bytes(self, tokens: int) -> int:
         """Constant in the input length: active slots plus memory slots (fp32)."""
         return (self.slots + self.memory_slots) * self.d * 4
+
+    def memory_bytes(self, tokens: int) -> dict:
+        return {"state": self.state_bytes(tokens), "kv": 2 * min(self.window, tokens) * self.d * 4}

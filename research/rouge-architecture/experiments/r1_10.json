@@ -1,0 +1,148 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.10",
+ "title": "State capacity law: recall and capability against memory slots (8, 16, 32, 64)",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.03 (open question: how many slots)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "How does OOD recall (14-20 facts) scale with the number of exact memory slots, and where does it saturate? How much is retained per byte?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "slots8": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 8,
+    "read_k": 2
+   },
+   "slots16": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 16,
+    "read_k": 2
+   },
+   "slots32": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2
+   },
+   "slots64": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 64,
+    "read_k": 2
+   }
+  },
+  "gate": {
+   "checks": {
+    "S1_16_gt_8": {
+     "left": "slots16:ood.recall",
+     "op": ">",
+     "right": "slots8:ood.recall"
+    },
+    "S2_32_gt_16": {
+     "left": "slots32:ood.recall",
+     "op": ">",
+     "right": "slots16:ood.recall"
+    },
+    "S3a_64_saturates_hi": {
+     "left": "slots64:ood.recall",
+     "op": "<=",
+     "right": "slots32:ood.recall",
+     "plus": 0.03
+    },
+    "S3b_64_saturates_lo": {
+     "left": "slots64:ood.recall",
+     "op": ">=",
+     "right": "slots32:ood.recall",
+     "plus": -0.03
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "S1_16_gt_8",
+      "S2_32_gt_16",
+      "S3a_64_saturates_hi",
+      "S3b_64_saturates_lo"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "S1_16_gt_8",
+      "S2_32_gt_16"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 300000000000000.0
+ },
+ "predictions": {
+  "law": "Recall rises with slots while slots < facts (OOD has 14-20 facts) and saturates once slots exceed them: 8 < 16 < 32 and 64 within 3 points of 32.",
+  "reported": "recall and dev accuracy per byte of state for every slot count (the retention-per-byte curve)"
+ },
+ "prior_art": "Capacity limits of fixed-state models (2402.01032, 2312.04927)",
+ "not_claimed": "All mechanisms are prior art (see docs/rouge/research/prior-art.md); only the measurement is new."
+}

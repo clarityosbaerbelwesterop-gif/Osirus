@@ -1,0 +1,139 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.11",
+ "title": "Local exact window + persistent state",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.03 (exact-recall gap), R1.05 (hybrids: Griffin 2402.19427, Samba 2406.07522, Infini-attention 2404.07143)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "Does an exact window of the last 16 or 32 token embeddings, read by attention at every think step, add local exactness to rouge-mem at a small constant memory?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "rouge-mem": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2
+   },
+   "rouge-win16": {
+    "kind": "rouge-mem",
+    "d": 104,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "window": 16
+   },
+   "rouge-win32": {
+    "kind": "rouge-mem",
+    "d": 104,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "window": 32
+   }
+  },
+  "gate": {
+   "checks": {
+    "W1_capability": {
+     "left": "rouge-win16:dev.all",
+     "op": ">=",
+     "right": "rouge-mem:dev.all",
+     "plus": 0.02
+    },
+    "W2_recall": {
+     "left": "rouge-win16:ood.recall",
+     "op": ">=",
+     "right": "rouge-mem:ood.recall",
+     "plus": 0.05
+    },
+    "W3_memory": {
+     "left": "rouge-win16:total_bytes",
+     "op": "<=",
+     "right": "transformer:total_bytes",
+     "times": 0.25
+    },
+    "W4_bigger_window": {
+     "left": "rouge-win32:dev.all",
+     "op": ">=",
+     "right": "rouge-win16:dev.all"
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "W1_capability",
+      "W2_recall",
+      "W3_memory"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "W3_memory"
+     ],
+     "any": [
+      "W1_capability",
+      "W2_recall"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 300000000000000.0
+ },
+ "predictions": {
+  "W1-W3": "gating as written; W4 (32 >= 16) reported",
+  "params": "window models use d=104 (~221k) to stay parameter-matched"
+ },
+ "prior_art": "Sliding-window + recurrent hybrids (Griffin, Samba), Infini-attention",
+ "not_claimed": "All mechanisms are prior art (see docs/rouge/research/prior-art.md); only the measurement is new."
+}
