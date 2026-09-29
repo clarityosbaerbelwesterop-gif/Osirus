@@ -78,18 +78,21 @@ def collate(examples):
 
 
 @torch.no_grad()
-def evaluate(model, examples, batch_size=200) -> dict:
+def evaluate(model, examples, batch_size=200, keep_rows=False, **kwargs) -> dict:
     model.eval()
     rows = []
     for i in range(0, len(examples), batch_size):
         chunk = examples[i : i + batch_size]
         ids, lengths, answers = collate(chunk)
-        logits, info = model(ids, lengths)
+        logits, info = model(ids, lengths, **kwargs)
         steps = info.get("steps", torch.zeros(len(chunk))).tolist()
         for (_, _, task, level), ok, s in zip(chunk, (logits.argmax(-1) == answers).tolist(), steps):
             rows.append((task, level, ok, s))
     model.train()
-    out = {"all": sum(r[2] for r in rows) / len(rows), "task": {}, "level": {}, "steps": {}}
+    out = {"all": sum(r[2] for r in rows) / len(rows), "task": {}, "level": {}, "steps": {},
+           "steps_mean": sum(r[3] for r in rows) / len(rows)}
+    if keep_rows:
+        out["rows"] = [(r[2], r[3]) for r in rows]
     for task in bench.TASKS:
         sel = [r for r in rows if r[0] == task]
         if sel:
@@ -101,11 +104,11 @@ def evaluate(model, examples, batch_size=200) -> dict:
     return out
 
 
-def flops_per_example(model, examples) -> float:
+def flops_per_example(model, examples, **kwargs) -> float:
     ids, lengths, _ = collate(examples)
     model.eval()
     with FlopCounterMode(display=False) as counter:  # forward only; grad mode on for the module tracker
-        model(ids, lengths)
+        model(ids, lengths, **kwargs)
     model.train()
     counted = counter.get_total_flops() / len(examples)
     if hasattr(model, "analytic_flops"):
@@ -171,6 +174,8 @@ def train(args) -> None:
         loss = F.cross_entropy(logits, answers)
         if hasattr(model, "extra_loss"):
             loss = loss + model.extra_loss(info)
+        if hasattr(model, "extra_loss_logits"):  # deep supervision (early-exit heads)
+            loss = loss + model.extra_loss_logits(info, answers)
         opt.zero_grad(set_to_none=True)
         loss.backward()
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
@@ -219,6 +224,23 @@ def train(args) -> None:
         "sample_efficiency": round(sum(c["probe"] for c in curve) / len(curve), 4),
         "curve": curve, **results,
     }
+    if hasattr(model, "variants"):  # inference settings of one trained model (depth knob, capacity, exit threshold)
+        result["variants"] = {}
+        full_rows = None
+        for name, kw in model.variants.items():
+            dev = evaluate(model, sets["dev"], keep_rows=True, **kw)
+            row = {"dev": dev["all"], "ood": evaluate(model, sets["ood"], **kw)["all"],
+                   "flops": flops_per_example(model, flop_set, **kw), "steps": dev["steps_mean"]}
+            if name == "full":
+                full_rows, full_flops = dev["rows"], row["flops"]
+            elif full_rows is not None and "threshold" in kw:
+                layers = getattr(model, "layers", 0)
+                row["false_exit_rate"] = sum(1 for (ok, s), (fok, _) in zip(dev["rows"], full_rows)
+                                             if s < layers and fok and not ok) / len(full_rows)
+                # per-example exits: a batch only stops when every example has exited, so the
+                # counted FLOPs overstate the cost; charge each example its own exit layer
+                row["flops"] = full_flops * dev["steps_mean"] / layers
+            result["variants"][name] = row
     (out / f"{args.model}-seed{args.seed}.json").write_text(json.dumps(result, indent=1))
     print(json.dumps({"model": args.model, "seed": args.seed, **{s: round(results[s]["all"], 4) for s in results},
                       "flops_M": round(flops / 1e6, 1), "train_s": result["train_seconds"]}), flush=True)
@@ -253,6 +275,9 @@ def report(args) -> None:
             "train_seconds": s(lambda r: r["train_seconds"]), "cpu_core_seconds": s(lambda r: r["cpu_core_seconds"]),
             "sample_efficiency": s(lambda r: r["sample_efficiency"]),
         })
+        for name in rs[0].get("variants", {}):
+            for key in rs[0]["variants"][name]:
+                metrics[f"var.{name}.{key}"] = s(lambda r, n=name, k=key: r["variants"][n][k])
         table[m] = {"seeds": [r["seed"] for r in rs], "kind": rs[0]["kind"], "metrics": metrics,
                     "memory_tokens": rs[0]["memory"]["max_ood_tokens"]}
     decision = gate.decide(table, SETUP["gate"])
@@ -293,6 +318,13 @@ def markdown(summary: dict) -> str:
     ]
     for name, fn in rows:
         lines.append(f"| {name} | " + " | ".join(fn(table[m]["metrics"]) for m in models) + " |")
+    var_rows = sorted({k for m in models for k in table[m]["metrics"] if k.startswith("var.")})
+    if var_rows:
+        lines += ["", "## Inference settings (one trained model, several settings)", "", "| setting | " + " | ".join(models) + " |",
+                  "|---|" + "---|" * len(models)]
+        for k in var_rows:
+            fmt = (lambda x: f"{x['mean'] / 1e6:.1f} M") if k.endswith(".flops") else (lambda x: f"{x['mean']:.2f}") if k.endswith(".steps") else (lambda x: f"{100 * x['mean']:.1f}")
+            lines.append(f"| {k[4:]} | " + " | ".join(fmt(table[m]["metrics"][k]) if k in table[m]["metrics"] else "-" for m in models) + " |")
     lines += ["", "## Decision", "", f"`{json.dumps(summary['decision'])}`", ""]
     return "\n".join(lines)
 

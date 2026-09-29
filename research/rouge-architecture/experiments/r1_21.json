@@ -1,0 +1,104 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.21",
+ "title": "Early exit with calibrated confidence",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.02b (learned halting), R1.07/R1.08 (scorecard on benchmark v3)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "With an answer head after every layer (deep supervision), can the model stop at the first confident layer and save >= 30% FLOPs, losing <= 1 point, with <= 5% false early exits?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "early": {
+    "kind": "early",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "thresholds": [
+     0.9,
+     0.8,
+     0.7
+    ]
+   }
+  },
+  "gate": {
+   "checks": {
+    "E1_flops": {
+     "left": "early:var.exit80.flops",
+     "op": "<=",
+     "right": "early:var.full.flops",
+     "times": 0.7
+    },
+    "E2_accuracy": {
+     "left": "early:var.exit80.dev",
+     "op": ">=",
+     "right": "early:var.full.dev",
+     "plus": -0.01
+    },
+    "E3_false_exits": {
+     "left": "early:var.exit80.false_exit_rate",
+     "op": "<=",
+     "value": 0.05
+    },
+    "E4_supervision_cost": {
+     "left": "early:var.full.dev",
+     "op": ">=",
+     "right": "transformer:dev.all",
+     "plus": -0.02
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "E1_flops",
+      "E2_accuracy",
+      "E3_false_exits"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "E2_accuracy",
+      "E3_false_exits"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 150000000000000.0
+ },
+ "predictions": {
+  "false_exit": "an example the full model answers correctly but the exited model answers wrongly",
+  "flops": "per-example exit FLOPs = full FLOPs x mean exit layer / layers",
+  "E4": "reported"
+ },
+ "prior_art": "CALM 2207.07061, DeeBERT 2004.12993",
+ "not_claimed": "Mixture-of-Depths, recurrent-depth training and early exit are prior art; the question is whether they pay on this benchmark at this scale."
+}

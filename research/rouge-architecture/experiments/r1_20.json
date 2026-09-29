@@ -1,0 +1,117 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.20",
+ "title": "Think-harder knob: a looped model trained with random depth",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.02b (learned halting), R1.07/R1.08 (scorecard on benchmark v3)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "If a shared block is trained with a random number of iterations (1-8), does test-time depth become a real capability knob (FAST 1, NORMAL 2, DEEP 4, ULTRA 8), and does ULTRA beat a model trained at fixed depth 4?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "knob": {
+    "kind": "knob",
+    "d": 128,
+    "heads": 4,
+    "max_steps": 8,
+    "random_depth": true,
+    "steps": 4
+   },
+   "fixed4": {
+    "kind": "knob",
+    "d": 128,
+    "heads": 4,
+    "max_steps": 8,
+    "random_depth": false,
+    "steps": 4
+   }
+  },
+  "gate": {
+   "checks": {
+    "K1a": {
+     "left": "knob:var.normal.ood",
+     "op": ">=",
+     "right": "knob:var.fast.ood",
+     "plus": -0.005
+    },
+    "K1b": {
+     "left": "knob:var.deep.ood",
+     "op": ">=",
+     "right": "knob:var.normal.ood",
+     "plus": -0.005
+    },
+    "K1c": {
+     "left": "knob:var.ultra.ood",
+     "op": ">=",
+     "right": "knob:var.deep.ood",
+     "plus": -0.005
+    },
+    "K2_ultra_gain": {
+     "left": "knob:var.ultra.ood",
+     "op": ">=",
+     "right": "fixed4:var.deep.ood",
+     "plus": 0.02
+    },
+    "K3_no_loss": {
+     "left": "knob:var.deep.dev",
+     "op": ">=",
+     "right": "fixed4:var.deep.dev",
+     "plus": -0.02
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "K1a",
+      "K1b",
+      "K1c",
+      "K2_ultra_gain"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "K1a",
+      "K1b",
+      "K1c"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 150000000000000.0
+ },
+ "predictions": {
+  "PASS": "OOD accuracy never drops as the knob rises, and ULTRA beats the fixed-depth model by >= 2 points OOD",
+  "K3": "reported: random-depth training costs <= 2 points at depth 4 (dev)"
+ },
+ "prior_art": "Recurrent depth 2502.05171, Universal Transformer 1807.03819, Looped Transformers 2409.15647",
+ "not_claimed": "Mixture-of-Depths, recurrent-depth training and early exit are prior art; the question is whether they pay on this benchmark at this scale."
+}

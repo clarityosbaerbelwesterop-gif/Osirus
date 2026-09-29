@@ -136,6 +136,9 @@ def build(kind: str, vocab: int, **config) -> nn.Module:
     if kind == "moe":
         from prototypes.sparse_circuits import SparseTransformer
         return SparseTransformer(vocab, **config)
+    if kind in ("mod", "knob", "early"):
+        from prototypes import dynamic
+        return {"mod": dynamic.MoDTransformer, "knob": dynamic.KnobLooped, "early": dynamic.EarlyExit}[kind](vocab, **config)
     if kind == "structured":
         from prototypes.structured import StructuredTransformer
         return StructuredTransformer(vocab, **config)
