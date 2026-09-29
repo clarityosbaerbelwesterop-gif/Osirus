@@ -167898,5 +167898,3890 @@
    "result": "PARTIAL"
   },
   "recorded": "2026-09-29T23:31:32Z"
+ },
+ {
+  "experiment_id": "R1.13",
+  "run": "rouge-forget-seed1",
+  "parent": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+  "hypothesis": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+  "architecture": "rouge-forget",
+  "config": {
+   "kind": "rouge-mem",
+   "d": 112,
+   "slots": 4,
+   "heads": 4,
+   "max_think": 8,
+   "halting": true,
+   "tau": 0.01,
+   "inject": true,
+   "rezero": true,
+   "tau_warmup": 0.3,
+   "memory_slots": 32,
+   "read_k": 2,
+   "context": 3,
+   "allocation": "usage"
+  },
+  "seed": 1,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 243348,
+  "active_parameters": 243348,
+  "flop_estimate": 176496992.0,
+  "checkpoint_sha256": "99720fa861a68bce58aafd182ae06535f588a0ee10638c1380f86f53153e1f81",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007651",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 8431.9,
+  "cost_usd": 0.0,
+  "ci_run": "36592875762",
+  "metrics": {
+   "dev": {
+    "all": 0.2966666666666667,
+    "task": {
+     "retain": 0.345,
+     "overwrite": 0.275,
+     "saturate": 0.27
+    },
+    "level": {
+     "retain:2": 0.2857,
+     "retain:3": 0.25,
+     "retain:4": 0.4444,
+     "retain:5": 0.1818,
+     "retain:6": 0.3636,
+     "retain:7": 0.5455,
+     "retain:8": 0.1667,
+     "retain:9": 0.2222,
+     "retain:10": 0.2,
+     "retain:11": 0.5,
+     "retain:12": 0.4,
+     "retain:13": 0.2778,
+     "retain:14": 0.7,
+     "retain:15": 0.1667,
+     "retain:16": 0.3333,
+     "retain:17": 0.5,
+     "retain:18": 0.3,
+     "retain:19": 0.2,
+     "retain:20": 0.5,
+     "overwrite:1": 0.3235,
+     "overwrite:2": 0.3623,
+     "overwrite:3": 0.127,
+     "saturate:4": 0.4783,
+     "saturate:5": 0.3077,
+     "saturate:6": 0.3043,
+     "saturate:7": 0.3077,
+     "saturate:8": 0.1818,
+     "saturate:9": 0.4,
+     "saturate:10": 0.1739,
+     "saturate:11": 0.1923,
+     "saturate:12": 0.125
+    },
+    "steps": {
+     "retain": 1.125,
+     "overwrite": 1.01,
+     "saturate": 1.07
+    },
+    "steps_mean": 1.0683333333333334,
+    "calibration": {
+     "ece": 0.03496329009532929,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6217583470898344
+    }
+   },
+   "holdout": {
+    "all": 0.2916666666666667,
+    "task": {
+     "retain": 0.35,
+     "overwrite": 0.27,
+     "saturate": 0.255
+    },
+    "level": {
+     "retain:2": 0.4286,
+     "retain:3": 0.4667,
+     "retain:4": 0.3,
+     "retain:5": 0.0769,
+     "retain:6": 0.5,
+     "retain:7": 0.0833,
+     "retain:8": 0.0909,
+     "retain:9": 0.4444,
+     "retain:10": 0.3846,
+     "retain:11": 0.8,
+     "retain:12": 0.3,
+     "retain:13": 0.5,
+     "retain:14": 0.2308,
+     "retain:15": 0.3636,
+     "retain:16": 0.5714,
+     "retain:17": 0.5714,
+     "retain:18": 0.2857,
+     "retain:19": 0.2857,
+     "retain:20": 0.375,
+     "overwrite:1": 0.3448,
+     "overwrite:2": 0.3333,
+     "overwrite:3": 0.1507,
+     "saturate:4": 0.5,
+     "saturate:5": 0.2,
+     "saturate:6": 0.2692,
+     "saturate:7": 0.2174,
+     "saturate:8": 0.24,
+     "saturate:9": 0.1053,
+     "saturate:10": 0.2609,
+     "saturate:11": 0.2727,
+     "saturate:12": 0.2273
+    },
+    "steps": {
+     "retain": 1.11,
+     "overwrite": 1.005,
+     "saturate": 1.06
+    },
+    "steps_mean": 1.0583333333333333,
+    "calibration": {
+     "ece": 0.029147696246703464,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6228840336134454
+    }
+   },
+   "ood": {
+    "all": 0.175,
+    "task": {
+     "retain": 0.27,
+     "overwrite": 0.06,
+     "saturate": 0.195
+    },
+    "level": {
+     "retain:40": 0.3333,
+     "retain:41": 0.2,
+     "retain:42": 0.3333,
+     "retain:43": 0.0,
+     "retain:44": 0.3333,
+     "retain:45": 0.6,
+     "retain:46": 0.1111,
+     "retain:47": 0.5,
+     "retain:48": 0.2,
+     "retain:49": 0.1667,
+     "retain:50": 0.3333,
+     "retain:51": 0.5,
+     "retain:52": 0.5,
+     "retain:53": 0.5,
+     "retain:54": 0.1667,
+     "retain:55": 0.6667,
+     "retain:56": 0.3333,
+     "retain:57": 0.625,
+     "retain:58": 0.0,
+     "retain:59": 0.5,
+     "retain:60": 0.2,
+     "retain:61": 0.0,
+     "retain:62": 0.2,
+     "retain:63": 0.3333,
+     "retain:64": 0.1667,
+     "retain:65": 0.25,
+     "retain:66": 0.0,
+     "retain:67": 0.0,
+     "retain:68": 0.3333,
+     "retain:69": 0.1429,
+     "retain:70": 0.0,
+     "retain:71": 0.1429,
+     "retain:72": 0.0,
+     "retain:73": 0.3333,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.2,
+     "retain:77": 0.125,
+     "retain:78": 0.25,
+     "retain:79": 0.6667,
+     "retain:80": 0.0,
+     "overwrite:5": 0.0455,
+     "overwrite:6": 0.0577,
+     "overwrite:7": 0.0612,
+     "overwrite:8": 0.0727,
+     "saturate:18": 0.3,
+     "saturate:19": 0.0938,
+     "saturate:20": 0.2143,
+     "saturate:21": 0.3462,
+     "saturate:22": 0.2632,
+     "saturate:23": 0.0952,
+     "saturate:24": 0.1852,
+     "saturate:25": 0.1,
+     "saturate:26": 0.1905
+    },
+    "steps": {
+     "retain": 2.015,
+     "overwrite": 1.455,
+     "saturate": 1.21
+    },
+    "steps_mean": 1.56,
+    "calibration": {
+     "ece": 0.21355885526786247,
+     "confident_error_rate": 0.0033333333333333335,
+     "auroc_confidence": 0.5761616161616162
+    }
+   },
+   "adv": {
+    "all": 0.23666666666666666,
+    "task": {
+     "retain": 0.4,
+     "overwrite": 0.19,
+     "saturate": 0.12
+    },
+    "level": {
+     "retain:2": 0.6667,
+     "retain:3": 0.3333,
+     "retain:4": 0.25,
+     "retain:5": 0.5714,
+     "retain:6": 0.1667,
+     "retain:7": 0.5,
+     "retain:8": 0.6667,
+     "retain:9": 0.0,
+     "retain:10": 0.5,
+     "retain:11": 0.25,
+     "retain:12": 0.2,
+     "retain:13": 0.5,
+     "retain:14": 0.1667,
+     "retain:15": 0.4,
+     "retain:16": 0.5,
+     "retain:17": 0.4,
+     "retain:18": 0.4,
+     "retain:19": 0.5,
+     "retain:20": 0.6,
+     "overwrite:1": 0.1379,
+     "overwrite:2": 0.2353,
+     "overwrite:3": 0.1892,
+     "saturate:4": 0.1429,
+     "saturate:5": 0.125,
+     "saturate:6": 0.125,
+     "saturate:7": 0.1667,
+     "saturate:8": 0.0833,
+     "saturate:9": 0.0833,
+     "saturate:10": 0.0,
+     "saturate:11": 0.1538,
+     "saturate:12": 0.2
+    },
+    "steps": {
+     "retain": 1.14,
+     "overwrite": 1.02,
+     "saturate": 1.04
+    },
+    "steps_mean": 1.0666666666666667,
+    "calibration": {
+     "ece": 0.09302527626355488,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5263546343563564
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.13",
+  "run": "rouge-forget-seed2",
+  "parent": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+  "hypothesis": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+  "architecture": "rouge-forget",
+  "config": {
+   "kind": "rouge-mem",
+   "d": 112,
+   "slots": 4,
+   "heads": 4,
+   "max_think": 8,
+   "halting": true,
+   "tau": 0.01,
+   "inject": true,
+   "rezero": true,
+   "tau_warmup": 0.3,
+   "memory_slots": 32,
+   "read_k": 2,
+   "context": 3,
+   "allocation": "usage"
+  },
+  "seed": 2,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 243348,
+  "active_parameters": 243348,
+  "flop_estimate": 176496992.0,
+  "checkpoint_sha256": "922fbab996a5023474ca04f9db7d9647d2a51e7d2596fb1b296144778abcfb1c",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007649",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 5371.9,
+  "cost_usd": 0.0,
+  "ci_run": "36592875762",
+  "metrics": {
+   "dev": {
+    "all": 0.29,
+    "task": {
+     "retain": 0.325,
+     "overwrite": 0.295,
+     "saturate": 0.25
+    },
+    "level": {
+     "retain:2": 0.1429,
+     "retain:3": 0.25,
+     "retain:4": 0.3333,
+     "retain:5": 0.2727,
+     "retain:6": 0.3636,
+     "retain:7": 0.3636,
+     "retain:8": 0.1667,
+     "retain:9": 0.3333,
+     "retain:10": 0.3,
+     "retain:11": 0.4167,
+     "retain:12": 0.3,
+     "retain:13": 0.1667,
+     "retain:14": 0.7,
+     "retain:15": 0.1667,
+     "retain:16": 0.4167,
+     "retain:17": 0.25,
+     "retain:18": 0.4,
+     "retain:19": 0.3,
+     "retain:20": 0.5,
+     "overwrite:1": 0.3676,
+     "overwrite:2": 0.3188,
+     "overwrite:3": 0.1905,
+     "saturate:4": 0.4348,
+     "saturate:5": 0.3077,
+     "saturate:6": 0.2609,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.2273,
+     "saturate:9": 0.35,
+     "saturate:10": 0.1304,
+     "saturate:11": 0.1538,
+     "saturate:12": 0.0833
+    },
+    "steps": {
+     "retain": 1.41,
+     "overwrite": 1.49,
+     "saturate": 1.75
+    },
+    "steps_mean": 1.55,
+    "calibration": {
+     "ece": 0.05273634806275368,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6534051049592574
+    }
+   },
+   "holdout": {
+    "all": 0.2733333333333333,
+    "task": {
+     "retain": 0.33,
+     "overwrite": 0.245,
+     "saturate": 0.245
+    },
+    "level": {
+     "retain:2": 0.3571,
+     "retain:3": 0.3333,
+     "retain:4": 0.6,
+     "retain:5": 0.2308,
+     "retain:6": 0.3,
+     "retain:7": 0.3333,
+     "retain:8": 0.2727,
+     "retain:9": 0.2222,
+     "retain:10": 0.2308,
+     "retain:11": 0.6,
+     "retain:12": 0.4,
+     "retain:13": 0.25,
+     "retain:14": 0.2308,
+     "retain:15": 0.5455,
+     "retain:16": 0.2857,
+     "retain:17": 0.2857,
+     "retain:18": 0.3571,
+     "retain:19": 0.1429,
+     "retain:20": 0.375,
+     "overwrite:1": 0.3621,
+     "overwrite:2": 0.2174,
+     "overwrite:3": 0.1781,
+     "saturate:4": 0.45,
+     "saturate:5": 0.25,
+     "saturate:6": 0.2308,
+     "saturate:7": 0.2609,
+     "saturate:8": 0.24,
+     "saturate:9": 0.1053,
+     "saturate:10": 0.1739,
+     "saturate:11": 0.2727,
+     "saturate:12": 0.2273
+    },
+    "steps": {
+     "retain": 1.45,
+     "overwrite": 1.46,
+     "saturate": 1.77
+    },
+    "steps_mean": 1.56,
+    "calibration": {
+     "ece": 0.054918348068992304,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6513341910942045
+    }
+   },
+   "ood": {
+    "all": 0.195,
+    "task": {
+     "retain": 0.325,
+     "overwrite": 0.075,
+     "saturate": 0.185
+    },
+    "level": {
+     "retain:40": 0.3333,
+     "retain:41": 0.2,
+     "retain:42": 0.0,
+     "retain:43": 0.3333,
+     "retain:44": 0.3333,
+     "retain:45": 0.8,
+     "retain:46": 0.3333,
+     "retain:47": 0.1667,
+     "retain:48": 0.8,
+     "retain:49": 0.3333,
+     "retain:50": 0.3333,
+     "retain:51": 0.375,
+     "retain:52": 0.5,
+     "retain:53": 0.5,
+     "retain:54": 0.5,
+     "retain:55": 0.0,
+     "retain:56": 0.3333,
+     "retain:57": 0.625,
+     "retain:58": 0.0,
+     "retain:59": 0.1667,
+     "retain:60": 0.6,
+     "retain:61": 0.25,
+     "retain:62": 0.0,
+     "retain:63": 0.3333,
+     "retain:64": 0.1667,
+     "retain:65": 0.0,
+     "retain:66": 0.25,
+     "retain:67": 0.6,
+     "retain:68": 0.6667,
+     "retain:69": 0.2857,
+     "retain:70": 0.0,
+     "retain:71": 0.0,
+     "retain:72": 0.3333,
+     "retain:73": 1.0,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.6,
+     "retain:77": 0.375,
+     "retain:78": 0.25,
+     "retain:79": 0.3333,
+     "retain:80": 0.0,
+     "overwrite:5": 0.0682,
+     "overwrite:6": 0.0385,
+     "overwrite:7": 0.0612,
+     "overwrite:8": 0.1273,
+     "saturate:18": 0.35,
+     "saturate:19": 0.0938,
+     "saturate:20": 0.0,
+     "saturate:21": 0.3846,
+     "saturate:22": 0.2105,
+     "saturate:23": 0.0476,
+     "saturate:24": 0.2222,
+     "saturate:25": 0.1,
+     "saturate:26": 0.1905
+    },
+    "steps": {
+     "retain": 1.895,
+     "overwrite": 1.74,
+     "saturate": 1.555
+    },
+    "steps_mean": 1.73,
+    "calibration": {
+     "ece": 0.2813541084776322,
+     "confident_error_rate": 0.03666666666666667,
+     "auroc_confidence": 0.6020951673125586
+    }
+   },
+   "adv": {
+    "all": 0.21666666666666667,
+    "task": {
+     "retain": 0.32,
+     "overwrite": 0.22,
+     "saturate": 0.11
+    },
+    "level": {
+     "retain:2": 0.3333,
+     "retain:3": 0.1667,
+     "retain:4": 0.375,
+     "retain:5": 0.2857,
+     "retain:6": 0.1667,
+     "retain:7": 0.3333,
+     "retain:8": 0.6667,
+     "retain:9": 0.5,
+     "retain:10": 0.5,
+     "retain:11": 0.25,
+     "retain:12": 0.0,
+     "retain:13": 0.25,
+     "retain:14": 0.1667,
+     "retain:15": 0.4,
+     "retain:16": 0.1667,
+     "retain:17": 0.4,
+     "retain:18": 0.6,
+     "retain:19": 0.25,
+     "retain:20": 0.6,
+     "overwrite:1": 0.1724,
+     "overwrite:2": 0.2353,
+     "overwrite:3": 0.2432,
+     "saturate:4": 0.3571,
+     "saturate:5": 0.0,
+     "saturate:6": 0.125,
+     "saturate:7": 0.0,
+     "saturate:8": 0.1667,
+     "saturate:9": 0.0,
+     "saturate:10": 0.0833,
+     "saturate:11": 0.0769,
+     "saturate:12": 0.0667
+    },
+    "steps": {
+     "retain": 1.43,
+     "overwrite": 1.5,
+     "saturate": 1.72
+    },
+    "steps_mean": 1.55,
+    "calibration": {
+     "ece": 0.10554354866345723,
+     "confident_error_rate": 0.0033333333333333335,
+     "auroc_confidence": 0.5520785597381342
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.13",
+  "run": "rouge-forget-seed3",
+  "parent": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+  "hypothesis": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+  "architecture": "rouge-forget",
+  "config": {
+   "kind": "rouge-mem",
+   "d": 112,
+   "slots": 4,
+   "heads": 4,
+   "max_think": 8,
+   "halting": true,
+   "tau": 0.01,
+   "inject": true,
+   "rezero": true,
+   "tau_warmup": 0.3,
+   "memory_slots": 32,
+   "read_k": 2,
+   "context": 3,
+   "allocation": "usage"
+  },
+  "seed": 3,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 243348,
+  "active_parameters": 243348,
+  "flop_estimate": 176496992.0,
+  "checkpoint_sha256": "5d1dfbe3a3836db1556ed3eb64a2a11a3b5581db1c3616edf4ca5b96ca4d49ba",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007650",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 8520.4,
+  "cost_usd": 0.0,
+  "ci_run": "36592875762",
+  "metrics": {
+   "dev": {
+    "all": 0.2966666666666667,
+    "task": {
+     "retain": 0.32,
+     "overwrite": 0.3,
+     "saturate": 0.27
+    },
+    "level": {
+     "retain:2": 0.1429,
+     "retain:3": 0.1667,
+     "retain:4": 0.3333,
+     "retain:5": 0.2727,
+     "retain:6": 0.5455,
+     "retain:7": 0.4545,
+     "retain:8": 0.25,
+     "retain:9": 0.2222,
+     "retain:10": 0.3,
+     "retain:11": 0.4167,
+     "retain:12": 0.3,
+     "retain:13": 0.2778,
+     "retain:14": 0.7,
+     "retain:15": 0.1667,
+     "retain:16": 0.3333,
+     "retain:17": 0.25,
+     "retain:18": 0.2,
+     "retain:19": 0.2,
+     "retain:20": 0.4167,
+     "overwrite:1": 0.3971,
+     "overwrite:2": 0.3913,
+     "overwrite:3": 0.0952,
+     "saturate:4": 0.3913,
+     "saturate:5": 0.2308,
+     "saturate:6": 0.3043,
+     "saturate:7": 0.4615,
+     "saturate:8": 0.2273,
+     "saturate:9": 0.35,
+     "saturate:10": 0.1304,
+     "saturate:11": 0.2692,
+     "saturate:12": 0.1667
+    },
+    "steps": {
+     "retain": 1.11,
+     "overwrite": 1.01,
+     "saturate": 1.03
+    },
+    "steps_mean": 1.05,
+    "calibration": {
+     "ece": 0.04781272018949192,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6031737579210821
+    }
+   },
+   "holdout": {
+    "all": 0.29,
+    "task": {
+     "retain": 0.375,
+     "overwrite": 0.25,
+     "saturate": 0.245
+    },
+    "level": {
+     "retain:2": 0.5,
+     "retain:3": 0.3333,
+     "retain:4": 0.3,
+     "retain:5": 0.1538,
+     "retain:6": 0.5,
+     "retain:7": 0.3333,
+     "retain:8": 0.1818,
+     "retain:9": 0.3333,
+     "retain:10": 0.2308,
+     "retain:11": 0.8,
+     "retain:12": 0.4,
+     "retain:13": 0.5,
+     "retain:14": 0.2308,
+     "retain:15": 0.2727,
+     "retain:16": 0.2857,
+     "retain:17": 0.5714,
+     "retain:18": 0.5714,
+     "retain:19": 0.1429,
+     "retain:20": 0.75,
+     "overwrite:1": 0.3448,
+     "overwrite:2": 0.2464,
+     "overwrite:3": 0.1781,
+     "saturate:4": 0.45,
+     "saturate:5": 0.25,
+     "saturate:6": 0.2308,
+     "saturate:7": 0.2609,
+     "saturate:8": 0.16,
+     "saturate:9": 0.1053,
+     "saturate:10": 0.1739,
+     "saturate:11": 0.3636,
+     "saturate:12": 0.2273
+    },
+    "steps": {
+     "retain": 1.115,
+     "overwrite": 1.01,
+     "saturate": 1.04
+    },
+    "steps_mean": 1.055,
+    "calibration": {
+     "ece": 0.04138238077362379,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6174248556472938
+    }
+   },
+   "ood": {
+    "all": 0.20166666666666666,
+    "task": {
+     "retain": 0.36,
+     "overwrite": 0.055,
+     "saturate": 0.19
+    },
+    "level": {
+     "retain:40": 0.3333,
+     "retain:41": 0.8,
+     "retain:42": 0.6667,
+     "retain:43": 0.3333,
+     "retain:44": 0.6667,
+     "retain:45": 0.4,
+     "retain:46": 0.0,
+     "retain:47": 0.5,
+     "retain:48": 0.2,
+     "retain:49": 0.5,
+     "retain:50": 0.0,
+     "retain:51": 0.5,
+     "retain:52": 0.0,
+     "retain:53": 0.375,
+     "retain:54": 0.3333,
+     "retain:55": 0.3333,
+     "retain:56": 0.0,
+     "retain:57": 0.625,
+     "retain:58": 0.0,
+     "retain:59": 0.1667,
+     "retain:60": 0.2,
+     "retain:61": 0.0,
+     "retain:62": 0.6,
+     "retain:63": 0.1667,
+     "retain:64": 0.1667,
+     "retain:65": 0.25,
+     "retain:66": 0.25,
+     "retain:67": 0.6,
+     "retain:68": 0.0,
+     "retain:69": 0.5714,
+     "retain:70": 0.75,
+     "retain:71": 0.2857,
+     "retain:72": 0.0,
+     "retain:73": 0.0,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.8,
+     "retain:77": 0.375,
+     "retain:78": 0.5,
+     "retain:79": 0.6667,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.0455,
+     "overwrite:6": 0.0385,
+     "overwrite:7": 0.0816,
+     "overwrite:8": 0.0545,
+     "saturate:18": 0.25,
+     "saturate:19": 0.0938,
+     "saturate:20": 0.0714,
+     "saturate:21": 0.3077,
+     "saturate:22": 0.3158,
+     "saturate:23": 0.0952,
+     "saturate:24": 0.2593,
+     "saturate:25": 0.1,
+     "saturate:26": 0.1905
+    },
+    "steps": {
+     "retain": 1.44,
+     "overwrite": 1.2,
+     "saturate": 1.105
+    },
+    "steps_mean": 1.2483333333333333,
+    "calibration": {
+     "ece": 0.21759387227396174,
+     "confident_error_rate": 0.0033333333333333335,
+     "auroc_confidence": 0.6253386014251454
+    }
+   },
+   "adv": {
+    "all": 0.22,
+    "task": {
+     "retain": 0.38,
+     "overwrite": 0.16,
+     "saturate": 0.12
+    },
+    "level": {
+     "retain:2": 0.6667,
+     "retain:3": 0.3333,
+     "retain:4": 0.5,
+     "retain:5": 0.4286,
+     "retain:6": 0.1667,
+     "retain:7": 0.3333,
+     "retain:8": 0.6667,
+     "retain:9": 0.5,
+     "retain:10": 0.3333,
+     "retain:11": 0.0,
+     "retain:12": 0.2,
+     "retain:13": 0.25,
+     "retain:14": 0.3333,
+     "retain:15": 0.4,
+     "retain:16": 0.3333,
+     "retain:17": 0.4,
+     "retain:18": 0.6,
+     "retain:19": 0.25,
+     "retain:20": 0.8,
+     "overwrite:1": 0.1724,
+     "overwrite:2": 0.1471,
+     "overwrite:3": 0.1622,
+     "saturate:4": 0.1429,
+     "saturate:5": 0.25,
+     "saturate:6": 0.25,
+     "saturate:7": 0.1667,
+     "saturate:8": 0.0,
+     "saturate:9": 0.0833,
+     "saturate:10": 0.0,
+     "saturate:11": 0.0769,
+     "saturate:12": 0.2
+    },
+    "steps": {
+     "retain": 1.08,
+     "overwrite": 1.0,
+     "saturate": 1.09
+    },
+    "steps_mean": 1.0566666666666666,
+    "calibration": {
+     "ece": 0.10181814566254614,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5541958041958042
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.13",
+  "run": "rouge-mem-seed1",
+  "parent": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+  "hypothesis": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+  "architecture": "rouge-mem",
+  "config": {
+   "kind": "rouge-mem",
+   "d": 112,
+   "slots": 4,
+   "heads": 4,
+   "max_think": 8,
+   "halting": true,
+   "tau": 0.01,
+   "inject": true,
+   "rezero": true,
+   "tau_warmup": 0.3,
+   "memory_slots": 32,
+   "read_k": 2,
+   "context": 3
+  },
+  "seed": 1,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 230691,
+  "active_parameters": 230691,
+  "flop_estimate": 173045600.0,
+  "checkpoint_sha256": "66648c4666395dd8508193b325c9defe6be13d0d440b01bd9b85f288fc4e7039",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007645",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 7435.2,
+  "cost_usd": 0.0,
+  "ci_run": "36592875762",
+  "metrics": {
+   "dev": {
+    "all": 0.29833333333333334,
+    "task": {
+     "retain": 0.325,
+     "overwrite": 0.28,
+     "saturate": 0.29
+    },
+    "level": {
+     "retain:2": 0.1429,
+     "retain:3": 0.1667,
+     "retain:4": 0.3333,
+     "retain:5": 0.3636,
+     "retain:6": 0.4545,
+     "retain:7": 0.4545,
+     "retain:8": 0.1667,
+     "retain:9": 0.1111,
+     "retain:10": 0.2,
+     "retain:11": 0.5,
+     "retain:12": 0.4,
+     "retain:13": 0.3333,
+     "retain:14": 0.7,
+     "retain:15": 0.0,
+     "retain:16": 0.4167,
+     "retain:17": 0.25,
+     "retain:18": 0.3,
+     "retain:19": 0.3,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.3382,
+     "overwrite:2": 0.3478,
+     "overwrite:3": 0.1429,
+     "saturate:4": 0.5217,
+     "saturate:5": 0.3462,
+     "saturate:6": 0.3043,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.1818,
+     "saturate:9": 0.4,
+     "saturate:10": 0.2174,
+     "saturate:11": 0.1923,
+     "saturate:12": 0.125
+    },
+    "steps": {
+     "retain": 1.555,
+     "overwrite": 1.25,
+     "saturate": 1.47
+    },
+    "steps_mean": 1.425,
+    "calibration": {
+     "ece": 0.033965332731604576,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6383975371223078
+    }
+   },
+   "holdout": {
+    "all": 0.28833333333333333,
+    "task": {
+     "retain": 0.33,
+     "overwrite": 0.27,
+     "saturate": 0.265
+    },
+    "level": {
+     "retain:2": 0.4286,
+     "retain:3": 0.4667,
+     "retain:4": 0.3,
+     "retain:5": 0.2308,
+     "retain:6": 0.3,
+     "retain:7": 0.1667,
+     "retain:8": 0.0909,
+     "retain:9": 0.2222,
+     "retain:10": 0.3077,
+     "retain:11": 0.8,
+     "retain:12": 0.3,
+     "retain:13": 0.25,
+     "retain:14": 0.3077,
+     "retain:15": 0.3636,
+     "retain:16": 0.5714,
+     "retain:17": 0.5,
+     "retain:18": 0.2143,
+     "retain:19": 0.2857,
+     "retain:20": 0.375,
+     "overwrite:1": 0.3448,
+     "overwrite:2": 0.3188,
+     "overwrite:3": 0.1644,
+     "saturate:4": 0.45,
+     "saturate:5": 0.2,
+     "saturate:6": 0.2692,
+     "saturate:7": 0.2609,
+     "saturate:8": 0.2,
+     "saturate:9": 0.1579,
+     "saturate:10": 0.2174,
+     "saturate:11": 0.3636,
+     "saturate:12": 0.2727
+    },
+    "steps": {
+     "retain": 1.485,
+     "overwrite": 1.14,
+     "saturate": 1.475
+    },
+    "steps_mean": 1.3666666666666667,
+    "calibration": {
+     "ece": 0.03808963196973006,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6215700342488933
+    }
+   },
+   "ood": {
+    "all": 0.18833333333333332,
+    "task": {
+     "retain": 0.33,
+     "overwrite": 0.05,
+     "saturate": 0.185
+    },
+    "level": {
+     "retain:40": 0.6667,
+     "retain:41": 0.2,
+     "retain:42": 0.1667,
+     "retain:43": 0.0,
+     "retain:44": 0.3333,
+     "retain:45": 0.8,
+     "retain:46": 0.0,
+     "retain:47": 0.6667,
+     "retain:48": 0.2,
+     "retain:49": 0.6667,
+     "retain:50": 0.0,
+     "retain:51": 0.25,
+     "retain:52": 0.5,
+     "retain:53": 0.375,
+     "retain:54": 0.1667,
+     "retain:55": 0.3333,
+     "retain:56": 0.3333,
+     "retain:57": 0.125,
+     "retain:58": 0.3333,
+     "retain:59": 0.1667,
+     "retain:60": 0.2,
+     "retain:61": 0.25,
+     "retain:62": 0.4,
+     "retain:63": 0.0,
+     "retain:64": 0.5,
+     "retain:65": 0.5,
+     "retain:66": 0.75,
+     "retain:67": 0.2,
+     "retain:68": 0.3333,
+     "retain:69": 0.4286,
+     "retain:70": 0.25,
+     "retain:71": 0.5714,
+     "retain:72": 1.0,
+     "retain:73": 0.3333,
+     "retain:74": 0.5,
+     "retain:75": 0.5,
+     "retain:76": 0.2,
+     "retain:77": 0.25,
+     "retain:78": 0.25,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.0682,
+     "overwrite:6": 0.0577,
+     "overwrite:7": 0.0408,
+     "overwrite:8": 0.0364,
+     "saturate:18": 0.3,
+     "saturate:19": 0.0938,
+     "saturate:20": 0.0714,
+     "saturate:21": 0.3077,
+     "saturate:22": 0.2105,
+     "saturate:23": 0.0476,
+     "saturate:24": 0.2222,
+     "saturate:25": 0.15,
+     "saturate:26": 0.2381
+    },
+    "steps": {
+     "retain": 2.07,
+     "overwrite": 1.84,
+     "saturate": 1.755
+    },
+    "steps_mean": 1.8883333333333334,
+    "calibration": {
+     "ece": 0.2752820788075527,
+     "confident_error_rate": 0.018333333333333333,
+     "auroc_confidence": 0.6520506623539459
+    }
+   },
+   "adv": {
+    "all": 0.21666666666666667,
+    "task": {
+     "retain": 0.34,
+     "overwrite": 0.16,
+     "saturate": 0.15
+    },
+    "level": {
+     "retain:2": 0.6667,
+     "retain:3": 0.3333,
+     "retain:4": 0.5,
+     "retain:5": 0.5714,
+     "retain:6": 0.1667,
+     "retain:7": 0.5,
+     "retain:8": 0.3333,
+     "retain:9": 0.0,
+     "retain:10": 0.3333,
+     "retain:11": 0.25,
+     "retain:12": 0.0,
+     "retain:13": 0.125,
+     "retain:14": 0.1667,
+     "retain:15": 0.6,
+     "retain:16": 0.5,
+     "retain:17": 0.4,
+     "retain:18": 0.4,
+     "retain:19": 0.25,
+     "retain:20": 0.2,
+     "overwrite:1": 0.1379,
+     "overwrite:2": 0.1471,
+     "overwrite:3": 0.1892,
+     "saturate:4": 0.3571,
+     "saturate:5": 0.125,
+     "saturate:6": 0.125,
+     "saturate:7": 0.1667,
+     "saturate:8": 0.1667,
+     "saturate:9": 0.0833,
+     "saturate:10": 0.0,
+     "saturate:11": 0.0769,
+     "saturate:12": 0.2
+    },
+    "steps": {
+     "retain": 1.52,
+     "overwrite": 1.22,
+     "saturate": 1.44
+    },
+    "steps_mean": 1.3933333333333333,
+    "calibration": {
+     "ece": 0.11056201939781508,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5567266775777414
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.13",
+  "run": "rouge-mem-seed2",
+  "parent": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+  "hypothesis": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+  "architecture": "rouge-mem",
+  "config": {
+   "kind": "rouge-mem",
+   "d": 112,
+   "slots": 4,
+   "heads": 4,
+   "max_think": 8,
+   "halting": true,
+   "tau": 0.01,
+   "inject": true,
+   "rezero": true,
+   "tau_warmup": 0.3,
+   "memory_slots": 32,
+   "read_k": 2,
+   "context": 3
+  },
+  "seed": 2,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 230691,
+  "active_parameters": 230691,
+  "flop_estimate": 173045600.0,
+  "checkpoint_sha256": "39f5042170213b06d252d6bd845408e185dbc8106918952325558c10c45d977e",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007648",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 8495.9,
+  "cost_usd": 0.0,
+  "ci_run": "36592875762",
+  "metrics": {
+   "dev": {
+    "all": 0.8,
+    "task": {
+     "retain": 0.79,
+     "overwrite": 0.87,
+     "saturate": 0.74
+    },
+    "level": {
+     "retain:2": 0.8571,
+     "retain:3": 0.9167,
+     "retain:4": 0.7778,
+     "retain:5": 0.7273,
+     "retain:6": 0.8182,
+     "retain:7": 0.7273,
+     "retain:8": 0.9167,
+     "retain:9": 0.6667,
+     "retain:10": 0.9,
+     "retain:11": 0.75,
+     "retain:12": 1.0,
+     "retain:13": 0.7222,
+     "retain:14": 0.7,
+     "retain:15": 1.0,
+     "retain:16": 0.75,
+     "retain:17": 0.875,
+     "retain:18": 0.7,
+     "retain:19": 0.7,
+     "retain:20": 0.6667,
+     "overwrite:1": 0.8529,
+     "overwrite:2": 0.913,
+     "overwrite:3": 0.8413,
+     "saturate:4": 0.8261,
+     "saturate:5": 0.9231,
+     "saturate:6": 0.913,
+     "saturate:7": 0.6923,
+     "saturate:8": 0.7727,
+     "saturate:9": 0.8,
+     "saturate:10": 0.5652,
+     "saturate:11": 0.5,
+     "saturate:12": 0.6667
+    },
+    "steps": {
+     "retain": 1.63,
+     "overwrite": 1.585,
+     "saturate": 1.465
+    },
+    "steps_mean": 1.56,
+    "calibration": {
+     "ece": 0.023935676639278737,
+     "confident_error_rate": 0.0016666666666666668,
+     "auroc_confidence": 0.9528993055555556
+    }
+   },
+   "holdout": {
+    "all": 0.7833333333333333,
+    "task": {
+     "retain": 0.78,
+     "overwrite": 0.87,
+     "saturate": 0.7
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.8,
+     "retain:4": 1.0,
+     "retain:5": 0.8462,
+     "retain:6": 0.8,
+     "retain:7": 0.5833,
+     "retain:8": 1.0,
+     "retain:9": 1.0,
+     "retain:10": 0.5385,
+     "retain:11": 0.8,
+     "retain:12": 0.6,
+     "retain:13": 0.75,
+     "retain:14": 0.7692,
+     "retain:15": 0.5455,
+     "retain:16": 0.8571,
+     "retain:17": 0.6429,
+     "retain:18": 0.7857,
+     "retain:19": 0.8571,
+     "retain:20": 0.75,
+     "overwrite:1": 0.931,
+     "overwrite:2": 0.7971,
+     "overwrite:3": 0.8904,
+     "saturate:4": 0.85,
+     "saturate:5": 0.85,
+     "saturate:6": 0.6923,
+     "saturate:7": 0.8261,
+     "saturate:8": 0.64,
+     "saturate:9": 0.5263,
+     "saturate:10": 0.6522,
+     "saturate:11": 0.7273,
+     "saturate:12": 0.5455
+    },
+    "steps": {
+     "retain": 1.635,
+     "overwrite": 1.485,
+     "saturate": 1.45
+    },
+    "steps_mean": 1.5233333333333334,
+    "calibration": {
+     "ece": 0.03994170648356278,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.9729296235679215
+    }
+   },
+   "ood": {
+    "all": 0.665,
+    "task": {
+     "retain": 0.72,
+     "overwrite": 0.79,
+     "saturate": 0.485
+    },
+    "level": {
+     "retain:40": 1.0,
+     "retain:41": 0.6,
+     "retain:42": 0.5,
+     "retain:43": 1.0,
+     "retain:44": 0.5,
+     "retain:45": 1.0,
+     "retain:46": 0.5556,
+     "retain:47": 0.6667,
+     "retain:48": 1.0,
+     "retain:49": 0.5,
+     "retain:50": 1.0,
+     "retain:51": 0.75,
+     "retain:52": 1.0,
+     "retain:53": 1.0,
+     "retain:54": 0.6667,
+     "retain:55": 0.5,
+     "retain:56": 1.0,
+     "retain:57": 1.0,
+     "retain:58": 1.0,
+     "retain:59": 0.6667,
+     "retain:60": 1.0,
+     "retain:61": 1.0,
+     "retain:62": 0.8,
+     "retain:63": 0.6667,
+     "retain:64": 0.8333,
+     "retain:65": 0.75,
+     "retain:66": 0.5,
+     "retain:67": 0.6,
+     "retain:68": 0.6667,
+     "retain:69": 0.7143,
+     "retain:70": 0.5,
+     "retain:71": 0.7143,
+     "retain:72": 0.3333,
+     "retain:73": 1.0,
+     "retain:74": 0.5,
+     "retain:75": 0.5,
+     "retain:76": 0.6,
+     "retain:77": 0.875,
+     "retain:78": 0.25,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.8409,
+     "overwrite:6": 0.7692,
+     "overwrite:7": 0.7755,
+     "overwrite:8": 0.7818,
+     "saturate:18": 0.5,
+     "saturate:19": 0.5312,
+     "saturate:20": 0.5,
+     "saturate:21": 0.4615,
+     "saturate:22": 0.7368,
+     "saturate:23": 0.4762,
+     "saturate:24": 0.4444,
+     "saturate:25": 0.4,
+     "saturate:26": 0.3333
+    },
+    "steps": {
+     "retain": 1.69,
+     "overwrite": 1.59,
+     "saturate": 1.765
+    },
+    "steps_mean": 1.6816666666666666,
+    "calibration": {
+     "ece": 0.11743106763809917,
+     "confident_error_rate": 0.016666666666666666,
+     "auroc_confidence": 0.9237396975024627
+    }
+   },
+   "adv": {
+    "all": 0.7766666666666666,
+    "task": {
+     "retain": 0.83,
+     "overwrite": 0.81,
+     "saturate": 0.69
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 1.0,
+     "retain:4": 0.75,
+     "retain:5": 1.0,
+     "retain:6": 1.0,
+     "retain:7": 0.6667,
+     "retain:8": 1.0,
+     "retain:9": 1.0,
+     "retain:10": 1.0,
+     "retain:11": 0.5,
+     "retain:12": 0.8,
+     "retain:13": 0.625,
+     "retain:14": 1.0,
+     "retain:15": 0.8,
+     "retain:16": 0.8333,
+     "retain:17": 0.8,
+     "retain:18": 0.6,
+     "retain:19": 0.75,
+     "retain:20": 0.8,
+     "overwrite:1": 0.931,
+     "overwrite:2": 0.7059,
+     "overwrite:3": 0.8108,
+     "saturate:4": 0.8571,
+     "saturate:5": 0.75,
+     "saturate:6": 0.5,
+     "saturate:7": 0.8333,
+     "saturate:8": 0.9167,
+     "saturate:9": 0.75,
+     "saturate:10": 0.4167,
+     "saturate:11": 0.7692,
+     "saturate:12": 0.4667
+    },
+    "steps": {
+     "retain": 1.65,
+     "overwrite": 1.59,
+     "saturate": 1.43
+    },
+    "steps_mean": 1.5566666666666666,
+    "calibration": {
+     "ece": 0.01983388508359591,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.9600922426494138
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.13",
+  "run": "rouge-mem-seed3",
+  "parent": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+  "hypothesis": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+  "architecture": "rouge-mem",
+  "config": {
+   "kind": "rouge-mem",
+   "d": 112,
+   "slots": 4,
+   "heads": 4,
+   "max_think": 8,
+   "halting": true,
+   "tau": 0.01,
+   "inject": true,
+   "rezero": true,
+   "tau_warmup": 0.3,
+   "memory_slots": 32,
+   "read_k": 2,
+   "context": 3
+  },
+  "seed": 3,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 230691,
+  "active_parameters": 230691,
+  "flop_estimate": 182422688.0,
+  "checkpoint_sha256": "d82148756aa4352ab85822b236732c994ba5ef88f8f6a0866d32365dca297770",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007639",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 8900.0,
+  "cost_usd": 0.0,
+  "ci_run": "36592875762",
+  "metrics": {
+   "dev": {
+    "all": 0.47,
+    "task": {
+     "retain": 0.395,
+     "overwrite": 0.51,
+     "saturate": 0.505
+    },
+    "level": {
+     "retain:2": 0.4286,
+     "retain:3": 0.4167,
+     "retain:4": 0.8889,
+     "retain:5": 0.2727,
+     "retain:6": 0.4545,
+     "retain:7": 0.3636,
+     "retain:8": 0.4167,
+     "retain:9": 0.1111,
+     "retain:10": 0.5,
+     "retain:11": 0.3333,
+     "retain:12": 0.3,
+     "retain:13": 0.3889,
+     "retain:14": 0.6,
+     "retain:15": 0.1667,
+     "retain:16": 0.3333,
+     "retain:17": 0.5,
+     "retain:18": 0.3,
+     "retain:19": 0.2,
+     "retain:20": 0.5,
+     "overwrite:1": 0.5735,
+     "overwrite:2": 0.5507,
+     "overwrite:3": 0.3968,
+     "saturate:4": 0.6957,
+     "saturate:5": 0.6538,
+     "saturate:6": 0.5217,
+     "saturate:7": 0.7692,
+     "saturate:8": 0.3636,
+     "saturate:9": 0.45,
+     "saturate:10": 0.3913,
+     "saturate:11": 0.4231,
+     "saturate:12": 0.375
+    },
+    "steps": {
+     "retain": 2.34,
+     "overwrite": 3.69,
+     "saturate": 3.905
+    },
+    "steps_mean": 3.3116666666666665,
+    "calibration": {
+     "ece": 0.03464021633068719,
+     "confident_error_rate": 0.0016666666666666668,
+     "auroc_confidence": 0.7955082742316785
+    }
+   },
+   "holdout": {
+    "all": 0.445,
+    "task": {
+     "retain": 0.355,
+     "overwrite": 0.525,
+     "saturate": 0.455
+    },
+    "level": {
+     "retain:2": 0.4286,
+     "retain:3": 0.5333,
+     "retain:4": 0.5,
+     "retain:5": 0.2308,
+     "retain:6": 0.5,
+     "retain:7": 0.25,
+     "retain:8": 0.1818,
+     "retain:9": 0.2222,
+     "retain:10": 0.3077,
+     "retain:11": 0.4,
+     "retain:12": 0.3,
+     "retain:13": 0.5,
+     "retain:14": 0.3077,
+     "retain:15": 0.3636,
+     "retain:16": 0.2857,
+     "retain:17": 0.4286,
+     "retain:18": 0.3571,
+     "retain:19": 0.1429,
+     "retain:20": 0.5,
+     "overwrite:1": 0.6207,
+     "overwrite:2": 0.4638,
+     "overwrite:3": 0.5068,
+     "saturate:4": 0.65,
+     "saturate:5": 0.6,
+     "saturate:6": 0.5769,
+     "saturate:7": 0.3478,
+     "saturate:8": 0.44,
+     "saturate:9": 0.3684,
+     "saturate:10": 0.1739,
+     "saturate:11": 0.5455,
+     "saturate:12": 0.4091
+    },
+    "steps": {
+     "retain": 2.13,
+     "overwrite": 3.825,
+     "saturate": 3.325
+    },
+    "steps_mean": 3.0933333333333333,
+    "calibration": {
+     "ece": 0.03273446167508759,
+     "confident_error_rate": 0.005,
+     "auroc_confidence": 0.7905433523411052
+    }
+   },
+   "ood": {
+    "all": 0.23833333333333334,
+    "task": {
+     "retain": 0.155,
+     "overwrite": 0.325,
+     "saturate": 0.235
+    },
+    "level": {
+     "retain:40": 0.6667,
+     "retain:41": 0.4,
+     "retain:42": 0.1667,
+     "retain:43": 0.0,
+     "retain:44": 0.8333,
+     "retain:45": 0.2,
+     "retain:46": 0.0,
+     "retain:47": 0.0,
+     "retain:48": 0.4,
+     "retain:49": 0.0,
+     "retain:50": 0.3333,
+     "retain:51": 0.25,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.0,
+     "retain:55": 0.0,
+     "retain:56": 0.3333,
+     "retain:57": 0.125,
+     "retain:58": 0.0,
+     "retain:59": 0.1667,
+     "retain:60": 0.2,
+     "retain:61": 0.0,
+     "retain:62": 0.0,
+     "retain:63": 0.3333,
+     "retain:64": 0.1667,
+     "retain:65": 0.0,
+     "retain:66": 0.0,
+     "retain:67": 0.0,
+     "retain:68": 0.0,
+     "retain:69": 0.0,
+     "retain:70": 0.25,
+     "retain:71": 0.2857,
+     "retain:72": 0.0,
+     "retain:73": 0.6667,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.2,
+     "retain:77": 0.0,
+     "retain:78": 0.0,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.3864,
+     "overwrite:6": 0.25,
+     "overwrite:7": 0.3673,
+     "overwrite:8": 0.3091,
+     "saturate:18": 0.35,
+     "saturate:19": 0.1562,
+     "saturate:20": 0.0714,
+     "saturate:21": 0.4615,
+     "saturate:22": 0.3158,
+     "saturate:23": 0.1429,
+     "saturate:24": 0.2222,
+     "saturate:25": 0.15,
+     "saturate:26": 0.1905
+    },
+    "steps": {
+     "retain": 2.235,
+     "overwrite": 3.68,
+     "saturate": 2.485
+    },
+    "steps_mean": 2.8,
+    "calibration": {
+     "ece": 0.2754530302745601,
+     "confident_error_rate": 0.095,
+     "auroc_confidence": 0.7392847852366452
+    }
+   },
+   "adv": {
+    "all": 0.4166666666666667,
+    "task": {
+     "retain": 0.37,
+     "overwrite": 0.46,
+     "saturate": 0.42
+    },
+    "level": {
+     "retain:2": 0.3333,
+     "retain:3": 0.1667,
+     "retain:4": 0.625,
+     "retain:5": 0.4286,
+     "retain:6": 0.3333,
+     "retain:7": 0.1667,
+     "retain:8": 0.6667,
+     "retain:9": 0.5,
+     "retain:10": 0.5,
+     "retain:11": 0.25,
+     "retain:12": 0.2,
+     "retain:13": 0.375,
+     "retain:14": 0.1667,
+     "retain:15": 0.4,
+     "retain:16": 0.5,
+     "retain:17": 0.4,
+     "retain:18": 0.4,
+     "retain:19": 0.25,
+     "retain:20": 0.4,
+     "overwrite:1": 0.4828,
+     "overwrite:2": 0.5294,
+     "overwrite:3": 0.3784,
+     "saturate:4": 0.6429,
+     "saturate:5": 0.5,
+     "saturate:6": 0.5,
+     "saturate:7": 0.1667,
+     "saturate:8": 0.4167,
+     "saturate:9": 0.1667,
+     "saturate:10": 0.4167,
+     "saturate:11": 0.3846,
+     "saturate:12": 0.4667
+    },
+    "steps": {
+     "retain": 2.16,
+     "overwrite": 4.09,
+     "saturate": 3.69
+    },
+    "steps_mean": 3.3133333333333335,
+    "calibration": {
+     "ece": 0.09080776924888294,
+     "confident_error_rate": 0.0033333333333333335,
+     "auroc_confidence": 0.7799771428571428
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.13",
+  "run": "transformer-w32-seed1",
+  "parent": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+  "hypothesis": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+  "architecture": "transformer-w32",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "window": 32
+  },
+  "seed": 1,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 42080256.0,
+  "checkpoint_sha256": "1d016c1b9ab2bf1900741dc50239de58100478d4a3c0e6e4c8b74ba01cd5efee",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007652",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2073.5,
+  "cost_usd": 0.0,
+  "ci_run": "36592875762",
+  "metrics": {
+   "dev": {
+    "all": 0.5866666666666667,
+    "task": {
+     "retain": 0.44,
+     "overwrite": 0.84,
+     "saturate": 0.48
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.9167,
+     "retain:4": 0.3333,
+     "retain:5": 0.1818,
+     "retain:6": 0.6364,
+     "retain:7": 0.2727,
+     "retain:8": 0.3333,
+     "retain:9": 0.1111,
+     "retain:10": 0.5,
+     "retain:11": 0.3333,
+     "retain:12": 0.4,
+     "retain:13": 0.2778,
+     "retain:14": 0.5,
+     "retain:15": 0.1667,
+     "retain:16": 0.5833,
+     "retain:17": 0.25,
+     "retain:18": 0.4,
+     "retain:19": 0.5,
+     "retain:20": 0.6667,
+     "overwrite:1": 0.9118,
+     "overwrite:2": 0.8986,
+     "overwrite:3": 0.6984,
+     "saturate:4": 0.6957,
+     "saturate:5": 0.5769,
+     "saturate:6": 0.4783,
+     "saturate:7": 0.6154,
+     "saturate:8": 0.5,
+     "saturate:9": 0.5,
+     "saturate:10": 0.4348,
+     "saturate:11": 0.3462,
+     "saturate:12": 0.25
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.05556082442402841,
+     "confident_error_rate": 0.006666666666666667,
+     "auroc_confidence": 0.8145161290322581
+    }
+   },
+   "holdout": {
+    "all": 0.5683333333333334,
+    "task": {
+     "retain": 0.375,
+     "overwrite": 0.865,
+     "saturate": 0.465
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.8,
+     "retain:4": 0.2,
+     "retain:5": 0.0769,
+     "retain:6": 0.2,
+     "retain:7": 0.3333,
+     "retain:8": 0.0909,
+     "retain:9": 0.1111,
+     "retain:10": 0.3077,
+     "retain:11": 0.4,
+     "retain:12": 0.3,
+     "retain:13": 0.25,
+     "retain:14": 0.2308,
+     "retain:15": 0.4545,
+     "retain:16": 0.5714,
+     "retain:17": 0.2857,
+     "retain:18": 0.2857,
+     "retain:19": 0.7143,
+     "retain:20": 0.375,
+     "overwrite:1": 0.9138,
+     "overwrite:2": 0.8406,
+     "overwrite:3": 0.8493,
+     "saturate:4": 0.7,
+     "saturate:5": 0.6,
+     "saturate:6": 0.5769,
+     "saturate:7": 0.4348,
+     "saturate:8": 0.44,
+     "saturate:9": 0.4211,
+     "saturate:10": 0.2609,
+     "saturate:11": 0.5,
+     "saturate:12": 0.2727
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04299288600683213,
+     "confident_error_rate": 0.006666666666666667,
+     "auroc_confidence": 0.8021377053635118
+    }
+   },
+   "ood": {
+    "all": 0.16166666666666665,
+    "task": {
+     "retain": 0.125,
+     "overwrite": 0.205,
+     "saturate": 0.155
+    },
+    "level": {
+     "retain:40": 0.0,
+     "retain:41": 0.0,
+     "retain:42": 0.1667,
+     "retain:43": 0.0,
+     "retain:44": 0.0,
+     "retain:45": 0.2,
+     "retain:46": 0.1111,
+     "retain:47": 0.0,
+     "retain:48": 0.0,
+     "retain:49": 0.0,
+     "retain:50": 0.0,
+     "retain:51": 0.5,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.0,
+     "retain:55": 0.3333,
+     "retain:56": 0.0,
+     "retain:57": 0.125,
+     "retain:58": 0.0,
+     "retain:59": 0.1667,
+     "retain:60": 0.2,
+     "retain:61": 0.0,
+     "retain:62": 0.0,
+     "retain:63": 0.3333,
+     "retain:64": 0.1667,
+     "retain:65": 0.0,
+     "retain:66": 0.0,
+     "retain:67": 0.2,
+     "retain:68": 0.0,
+     "retain:69": 0.0,
+     "retain:70": 0.0,
+     "retain:71": 0.4286,
+     "retain:72": 0.0,
+     "retain:73": 0.3333,
+     "retain:74": 0.5,
+     "retain:75": 0.0,
+     "retain:76": 0.0,
+     "retain:77": 0.25,
+     "retain:78": 0.0,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.25,
+     "overwrite:6": 0.1538,
+     "overwrite:7": 0.1224,
+     "overwrite:8": 0.2909,
+     "saturate:18": 0.15,
+     "saturate:19": 0.125,
+     "saturate:20": 0.1429,
+     "saturate:21": 0.2308,
+     "saturate:22": 0.2105,
+     "saturate:23": 0.1429,
+     "saturate:24": 0.1111,
+     "saturate:25": 0.15,
+     "saturate:26": 0.1429
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.3669541401167711,
+     "confident_error_rate": 0.085,
+     "auroc_confidence": 0.5756594453895185
+    }
+   },
+   "adv": {
+    "all": 0.52,
+    "task": {
+     "retain": 0.36,
+     "overwrite": 0.82,
+     "saturate": 0.38
+    },
+    "level": {
+     "retain:2": 0.6667,
+     "retain:3": 0.5,
+     "retain:4": 0.125,
+     "retain:5": 0.4286,
+     "retain:6": 0.0,
+     "retain:7": 0.5,
+     "retain:8": 0.6667,
+     "retain:9": 0.0,
+     "retain:10": 0.6667,
+     "retain:11": 0.0,
+     "retain:12": 0.2,
+     "retain:13": 0.0,
+     "retain:14": 0.1667,
+     "retain:15": 0.4,
+     "retain:16": 0.5,
+     "retain:17": 0.4,
+     "retain:18": 0.6,
+     "retain:19": 0.5,
+     "retain:20": 0.8,
+     "overwrite:1": 0.8621,
+     "overwrite:2": 0.8235,
+     "overwrite:3": 0.7838,
+     "saturate:4": 0.3571,
+     "saturate:5": 0.375,
+     "saturate:6": 0.5,
+     "saturate:7": 0.1667,
+     "saturate:8": 0.3333,
+     "saturate:9": 0.5833,
+     "saturate:10": 0.4167,
+     "saturate:11": 0.2308,
+     "saturate:12": 0.4
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.056045849422613786,
+     "confident_error_rate": 0.013333333333333334,
+     "auroc_confidence": 0.7675836894586895
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.13",
+  "run": "transformer-w32-seed2",
+  "parent": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+  "hypothesis": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+  "architecture": "transformer-w32",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "window": 32
+  },
+  "seed": 2,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 42080256.0,
+  "checkpoint_sha256": "00ad5d9047f750b26b3ab62e631f3d5b8c784594bfcfb11cabfe9ca9b5d07488",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007644",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1542.4,
+  "cost_usd": 0.0,
+  "ci_run": "36592875762",
+  "metrics": {
+   "dev": {
+    "all": 0.3383333333333333,
+    "task": {
+     "retain": 0.355,
+     "overwrite": 0.43,
+     "saturate": 0.23
+    },
+    "level": {
+     "retain:2": 0.7143,
+     "retain:3": 0.4167,
+     "retain:4": 0.1111,
+     "retain:5": 0.0909,
+     "retain:6": 0.3636,
+     "retain:7": 0.3636,
+     "retain:8": 0.25,
+     "retain:9": 0.3333,
+     "retain:10": 0.1,
+     "retain:11": 0.5,
+     "retain:12": 0.4,
+     "retain:13": 0.1111,
+     "retain:14": 0.6,
+     "retain:15": 0.3333,
+     "retain:16": 0.4167,
+     "retain:17": 0.375,
+     "retain:18": 0.5,
+     "retain:19": 0.4,
+     "retain:20": 0.5833,
+     "overwrite:1": 0.4853,
+     "overwrite:2": 0.5072,
+     "overwrite:3": 0.2857,
+     "saturate:4": 0.3913,
+     "saturate:5": 0.3077,
+     "saturate:6": 0.2174,
+     "saturate:7": 0.3077,
+     "saturate:8": 0.2273,
+     "saturate:9": 0.15,
+     "saturate:10": 0.1739,
+     "saturate:11": 0.1154,
+     "saturate:12": 0.2083
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.031315302302440014,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6335446886128724
+    }
+   },
+   "holdout": {
+    "all": 0.31666666666666665,
+    "task": {
+     "retain": 0.29,
+     "overwrite": 0.4,
+     "saturate": 0.26
+    },
+    "level": {
+     "retain:2": 0.4286,
+     "retain:3": 0.8,
+     "retain:4": 0.0,
+     "retain:5": 0.0,
+     "retain:6": 0.1,
+     "retain:7": 0.0,
+     "retain:8": 0.1818,
+     "retain:9": 0.2222,
+     "retain:10": 0.2308,
+     "retain:11": 0.6,
+     "retain:12": 0.3,
+     "retain:13": 0.25,
+     "retain:14": 0.2308,
+     "retain:15": 0.4545,
+     "retain:16": 0.2857,
+     "retain:17": 0.4286,
+     "retain:18": 0.1429,
+     "retain:19": 0.2857,
+     "retain:20": 0.625,
+     "overwrite:1": 0.3966,
+     "overwrite:2": 0.4058,
+     "overwrite:3": 0.3973,
+     "saturate:4": 0.4,
+     "saturate:5": 0.25,
+     "saturate:6": 0.4231,
+     "saturate:7": 0.1739,
+     "saturate:8": 0.28,
+     "saturate:9": 0.2105,
+     "saturate:10": 0.1739,
+     "saturate:11": 0.2273,
+     "saturate:12": 0.1818
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04676602197190125,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6211553273427471
+    }
+   },
+   "ood": {
+    "all": 0.12833333333333333,
+    "task": {
+     "retain": 0.115,
+     "overwrite": 0.11,
+     "saturate": 0.16
+    },
+    "level": {
+     "retain:40": 0.0,
+     "retain:41": 0.0,
+     "retain:42": 0.5,
+     "retain:43": 0.3333,
+     "retain:44": 0.0,
+     "retain:45": 0.0,
+     "retain:46": 0.1111,
+     "retain:47": 0.1667,
+     "retain:48": 0.0,
+     "retain:49": 0.3333,
+     "retain:50": 0.0,
+     "retain:51": 0.125,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.0,
+     "retain:55": 0.0,
+     "retain:56": 0.0,
+     "retain:57": 0.25,
+     "retain:58": 0.0,
+     "retain:59": 0.0,
+     "retain:60": 0.2,
+     "retain:61": 0.0,
+     "retain:62": 0.0,
+     "retain:63": 0.1667,
+     "retain:64": 0.0,
+     "retain:65": 0.0,
+     "retain:66": 0.0,
+     "retain:67": 0.2,
+     "retain:68": 0.0,
+     "retain:69": 0.1429,
+     "retain:70": 0.5,
+     "retain:71": 0.4286,
+     "retain:72": 0.0,
+     "retain:73": 0.0,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.0,
+     "retain:77": 0.125,
+     "retain:78": 0.0,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.1136,
+     "overwrite:6": 0.0769,
+     "overwrite:7": 0.1224,
+     "overwrite:8": 0.1273,
+     "saturate:18": 0.2,
+     "saturate:19": 0.0938,
+     "saturate:20": 0.0714,
+     "saturate:21": 0.2692,
+     "saturate:22": 0.2632,
+     "saturate:23": 0.0476,
+     "saturate:24": 0.1852,
+     "saturate:25": 0.05,
+     "saturate:26": 0.2381
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.39017729784051586,
+     "confident_error_rate": 0.13666666666666666,
+     "auroc_confidence": 0.5354473442427553
+    }
+   },
+   "adv": {
+    "all": 0.26,
+    "task": {
+     "retain": 0.3,
+     "overwrite": 0.38,
+     "saturate": 0.1
+    },
+    "level": {
+     "retain:2": 0.6667,
+     "retain:3": 0.5,
+     "retain:4": 0.125,
+     "retain:5": 0.0,
+     "retain:6": 0.0,
+     "retain:7": 0.3333,
+     "retain:8": 0.0,
+     "retain:9": 0.0,
+     "retain:10": 0.5,
+     "retain:11": 0.0,
+     "retain:12": 0.0,
+     "retain:13": 0.25,
+     "retain:14": 0.3333,
+     "retain:15": 0.8,
+     "retain:16": 0.3333,
+     "retain:17": 0.4,
+     "retain:18": 0.4,
+     "retain:19": 0.5,
+     "retain:20": 0.6,
+     "overwrite:1": 0.4138,
+     "overwrite:2": 0.2353,
+     "overwrite:3": 0.4865,
+     "saturate:4": 0.2857,
+     "saturate:5": 0.0,
+     "saturate:6": 0.0,
+     "saturate:7": 0.0,
+     "saturate:8": 0.0833,
+     "saturate:9": 0.0833,
+     "saturate:10": 0.0,
+     "saturate:11": 0.0769,
+     "saturate:12": 0.2
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.07798626874883968,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5475282975282976
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.13",
+  "run": "transformer-w32-seed3",
+  "parent": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+  "hypothesis": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+  "architecture": "transformer-w32",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "window": 32
+  },
+  "seed": 3,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 42080256.0,
+  "checkpoint_sha256": "98b9473e74242bb5cb1409b2c96bf5f61ac0f9f87d571e7093a4a490f71c493b",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007646",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2027.9,
+  "cost_usd": 0.0,
+  "ci_run": "36592875762",
+  "metrics": {
+   "dev": {
+    "all": 0.36666666666666664,
+    "task": {
+     "retain": 0.37,
+     "overwrite": 0.465,
+     "saturate": 0.265
+    },
+    "level": {
+     "retain:2": 0.7143,
+     "retain:3": 0.5,
+     "retain:4": 0.2222,
+     "retain:5": 0.0909,
+     "retain:6": 0.3636,
+     "retain:7": 0.4545,
+     "retain:8": 0.0833,
+     "retain:9": 0.1111,
+     "retain:10": 0.2,
+     "retain:11": 0.5833,
+     "retain:12": 0.5,
+     "retain:13": 0.2222,
+     "retain:14": 0.6,
+     "retain:15": 0.1667,
+     "retain:16": 0.4167,
+     "retain:17": 0.5,
+     "retain:18": 0.4,
+     "retain:19": 0.3,
+     "retain:20": 0.6667,
+     "overwrite:1": 0.5882,
+     "overwrite:2": 0.4783,
+     "overwrite:3": 0.3175,
+     "saturate:4": 0.4783,
+     "saturate:5": 0.3462,
+     "saturate:6": 0.2609,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.2727,
+     "saturate:9": 0.3,
+     "saturate:10": 0.1304,
+     "saturate:11": 0.1923,
+     "saturate:12": 0.0833
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04920548535883426,
+     "confident_error_rate": 0.0016666666666666668,
+     "auroc_confidence": 0.5685047846889952
+    }
+   },
+   "holdout": {
+    "all": 0.345,
+    "task": {
+     "retain": 0.365,
+     "overwrite": 0.445,
+     "saturate": 0.225
+    },
+    "level": {
+     "retain:2": 0.6429,
+     "retain:3": 0.6667,
+     "retain:4": 0.3,
+     "retain:5": 0.0,
+     "retain:6": 0.1,
+     "retain:7": 0.0,
+     "retain:8": 0.1818,
+     "retain:9": 0.2222,
+     "retain:10": 0.2308,
+     "retain:11": 0.8,
+     "retain:12": 0.4,
+     "retain:13": 0.25,
+     "retain:14": 0.3846,
+     "retain:15": 0.5455,
+     "retain:16": 0.2857,
+     "retain:17": 0.5,
+     "retain:18": 0.2143,
+     "retain:19": 0.5714,
+     "retain:20": 0.875,
+     "overwrite:1": 0.5517,
+     "overwrite:2": 0.4203,
+     "overwrite:3": 0.3836,
+     "saturate:4": 0.35,
+     "saturate:5": 0.25,
+     "saturate:6": 0.3077,
+     "saturate:7": 0.1304,
+     "saturate:8": 0.28,
+     "saturate:9": 0.1053,
+     "saturate:10": 0.1739,
+     "saturate:11": 0.2273,
+     "saturate:12": 0.1818
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.02309706379969917,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6241103366891618
+    }
+   },
+   "ood": {
+    "all": 0.13,
+    "task": {
+     "retain": 0.09,
+     "overwrite": 0.095,
+     "saturate": 0.205
+    },
+    "level": {
+     "retain:40": 0.0,
+     "retain:41": 0.0,
+     "retain:42": 0.0,
+     "retain:43": 0.0,
+     "retain:44": 0.0,
+     "retain:45": 0.0,
+     "retain:46": 0.1111,
+     "retain:47": 0.1667,
+     "retain:48": 0.0,
+     "retain:49": 0.0,
+     "retain:50": 0.0,
+     "retain:51": 0.125,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.0,
+     "retain:55": 0.3333,
+     "retain:56": 0.0,
+     "retain:57": 0.0,
+     "retain:58": 0.3333,
+     "retain:59": 0.1667,
+     "retain:60": 0.0,
+     "retain:61": 0.0,
+     "retain:62": 0.0,
+     "retain:63": 0.1667,
+     "retain:64": 0.0,
+     "retain:65": 0.0,
+     "retain:66": 0.25,
+     "retain:67": 0.0,
+     "retain:68": 0.3333,
+     "retain:69": 0.0,
+     "retain:70": 0.0,
+     "retain:71": 0.0,
+     "retain:72": 0.3333,
+     "retain:73": 0.3333,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.4,
+     "retain:77": 0.25,
+     "retain:78": 0.0,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.1364,
+     "overwrite:6": 0.0769,
+     "overwrite:7": 0.102,
+     "overwrite:8": 0.0727,
+     "saturate:18": 0.3,
+     "saturate:19": 0.125,
+     "saturate:20": 0.1429,
+     "saturate:21": 0.2692,
+     "saturate:22": 0.3684,
+     "saturate:23": 0.1429,
+     "saturate:24": 0.1111,
+     "saturate:25": 0.05,
+     "saturate:26": 0.381
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.35445524250467614,
+     "confident_error_rate": 0.07333333333333333,
+     "auroc_confidence": 0.49555457314078005
+    }
+   },
+   "adv": {
+    "all": 0.24,
+    "task": {
+     "retain": 0.24,
+     "overwrite": 0.37,
+     "saturate": 0.11
+    },
+    "level": {
+     "retain:2": 0.6667,
+     "retain:3": 0.5,
+     "retain:4": 0.125,
+     "retain:5": 0.0,
+     "retain:6": 0.0,
+     "retain:7": 0.1667,
+     "retain:8": 0.3333,
+     "retain:9": 0.0,
+     "retain:10": 0.3333,
+     "retain:11": 0.0,
+     "retain:12": 0.2,
+     "retain:13": 0.125,
+     "retain:14": 0.1667,
+     "retain:15": 0.4,
+     "retain:16": 0.1667,
+     "retain:17": 0.4,
+     "retain:18": 0.4,
+     "retain:19": 0.25,
+     "retain:20": 0.6,
+     "overwrite:1": 0.3793,
+     "overwrite:2": 0.2647,
+     "overwrite:3": 0.4595,
+     "saturate:4": 0.2143,
+     "saturate:5": 0.125,
+     "saturate:6": 0.125,
+     "saturate:7": 0.0,
+     "saturate:8": 0.0833,
+     "saturate:9": 0.0833,
+     "saturate:10": 0.0,
+     "saturate:11": 0.0769,
+     "saturate:12": 0.2
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.09665176833669342,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6017909356725146
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.13",
+  "run": "experiment",
+  "parent": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+  "hypothesis": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+  "architecture": [
+   "transformer-w32",
+   "rouge-mem",
+   "rouge-forget"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": null,
+  "flop_estimate": 450000000000000.0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 52799.1,
+  "cost_usd": 0.0,
+  "ci_run": "36592875762",
+  "metrics": {
+   "experiment": "R1.13",
+   "models": {
+    "transformer-w32": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.4305555555555556,
+       "sd": 0.13593639580224168,
+       "ci95": [
+        0.09284357356233375,
+        0.7682675375487774
+       ],
+       "n": 3,
+       "values": [
+        0.5866666666666667,
+        0.3383333333333333,
+        0.36666666666666664
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.41,
+       "sd": 0.13785056321168146,
+       "ci95": [
+        0.06753257877438029,
+        0.7524674212256197
+       ],
+       "n": 3,
+       "values": [
+        0.5683333333333334,
+        0.31666666666666665,
+        0.345
+       ]
+      },
+      "ood.all": {
+       "mean": 0.13999999999999999,
+       "sd": 0.018782379449307735,
+       "ci95": [
+        0.09333821709086482,
+        0.18666178290913515
+       ],
+       "n": 3,
+       "values": [
+        0.16166666666666665,
+        0.12833333333333333,
+        0.13
+       ]
+      },
+      "adv.all": {
+       "mean": 0.34,
+       "sd": 0.1562049935181331,
+       "ci95": [
+        -0.04806603372793833,
+        0.7280660337279383
+       ],
+       "n": 3,
+       "values": [
+        0.52,
+        0.26,
+        0.24
+       ]
+      },
+      "dev.retain": {
+       "mean": 0.38833333333333336,
+       "sd": 0.045368858629387346,
+       "ci95": [
+        0.27562174437234355,
+        0.5010449222943232
+       ],
+       "n": 3,
+       "values": [
+        0.44,
+        0.355,
+        0.37
+       ]
+      },
+      "dev.overwrite": {
+       "mean": 0.5783333333333334,
+       "sd": 0.22728469665451154,
+       "ci95": [
+        0.013681277267436731,
+        1.1429853893992301
+       ],
+       "n": 3,
+       "values": [
+        0.84,
+        0.43,
+        0.465
+       ]
+      },
+      "dev.saturate": {
+       "mean": 0.325,
+       "sd": 0.1353698637068088,
+       "ci95": [
+        -0.011304524662296644,
+        0.6613045246622966
+       ],
+       "n": 3,
+       "values": [
+        0.48,
+        0.23,
+        0.265
+       ]
+      },
+      "ood.retain": {
+       "mean": 0.10999999999999999,
+       "sd": 0.01802775637731995,
+       "ci95": [
+        0.06521295602148613,
+        0.15478704397851384
+       ],
+       "n": 3,
+       "values": [
+        0.125,
+        0.115,
+        0.09
+       ]
+      },
+      "ood.overwrite": {
+       "mean": 0.1366666666666667,
+       "sd": 0.05965176722724426,
+       "ci95": [
+        -0.01152849784996357,
+        0.28486183118329694
+       ],
+       "n": 3,
+       "values": [
+        0.205,
+        0.11,
+        0.095
+       ]
+      },
+      "ood.saturate": {
+       "mean": 0.17333333333333334,
+       "sd": 0.027537852736430505,
+       "ci95": [
+        0.10491999360504807,
+        0.24174667306161862
+       ],
+       "n": 3,
+       "values": [
+        0.155,
+        0.16,
+        0.205
+       ]
+      },
+      "adv.retain": {
+       "mean": 0.3,
+       "sd": 0.06,
+       "ci95": [
+        0.1509397075006224,
+        0.44906029249937757
+       ],
+       "n": 3,
+       "values": [
+        0.36,
+        0.3,
+        0.24
+       ]
+      },
+      "adv.overwrite": {
+       "mean": 0.5233333333333333,
+       "sd": 0.2569695182961071,
+       "ci95": [
+        -0.11506585934403146,
+        1.161732526010698
+       ],
+       "n": 3,
+       "values": [
+        0.82,
+        0.38,
+        0.37
+       ]
+      },
+      "adv.saturate": {
+       "mean": 0.19666666666666666,
+       "sd": 0.1588500340992514,
+       "ci95": [
+        -0.19797054243950868,
+        0.5913038757728419
+       ],
+       "n": 3,
+       "values": [
+        0.38,
+        0.1,
+        0.11
+       ]
+      },
+      "above_cue.retain": {
+       "mean": 0.2213333333333333,
+       "sd": 0.04536885862938735,
+       "ci95": [
+        0.10862174437234348,
+        0.33404492229432314
+       ],
+       "n": 3,
+       "values": [
+        0.273,
+        0.18799999999999997,
+        0.20299999999999999
+       ]
+      },
+      "steps.retain": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.overwrite": {
+       "mean": 0.37833333333333324,
+       "sd": 0.2272846966545115,
+       "ci95": [
+        -0.18631872273256328,
+        0.9429853893992297
+       ],
+       "n": 3,
+       "values": [
+        0.6399999999999999,
+        0.22999999999999998,
+        0.265
+       ]
+      },
+      "steps.overwrite": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.saturate": {
+       "mean": 0.018000000000000006,
+       "sd": 0.1353698637068088,
+       "ci95": [
+        -0.31830452466229664,
+        0.35430452466229667
+       ],
+       "n": 3,
+       "values": [
+        0.173,
+        -0.07699999999999999,
+        -0.04199999999999998
+       ]
+      },
+      "steps.saturate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 206256,
+      "params_active": 206256,
+      "stored_bytes": 825024,
+      "flops": {
+       "mean": 42080256.0,
+       "sd": 0.0,
+       "ci95": [
+        42080256.0,
+        42080256.0
+       ],
+       "n": 3,
+       "values": [
+        42080256.0,
+        42080256.0,
+        42080256.0
+       ]
+      },
+      "train_flops": {
+       "mean": 80794091520000.0,
+       "sd": 0.0,
+       "ci95": [
+        80794091520000.0,
+        80794091520000.0
+       ],
+       "n": 3,
+       "values": [
+        80794091520000.0,
+        80794091520000.0,
+        80794091520000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 65536,
+      "total_bytes": 65536,
+      "peak_rss_mb": {
+       "mean": 740.2666666666668,
+       "sd": 20.521777051058038,
+       "ci95": [
+        689.283631836038,
+        791.2497014972955
+       ],
+       "n": 3,
+       "values": [
+        747.1,
+        717.2,
+        756.5
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.6549999999999999,
+       "sd": 0.09969453345093698,
+       "ci95": [
+        0.4073250613869058,
+        0.9026749386130941
+       ],
+       "n": 3,
+       "values": [
+        0.708,
+        0.54,
+        0.717
+       ]
+      },
+      "train_seconds": {
+       "mean": 1881.2666666666667,
+       "sd": 294.35149623083845,
+       "ci95": [
+        1149.997997903363,
+        2612.5353354299705
+       ],
+       "n": 3,
+       "values": [
+        2073.5,
+        1542.4,
+        2027.9
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 7525.099999999999,
+       "sd": 1177.4231567282848,
+       "ci95": [
+        4599.98266437569,
+        10450.21733562431
+       ],
+       "n": 3,
+       "values": [
+        8293.9,
+        6169.6,
+        8111.8
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.3580666666666667,
+       "sd": 0.03173268556761834,
+       "ci95": [
+        0.2792319434583339,
+        0.4369013898749995
+       ],
+       "n": 3,
+       "values": [
+        0.3925,
+        0.3517,
+        0.33
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.04536053736176756,
+       "sd": 0.012571756224259939,
+       "ci95": [
+        0.014128043028116606,
+        0.0765930316954185
+       ],
+       "n": 3,
+       "values": [
+        0.05556082442402841,
+        0.031315302302440014,
+        0.04920548535883426
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.370528893487321,
+       "sd": 0.01812734000341452,
+       "ci95": [
+        0.32549445010157707,
+        0.4155633368730649
+       ],
+       "n": 3,
+       "values": [
+        0.3669541401167711,
+        0.39017729784051586,
+        0.35445524250467614
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.002777777777777778,
+       "sd": 0.003469443332443555,
+       "ci95": [
+        -0.005841492854623083,
+        0.01139704841017864
+       ],
+       "n": 3,
+       "values": [
+        0.006666666666666667,
+        0.0,
+        0.0016666666666666668
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.09833333333333334,
+       "sd": 0.033706247360261135,
+       "ci95": [
+        0.014595615157051697,
+        0.182071051509615
+       ],
+       "n": 3,
+       "values": [
+        0.085,
+        0.13666666666666666,
+        0.07333333333333333
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.6721885341113752,
+       "sd": 0.12747707826342344,
+       "ci95": [
+        0.3554923578961761,
+        0.9888847103265743
+       ],
+       "n": 3,
+       "values": [
+        0.8145161290322581,
+        0.6335446886128724,
+        0.5685047846889952
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.5355537875910179,
+       "sd": 0.04005254220566367,
+       "ci95": [
+        0.4360497266490197,
+        0.6350578485330161
+       ],
+       "n": 3,
+       "values": [
+        0.5756594453895185,
+        0.5354473442427553,
+        0.49555457314078005
+       ]
+      }
+     },
+     "memory_tokens": 355
+    },
+    "rouge-mem": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "rouge-mem",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.5227777777777778,
+       "sd": 0.25496368659376084,
+       "ci95": [
+        -0.11063825056198273,
+        1.1561938061175383
+       ],
+       "n": 3,
+       "values": [
+        0.29833333333333334,
+        0.8,
+        0.47
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.5055555555555556,
+       "sd": 0.2529950226417142,
+       "ci95": [
+        -0.12296964570878732,
+        1.1340807568198987
+       ],
+       "n": 3,
+       "values": [
+        0.28833333333333333,
+        0.7833333333333333,
+        0.445
+       ]
+      },
+      "ood.all": {
+       "mean": 0.36388888888888893,
+       "sd": 0.26196550522144313,
+       "ci95": [
+        -0.28692202499537,
+        1.0146998027731478
+       ],
+       "n": 3,
+       "values": [
+        0.18833333333333332,
+        0.665,
+        0.23833333333333334
+       ]
+      },
+      "adv.all": {
+       "mean": 0.47,
+       "sd": 0.2837839553839035,
+       "ci95": [
+        -0.23501532326924957,
+        1.1750153232692495
+       ],
+       "n": 3,
+       "values": [
+        0.21666666666666667,
+        0.7766666666666666,
+        0.4166666666666667
+       ]
+      },
+      "dev.retain": {
+       "mean": 0.5033333333333333,
+       "sd": 0.25071564237863847,
+       "ci95": [
+        -0.11952911645215325,
+        1.1261957831188198
+       ],
+       "n": 3,
+       "values": [
+        0.325,
+        0.79,
+        0.395
+       ]
+      },
+      "dev.overwrite": {
+       "mean": 0.5533333333333333,
+       "sd": 0.29737742572921255,
+       "ci95": [
+        -0.18545276769847263,
+        1.2921194343651394
+       ],
+       "n": 3,
+       "values": [
+        0.28,
+        0.87,
+        0.51
+       ]
+      },
+      "dev.saturate": {
+       "mean": 0.5116666666666667,
+       "sd": 0.22507406188482346,
+       "ci95": [
+        -0.047493424976246534,
+        1.0708267583095799
+       ],
+       "n": 3,
+       "values": [
+        0.29,
+        0.74,
+        0.505
+       ]
+      },
+      "ood.retain": {
+       "mean": 0.40166666666666667,
+       "sd": 0.2892375033313165,
+       "ci95": [
+        -0.3168971141392622,
+        1.1202304474725955
+       ],
+       "n": 3,
+       "values": [
+        0.33,
+        0.72,
+        0.155
+       ]
+      },
+      "ood.overwrite": {
+       "mean": 0.38833333333333336,
+       "sd": 0.3740432238837289,
+       "ci95": [
+        -0.5409165393253135,
+        1.31758320599198
+       ],
+       "n": 3,
+       "values": [
+        0.05,
+        0.79,
+        0.325
+       ]
+      },
+      "ood.saturate": {
+       "mean": 0.30166666666666664,
+       "sd": 0.16072751268321592,
+       "ci95": [
+        -0.09763483422095981,
+        0.7009681675542931
+       ],
+       "n": 3,
+       "values": [
+        0.185,
+        0.485,
+        0.235
+       ]
+      },
+      "adv.retain": {
+       "mean": 0.5133333333333333,
+       "sd": 0.27465129406819355,
+       "ci95": [
+        -0.16899337048562502,
+        1.1956600371522916
+       ],
+       "n": 3,
+       "values": [
+        0.34,
+        0.83,
+        0.37
+       ]
+      },
+      "adv.overwrite": {
+       "mean": 0.47666666666666674,
+       "sd": 0.32532035493238565,
+       "ci95": [
+        -0.33153912103704547,
+        1.284872454370379
+       ],
+       "n": 3,
+       "values": [
+        0.16,
+        0.81,
+        0.46
+       ]
+      },
+      "adv.saturate": {
+       "mean": 0.42,
+       "sd": 0.26999999999999996,
+       "ci95": [
+        -0.250771316247199,
+        1.090771316247199
+       ],
+       "n": 3,
+       "values": [
+        0.15,
+        0.69,
+        0.42
+       ]
+      },
+      "above_cue.retain": {
+       "mean": 0.3363333333333334,
+       "sd": 0.25071564237863847,
+       "ci95": [
+        -0.2865291164521532,
+        0.9591957831188199
+       ],
+       "n": 3,
+       "values": [
+        0.158,
+        0.623,
+        0.228
+       ]
+      },
+      "steps.retain": {
+       "mean": 1.8416666666666666,
+       "sd": 0.4331954908968159,
+       "ci95": [
+        0.7654625569584859,
+        2.9178707763748473
+       ],
+       "n": 3,
+       "values": [
+        1.555,
+        1.63,
+        2.34
+       ]
+      },
+      "above_cue.overwrite": {
+       "mean": 0.35333333333333333,
+       "sd": 0.2973774257292125,
+       "ci95": [
+        -0.38545276769847253,
+        1.0921194343651393
+       ],
+       "n": 3,
+       "values": [
+        0.08000000000000002,
+        0.6699999999999999,
+        0.31
+       ]
+      },
+      "steps.overwrite": {
+       "mean": 2.1750000000000003,
+       "sd": 1.3226772092993815,
+       "ci95": [
+        -1.1109775283404377,
+        5.460977528340438
+       ],
+       "n": 3,
+       "values": [
+        1.25,
+        1.585,
+        3.69
+       ]
+      },
+      "above_cue.saturate": {
+       "mean": 0.20466666666666666,
+       "sd": 0.22507406188482346,
+       "ci95": [
+        -0.3544934249762466,
+        0.7638267583095799
+       ],
+       "n": 3,
+       "values": [
+        -0.017000000000000015,
+        0.433,
+        0.198
+       ]
+      },
+      "steps.saturate": {
+       "mean": 2.28,
+       "sd": 1.4072935017259192,
+       "ci95": [
+        -1.2161930166623143,
+        5.776193016662313
+       ],
+       "n": 3,
+       "values": [
+        1.47,
+        1.465,
+        3.905
+       ]
+      },
+      "params": 230691,
+      "params_active": 230691,
+      "stored_bytes": 922764,
+      "flops": {
+       "mean": 176171296.0,
+       "sd": 5413864.281014809,
+       "ci95": [
+        162721426.112,
+        189621165.888
+       ],
+       "n": 3,
+       "values": [
+        173045600.0,
+        173045600.0,
+        182422688.0
+       ]
+      },
+      "train_flops": {
+       "mean": 338248888320000.0,
+       "sd": 10394619419548.434,
+       "ci95": [
+        312425138135040.0,
+        364072638504960.0
+       ],
+       "n": 3,
+       "values": [
+        332247552000000.0,
+        332247552000000.0,
+        350251560960000.0
+       ]
+      },
+      "state_bytes": 16128,
+      "kv_bytes": 0,
+      "total_bytes": 16128,
+      "peak_rss_mb": {
+       "mean": 902.5666666666666,
+       "sd": 9.360199428074857,
+       "ci95": [
+        879.3127655899775,
+        925.8205677433557
+       ],
+       "n": 3,
+       "values": [
+        913.3,
+        898.3,
+        896.1
+       ]
+      },
+      "latency_ms": {
+       "mean": 2.654666666666667,
+       "sd": 0.31123035413232647,
+       "ci95": [
+        1.8814652063058426,
+        3.4278681270274913
+       ],
+       "n": 3,
+       "values": [
+        2.313,
+        2.729,
+        2.922
+       ]
+      },
+      "train_seconds": {
+       "mean": 8277.033333333333,
+       "sd": 756.5293935686394,
+       "ci95": [
+        6397.558455171364,
+        10156.508211495302
+       ],
+       "n": 3,
+       "values": [
+        7435.2,
+        8495.9,
+        8900.0
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 33108.1,
+       "sd": 3026.076401877521,
+       "ci95": [
+        25590.30277351121,
+        40625.897226488785
+       ],
+       "n": 3,
+       "values": [
+        29740.8,
+        33983.6,
+        35599.9
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.5052666666666666,
+       "sd": 0.2906518421296059,
+       "ci95": [
+        -0.21681081005536618,
+        1.2273441433886996
+       ],
+       "n": 3,
+       "values": [
+        0.25,
+        0.8216,
+        0.4442
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.030847075233856835,
+       "sd": 0.0059949511981274494,
+       "ci95": [
+        0.015953588915317306,
+        0.045740561552396364
+       ],
+       "n": 3,
+       "values": [
+        0.033965332731604576,
+        0.023935676639278737,
+        0.03464021633068719
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.22272205890673732,
+       "sd": 0.09118471329038845,
+       "ci95": [
+        -0.0038116083355490826,
+        0.44925572614902376
+       ],
+       "n": 3,
+       "values": [
+        0.2752820788075527,
+        0.11743106763809917,
+        0.2754530302745601
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0011111111111111111,
+       "sd": 0.0009622504486493763,
+       "ci95": [
+        -0.0012794444444444448,
+        0.003501666666666667
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0016666666666666668,
+        0.0016666666666666668
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.043333333333333335,
+       "sd": 0.04475240527365851,
+       "ci95": [
+        -0.06784677700237042,
+        0.15451344366903708
+       ],
+       "n": 3,
+       "values": [
+        0.018333333333333333,
+        0.016666666666666666,
+        0.095
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.795601705636514,
+       "sd": 0.1572509050338999,
+       "ci95": [
+        0.4049372739674312,
+        1.186266137305597
+       ],
+       "n": 3,
+       "values": [
+        0.6383975371223078,
+        0.9528993055555556,
+        0.7955082742316785
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.771691715031018,
+       "sd": 0.13871333670201305,
+       "ci95": [
+        0.4270808726582394,
+        1.1163025574037966
+       ],
+       "n": 3,
+       "values": [
+        0.6520506623539459,
+        0.9237396975024627,
+        0.7392847852366452
+       ]
+      }
+     },
+     "memory_tokens": 355
+    },
+    "rouge-forget": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "rouge-mem",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.29444444444444445,
+       "sd": 0.0038490017945975296,
+       "ci95": [
+        0.28488222222222215,
+        0.30400666666666676
+       ],
+       "n": 3,
+       "values": [
+        0.2966666666666667,
+        0.29,
+        0.2966666666666667
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.285,
+       "sd": 0.010137937550497043,
+       "ci95": [
+        0.2598139343897081,
+        0.31018606561029183
+       ],
+       "n": 3,
+       "values": [
+        0.2916666666666667,
+        0.2733333333333333,
+        0.29
+       ]
+      },
+      "ood.all": {
+       "mean": 0.19055555555555556,
+       "sd": 0.013877773329774223,
+       "ci95": [
+        0.15607847302595212,
+        0.225032638085159
+       ],
+       "n": 3,
+       "values": [
+        0.175,
+        0.195,
+        0.20166666666666666
+       ]
+      },
+      "adv.all": {
+       "mean": 0.22444444444444445,
+       "sd": 0.01071516751221439,
+       "ci95": [
+        0.19782434438526936,
+        0.25106454450361954
+       ],
+       "n": 3,
+       "values": [
+        0.23666666666666666,
+        0.21666666666666667,
+        0.22
+       ]
+      },
+      "dev.retain": {
+       "mean": 0.33,
+       "sd": 0.013228756555322933,
+       "ci95": [
+        0.2971352946410084,
+        0.3628647053589916
+       ],
+       "n": 3,
+       "values": [
+        0.345,
+        0.325,
+        0.32
+       ]
+      },
+      "dev.overwrite": {
+       "mean": 0.29000000000000004,
+       "sd": 0.013228756555322933,
+       "ci95": [
+        0.2571352946410084,
+        0.32286470535899164
+       ],
+       "n": 3,
+       "values": [
+        0.275,
+        0.295,
+        0.3
+       ]
+      },
+      "dev.saturate": {
+       "mean": 0.26333333333333336,
+       "sd": 0.011547005383792526,
+       "ci95": [
+        0.23464666666666667,
+        0.29202000000000006
+       ],
+       "n": 3,
+       "values": [
+        0.27,
+        0.25,
+        0.27
+       ]
+      },
+      "ood.retain": {
+       "mean": 0.3183333333333333,
+       "sd": 0.04536885862938732,
+       "ci95": [
+        0.20562174437234354,
+        0.43104492229432306
+       ],
+       "n": 3,
+       "values": [
+        0.27,
+        0.325,
+        0.36
+       ]
+      },
+      "ood.overwrite": {
+       "mean": 0.06333333333333334,
+       "sd": 0.010408329997330662,
+       "ci95": [
+        0.03747552143613077,
+        0.08919114523053591
+       ],
+       "n": 3,
+       "values": [
+        0.06,
+        0.075,
+        0.055
+       ]
+      },
+      "ood.saturate": {
+       "mean": 0.19000000000000003,
+       "sd": 0.0050000000000000044,
+       "ci95": [
+        0.17757830895838522,
+        0.20242169104161484
+       ],
+       "n": 3,
+       "values": [
+        0.195,
+        0.185,
+        0.19
+       ]
+      },
+      "adv.retain": {
+       "mean": 0.3666666666666667,
+       "sd": 0.04163331998932266,
+       "ci95": [
+        0.26323541907785636,
+        0.47009791425547703
+       ],
+       "n": 3,
+       "values": [
+        0.4,
+        0.32,
+        0.38
+       ]
+      },
+      "adv.overwrite": {
+       "mean": 0.19000000000000003,
+       "sd": 0.03,
+       "ci95": [
+        0.11546985375031124,
+        0.26453014624968885
+       ],
+       "n": 3,
+       "values": [
+        0.19,
+        0.22,
+        0.16
+       ]
+      },
+      "adv.saturate": {
+       "mean": 0.11666666666666665,
+       "sd": 0.0057735026918962545,
+       "ci95": [
+        0.10232333333333332,
+        0.13101
+       ],
+       "n": 3,
+       "values": [
+        0.12,
+        0.11,
+        0.12
+       ]
+      },
+      "above_cue.retain": {
+       "mean": 0.163,
+       "sd": 0.013228756555322933,
+       "ci95": [
+        0.13013529464100843,
+        0.1958647053589916
+       ],
+       "n": 3,
+       "values": [
+        0.17799999999999996,
+        0.158,
+        0.153
+       ]
+      },
+      "steps.retain": {
+       "mean": 1.215,
+       "sd": 0.1690414150437696,
+       "ci95": [
+        0.7950439538177837,
+        1.6349560461822166
+       ],
+       "n": 3,
+       "values": [
+        1.125,
+        1.41,
+        1.11
+       ]
+      },
+      "above_cue.overwrite": {
+       "mean": 0.08999999999999998,
+       "sd": 0.013228756555322933,
+       "ci95": [
+        0.057135294641008395,
+        0.12286470535899158
+       ],
+       "n": 3,
+       "values": [
+        0.07500000000000001,
+        0.09499999999999997,
+        0.09999999999999998
+       ]
+      },
+      "steps.overwrite": {
+       "mean": 1.17,
+       "sd": 0.27712812921102037,
+       "ci95": [
+        0.48151999999999995,
+        1.85848
+       ],
+       "n": 3,
+       "values": [
+        1.01,
+        1.49,
+        1.01
+       ]
+      },
+      "above_cue.saturate": {
+       "mean": -0.04366666666666665,
+       "sd": 0.011547005383792525,
+       "ci95": [
+        -0.07235333333333334,
+        -0.014979999999999962
+       ],
+       "n": 3,
+       "values": [
+        -0.03699999999999998,
+        -0.056999999999999995,
+        -0.03699999999999998
+       ]
+      },
+      "steps.saturate": {
+       "mean": 1.2833333333333334,
+       "sd": 0.4046397574798271,
+       "ci95": [
+        0.27807132321966277,
+        2.288595343447004
+       ],
+       "n": 3,
+       "values": [
+        1.07,
+        1.75,
+        1.03
+       ]
+      },
+      "params": 243348,
+      "params_active": 243348,
+      "stored_bytes": 973392,
+      "flops": {
+       "mean": 176496992.0,
+       "sd": 0.0,
+       "ci95": [
+        176496992.0,
+        176496992.0
+       ],
+       "n": 3,
+       "values": [
+        176496992.0,
+        176496992.0,
+        176496992.0
+       ]
+      },
+      "train_flops": {
+       "mean": 338874224640000.0,
+       "sd": 0.0,
+       "ci95": [
+        338874224640000.0,
+        338874224640000.0
+       ],
+       "n": 3,
+       "values": [
+        338874224640000.0,
+        338874224640000.0,
+        338874224640000.0
+       ]
+      },
+      "state_bytes": 16128,
+      "kv_bytes": 0,
+      "total_bytes": 16128,
+      "peak_rss_mb": {
+       "mean": 1115.4666666666667,
+       "sd": 24.365002223134137,
+       "ci95": [
+        1054.9357606978606,
+        1175.9975726354728
+       ],
+       "n": 3,
+       "values": [
+        1101.2,
+        1143.6,
+        1101.6
+       ]
+      },
+      "latency_ms": {
+       "mean": 1.9776666666666667,
+       "sd": 0.7615460152435526,
+       "ci95": [
+        0.08572880360100976,
+        3.8696045297323236
+       ],
+       "n": 3,
+       "values": [
+        2.514,
+        1.106,
+        2.313
+       ]
+      },
+      "train_seconds": {
+       "mean": 7441.399999999999,
+       "sd": 1792.7857512820656,
+       "ci95": [
+        2987.513858752981,
+        11895.286141247016
+       ],
+       "n": 3,
+       "values": [
+        8431.9,
+        5371.9,
+        8520.4
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 29765.63333333333,
+       "sd": 7171.085287690652,
+       "ci95": [
+        11950.232157980801,
+        47581.03450868586
+       ],
+       "n": 3,
+       "values": [
+        33727.6,
+        21487.7,
+        34081.6
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.2758333333333333,
+       "sd": 0.027959315680705317,
+       "ci95": [
+        0.20637293710919385,
+        0.3452937295574728
+       ],
+       "n": 3,
+       "values": [
+        0.2483,
+        0.3042,
+        0.275
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.04517078611585829,
+       "sd": 0.009176342360408459,
+       "ci95": [
+        0.02237364817724306,
+        0.06796792405447352
+       ],
+       "n": 3,
+       "values": [
+        0.03496329009532929,
+        0.05273634806275368,
+        0.04781272018949192
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.23750227867315213,
+       "sd": 0.03803035068811084,
+       "ci95": [
+        0.14302202538275702,
+        0.3319825319635472
+       ],
+       "n": 3,
+       "values": [
+        0.21355885526786247,
+        0.2813541084776322,
+        0.21759387227396174
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.014444444444444446,
+       "sd": 0.019245008972987525,
+       "ci95": [
+        -0.03336666666666666,
+        0.06225555555555556
+       ],
+       "n": 3,
+       "values": [
+        0.0033333333333333335,
+        0.03666666666666667,
+        0.0033333333333333335
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.6261124033233912,
+       "sd": 0.02539715359210818,
+       "ci95": [
+        0.5630172842718701,
+        0.6892075223749123
+       ],
+       "n": 3,
+       "values": [
+        0.6217583470898344,
+        0.6534051049592574,
+        0.6031737579210821
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.6011984616331068,
+       "sd": 0.024600752645173543,
+       "ci95": [
+        0.5400818718832,
+        0.6623150513830135
+       ],
+       "n": 3,
+       "values": [
+        0.5761616161616162,
+        0.6020951673125586,
+        0.6253386014251454
+       ]
+      }
+     },
+     "memory_tokens": 355
+    }
+   },
+   "cue_floors": {
+    "retain": 0.167,
+    "overwrite": 0.2,
+    "saturate": 0.307
+   }
+  },
+  "result": "FAIL",
+  "decision": {
+   "complete": true,
+   "checks": {
+    "F1_overwrite": false,
+    "F2_saturate": false,
+    "F3_retain_kept": false
+   },
+   "result": "FAIL"
+  },
+  "recorded": "2026-09-29T23:31:57Z"
  }
 ]
