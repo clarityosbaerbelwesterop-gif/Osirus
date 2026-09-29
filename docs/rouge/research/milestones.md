@@ -22,10 +22,10 @@ and a documented result. Negative results count and are recorded.
 
 | ID    | Milestone                                                                                                  | Tier      |
 | ----- | ---------------------------------------------------------------------------------------------------------- | --------- |
-| R1.01 | Persistent state + adaptive recurrence vs Transformer (parameter- and FLOP-matched) on the micro-benchmark | CI        |
-| R1.02 | Learned halting: compute-penalty sweep (τ), accuracy–compute Pareto front                                  | CI        |
-| R1.03 | State quality: linear probes for variables, goals, intermediate results, uncertainty; vs more context      | CI        |
-| R1.04 | Sparse circuits v0: conditional module execution; active fraction, quality, latency, memory traffic        | CI        |
+| R1.01 | Persistent state + adaptive recurrence vs Transformer (parameter- and FLOP-matched). **FAIL** (R1.01, R1.01b) | CI        |
+| R1.02 | Learned halting (fixed / ACT / ACT-warm / PonderNet) on a depth-controlled, cue-audited benchmark (R1.02b) | CI        |
+| R1.03 | State probes (trained vs untrained) + two-level memory (active state + exact slots, top-k reads)           | CI        |
+| R1.04 | Sparse circuits: top-2-of-8 module bank vs dense at matched active compute and total parameters            | CI        |
 | R1.05 | Prior-art review with search; novelty claims only where supported                                          | —         |
 | R1.06 | Benchmark v2: harder algorithmic suite (permutation composition, graph search, arithmetic, code tracing)   | CI        |
 | R1.07 | Baseline zoo: Transformer, LSTM, Mamba-style SSM, MoE at matched parameters and FLOPs                      | CI/server |
