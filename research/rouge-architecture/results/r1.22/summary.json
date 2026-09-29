@@ -1,0 +1,54 @@
+{
+ "experiment": "R1.22",
+ "rows": [
+  {
+   "d": 64,
+   "dense-active": 0.008756734000144206,
+   "dense-active.params": 33088,
+   "dense-total": 0.027138903999912145,
+   "dense-total.params": 132160,
+   "moe-gather": 0.01696059799996874,
+   "moe-gather.params": 133120,
+   "moe-masked": 0.0953444120000313,
+   "moe-masked.params": 133120
+  },
+  {
+   "d": 256,
+   "dense-active": 0.03795270399996298,
+   "dense-active.params": 525568,
+   "dense-total": 0.1913161890001902,
+   "dense-total.params": 2101504,
+   "moe-gather": 0.0730825709997589,
+   "moe-gather.params": 2105344,
+   "moe-masked": 0.41339760099981504,
+   "moe-masked.params": 2105344
+  },
+  {
+   "d": 512,
+   "dense-active": 0.1697154049998062,
+   "dense-active.params": 2099712,
+   "dense-total": 0.6535236869999608,
+   "dense-total.params": 8397312,
+   "moe-gather": 0.19962386399993193,
+   "moe-gather.params": 8404992,
+   "moe-masked": 0.9701351789999535,
+   "moe-masked.params": 8404992
+  }
+ ],
+ "decision": {
+  "complete": true,
+  "checks": {
+   "K1_saves_vs_total": true,
+   "K2_overhead_vs_active": true,
+   "K3_small_overhead_ratio": 1.94
+  },
+  "result": "PASS"
+ },
+ "hardware": {
+  "machine": "x86_64",
+  "cpus": 4,
+  "torch": "2.14.0+cu130",
+  "processor": "x86_64",
+  "runner": "local container"
+ }
+}
