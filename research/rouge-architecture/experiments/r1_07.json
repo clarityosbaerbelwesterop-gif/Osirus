@@ -1,0 +1,319 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.07",
+ "title": "Baseline zoo on benchmark v3, reported with the R1.08 scorecard",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.06 (benchmark v3 + shortcut audit), R1.03 (rouge-mem candidate), R1.04 (MoE)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "How do conventional baselines (Transformer, LSTM, GRU, selective SSM, looped Transformer, MoE) and the current Rouge candidate (small state + exact memory) compare, per capability, at ~210k physical parameters on a cue-audited benchmark? Does the benchmark discriminate (models clearly above the cue floor on most tasks)?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "lstm": {
+    "kind": "lstm",
+    "d": 112,
+    "layers": 2
+   },
+   "gru": {
+    "kind": "gru",
+    "d": 128,
+    "layers": 2
+   },
+   "ssm": {
+    "kind": "ssm",
+    "d": 104,
+    "layers": 4,
+    "n": 16
+   },
+   "looped": {
+    "kind": "looped",
+    "d": 128,
+    "heads": 4,
+    "steps": 4
+   },
+   "moe": {
+    "kind": "moe",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "experts": 8,
+    "hidden": 128,
+    "top_k": 2,
+    "balance": 0.01
+   },
+   "rouge-mem": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2
+   }
+  },
+  "matching": "physical parameters 206k-218k for all models except moe (606k physical, 209k active = the Transformer's active size); FLOPs and memory are measured and reported, not matched (R1.07 characterises)",
+  "gate": {
+   "checks": {
+    "D_state": {
+     "left_any": [
+      "transformer:above_cue.state",
+      "lstm:above_cue.state",
+      "gru:above_cue.state",
+      "ssm:above_cue.state",
+      "looped:above_cue.state",
+      "moe:above_cue.state",
+      "rouge-mem:above_cue.state"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "D_recall": {
+     "left_any": [
+      "transformer:above_cue.recall",
+      "lstm:above_cue.recall",
+      "gru:above_cue.recall",
+      "ssm:above_cue.recall",
+      "looped:above_cue.recall",
+      "moe:above_cue.recall",
+      "rouge-mem:above_cue.recall"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "D_hops": {
+     "left_any": [
+      "transformer:above_cue.hops",
+      "lstm:above_cue.hops",
+      "gru:above_cue.hops",
+      "ssm:above_cue.hops",
+      "looped:above_cue.hops",
+      "moe:above_cue.hops",
+      "rouge-mem:above_cue.hops"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "D_perm": {
+     "left_any": [
+      "transformer:above_cue.perm",
+      "lstm:above_cue.perm",
+      "gru:above_cue.perm",
+      "ssm:above_cue.perm",
+      "looped:above_cue.perm",
+      "moe:above_cue.perm",
+      "rouge-mem:above_cue.perm"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "D_conn": {
+     "left_any": [
+      "transformer:above_cue.conn",
+      "lstm:above_cue.conn",
+      "gru:above_cue.conn",
+      "ssm:above_cue.conn",
+      "looped:above_cue.conn",
+      "moe:above_cue.conn",
+      "rouge-mem:above_cue.conn"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "D_arith": {
+     "left_any": [
+      "transformer:above_cue.arith",
+      "lstm:above_cue.arith",
+      "gru:above_cue.arith",
+      "ssm:above_cue.arith",
+      "looped:above_cue.arith",
+      "moe:above_cue.arith",
+      "rouge-mem:above_cue.arith"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "D_binding": {
+     "left_any": [
+      "transformer:above_cue.binding",
+      "lstm:above_cue.binding",
+      "gru:above_cue.binding",
+      "ssm:above_cue.binding",
+      "looped:above_cue.binding",
+      "moe:above_cue.binding",
+      "rouge-mem:above_cue.binding"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "D_stack": {
+     "left_any": [
+      "transformer:above_cue.stack",
+      "lstm:above_cue.stack",
+      "gru:above_cue.stack",
+      "ssm:above_cue.stack",
+      "looped:above_cue.stack",
+      "moe:above_cue.stack",
+      "rouge-mem:above_cue.stack"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "D_trace": {
+     "left_any": [
+      "transformer:above_cue.trace",
+      "lstm:above_cue.trace",
+      "gru:above_cue.trace",
+      "ssm:above_cue.trace",
+      "looped:above_cue.trace",
+      "moe:above_cue.trace",
+      "rouge-mem:above_cue.trace"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "D_cf": {
+     "left_any": [
+      "transformer:above_cue.cf",
+      "lstm:above_cue.cf",
+      "gru:above_cue.cf",
+      "ssm:above_cue.cf",
+      "looped:above_cue.cf",
+      "moe:above_cue.cf",
+      "rouge-mem:above_cue.cf"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "D_plan": {
+     "left_any": [
+      "transformer:above_cue.plan",
+      "lstm:above_cue.plan",
+      "gru:above_cue.plan",
+      "ssm:above_cue.plan",
+      "looped:above_cue.plan",
+      "moe:above_cue.plan",
+      "rouge-mem:above_cue.plan"
+     ],
+     "op": ">=",
+     "value": 0.2
+    },
+    "P1_attention_recall": {
+     "left": "transformer:ood.recall",
+     "op": ">=",
+     "right": "lstm:ood.recall"
+    },
+    "P1b_attention_recall_ssm": {
+     "left": "transformer:ood.recall",
+     "op": ">=",
+     "right": "ssm:ood.recall"
+    },
+    "P2_recurrent_perm": {
+     "left_any": [
+      "lstm:ood.perm",
+      "gru:ood.perm",
+      "ssm:ood.perm",
+      "rouge-mem:ood.perm"
+     ],
+     "op": ">",
+     "right": "transformer:ood.perm",
+     "plus": 0.05
+    },
+    "P3_memory_vs_lstm_recall": {
+     "left": "rouge-mem:ood.recall",
+     "op": ">=",
+     "right": "lstm:ood.recall"
+    },
+    "P4_moe_not_worse": {
+     "left": "moe:dev.all",
+     "op": ">=",
+     "right": "transformer:dev.all",
+     "plus": -0.02
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "at_least": {
+      "n": 6,
+      "of": [
+       "D_state",
+       "D_recall",
+       "D_hops",
+       "D_perm",
+       "D_conn",
+       "D_arith",
+       "D_binding",
+       "D_stack",
+       "D_trace",
+       "D_cf",
+       "D_plan"
+      ]
+     }
+    },
+    {
+     "result": "PARTIAL",
+     "at_least": {
+      "n": 3,
+      "of": [
+       "D_state",
+       "D_recall",
+       "D_hops",
+       "D_perm",
+       "D_conn",
+       "D_arith",
+       "D_binding",
+       "D_stack",
+       "D_trace",
+       "D_cf",
+       "D_plan"
+      ]
+     }
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 300000000000000.0,
+  "note": "largest: rouge-mem ~103 MFLOP executed forward x 3 x 960k examples"
+ },
+ "predictions": {
+  "gating": "PASS if on >= 6 of 11 tasks at least one model is >= 20 points above the task's cue floor (dev): the benchmark discriminates. PARTIAL at 3-5 tasks; FAIL below (benchmark too hard at this scale: redesign levels).",
+  "P1_attention_recall": "Transformer >= LSTM and >= SSM on OOD recall (associative recall favours attention: Zoology 2312.04927).",
+  "P2_recurrent_perm": "Some recurrent model (LSTM, GRU, SSM, rouge-mem) beats the Transformer by > 5 points on OOD permutation composition (state tracking; Illusion of State 2404.08819).",
+  "P3_memory_vs_lstm_recall": "rouge-mem >= LSTM on OOD recall (explicit memory vs a fixed vector).",
+  "P4_moe_not_worse": "MoE dev accuracy >= Transformer - 2 points (R1.04 replicated on v3).",
+  "note": "P1-P4 are recorded as predictions; only the discrimination count gates this baseline milestone."
+ },
+ "prior_art": "See docs/rouge/research/prior-art.md (LSTM, GRU, Mamba-style SSM 2312.00752, Universal Transformer 1807.03819, Switch MoE 2101.03961).",
+ "not_claimed": "Baselines are small re-implementations (the SSM is a sequential-scan Mamba-style layer, not the official kernel)."
+}

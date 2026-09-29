@@ -62,11 +62,13 @@ def record(args) -> None:
             "experiment_id": exp_id, "run": f"{run['model']}-seed{run['seed']}", "parent": prereg.get("follows"),
             "hypothesis": prereg.get("question"), "architecture": run["model"],
             "config": prereg["setup"]["models"].get(run["model"]), "seed": run["seed"],
-            "dataset_hash": data, "code_sha": args.code_sha, "parameter_count": run["parameters"],
+            "dataset_hash": data, "code_sha": run.get("code_sha") if run.get("code_sha", "local") != "local" else args.code_sha,
+            "parameter_count": run.get("parameters", run.get("params")), "active_parameters": run.get("params_active"),
             "flop_estimate": run.get("flops_effective", run.get("flops_per_example")),
+            "checkpoint_sha256": run.get("checkpoint_sha256"),
             "hardware": run.get("hardware", args.hardware), "duration_s": run["train_seconds"],
             "cost_usd": 0.0 if route["tier"] < 3 else None, "ci_run": args.run_id,
-            "metrics": {"id": run["id"], "ood": run["ood"], **({"extra": run["extra"]} if "extra" in run else {})},
+            "metrics": {split: run[split] for split in ("id", "dev", "holdout", "ood", "adv") if split in run},
             "result": None, "decision": None,
         })
     rows.append({
