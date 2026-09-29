@@ -1,0 +1,123 @@
+{
+ "experiment": "R1.24",
+ "rows": [
+  {
+   "model": "transformer",
+   "tokens": 64,
+   "tokens_per_second": 48381.24115550877,
+   "cpu_core_seconds_per_1k_tokens": 0.08267667187666916,
+   "memory_bytes_per_stream": 131072
+  },
+  {
+   "model": "transformer",
+   "tokens": 256,
+   "tokens_per_second": 70851.39646094355,
+   "cpu_core_seconds_per_1k_tokens": 0.056456191406262235,
+   "memory_bytes_per_stream": 524288
+  },
+  {
+   "model": "transformer",
+   "tokens": 1024,
+   "tokens_per_second": 81500.19656252315,
+   "cpu_core_seconds_per_1k_tokens": 0.04907963623046463,
+   "memory_bytes_per_stream": 2097152
+  },
+  {
+   "model": "lstm",
+   "tokens": 64,
+   "tokens_per_second": 140271.82048831056,
+   "cpu_core_seconds_per_1k_tokens": 0.028516062499761574,
+   "memory_bytes_per_stream": 1792
+  },
+  {
+   "model": "lstm",
+   "tokens": 256,
+   "tokens_per_second": 196995.2453747273,
+   "cpu_core_seconds_per_1k_tokens": 0.02030505859362819,
+   "memory_bytes_per_stream": 1792
+  },
+  {
+   "model": "lstm",
+   "tokens": 1024,
+   "tokens_per_second": 196549.84483198734,
+   "cpu_core_seconds_per_1k_tokens": 0.02035107177733586,
+   "memory_bytes_per_stream": 1792
+  },
+  {
+   "model": "ssm",
+   "tokens": 64,
+   "tokens_per_second": 12520.834840268251,
+   "cpu_core_seconds_per_1k_tokens": 0.3194675156272808,
+   "memory_bytes_per_stream": 26624
+  },
+  {
+   "model": "ssm",
+   "tokens": 256,
+   "tokens_per_second": 18077.10753143302,
+   "cpu_core_seconds_per_1k_tokens": 0.22127433789087547,
+   "memory_bytes_per_stream": 26624
+  },
+  {
+   "model": "ssm",
+   "tokens": 1024,
+   "tokens_per_second": 19113.086434909783,
+   "cpu_core_seconds_per_1k_tokens": 0.20928069433590046,
+   "memory_bytes_per_stream": 26624
+  },
+  {
+   "model": "rouge-mem",
+   "tokens": 64,
+   "tokens_per_second": 8997.711681578096,
+   "cpu_core_seconds_per_1k_tokens": 0.44455747656257927,
+   "memory_bytes_per_stream": 16128
+  },
+  {
+   "model": "rouge-mem",
+   "tokens": 256,
+   "tokens_per_second": 9027.312818149347,
+   "cpu_core_seconds_per_1k_tokens": 0.44309974414069586,
+   "memory_bytes_per_stream": 16128
+  },
+  {
+   "model": "rouge-mem",
+   "tokens": 1024,
+   "tokens_per_second": 7888.2947971933445,
+   "cpu_core_seconds_per_1k_tokens": 0.5070804404296858,
+   "memory_bytes_per_stream": 16128
+  },
+  {
+   "model": "rouge-cheap",
+   "tokens": 64,
+   "tokens_per_second": 13259.582430764267,
+   "cpu_core_seconds_per_1k_tokens": 0.30166862500280445,
+   "memory_bytes_per_stream": 14976
+  },
+  {
+   "model": "rouge-cheap",
+   "tokens": 256,
+   "tokens_per_second": 11853.423596630397,
+   "cpu_core_seconds_per_1k_tokens": 0.33745524804640326,
+   "memory_bytes_per_stream": 14976
+  },
+  {
+   "model": "rouge-cheap",
+   "tokens": 1024,
+   "tokens_per_second": 11479.480715483201,
+   "cpu_core_seconds_per_1k_tokens": 0.3484478173829686,
+   "memory_bytes_per_stream": 14976
+  }
+ ],
+ "decision": {
+  "complete": true,
+  "checks": {
+   "H1_memory": true,
+   "H2_speed": false
+  },
+  "result": "PARTIAL"
+ },
+ "hardware": {
+  "machine": "x86_64",
+  "cpus": 4,
+  "torch": "2.14.0+cu130"
+ }
+}
