@@ -184,7 +184,37 @@ def report(args) -> None:
             table[m]["think_steps_ood"] = mean(lambda r: r["ood"]["think_steps_mean"])
     table["decision"] = decide(table, runs)
     (out / "summary.json").write_text(json.dumps(table, indent=1))
-    print(json.dumps(table, indent=1))
+    (out / "report.md").write_text(markdown(table))
+    print(markdown(table))
+
+
+def markdown(table: dict) -> str:
+    models = [m for m in ("transformer", "transformer-flops", "rouge", "rouge-fixed") if m in table]
+    pct = lambda v: f"{100 * v:.1f}"  # noqa: E731
+    lines = ["| | " + " | ".join(models) + " |", "|---|" + "---|" * len(models)]
+    rows = [
+        ("parameters", lambda r: f"{r['parameters']:,}"),
+        ("disk (fp32 checkpoint)", lambda r: f"{r['disk_bytes'] / 1e6:.2f} MB"),
+        ("state memory at 67 tokens", lambda r: f"{r['state_bytes_len67'] / 1024:.0f} KiB"),
+        ("FLOPs / example (ID)", lambda r: f"{r['flops_per_example_id'] / 1e6:.0f} M"),
+        ("FLOPs / example (OOD)", lambda r: f"{r['flops_per_example_ood'] / 1e6:.0f} M"),
+        ("train wall-clock (CPU)", lambda r: f"{r['train_seconds'] / 60:.1f} min"),
+        ("latency / example (CPU, 1 batch)", lambda r: f"{r['latency_ms']:.2f} ms"),
+    ]
+    for split in ("id", "ood"):
+        for task in ("all", *mb.TASKS):
+            rows.append((f"{split.upper()} {task} (%)", lambda r, k=f"{split}_{task}": pct(r[k])))
+    for name, fn in rows:
+        lines.append(f"| {name} | " + " | ".join(fn(table[m]) for m in models) + " |")
+    if "rouge" in table:
+        r = table["rouge"]
+        lines += ["", f"Rouge think steps: ID {r['think_steps_id']:.2f}, OOD {r['think_steps_ood']:.2f}; "
+                      f"OOD with 16 think steps: {pct(r['ood_think16_all'])}%."]
+    lines += ["", "Per-seed OOD accuracy:", ""]
+    for m in models:
+        lines.append(f"- {m}: " + ", ".join(f"{t} {v}" for t, v in table[m]["per_seed_ood"].items()))
+    lines += ["", f"Decision: `{json.dumps(table.get('decision'))}`"]
+    return "\n".join(lines) + "\n"
 
 
 def spearman(xs: list[float], ys: list[float]) -> float:
