@@ -14,3 +14,4 @@ test-results-prod
 
 # Rouge research checkpoints are CI artifacts (sha256 in the result JSON), never committed.
 research/rouge-architecture/results/**/checkpoints/
+research/**/__pycache__/
