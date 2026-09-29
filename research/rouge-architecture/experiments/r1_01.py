@@ -33,6 +33,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from benchmarks import microbench as mb  # noqa: E402
+from lab import stats  # noqa: E402
 from prototypes.rouge_r101 import Rouge  # noqa: E402
 from prototypes.transformer_baseline import Transformer  # noqa: E402
 
@@ -104,6 +105,14 @@ def flops_per_example(model, examples, **kwargs) -> float:
     return counter.get_total_flops() / len(examples)
 
 
+def hardware() -> dict:
+    import os
+    import platform
+    return {"machine": platform.machine(), "system": platform.system(), "cpus": os.cpu_count(),
+            "torch": torch.__version__, "runner": os.environ.get("RUNNER_NAME", "local"),
+            "runner_environment": os.environ.get("RUNNER_ENVIRONMENT", "local")}
+
+
 def train(args) -> None:
     torch.manual_seed(args.seed)
     torch.set_num_threads(args.threads)
@@ -115,8 +124,33 @@ def train(args) -> None:
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda s: min(1.0, (s + 1) / warm) * 0.5 * (1 + math.cos(math.pi * min(1.0, s / args.steps))))
     probe = mb.fixed_set("probe", 50, "id")
-    curve, tokens_seen, start = [], 0, time.time()
-    for step in range(1, args.steps + 1):
+    curve, tokens_seen, start, first = [], 0, time.time(), 1
+    resume = Path(args.out) / "resume" / f"{args.model}-seed{args.seed}.pt"
+    if resume.exists():
+        # Continue a run that stopped at its time budget or lost its runner:
+        # model, optimizer, schedule, data-stream RNG and curve continue exactly.
+        saved = torch.load(resume, weights_only=False)
+        model.load_state_dict(saved["model"])
+        opt.load_state_dict(saved["opt"])
+        sched.load_state_dict(saved["sched"])
+        rng.setstate(saved["rng"])
+        torch.set_rng_state(saved["torch_rng"])
+        curve, tokens_seen, first = saved["curve"], saved["tokens_seen"], saved["step"] + 1
+        if hasattr(model, "tau_base"):
+            model.tau = saved["tau"]
+        start -= saved["elapsed"]
+        print(f"resumed {args.model} seed {args.seed} at step {saved['step']}", flush=True)
+
+    def save_resume(step):
+        resume.parent.mkdir(parents=True, exist_ok=True)
+        torch.save({"model": model.state_dict(), "opt": opt.state_dict(), "sched": sched.state_dict(),
+                    "rng": rng.getstate(), "torch_rng": torch.get_rng_state(), "curve": curve,
+                    "tokens_seen": tokens_seen, "step": step, "tau": getattr(model, "tau", None),
+                    "elapsed": time.time() - start}, resume.with_suffix(".tmp"))
+        resume.with_suffix(".tmp").replace(resume)  # atomic: a crash never leaves a torn checkpoint
+
+    deadline = time.time() + args.budget_min * 60 if args.budget_min else None
+    for step in range(first, args.steps + 1):
         ids, lengths, answers = collate(mb.batch(rng, SETUP["batch"], "id"))
         tokens_seen += int(lengths.sum())
         logits, info = model(ids, lengths)
@@ -135,7 +169,13 @@ def train(args) -> None:
             curve.append({"step": step, "loss": round(loss.item(), 4), "probe_id": evaluate(model, probe)["all"],
                           "elapsed_s": round(time.time() - start, 1)})
             print(args.model, args.seed, curve[-1], flush=True)
+        if step < args.steps and (step % args.ckpt_every == 0 or (deadline and time.time() > deadline)):
+            save_resume(step)
+            if deadline and time.time() > deadline:
+                print(f"time budget reached at step {step}: resume state saved; rerun to continue", flush=True)
+                raise SystemExit(75)
     train_seconds = time.time() - start
+    resume.unlink(missing_ok=True)
 
     out = Path(args.out)
     (out / "checkpoints").mkdir(parents=True, exist_ok=True)
@@ -149,7 +189,7 @@ def train(args) -> None:
     result = {
         "model": args.model, "seed": args.seed, "steps": args.steps, "batch": SETUP["batch"],
         "training_examples": args.steps * SETUP["batch"], "training_tokens": tokens_seen,
-        "train_seconds": round(train_seconds, 1), "threads": args.threads,
+        "train_seconds": round(train_seconds, 1), "threads": args.threads, "hardware": hardware(),
         "parameters": params, "disk_bytes": ckpt.stat().st_size,
         "checkpoint_sha256": hashlib.sha256(ckpt.read_bytes()).hexdigest(),
         "state_bytes": {"len39": model.state_bytes(39), "len67": model.state_bytes(67)},
@@ -190,6 +230,13 @@ def report(args) -> None:
             "per_seed_ood": {t: [round(r["ood"][t], 3) for r in rs] for t in mb.TASKS},
             "per_seed_id": {t: [round(r["id"][t], 3) for r in rs] for t in mb.TASKS},
         }
+        # Every accuracy is also reported as mean, SD and 95% CI over seeds.
+        table[m]["stats"] = {
+            **{f"{split}_{t}": stats.summary([r[split][t] for r in rs]) for split in ("id", "ood") for t in ("all", *mb.TASKS)},
+            "train_seconds": stats.summary([r["train_seconds"] for r in rs]),
+        }
+        if "think_steps_mean" in rs[0]["ood"]:
+            table[m]["stats"]["think_steps_ood"] = stats.summary([r["ood"]["think_steps_mean"] for r in rs])
         if "ood_think16" in rs[0]:
             table[m]["think_steps_by_level"] = rs[0]["ood"].get("think_steps_by_level")
             table[m]["ood_think16_all"] = mean(lambda r: r["ood_think16"]["all"])
@@ -204,7 +251,8 @@ def report(args) -> None:
 def markdown(table: dict) -> str:
     models = [m for m in SETUP["models"] if m in table]
     pct = lambda v: f"{100 * v:.1f}"  # noqa: E731
-    lines = ["| | " + " | ".join(models) + " |", "|---|" + "---|" * len(models)]
+    lines = ["Accuracy: mean ± SD over seeds [95% CI, Student t]. Chance is 10%.", "",
+             "| | " + " | ".join(models) + " |", "|---|" + "---|" * len(models)]
     rows = [
         ("parameters", lambda r: f"{r['parameters']:,}"),
         ("disk (fp32 checkpoint)", lambda r: f"{r['disk_bytes'] / 1e6:.2f} MB"),
@@ -214,9 +262,13 @@ def markdown(table: dict) -> str:
         ("train wall-clock (CPU)", lambda r: f"{r['train_seconds'] / 60:.1f} min"),
         ("latency / example (CPU, 1 batch)", lambda r: f"{r['latency_ms']:.2f} ms"),
     ]
+    def acc(r, k):
+        st = r["stats"][k]
+        return f"{pct(st['mean'])} ± {pct(st['sd'])} [{pct(st['ci95'][0])}, {pct(st['ci95'][1])}]"
+
     for split in ("id", "ood"):
         for task in ("all", *mb.TASKS):
-            rows.append((f"{split.upper()} {task} (%)", lambda r, k=f"{split}_{task}": pct(r[k])))
+            rows.append((f"{split.upper()} {task} (%)", lambda r, k=f"{split}_{task}": acc(r, k)))
     for name, fn in rows:
         lines.append(f"| {name} | " + " | ".join(fn(table[m]) for m in models) + " |")
     for m in (m for m in models if "think_steps_id" in table[m]):
@@ -230,24 +282,7 @@ def markdown(table: dict) -> str:
     return "\n".join(lines) + "\n"
 
 
-def spearman(xs: list[float], ys: list[float]) -> float:
-    def ranks(v):  # average ranks, so ties carry no correlation
-        order = sorted(range(len(v)), key=v.__getitem__)
-        r = [0.0] * len(v)
-        i = 0
-        while i < len(order):
-            j = i
-            while j + 1 < len(order) and v[order[j + 1]] == v[order[i]]:
-                j += 1
-            for k in range(i, j + 1):
-                r[order[k]] = (i + j) / 2
-            i = j + 1
-        return r
-    rx, ry = ranks(xs), ranks(ys)
-    mx, my = sum(rx) / len(rx), sum(ry) / len(ry)
-    cov = sum((a - mx) * (b - my) for a, b in zip(rx, ry))
-    var = (sum((a - mx) ** 2 for a in rx) * sum((b - my) ** 2 for b in ry)) ** 0.5
-    return cov / var if var else 0.0
+spearman = stats.spearman
 
 
 def decide(table: dict, runs: list[dict]) -> dict:
@@ -291,6 +326,8 @@ def main() -> None:
     parser.add_argument("--steps", type=int)
     parser.add_argument("--eval-every", type=int, default=250)
     parser.add_argument("--threads", type=int, default=1)
+    parser.add_argument("--ckpt-every", type=int, default=1000, help="resume checkpoint interval (steps)")
+    parser.add_argument("--budget-min", type=float, default=0, help="stop with exit 75 and a resume checkpoint after this many minutes")
     parser.add_argument("--out")
     args = parser.parse_args()
     load(args.prereg)

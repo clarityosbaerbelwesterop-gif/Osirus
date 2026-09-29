@@ -1,0 +1,101 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.03",
+ "title": "Persistent state quality, and a two-level memory for the recall loss",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.01 / R1.01b: the fixed-size state loses on recall (P3), as predicted by its capacity",
+ "runner": "experiments/r1_03.py",
+ "benchmarks": [
+  "benchmarks/microbench.py"
+ ],
+ "question": "What does the persistent state encode (facts, intermediate results, calibrated uncertainty), and does a small active state plus a constant-size exact slot memory with top-k reads close the recall gap to a Transformer at <= 1/4 of its KV-cache bytes, without losing state tracking or hops?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 300,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "probe_examples": 600,
+  "models": {
+   "transformer": {
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "rouge-b": {
+    "d": 128,
+    "slots": 8,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3
+   },
+   "rouge-mem": {
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2
+   }
+  },
+  "gate": {
+   "recall_gain": 0.1,
+   "memory_ratio": 0.25
+  },
+  "parameters": {
+   "transformer": 205740,
+   "rouge-b": 211374,
+   "rouge-mem": 217247
+  },
+  "inference_memory_bytes_at_67_tokens": {
+   "transformer": 137216,
+   "rouge-b": 4096,
+   "rouge-mem": 16128
+  },
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)"
+ },
+ "compute": {
+  "train_flops_per_run": 480000000000000.0,
+  "note": "rouge-b: 166 MFLOP forward x 3 x 64 x 15,000"
+ },
+ "roles": {
+  "candidate": "rouge-mem",
+  "state_only": "rouge-b",
+  "baseline": "transformer"
+ },
+ "predictions": {
+  "M1_recall": "rouge-mem OOD recall >= rouge-b + 0.10 and >= transformer - 0.02, with inference memory at 26 facts <= 0.25x the Transformer's KV cache.",
+  "M2_no_regression": "rouge-mem OOD state and OOD hops each >= rouge-b - 0.02.",
+  "M3_facts_probe": "A linear probe reads 'is key x stored' (balanced accuracy) from rouge-mem's state + memory at least as well as from rouge-b's state (OOD lengths).",
+  "probes_reported": "Probes for intermediate results (state value half way; first hop) and ECE (uncertainty) are reported for every model, not gating. Goals and causal relations are not tested here: no task in this benchmark has them."
+ },
+ "decision": {
+  "PASS": "M1 and M2: the two-level memory is kept for the combined model.",
+  "PARTIAL": "Recall improves by >= 0.10 over rouge-b but M1 or M2 is otherwise missed.",
+  "FAIL": "No recall gain of 0.10 over rouge-b: the memory design is recorded and not scaled."
+ },
+ "prior_art": [
+  "Neural Turing Machines, Graves et al. 2014 (arXiv 1410.5401)",
+  "Differentiable Neural Computer, Graves et al. 2016",
+  "Memory Networks, Weston et al. 2014 (arXiv 1410.3916)",
+  "Titans, Behrouz et al. 2025 (arXiv 2501.00663)",
+  "Repeat After Me, Jelassi et al. 2024 (arXiv 2402.01032): fixed-state models lose on copying/recall"
+ ],
+ "not_claimed": "Slot memories, content addressing and top-k reads are prior art. No novelty claim."
+}

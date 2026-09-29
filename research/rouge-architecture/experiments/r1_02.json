@@ -1,0 +1,142 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.02",
+ "title": "Learned halting: does adaptive recurrence spend compute where the task needs it?",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.01 (FAIL): ACT halting collapsed to ~1.5 steps and did not track difficulty (rho = 0.14)",
+ "runner": "experiments/r1_02.py",
+ "benchmarks": [
+  "benchmarks/depthbench.py"
+ ],
+ "question": "On a task whose required sequential depth is controlled exactly (1, 2, 4, 8 in training; 12, 16 held out) and whose input length is constant, does a shared-block looped model with learned halting (a) choose more steps for deeper examples, (b) keep the accuracy of the same model at fixed depth, and (c) reach a Transformer's accuracy with fewer FLOPs?",
+ "design_notes": {
+  "one_hypothesis": "R1.02 isolates adaptive recurrence: the looped block reads the whole input (bidirectional attention), so memory capacity is not a confound. Persistent state is R1.03; sparsity is R1.04. Mechanisms are combined only after each has independent evidence.",
+  "constant_length": "Every example is 57 tokens, so the number of steps cannot track input length, only depth.",
+  "pilot": "A 1,500-step local pilot (seed 1, 1 CPU thread) showed all models at the terminal-guess level (~27%) after 1,000 steps; the budget is therefore 15,000 steps, the R1.01b lesson."
+ },
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "optimizer": "AdamW, cosine decay, grad clip 1.0",
+  "eval_per_depth": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "ood_max_think": 24,
+  "correlation_depths": [
+   1,
+   2,
+   4,
+   8,
+   16
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {
+    "d": 48,
+    "layers": 4,
+    "heads": 4
+   },
+   "transformer-flops": {
+    "d": 96,
+    "layers": 8,
+    "heads": 4
+   },
+   "loop-fixed": {
+    "d": 96,
+    "heads": 4,
+    "halting": "fixed",
+    "think_steps": 8
+   },
+   "loop-act": {
+    "d": 96,
+    "heads": 4,
+    "halting": "act",
+    "max_think": 12,
+    "tau": 0.01
+   },
+   "loop-act-warm": {
+    "d": 96,
+    "heads": 4,
+    "halting": "act",
+    "max_think": 12,
+    "tau": 0.01,
+    "tau_warmup": 0.3,
+    "floor": 6,
+    "floor_warmup": 0.3
+   },
+   "loop-ponder": {
+    "d": 96,
+    "heads": 4,
+    "halting": "ponder",
+    "max_think": 12,
+    "lambda_p": 0.2,
+    "beta": 0.01
+   }
+  },
+  "parameters": {
+   "transformer": 116094,
+   "transformer-flops": 900702,
+   "loop-fixed": 118111,
+   "loop-act": 118111,
+   "loop-act-warm": 118111,
+   "loop-ponder": 118111
+  },
+  "flops_per_example_forward": {
+   "transformer": 12600000.0,
+   "transformer-flops": 100900000.0,
+   "loop, per step": 12600000.0
+  },
+  "matching": "transformer = the looped models' parameters and one step's FLOPs; transformer-flops = 8 steps' FLOPs (loop-fixed's compute) with 7.6x the parameters",
+  "gate": {
+   "learned_margin": 0.2,
+   "rho_mean": 0.5,
+   "rho_min_seed": 0.3,
+   "rho_fail_below": 0.3,
+   "steps_ratio_8_1": 1.5,
+   "fixed_tolerance": 0.03
+  }
+ },
+ "roles": {
+  "candidate": "loop-ponder",
+  "fixed": "loop-fixed",
+  "baseline": "transformer",
+  "baseline_flops": "transformer-flops",
+  "secondary": [
+   "loop-act-warm",
+   "loop-act"
+  ]
+ },
+ "predictions": {
+  "G1_depth": "Candidate (loop-ponder): per-example Spearman rho(required depth, chosen steps) over depths {1,2,4,8,16} >= 0.5 (mean of 3 seeds) and >= 0.3 in every seed, and mean steps at depth 8 >= 1.5x mean steps at depth 1.",
+  "G2_accuracy_vs_fixed": "Candidate ID accuracy >= loop-fixed ID accuracy - 0.03 (adaptive compute does not win by stopping early).",
+  "G3_per_flop": "Candidate ID accuracy >= transformer-flops - 0.02 at <= 0.75x its FLOPs per example, or >= transformer-flops + 0.02 at <= 1.0x its FLOPs.",
+  "G4_ood": "Reported, not gating: candidate OOD accuracy >= transformer-flops + 0.10, and more steps at depth 16 than at depth 8 (compute extrapolates).",
+  "control": "loop-act (the R1.01 recipe) is expected to collapse to few steps and fail G1."
+ },
+ "decision": {
+  "INCONCLUSIVE": "No model beats the terminal-guess baseline by 0.20 on ID: the benchmark did not separate anything; nothing is concluded.",
+  "FAIL": "G1 fails (no depth-compute correlation: rho < 0.3 or the step ratio fails), or both G2 and G3 fail.",
+  "PARTIAL": "G1 holds and exactly one of G2, G3 holds.",
+  "PASS": "G1, G2 and G3 hold: adaptive recurrence proceeds to be combined with persistent state (after R1.03).",
+  "secondary": "loop-act-warm and loop-act are reported with the same checks as exploratory results; a secondary variant that would pass does not change the decision and needs its own confirmation run."
+ },
+ "prior_art": [
+  "ACT, Graves 2016 (arXiv 1603.08983)",
+  "Universal Transformer, Dehghani et al. 2018 (arXiv 1807.03819)",
+  "PonderNet, Banino et al. 2021 (arXiv 2107.05407)",
+  "Looped Transformers for length generalization, Fan et al. 2024 (arXiv 2409.15647)",
+  "Recurrent depth, Geiping et al. 2025 (arXiv 2502.05171)"
+ ],
+ "not_claimed": "Every halting method here is prior art; R1.02 measures which one learns depth-proportional compute on this benchmark. No novelty claim.",
+ "compute": {
+  "train_flops_per_run": 440000000000000.0,
+  "note": "largest run: loop-ponder trains all 12 steps (151 MFLOP forward x 3 x 64 x 15,000)"
+ }
+}

@@ -23,26 +23,26 @@ def rope(x: torch.Tensor) -> torch.Tensor:
 
 
 class Block(nn.Module):
-    def __init__(self, d: int, heads: int):
+    def __init__(self, d: int, heads: int, causal: bool = True, ff: int | None = None):
         super().__init__()
-        self.heads = heads
+        self.heads, self.causal = heads, causal
         self.ln1, self.ln2 = nn.LayerNorm(d), nn.LayerNorm(d)
         self.qkv, self.out = nn.Linear(d, 3 * d), nn.Linear(d, d)
-        self.mlp = nn.Sequential(nn.Linear(d, 4 * d), nn.GELU(), nn.Linear(4 * d, d))
+        self.mlp = nn.Sequential(nn.Linear(d, ff or 4 * d), nn.GELU(), nn.Linear(ff or 4 * d, d))
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         b, t, d = x.shape
         q, k, v = self.qkv(self.ln1(x)).view(b, t, 3, self.heads, d // self.heads).permute(2, 0, 3, 1, 4)
-        y = F.scaled_dot_product_attention(rope(q), rope(k), v, is_causal=True)
+        y = F.scaled_dot_product_attention(rope(q), rope(k), v, is_causal=self.causal)
         x = x + self.out(y.transpose(1, 2).reshape(b, t, d))
         return x + self.mlp(self.ln2(x))
 
 
 class Transformer(nn.Module):
-    def __init__(self, vocab: int, d: int = 64, layers: int = 4, heads: int = 4):
+    def __init__(self, vocab: int, d: int = 64, layers: int = 4, heads: int = 4, causal: bool = True, ff: int | None = None):
         super().__init__()
         self.embed = nn.Embedding(vocab, d)
-        self.blocks = nn.ModuleList(Block(d, heads) for _ in range(layers))
+        self.blocks = nn.ModuleList(Block(d, heads, causal, ff) for _ in range(layers))
         self.ln = nn.LayerNorm(d)
         self.head = nn.Linear(d, vocab)
         self.d, self.layers = d, layers

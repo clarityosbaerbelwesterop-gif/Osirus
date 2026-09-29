@@ -1,24 +1,44 @@
 name: Rouge research R1
+run-name: research ${{ inputs.experiment }}${{ inputs.reuse_run && ' (report)' || '' }}
 
-# Rouge architecture research on free CI CPUs (research/rouge-architecture).
-# One pre-registered experiment per dispatch: every model x seed from its
-# pre-registration trains on its own runner, then one job applies the
-# pre-registered decision. No paid compute.
+# Rouge architecture research (research/rouge-architecture), one
+# pre-registered experiment per dispatch:
+#   plan (compute router) -> tests -> train (model x seed matrix, resumable)
+#   -> report (seed statistics + pre-registered gate) -> record (registry,
+#   research branch only) -> next approved free experiment.
+# Tier 0 runs on free GitHub CPUs; tiers 1-2 on the owner's self-hosted
+# runner (labels self-hosted, rouge-research[, gpu]). Tier 3 (H200) is never
+# selected by this workflow. Nothing here spends money or touches main.
 
 on:
   workflow_dispatch:
     inputs:
       experiment:
-        description: pre-registration file in research/rouge-architecture/experiments (without .json)
-        default: r1_01b
+        description: pre-registration in research/rouge-architecture/experiments (without .json)
+        default: r1_02
+      runner:
+        description: auto (compute router), github, self-hosted or gpu
+        default: auto
       reuse_run:
         description: report only, from the artifacts of this earlier run id (no training)
         default: ""
+      artifact_prefix:
+        description: artifact name prefix of reuse_run (default = experiment; R1.01 used r1.01)
+        default: ""
+      auto_next:
+        description: when this experiment is recorded, dispatch the next approved free one from experiments/queue.json
+        type: boolean
+        default: true
 
 permissions:
   contents: read
 
+concurrency:
+  group: research-${{ inputs.experiment }}
+  cancel-in-progress: false
+
 env:
+  LAB: research/rouge-architecture
   PREREG: research/rouge-architecture/experiments/${{ inputs.experiment }}.json
 
 jobs:
@@ -27,18 +47,33 @@ jobs:
     outputs:
       models: ${{ steps.plan.outputs.models }}
       seeds: ${{ steps.plan.outputs.seeds }}
+      runs_on: ${{ steps.plan.outputs.runs_on }}
+      runner_script: ${{ steps.plan.outputs.runner_script }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - id: plan
+        env:
+          RUNNER_CHOICE: ${{ inputs.runner }}
         run: |
-          python3 - >> "$GITHUB_OUTPUT" <<'PY'
-          import json, os
-          setup = json.load(open(os.environ["PREREG"]))["setup"]
+          route="$(python3 "$LAB/lab/compute.py" "$PREREG" --runner "$RUNNER_CHOICE")"
+          echo "$route"
+          python3 - "$route" >> "$GITHUB_OUTPUT" <<'PY'
+          import json, os, sys
+          prereg = json.load(open(os.environ["PREREG"]))
+          setup = prereg["setup"]
           print("models=" + json.dumps(list(setup["models"])))
           print("seeds=" + json.dumps(setup["seeds"]))
+          print("runs_on=" + json.dumps(json.loads(sys.argv[1])["runs_on"]))
+          print("runner_script=" + prereg.get("runner", "experiments/r1_01.py"))
           PY
+          {
+            echo "### Plan: ${{ inputs.experiment }}"
+            echo '```json'
+            echo "$route"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   tests:
     if: ${{ !inputs.reuse_run }}
@@ -52,37 +87,72 @@ jobs:
         with:
           python-version: "3.11"
       - run: python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
-      - run: python -m unittest discover -s research/rouge-architecture/tests -v
+      - run: python -m unittest discover -s "$LAB/tests" -v
 
   train:
     needs: [plan, tests]
     if: ${{ !inputs.reuse_run }}
-    runs-on: ubuntu-latest
-    timeout-minutes: 300
+    runs-on: ${{ fromJSON(needs.plan.outputs.runs_on) }}
+    timeout-minutes: 350
     strategy:
       fail-fast: false
       matrix:
         model: ${{ fromJSON(needs.plan.outputs.models) }}
         seed: ${{ fromJSON(needs.plan.outputs.seeds) }}
+    env:
+      MODEL: ${{ matrix.model }}
+      SEED: ${{ matrix.seed }}
+      RUN_KEY: ${{ inputs.experiment }}-${{ matrix.model }}-seed${{ matrix.seed }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
       - uses: actions/setup-python@v5
+        if: ${{ runner.environment == 'github-hosted' }}
         with:
           python-version: "3.11"
-      - run: python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
+      - name: Python environment
+        run: |
+          if [ "$RUNNER_ENVIRONMENT" = "github-hosted" ]; then
+            python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
+            echo "OUT=$RUNNER_TEMP/results" >> "$GITHUB_ENV"
+          else
+            # Owner's server: one persistent environment and results directory,
+            # so a lost runner resumes from its last checkpoint on disk.
+            venv="${ROUGE_VENV:-$HOME/.rouge-venv}"
+            [ -x "$venv/bin/python" ] || "$LAB/env/bootstrap.sh" "$venv"
+            echo "$venv/bin" >> "$GITHUB_PATH"
+            echo "OUT=${ROUGE_STATE_DIR:-$HOME/rouge-state}/${{ github.run_id }}/$RUN_KEY" >> "$GITHUB_ENV"
+          fi
+      - name: Restore resume checkpoint (re-run of this job)
+        if: ${{ runner.environment == 'github-hosted' }}
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/results/resume
+          key: resume-${{ env.RUN_KEY }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: resume-${{ env.RUN_KEY }}-${{ github.run_id }}-
       - name: Train and evaluate
         env:
-          MODEL: ${{ matrix.model }}
-          SEED: ${{ matrix.seed }}
+          RUNNER_SCRIPT: ${{ needs.plan.outputs.runner_script }}
         run: |
-          python research/rouge-architecture/experiments/r1_01.py --prereg "$PREREG" train --model "$MODEL" --seed "$SEED" \
-            --threads "$(nproc)" --out "$RUNNER_TEMP/results"
+          # Stops with exit 75 and a resume checkpoint before the job limit;
+          # "Re-run failed jobs" then continues from that step.
+          python "$LAB/$RUNNER_SCRIPT" --prereg "$PREREG" train --model "$MODEL" --seed "$SEED" \
+            --threads "$(nproc)" --out "$OUT" --budget-min 320
+      - name: Save resume checkpoint
+        # Only a stopped or lost run leaves a resume checkpoint (a finished run deletes it).
+        if: ${{ (failure() || cancelled()) && runner.environment == 'github-hosted' }}
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/results/resume
+          key: resume-${{ env.RUN_KEY }}-${{ github.run_id }}-${{ github.run_attempt }}
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.experiment }}-${{ matrix.model }}-seed${{ matrix.seed }}
-          path: ${{ runner.temp }}/results
+          name: ${{ env.RUN_KEY }}
+          path: |
+            ${{ env.OUT }}/*-seed*.json
+            ${{ env.OUT }}/checkpoints
           retention-days: 90
 
   report:
@@ -90,25 +160,27 @@ jobs:
     if: ${{ always() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      actions: read
+      contents: write
+      actions: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          persist-credentials: false
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
       - run: python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
       - uses: actions/download-artifact@v4
         with:
-          pattern: ${{ inputs.reuse_run && 'r1.01-*-seed*' || format('{0}-*-seed*', inputs.experiment) }}
+          pattern: ${{ format('{0}-*-seed*', inputs.artifact_prefix || inputs.experiment) }}
           merge-multiple: true
           path: ${{ runner.temp }}/results
           run-id: ${{ inputs.reuse_run || github.run_id }}
           github-token: ${{ github.token }}
-      - name: Summary and pre-registered decision
-        run: python research/rouge-architecture/experiments/r1_01.py --prereg "$PREREG" report --out "$RUNNER_TEMP/results"
+      - name: Seed statistics and pre-registered decision
+        env:
+          RUNNER_SCRIPT: ${{ needs.plan.outputs.runner_script }}
+        run: |
+          python "$LAB/$RUNNER_SCRIPT" --prereg "$PREREG" report --out "$RUNNER_TEMP/results"
+          cat "$RUNNER_TEMP/results/report.md" >> "$GITHUB_STEP_SUMMARY"
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ inputs.experiment }}-summary
@@ -117,3 +189,57 @@ jobs:
             ${{ runner.temp }}/results/report.md
             ${{ runner.temp }}/results/*-seed*.json
           retention-days: 90
+      - name: Record in the registry (research branch only)
+        id: record
+        env:
+          RUN_ID: ${{ inputs.reuse_run || github.run_id }}
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$BRANCH" = "$DEFAULT_BRANCH" ] || [ "${BRANCH#rouge/}" = "$BRANCH" ]; then
+            echo "not a rouge/* research branch: nothing is committed"; exit 0
+          fi
+          complete="$(python3 -c "import json; print(json.load(open('$RUNNER_TEMP/results/summary.json')).get('decision', {}).get('complete', False))")"
+          if [ "$complete" != "True" ]; then
+            echo "incomplete experiment: not recorded"; exit 0
+          fi
+          id="$(python3 -c "import json; print(json.load(open('$PREREG'))['id'].lower())")"
+          # The code SHA is the one the models were trained with (the reused run's head).
+          code_sha="$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/$RUN_ID" | python3 -c "import json,sys; print(json.load(sys.stdin)['head_sha'])")"
+          git config user.name "rouge-research[bot]"
+          git config user.email "rouge-research@users.noreply.github.com"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
+            mkdir -p "$LAB/results/$id"
+            cp "$RUNNER_TEMP/results/summary.json" "$RUNNER_TEMP/results/report.md" "$LAB/results/$id/"
+            python3 "$LAB/lab/controller.py" record --prereg "$PREREG" --results "$RUNNER_TEMP/results" \
+              --run-id "$RUN_ID" --code-sha "$code_sha"
+            git add "$LAB/results/$id" "$LAB/experiments/registry.json"
+            git diff --cached --quiet && break
+            git commit -q -m "research(rouge): record ${id} (run $RUN_ID)"
+            git push -q origin "HEAD:$BRANCH" && break
+            sleep $((attempt * 5))
+          done
+          echo "recorded=true" >> "$GITHUB_OUTPUT"
+      - name: Dispatch the next approved free experiment
+        if: ${{ inputs.auto_next && steps.record.outputs.recorded == 'true' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          next="$(python3 "$LAB/lab/controller.py" next)"
+          if [ -z "$next" ]; then echo "queue empty or waiting for approval"; exit 0; fi
+          tier="$(python3 "$LAB/lab/compute.py" "$LAB/experiments/$next.json" | python3 -c "import json,sys; print(json.load(sys.stdin)['tier'])")"
+          active="$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/research-r1.yml/runs?per_page=30" | python3 -c "
+          import json, sys
+          runs = json.load(sys.stdin)['workflow_runs']
+          print(any(r['display_title'] == 'research $next' and r['status'] != 'completed' for r in runs))")"
+          if [ "$active" = "True" ]; then echo "$next is already running"; exit 0; fi
+          if [ "$tier" -ge 3 ]; then echo "$next needs tier $tier: owner approval, not dispatched"; exit 0; fi
+          curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/research-r1.yml/dispatches" \
+            -d "{\"ref\":\"$BRANCH\",\"inputs\":{\"experiment\":\"$next\"}}"
+          echo "dispatched $next (tier $tier)" | tee -a "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,108 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.04",
+ "title": "Sparse conditional circuits: a router executes K of E modules per token",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+ "runner": "experiments/r1_04.py",
+ "benchmarks": [
+  "benchmarks/microbench.py"
+ ],
+ "question": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 300,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "models": {
+   "transformer": {
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "transformer-wide": {
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "ff": 1024
+   },
+   "moe-top2": {
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "experts": 8,
+    "hidden": 128,
+    "top_k": 2,
+    "balance": 0.01
+   },
+   "moe-top1": {
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "experts": 8,
+    "hidden": 256,
+    "top_k": 1,
+    "balance": 0.01
+   }
+  },
+  "gate": {
+   "active_margin": 0.02,
+   "nmi_min": 0.1,
+   "min_load": 0.02
+  },
+  "parameters": {
+   "transformer": 205740,
+   "transformer-wide": 602028,
+   "moe-top2": 605868,
+   "moe-top1": 1134252
+  },
+  "active_parameters": {
+   "transformer": 205740,
+   "transformer-wide": 602028,
+   "moe-top2": 208044,
+   "moe-top1": 207788
+  },
+  "flops_per_example_forward": {
+   "transformer": 15300000.0,
+   "transformer-wide": 46000000.0,
+   "moe-top2": 15500000.0,
+   "moe-top1": 15500000.0
+  },
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)"
+ },
+ "compute": {
+  "train_flops_per_run": 140000000000000.0
+ },
+ "roles": {
+  "candidate": "moe-top2",
+  "active_matched": "transformer",
+  "total_matched": "transformer-wide",
+  "secondary": [
+   "moe-top1"
+  ]
+ },
+ "predictions": {
+  "S1_vs_active_matched": "moe-top2 ID accuracy >= transformer + 0.02, OOD >= transformer - 0.01, at <= 1.15x its FLOPs.",
+  "S2_vs_total_matched": "moe-top2 ID accuracy >= transformer-wide - 0.02 at <= 0.5x its FLOPs.",
+  "S3_specialisation": "Token-conditioned task-expert NMI, I(task; expert | token) / H(task | token), >= 0.1 and >= 2x the same router's value at initialisation, with every expert above 2% load. (The unconditional NMI is reported but not used: an untrained router already scores 0.11 on it because tasks use different tokens.)"
+ },
+ "decision": {
+  "PASS": "(S1 or S2) and S3.",
+  "PARTIAL": "(S1 or S2) without S3, or S3 alone.",
+  "FAIL": "None of S1, S2, S3."
+ },
+ "prior_art": [
+  "Sparsely-gated MoE, Shazeer et al. 2017 (arXiv 1701.06538)",
+  "Switch Transformer, Fedus et al. 2021 (arXiv 2101.03961)",
+  "Mixture-of-Depths, Raposo et al. 2024 (arXiv 2404.02258)"
+ ],
+ "not_claimed": "Mixture-of-Experts is prior art. No novelty claim."
+}
