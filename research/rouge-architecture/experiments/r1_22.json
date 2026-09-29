@@ -1,0 +1,45 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.22",
+ "title": "Real sparse execution: wall-clock of top-2-of-8 expert dispatch vs dense",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.04 (PARTIAL: sparse routing specialises at no accuracy cost)",
+ "runner": "lab/kernels.py",
+ "question": "Does the gather-scatter top-2-of-8 MoE MLP save real CPU wall-clock time against a dense MLP with the same total parameters, and how much dispatch overhead does it add against a dense MLP with the same active FLOPs, as the width grows (d = 64, 256, 512)?",
+ "setup": {
+  "tokens_per_batch": 4096,
+  "widths": [
+   64,
+   256,
+   512
+  ],
+  "experts": 8,
+  "top_k": 2,
+  "expert_hidden": "2d (dense-active hidden 4d = top_k x 2d; dense-total hidden 16d)",
+  "repeats": 5,
+  "measure": "median seconds per forward+backward, after 3 warm-up iterations, torch threads = all cores",
+  "variants": [
+   "dense-active",
+   "dense-total",
+   "moe-gather",
+   "moe-masked (all experts computed, then masked: the naive dense execution)"
+  ],
+  "hardware": "the container CPU (tier 0); recorded in the result",
+  "seeds": [
+   1
+  ]
+ },
+ "predictions": {
+  "K1": "at d=512, moe-gather <= 0.5x the time of dense-total (sparsity saves real time at width)",
+  "K2": "at d=512, moe-gather <= 1.5x the time of dense-active (dispatch overhead bounded)",
+  "K3": "at d=64, overhead dominates (reported, not gating)"
+ },
+ "decision": {
+  "PASS": "K1 and K2",
+  "PARTIAL": "K1 only",
+  "FAIL": "otherwise"
+ },
+ "prior_art": "Switch Transformer 2101.03961, MegaBlocks (Gale et al. 2022, 2211.15841), Mixture-of-Depths 2404.02258",
+ "not_claimed": "CPU timings on one machine; GPU kernels (Triton/Metal) are a later step (tier 1-2)."
+}
