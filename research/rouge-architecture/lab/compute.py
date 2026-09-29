@@ -24,7 +24,7 @@ import json
 import sys
 from pathlib import Path
 
-GITHUB_CPU_FLOPS = 30e9          # sustained training FLOP/s on a 4-vCPU runner, measured in R1.01
+GITHUB_CPU_FLOPS = 50e9          # sustained training FLOP/s per 4-vCPU runner; measured 58-78 G in R1.01b/R1.02 (3x forward FLOPs / wall-clock)
 GITHUB_RAM_GB = 14               # 16 GB runner, 2 GB headroom
 GITHUB_HOURS = 5.5               # 6 h job limit, 30 min headroom
 TIER0_PARAMS = 300e6

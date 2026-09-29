@@ -1,5 +1,30 @@
 [
- {"id": "r1_02", "approved": true, "cost_usd": 0, "after": ["r1_01b"], "approved_by": "owner brief 2026-09-29 (R1.01b -> R1.04, free compute only)"},
- {"id": "r1_03", "approved": true, "cost_usd": 0, "after": ["r1_02"], "approved_by": "owner brief 2026-09-29 (R1.01b -> R1.04, free compute only)"},
- {"id": "r1_04", "approved": true, "cost_usd": 0, "after": ["r1_03"], "approved_by": "owner brief 2026-09-29 (R1.01b -> R1.04, free compute only)"}
+ {
+  "id": "r1_02b",
+  "approved": true,
+  "cost_usd": 0,
+  "after": [
+   "r1_01b"
+  ],
+  "approved_by": "owner brief 2026-09-29 (R1.01b -> R1.04, free compute only)",
+  "note": "replaces r1_02 (void: benchmark length cue)"
+ },
+ {
+  "id": "r1_03",
+  "approved": true,
+  "cost_usd": 0,
+  "after": [
+   "r1_02b"
+  ],
+  "approved_by": "owner brief 2026-09-29 (R1.01b -> R1.04, free compute only)"
+ },
+ {
+  "id": "r1_04",
+  "approved": true,
+  "cost_usd": 0,
+  "after": [
+   "r1_03"
+  ],
+  "approved_by": "owner brief 2026-09-29 (R1.01b -> R1.04, free compute only)"
+ }
 ]

@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 import math
 import os
@@ -41,9 +42,11 @@ SCHEDULE_KEYS = ("tau_warmup", "floor_warmup")
 
 
 def load(path: str) -> None:
-    global PREREG, SETUP
+    global PREREG, SETUP, db
     PREREG = json.loads(Path(path).read_text())
     SETUP = PREREG["setup"]
+    # R1.02 used benchmarks/depthbench.py (void: length cue); R1.02b uses depthbench2.
+    db = importlib.import_module("benchmarks." + Path(PREREG.get("benchmarks", ["benchmarks/depthbench.py"])[0]).stem)
 
 
 def build(name: str) -> torch.nn.Module:
@@ -126,6 +129,7 @@ def train(args) -> None:
     sched = torch.optim.lr_scheduler.LambdaLR(
         opt, lambda s: min(1.0, (s + 1) / warm) * 0.5 * (1 + math.cos(math.pi * min(1.0, s / args.steps))))
     probe = db.fixed_set("probe", 25, "id")
+    seq_len = len(probe[0][0])
     curve, examples_seen, start, first = [], 0, time.time(), 1
     out = Path(args.out)
     resume = out / "resume" / f"{args.model}-seed{args.seed}.pt"
@@ -198,7 +202,7 @@ def train(args) -> None:
         "train_seconds": round(train_seconds, 1), "threads": args.threads, "hardware": hardware(),
         "code_sha": os.environ.get("GITHUB_SHA", "local"), "parameters": params, "disk_bytes": ckpt.stat().st_size,
         "checkpoint_sha256": hashlib.sha256(ckpt.read_bytes()).hexdigest(),
-        "state_bytes": {"len57": model.state_bytes(57)},
+        "state_bytes": {"len57": model.state_bytes(seq_len), "tokens": seq_len},
         "peak_rss_mb": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 1),
         "latency_ms_per_example_cpu": round(latency_ms, 3),
         "id": result_id, "ood": evaluate(model, ood_set, **ood_kwargs), "curve": curve,
@@ -230,7 +234,7 @@ def report(args) -> None:
         by = lambda r, d: r["id"]["by_depth"].get(d) or r["ood"]["by_depth"][d]  # noqa: E731
         table[m] = {
             "seeds": [r["seed"] for r in rs], "parameters": rs[0]["parameters"], "disk_bytes": rs[0]["disk_bytes"],
-            "state_bytes_len57": rs[0]["state_bytes"]["len57"], "hardware": rs[0].get("hardware"),
+            "state_bytes_len57": rs[0]["state_bytes"]["len57"], "tokens": rs[0]["state_bytes"].get("tokens", 57), "hardware": rs[0].get("hardware"),
             "id_all": stats.summary([r["id"]["all"] for r in rs]), "ood_all": stats.summary([r["ood"]["all"] for r in rs]),
             "guess_id": rs[0]["id"]["guess"], "guess_ood": rs[0]["ood"]["guess"],
             "acc_by_depth": {d: stats.summary([by(r, d)["acc"] for r in rs]) for d in depths},
@@ -295,7 +299,7 @@ def markdown(table: dict) -> str:
     rows = [("parameters", lambda r: f"{r['parameters']:,}"),
             ("FLOPs / example (ID)", lambda r: f"{r['flops_id']['mean'] / 1e6:.1f} M"),
             ("FLOPs / example (OOD)", lambda r: f"{r['flops_ood']['mean'] / 1e6:.1f} M"),
-            ("activation memory at 57 tokens", lambda r: f"{r['state_bytes_len57'] / 1024:.0f} KiB"),
+            ("activation memory (one input)", lambda r: f"{r['state_bytes_len57'] / 1024:.0f} KiB at {r['tokens']} tokens"),
             ("train wall-clock", lambda r: f"{r['train_seconds']['mean'] / 60:.1f} min"),
             ("latency / example (CPU)", lambda r: f"{r['latency_ms']['mean']:.2f} ms"),
             ("ID accuracy (%)", lambda r: pct(r["id_all"])), ("OOD accuracy (%)", lambda r: pct(r["ood_all"])),

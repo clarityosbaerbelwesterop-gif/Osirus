@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from benchmarks import depthbench as db  # noqa: E402
+from benchmarks import depthbench2 as db2  # noqa: E402
 from lab import compute  # noqa: E402
 
 try:
@@ -42,9 +43,44 @@ class DepthBenchTest(unittest.TestCase):
         self.assertFalse(set(db.DEPTHS["id"]) & set(db.DEPTHS["ood"]))
 
 
+class DepthBench2Test(unittest.TestCase):
+    def test_answers_and_constant_length(self):
+        for split in ("id", "ood"):
+            xs = db2.fixed_set("test", 20, split)
+            self.assertTrue(all(db2.solve(t) == a for t, a, _, _ in xs))
+            self.assertEqual({len(t) for t, *_ in xs}, {1 + 3 * db2.NODES + 2})
+
+    def test_no_shortcut_beats_guessing_at_any_depth(self):
+        # The lesson of R1.02 (void): cheap cues must stay at the 50% guess level.
+        for split in ("id", "ood"):
+            by = {}
+            for t, a, d, _ in db2.fixed_set("audit", 150, split):
+                for name, guess in db2.shortcuts(t).items():
+                    if name == "query_target_is_terminal_else_first" and d == 1:
+                        continue  # one real hop: that is the task, not a cue
+                    by.setdefault((name, d), []).append(guess == a)
+            for key, hits in by.items():
+                self.assertLess(sum(hits) / len(hits), 0.62, key)
+
+    def test_v1_had_the_length_cue(self):
+        # Kept as a record of why R1.02 was void.
+        def longest(tokens):
+            w = [db.VOCAB[t] for t in tokens]
+            nxt = {w[i]: w[i + 1] for i in range(1, len(w) - 2, 3)}
+
+            def run(n):
+                k = 0
+                while nxt[n] != n:
+                    n, k = nxt[n], k + 1
+                return n, k
+            return db.ID[run(max(nxt, key=lambda n: run(n)[1]))[0]]
+        xs = db.fixed_set("r1.02", 100, "ood")
+        self.assertGreater(sum(longest(t) == a for t, a, _, _ in xs) / len(xs), 0.95)
+
+
 class RouterTest(unittest.TestCase):
     def test_tiers_and_no_automatic_h200(self):
-        prereg = json.loads((ROOT / "experiments" / "r1_02.json").read_text())
+        prereg = json.loads((ROOT / "experiments" / "r1_02b.json").read_text())
         self.assertEqual(compute.route(prereg)["tier"], 0)
         big = {**prereg, "setup": {**prereg["setup"], "parameters": {"x": 1_000_000_000}}}
         self.assertEqual(compute.route(big)["runs_on"], ["self-hosted", "rouge-research"])

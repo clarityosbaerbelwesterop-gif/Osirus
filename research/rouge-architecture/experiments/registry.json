@@ -1728,5 +1728,46 @@
    "result": "FAIL"
   },
   "recorded": "2026-09-29T11:13:45Z"
+ },
+ {
+  "experiment_id": "R1.02",
+  "run": "experiment",
+  "parent": "R1.01 (FAIL): ACT halting collapsed to ~1.5 steps and did not track difficulty (rho = 0.14)",
+  "hypothesis": "On a task whose required sequential depth is controlled exactly (1, 2, 4, 8 in training; 12, 16 held out) and whose input length is constant, does a shared-block looped model with learned halting (a) choose more steps for deeper examples, (b) keep the accuracy of the same model at fixed depth, and (c) reach a Transformer's accuracy with fewer FLOPs?",
+  "architecture": [
+   "transformer",
+   "transformer-flops",
+   "loop-fixed",
+   "loop-act",
+   "loop-act-warm",
+   "loop-ponder"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "b9e8f093f9442ee7cf5b04c8f10829f57547124998103ad42dab78022c03f377",
+  "code_sha": "cffc145",
+  "parameter_count": {
+   "transformer": 116094,
+   "transformer-flops": 900702,
+   "loop-fixed": 118111,
+   "loop-act": 118111,
+   "loop-act-warm": 118111,
+   "loop-ponder": 118111
+  },
+  "flop_estimate": null,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": null,
+  "cost_usd": 0.0,
+  "ci_run": "36559698569",
+  "metrics": {},
+  "result": "VOID",
+  "decision": {
+   "result": "VOID",
+   "reason": "benchmark confound: 'terminal of the longest chain' correct on 100% of OOD and 92% of depth-8 examples (0% at depth 1); cancelled before any gate; superseded by R1.02b"
+  },
+  "recorded": "2026-09-29T11:22:06Z"
  }
 ]

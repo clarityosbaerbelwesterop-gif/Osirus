@@ -83,6 +83,23 @@ def record(args) -> None:
     print(json.dumps({"experiment": exp_id, "result": decision.get("result"), "runs": len(runs)}))
 
 
+def void(args) -> None:
+    """Record an experiment that was stopped because its design was invalid."""
+    prereg = json.loads(Path(args.prereg).read_text())
+    rows = [r for r in load(REGISTRY, []) if r["experiment_id"] != prereg["id"]]
+    rows.append({
+        "experiment_id": prereg["id"], "run": "experiment", "parent": prereg.get("follows"),
+        "hypothesis": prereg.get("question"), "architecture": list(prereg["setup"]["models"]),
+        "seed": prereg["setup"]["seeds"], "dataset_hash": dataset_hash(prereg), "code_sha": args.code_sha,
+        "parameter_count": prereg["setup"].get("parameters"), "flop_estimate": None, "hardware": "tier 0: ubuntu-latest",
+        "duration_s": None, "cost_usd": 0.0, "ci_run": args.run_id, "metrics": {}, "result": "VOID",
+        "decision": {"result": "VOID", "reason": args.reason},
+        "recorded": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+    })
+    REGISTRY.write_text(json.dumps(rows, indent=1) + "\n")
+    print(json.dumps({"experiment": prereg["id"], "result": "VOID"}))
+
+
 def next_experiment() -> str | None:
     done = {r["experiment_id"].lower().replace(".", "_") for r in load(REGISTRY, []) if r["run"] == "experiment"}
     for item in load(QUEUE, []):
@@ -101,7 +118,8 @@ def next_experiment() -> str | None:
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", choices=["record", "next"])
+    parser.add_argument("command", choices=["record", "void", "next"])
+    parser.add_argument("--reason")
     parser.add_argument("--prereg")
     parser.add_argument("--results")
     parser.add_argument("--run-id", default="local")
@@ -110,6 +128,8 @@ def main() -> None:
     args = parser.parse_args()
     if args.command == "record":
         record(args)
+    elif args.command == "void":
+        void(args)
     else:
         print(next_experiment() or "")
 

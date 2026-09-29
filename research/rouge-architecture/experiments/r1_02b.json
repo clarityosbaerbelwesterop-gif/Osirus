@@ -1,19 +1,21 @@
 {
  "schema": "rouge.research-experiment/1",
- "id": "R1.02",
+ "id": "R1.02b",
  "title": "Learned halting: does adaptive recurrence spend compute where the task needs it?",
- "status": "void",
+ "status": "pre-registered",
  "registered": "2026-09-29",
- "follows": "R1.01 (FAIL): ACT halting collapsed to ~1.5 steps and did not track difficulty (rho = 0.14)",
+ "follows": "R1.02 (void: length cue in benchmark v1); R1.01b (FAIL: ACT halting stops after ~1 step)",
  "runner": "experiments/r1_02.py",
  "benchmarks": [
-  "benchmarks/depthbench.py"
+  "benchmarks/depthbench2.py"
  ],
  "question": "On a task whose required sequential depth is controlled exactly (1, 2, 4, 8 in training; 12, 16 held out) and whose input length is constant, does a shared-block looped model with learned halting (a) choose more steps for deeper examples, (b) keep the accuracy of the same model at fixed depth, and (c) reach a Transformer's accuracy with fewer FLOPs?",
  "design_notes": {
   "one_hypothesis": "R1.02 isolates adaptive recurrence: the looped block reads the whole input (bidirectional attention), so memory capacity is not a confound. Persistent state is R1.03; sparsity is R1.04. Mechanisms are combined only after each has independent evidence.",
-  "constant_length": "Every example is 57 tokens, so the number of steps cannot track input length, only depth.",
-  "pilot": "A 1,500-step local pilot (seed 1, 1 CPU thread) showed all models at the terminal-guess level (~27%) after 1,000 steps; the budget is therefore 15,000 steps, the R1.01b lesson."
+  "constant_length": "Every example is 105 tokens with exactly two 17-node chains, so neither length nor chain shape reveals depth or the answer; guessing a terminal gives 50% at every depth.",
+  "pilot": "A 1,500-step local pilot (seed 1, 1 CPU thread) showed all models at the terminal-guess level (~27%) after 1,000 steps; the budget is therefore 15,000 steps, the R1.01b lesson.",
+  "shortcut_audit": "Before the runs, four cheap heuristics (longest chain, first terminal, nearest terminal in the text, one-hop check) were measured on the frozen sets: all at 47-57% at every depth (tests/test_r102.py enforces < 62%).",
+  "what_changed_from_r1_02": "Only the benchmark. Models, budget, seeds, gate thresholds and roles are unchanged. One R1.02 job result had been seen (transformer seed 3); it motivated the audit, not any threshold."
  },
  "setup": {
   "batch": 64,
@@ -81,17 +83,17 @@
    }
   },
   "parameters": {
-   "transformer": 116094,
-   "transformer-flops": 900702,
-   "loop-fixed": 118111,
-   "loop-act": 118111,
-   "loop-act-warm": 118111,
-   "loop-ponder": 118111
+   "transformer": 117064,
+   "transformer-flops": 902632,
+   "loop-fixed": 120041,
+   "loop-act": 120041,
+   "loop-act-warm": 120041,
+   "loop-ponder": 120041
   },
   "flops_per_example_forward": {
-   "transformer": 12600000.0,
-   "transformer-flops": 100900000.0,
-   "loop, per step": 12600000.0
+   "transformer": 23200000.0,
+   "transformer-flops": 185800000.0,
+   "loop, per step": 23200000.0
   },
   "matching": "transformer = the looped models' parameters and one step's FLOPs; transformer-flops = 8 steps' FLOPs (loop-fixed's compute) with 7.6x the parameters",
   "gate": {
@@ -136,13 +138,7 @@
  ],
  "not_claimed": "Every halting method here is prior art; R1.02 measures which one learns depth-proportional compute on this benchmark. No novelty claim.",
  "compute": {
-  "train_flops_per_run": 440000000000000.0,
-  "note": "largest run: loop-ponder trains all 12 steps (151 MFLOP forward x 3 x 64 x 15,000)"
- },
- "void": {
-  "date": "2026-09-29",
-  "run": 36559698569,
-  "reason": "Benchmark confound found in the first finished job (transformer seed 3: ID 29.0%, OOD 74.3% although OOD is deeper). Distractor chains were shorter than the queried chain at large depth, so 'the terminal of the longest chain' is correct on 100% of OOD examples and 92% at depth 8 (0% at depth 1): depth and a non-computational cue were confounded. The run was cancelled; no gate was evaluated. Replaced by R1.02b (benchmarks/depthbench2.py), same models, budget and gate.",
-  "superseded_by": "R1.02b"
+  "train_flops_per_run": 801792000000000.0,
+  "note": "largest run: loop-ponder trains all 12 steps"
  }
 }
