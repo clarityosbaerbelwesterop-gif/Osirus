@@ -1,0 +1,7 @@
+# Rouge architecture research environment. Versions the R1 experiments ran with.
+torch==2.14.0
+numpy
+# Optional, installed by bootstrap.sh when the hardware supports them:
+#   triton          (NVIDIA GPUs; custom kernels, R1.22+)
+#   mlx             (Apple silicon; MLX prototypes)
+#   transformers    (only for baselines against pretrained models)
