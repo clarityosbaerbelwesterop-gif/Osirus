@@ -11,13 +11,13 @@ program (`training/rouge/`) and from the Osirus runtime.
 
 | Path           | What                                                                            |
 | -------------- | ------------------------------------------------------------------------------- |
-| `benchmarks/`  | Code-generated, code-verified tasks with ID and OOD ranges                      |
+| `benchmarks/`  | Code-generated, code-verified tasks with ID and OOD ranges; `suite3.py` (11 capabilities), `streams.py` (long streams), `audit.py` (automatic shortcut audit) |
 | `prototypes/`  | Rouge prototypes and conventional baselines (Transformer; later LSTM, SSM, MoE) |
 | `experiments/` | One pre-registration (`<id>.json`) and one runner (`<id>.py`) per milestone     |
 | `results/`     | Result JSON and reports; checkpoints are CI artifacts, never committed          |
 | `tests/`       | Benchmark correctness and model invariants                                      |
 | `env/`         | One-command research environment (`bootstrap.sh`) and runner setup (`runner.sh`) |
-| `lab/`         | Seed statistics, compute router, research controller                            |
+| `lab/`         | Seed statistics, compute router, research controller, pre-registered gates as data (`gate.py`) |
 
 Directories planned in the program are added when their first experiment
 exists, not before: `theory`, `kernels`, `state`, `memory`, `routing`,
@@ -48,8 +48,15 @@ python experiments/r1_02.py --prereg experiments/r1_02.json train --model loop-p
 python experiments/r1_02.py --prereg experiments/r1_02.json report
 ```
 
-Each pre-registration names its runner (`"runner"`); R1.01 and R1.01b use
-`experiments/r1_01.py`.
+Each pre-registration names its runner (`"runner"`):
+- R1.01 and R1.01b use `experiments/r1_01.py`.
+- From R1.07 on, experiments on benchmark v3 or streams use `experiments/suite.py`.
+  It trains any model in `prototypes/zoo.py` and writes the R1.08 scorecard.
+
+**Rules for every benchmark (lessons of R1.02 and microbench v1):**
+- Run `python benchmarks/audit.py [module]` before the main runs.
+- Report accuracy above each task's cue floor.
+- Never train on dev, holdout, OOD or adversarial examples.
 
 ## The research loop (GitHub = orchestrator, iPad = control)
 

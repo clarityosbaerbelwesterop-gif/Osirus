@@ -26,10 +26,10 @@ and a documented result. Negative results count and are recorded.
 | R1.02 | Learned halting (fixed / ACT / ACT-warm / PonderNet) on a depth-controlled, cue-audited benchmark (R1.02b) | CI        |
 | R1.03 | State probes (trained vs untrained) + two-level memory (active state + exact slots, top-k reads)           | CI        |
 | R1.04 | Sparse circuits: top-2-of-8 module bank vs dense at matched active compute and total parameters            | CI        |
-| R1.05 | Prior-art review with search; novelty claims only where supported                                          | —         |
-| R1.06 | Benchmark v2: harder algorithmic suite (permutation composition, graph search, arithmetic, code tracing)   | CI        |
-| R1.07 | Baseline zoo: Transformer, LSTM, Mamba-style SSM, MoE at matched parameters and FLOPs                      | CI/server |
-| R1.08 | Scorecard tooling: FLOPs, bytes, energy proxy, sample efficiency, one report format                        | CI        |
+| R1.05 | Prior-art map (`docs/rouge/research/prior-art.md`). **PASS**                                               | —         |
+| R1.06 | Benchmark v3: 11 capabilities + automatic shortcut audit + rotating holdout + adversarial split. **PASS**  | CI        |
+| R1.07 | Baseline zoo on v3: Transformer, LSTM, GRU, selective SSM, looped, MoE, rouge-mem (pre-registered)         | CI/server |
+| R1.08 | Canonical scorecard (`experiments/suite.py`) + gates as data (`lab/gate.py`)                               | CI        |
 
 ## R1.09–R1.16 Persistent state
 
