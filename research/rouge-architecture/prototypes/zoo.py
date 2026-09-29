@@ -136,6 +136,9 @@ def build(kind: str, vocab: int, **config) -> nn.Module:
     if kind == "moe":
         from prototypes.sparse_circuits import SparseTransformer
         return SparseTransformer(vocab, **config)
+    if kind == "active":
+        from prototypes.active import ActiveSelector
+        return ActiveSelector(vocab, **config)
     if kind == "hypverify":
         from prototypes.hypotheses import HypVerify
         return HypVerify(vocab, **config)

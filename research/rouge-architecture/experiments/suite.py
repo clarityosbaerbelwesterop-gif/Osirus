@@ -88,6 +88,8 @@ def evaluate(model, examples, batch_size=200, keep_rows=False, **kwargs) -> dict
         ids, lengths, answers = collate(chunk)
         if getattr(model, "uses_levels", False):
             kwargs = {**kwargs, "levels": torch.tensor([e[3] for e in chunk])}
+        if getattr(model, "uses_oracle", False):  # R1.36: answers to the model's own queries only
+            kwargs = {**kwargs, "oracle": torch.tensor([bench.oracle(e[0], e[1]) for e in chunk], dtype=torch.float32)}
         logits, info = model(ids, lengths, **kwargs)
         steps = info.get("steps", torch.zeros(len(chunk))).tolist()
         conf = F.softmax(logits, -1).max(-1).values.tolist()
@@ -146,6 +148,8 @@ def flops_per_example(model, examples, **kwargs) -> float:
     ids, lengths, _ = collate(examples)
     if getattr(model, "uses_levels", False):
         kwargs = {**kwargs, "levels": torch.tensor([e[3] for e in examples])}
+    if getattr(model, "uses_oracle", False):
+        kwargs = {**kwargs, "oracle": torch.tensor([bench.oracle(e[0], e[1]) for e in examples], dtype=torch.float32)}
     model.eval()
     with FlopCounterMode(display=False) as counter:  # forward only; grad mode on for the module tracker
         model(ids, lengths, **kwargs)
@@ -212,6 +216,8 @@ def train(args) -> None:
         ids, lengths, answers = collate(examples)
         seen += len(answers)
         extra = {"levels": torch.tensor([e[3] for e in examples])} if getattr(model, "uses_levels", False) else {}
+        if getattr(model, "uses_oracle", False):
+            extra["oracle"] = torch.tensor([bench.oracle(e[0], e[1]) for e in examples], dtype=torch.float32)
         logits, info = model(ids, lengths, **extra)
         if model.objective == "reinforce":
             # R1.39: learn from an external verifier only. The model samples an answer, the task's

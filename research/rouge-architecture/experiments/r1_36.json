@@ -1,0 +1,103 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.36",
+ "title": "Active test selection: which 2 of 4 questions to ask about a hidden target",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.35 (multiple hypotheses)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/clues.py"
+ ],
+ "question": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+ "setup": {
+  "batch": 64,
+  "steps": 8000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 1000,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "active-learned": {
+    "kind": "active",
+    "d": 64,
+    "layers": 2,
+    "heads": 4,
+    "queries": 2,
+    "policy": "learned"
+   },
+   "active-random": {
+    "kind": "active",
+    "d": 64,
+    "layers": 2,
+    "heads": 4,
+    "queries": 2,
+    "policy": "random"
+   },
+   "active-eig": {
+    "kind": "active",
+    "d": 64,
+    "layers": 2,
+    "heads": 4,
+    "queries": 2,
+    "policy": "eig"
+   }
+  },
+  "gate": {
+   "checks": {
+    "A1_vs_random": {
+     "left": "active-learned:dev.all",
+     "op": ">=",
+     "right": "active-random:dev.all",
+     "plus": 0.1
+    },
+    "A2_near_eig": {
+     "left": "active-learned:dev.all",
+     "op": ">=",
+     "right": "active-eig:dev.all",
+     "plus": -0.05
+    },
+    "A3_ood": {
+     "left": "active-learned:ood.all",
+     "op": ">=",
+     "right": "active-random:ood.all",
+     "plus": 0.1
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "A1_vs_random",
+      "A2_near_eig"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "any": [
+      "A1_vs_random"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 20000000000000.0
+ },
+ "predictions": {
+  "PASS": "learned queries beat random queries by >= 10 points and come within 5 points of the exact expected-information-gain policy (same answer head)",
+  "A3": "reported: the advantage holds on OOD tables where the separating pair uses attributes 3/4",
+  "design": "three models with the same architecture, each trained AND evaluated with one query policy (learned, random, exact EIG), so every answer head matches its own query distribution. A local smoke test that evaluated one learned-policy model under all three policies was unfair to EIG (72 vs 52%) and was replaced before any run."
+ },
+ "prior_art": "Bayesian experimental design / expected information gain (Lindley 1956), BALD 1112.5745, active feature acquisition",
+ "not_claimed": "Information-gain query selection is prior art; the question is whether a small model learns it end to end."
+}
