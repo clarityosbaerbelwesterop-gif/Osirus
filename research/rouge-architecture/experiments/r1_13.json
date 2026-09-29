@@ -1,0 +1,123 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.13",
+ "title": "Learned forgetting: overwrite the key's own slot, allocate new keys to stale slots",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.03 (what to store / overwrite), R1.10 (slot law)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/streams.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "Does usage-based allocation (similarity to existing slots for overwrites plus a least-recently-used bias for new keys) reduce interference and saturation in rouge-mem's exact memory?",
+ "setup": {
+  "batch": 64,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "steps": 10000,
+  "models": {
+   "transformer-w32": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "window": 32
+   },
+   "rouge-mem": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "context": 3
+   },
+   "rouge-forget": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "context": 3,
+    "allocation": "usage"
+   }
+  },
+  "gate": {
+   "checks": {
+    "F1_overwrite": {
+     "left": "rouge-forget:ood.overwrite",
+     "op": ">=",
+     "right": "rouge-mem:ood.overwrite",
+     "plus": 0.05
+    },
+    "F2_saturate": {
+     "left": "rouge-forget:ood.saturate",
+     "op": ">=",
+     "right": "rouge-mem:ood.saturate",
+     "plus": 0.05
+    },
+    "F3_retain_kept": {
+     "left": "rouge-forget:ood.retain",
+     "op": ">=",
+     "right": "rouge-mem:ood.retain",
+     "plus": -0.03
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "F1_overwrite",
+      "F2_saturate",
+      "F3_retain_kept"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "F3_retain_kept"
+     ],
+     "any": [
+      "F1_overwrite",
+      "F2_saturate"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 450000000000000.0,
+  "note": "streams are long (ID up to 119 tokens, OOD up to 359): 10,000 steps; runs may resume across attempts"
+ },
+ "predictions": {
+  "F1-F3": "gating as written",
+  "params": "rouge-forget adds ~12.7k parameters (5%) for the match projection"
+ },
+ "prior_art": "DNC usage-based allocation (Graves et al. 2016), NTM 1410.5401, Titans forgetting gate 2501.00663",
+ "not_claimed": "Streaming recurrent memory, sliding windows and learned allocation are prior art (see docs/rouge/research/prior-art.md)."
+}

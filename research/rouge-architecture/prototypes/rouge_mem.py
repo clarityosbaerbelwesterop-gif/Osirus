@@ -31,10 +31,22 @@ from prototypes.rouge_r101 import Rouge
 
 
 class RougeMem(Rouge):
-    def __init__(self, vocab: int, memory_slots: int = 32, read_k: int = 2, read_mode: str = "cell", window: int = 0, **kwargs):
+    def __init__(self, vocab: int, memory_slots: int = 32, read_k: int = 2, read_mode: str = "cell", window: int = 0,
+                 context: int = 2, allocation: str = "content", **kwargs):
         super().__init__(vocab, **kwargs)
         d = self.d
-        self.content = nn.Linear(2 * d, d)
+        # A write sees the last `context` tokens. R1.03 used 2 (key and value
+        # adjacent); "k = v" statements need 3, or the write at v cannot see k.
+        self.context = context
+        self.content = nn.Linear(context * d, d)
+        # R1.13: "usage" allocation adds (i) a similarity term, so a key's new
+        # value overwrites the slot that already holds that key, and (ii) a
+        # least-recently-used bias, so new keys go to stale slots (learned
+        # forgetting instead of random collisions). "content" = R1.03.
+        self.allocation = allocation
+        if allocation == "usage":
+            self.match = nn.Linear(d, d)
+            self.usage_scale = nn.Parameter(torch.tensor(1.0))
         self.address = nn.Linear(d, memory_slots)
         self.gate = nn.Linear(d, 1)
         self.query = nn.Linear(d, d)
@@ -65,12 +77,16 @@ class RougeMem(Rouge):
         att = F.softmax(scores.masked_fill(~valid, float("-inf")), -1)
         return (att[:, :, None] * values).sum(1)
 
-    def write(self, memory, prev, cur, live):
-        c = self.content(torch.cat([prev, cur], -1))
-        soft = F.softmax(self.address(c), -1)
+    def write(self, memory, prev, cur, live, usage=None):
+        c = self.content(torch.cat([*prev[-(self.context - 1):], cur], -1) if isinstance(prev, list) else torch.cat([prev, cur], -1))
+        logits = self.address(c)
+        if self.allocation == "usage":
+            logits = logits + (memory @ self.match(c)[:, :, None]).squeeze(-1) / self.d ** 0.5 - F.softplus(self.usage_scale) * usage
+        soft = F.softmax(logits, -1)
         hard = F.one_hot(soft.argmax(-1), self.memory_slots).float()
         w = hard + soft - soft.detach()                      # straight-through top-1
         g = torch.sigmoid(self.gate(c)) * live[:, None].float()
+        self._last_write = (g * hard).detach()
         return memory + (g * w)[:, :, None] * (c[:, None, :] - memory)
 
     def read(self, memory, x):
@@ -86,12 +102,15 @@ class RougeMem(Rouge):
         u = self.embed(ids)
         state = self.init_state.expand(b, -1, -1)
         memory = torch.zeros(b, self.memory_slots, self.d)
-        prev = torch.zeros(b, self.d)
+        prev = [torch.zeros(b, self.d) for _ in range(self.context - 1)]
+        usage = torch.zeros(b, self.memory_slots)
         for i in range(t):
             live = i < lengths
             state = torch.where(live[:, None, None], self.read_token(state, u[:, i]), state)
-            memory = self.write(memory, prev, u[:, i], live)
-            prev = torch.where(live[:, None], u[:, i], prev)
+            memory = self.write(memory, prev, u[:, i], live, usage)
+            if self.allocation == "usage":
+                usage = 0.9 * usage + self._last_write  # recently written slots count as used
+            prev = prev[1:] + [torch.where(live[:, None], u[:, i], prev[-1])]
         read_state = state
         if self.window:
             # the last `window` real tokens of every sequence (earlier positions are masked out)

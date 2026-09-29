@@ -43,7 +43,8 @@
     "rezero": true,
     "tau_warmup": 0.3,
     "memory_slots": 8,
-    "read_k": 2
+    "read_k": 2,
+    "context": 3
    },
    "slots16": {
     "kind": "rouge-mem",
@@ -57,7 +58,8 @@
     "rezero": true,
     "tau_warmup": 0.3,
     "memory_slots": 16,
-    "read_k": 2
+    "read_k": 2,
+    "context": 3
    },
    "slots32": {
     "kind": "rouge-mem",
@@ -71,7 +73,8 @@
     "rezero": true,
     "tau_warmup": 0.3,
     "memory_slots": 32,
-    "read_k": 2
+    "read_k": 2,
+    "context": 3
    },
    "slots64": {
     "kind": "rouge-mem",
@@ -85,7 +88,8 @@
     "rezero": true,
     "tau_warmup": 0.3,
     "memory_slots": 64,
-    "read_k": 2
+    "read_k": 2,
+    "context": 3
    }
   },
   "gate": {
@@ -134,7 +138,8 @@
      "result": "FAIL"
     }
    ]
-  }
+  },
+  "write_context_note": "rouge models use context=3 (a write sees the last 3 tokens): with R1.03's context=2 the write at v in 'k = v' cannot see k; fixed before any run of this experiment (found while designing R1.12)"
  },
  "compute": {
   "train_flops_per_run": 300000000000000.0

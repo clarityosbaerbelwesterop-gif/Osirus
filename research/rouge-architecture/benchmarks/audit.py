@@ -29,6 +29,8 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+import importlib  # noqa: E402
+
 from benchmarks import suite3 as bench  # noqa: E402
 
 MARGIN = 0.15
@@ -73,6 +75,12 @@ def position_cue(train):
     return best, best_acc
 
 
+def use(module: str) -> None:
+    """Audit another benchmark module with the same interface (e.g. benchmarks.streams)."""
+    global bench
+    bench = importlib.import_module(module)
+
+
 def audit_task(task: str, n_train: int = 3000, n_eval: int = 500, seed: str = "audit") -> dict:
     r = random.Random(f"{seed}:{task}")
     train = [bench.example(r, task, "id") for _ in range(n_train)]
@@ -108,6 +116,8 @@ def adversarial(task: str, n: int, namespace: str, seed: str = "audit") -> list:
 
 
 def main() -> None:
+    if len(sys.argv) > 1:
+        use(sys.argv[1])
     report = {t: audit_task(t) for t in bench.TASKS}
     print(json.dumps(report, indent=1))
     flagged = [(t, s) for t, v in report.items() for s, x in v.items() if x["flag"] and t not in KNOWN_FLOORS]

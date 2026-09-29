@@ -1,0 +1,126 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.12",
+ "title": "Streaming state: facts across long streams without replay",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.03 (memory candidate), R1.11 (window + state)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/streams.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+ "setup": {
+  "batch": 64,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "steps": 10000,
+  "models": {
+   "transformer-full": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "transformer-w32": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "window": 32
+   },
+   "lstm": {
+    "kind": "lstm",
+    "d": 112,
+    "layers": 2
+   },
+   "ssm": {
+    "kind": "ssm",
+    "d": 104,
+    "layers": 4,
+    "n": 16
+   },
+   "rouge-mem": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "context": 3
+   }
+  },
+  "gate": {
+   "checks": {
+    "T1_retain_vs_window": {
+     "left": "rouge-mem:ood.retain",
+     "op": ">=",
+     "right": "transformer-w32:ood.retain",
+     "plus": 0.1
+    },
+    "T2_memory": {
+     "left": "rouge-mem:total_bytes",
+     "op": "<=",
+     "right": "transformer-w32:total_bytes"
+    },
+    "T3_vs_lstm": {
+     "left": "rouge-mem:ood.retain",
+     "op": ">=",
+     "right": "lstm:ood.retain",
+     "plus": 0.1
+    },
+    "T4_vs_full": {
+     "left": "rouge-mem:ood.retain",
+     "op": ">=",
+     "right": "transformer-full:ood.retain",
+     "plus": -0.05
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "T1_retain_vs_window",
+      "T2_memory"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "any": [
+      "T1_retain_vs_window",
+      "T3_vs_lstm"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 450000000000000.0,
+  "note": "streams are long (ID up to 119 tokens, OOD up to 359): 10,000 steps; runs may resume across attempts"
+ },
+ "predictions": {
+  "T1+T2": "gating: +10 points OOD retention over the 32-token window at <= its memory",
+  "T3": "PARTIAL alternative: +10 points over the LSTM (a fixed vector state)",
+  "T4": "reported: within 5 points of the full-context Transformer (unbounded KV)"
+ },
+ "prior_art": "RMT 2207.06881, Memorizing Transformers 2203.08913, Titans 2501.00663, Griffin 2402.19427",
+ "not_claimed": "Streaming recurrent memory, sliding windows and learned allocation are prior art (see docs/rouge/research/prior-art.md)."
+}

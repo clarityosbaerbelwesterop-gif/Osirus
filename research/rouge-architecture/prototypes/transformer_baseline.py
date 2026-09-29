@@ -23,9 +23,9 @@ def rope(x: torch.Tensor) -> torch.Tensor:
 
 
 class Block(nn.Module):
-    def __init__(self, d: int, heads: int, causal: bool = True, ff: int | None = None):
+    def __init__(self, d: int, heads: int, causal: bool = True, ff: int | None = None, window: int = 0):
         super().__init__()
-        self.heads, self.causal = heads, causal
+        self.heads, self.causal, self.window = heads, causal, window
         self.ln1, self.ln2 = nn.LayerNorm(d), nn.LayerNorm(d)
         self.qkv, self.out = nn.Linear(d, 3 * d), nn.Linear(d, d)
         self.mlp = nn.Sequential(nn.Linear(d, ff or 4 * d), nn.GELU(), nn.Linear(ff or 4 * d, d))
@@ -33,16 +33,23 @@ class Block(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         b, t, d = x.shape
         q, k, v = self.qkv(self.ln1(x)).view(b, t, 3, self.heads, d // self.heads).permute(2, 0, 3, 1, 4)
-        y = F.scaled_dot_product_attention(rope(q), rope(k), v, is_causal=self.causal)
+        if self.window:  # causal sliding window: position i sees positions i-window+1 .. i
+            i = torch.arange(t)
+            mask = (i[None, :] <= i[:, None]) & (i[:, None] - i[None, :] < self.window)
+            y = F.scaled_dot_product_attention(rope(q), rope(k), v, attn_mask=mask)
+        else:
+            y = F.scaled_dot_product_attention(rope(q), rope(k), v, is_causal=self.causal)
         x = x + self.out(y.transpose(1, 2).reshape(b, t, d))
         return x + self.mlp(self.ln2(x))
 
 
 class Transformer(nn.Module):
-    def __init__(self, vocab: int, d: int = 64, layers: int = 4, heads: int = 4, causal: bool = True, ff: int | None = None):
+    def __init__(self, vocab: int, d: int = 64, layers: int = 4, heads: int = 4, causal: bool = True, ff: int | None = None,
+                 window: int = 0):
         super().__init__()
         self.embed = nn.Embedding(vocab, d)
-        self.blocks = nn.ModuleList(Block(d, heads, causal, ff) for _ in range(layers))
+        self.blocks = nn.ModuleList(Block(d, heads, causal, ff, window) for _ in range(layers))
+        self.window = window
         self.ln = nn.LayerNorm(d)
         self.head = nn.Linear(d, vocab)
         self.d, self.layers = d, layers
@@ -55,5 +62,5 @@ class Transformer(nn.Module):
         return self.head(self.ln(last)), {}
 
     def state_bytes(self, tokens: int) -> int:
-        """Inference memory that grows with the input: the KV cache (fp32)."""
-        return 2 * self.layers * tokens * self.d * 4
+        """Inference memory that grows with the input: the KV cache (fp32), capped by a sliding window."""
+        return 2 * self.layers * (min(tokens, self.window) if self.window else tokens) * self.d * 4

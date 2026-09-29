@@ -76,6 +76,21 @@
     "tau_warmup": 0.3,
     "memory_slots": 32,
     "read_k": 2
+   },
+   "rouge-mem3": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "context": 3
    }
   },
   "matching": "physical parameters 206k-218k for all models except moe (606k physical, 209k active = the Transformer's active size); FLOPs and memory are measured and reported, not matched (R1.07 characterises)",
@@ -300,7 +315,8 @@
      "result": "FAIL"
     }
    ]
-  }
+  },
+  "write_context_note": "rouge-mem is R1.03's design (context=2); rouge-mem3 adds the 3-token write context, since 'k = v' tasks need it (added before any run)"
  },
  "compute": {
   "train_flops_per_run": 300000000000000.0,

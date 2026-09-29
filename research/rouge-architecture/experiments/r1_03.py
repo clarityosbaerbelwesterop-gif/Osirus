@@ -65,13 +65,13 @@ def features(model, examples) -> torch.Tensor:
         b, t = ids.shape
         u = model.embed(ids)
         state = model.init_state.expand(b, -1, -1)
-        memory, prev = (torch.zeros(b, model.memory_slots, model.d), torch.zeros(b, model.d)) if isinstance(model, RougeMem) else (None, None)
+        memory, prev = (torch.zeros(b, model.memory_slots, model.d), [torch.zeros(b, model.d)] * (model.context - 1)) if isinstance(model, RougeMem) else (None, None)
         for i in range(t):
             live = i < lengths
             state = torch.where(live[:, None, None], model.step(state, u[:, i]), state)
             if memory is not None:
-                memory = model.write(memory, prev, u[:, i], live)
-                prev = torch.where(live[:, None], u[:, i], prev)
+                memory = model.write(memory, prev, u[:, i], live, torch.zeros(b, model.memory_slots))
+                prev = prev[1:] + [torch.where(live[:, None], u[:, i], prev[-1])]
         feats = state.flatten(1) if memory is None else torch.cat([state.flatten(1), memory.flatten(1)], -1)
     model.train()
     return feats

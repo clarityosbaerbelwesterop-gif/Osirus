@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 import math
 import os
@@ -51,9 +52,12 @@ SETUP: dict = {}
 
 
 def load(path: str) -> None:
-    global PREREG, SETUP
+    global PREREG, SETUP, bench
     PREREG = json.loads(Path(path).read_text())
     SETUP = PREREG["setup"]
+    module = "benchmarks." + Path(PREREG.get("benchmarks", ["benchmarks/suite3.py"])[0]).stem
+    bench = importlib.import_module(module)  # suite3 (R1.07-R1.11) or streams (R1.12-R1.13)
+    audit.use(module)
 
 
 def build(name: str) -> torch.nn.Module:
@@ -120,7 +124,7 @@ def eval_sets() -> dict:
     return {
         "dev": bench.fixed_set("dev", per, "dev"),
         "holdout": bench.fixed_set(f"holdout:{exp}", per, "holdout"),
-        "ood": bench.fixed_set(f"ood", per, "ood"),
+        "ood": bench.fixed_set("ood", per, "ood"),
         "adv": [e for t in bench.TASKS for e in audit.adversarial(t, per // 2, exp)],
     }
 
@@ -195,7 +199,7 @@ def train(args) -> None:
     latency_ms = (time.time() - t0) / len(sets["dev"]) * 1000
     for split in ("holdout", "ood", "adv"):
         results[split] = evaluate(model, sets[split])
-    flop_set = [e for t in bench.TASKS for e in bench.fixed_set("flops", 4, "dev", (t,))]
+    flop_set = [e for t in bench.TASKS for e in bench.fixed_set("flops", max(2, 44 // len(bench.TASKS)), "dev", (t,))]
     flops = flops_per_example(model, flop_set)
     mean_len = sum(len(t) for t, *_ in sets["dev"]) / len(sets["dev"])
     max_len = max(len(t) for t, *_ in sets["ood"])
