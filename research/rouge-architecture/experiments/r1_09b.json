@@ -1,0 +1,41 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.09b",
+ "title": "Parallel-scan state reads: the cheap read as a linear recurrence",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.24 (PARTIAL: constant memory confirmed, speed bound by the per-token Python loop), R1.09 (cheap reads)",
+ "runner": "experiments/suite.py",
+ "benchmarks": ["benchmarks/suite3.py", "benchmarks/audit.py"],
+ "question": "If the cheap read uses slot keys that do not depend on the state, and write addresses that depend on the tokens only, both the active state and the exact memory become linear recurrences computed by an exact chunked scan (T/32 Python steps instead of T). Does this keep rouge-cheap's capability while cutting inference latency at least in half?",
+ "setup": {
+  "batch": 64, "steps": 15000, "lr": 0.001, "weight_decay": 0.01, "warmup": 200, "eval_per_task": 200, "seeds": [1, 2, 3],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {"kind": "transformer", "d": 64, "layers": 4, "heads": 4},
+   "rouge-cheap": {"kind": "rouge-mem", "d": 104, "slots": 4, "heads": 4, "max_think": 8, "halting": true, "tau": 0.01, "inject": true, "rezero": true, "tau_warmup": 0.3, "memory_slots": 32, "read_k": 2, "context": 3, "read_mode": "write"},
+   "rouge-scan": {"kind": "rouge-mem", "d": 104, "slots": 4, "heads": 4, "max_think": 8, "halting": true, "tau": 0.01, "inject": true, "rezero": true, "tau_warmup": 0.3, "memory_slots": 32, "read_k": 2, "context": 3, "read_mode": "scan"}
+  },
+  "gate": {
+   "checks": {
+    "P1_latency": {"left": "rouge-scan:latency_ms", "op": "<=", "right": "rouge-cheap:latency_ms", "times": 0.5},
+    "P2_capability": {"left": "rouge-scan:dev.all", "op": ">=", "right": "rouge-cheap:dev.all", "plus": -0.03},
+    "P3_recall": {"left": "rouge-scan:ood.recall", "op": ">=", "right": "rouge-cheap:ood.recall", "plus": -0.05},
+    "P4_vs_transformer_latency": {"left": "rouge-scan:latency_ms", "op": "<=", "right": "transformer:latency_ms", "times": 2}
+   },
+   "decision": [
+    {"result": "PASS", "all": ["P1_latency", "P2_capability", "P3_recall"]},
+    {"result": "PARTIAL", "all": ["P1_latency"], "any": ["P2_capability", "P3_recall"]},
+    {"result": "FAIL"}
+   ]
+  }
+ },
+ "compute": {"train_flops_per_run": 1.5e14},
+ "predictions": {
+  "P1-P3": "gating as written: half the latency, capability within 3 points, recall within 5 points of rouge-cheap",
+  "P4": "reported: within 2x of the Transformer's latency",
+  "exactness": "the chunked scan equals the sequential recurrence (unit test); only the model changes (state-independent slot keys, per-slot decay)"
+ },
+ "prior_art": "Linear attention as RNN 2006.16236, Mamba selective scan 2312.00752, RetNet 2307.08621, parallel prefix scans (Blelloch 1990)",
+ "not_claimed": "Linear recurrences with parallel scans are prior art; the question is whether Rouge's slot state and exact memory survive this form."
+}

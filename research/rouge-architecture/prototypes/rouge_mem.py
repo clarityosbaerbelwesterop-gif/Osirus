@@ -56,8 +56,14 @@ class RougeMem(Rouge):
         # cross-attention write into the slots (O(d^2 + M d) instead of
         # O(M d^2)); thinking still uses the cell.
         self.read_mode = read_mode
-        if read_mode == "write":
+        if read_mode in ("write", "scan"):
             self.wk, self.wv, self.wg = nn.Linear(d, d), nn.Linear(d, d), nn.Linear(d, d)
+        if read_mode == "scan":
+            # R1.09b: slot keys independent of the state and a per-slot decay make the read a linear
+            # recurrence S_t = lambda * S_{t-1} + a_t (x) v_t, computed by a chunked scan (T/chunk Python steps).
+            self.slot_keys = nn.Parameter(torch.randn(self.slots, d) * d ** -0.5)
+            self.decay = nn.Parameter(torch.full((self.slots, 1), 4.0))       # sigmoid(4) ~ 0.98
+            self.chunk = 32
         # R1.11: an exact window of the last `window` token embeddings, read by
         # attention at every think step (local exactness at W x d memory).
         self.window = window
@@ -71,6 +77,39 @@ class RougeMem(Rouge):
         a = F.softmax((state @ self.wk(u)[:, :, None]).squeeze(-1) / self.d ** 0.5, -1)   # (B, M)
         delta = a[:, :, None] * (torch.sigmoid(self.wg(u)) * self.wv(u))[:, None, :]
         return self.norm(state + delta)
+
+    @staticmethod
+    def linear_scan(x0, a, b, chunk):
+        """Final x_T of x_t = a_t * x_{t-1} + b_t (elementwise), exactly, in chunks:
+        x_end = (prod a) x_0 + sum_t (prod_{s>t} a_s) b_t, suffix products via a reversed cumprod."""
+        x = x0
+        for start in range(0, a.shape[1], chunk):
+            ac, bc = a[:, start:start + chunk], b[:, start:start + chunk]
+            suffix = torch.flip(torch.cumprod(torch.flip(ac, [1]), 1), [1])        # prod_{s>=t} a_s
+            after = torch.cat([suffix[:, 1:], torch.ones_like(suffix[:, :1])], 1)  # prod_{s>t} a_s
+            x = suffix[:, 0] * x + (after * bc).sum(1)
+        return x
+
+    def scan_read(self, u, lengths):
+        """Parallel read of the whole input: returns the final active state and memory."""
+        b, t, d = u.shape
+        live = (torch.arange(t)[None, :] < lengths[:, None]).float()               # (B, T)
+        # active state: S_t = lambda S_{t-1} + a_t (x) (sigmoid(g_t) v_t); pads are identity steps
+        a = F.softmax(self.wk(u) @ self.slot_keys.t() / d ** 0.5, -1) * live[..., None]   # (B, T, M)
+        delta = a[..., None] * (torch.sigmoid(self.wg(u)) * self.wv(u))[:, :, None, :]    # (B, T, M, d)
+        lam = torch.sigmoid(self.decay)[None, None].expand(b, t, -1, d)                   # (B, T, M, d)
+        coef = torch.where(live[..., None, None] > 0, lam, torch.ones_like(lam))
+        state = self.norm(self.linear_scan(self.init_state.expand(b, -1, -1), coef, delta, self.chunk))
+        # exact memory: M_t = (1 - beta_t) M_{t-1} + beta_t c_t with beta_t = g_t w_t from the tokens only
+        shifted = [torch.cat([torch.zeros(b, k, d), u[:, :-k]], 1) for k in range(self.context - 1, 0, -1)]
+        c = self.content(torch.cat(shifted + [u], -1))                                     # (B, T, d)
+        soft = F.softmax(self.address(c), -1)
+        hard = F.one_hot(soft.argmax(-1), self.memory_slots).float()
+        w = hard + soft - soft.detach()
+        beta = (torch.sigmoid(self.gate(c)) * live[..., None] * w)[..., None]              # (B, T, K, 1)
+        memory = self.linear_scan(torch.zeros(b, self.memory_slots, d), (1 - beta).expand(-1, -1, -1, d),
+                                  beta * c[:, :, None, :], self.chunk)
+        return state, memory
 
     def read_window(self, keys, values, valid, x):
         scores = (keys @ self.win_q(x)[:, :, None]).squeeze(-1) / self.d ** 0.5
@@ -104,7 +143,10 @@ class RougeMem(Rouge):
         memory = torch.zeros(b, self.memory_slots, self.d)
         prev = [torch.zeros(b, self.d) for _ in range(self.context - 1)]
         usage = torch.zeros(b, self.memory_slots)
-        for i in range(t):
+        if self.read_mode == "scan":
+            assert self.allocation == "content", "the scan needs write addresses that depend on the tokens only"
+            state, memory = self.scan_read(u, lengths)
+        for i in range(0 if self.read_mode == "scan" else t):
             live = i < lengths
             state = torch.where(live[:, None, None], self.read_token(state, u[:, i]), state)
             memory = self.write(memory, prev, u[:, i], live, usage)

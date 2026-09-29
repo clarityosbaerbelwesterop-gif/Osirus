@@ -54,3 +54,22 @@ class ZooTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+@unittest.skipIf(torch is None, "torch not installed")
+class ScanTest(unittest.TestCase):
+    def test_chunked_scan_equals_the_recurrence_and_is_pad_invariant(self):
+        from benchmarks import suite3 as bench
+        from prototypes.rouge_mem import RougeMem
+        torch.manual_seed(0)
+        a, b, x0 = torch.rand(2, 70, 3, 4), torch.randn(2, 70, 3, 4), torch.randn(2, 3, 4)
+        x = x0.clone()
+        for t in range(70):
+            x = a[:, t] * x + b[:, t]
+        self.assertTrue(torch.allclose(RougeMem.linear_scan(x0, a, b, 16), x, atol=1e-5))
+        m = RougeMem(len(bench.VOCAB), d=32, slots=2, heads=4, max_think=3, inject=True, rezero=True,
+                     memory_slots=8, context=3, read_mode="scan").eval()
+        ids = torch.tensor([[1, 20, 21, 22, 2, 0], [1, 23, 24, 25, 26, 2]])
+        lengths = torch.tensor([5, 6])
+        padded = torch.cat([ids, torch.zeros(2, 4, dtype=torch.long)], 1)
+        self.assertTrue(torch.allclose(m(ids, lengths)[0], m(padded, lengths)[0], atol=1e-5))
