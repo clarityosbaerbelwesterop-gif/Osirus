@@ -84,15 +84,24 @@ def evaluate(model, examples, batch_size=200, keep_rows=False, **kwargs) -> dict
     for i in range(0, len(examples), batch_size):
         chunk = examples[i : i + batch_size]
         ids, lengths, answers = collate(chunk)
+        if getattr(model, "uses_levels", False):
+            kwargs = {**kwargs, "levels": torch.tensor([e[3] for e in chunk])}
         logits, info = model(ids, lengths, **kwargs)
         steps = info.get("steps", torch.zeros(len(chunk))).tolist()
-        for (_, _, task, level), ok, s in zip(chunk, (logits.argmax(-1) == answers).tolist(), steps):
-            rows.append((task, level, ok, s))
+        conf = F.softmax(logits, -1).max(-1).values.tolist()
+        ver = info["verifier_prob"].tolist() if "verifier_prob" in info else [None] * len(chunk)
+        for (_, _, task, level), ok, s, c, v in zip(chunk, (logits.argmax(-1) == answers).tolist(), steps, conf, ver):
+            rows.append((task, level, ok, s, c, v))
     model.train()
     out = {"all": sum(r[2] for r in rows) / len(rows), "task": {}, "level": {}, "steps": {},
            "steps_mean": sum(r[3] for r in rows) / len(rows)}
     if keep_rows:
         out["rows"] = [(r[2], r[3]) for r in rows]
+    oks, confs = [r[2] for r in rows], [r[4] for r in rows]
+    out["calibration"] = {"ece": ece(confs, oks), "confident_error_rate": sum(1 for o, c in zip(oks, confs) if c >= 0.8 and not o) / len(rows),
+                          "auroc_confidence": auroc(confs, oks)}
+    if rows[0][5] is not None:
+        out["calibration"]["auroc_verifier"] = auroc([r[5] for r in rows], oks)
     for task in bench.TASKS:
         sel = [r for r in rows if r[0] == task]
         if sel:
@@ -104,8 +113,37 @@ def evaluate(model, examples, batch_size=200, keep_rows=False, **kwargs) -> dict
     return out
 
 
+def ece(conf, ok, bins=10) -> float:
+    total = 0.0
+    for i in range(bins):
+        sel = [(c, o) for c, o in zip(conf, ok) if i / bins < c <= (i + 1) / bins]
+        if sel:
+            total += len(sel) / len(conf) * abs(sum(o for _, o in sel) / len(sel) - sum(c for c, _ in sel) / len(sel))
+    return total
+
+
+def auroc(score, ok) -> float:
+    """Probability that a correct answer scores higher than a wrong one (ties count half)."""
+    pos = [s for s, o in zip(score, ok) if o]
+    neg = [s for s, o in zip(score, ok) if not o]
+    if not pos or not neg:
+        return 0.5
+    ranked = sorted([(s, 1) for s in pos] + [(s, 0) for s in neg])
+    rank_sum, i = 0.0, 0
+    while i < len(ranked):
+        j = i
+        while j + 1 < len(ranked) and ranked[j + 1][0] == ranked[i][0]:
+            j += 1
+        avg = (i + j) / 2 + 1
+        rank_sum += avg * sum(1 for k in range(i, j + 1) if ranked[k][1])
+        i = j + 1
+    return (rank_sum - len(pos) * (len(pos) + 1) / 2) / (len(pos) * len(neg))
+
+
 def flops_per_example(model, examples, **kwargs) -> float:
     ids, lengths, _ = collate(examples)
+    if getattr(model, "uses_levels", False):
+        kwargs = {**kwargs, "levels": torch.tensor([e[3] for e in examples])}
     model.eval()
     with FlopCounterMode(display=False) as counter:  # forward only; grad mode on for the module tracker
         model(ids, lengths, **kwargs)
@@ -168,10 +206,14 @@ def train(args) -> None:
 
     deadline = time.time() + args.budget_min * 60 if args.budget_min else None
     for step in range(first, args.steps + 1):
-        ids, lengths, answers = collate(bench.batch(rng, SETUP["batch"], "id"))
+        examples = bench.batch(rng, SETUP["batch"], "id")
+        ids, lengths, answers = collate(examples)
         seen += len(answers)
-        logits, info = model(ids, lengths)
+        extra = {"levels": torch.tensor([e[3] for e in examples])} if getattr(model, "uses_levels", False) else {}
+        logits, info = model(ids, lengths, **extra)
         loss = F.cross_entropy(logits, answers)
+        if getattr(model, "hint_weight", 0) > 0:  # execution supervision: the state after every program step
+            loss = loss + model.hint_weight * model.hint_loss(info, [bench.hints(e[0], e[2]) for e in examples])
         if hasattr(model, "extra_loss"):
             loss = loss + model.extra_loss(info)
         if hasattr(model, "extra_loss_logits"):  # deep supervision (early-exit heads)
@@ -275,6 +317,9 @@ def report(args) -> None:
             "train_seconds": s(lambda r: r["train_seconds"]), "cpu_core_seconds": s(lambda r: r["cpu_core_seconds"]),
             "sample_efficiency": s(lambda r: r["sample_efficiency"]),
         })
+        for key in rs[0]["dev"].get("calibration", {}):
+            metrics[f"dev.cal.{key}"] = s(lambda r, k=key: r["dev"]["calibration"][k])
+            metrics[f"ood.cal.{key}"] = s(lambda r, k=key: r["ood"]["calibration"][k])
         for name in rs[0].get("variants", {}):
             for key in rs[0]["variants"][name]:
                 metrics[f"var.{name}.{key}"] = s(lambda r, n=name, k=key: r["variants"][n][k])

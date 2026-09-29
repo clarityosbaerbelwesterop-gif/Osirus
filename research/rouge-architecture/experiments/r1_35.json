@@ -1,0 +1,106 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.35",
+ "title": "Multiple internal hypotheses (+ R1.37 verifier head, R1.38 selection among hypotheses)",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.08 scorecard (calibration metrics)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "Does keeping 4 hypothesis heads with a learned score reduce confident wrong answers (confidence >= 0.8 and wrong) compared with one head? Does an independently trained verifier head predict correctness better than the model's own confidence (R1.37), and does picking the hypothesis the verifier prefers beat the model's own pick (R1.38)?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "hyp4": {
+    "kind": "hypverify",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "hypotheses": 4
+   }
+  },
+  "gate": {
+   "checks": {
+    "H1_fewer_confident_errors": {
+     "left": "hyp4:dev.cal.confident_error_rate",
+     "op": "<=",
+     "right": "transformer:dev.cal.confident_error_rate",
+     "times": 0.8
+    },
+    "H2_no_accuracy_loss": {
+     "left": "hyp4:dev.all",
+     "op": ">=",
+     "right": "transformer:dev.all",
+     "plus": -0.02
+    },
+    "V1_R1_37_verifier_beats_confidence": {
+     "left": "hyp4:dev.cal.auroc_verifier",
+     "op": ">=",
+     "right": "hyp4:dev.cal.auroc_confidence",
+     "plus": 0.03
+    },
+    "S1_R1_38_verifier_pick": {
+     "left": "hyp4:var.verifier.dev",
+     "op": ">=",
+     "right": "hyp4:var.own.dev",
+     "plus": 0.01
+    },
+    "S2_R1_38_vs_single": {
+     "left": "hyp4:var.own.dev",
+     "op": ">=",
+     "right": "hyp4:var.single.dev",
+     "plus": 0.01
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "H1_fewer_confident_errors",
+      "H2_no_accuracy_loss"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "any": [
+      "H1_fewer_confident_errors"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 150000000000000.0
+ },
+ "predictions": {
+  "R1.35": "PASS: >= 20% fewer confident errors at no accuracy loss",
+  "R1.37": "V1 recorded as R1.37's result: verifier AUROC >= own-confidence AUROC + 0.03 (PASS) \u2014 it is trained on external correctness only",
+  "R1.38": "S1 and S2 recorded as R1.38's result: selection among 4 latent hypotheses beats a single trajectory and the model's own pick",
+  "compute": "4 heads and a verifier add < 5% FLOPs; selection costs no extra forward passes"
+ },
+ "prior_art": "Multiple choice learning (Guzman-Rivera 2012; 1606.07839), verifiers 2110.14168, CALM 2207.07061",
+ "not_claimed": "Execution hints, multiple-choice learning and learned verifiers are prior art; the measurement on this benchmark is the contribution."
+}

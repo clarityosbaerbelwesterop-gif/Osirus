@@ -1,0 +1,106 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.34",
+ "title": "Latent program execution: one latent step per program step, with and without execution supervision (covers R1.33)",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.20 (depth knob), R1.02b (halting)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/programs.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "If a shared block runs once per program step (oracle depth) and is supervised with the program state after every step, does execution generalise to programs with more steps than seen in training? Without the step supervision (R1.33), does the step-aligned latent loop alone help?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "looped-fixed4": {
+    "kind": "exec",
+    "d": 128,
+    "heads": 4,
+    "hint_weight": 0.0,
+    "fixed_steps": 4
+   },
+   "exec-nohint": {
+    "kind": "exec",
+    "d": 128,
+    "heads": 4,
+    "hint_weight": 0.0
+   },
+   "exec-hint": {
+    "kind": "exec",
+    "d": 128,
+    "heads": 4,
+    "hint_weight": 1.0
+   }
+  },
+  "gate": {
+   "checks": {
+    "X1_vs_transformer": {
+     "left": "exec-hint:ood.all",
+     "op": ">=",
+     "right": "transformer:ood.all",
+     "plus": 0.1
+    },
+    "X2_hints_help": {
+     "left": "exec-hint:ood.all",
+     "op": ">=",
+     "right": "exec-nohint:ood.all",
+     "plus": 0.05
+    },
+    "X3_R1_33_step_alignment": {
+     "left": "exec-nohint:ood.all",
+     "op": ">=",
+     "right": "looped-fixed4:ood.all",
+     "plus": 0.05
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "X1_vs_transformer",
+      "X2_hints_help"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "any": [
+      "X1_vs_transformer",
+      "X2_hints_help"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 150000000000000.0
+ },
+ "predictions": {
+  "R1.34": "PASS if execution-supervised latent steps beat the Transformer by 10 points OOD (more loop iterations / operations than trained) AND beat the same loop without hints by 5",
+  "R1.33": "X3 is R1.33's result: step-aligned latent iteration without supervision vs the same block at fixed depth 4 (reported in R1.33's README as PASS if X3 holds, FAIL otherwise)",
+  "oracle_depth": "the number of latent steps equals the program length; learned halting is R1.02's question"
+ },
+ "prior_art": "CLRS hints 2205.15659, Neural GPU 1511.08228, NPI 1511.06279, Looped Transformers 2409.15647",
+ "not_claimed": "Execution hints, multiple-choice learning and learned verifiers are prior art; the measurement on this benchmark is the contribution."
+}
