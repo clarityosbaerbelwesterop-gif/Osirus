@@ -1,16 +1,16 @@
 name: Rouge research R1
 
 # Rouge architecture research on free CI CPUs (research/rouge-architecture).
-# R1.01: every model x seed trains on its own runner, then one job applies
-# the pre-registered decision (experiments/r1_01.json). No paid compute.
+# One pre-registered experiment per dispatch: every model x seed from its
+# pre-registration trains on its own runner, then one job applies the
+# pre-registered decision. No paid compute.
 
 on:
-  # A changed pre-registration starts a full run.
-  push:
-    branches: ["rouge/native-model-*"]
-    paths: ["research/rouge-architecture/experiments/*.json"]
   workflow_dispatch:
     inputs:
+      experiment:
+        description: pre-registration file in research/rouge-architecture/experiments (without .json)
+        default: r1_01b
       reuse_run:
         description: report only, from the artifacts of this earlier run id (no training)
         default: ""
@@ -18,7 +18,28 @@ on:
 permissions:
   contents: read
 
+env:
+  PREREG: research/rouge-architecture/experiments/${{ inputs.experiment }}.json
+
 jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      models: ${{ steps.plan.outputs.models }}
+      seeds: ${{ steps.plan.outputs.seeds }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - id: plan
+        run: |
+          python3 - >> "$GITHUB_OUTPUT" <<'PY'
+          import json, os
+          setup = json.load(open(os.environ["PREREG"]))["setup"]
+          print("models=" + json.dumps(list(setup["models"])))
+          print("seeds=" + json.dumps(setup["seeds"]))
+          PY
+
   tests:
     if: ${{ !inputs.reuse_run }}
     runs-on: ubuntu-latest
@@ -33,16 +54,16 @@ jobs:
       - run: python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
       - run: python -m unittest discover -s research/rouge-architecture/tests -v
 
-  r1_01:
-    needs: tests
+  train:
+    needs: [plan, tests]
     if: ${{ !inputs.reuse_run }}
     runs-on: ubuntu-latest
-    timeout-minutes: 150
+    timeout-minutes: 300
     strategy:
       fail-fast: false
       matrix:
-        model: [transformer, transformer-flops, rouge, rouge-fixed]
-        seed: [1, 2, 3]
+        model: ${{ fromJSON(needs.plan.outputs.models) }}
+        seed: ${{ fromJSON(needs.plan.outputs.seeds) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -52,19 +73,21 @@ jobs:
           python-version: "3.11"
       - run: python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
       - name: Train and evaluate
+        env:
+          MODEL: ${{ matrix.model }}
+          SEED: ${{ matrix.seed }}
         run: |
-          nproc
-          python research/rouge-architecture/experiments/r1_01.py train --model "${{ matrix.model }}" --seed "${{ matrix.seed }}" \
-            --threads "$(nproc)" --out "$RUNNER_TEMP/r1.01"
+          python research/rouge-architecture/experiments/r1_01.py --prereg "$PREREG" train --model "$MODEL" --seed "$SEED" \
+            --threads "$(nproc)" --out "$RUNNER_TEMP/results"
       - uses: actions/upload-artifact@v4
         with:
-          name: r1.01-${{ matrix.model }}-seed${{ matrix.seed }}
-          path: ${{ runner.temp }}/r1.01
+          name: ${{ inputs.experiment }}-${{ matrix.model }}-seed${{ matrix.seed }}
+          path: ${{ runner.temp }}/results
           retention-days: 90
 
   report:
-    needs: r1_01
-    if: ${{ always() }}
+    needs: [plan, train]
+    if: ${{ always() && needs.plan.result == 'success' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -79,18 +102,18 @@ jobs:
       - run: python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
       - uses: actions/download-artifact@v4
         with:
-          pattern: r1.01-*-seed*
+          pattern: ${{ inputs.reuse_run && 'r1.01-*-seed*' || format('{0}-*-seed*', inputs.experiment) }}
           merge-multiple: true
-          path: ${{ runner.temp }}/r1.01
+          path: ${{ runner.temp }}/results
           run-id: ${{ inputs.reuse_run || github.run_id }}
           github-token: ${{ github.token }}
       - name: Summary and pre-registered decision
-        run: python research/rouge-architecture/experiments/r1_01.py report --out "$RUNNER_TEMP/r1.01"
+        run: python research/rouge-architecture/experiments/r1_01.py --prereg "$PREREG" report --out "$RUNNER_TEMP/results"
       - uses: actions/upload-artifact@v4
         with:
-          name: r1.01-summary
+          name: ${{ inputs.experiment }}-summary
           path: |
-            ${{ runner.temp }}/r1.01/summary.json
-            ${{ runner.temp }}/r1.01/report.md
-            ${{ runner.temp }}/r1.01/*-seed*.json
+            ${{ runner.temp }}/results/summary.json
+            ${{ runner.temp }}/results/report.md
+            ${{ runner.temp }}/results/*-seed*.json
           retention-days: 90

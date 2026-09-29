@@ -15,6 +15,17 @@ thinking happens once, after the query token, before the answer.
 
 Fixed-iteration ablation: halting=False runs exactly `think_steps`
 iterations, isolating the effect of *adaptive* compute from recurrence.
+
+R1.01b repairs (off by default, so R1.01 is reproducible), after R1.01
+showed thinking contracting the state and blocking gradients:
+- inject=True: every think step sees the query token's embedding plus the
+  learned think vector (input injection, as in recurrent-depth models),
+  so iterating cannot wash the task out of the state;
+- rezero=True: S <- LN(S + alpha * delta) with a learned alpha that starts
+  at 0, so extra iterations start as the identity and depth does not block
+  learning;
+- the ponder cost is warmed up by the runner (tau = 0 early), so halting
+  cannot collapse before thinking has become useful.
 """
 
 from __future__ import annotations
@@ -44,7 +55,8 @@ class Cell(nn.Module):
 
 class Rouge(nn.Module):
     def __init__(self, vocab: int, d: int = 128, slots: int = 8, heads: int = 4, max_think: int = 8,
-                 halting: bool = True, think_steps: int = 4, tau: float = 0.01):
+                 halting: bool = True, think_steps: int = 4, tau: float = 0.01,
+                 inject: bool = False, rezero: bool = False):
         super().__init__()
         self.embed = nn.Embedding(vocab, d)
         self.init_state = nn.Parameter(torch.randn(slots, d) * 0.02)
@@ -57,9 +69,12 @@ class Rouge(nn.Module):
         self.head = nn.Linear(d, vocab)
         self.d, self.slots = d, slots
         self.max_think, self.halting, self.think_steps, self.tau = max_think, halting, think_steps, tau
+        self.tau_base, self.inject = tau, inject
+        self.alpha = nn.Parameter(torch.zeros(())) if rezero else None
 
     def step(self, state: torch.Tensor, inp: torch.Tensor) -> torch.Tensor:
-        return self.norm(state + self.cell(state, inp))
+        delta = self.cell(state, inp)
+        return self.norm(state + (self.alpha * delta if self.alpha is not None else delta))
 
     def forward(self, ids: torch.Tensor, lengths: torch.Tensor, max_think: int | None = None) -> tuple[torch.Tensor, dict]:
         b, t = ids.shape
@@ -69,6 +84,8 @@ class Rouge(nn.Module):
             live = (i < lengths)[:, None, None]
             state = torch.where(live, self.step(state, u[:, i]), state)
         think = self.think_token.expand(b, -1)
+        if self.inject:
+            think = think + u[torch.arange(b), lengths - 1]  # the query token, at every step
         if not self.halting:
             for _ in range(self.think_steps):
                 state = self.step(state, think)

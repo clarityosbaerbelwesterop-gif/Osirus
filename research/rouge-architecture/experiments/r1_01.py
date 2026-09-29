@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""R1.01: Rouge prototype (persistent state + adaptive recurrent compute)
-vs a parameter-matched Transformer, same data, same token budget, same
-optimizer, same hardware. Pre-registration: experiments/r1_01.json.
+"""R1.01 / R1.01b: Rouge prototype (persistent state + adaptive recurrent
+compute) vs Transformer baselines matched in parameters and in FLOPs, same
+data, same token budget, same optimizer, same hardware. The experiment is
+defined by its pre-registration (experiments/r1_01.json, r1_01b.json).
 
-    python experiments/r1_01.py train --model transformer --seed 1 --steps 2000 --out results/r1.01
-    python experiments/r1_01.py report --out results/r1.01
+    python experiments/r1_01.py --prereg experiments/r1_01b.json train --model rouge-b --seed 1
+    python experiments/r1_01.py --prereg experiments/r1_01b.json report --out results/r1.01b
 
 Every run writes a checkpoint (never committed; sha256 recorded) and a JSON
 with parameters, disk, state memory, FLOPs (measured with
@@ -35,19 +36,27 @@ from benchmarks import microbench as mb  # noqa: E402
 from prototypes.rouge_r101 import Rouge  # noqa: E402
 from prototypes.transformer_baseline import Transformer  # noqa: E402
 
-PREREG = json.loads((ROOT / "experiments" / "r1_01.json").read_text())
-SETUP = PREREG["setup"]
+PREREG: dict = {}
+SETUP: dict = {}
+ROLES_R101 = {"candidate": "rouge", "baseline": "transformer", "baseline_flops": "transformer-flops", "ablation": "rouge-fixed"}
+
+
+def load(path: str) -> None:
+    global PREREG, SETUP
+    PREREG = json.loads(Path(path).read_text())
+    SETUP = PREREG["setup"]
+
+
+def roles() -> dict:
+    return PREREG.get("roles", ROLES_R101)
 
 
 def build(name: str) -> torch.nn.Module:
-    vocab = len(mb.VOCAB)
-    if name in ("transformer", "transformer-flops"):
-        return Transformer(vocab, **SETUP["models"][name])
-    if name == "rouge":
-        return Rouge(vocab, **SETUP["models"]["rouge"])
-    if name == "rouge-fixed":
-        return Rouge(vocab, **SETUP["models"]["rouge-fixed"])
-    raise ValueError(name)
+    config = dict(SETUP["models"][name])
+    tau_warmup = config.pop("tau_warmup", 0)  # a training-schedule setting, not an architecture one
+    model = (Transformer if name.startswith("transformer") else Rouge)(len(mb.VOCAB), **config)
+    model.tau_warmup = tau_warmup
+    return model
 
 
 def collate(examples):
@@ -119,6 +128,9 @@ def train(args) -> None:
         torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
         opt.step()
         sched.step()
+        if hasattr(model, "tau_base") and model.tau_warmup:
+            # No ponder cost early, so halting cannot collapse before thinking helps.
+            model.tau = model.tau_base * min(1.0, step / (model.tau_warmup * args.steps))
         if step % args.eval_every == 0 or step == args.steps:
             curve.append({"step": step, "loss": round(loss.item(), 4), "probe_id": evaluate(model, probe)["all"],
                           "elapsed_s": round(time.time() - start, 1)})
@@ -146,7 +158,7 @@ def train(args) -> None:
         "id": result_id, "ood": evaluate(model, ood_set), "curve": curve,
         "flops_per_example": {"id": flops_per_example(model, id_set[:60]), "ood": flops_per_example(model, ood_set[:60])},
     }
-    if args.model == "rouge":
+    if getattr(model, "halting", False):
         result["ood_think16"] = evaluate(model, ood_set, max_think=16)
         one = flops_per_example(model, id_set[:60], max_think=1)
         two = flops_per_example(model, id_set[:60], max_think=2)
@@ -159,7 +171,8 @@ def train(args) -> None:
 def report(args) -> None:
     out = Path(args.out)
     runs = [json.loads(p.read_text()) for p in sorted(out.glob("*-seed*.json"))]
-    models = sorted({r["model"] for r in runs}, key=["transformer", "transformer-flops", "rouge", "rouge-fixed"].index)
+    order = list(SETUP["models"])
+    models = sorted({r["model"] for r in runs}, key=order.index)
     table = {}
     for m in models:
         rs = [r for r in runs if r["model"] == m]
@@ -177,7 +190,7 @@ def report(args) -> None:
             "per_seed_ood": {t: [round(r["ood"][t], 3) for r in rs] for t in mb.TASKS},
             "per_seed_id": {t: [round(r["id"][t], 3) for r in rs] for t in mb.TASKS},
         }
-        if m == "rouge":
+        if "ood_think16" in rs[0]:
             table[m]["think_steps_by_level"] = rs[0]["ood"].get("think_steps_by_level")
             table[m]["ood_think16_all"] = mean(lambda r: r["ood_think16"]["all"])
             table[m]["think_steps_id"] = mean(lambda r: r["id"]["think_steps_mean"])
@@ -189,7 +202,7 @@ def report(args) -> None:
 
 
 def markdown(table: dict) -> str:
-    models = [m for m in ("transformer", "transformer-flops", "rouge", "rouge-fixed") if m in table]
+    models = [m for m in SETUP["models"] if m in table]
     pct = lambda v: f"{100 * v:.1f}"  # noqa: E731
     lines = ["| | " + " | ".join(models) + " |", "|---|" + "---|" * len(models)]
     rows = [
@@ -206,9 +219,9 @@ def markdown(table: dict) -> str:
             rows.append((f"{split.upper()} {task} (%)", lambda r, k=f"{split}_{task}": pct(r[k])))
     for name, fn in rows:
         lines.append(f"| {name} | " + " | ".join(fn(table[m]) for m in models) + " |")
-    if "rouge" in table:
-        r = table["rouge"]
-        lines += ["", f"Rouge think steps: ID {r['think_steps_id']:.2f}, OOD {r['think_steps_ood']:.2f}; "
+    for m in (m for m in models if "think_steps_id" in table[m]):
+        r = table[m]
+        lines += ["", f"{m} think steps: ID {r['think_steps_id']:.2f}, OOD {r['think_steps_ood']:.2f}; "
                       f"OOD with 16 think steps: {pct(r['ood_think16_all'])}%."]
     lines += ["", "Per-seed OOD accuracy:", ""]
     for m in models:
@@ -239,15 +252,16 @@ def spearman(xs: list[float], ys: list[float]) -> float:
 
 def decide(table: dict, runs: list[dict]) -> dict:
     """The pre-registered predictions P1-P5 and the decision, from the runs."""
-    need = {"transformer", "transformer-flops", "rouge", "rouge-fixed"}
+    role = roles()
+    need = set(role.values())
     if not need <= set(table):
         return {"complete": False, "missing": sorted(need - set(table))}
-    t, tf, r, rf = (table[k] for k in ("transformer", "transformer-flops", "rouge", "rouge-fixed"))
+    t, tf, r, rf = (table[role[k]] for k in ("baseline", "baseline_flops", "candidate", "ablation"))
     seeds = lambda m, task: {x["seed"]: x["ood"][task] for x in runs if x["model"] == m}  # noqa: E731
-    every = lambda task: all(seeds("rouge", task)[k] > v for k, v in seeds("transformer", task).items())  # noqa: E731
+    every = lambda task: all(seeds(role["candidate"], task)[k] > v for k, v in seeds(role["baseline"], task).items())  # noqa: E731
     levels = {}
     for x in runs:
-        if x["model"] == "rouge":
+        if x["model"] == role["candidate"]:
             for split in ("id", "ood"):
                 for key, steps in x[split].get("think_steps_by_level", {}).items():
                     task, level = key.split(":")
@@ -260,24 +274,28 @@ def decide(table: dict, runs: list[dict]) -> dict:
         "P2_hops": r["ood_hops"] >= t["ood_hops"] + 0.10 and rho >= 0.6,
         "P2_hops_rho": round(rho, 3),
         "P3_recall": t["id_recall"] >= r["id_recall"] and t["ood_recall"] >= r["ood_recall"],
-        "P4_adaptive": r["ood_all"] >= rf["ood_all"] - 0.02 and r["ood_think16_all"] >= r["ood_all"] - 0.02,
+        "P4_vs_ablation": r["ood_all"] >= rf["ood_all"] - 0.02 and r.get("ood_think16_all", r["ood_all"]) >= r["ood_all"] - 0.02,
         "P5_compute_state": r["ood_state"] > tf["ood_state"],
         "P5_compute_hops": r["ood_hops"] > tf["ood_hops"],
     }
     advance = (p["P1_state"] and p["P5_compute_state"]) or (p["P2_hops"] and p["P5_compute_hops"])
-    return {"complete": True, "predictions": p, "result": "ADVANCE" if advance else "FAIL"}
+    return {"complete": True, "roles": role, "predictions": p, "result": "ADVANCE" if advance else "FAIL"}
 
 
 def main() -> None:
     parser = argparse.ArgumentParser()
+    parser.add_argument("--prereg", default=str(ROOT / "experiments" / "r1_01.json"))
     parser.add_argument("command", choices=["train", "report"])
-    parser.add_argument("--model", choices=["transformer", "transformer-flops", "rouge", "rouge-fixed"])
+    parser.add_argument("--model")
     parser.add_argument("--seed", type=int, default=1)
-    parser.add_argument("--steps", type=int, default=SETUP["steps"])
+    parser.add_argument("--steps", type=int)
     parser.add_argument("--eval-every", type=int, default=250)
     parser.add_argument("--threads", type=int, default=1)
-    parser.add_argument("--out", default=str(ROOT / "results" / "r1.01"))
+    parser.add_argument("--out")
     args = parser.parse_args()
+    load(args.prereg)
+    args.steps = args.steps or SETUP["steps"]
+    args.out = args.out or str(ROOT / "results" / PREREG["id"].lower())
     (train if args.command == "train" else report)(args)
 
 

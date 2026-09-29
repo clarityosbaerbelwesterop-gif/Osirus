@@ -1,0 +1,47 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.01b",
+ "title": "R1.01 repaired: input injection + ReZero thinking + ponder warm-up, and a training budget where baselines stop improving",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.01 (FAIL): see results/r1.01/README.md",
+ "question": "Does the persistent-state + adaptive-recurrence prototype beat parameter- and FLOP-matched Transformers once (a) thinking can no longer erase the state and (b) the models are trained long enough to learn the tasks?",
+ "changes_from_r1_01": {
+  "budget": "15,000 steps instead of 3,000 (every model), so the comparison is not decided by under-training",
+  "rouge-b": "inject=True (query embedding re-fed at every think step), rezero=True (learned residual gate starting at 0), tau warm-up (no ponder cost for the first 30% of steps)",
+  "kept": "benchmark, frozen eval sets, optimizer, lr schedule, batch, seeds, both Transformer baselines; the original R1.01 prototype ('rouge') is re-run at the new budget to separate the effect of budget from the effect of the repairs"
+ },
+ "roles": {"candidate": "rouge-b", "baseline": "transformer", "baseline_flops": "transformer-flops", "ablation": "rouge"},
+ "setup": {
+  "data": "benchmarks/microbench.py, ID ranges for training, fresh stream per seed",
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "optimizer": "AdamW, cosine decay, grad clip 1.0",
+  "eval_per_task": 300,
+  "seeds": [1, 2, 3],
+  "hardware": "CPU, GitHub Actions runners (4 threads per run)",
+  "models": {
+   "transformer": {"d": 64, "layers": 4, "heads": 4},
+   "transformer-flops": {"d": 192, "layers": 4, "heads": 4},
+   "rouge": {"d": 128, "slots": 8, "heads": 4, "max_think": 8, "halting": true, "tau": 0.01},
+   "rouge-b": {"d": 128, "slots": 8, "heads": 4, "max_think": 8, "halting": true, "tau": 0.01, "inject": true, "rezero": true, "tau_warmup": 0.3}
+  },
+  "parameters": {"transformer": 205740, "transformer-flops": 1796780, "rouge": 211373, "rouge-b": 211374}
+ },
+ "predictions": {
+  "P1_state": "State, OOD: rouge-b >= transformer + 0.20 (mean of 3 seeds) and ahead in every seed.",
+  "P2_hops": "Hops, OOD: rouge-b >= transformer + 0.10, and rouge-b's think steps rise with the hop count (Spearman rho >= 0.6 over levels 1-8).",
+  "P3_recall": "Recall: transformer >= rouge-b, ID and OOD (fixed-size state; predicted loss).",
+  "P4_repairs": "rouge-b OOD all >= rouge OOD all - 0.02, and 16 think steps at test do not reduce rouge-b's OOD accuracy.",
+  "P5_compute": "Where P1/P2 hold, rouge-b also beats the FLOP-matched transformer on that task."
+ },
+ "decision": {
+  "advance": "(P1 and P5 on state) or (P2 and P5 on hops): proceed to R1.02 and R1.03 with rouge-b.",
+  "fail": "Otherwise: record the result; the next step is the cheaper-read / hybrid design (R1.09, R1.11), not scaling.",
+  "chance_level": 0.1
+ },
+ "not_claimed": "Input injection and gated residual recurrence are prior art (recurrent-depth models, ReZero). R1.01b tests whether they make this prototype useful; no novelty claim."
+}

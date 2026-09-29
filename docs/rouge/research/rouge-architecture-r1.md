@@ -1,7 +1,6 @@
 # Rouge 1 — architecture research program R1
 
-**Status:** R1.01 pre-registered and running on free CI CPUs. No paid
-compute has been used.
+**Status:** R1.01 ran on free CI CPUs ($0). The pre-registered result is **FAIL** ([results](../../../research/rouge-architecture/results/r1.01/README.md)). R1.01b, the repaired prototype at a 5× training budget, is pre-registered.
 
 ## Scope
 
