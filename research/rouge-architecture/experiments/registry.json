@@ -154108,5 +154108,6380 @@
    "result": "PARTIAL"
   },
   "recorded": "2026-09-29T23:30:58Z"
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "lstm-seed1",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "lstm",
+  "config": {
+   "kind": "lstm",
+   "d": 112,
+   "layers": 2
+  },
+  "seed": 1,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 213520,
+  "active_parameters": 213520,
+  "flop_estimate": 21705898.59375,
+  "checkpoint_sha256": "025b40a949749e31f8d269f8e9be49370e0879e8136ce11d32723077da7d2bef",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007638",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 487.6,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.5433333333333333,
+    "task": {
+     "retain": 0.905,
+     "overwrite": 0.475,
+     "saturate": 0.25
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.75,
+     "retain:4": 0.8889,
+     "retain:5": 0.6364,
+     "retain:6": 0.8182,
+     "retain:7": 0.7273,
+     "retain:8": 0.75,
+     "retain:9": 0.7778,
+     "retain:10": 0.9,
+     "retain:11": 1.0,
+     "retain:12": 1.0,
+     "retain:13": 1.0,
+     "retain:14": 1.0,
+     "retain:15": 1.0,
+     "retain:16": 1.0,
+     "retain:17": 1.0,
+     "retain:18": 1.0,
+     "retain:19": 1.0,
+     "retain:20": 1.0,
+     "overwrite:1": 0.5441,
+     "overwrite:2": 0.4638,
+     "overwrite:3": 0.4127,
+     "saturate:4": 0.3478,
+     "saturate:5": 0.3846,
+     "saturate:6": 0.3043,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.2727,
+     "saturate:9": 0.15,
+     "saturate:10": 0.1304,
+     "saturate:11": 0.1923,
+     "saturate:12": 0.125
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.029042700876792286,
+     "confident_error_rate": 0.0016666666666666668,
+     "auroc_confidence": 0.7963145403251086
+    }
+   },
+   "holdout": {
+    "all": 0.5366666666666666,
+    "task": {
+     "retain": 0.905,
+     "overwrite": 0.45,
+     "saturate": 0.255
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.9231,
+     "retain:4": 0.8889,
+     "retain:5": 0.8333,
+     "retain:6": 0.75,
+     "retain:7": 0.7647,
+     "retain:8": 0.4,
+     "retain:9": 0.6154,
+     "retain:10": 0.9091,
+     "retain:11": 0.9091,
+     "retain:12": 1.0,
+     "retain:13": 1.0,
+     "retain:14": 1.0,
+     "retain:15": 1.0,
+     "retain:16": 1.0,
+     "retain:17": 1.0,
+     "retain:18": 1.0,
+     "retain:19": 1.0,
+     "retain:20": 1.0,
+     "overwrite:1": 0.5,
+     "overwrite:2": 0.4615,
+     "overwrite:3": 0.3913,
+     "saturate:4": 0.2778,
+     "saturate:5": 0.3,
+     "saturate:6": 0.3043,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.2632,
+     "saturate:9": 0.1111,
+     "saturate:10": 0.2258,
+     "saturate:11": 0.0556,
+     "saturate:12": 0.2963
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.02482026770710945,
+     "confident_error_rate": 0.006666666666666667,
+     "auroc_confidence": 0.8019795343849144
+    }
+   },
+   "ood": {
+    "all": 0.4066666666666667,
+    "task": {
+     "retain": 1.0,
+     "overwrite": 0.08,
+     "saturate": 0.14
+    },
+    "level": {
+     "retain:40": 1.0,
+     "retain:41": 1.0,
+     "retain:42": 1.0,
+     "retain:43": 1.0,
+     "retain:44": 1.0,
+     "retain:45": 1.0,
+     "retain:46": 1.0,
+     "retain:47": 1.0,
+     "retain:48": 1.0,
+     "retain:49": 1.0,
+     "retain:50": 1.0,
+     "retain:51": 1.0,
+     "retain:52": 1.0,
+     "retain:53": 1.0,
+     "retain:54": 1.0,
+     "retain:55": 1.0,
+     "retain:56": 1.0,
+     "retain:57": 1.0,
+     "retain:58": 1.0,
+     "retain:59": 1.0,
+     "retain:60": 1.0,
+     "retain:61": 1.0,
+     "retain:62": 1.0,
+     "retain:63": 1.0,
+     "retain:64": 1.0,
+     "retain:65": 1.0,
+     "retain:66": 1.0,
+     "retain:67": 1.0,
+     "retain:68": 1.0,
+     "retain:69": 1.0,
+     "retain:70": 1.0,
+     "retain:71": 1.0,
+     "retain:72": 1.0,
+     "retain:73": 1.0,
+     "retain:74": 1.0,
+     "retain:75": 1.0,
+     "retain:76": 1.0,
+     "retain:77": 1.0,
+     "retain:78": 1.0,
+     "retain:79": 1.0,
+     "retain:80": 1.0,
+     "overwrite:5": 0.1818,
+     "overwrite:6": 0.0577,
+     "overwrite:7": 0.0612,
+     "overwrite:8": 0.0364,
+     "saturate:18": 0.25,
+     "saturate:19": 0.125,
+     "saturate:20": 0.2857,
+     "saturate:21": 0.0385,
+     "saturate:22": 0.1053,
+     "saturate:23": 0.0952,
+     "saturate:24": 0.1481,
+     "saturate:25": 0.1,
+     "saturate:26": 0.1905
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.5585460989673932,
+     "confident_error_rate": 0.5433333333333333,
+     "auroc_confidence": 0.6956103794437282
+    }
+   },
+   "adv": {
+    "all": 0.5066666666666667,
+    "task": {
+     "retain": 0.93,
+     "overwrite": 0.44,
+     "saturate": 0.15
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.75,
+     "retain:4": 0.875,
+     "retain:5": 1.0,
+     "retain:6": 1.0,
+     "retain:7": 1.0,
+     "retain:8": 1.0,
+     "retain:9": 0.375,
+     "retain:10": 1.0,
+     "retain:11": 1.0,
+     "retain:12": 1.0,
+     "retain:13": 1.0,
+     "retain:14": 1.0,
+     "retain:15": 1.0,
+     "retain:16": 1.0,
+     "retain:17": 1.0,
+     "retain:18": 1.0,
+     "retain:19": 1.0,
+     "retain:20": 1.0,
+     "overwrite:1": 0.4242,
+     "overwrite:2": 0.5,
+     "overwrite:3": 0.4146,
+     "saturate:4": 0.0,
+     "saturate:5": 0.1,
+     "saturate:6": 0.1667,
+     "saturate:7": 0.3636,
+     "saturate:8": 0.1429,
+     "saturate:9": 0.0909,
+     "saturate:10": 0.1176,
+     "saturate:11": 0.25,
+     "saturate:12": 0.0769
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.0710618829727173,
+     "confident_error_rate": 0.0033333333333333335,
+     "auroc_confidence": 0.8488620199146515
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "lstm-seed2",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "lstm",
+  "config": {
+   "kind": "lstm",
+   "d": 112,
+   "layers": 2
+  },
+  "seed": 2,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 213520,
+  "active_parameters": 213520,
+  "flop_estimate": 21705898.59375,
+  "checkpoint_sha256": "b07f834102aeac33befa4ab6381cc01d5fec9cbbbe49becc1b42bef7ec9c7cf5",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007634",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 791.3,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.5366666666666666,
+    "task": {
+     "retain": 0.915,
+     "overwrite": 0.46,
+     "saturate": 0.235
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.8333,
+     "retain:4": 0.8889,
+     "retain:5": 0.6364,
+     "retain:6": 0.8182,
+     "retain:7": 0.7273,
+     "retain:8": 0.75,
+     "retain:9": 0.7778,
+     "retain:10": 1.0,
+     "retain:11": 1.0,
+     "retain:12": 1.0,
+     "retain:13": 1.0,
+     "retain:14": 1.0,
+     "retain:15": 1.0,
+     "retain:16": 1.0,
+     "retain:17": 1.0,
+     "retain:18": 1.0,
+     "retain:19": 1.0,
+     "retain:20": 1.0,
+     "overwrite:1": 0.5441,
+     "overwrite:2": 0.4348,
+     "overwrite:3": 0.3968,
+     "saturate:4": 0.3478,
+     "saturate:5": 0.3077,
+     "saturate:6": 0.2609,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.2727,
+     "saturate:9": 0.15,
+     "saturate:10": 0.1304,
+     "saturate:11": 0.1923,
+     "saturate:12": 0.125
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03379711424311004,
+     "confident_error_rate": 0.008333333333333333,
+     "auroc_confidence": 0.8079784619509361
+    }
+   },
+   "holdout": {
+    "all": 0.5516666666666666,
+    "task": {
+     "retain": 0.915,
+     "overwrite": 0.475,
+     "saturate": 0.265
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.8462,
+     "retain:4": 0.8889,
+     "retain:5": 0.8333,
+     "retain:6": 0.75,
+     "retain:7": 0.8235,
+     "retain:8": 0.4,
+     "retain:9": 0.6154,
+     "retain:10": 1.0,
+     "retain:11": 1.0,
+     "retain:12": 1.0,
+     "retain:13": 1.0,
+     "retain:14": 1.0,
+     "retain:15": 1.0,
+     "retain:16": 1.0,
+     "retain:17": 1.0,
+     "retain:18": 1.0,
+     "retain:19": 1.0,
+     "retain:20": 1.0,
+     "overwrite:1": 0.5303,
+     "overwrite:2": 0.5077,
+     "overwrite:3": 0.3913,
+     "saturate:4": 0.3889,
+     "saturate:5": 0.35,
+     "saturate:6": 0.2609,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.3158,
+     "saturate:9": 0.0556,
+     "saturate:10": 0.2903,
+     "saturate:11": 0.0556,
+     "saturate:12": 0.2222
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.02325968203445275,
+     "confident_error_rate": 0.01,
+     "auroc_confidence": 0.8013117847235481
+    }
+   },
+   "ood": {
+    "all": 0.4066666666666667,
+    "task": {
+     "retain": 1.0,
+     "overwrite": 0.08,
+     "saturate": 0.14
+    },
+    "level": {
+     "retain:40": 1.0,
+     "retain:41": 1.0,
+     "retain:42": 1.0,
+     "retain:43": 1.0,
+     "retain:44": 1.0,
+     "retain:45": 1.0,
+     "retain:46": 1.0,
+     "retain:47": 1.0,
+     "retain:48": 1.0,
+     "retain:49": 1.0,
+     "retain:50": 1.0,
+     "retain:51": 1.0,
+     "retain:52": 1.0,
+     "retain:53": 1.0,
+     "retain:54": 1.0,
+     "retain:55": 1.0,
+     "retain:56": 1.0,
+     "retain:57": 1.0,
+     "retain:58": 1.0,
+     "retain:59": 1.0,
+     "retain:60": 1.0,
+     "retain:61": 1.0,
+     "retain:62": 1.0,
+     "retain:63": 1.0,
+     "retain:64": 1.0,
+     "retain:65": 1.0,
+     "retain:66": 1.0,
+     "retain:67": 1.0,
+     "retain:68": 1.0,
+     "retain:69": 1.0,
+     "retain:70": 1.0,
+     "retain:71": 1.0,
+     "retain:72": 1.0,
+     "retain:73": 1.0,
+     "retain:74": 1.0,
+     "retain:75": 1.0,
+     "retain:76": 1.0,
+     "retain:77": 1.0,
+     "retain:78": 1.0,
+     "retain:79": 1.0,
+     "retain:80": 1.0,
+     "overwrite:5": 0.1818,
+     "overwrite:6": 0.0577,
+     "overwrite:7": 0.0612,
+     "overwrite:8": 0.0364,
+     "saturate:18": 0.25,
+     "saturate:19": 0.125,
+     "saturate:20": 0.2857,
+     "saturate:21": 0.0385,
+     "saturate:22": 0.1053,
+     "saturate:23": 0.0952,
+     "saturate:24": 0.1481,
+     "saturate:25": 0.1,
+     "saturate:26": 0.1905
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.5599306912223498,
+     "confident_error_rate": 0.5483333333333333,
+     "auroc_confidence": 0.7094020537852275
+    }
+   },
+   "adv": {
+    "all": 0.5133333333333333,
+    "task": {
+     "retain": 0.92,
+     "overwrite": 0.48,
+     "saturate": 0.14
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.75,
+     "retain:4": 0.875,
+     "retain:5": 1.0,
+     "retain:6": 1.0,
+     "retain:7": 1.0,
+     "retain:8": 1.0,
+     "retain:9": 0.375,
+     "retain:10": 1.0,
+     "retain:11": 1.0,
+     "retain:12": 0.75,
+     "retain:13": 1.0,
+     "retain:14": 1.0,
+     "retain:15": 1.0,
+     "retain:16": 1.0,
+     "retain:17": 1.0,
+     "retain:18": 1.0,
+     "retain:19": 1.0,
+     "retain:20": 1.0,
+     "overwrite:1": 0.4848,
+     "overwrite:2": 0.3846,
+     "overwrite:3": 0.5366,
+     "saturate:4": 1.0,
+     "saturate:5": 0.0,
+     "saturate:6": 0.0833,
+     "saturate:7": 0.3636,
+     "saturate:8": 0.1429,
+     "saturate:9": 0.0909,
+     "saturate:10": 0.0588,
+     "saturate:11": 0.5,
+     "saturate:12": 0.0769
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.05901632989446321,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8613236078989503
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "lstm-seed3",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "lstm",
+  "config": {
+   "kind": "lstm",
+   "d": 112,
+   "layers": 2
+  },
+  "seed": 3,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 213520,
+  "active_parameters": 213520,
+  "flop_estimate": 21705898.59375,
+  "checkpoint_sha256": "b5a1de36c6531da386b7393ff4c6e74ae780dfa901a0a86c164799276915d721",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007640",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 607.4,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.5533333333333333,
+    "task": {
+     "retain": 0.905,
+     "overwrite": 0.465,
+     "saturate": 0.29
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.8333,
+     "retain:4": 1.0,
+     "retain:5": 0.5455,
+     "retain:6": 0.8182,
+     "retain:7": 0.6364,
+     "retain:8": 0.75,
+     "retain:9": 0.7778,
+     "retain:10": 0.9,
+     "retain:11": 1.0,
+     "retain:12": 1.0,
+     "retain:13": 1.0,
+     "retain:14": 1.0,
+     "retain:15": 1.0,
+     "retain:16": 1.0,
+     "retain:17": 1.0,
+     "retain:18": 1.0,
+     "retain:19": 1.0,
+     "retain:20": 1.0,
+     "overwrite:1": 0.4706,
+     "overwrite:2": 0.4493,
+     "overwrite:3": 0.4762,
+     "saturate:4": 0.5217,
+     "saturate:5": 0.3846,
+     "saturate:6": 0.2174,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.2727,
+     "saturate:9": 0.25,
+     "saturate:10": 0.2174,
+     "saturate:11": 0.2692,
+     "saturate:12": 0.125
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.038068146482110043,
+     "confident_error_rate": 0.005,
+     "auroc_confidence": 0.7711517712641611
+    }
+   },
+   "holdout": {
+    "all": 0.55,
+    "task": {
+     "retain": 0.91,
+     "overwrite": 0.465,
+     "saturate": 0.275
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.8462,
+     "retain:4": 0.8889,
+     "retain:5": 0.8333,
+     "retain:6": 0.75,
+     "retain:7": 0.8235,
+     "retain:8": 0.4,
+     "retain:9": 0.5385,
+     "retain:10": 1.0,
+     "retain:11": 1.0,
+     "retain:12": 1.0,
+     "retain:13": 1.0,
+     "retain:14": 1.0,
+     "retain:15": 1.0,
+     "retain:16": 1.0,
+     "retain:17": 1.0,
+     "retain:18": 1.0,
+     "retain:19": 1.0,
+     "retain:20": 1.0,
+     "overwrite:1": 0.5152,
+     "overwrite:2": 0.4769,
+     "overwrite:3": 0.4058,
+     "saturate:4": 0.2778,
+     "saturate:5": 0.3,
+     "saturate:6": 0.3478,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.2105,
+     "saturate:9": 0.1667,
+     "saturate:10": 0.2581,
+     "saturate:11": 0.1667,
+     "saturate:12": 0.2963
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04799323245882991,
+     "confident_error_rate": 0.01,
+     "auroc_confidence": 0.798742985409652
+    }
+   },
+   "ood": {
+    "all": 0.4066666666666667,
+    "task": {
+     "retain": 1.0,
+     "overwrite": 0.075,
+     "saturate": 0.145
+    },
+    "level": {
+     "retain:40": 1.0,
+     "retain:41": 1.0,
+     "retain:42": 1.0,
+     "retain:43": 1.0,
+     "retain:44": 1.0,
+     "retain:45": 1.0,
+     "retain:46": 1.0,
+     "retain:47": 1.0,
+     "retain:48": 1.0,
+     "retain:49": 1.0,
+     "retain:50": 1.0,
+     "retain:51": 1.0,
+     "retain:52": 1.0,
+     "retain:53": 1.0,
+     "retain:54": 1.0,
+     "retain:55": 1.0,
+     "retain:56": 1.0,
+     "retain:57": 1.0,
+     "retain:58": 1.0,
+     "retain:59": 1.0,
+     "retain:60": 1.0,
+     "retain:61": 1.0,
+     "retain:62": 1.0,
+     "retain:63": 1.0,
+     "retain:64": 1.0,
+     "retain:65": 1.0,
+     "retain:66": 1.0,
+     "retain:67": 1.0,
+     "retain:68": 1.0,
+     "retain:69": 1.0,
+     "retain:70": 1.0,
+     "retain:71": 1.0,
+     "retain:72": 1.0,
+     "retain:73": 1.0,
+     "retain:74": 1.0,
+     "retain:75": 1.0,
+     "retain:76": 1.0,
+     "retain:77": 1.0,
+     "retain:78": 1.0,
+     "retain:79": 1.0,
+     "retain:80": 1.0,
+     "overwrite:5": 0.1591,
+     "overwrite:6": 0.0577,
+     "overwrite:7": 0.0612,
+     "overwrite:8": 0.0364,
+     "saturate:18": 0.3,
+     "saturate:19": 0.125,
+     "saturate:20": 0.2857,
+     "saturate:21": 0.0385,
+     "saturate:22": 0.1053,
+     "saturate:23": 0.0952,
+     "saturate:24": 0.1481,
+     "saturate:25": 0.1,
+     "saturate:26": 0.1905
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.5594941970209281,
+     "confident_error_rate": 0.5383333333333333,
+     "auroc_confidence": 0.6339219930005526
+    }
+   },
+   "adv": {
+    "all": 0.5,
+    "task": {
+     "retain": 0.93,
+     "overwrite": 0.41,
+     "saturate": 0.16
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.75,
+     "retain:4": 0.875,
+     "retain:5": 1.0,
+     "retain:6": 1.0,
+     "retain:7": 1.0,
+     "retain:8": 1.0,
+     "retain:9": 0.375,
+     "retain:10": 1.0,
+     "retain:11": 1.0,
+     "retain:12": 1.0,
+     "retain:13": 1.0,
+     "retain:14": 1.0,
+     "retain:15": 1.0,
+     "retain:16": 1.0,
+     "retain:17": 1.0,
+     "retain:18": 1.0,
+     "retain:19": 1.0,
+     "retain:20": 1.0,
+     "overwrite:1": 0.4242,
+     "overwrite:2": 0.3462,
+     "overwrite:3": 0.439,
+     "saturate:4": 0.0,
+     "saturate:5": 0.0,
+     "saturate:6": 0.1667,
+     "saturate:7": 0.4545,
+     "saturate:8": 0.1429,
+     "saturate:9": 0.0909,
+     "saturate:10": 0.0588,
+     "saturate:11": 0.5,
+     "saturate:12": 0.1538
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.07097849448521931,
+     "confident_error_rate": 0.0033333333333333335,
+     "auroc_confidence": 0.8609777777777777
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "rouge-mem-seed1",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "rouge-mem",
+  "config": {
+   "kind": "rouge-mem",
+   "d": 112,
+   "slots": 4,
+   "heads": 4,
+   "max_think": 8,
+   "halting": true,
+   "tau": 0.01,
+   "inject": true,
+   "rezero": true,
+   "tau_warmup": 0.3,
+   "memory_slots": 32,
+   "read_k": 2,
+   "context": 3
+  },
+  "seed": 1,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 230691,
+  "active_parameters": 230691,
+  "flop_estimate": 173045600.0,
+  "checkpoint_sha256": "66648c4666395dd8508193b325c9defe6be13d0d440b01bd9b85f288fc4e7039",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007635",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 7669.2,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.29833333333333334,
+    "task": {
+     "retain": 0.325,
+     "overwrite": 0.28,
+     "saturate": 0.29
+    },
+    "level": {
+     "retain:2": 0.1429,
+     "retain:3": 0.1667,
+     "retain:4": 0.3333,
+     "retain:5": 0.3636,
+     "retain:6": 0.4545,
+     "retain:7": 0.4545,
+     "retain:8": 0.1667,
+     "retain:9": 0.1111,
+     "retain:10": 0.2,
+     "retain:11": 0.5,
+     "retain:12": 0.4,
+     "retain:13": 0.3333,
+     "retain:14": 0.7,
+     "retain:15": 0.0,
+     "retain:16": 0.4167,
+     "retain:17": 0.25,
+     "retain:18": 0.3,
+     "retain:19": 0.3,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.3382,
+     "overwrite:2": 0.3478,
+     "overwrite:3": 0.1429,
+     "saturate:4": 0.5217,
+     "saturate:5": 0.3462,
+     "saturate:6": 0.3043,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.1818,
+     "saturate:9": 0.4,
+     "saturate:10": 0.2174,
+     "saturate:11": 0.1923,
+     "saturate:12": 0.125
+    },
+    "steps": {
+     "retain": 1.555,
+     "overwrite": 1.25,
+     "saturate": 1.47
+    },
+    "steps_mean": 1.425,
+    "calibration": {
+     "ece": 0.033965332731604576,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6383975371223078
+    }
+   },
+   "holdout": {
+    "all": 0.2916666666666667,
+    "task": {
+     "retain": 0.365,
+     "overwrite": 0.25,
+     "saturate": 0.26
+    },
+    "level": {
+     "retain:2": 0.3846,
+     "retain:3": 0.2308,
+     "retain:4": 0.2222,
+     "retain:5": 0.0,
+     "retain:6": 0.375,
+     "retain:7": 0.2353,
+     "retain:8": 0.2,
+     "retain:9": 0.3077,
+     "retain:10": 0.7273,
+     "retain:11": 0.7273,
+     "retain:12": 0.5833,
+     "retain:13": 0.1429,
+     "retain:14": 0.4167,
+     "retain:15": 0.25,
+     "retain:16": 0.3333,
+     "retain:17": 0.5,
+     "retain:18": 0.5,
+     "retain:19": 0.3333,
+     "retain:20": 0.1667,
+     "overwrite:1": 0.3333,
+     "overwrite:2": 0.3231,
+     "overwrite:3": 0.1014,
+     "saturate:4": 0.2222,
+     "saturate:5": 0.3,
+     "saturate:6": 0.3913,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.2105,
+     "saturate:9": 0.0556,
+     "saturate:10": 0.2581,
+     "saturate:11": 0.1667,
+     "saturate:12": 0.2593
+    },
+    "steps": {
+     "retain": 1.51,
+     "overwrite": 1.185,
+     "saturate": 1.47
+    },
+    "steps_mean": 1.3883333333333334,
+    "calibration": {
+     "ece": 0.03568291132648784,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6606789915966387
+    }
+   },
+   "ood": {
+    "all": 0.18833333333333332,
+    "task": {
+     "retain": 0.33,
+     "overwrite": 0.05,
+     "saturate": 0.185
+    },
+    "level": {
+     "retain:40": 0.6667,
+     "retain:41": 0.2,
+     "retain:42": 0.1667,
+     "retain:43": 0.0,
+     "retain:44": 0.3333,
+     "retain:45": 0.8,
+     "retain:46": 0.0,
+     "retain:47": 0.6667,
+     "retain:48": 0.2,
+     "retain:49": 0.6667,
+     "retain:50": 0.0,
+     "retain:51": 0.25,
+     "retain:52": 0.5,
+     "retain:53": 0.375,
+     "retain:54": 0.1667,
+     "retain:55": 0.3333,
+     "retain:56": 0.3333,
+     "retain:57": 0.125,
+     "retain:58": 0.3333,
+     "retain:59": 0.1667,
+     "retain:60": 0.2,
+     "retain:61": 0.25,
+     "retain:62": 0.4,
+     "retain:63": 0.0,
+     "retain:64": 0.5,
+     "retain:65": 0.5,
+     "retain:66": 0.75,
+     "retain:67": 0.2,
+     "retain:68": 0.3333,
+     "retain:69": 0.4286,
+     "retain:70": 0.25,
+     "retain:71": 0.5714,
+     "retain:72": 1.0,
+     "retain:73": 0.3333,
+     "retain:74": 0.5,
+     "retain:75": 0.5,
+     "retain:76": 0.2,
+     "retain:77": 0.25,
+     "retain:78": 0.25,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.0682,
+     "overwrite:6": 0.0577,
+     "overwrite:7": 0.0408,
+     "overwrite:8": 0.0364,
+     "saturate:18": 0.3,
+     "saturate:19": 0.0938,
+     "saturate:20": 0.0714,
+     "saturate:21": 0.3077,
+     "saturate:22": 0.2105,
+     "saturate:23": 0.0476,
+     "saturate:24": 0.2222,
+     "saturate:25": 0.15,
+     "saturate:26": 0.2381
+    },
+    "steps": {
+     "retain": 2.07,
+     "overwrite": 1.84,
+     "saturate": 1.755
+    },
+    "steps_mean": 1.8883333333333334,
+    "calibration": {
+     "ece": 0.2752820788075527,
+     "confident_error_rate": 0.018333333333333333,
+     "auroc_confidence": 0.6520506623539459
+    }
+   },
+   "adv": {
+    "all": 0.25,
+    "task": {
+     "retain": 0.37,
+     "overwrite": 0.21,
+     "saturate": 0.17
+    },
+    "level": {
+     "retain:2": 0.1667,
+     "retain:3": 0.0,
+     "retain:4": 0.75,
+     "retain:5": 0.3333,
+     "retain:6": 0.0,
+     "retain:7": 0.2,
+     "retain:8": 0.3333,
+     "retain:9": 0.5,
+     "retain:10": 0.0,
+     "retain:11": 0.2727,
+     "retain:12": 0.25,
+     "retain:13": 0.0,
+     "retain:14": 1.0,
+     "retain:15": 0.3333,
+     "retain:16": 0.5714,
+     "retain:17": 0.4286,
+     "retain:18": 0.7143,
+     "retain:19": 0.0,
+     "retain:20": 0.6667,
+     "overwrite:1": 0.1818,
+     "overwrite:2": 0.3462,
+     "overwrite:3": 0.1463,
+     "saturate:4": 1.0,
+     "saturate:5": 0.4,
+     "saturate:6": 0.3333,
+     "saturate:7": 0.0,
+     "saturate:8": 0.0952,
+     "saturate:9": 0.2727,
+     "saturate:10": 0.0588,
+     "saturate:11": 0.0,
+     "saturate:12": 0.1538
+    },
+    "steps": {
+     "retain": 1.54,
+     "overwrite": 1.19,
+     "saturate": 1.44
+    },
+    "steps_mean": 1.39,
+    "calibration": {
+     "ece": 0.06439832344651221,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6478814814814815
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "rouge-mem-seed2",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "rouge-mem",
+  "config": {
+   "kind": "rouge-mem",
+   "d": 112,
+   "slots": 4,
+   "heads": 4,
+   "max_think": 8,
+   "halting": true,
+   "tau": 0.01,
+   "inject": true,
+   "rezero": true,
+   "tau_warmup": 0.3,
+   "memory_slots": 32,
+   "read_k": 2,
+   "context": 3
+  },
+  "seed": 2,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 230691,
+  "active_parameters": 230691,
+  "flop_estimate": 173045600.0,
+  "checkpoint_sha256": "39f5042170213b06d252d6bd845408e185dbc8106918952325558c10c45d977e",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007631",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 8375.1,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.8,
+    "task": {
+     "retain": 0.79,
+     "overwrite": 0.87,
+     "saturate": 0.74
+    },
+    "level": {
+     "retain:2": 0.8571,
+     "retain:3": 0.9167,
+     "retain:4": 0.7778,
+     "retain:5": 0.7273,
+     "retain:6": 0.8182,
+     "retain:7": 0.7273,
+     "retain:8": 0.9167,
+     "retain:9": 0.6667,
+     "retain:10": 0.9,
+     "retain:11": 0.75,
+     "retain:12": 1.0,
+     "retain:13": 0.7222,
+     "retain:14": 0.7,
+     "retain:15": 1.0,
+     "retain:16": 0.75,
+     "retain:17": 0.875,
+     "retain:18": 0.7,
+     "retain:19": 0.7,
+     "retain:20": 0.6667,
+     "overwrite:1": 0.8529,
+     "overwrite:2": 0.913,
+     "overwrite:3": 0.8413,
+     "saturate:4": 0.8261,
+     "saturate:5": 0.9231,
+     "saturate:6": 0.913,
+     "saturate:7": 0.6923,
+     "saturate:8": 0.7727,
+     "saturate:9": 0.8,
+     "saturate:10": 0.5652,
+     "saturate:11": 0.5,
+     "saturate:12": 0.6667
+    },
+    "steps": {
+     "retain": 1.63,
+     "overwrite": 1.585,
+     "saturate": 1.465
+    },
+    "steps_mean": 1.56,
+    "calibration": {
+     "ece": 0.023935676639278737,
+     "confident_error_rate": 0.0016666666666666668,
+     "auroc_confidence": 0.9528993055555556
+    }
+   },
+   "holdout": {
+    "all": 0.7666666666666667,
+    "task": {
+     "retain": 0.755,
+     "overwrite": 0.81,
+     "saturate": 0.735
+    },
+    "level": {
+     "retain:2": 0.9231,
+     "retain:3": 0.8462,
+     "retain:4": 0.7778,
+     "retain:5": 0.3333,
+     "retain:6": 1.0,
+     "retain:7": 0.7647,
+     "retain:8": 0.6,
+     "retain:9": 0.8462,
+     "retain:10": 0.9091,
+     "retain:11": 0.7273,
+     "retain:12": 0.6667,
+     "retain:13": 0.8571,
+     "retain:14": 0.6667,
+     "retain:15": 0.75,
+     "retain:16": 0.75,
+     "retain:17": 0.6667,
+     "retain:18": 0.6875,
+     "retain:19": 0.7778,
+     "retain:20": 0.5833,
+     "overwrite:1": 0.8182,
+     "overwrite:2": 0.8154,
+     "overwrite:3": 0.7971,
+     "saturate:4": 0.9444,
+     "saturate:5": 0.75,
+     "saturate:6": 0.913,
+     "saturate:7": 0.8462,
+     "saturate:8": 0.7895,
+     "saturate:9": 0.5556,
+     "saturate:10": 0.7419,
+     "saturate:11": 0.3889,
+     "saturate:12": 0.6296
+    },
+    "steps": {
+     "retain": 1.65,
+     "overwrite": 1.565,
+     "saturate": 1.45
+    },
+    "steps_mean": 1.555,
+    "calibration": {
+     "ece": 0.015484106714526807,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.9494409937888199
+    }
+   },
+   "ood": {
+    "all": 0.665,
+    "task": {
+     "retain": 0.72,
+     "overwrite": 0.79,
+     "saturate": 0.485
+    },
+    "level": {
+     "retain:40": 1.0,
+     "retain:41": 0.6,
+     "retain:42": 0.5,
+     "retain:43": 1.0,
+     "retain:44": 0.5,
+     "retain:45": 1.0,
+     "retain:46": 0.5556,
+     "retain:47": 0.6667,
+     "retain:48": 1.0,
+     "retain:49": 0.5,
+     "retain:50": 1.0,
+     "retain:51": 0.75,
+     "retain:52": 1.0,
+     "retain:53": 1.0,
+     "retain:54": 0.6667,
+     "retain:55": 0.5,
+     "retain:56": 1.0,
+     "retain:57": 1.0,
+     "retain:58": 1.0,
+     "retain:59": 0.6667,
+     "retain:60": 1.0,
+     "retain:61": 1.0,
+     "retain:62": 0.8,
+     "retain:63": 0.6667,
+     "retain:64": 0.8333,
+     "retain:65": 0.75,
+     "retain:66": 0.5,
+     "retain:67": 0.6,
+     "retain:68": 0.6667,
+     "retain:69": 0.7143,
+     "retain:70": 0.5,
+     "retain:71": 0.7143,
+     "retain:72": 0.3333,
+     "retain:73": 1.0,
+     "retain:74": 0.5,
+     "retain:75": 0.5,
+     "retain:76": 0.6,
+     "retain:77": 0.875,
+     "retain:78": 0.25,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.8409,
+     "overwrite:6": 0.7692,
+     "overwrite:7": 0.7755,
+     "overwrite:8": 0.7818,
+     "saturate:18": 0.5,
+     "saturate:19": 0.5312,
+     "saturate:20": 0.5,
+     "saturate:21": 0.4615,
+     "saturate:22": 0.7368,
+     "saturate:23": 0.4762,
+     "saturate:24": 0.4444,
+     "saturate:25": 0.4,
+     "saturate:26": 0.3333
+    },
+    "steps": {
+     "retain": 1.69,
+     "overwrite": 1.59,
+     "saturate": 1.765
+    },
+    "steps_mean": 1.6816666666666666,
+    "calibration": {
+     "ece": 0.11743106763809917,
+     "confident_error_rate": 0.016666666666666666,
+     "auroc_confidence": 0.9237396975024627
+    }
+   },
+   "adv": {
+    "all": 0.74,
+    "task": {
+     "retain": 0.77,
+     "overwrite": 0.8,
+     "saturate": 0.65
+    },
+    "level": {
+     "retain:2": 0.8333,
+     "retain:3": 0.75,
+     "retain:4": 1.0,
+     "retain:5": 1.0,
+     "retain:6": 0.6667,
+     "retain:7": 0.8,
+     "retain:8": 1.0,
+     "retain:9": 0.75,
+     "retain:10": 0.6667,
+     "retain:11": 0.5455,
+     "retain:12": 0.5,
+     "retain:13": 1.0,
+     "retain:14": 0.6667,
+     "retain:15": 1.0,
+     "retain:16": 0.8571,
+     "retain:17": 1.0,
+     "retain:18": 0.5714,
+     "retain:19": 0.5,
+     "retain:20": 0.6667,
+     "overwrite:1": 0.8182,
+     "overwrite:2": 0.8077,
+     "overwrite:3": 0.7805,
+     "saturate:4": 1.0,
+     "saturate:5": 0.8,
+     "saturate:6": 0.5833,
+     "saturate:7": 0.8182,
+     "saturate:8": 0.5714,
+     "saturate:9": 0.7273,
+     "saturate:10": 0.4118,
+     "saturate:11": 1.0,
+     "saturate:12": 0.6923
+    },
+    "steps": {
+     "retain": 1.67,
+     "overwrite": 1.45,
+     "saturate": 1.38
+    },
+    "steps_mean": 1.5,
+    "calibration": {
+     "ece": 0.05451059743762013,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.9685839685839686
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "rouge-mem-seed3",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "rouge-mem",
+  "config": {
+   "kind": "rouge-mem",
+   "d": 112,
+   "slots": 4,
+   "heads": 4,
+   "max_think": 8,
+   "halting": true,
+   "tau": 0.01,
+   "inject": true,
+   "rezero": true,
+   "tau_warmup": 0.3,
+   "memory_slots": 32,
+   "read_k": 2,
+   "context": 3
+  },
+  "seed": 3,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 230691,
+  "active_parameters": 230691,
+  "flop_estimate": 182422688.0,
+  "checkpoint_sha256": "d82148756aa4352ab85822b236732c994ba5ef88f8f6a0866d32365dca297770",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007642",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 8366.0,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.47,
+    "task": {
+     "retain": 0.395,
+     "overwrite": 0.51,
+     "saturate": 0.505
+    },
+    "level": {
+     "retain:2": 0.4286,
+     "retain:3": 0.4167,
+     "retain:4": 0.8889,
+     "retain:5": 0.2727,
+     "retain:6": 0.4545,
+     "retain:7": 0.3636,
+     "retain:8": 0.4167,
+     "retain:9": 0.1111,
+     "retain:10": 0.5,
+     "retain:11": 0.3333,
+     "retain:12": 0.3,
+     "retain:13": 0.3889,
+     "retain:14": 0.6,
+     "retain:15": 0.1667,
+     "retain:16": 0.3333,
+     "retain:17": 0.5,
+     "retain:18": 0.3,
+     "retain:19": 0.2,
+     "retain:20": 0.5,
+     "overwrite:1": 0.5735,
+     "overwrite:2": 0.5507,
+     "overwrite:3": 0.3968,
+     "saturate:4": 0.6957,
+     "saturate:5": 0.6538,
+     "saturate:6": 0.5217,
+     "saturate:7": 0.7692,
+     "saturate:8": 0.3636,
+     "saturate:9": 0.45,
+     "saturate:10": 0.3913,
+     "saturate:11": 0.4231,
+     "saturate:12": 0.375
+    },
+    "steps": {
+     "retain": 2.34,
+     "overwrite": 3.69,
+     "saturate": 3.905
+    },
+    "steps_mean": 3.3116666666666665,
+    "calibration": {
+     "ece": 0.03464021633068719,
+     "confident_error_rate": 0.0016666666666666668,
+     "auroc_confidence": 0.7955082742316785
+    }
+   },
+   "holdout": {
+    "all": 0.4816666666666667,
+    "task": {
+     "retain": 0.41,
+     "overwrite": 0.56,
+     "saturate": 0.475
+    },
+    "level": {
+     "retain:2": 0.6154,
+     "retain:3": 0.4615,
+     "retain:4": 0.1111,
+     "retain:5": 0.0,
+     "retain:6": 0.625,
+     "retain:7": 0.7059,
+     "retain:8": 0.2,
+     "retain:9": 0.2308,
+     "retain:10": 0.5455,
+     "retain:11": 0.4545,
+     "retain:12": 0.5833,
+     "retain:13": 0.0,
+     "retain:14": 0.3333,
+     "retain:15": 0.25,
+     "retain:16": 0.1667,
+     "retain:17": 0.6667,
+     "retain:18": 0.4375,
+     "retain:19": 0.4444,
+     "retain:20": 0.4167,
+     "overwrite:1": 0.6818,
+     "overwrite:2": 0.6615,
+     "overwrite:3": 0.3478,
+     "saturate:4": 0.6667,
+     "saturate:5": 0.7,
+     "saturate:6": 0.4783,
+     "saturate:7": 0.6538,
+     "saturate:8": 0.4737,
+     "saturate:9": 0.2778,
+     "saturate:10": 0.4516,
+     "saturate:11": 0.2778,
+     "saturate:12": 0.2963
+    },
+    "steps": {
+     "retain": 2.195,
+     "overwrite": 4.02,
+     "saturate": 3.79
+    },
+    "steps_mean": 3.335,
+    "calibration": {
+     "ece": 0.02837694865961872,
+     "confident_error_rate": 0.0016666666666666668,
+     "auroc_confidence": 0.7940008233291426
+    }
+   },
+   "ood": {
+    "all": 0.23833333333333334,
+    "task": {
+     "retain": 0.155,
+     "overwrite": 0.325,
+     "saturate": 0.235
+    },
+    "level": {
+     "retain:40": 0.6667,
+     "retain:41": 0.4,
+     "retain:42": 0.1667,
+     "retain:43": 0.0,
+     "retain:44": 0.8333,
+     "retain:45": 0.2,
+     "retain:46": 0.0,
+     "retain:47": 0.0,
+     "retain:48": 0.4,
+     "retain:49": 0.0,
+     "retain:50": 0.3333,
+     "retain:51": 0.25,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.0,
+     "retain:55": 0.0,
+     "retain:56": 0.3333,
+     "retain:57": 0.125,
+     "retain:58": 0.0,
+     "retain:59": 0.1667,
+     "retain:60": 0.2,
+     "retain:61": 0.0,
+     "retain:62": 0.0,
+     "retain:63": 0.3333,
+     "retain:64": 0.1667,
+     "retain:65": 0.0,
+     "retain:66": 0.0,
+     "retain:67": 0.0,
+     "retain:68": 0.0,
+     "retain:69": 0.0,
+     "retain:70": 0.25,
+     "retain:71": 0.2857,
+     "retain:72": 0.0,
+     "retain:73": 0.6667,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.2,
+     "retain:77": 0.0,
+     "retain:78": 0.0,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.3864,
+     "overwrite:6": 0.25,
+     "overwrite:7": 0.3673,
+     "overwrite:8": 0.3091,
+     "saturate:18": 0.35,
+     "saturate:19": 0.1562,
+     "saturate:20": 0.0714,
+     "saturate:21": 0.4615,
+     "saturate:22": 0.3158,
+     "saturate:23": 0.1429,
+     "saturate:24": 0.2222,
+     "saturate:25": 0.15,
+     "saturate:26": 0.1905
+    },
+    "steps": {
+     "retain": 2.235,
+     "overwrite": 3.68,
+     "saturate": 2.485
+    },
+    "steps_mean": 2.8,
+    "calibration": {
+     "ece": 0.2754530302745601,
+     "confident_error_rate": 0.095,
+     "auroc_confidence": 0.7392847852366452
+    }
+   },
+   "adv": {
+    "all": 0.45666666666666667,
+    "task": {
+     "retain": 0.42,
+     "overwrite": 0.51,
+     "saturate": 0.44
+    },
+    "level": {
+     "retain:2": 0.6667,
+     "retain:3": 0.25,
+     "retain:4": 0.375,
+     "retain:5": 0.1667,
+     "retain:6": 0.0,
+     "retain:7": 0.6,
+     "retain:8": 0.3333,
+     "retain:9": 0.625,
+     "retain:10": 0.3333,
+     "retain:11": 0.3636,
+     "retain:12": 0.0,
+     "retain:13": 0.0,
+     "retain:14": 1.0,
+     "retain:15": 0.3333,
+     "retain:16": 0.5714,
+     "retain:17": 0.4286,
+     "retain:18": 0.5714,
+     "retain:19": 0.1667,
+     "retain:20": 1.0,
+     "overwrite:1": 0.5455,
+     "overwrite:2": 0.5,
+     "overwrite:3": 0.4878,
+     "saturate:4": 1.0,
+     "saturate:5": 0.7,
+     "saturate:6": 0.5,
+     "saturate:7": 0.5455,
+     "saturate:8": 0.4286,
+     "saturate:9": 0.5455,
+     "saturate:10": 0.2353,
+     "saturate:11": 0.5,
+     "saturate:12": 0.2308
+    },
+    "steps": {
+     "retain": 2.18,
+     "overwrite": 3.91,
+     "saturate": 3.99
+    },
+    "steps_mean": 3.36,
+    "calibration": {
+     "ece": 0.05729341571529707,
+     "confident_error_rate": 0.006666666666666667,
+     "auroc_confidence": 0.8162196050333617
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "ssm-seed1",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "ssm",
+  "config": {
+   "kind": "ssm",
+   "d": 104,
+   "layers": 4,
+   "n": 16
+  },
+  "seed": 1,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206176,
+  "active_parameters": 206176,
+  "flop_estimate": 39892736.0,
+  "checkpoint_sha256": "8a4568cdddb808a7c80691672ce64c6884904992bd6f58acdea51a095db0b100",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007641",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 5767.8,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.24333333333333335,
+    "task": {
+     "retain": 0.16,
+     "overwrite": 0.325,
+     "saturate": 0.245
+    },
+    "level": {
+     "retain:2": 0.2857,
+     "retain:3": 0.3333,
+     "retain:4": 0.3333,
+     "retain:5": 0.1818,
+     "retain:6": 0.0,
+     "retain:7": 0.1818,
+     "retain:8": 0.25,
+     "retain:9": 0.1111,
+     "retain:10": 0.0,
+     "retain:11": 0.1667,
+     "retain:12": 0.3,
+     "retain:13": 0.1111,
+     "retain:14": 0.3,
+     "retain:15": 0.1667,
+     "retain:16": 0.0,
+     "retain:17": 0.125,
+     "retain:18": 0.1,
+     "retain:19": 0.0,
+     "retain:20": 0.1667,
+     "overwrite:1": 0.3529,
+     "overwrite:2": 0.4203,
+     "overwrite:3": 0.1905,
+     "saturate:4": 0.5652,
+     "saturate:5": 0.1538,
+     "saturate:6": 0.3478,
+     "saturate:7": 0.0769,
+     "saturate:8": 0.3182,
+     "saturate:9": 0.2,
+     "saturate:10": 0.0435,
+     "saturate:11": 0.2308,
+     "saturate:12": 0.2083
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04994836791108051,
+     "confident_error_rate": 0.006666666666666667,
+     "auroc_confidence": 0.6871341500211212
+    }
+   },
+   "holdout": {
+    "all": 0.30333333333333334,
+    "task": {
+     "retain": 0.22,
+     "overwrite": 0.395,
+     "saturate": 0.295
+    },
+    "level": {
+     "retain:2": 0.6923,
+     "retain:3": 0.1538,
+     "retain:4": 0.2222,
+     "retain:5": 0.1667,
+     "retain:6": 0.5,
+     "retain:7": 0.5294,
+     "retain:8": 0.0,
+     "retain:9": 0.0,
+     "retain:10": 0.1818,
+     "retain:11": 0.0,
+     "retain:12": 0.0833,
+     "retain:13": 0.1429,
+     "retain:14": 0.1667,
+     "retain:15": 0.125,
+     "retain:16": 0.1667,
+     "retain:17": 0.1667,
+     "retain:18": 0.25,
+     "retain:19": 0.2222,
+     "retain:20": 0.0833,
+     "overwrite:1": 0.4242,
+     "overwrite:2": 0.4923,
+     "overwrite:3": 0.2754,
+     "saturate:4": 0.1667,
+     "saturate:5": 0.4,
+     "saturate:6": 0.2609,
+     "saturate:7": 0.4231,
+     "saturate:8": 0.2632,
+     "saturate:9": 0.4444,
+     "saturate:10": 0.2581,
+     "saturate:11": 0.2222,
+     "saturate:12": 0.2222
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.06498585926989715,
+     "confident_error_rate": 0.0016666666666666668,
+     "auroc_confidence": 0.6759819128240181
+    }
+   },
+   "ood": {
+    "all": 0.20833333333333334,
+    "task": {
+     "retain": 0.125,
+     "overwrite": 0.33,
+     "saturate": 0.17
+    },
+    "level": {
+     "retain:40": 0.3333,
+     "retain:41": 0.0,
+     "retain:42": 0.1667,
+     "retain:43": 0.0,
+     "retain:44": 0.0,
+     "retain:45": 0.2,
+     "retain:46": 0.0,
+     "retain:47": 0.0,
+     "retain:48": 0.0,
+     "retain:49": 0.5,
+     "retain:50": 0.0,
+     "retain:51": 0.25,
+     "retain:52": 0.0,
+     "retain:53": 0.125,
+     "retain:54": 0.0,
+     "retain:55": 0.1667,
+     "retain:56": 0.3333,
+     "retain:57": 0.375,
+     "retain:58": 0.3333,
+     "retain:59": 0.1667,
+     "retain:60": 0.2,
+     "retain:61": 0.5,
+     "retain:62": 0.0,
+     "retain:63": 0.3333,
+     "retain:64": 0.1667,
+     "retain:65": 0.0,
+     "retain:66": 0.0,
+     "retain:67": 0.0,
+     "retain:68": 0.0,
+     "retain:69": 0.0,
+     "retain:70": 0.25,
+     "retain:71": 0.0,
+     "retain:72": 0.0,
+     "retain:73": 0.0,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.2,
+     "retain:77": 0.125,
+     "retain:78": 0.0,
+     "retain:79": 0.0,
+     "retain:80": 0.0,
+     "overwrite:5": 0.3182,
+     "overwrite:6": 0.3846,
+     "overwrite:7": 0.3061,
+     "overwrite:8": 0.3091,
+     "saturate:18": 0.45,
+     "saturate:19": 0.2188,
+     "saturate:20": 0.0714,
+     "saturate:21": 0.1538,
+     "saturate:22": 0.1579,
+     "saturate:23": 0.1429,
+     "saturate:24": 0.0741,
+     "saturate:25": 0.1,
+     "saturate:26": 0.1429
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.01435681094725928,
+     "confident_error_rate": 0.005,
+     "auroc_confidence": 0.628378947368421
+    }
+   },
+   "adv": {
+    "all": 0.25333333333333335,
+    "task": {
+     "retain": 0.15,
+     "overwrite": 0.37,
+     "saturate": 0.24
+    },
+    "level": {
+     "retain:2": 0.1667,
+     "retain:3": 0.5,
+     "retain:4": 0.125,
+     "retain:5": 0.3333,
+     "retain:6": 0.3333,
+     "retain:7": 0.2,
+     "retain:8": 0.0,
+     "retain:9": 0.125,
+     "retain:10": 0.0,
+     "retain:11": 0.3636,
+     "retain:12": 0.25,
+     "retain:13": 0.0,
+     "retain:14": 0.0,
+     "retain:15": 0.0,
+     "retain:16": 0.1429,
+     "retain:17": 0.0,
+     "retain:18": 0.0,
+     "retain:19": 0.0,
+     "retain:20": 0.0,
+     "overwrite:1": 0.4242,
+     "overwrite:2": 0.2692,
+     "overwrite:3": 0.3902,
+     "saturate:4": 1.0,
+     "saturate:5": 0.4,
+     "saturate:6": 0.1667,
+     "saturate:7": 0.2727,
+     "saturate:8": 0.1905,
+     "saturate:9": 0.0909,
+     "saturate:10": 0.2353,
+     "saturate:11": 0.5,
+     "saturate:12": 0.2308
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.0815946511924267,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6730498120300752
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "ssm-seed2",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "ssm",
+  "config": {
+   "kind": "ssm",
+   "d": 104,
+   "layers": 4,
+   "n": 16
+  },
+  "seed": 2,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206176,
+  "active_parameters": 206176,
+  "flop_estimate": 39892736.0,
+  "checkpoint_sha256": "00b2c21995982341a498a837d8b999b495e1c9558407c7f01f601d61c66830cb",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007647",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 5881.9,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.26166666666666666,
+    "task": {
+     "retain": 0.175,
+     "overwrite": 0.355,
+     "saturate": 0.255
+    },
+    "level": {
+     "retain:2": 0.5714,
+     "retain:3": 0.25,
+     "retain:4": 0.3333,
+     "retain:5": 0.1818,
+     "retain:6": 0.2727,
+     "retain:7": 0.1818,
+     "retain:8": 0.0833,
+     "retain:9": 0.0,
+     "retain:10": 0.0,
+     "retain:11": 0.3333,
+     "retain:12": 0.3,
+     "retain:13": 0.0556,
+     "retain:14": 0.2,
+     "retain:15": 0.3333,
+     "retain:16": 0.25,
+     "retain:17": 0.125,
+     "retain:18": 0.1,
+     "retain:19": 0.0,
+     "retain:20": 0.0,
+     "overwrite:1": 0.3824,
+     "overwrite:2": 0.3913,
+     "overwrite:3": 0.2857,
+     "saturate:4": 0.4348,
+     "saturate:5": 0.3462,
+     "saturate:6": 0.3478,
+     "saturate:7": 0.3077,
+     "saturate:8": 0.2727,
+     "saturate:9": 0.25,
+     "saturate:10": 0.1304,
+     "saturate:11": 0.1538,
+     "saturate:12": 0.0833
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.034227928469578416,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.619229054938103
+    }
+   },
+   "holdout": {
+    "all": 0.2833333333333333,
+    "task": {
+     "retain": 0.155,
+     "overwrite": 0.44,
+     "saturate": 0.255
+    },
+    "level": {
+     "retain:2": 0.4615,
+     "retain:3": 0.2308,
+     "retain:4": 0.2222,
+     "retain:5": 0.0,
+     "retain:6": 0.125,
+     "retain:7": 0.3529,
+     "retain:8": 0.0,
+     "retain:9": 0.0,
+     "retain:10": 0.0909,
+     "retain:11": 0.0,
+     "retain:12": 0.1667,
+     "retain:13": 0.0,
+     "retain:14": 0.0833,
+     "retain:15": 0.0,
+     "retain:16": 0.0833,
+     "retain:17": 0.3333,
+     "retain:18": 0.125,
+     "retain:19": 0.4444,
+     "retain:20": 0.0,
+     "overwrite:1": 0.4848,
+     "overwrite:2": 0.4769,
+     "overwrite:3": 0.3623,
+     "saturate:4": 0.1667,
+     "saturate:5": 0.25,
+     "saturate:6": 0.3913,
+     "saturate:7": 0.2692,
+     "saturate:8": 0.2632,
+     "saturate:9": 0.2778,
+     "saturate:10": 0.2258,
+     "saturate:11": 0.1667,
+     "saturate:12": 0.2593
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.017678813983996716,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6462790697674419
+    }
+   },
+   "ood": {
+    "all": 0.195,
+    "task": {
+     "retain": 0.125,
+     "overwrite": 0.325,
+     "saturate": 0.135
+    },
+    "level": {
+     "retain:40": 0.0,
+     "retain:41": 0.0,
+     "retain:42": 0.0,
+     "retain:43": 0.0,
+     "retain:44": 0.0,
+     "retain:45": 0.2,
+     "retain:46": 0.1111,
+     "retain:47": 0.0,
+     "retain:48": 0.0,
+     "retain:49": 0.3333,
+     "retain:50": 0.0,
+     "retain:51": 0.25,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.5,
+     "retain:55": 0.0,
+     "retain:56": 0.0,
+     "retain:57": 0.25,
+     "retain:58": 0.3333,
+     "retain:59": 0.0,
+     "retain:60": 0.4,
+     "retain:61": 0.25,
+     "retain:62": 0.2,
+     "retain:63": 0.3333,
+     "retain:64": 0.1667,
+     "retain:65": 0.0,
+     "retain:66": 0.0,
+     "retain:67": 0.0,
+     "retain:68": 0.0,
+     "retain:69": 0.0,
+     "retain:70": 0.0,
+     "retain:71": 0.4286,
+     "retain:72": 0.0,
+     "retain:73": 0.0,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.0,
+     "retain:77": 0.125,
+     "retain:78": 0.0,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.3636,
+     "overwrite:6": 0.2885,
+     "overwrite:7": 0.3469,
+     "overwrite:8": 0.3091,
+     "saturate:18": 0.25,
+     "saturate:19": 0.1875,
+     "saturate:20": 0.0714,
+     "saturate:21": 0.1538,
+     "saturate:22": 0.1579,
+     "saturate:23": 0.0952,
+     "saturate:24": 0.1111,
+     "saturate:25": 0.1,
+     "saturate:26": 0.0476
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.02364299560586611,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5723664419316593
+    }
+   },
+   "adv": {
+    "all": 0.25666666666666665,
+    "task": {
+     "retain": 0.17,
+     "overwrite": 0.39,
+     "saturate": 0.21
+    },
+    "level": {
+     "retain:2": 0.3333,
+     "retain:3": 0.25,
+     "retain:4": 0.25,
+     "retain:5": 0.5,
+     "retain:6": 0.0,
+     "retain:7": 0.0,
+     "retain:8": 0.0,
+     "retain:9": 0.0,
+     "retain:10": 0.3333,
+     "retain:11": 0.1818,
+     "retain:12": 0.0,
+     "retain:13": 0.6667,
+     "retain:14": 0.0,
+     "retain:15": 0.0,
+     "retain:16": 0.4286,
+     "retain:17": 0.1429,
+     "retain:18": 0.0,
+     "retain:19": 0.0,
+     "retain:20": 0.0,
+     "overwrite:1": 0.303,
+     "overwrite:2": 0.4231,
+     "overwrite:3": 0.439,
+     "saturate:4": 1.0,
+     "saturate:5": 0.2,
+     "saturate:6": 0.1667,
+     "saturate:7": 0.1818,
+     "saturate:8": 0.0952,
+     "saturate:9": 0.2727,
+     "saturate:10": 0.1765,
+     "saturate:11": 0.5,
+     "saturate:12": 0.3077
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04961875284711521,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5573350416399744
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "ssm-seed3",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "ssm",
+  "config": {
+   "kind": "ssm",
+   "d": 104,
+   "layers": 4,
+   "n": 16
+  },
+  "seed": 3,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206176,
+  "active_parameters": 206176,
+  "flop_estimate": 39892736.0,
+  "checkpoint_sha256": "76be3ed11b2f7ec1d944361c6c5f1f650b089fc5f6d775d19a5101f411e2ffbb",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007630",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 5964.2,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.27166666666666667,
+    "task": {
+     "retain": 0.205,
+     "overwrite": 0.355,
+     "saturate": 0.255
+    },
+    "level": {
+     "retain:2": 0.5714,
+     "retain:3": 0.25,
+     "retain:4": 0.3333,
+     "retain:5": 0.1818,
+     "retain:6": 0.3636,
+     "retain:7": 0.3636,
+     "retain:8": 0.1667,
+     "retain:9": 0.0,
+     "retain:10": 0.1,
+     "retain:11": 0.25,
+     "retain:12": 0.2,
+     "retain:13": 0.0556,
+     "retain:14": 0.1,
+     "retain:15": 0.3333,
+     "retain:16": 0.3333,
+     "retain:17": 0.125,
+     "retain:18": 0.0,
+     "retain:19": 0.1,
+     "retain:20": 0.25,
+     "overwrite:1": 0.4706,
+     "overwrite:2": 0.3478,
+     "overwrite:3": 0.2381,
+     "saturate:4": 0.4348,
+     "saturate:5": 0.4615,
+     "saturate:6": 0.3043,
+     "saturate:7": 0.1538,
+     "saturate:8": 0.2273,
+     "saturate:9": 0.3,
+     "saturate:10": 0.1304,
+     "saturate:11": 0.1538,
+     "saturate:12": 0.0833
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03968035465727248,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6355659754882004
+    }
+   },
+   "holdout": {
+    "all": 0.28,
+    "task": {
+     "retain": 0.19,
+     "overwrite": 0.395,
+     "saturate": 0.255
+    },
+    "level": {
+     "retain:2": 0.4615,
+     "retain:3": 0.2308,
+     "retain:4": 0.1111,
+     "retain:5": 0.0,
+     "retain:6": 0.25,
+     "retain:7": 0.3529,
+     "retain:8": 0.0,
+     "retain:9": 0.0,
+     "retain:10": 0.1818,
+     "retain:11": 0.0909,
+     "retain:12": 0.25,
+     "retain:13": 0.0,
+     "retain:14": 0.25,
+     "retain:15": 0.25,
+     "retain:16": 0.1667,
+     "retain:17": 0.3333,
+     "retain:18": 0.0625,
+     "retain:19": 0.3333,
+     "retain:20": 0.0833,
+     "overwrite:1": 0.4545,
+     "overwrite:2": 0.3846,
+     "overwrite:3": 0.3478,
+     "saturate:4": 0.1111,
+     "saturate:5": 0.3,
+     "saturate:6": 0.3478,
+     "saturate:7": 0.2692,
+     "saturate:8": 0.2632,
+     "saturate:9": 0.2222,
+     "saturate:10": 0.2581,
+     "saturate:11": 0.3333,
+     "saturate:12": 0.1852
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.02894461294015248,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6302772266313933
+    }
+   },
+   "ood": {
+    "all": 0.18666666666666668,
+    "task": {
+     "retain": 0.1,
+     "overwrite": 0.35,
+     "saturate": 0.11
+    },
+    "level": {
+     "retain:40": 0.3333,
+     "retain:41": 0.0,
+     "retain:42": 0.0,
+     "retain:43": 0.0,
+     "retain:44": 0.1667,
+     "retain:45": 0.2,
+     "retain:46": 0.0,
+     "retain:47": 0.0,
+     "retain:48": 0.0,
+     "retain:49": 0.0,
+     "retain:50": 0.0,
+     "retain:51": 0.125,
+     "retain:52": 0.0,
+     "retain:53": 0.125,
+     "retain:54": 0.0,
+     "retain:55": 0.1667,
+     "retain:56": 0.3333,
+     "retain:57": 0.125,
+     "retain:58": 0.0,
+     "retain:59": 0.0,
+     "retain:60": 0.2,
+     "retain:61": 0.25,
+     "retain:62": 0.0,
+     "retain:63": 0.1667,
+     "retain:64": 0.3333,
+     "retain:65": 0.0,
+     "retain:66": 0.0,
+     "retain:67": 0.0,
+     "retain:68": 0.0,
+     "retain:69": 0.0,
+     "retain:70": 0.25,
+     "retain:71": 0.2857,
+     "retain:72": 0.0,
+     "retain:73": 0.3333,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.2,
+     "retain:77": 0.125,
+     "retain:78": 0.0,
+     "retain:79": 0.3333,
+     "retain:80": 0.0,
+     "overwrite:5": 0.3636,
+     "overwrite:6": 0.3654,
+     "overwrite:7": 0.3061,
+     "overwrite:8": 0.3636,
+     "saturate:18": 0.1,
+     "saturate:19": 0.0938,
+     "saturate:20": 0.0714,
+     "saturate:21": 0.1154,
+     "saturate:22": 0.1579,
+     "saturate:23": 0.0952,
+     "saturate:24": 0.1111,
+     "saturate:25": 0.05,
+     "saturate:26": 0.1905
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.02012146643052498,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5840529859484778
+    }
+   },
+   "adv": {
+    "all": 0.21666666666666667,
+    "task": {
+     "retain": 0.13,
+     "overwrite": 0.34,
+     "saturate": 0.18
+    },
+    "level": {
+     "retain:2": 0.3333,
+     "retain:3": 0.5,
+     "retain:4": 0.25,
+     "retain:5": 0.1667,
+     "retain:6": 0.0,
+     "retain:7": 0.0,
+     "retain:8": 0.0,
+     "retain:9": 0.0,
+     "retain:10": 0.0,
+     "retain:11": 0.0909,
+     "retain:12": 0.0,
+     "retain:13": 0.6667,
+     "retain:14": 0.0,
+     "retain:15": 0.3333,
+     "retain:16": 0.1429,
+     "retain:17": 0.1429,
+     "retain:18": 0.0,
+     "retain:19": 0.0,
+     "retain:20": 0.0,
+     "overwrite:1": 0.2727,
+     "overwrite:2": 0.3462,
+     "overwrite:3": 0.3902,
+     "saturate:4": 0.0,
+     "saturate:5": 0.2,
+     "saturate:6": 0.0,
+     "saturate:7": 0.3636,
+     "saturate:8": 0.1429,
+     "saturate:9": 0.1818,
+     "saturate:10": 0.1765,
+     "saturate:11": 0.5,
+     "saturate:12": 0.1538
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.07848409339785577,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5611783960720131
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "transformer-full-seed1",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "transformer-full",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 1,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 42080256.0,
+  "checkpoint_sha256": "90df2c4f8ca55c85fd7b2a381f1e4761aa36a99151cc5e58ce31bc129c5372f7",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007636",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1637.3,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.3383333333333333,
+    "task": {
+     "retain": 0.325,
+     "overwrite": 0.44,
+     "saturate": 0.25
+    },
+    "level": {
+     "retain:2": 0.7143,
+     "retain:3": 0.25,
+     "retain:4": 0.1111,
+     "retain:5": 0.0,
+     "retain:6": 0.1818,
+     "retain:7": 0.2727,
+     "retain:8": 0.0833,
+     "retain:9": 0.1111,
+     "retain:10": 0.0,
+     "retain:11": 0.3333,
+     "retain:12": 0.6,
+     "retain:13": 0.1667,
+     "retain:14": 0.7,
+     "retain:15": 0.3333,
+     "retain:16": 0.4167,
+     "retain:17": 0.5,
+     "retain:18": 0.4,
+     "retain:19": 0.6,
+     "retain:20": 0.6667,
+     "overwrite:1": 0.5147,
+     "overwrite:2": 0.5072,
+     "overwrite:3": 0.2857,
+     "saturate:4": 0.3913,
+     "saturate:5": 0.3846,
+     "saturate:6": 0.2609,
+     "saturate:7": 0.3077,
+     "saturate:8": 0.2727,
+     "saturate:9": 0.2,
+     "saturate:10": 0.1304,
+     "saturate:11": 0.1538,
+     "saturate:12": 0.1667
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.035162163351972885,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6388430469903588
+    }
+   },
+   "holdout": {
+    "all": 0.3616666666666667,
+    "task": {
+     "retain": 0.345,
+     "overwrite": 0.46,
+     "saturate": 0.28
+    },
+    "level": {
+     "retain:2": 0.6154,
+     "retain:3": 0.5385,
+     "retain:4": 0.1111,
+     "retain:5": 0.0,
+     "retain:6": 0.125,
+     "retain:7": 0.2941,
+     "retain:8": 0.0,
+     "retain:9": 0.0769,
+     "retain:10": 0.3636,
+     "retain:11": 0.4545,
+     "retain:12": 0.5833,
+     "retain:13": 0.0,
+     "retain:14": 0.25,
+     "retain:15": 0.5,
+     "retain:16": 0.4167,
+     "retain:17": 0.6667,
+     "retain:18": 0.375,
+     "retain:19": 0.3333,
+     "retain:20": 0.4167,
+     "overwrite:1": 0.5303,
+     "overwrite:2": 0.4615,
+     "overwrite:3": 0.3913,
+     "saturate:4": 0.2222,
+     "saturate:5": 0.35,
+     "saturate:6": 0.3913,
+     "saturate:7": 0.4231,
+     "saturate:8": 0.3158,
+     "saturate:9": 0.1667,
+     "saturate:10": 0.2258,
+     "saturate:11": 0.1111,
+     "saturate:12": 0.2593
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.022830876459678004,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6312281166151291
+    }
+   },
+   "ood": {
+    "all": 0.17166666666666666,
+    "task": {
+     "retain": 0.255,
+     "overwrite": 0.065,
+     "saturate": 0.195
+    },
+    "level": {
+     "retain:40": 0.0,
+     "retain:41": 0.0,
+     "retain:42": 0.3333,
+     "retain:43": 0.0,
+     "retain:44": 0.0,
+     "retain:45": 0.0,
+     "retain:46": 0.1111,
+     "retain:47": 0.5,
+     "retain:48": 0.6,
+     "retain:49": 0.3333,
+     "retain:50": 0.3333,
+     "retain:51": 0.125,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.0,
+     "retain:55": 0.1667,
+     "retain:56": 0.0,
+     "retain:57": 0.125,
+     "retain:58": 0.6667,
+     "retain:59": 0.3333,
+     "retain:60": 0.6,
+     "retain:61": 0.25,
+     "retain:62": 0.0,
+     "retain:63": 0.3333,
+     "retain:64": 0.5,
+     "retain:65": 0.25,
+     "retain:66": 0.75,
+     "retain:67": 0.4,
+     "retain:68": 0.3333,
+     "retain:69": 0.7143,
+     "retain:70": 0.75,
+     "retain:71": 0.2857,
+     "retain:72": 0.3333,
+     "retain:73": 0.3333,
+     "retain:74": 0.5,
+     "retain:75": 0.5,
+     "retain:76": 0.0,
+     "retain:77": 0.0,
+     "retain:78": 0.25,
+     "retain:79": 0.0,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.0682,
+     "overwrite:6": 0.0577,
+     "overwrite:7": 0.0408,
+     "overwrite:8": 0.0909,
+     "saturate:18": 0.15,
+     "saturate:19": 0.125,
+     "saturate:20": 0.3571,
+     "saturate:21": 0.3462,
+     "saturate:22": 0.2632,
+     "saturate:23": 0.1429,
+     "saturate:24": 0.1481,
+     "saturate:25": 0.05,
+     "saturate:26": 0.2381
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.2919570242365202,
+     "confident_error_rate": 0.05,
+     "auroc_confidence": 0.6202848156902581
+    }
+   },
+   "adv": {
+    "all": 0.32666666666666666,
+    "task": {
+     "retain": 0.32,
+     "overwrite": 0.49,
+     "saturate": 0.17
+    },
+    "level": {
+     "retain:2": 0.5,
+     "retain:3": 0.25,
+     "retain:4": 0.25,
+     "retain:5": 0.1667,
+     "retain:6": 0.0,
+     "retain:7": 0.2,
+     "retain:8": 0.0,
+     "retain:9": 0.25,
+     "retain:10": 0.3333,
+     "retain:11": 0.1818,
+     "retain:12": 0.25,
+     "retain:13": 0.6667,
+     "retain:14": 1.0,
+     "retain:15": 1.0,
+     "retain:16": 0.5714,
+     "retain:17": 0.1429,
+     "retain:18": 0.5714,
+     "retain:19": 0.0,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.5455,
+     "overwrite:2": 0.4231,
+     "overwrite:3": 0.4878,
+     "saturate:4": 0.0,
+     "saturate:5": 0.1,
+     "saturate:6": 0.0833,
+     "saturate:7": 0.3636,
+     "saturate:8": 0.1429,
+     "saturate:9": 0.0909,
+     "saturate:10": 0.2353,
+     "saturate:11": 0.0,
+     "saturate:12": 0.2308
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.02807114233573279,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5701656900383916
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "transformer-full-seed2",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "transformer-full",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 2,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 42080256.0,
+  "checkpoint_sha256": "988e270b7727a96b255591b3dfdc0203c10f716832518094f822149d0afbb69c",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007633",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2045.3,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.35,
+    "task": {
+     "retain": 0.345,
+     "overwrite": 0.445,
+     "saturate": 0.26
+    },
+    "level": {
+     "retain:2": 0.5714,
+     "retain:3": 0.4167,
+     "retain:4": 0.1111,
+     "retain:5": 0.0909,
+     "retain:6": 0.3636,
+     "retain:7": 0.2727,
+     "retain:8": 0.0833,
+     "retain:9": 0.1111,
+     "retain:10": 0.1,
+     "retain:11": 0.4167,
+     "retain:12": 0.2,
+     "retain:13": 0.2778,
+     "retain:14": 0.6,
+     "retain:15": 0.5,
+     "retain:16": 0.5833,
+     "retain:17": 0.375,
+     "retain:18": 0.4,
+     "retain:19": 0.4,
+     "retain:20": 0.75,
+     "overwrite:1": 0.4853,
+     "overwrite:2": 0.5217,
+     "overwrite:3": 0.3175,
+     "saturate:4": 0.4348,
+     "saturate:5": 0.3462,
+     "saturate:6": 0.1739,
+     "saturate:7": 0.3077,
+     "saturate:8": 0.2727,
+     "saturate:9": 0.25,
+     "saturate:10": 0.2609,
+     "saturate:11": 0.1923,
+     "saturate:12": 0.125
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.010163468495011305,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.623968253968254
+    }
+   },
+   "holdout": {
+    "all": 0.345,
+    "task": {
+     "retain": 0.3,
+     "overwrite": 0.445,
+     "saturate": 0.29
+    },
+    "level": {
+     "retain:2": 0.6923,
+     "retain:3": 0.2308,
+     "retain:4": 0.1111,
+     "retain:5": 0.1667,
+     "retain:6": 0.25,
+     "retain:7": 0.2353,
+     "retain:8": 0.0,
+     "retain:9": 0.1538,
+     "retain:10": 0.2727,
+     "retain:11": 0.4545,
+     "retain:12": 0.4167,
+     "retain:13": 0.1429,
+     "retain:14": 0.3333,
+     "retain:15": 0.5,
+     "retain:16": 0.0,
+     "retain:17": 0.3333,
+     "retain:18": 0.4375,
+     "retain:19": 0.3333,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.4697,
+     "overwrite:2": 0.4615,
+     "overwrite:3": 0.4058,
+     "saturate:4": 0.3333,
+     "saturate:5": 0.35,
+     "saturate:6": 0.3043,
+     "saturate:7": 0.4231,
+     "saturate:8": 0.2105,
+     "saturate:9": 0.1667,
+     "saturate:10": 0.2581,
+     "saturate:11": 0.1111,
+     "saturate:12": 0.3704
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03018103895088037,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6636796105763912
+    }
+   },
+   "ood": {
+    "all": 0.145,
+    "task": {
+     "retain": 0.205,
+     "overwrite": 0.06,
+     "saturate": 0.17
+    },
+    "level": {
+     "retain:40": 0.0,
+     "retain:41": 0.0,
+     "retain:42": 0.1667,
+     "retain:43": 0.0,
+     "retain:44": 0.1667,
+     "retain:45": 0.2,
+     "retain:46": 0.1111,
+     "retain:47": 0.5,
+     "retain:48": 0.2,
+     "retain:49": 0.1667,
+     "retain:50": 0.3333,
+     "retain:51": 0.125,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.0,
+     "retain:55": 0.0,
+     "retain:56": 0.6667,
+     "retain:57": 0.0,
+     "retain:58": 0.6667,
+     "retain:59": 0.3333,
+     "retain:60": 0.2,
+     "retain:61": 0.25,
+     "retain:62": 0.2,
+     "retain:63": 0.6667,
+     "retain:64": 0.5,
+     "retain:65": 0.0,
+     "retain:66": 0.5,
+     "retain:67": 0.2,
+     "retain:68": 0.6667,
+     "retain:69": 0.5714,
+     "retain:70": 0.5,
+     "retain:71": 0.1429,
+     "retain:72": 0.0,
+     "retain:73": 0.0,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.0,
+     "retain:77": 0.125,
+     "retain:78": 0.0,
+     "retain:79": 0.0,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.0455,
+     "overwrite:6": 0.0769,
+     "overwrite:7": 0.0408,
+     "overwrite:8": 0.0727,
+     "saturate:18": 0.15,
+     "saturate:19": 0.125,
+     "saturate:20": 0.1429,
+     "saturate:21": 0.2308,
+     "saturate:22": 0.3158,
+     "saturate:23": 0.0952,
+     "saturate:24": 0.1852,
+     "saturate:25": 0.05,
+     "saturate:26": 0.2381
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.3276694431404273,
+     "confident_error_rate": 0.06666666666666667,
+     "auroc_confidence": 0.5825771324863884
+    }
+   },
+   "adv": {
+    "all": 0.30333333333333334,
+    "task": {
+     "retain": 0.31,
+     "overwrite": 0.46,
+     "saturate": 0.14
+    },
+    "level": {
+     "retain:2": 0.5,
+     "retain:3": 0.75,
+     "retain:4": 0.25,
+     "retain:5": 0.3333,
+     "retain:6": 0.0,
+     "retain:7": 0.2,
+     "retain:8": 0.0,
+     "retain:9": 0.0,
+     "retain:10": 0.0,
+     "retain:11": 0.3636,
+     "retain:12": 0.0,
+     "retain:13": 0.3333,
+     "retain:14": 0.6667,
+     "retain:15": 0.6667,
+     "retain:16": 0.7143,
+     "retain:17": 0.1429,
+     "retain:18": 0.5714,
+     "retain:19": 0.0,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.4242,
+     "overwrite:2": 0.3846,
+     "overwrite:3": 0.5366,
+     "saturate:4": 1.0,
+     "saturate:5": 0.0,
+     "saturate:6": 0.1667,
+     "saturate:7": 0.3636,
+     "saturate:8": 0.0952,
+     "saturate:9": 0.0909,
+     "saturate:10": 0.0588,
+     "saturate:11": 0.0,
+     "saturate:12": 0.2308
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.05828572779893875,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5695357274304643
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "transformer-full-seed3",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "transformer-full",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 3,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 42080256.0,
+  "checkpoint_sha256": "b3dea6408e2373d40cae845d8f0a35eb60c61134999895fcce094300d4776a99",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007637",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 976.8,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.36,
+    "task": {
+     "retain": 0.35,
+     "overwrite": 0.48,
+     "saturate": 0.25
+    },
+    "level": {
+     "retain:2": 0.4286,
+     "retain:3": 0.5,
+     "retain:4": 0.2222,
+     "retain:5": 0.0909,
+     "retain:6": 0.3636,
+     "retain:7": 0.3636,
+     "retain:8": 0.25,
+     "retain:9": 0.1111,
+     "retain:10": 0.2,
+     "retain:11": 0.25,
+     "retain:12": 0.4,
+     "retain:13": 0.1667,
+     "retain:14": 0.9,
+     "retain:15": 0.0,
+     "retain:16": 0.4167,
+     "retain:17": 0.625,
+     "retain:18": 0.3,
+     "retain:19": 0.5,
+     "retain:20": 0.5833,
+     "overwrite:1": 0.5735,
+     "overwrite:2": 0.4928,
+     "overwrite:3": 0.3651,
+     "saturate:4": 0.3913,
+     "saturate:5": 0.3846,
+     "saturate:6": 0.2609,
+     "saturate:7": 0.3846,
+     "saturate:8": 0.2273,
+     "saturate:9": 0.2,
+     "saturate:10": 0.2174,
+     "saturate:11": 0.1154,
+     "saturate:12": 0.125
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.021825474699338286,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6137755594135802
+    }
+   },
+   "holdout": {
+    "all": 0.32166666666666666,
+    "task": {
+     "retain": 0.305,
+     "overwrite": 0.45,
+     "saturate": 0.21
+    },
+    "level": {
+     "retain:2": 0.6154,
+     "retain:3": 0.4615,
+     "retain:4": 0.1111,
+     "retain:5": 0.1667,
+     "retain:6": 0.25,
+     "retain:7": 0.2353,
+     "retain:8": 0.0,
+     "retain:9": 0.0769,
+     "retain:10": 0.3636,
+     "retain:11": 0.3636,
+     "retain:12": 0.3333,
+     "retain:13": 0.0,
+     "retain:14": 0.3333,
+     "retain:15": 0.375,
+     "retain:16": 0.3333,
+     "retain:17": 0.5,
+     "retain:18": 0.375,
+     "retain:19": 0.3333,
+     "retain:20": 0.25,
+     "overwrite:1": 0.5152,
+     "overwrite:2": 0.4308,
+     "overwrite:3": 0.4058,
+     "saturate:4": 0.2222,
+     "saturate:5": 0.3,
+     "saturate:6": 0.2609,
+     "saturate:7": 0.3077,
+     "saturate:8": 0.1053,
+     "saturate:9": 0.0556,
+     "saturate:10": 0.1935,
+     "saturate:11": 0.1111,
+     "saturate:12": 0.2593
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.05103303807477157,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6523914399562067
+    }
+   },
+   "ood": {
+    "all": 0.13833333333333334,
+    "task": {
+     "retain": 0.165,
+     "overwrite": 0.07,
+     "saturate": 0.18
+    },
+    "level": {
+     "retain:40": 0.0,
+     "retain:41": 0.0,
+     "retain:42": 0.1667,
+     "retain:43": 0.3333,
+     "retain:44": 0.1667,
+     "retain:45": 0.0,
+     "retain:46": 0.2222,
+     "retain:47": 0.0,
+     "retain:48": 0.4,
+     "retain:49": 0.1667,
+     "retain:50": 0.0,
+     "retain:51": 0.125,
+     "retain:52": 0.0,
+     "retain:53": 0.125,
+     "retain:54": 0.1667,
+     "retain:55": 0.3333,
+     "retain:56": 0.3333,
+     "retain:57": 0.125,
+     "retain:58": 0.3333,
+     "retain:59": 0.1667,
+     "retain:60": 0.0,
+     "retain:61": 0.0,
+     "retain:62": 0.2,
+     "retain:63": 0.3333,
+     "retain:64": 0.5,
+     "retain:65": 0.25,
+     "retain:66": 0.25,
+     "retain:67": 0.6,
+     "retain:68": 0.0,
+     "retain:69": 0.4286,
+     "retain:70": 0.25,
+     "retain:71": 0.0,
+     "retain:72": 0.0,
+     "retain:73": 0.0,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.0,
+     "retain:77": 0.0,
+     "retain:78": 0.0,
+     "retain:79": 0.0,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.0909,
+     "overwrite:6": 0.0577,
+     "overwrite:7": 0.0408,
+     "overwrite:8": 0.0909,
+     "saturate:18": 0.2,
+     "saturate:19": 0.125,
+     "saturate:20": 0.2857,
+     "saturate:21": 0.2308,
+     "saturate:22": 0.3158,
+     "saturate:23": 0.1429,
+     "saturate:24": 0.1111,
+     "saturate:25": 0.05,
+     "saturate:26": 0.2381
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.29001566238701343,
+     "confident_error_rate": 0.041666666666666664,
+     "auroc_confidence": 0.5665680128638344
+    }
+   },
+   "adv": {
+    "all": 0.33,
+    "task": {
+     "retain": 0.37,
+     "overwrite": 0.45,
+     "saturate": 0.17
+    },
+    "level": {
+     "retain:2": 0.5,
+     "retain:3": 0.25,
+     "retain:4": 0.5,
+     "retain:5": 0.3333,
+     "retain:6": 0.0,
+     "retain:7": 0.2,
+     "retain:8": 0.3333,
+     "retain:9": 0.25,
+     "retain:10": 0.0,
+     "retain:11": 0.2727,
+     "retain:12": 0.25,
+     "retain:13": 0.3333,
+     "retain:14": 0.3333,
+     "retain:15": 0.3333,
+     "retain:16": 0.8571,
+     "retain:17": 0.4286,
+     "retain:18": 0.5714,
+     "retain:19": 0.3333,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.5455,
+     "overwrite:2": 0.4231,
+     "overwrite:3": 0.3902,
+     "saturate:4": 0.0,
+     "saturate:5": 0.0,
+     "saturate:6": 0.1667,
+     "saturate:7": 0.3636,
+     "saturate:8": 0.1429,
+     "saturate:9": 0.0909,
+     "saturate:10": 0.2353,
+     "saturate:11": 0.25,
+     "saturate:12": 0.1538
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.045000816285610215,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6199809035629931
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "transformer-w32-seed1",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "transformer-w32",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "window": 32
+  },
+  "seed": 1,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 42080256.0,
+  "checkpoint_sha256": "1d016c1b9ab2bf1900741dc50239de58100478d4a3c0e6e4c8b74ba01cd5efee",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007629",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2018.9,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.5866666666666667,
+    "task": {
+     "retain": 0.44,
+     "overwrite": 0.84,
+     "saturate": 0.48
+    },
+    "level": {
+     "retain:2": 1.0,
+     "retain:3": 0.9167,
+     "retain:4": 0.3333,
+     "retain:5": 0.1818,
+     "retain:6": 0.6364,
+     "retain:7": 0.2727,
+     "retain:8": 0.3333,
+     "retain:9": 0.1111,
+     "retain:10": 0.5,
+     "retain:11": 0.3333,
+     "retain:12": 0.4,
+     "retain:13": 0.2778,
+     "retain:14": 0.5,
+     "retain:15": 0.1667,
+     "retain:16": 0.5833,
+     "retain:17": 0.25,
+     "retain:18": 0.4,
+     "retain:19": 0.5,
+     "retain:20": 0.6667,
+     "overwrite:1": 0.9118,
+     "overwrite:2": 0.8986,
+     "overwrite:3": 0.6984,
+     "saturate:4": 0.6957,
+     "saturate:5": 0.5769,
+     "saturate:6": 0.4783,
+     "saturate:7": 0.6154,
+     "saturate:8": 0.5,
+     "saturate:9": 0.5,
+     "saturate:10": 0.4348,
+     "saturate:11": 0.3462,
+     "saturate:12": 0.25
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.05556082442402841,
+     "confident_error_rate": 0.006666666666666667,
+     "auroc_confidence": 0.8145161290322581
+    }
+   },
+   "holdout": {
+    "all": 0.6133333333333333,
+    "task": {
+     "retain": 0.48,
+     "overwrite": 0.885,
+     "saturate": 0.475
+    },
+    "level": {
+     "retain:2": 0.9231,
+     "retain:3": 0.7692,
+     "retain:4": 0.1111,
+     "retain:5": 0.3333,
+     "retain:6": 0.25,
+     "retain:7": 0.4118,
+     "retain:8": 0.2,
+     "retain:9": 0.1538,
+     "retain:10": 0.7273,
+     "retain:11": 0.6364,
+     "retain:12": 0.8333,
+     "retain:13": 0.2857,
+     "retain:14": 0.4167,
+     "retain:15": 0.25,
+     "retain:16": 0.4167,
+     "retain:17": 0.6667,
+     "retain:18": 0.375,
+     "retain:19": 0.6667,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.8788,
+     "overwrite:2": 0.9077,
+     "overwrite:3": 0.8696,
+     "saturate:4": 0.6667,
+     "saturate:5": 0.35,
+     "saturate:6": 0.5217,
+     "saturate:7": 0.6923,
+     "saturate:8": 0.5263,
+     "saturate:9": 0.3889,
+     "saturate:10": 0.4194,
+     "saturate:11": 0.3333,
+     "saturate:12": 0.3704
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.054880160838365555,
+     "confident_error_rate": 0.005,
+     "auroc_confidence": 0.7918618815592204
+    }
+   },
+   "ood": {
+    "all": 0.16166666666666665,
+    "task": {
+     "retain": 0.125,
+     "overwrite": 0.205,
+     "saturate": 0.155
+    },
+    "level": {
+     "retain:40": 0.0,
+     "retain:41": 0.0,
+     "retain:42": 0.1667,
+     "retain:43": 0.0,
+     "retain:44": 0.0,
+     "retain:45": 0.2,
+     "retain:46": 0.1111,
+     "retain:47": 0.0,
+     "retain:48": 0.0,
+     "retain:49": 0.0,
+     "retain:50": 0.0,
+     "retain:51": 0.5,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.0,
+     "retain:55": 0.3333,
+     "retain:56": 0.0,
+     "retain:57": 0.125,
+     "retain:58": 0.0,
+     "retain:59": 0.1667,
+     "retain:60": 0.2,
+     "retain:61": 0.0,
+     "retain:62": 0.0,
+     "retain:63": 0.3333,
+     "retain:64": 0.1667,
+     "retain:65": 0.0,
+     "retain:66": 0.0,
+     "retain:67": 0.2,
+     "retain:68": 0.0,
+     "retain:69": 0.0,
+     "retain:70": 0.0,
+     "retain:71": 0.4286,
+     "retain:72": 0.0,
+     "retain:73": 0.3333,
+     "retain:74": 0.5,
+     "retain:75": 0.0,
+     "retain:76": 0.0,
+     "retain:77": 0.25,
+     "retain:78": 0.0,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.25,
+     "overwrite:6": 0.1538,
+     "overwrite:7": 0.1224,
+     "overwrite:8": 0.2909,
+     "saturate:18": 0.15,
+     "saturate:19": 0.125,
+     "saturate:20": 0.1429,
+     "saturate:21": 0.2308,
+     "saturate:22": 0.2105,
+     "saturate:23": 0.1429,
+     "saturate:24": 0.1111,
+     "saturate:25": 0.15,
+     "saturate:26": 0.1429
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.3669541401167711,
+     "confident_error_rate": 0.085,
+     "auroc_confidence": 0.5756594453895185
+    }
+   },
+   "adv": {
+    "all": 0.56,
+    "task": {
+     "retain": 0.47,
+     "overwrite": 0.82,
+     "saturate": 0.39
+    },
+    "level": {
+     "retain:2": 0.8333,
+     "retain:3": 1.0,
+     "retain:4": 0.375,
+     "retain:5": 0.1667,
+     "retain:6": 0.0,
+     "retain:7": 0.4,
+     "retain:8": 0.0,
+     "retain:9": 0.375,
+     "retain:10": 0.0,
+     "retain:11": 0.3636,
+     "retain:12": 0.25,
+     "retain:13": 0.6667,
+     "retain:14": 1.0,
+     "retain:15": 0.6667,
+     "retain:16": 0.7143,
+     "retain:17": 0.2857,
+     "retain:18": 0.8571,
+     "retain:19": 0.5,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.8182,
+     "overwrite:2": 0.7692,
+     "overwrite:3": 0.8537,
+     "saturate:4": 1.0,
+     "saturate:5": 0.3,
+     "saturate:6": 0.3333,
+     "saturate:7": 0.3636,
+     "saturate:8": 0.4286,
+     "saturate:9": 0.1818,
+     "saturate:10": 0.5294,
+     "saturate:11": 0.5,
+     "saturate:12": 0.3846
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03509367610017458,
+     "confident_error_rate": 0.01,
+     "auroc_confidence": 0.7565386002886003
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "transformer-w32-seed2",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "transformer-w32",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "window": 32
+  },
+  "seed": 2,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 42080256.0,
+  "checkpoint_sha256": "a222e8d856589a127cfe5af33cf1072860cb0cefb92278102113640192b31931",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007643",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1675.3,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.3333333333333333,
+    "task": {
+     "retain": 0.34,
+     "overwrite": 0.43,
+     "saturate": 0.23
+    },
+    "level": {
+     "retain:2": 0.7143,
+     "retain:3": 0.4167,
+     "retain:4": 0.0,
+     "retain:5": 0.0909,
+     "retain:6": 0.3636,
+     "retain:7": 0.3636,
+     "retain:8": 0.25,
+     "retain:9": 0.3333,
+     "retain:10": 0.1,
+     "retain:11": 0.5,
+     "retain:12": 0.4,
+     "retain:13": 0.1111,
+     "retain:14": 0.6,
+     "retain:15": 0.3333,
+     "retain:16": 0.3333,
+     "retain:17": 0.25,
+     "retain:18": 0.5,
+     "retain:19": 0.4,
+     "retain:20": 0.5833,
+     "overwrite:1": 0.4853,
+     "overwrite:2": 0.5072,
+     "overwrite:3": 0.2857,
+     "saturate:4": 0.3913,
+     "saturate:5": 0.3077,
+     "saturate:6": 0.2174,
+     "saturate:7": 0.3077,
+     "saturate:8": 0.2273,
+     "saturate:9": 0.15,
+     "saturate:10": 0.1304,
+     "saturate:11": 0.1538,
+     "saturate:12": 0.2083
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.041132438157995534,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6468875
+    }
+   },
+   "holdout": {
+    "all": 0.3516666666666667,
+    "task": {
+     "retain": 0.32,
+     "overwrite": 0.465,
+     "saturate": 0.27
+    },
+    "level": {
+     "retain:2": 0.5385,
+     "retain:3": 0.4615,
+     "retain:4": 0.1111,
+     "retain:5": 0.1667,
+     "retain:6": 0.25,
+     "retain:7": 0.2941,
+     "retain:8": 0.0,
+     "retain:9": 0.0769,
+     "retain:10": 0.4545,
+     "retain:11": 0.5455,
+     "retain:12": 0.3333,
+     "retain:13": 0.0,
+     "retain:14": 0.3333,
+     "retain:15": 0.375,
+     "retain:16": 0.1667,
+     "retain:17": 0.6667,
+     "retain:18": 0.375,
+     "retain:19": 0.3333,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.5303,
+     "overwrite:2": 0.4923,
+     "overwrite:3": 0.3768,
+     "saturate:4": 0.2222,
+     "saturate:5": 0.3,
+     "saturate:6": 0.3043,
+     "saturate:7": 0.3462,
+     "saturate:8": 0.3158,
+     "saturate:9": 0.2222,
+     "saturate:10": 0.2581,
+     "saturate:11": 0.1667,
+     "saturate:12": 0.2593
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.023197607298692077,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6292474323517586
+    }
+   },
+   "ood": {
+    "all": 0.13333333333333333,
+    "task": {
+     "retain": 0.125,
+     "overwrite": 0.11,
+     "saturate": 0.165
+    },
+    "level": {
+     "retain:40": 0.0,
+     "retain:41": 0.0,
+     "retain:42": 0.5,
+     "retain:43": 0.3333,
+     "retain:44": 0.0,
+     "retain:45": 0.0,
+     "retain:46": 0.1111,
+     "retain:47": 0.1667,
+     "retain:48": 0.0,
+     "retain:49": 0.3333,
+     "retain:50": 0.0,
+     "retain:51": 0.125,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.0,
+     "retain:55": 0.0,
+     "retain:56": 0.0,
+     "retain:57": 0.375,
+     "retain:58": 0.3333,
+     "retain:59": 0.0,
+     "retain:60": 0.4,
+     "retain:61": 0.0,
+     "retain:62": 0.0,
+     "retain:63": 0.1667,
+     "retain:64": 0.0,
+     "retain:65": 0.0,
+     "retain:66": 0.0,
+     "retain:67": 0.2,
+     "retain:68": 0.0,
+     "retain:69": 0.1429,
+     "retain:70": 0.5,
+     "retain:71": 0.4286,
+     "retain:72": 0.0,
+     "retain:73": 0.0,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.0,
+     "retain:77": 0.0,
+     "retain:78": 0.0,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.1136,
+     "overwrite:6": 0.0769,
+     "overwrite:7": 0.1224,
+     "overwrite:8": 0.1273,
+     "saturate:18": 0.2,
+     "saturate:19": 0.0938,
+     "saturate:20": 0.0714,
+     "saturate:21": 0.3077,
+     "saturate:22": 0.2632,
+     "saturate:23": 0.0476,
+     "saturate:24": 0.1852,
+     "saturate:25": 0.05,
+     "saturate:26": 0.2381
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.3841652445246776,
+     "confident_error_rate": 0.12833333333333333,
+     "auroc_confidence": 0.518485576923077
+    }
+   },
+   "adv": {
+    "all": 0.31,
+    "task": {
+     "retain": 0.33,
+     "overwrite": 0.44,
+     "saturate": 0.16
+    },
+    "level": {
+     "retain:2": 0.5,
+     "retain:3": 0.75,
+     "retain:4": 0.25,
+     "retain:5": 0.0,
+     "retain:6": 0.0,
+     "retain:7": 0.2,
+     "retain:8": 0.0,
+     "retain:9": 0.25,
+     "retain:10": 0.0,
+     "retain:11": 0.2727,
+     "retain:12": 0.0,
+     "retain:13": 0.0,
+     "retain:14": 0.6667,
+     "retain:15": 0.6667,
+     "retain:16": 0.8571,
+     "retain:17": 0.2857,
+     "retain:18": 0.5714,
+     "retain:19": 0.3333,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.4242,
+     "overwrite:2": 0.4615,
+     "overwrite:3": 0.439,
+     "saturate:4": 0.0,
+     "saturate:5": 0.0,
+     "saturate:6": 0.1667,
+     "saturate:7": 0.3636,
+     "saturate:8": 0.1429,
+     "saturate:9": 0.1818,
+     "saturate:10": 0.1176,
+     "saturate:11": 0.25,
+     "saturate:12": 0.1538
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.048595259636640534,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5637629214066802
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "transformer-w32-seed3",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": "transformer-w32",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "window": 32
+  },
+  "seed": 3,
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 42080256.0,
+  "checkpoint_sha256": "905f9386130d20d7148b38ec4d188b31a1f2499ef8c2fa374883fe61039b8774",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007632",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1665.2,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "dev": {
+    "all": 0.3466666666666667,
+    "task": {
+     "retain": 0.345,
+     "overwrite": 0.445,
+     "saturate": 0.25
+    },
+    "level": {
+     "retain:2": 0.5714,
+     "retain:3": 0.5,
+     "retain:4": 0.2222,
+     "retain:5": 0.0909,
+     "retain:6": 0.3636,
+     "retain:7": 0.4545,
+     "retain:8": 0.0833,
+     "retain:9": 0.1111,
+     "retain:10": 0.2,
+     "retain:11": 0.5,
+     "retain:12": 0.5,
+     "retain:13": 0.2222,
+     "retain:14": 0.6,
+     "retain:15": 0.0,
+     "retain:16": 0.4167,
+     "retain:17": 0.25,
+     "retain:18": 0.3,
+     "retain:19": 0.4,
+     "retain:20": 0.6667,
+     "overwrite:1": 0.5735,
+     "overwrite:2": 0.4493,
+     "overwrite:3": 0.3016,
+     "saturate:4": 0.3913,
+     "saturate:5": 0.3077,
+     "saturate:6": 0.2609,
+     "saturate:7": 0.4615,
+     "saturate:8": 0.2727,
+     "saturate:9": 0.3,
+     "saturate:10": 0.1304,
+     "saturate:11": 0.1538,
+     "saturate:12": 0.0833
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.015488541076580679,
+     "confident_error_rate": 0.0016666666666666668,
+     "auroc_confidence": 0.6038804945054945
+    }
+   },
+   "holdout": {
+    "all": 0.375,
+    "task": {
+     "retain": 0.325,
+     "overwrite": 0.495,
+     "saturate": 0.305
+    },
+    "level": {
+     "retain:2": 0.4615,
+     "retain:3": 0.3077,
+     "retain:4": 0.1111,
+     "retain:5": 0.1667,
+     "retain:6": 0.25,
+     "retain:7": 0.2941,
+     "retain:8": 0.0,
+     "retain:9": 0.2308,
+     "retain:10": 0.4545,
+     "retain:11": 0.5455,
+     "retain:12": 0.5833,
+     "retain:13": 0.0,
+     "retain:14": 0.25,
+     "retain:15": 0.25,
+     "retain:16": 0.3333,
+     "retain:17": 0.5,
+     "retain:18": 0.1875,
+     "retain:19": 0.3333,
+     "retain:20": 0.5833,
+     "overwrite:1": 0.5455,
+     "overwrite:2": 0.4923,
+     "overwrite:3": 0.4493,
+     "saturate:4": 0.2778,
+     "saturate:5": 0.35,
+     "saturate:6": 0.3043,
+     "saturate:7": 0.4231,
+     "saturate:8": 0.3158,
+     "saturate:9": 0.2222,
+     "saturate:10": 0.3226,
+     "saturate:11": 0.1667,
+     "saturate:12": 0.2963
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.028955753172437343,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6015051851851851
+    }
+   },
+   "ood": {
+    "all": 0.13166666666666665,
+    "task": {
+     "retain": 0.095,
+     "overwrite": 0.09,
+     "saturate": 0.21
+    },
+    "level": {
+     "retain:40": 0.0,
+     "retain:41": 0.0,
+     "retain:42": 0.0,
+     "retain:43": 0.0,
+     "retain:44": 0.0,
+     "retain:45": 0.0,
+     "retain:46": 0.1111,
+     "retain:47": 0.1667,
+     "retain:48": 0.2,
+     "retain:49": 0.0,
+     "retain:50": 0.0,
+     "retain:51": 0.125,
+     "retain:52": 0.0,
+     "retain:53": 0.0,
+     "retain:54": 0.0,
+     "retain:55": 0.3333,
+     "retain:56": 0.0,
+     "retain:57": 0.0,
+     "retain:58": 0.3333,
+     "retain:59": 0.1667,
+     "retain:60": 0.0,
+     "retain:61": 0.0,
+     "retain:62": 0.0,
+     "retain:63": 0.1667,
+     "retain:64": 0.1667,
+     "retain:65": 0.0,
+     "retain:66": 0.25,
+     "retain:67": 0.0,
+     "retain:68": 0.3333,
+     "retain:69": 0.0,
+     "retain:70": 0.0,
+     "retain:71": 0.0,
+     "retain:72": 0.0,
+     "retain:73": 0.3333,
+     "retain:74": 0.0,
+     "retain:75": 0.0,
+     "retain:76": 0.2,
+     "retain:77": 0.375,
+     "retain:78": 0.0,
+     "retain:79": 0.3333,
+     "retain:80": 0.3333,
+     "overwrite:5": 0.1136,
+     "overwrite:6": 0.0769,
+     "overwrite:7": 0.0816,
+     "overwrite:8": 0.0909,
+     "saturate:18": 0.2,
+     "saturate:19": 0.125,
+     "saturate:20": 0.1429,
+     "saturate:21": 0.3462,
+     "saturate:22": 0.3158,
+     "saturate:23": 0.2381,
+     "saturate:24": 0.1111,
+     "saturate:25": 0.1,
+     "saturate:26": 0.3333
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.35090429246425636,
+     "confident_error_rate": 0.05333333333333334,
+     "auroc_confidence": 0.513350664496222
+    }
+   },
+   "adv": {
+    "all": 0.31666666666666665,
+    "task": {
+     "retain": 0.29,
+     "overwrite": 0.5,
+     "saturate": 0.16
+    },
+    "level": {
+     "retain:2": 0.5,
+     "retain:3": 0.25,
+     "retain:4": 0.25,
+     "retain:5": 0.1667,
+     "retain:6": 0.0,
+     "retain:7": 0.0,
+     "retain:8": 0.0,
+     "retain:9": 0.25,
+     "retain:10": 0.0,
+     "retain:11": 0.2727,
+     "retain:12": 0.25,
+     "retain:13": 0.3333,
+     "retain:14": 0.6667,
+     "retain:15": 0.3333,
+     "retain:16": 0.4286,
+     "retain:17": 0.2857,
+     "retain:18": 0.5714,
+     "retain:19": 0.3333,
+     "retain:20": 0.3333,
+     "overwrite:1": 0.4242,
+     "overwrite:2": 0.4615,
+     "overwrite:3": 0.5854,
+     "saturate:4": 0.0,
+     "saturate:5": 0.0,
+     "saturate:6": 0.0833,
+     "saturate:7": 0.1818,
+     "saturate:8": 0.1905,
+     "saturate:9": 0.0909,
+     "saturate:10": 0.2353,
+     "saturate:11": 0.25,
+     "saturate:12": 0.2308
+    },
+    "steps": {
+     "retain": 0.0,
+     "overwrite": 0.0,
+     "saturate": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.036464830388625455,
+     "confident_error_rate": 0.0033333333333333335,
+     "auroc_confidence": 0.5571245186136072
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.12",
+  "run": "experiment",
+  "parent": "R1.03 (memory candidate), R1.11 (window + state)",
+  "hypothesis": "Reading a stream once, does rouge-mem keep facts over long distances (up to 80 statements after the write, 3x the training length) better than a Transformer restricted to a sliding window of 32 tokens, at no more memory?",
+  "architecture": [
+   "transformer-full",
+   "transformer-w32",
+   "lstm",
+   "ssm",
+   "rouge-mem"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "9c8b5d469fef6356443e8f86b00f9b0d60020793a9c297217d2e071c9a4fa9ac",
+  "code_sha": "994d448dd0ba01dfe8d66c77cee8ce1be79d50ed",
+  "parameter_count": null,
+  "flop_estimate": 450000000000000.0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 53929.3,
+  "cost_usd": 0.0,
+  "ci_run": "36592872133",
+  "metrics": {
+   "experiment": "R1.12",
+   "models": {
+    "transformer-full": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.34944444444444445,
+       "sd": 0.010844011831079518,
+       "ci95": [
+        0.3225042515209874,
+        0.3763846373679015
+       ],
+       "n": 3,
+       "values": [
+        0.3383333333333333,
+        0.35,
+        0.36
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.3427777777777778,
+       "sd": 0.020092379244472377,
+       "ci95": [
+        0.2928615123246199,
+        0.3926940432309357
+       ],
+       "n": 3,
+       "values": [
+        0.3616666666666667,
+        0.345,
+        0.32166666666666666
+       ]
+      },
+      "ood.all": {
+       "mean": 0.15166666666666664,
+       "sd": 0.017638342073763937,
+       "ci95": [
+        0.10784705952134446,
+        0.19548627381198883
+       ],
+       "n": 3,
+       "values": [
+        0.17166666666666666,
+        0.145,
+        0.13833333333333334
+       ]
+      },
+      "adv.all": {
+       "mean": 0.32,
+       "sd": 0.014529663145135577,
+       "ci95": [
+        0.2839034026944777,
+        0.3560965973055223
+       ],
+       "n": 3,
+       "values": [
+        0.32666666666666666,
+        0.30333333333333334,
+        0.33
+       ]
+      },
+      "dev.retain": {
+       "mean": 0.34,
+       "sd": 0.013228756555322933,
+       "ci95": [
+        0.3071352946410084,
+        0.37286470535899163
+       ],
+       "n": 3,
+       "values": [
+        0.325,
+        0.345,
+        0.35
+       ]
+      },
+      "dev.overwrite": {
+       "mean": 0.455,
+       "sd": 0.021794494717703356,
+       "ci95": [
+        0.40085510404171665,
+        0.5091448959582834
+       ],
+       "n": 3,
+       "values": [
+        0.44,
+        0.445,
+        0.48
+       ]
+      },
+      "dev.saturate": {
+       "mean": 0.25333333333333335,
+       "sd": 0.005773502691896262,
+       "ci95": [
+        0.23899,
+        0.2676766666666667
+       ],
+       "n": 3,
+       "values": [
+        0.25,
+        0.26,
+        0.25
+       ]
+      },
+      "ood.retain": {
+       "mean": 0.20833333333333334,
+       "sd": 0.04509249752822894,
+       "ci95": [
+        0.09630831881524557,
+        0.32035834785142114
+       ],
+       "n": 3,
+       "values": [
+        0.255,
+        0.205,
+        0.165
+       ]
+      },
+      "ood.overwrite": {
+       "mean": 0.065,
+       "sd": 0.0050000000000000044,
+       "ci95": [
+        0.052578308958385195,
+        0.07742169104161481
+       ],
+       "n": 3,
+       "values": [
+        0.065,
+        0.06,
+        0.07
+       ]
+      },
+      "ood.saturate": {
+       "mean": 0.18166666666666664,
+       "sd": 0.012583057392117914,
+       "ci95": [
+        0.15040609640990746,
+        0.21292723692342583
+       ],
+       "n": 3,
+       "values": [
+        0.195,
+        0.17,
+        0.18
+       ]
+      },
+      "adv.retain": {
+       "mean": 0.3333333333333333,
+       "sd": 0.03214550253664318,
+       "ci95": [
+        0.25347303315580805,
+        0.4131936335108586
+       ],
+       "n": 3,
+       "values": [
+        0.32,
+        0.31,
+        0.37
+       ]
+      },
+      "adv.overwrite": {
+       "mean": 0.4666666666666666,
+       "sd": 0.020816659994661313,
+       "ci95": [
+        0.4149510428722615,
+        0.5183822904610718
+       ],
+       "n": 3,
+       "values": [
+        0.49,
+        0.46,
+        0.45
+       ]
+      },
+      "adv.saturate": {
+       "mean": 0.16000000000000003,
+       "sd": 0.017320508075688773,
+       "ci95": [
+        0.11697000000000003,
+        0.20303000000000004
+       ],
+       "n": 3,
+       "values": [
+        0.17,
+        0.14,
+        0.17
+       ]
+      },
+      "above_cue.retain": {
+       "mean": 0.17299999999999996,
+       "sd": 0.013228756555322933,
+       "ci95": [
+        0.14013529464100838,
+        0.20586470535899154
+       ],
+       "n": 3,
+       "values": [
+        0.158,
+        0.17799999999999996,
+        0.18299999999999997
+       ]
+      },
+      "steps.retain": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.overwrite": {
+       "mean": 0.25499999999999995,
+       "sd": 0.021794494717703356,
+       "ci95": [
+        0.20085510404171658,
+        0.3091448959582833
+       ],
+       "n": 3,
+       "values": [
+        0.24,
+        0.245,
+        0.27999999999999997
+       ]
+      },
+      "steps.overwrite": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.saturate": {
+       "mean": -0.05366666666666666,
+       "sd": 0.005773502691896262,
+       "ci95": [
+        -0.06801,
+        -0.039323333333333314
+       ],
+       "n": 3,
+       "values": [
+        -0.056999999999999995,
+        -0.046999999999999986,
+        -0.056999999999999995
+       ]
+      },
+      "steps.saturate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 206256,
+      "params_active": 206256,
+      "stored_bytes": 825024,
+      "flops": {
+       "mean": 42080256.0,
+       "sd": 0.0,
+       "ci95": [
+        42080256.0,
+        42080256.0
+       ],
+       "n": 3,
+       "values": [
+        42080256.0,
+        42080256.0,
+        42080256.0
+       ]
+      },
+      "train_flops": {
+       "mean": 80794091520000.0,
+       "sd": 0.0,
+       "ci95": [
+        80794091520000.0,
+        80794091520000.0
+       ],
+       "n": 3,
+       "values": [
+        80794091520000.0,
+        80794091520000.0,
+        80794091520000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 727040,
+      "total_bytes": 727040,
+      "peak_rss_mb": {
+       "mean": 699.1666666666666,
+       "sd": 30.710964382990895,
+       "ci95": [
+        622.8702444355567,
+        775.4630888977765
+       ],
+       "n": 3,
+       "values": [
+        667.4,
+        701.4,
+        728.7
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.5790000000000001,
+       "sd": 0.20396323198066854,
+       "ci95": [
+        0.07228634969738579,
+        1.0857136503026144
+       ],
+       "n": 3,
+       "values": [
+        0.628,
+        0.754,
+        0.355
+       ]
+      },
+      "train_seconds": {
+       "mean": 1553.1333333333332,
+       "sd": 539.199483802918,
+       "ci95": [
+        213.579453813727,
+        2892.6872128529394
+       ],
+       "n": 3,
+       "values": [
+        1637.3,
+        2045.3,
+        976.8
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 6212.633333333334,
+       "sd": 2156.7366884562734,
+       "ci95": [
+        854.5699729094822,
+        11570.696693757185
+       ],
+       "n": 3,
+       "values": [
+        6549.2,
+        8181.3,
+        3907.4
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.35250000000000004,
+       "sd": 0.006510760324263234,
+       "ci95": [
+        0.3363250693611997,
+        0.36867493063880036
+       ],
+       "n": 3,
+       "values": [
+        0.345,
+        0.3558,
+        0.3567
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.02238370218210749,
+       "sd": 0.012508692960487858,
+       "ci95": [
+        -0.008692121675812934,
+        0.05345952604002792
+       ],
+       "n": 3,
+       "values": [
+        0.035162163351972885,
+        0.010163468495011305,
+        0.021825474699338286
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.3032140432546537,
+       "sd": 0.021201230132648043,
+       "ci95": [
+        0.2505430171726681,
+        0.35588506933663927
+       ],
+       "n": 3,
+       "values": [
+        0.2919570242365202,
+        0.3276694431404273,
+        0.29001566238701343
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.05277777777777778,
+       "sd": 0.01272937693043289,
+       "ci95": [
+        0.02115370030135852,
+        0.08440185525419704
+       ],
+       "n": 3,
+       "values": [
+        0.05,
+        0.06666666666666667,
+        0.041666666666666664
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.6255289534573977,
+       "sd": 0.012606409898323432,
+       "ci95": [
+        0.594210367677212,
+        0.6568475392375833
+       ],
+       "n": 3,
+       "values": [
+        0.6388430469903588,
+        0.623968253968254,
+        0.6137755594135802
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.5898099870134936,
+       "sd": 0.027579147284332757,
+       "ci95": [
+        0.5212940576620594,
+        0.6583259163649279
+       ],
+       "n": 3,
+       "values": [
+        0.6202848156902581,
+        0.5825771324863884,
+        0.5665680128638344
+       ]
+      }
+     },
+     "memory_tokens": 355
+    },
+    "transformer-w32": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.4222222222222222,
+       "sd": 0.14256902162084836,
+       "ci95": [
+        0.06803255448632645,
+        0.776411889958118
+       ],
+       "n": 3,
+       "values": [
+        0.5866666666666667,
+        0.3333333333333333,
+        0.3466666666666667
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.4466666666666666,
+       "sd": 0.1448083024016387,
+       "ci95": [
+        0.0869138681278902,
+        0.806419465205443
+       ],
+       "n": 3,
+       "values": [
+        0.6133333333333333,
+        0.3516666666666667,
+        0.375
+       ]
+      },
+      "ood.all": {
+       "mean": 0.14222222222222222,
+       "sd": 0.016859989894992794,
+       "ci95": [
+        0.10033630513415262,
+        0.18410813931029182
+       ],
+       "n": 3,
+       "values": [
+        0.16166666666666665,
+        0.13333333333333333,
+        0.13166666666666665
+       ]
+      },
+      "adv.all": {
+       "mean": 0.3955555555555556,
+       "sd": 0.14245207121201364,
+       "ci95": [
+        0.04165643218880699,
+        0.7494546789223042
+       ],
+       "n": 3,
+       "values": [
+        0.56,
+        0.31,
+        0.31666666666666665
+       ]
+      },
+      "dev.retain": {
+       "mean": 0.375,
+       "sd": 0.05634713834792322,
+       "ci95": [
+        0.2350146512725945,
+        0.5149853487274055
+       ],
+       "n": 3,
+       "values": [
+        0.44,
+        0.34,
+        0.345
+       ]
+      },
+      "dev.overwrite": {
+       "mean": 0.5716666666666667,
+       "sd": 0.23250448024357148,
+       "ci95": [
+        -0.005953097208708735,
+        1.149286430542042
+       ],
+       "n": 3,
+       "values": [
+        0.84,
+        0.43,
+        0.445
+       ]
+      },
+      "dev.saturate": {
+       "mean": 0.32,
+       "sd": 0.13892443989449804,
+       "ci95": [
+        -0.025135294099768002,
+        0.665135294099768
+       ],
+       "n": 3,
+       "values": [
+        0.48,
+        0.23,
+        0.25
+       ]
+      },
+      "ood.retain": {
+       "mean": 0.11499999999999999,
+       "sd": 0.017320508075688773,
+       "ci95": [
+        0.07196999999999999,
+        0.15803
+       ],
+       "n": 3,
+       "values": [
+        0.125,
+        0.125,
+        0.095
+       ]
+      },
+      "ood.overwrite": {
+       "mean": 0.135,
+       "sd": 0.06144102863722253,
+       "ci95": [
+        -0.017640295002117085,
+        0.2876402950021171
+       ],
+       "n": 3,
+       "values": [
+        0.205,
+        0.11,
+        0.09
+       ]
+      },
+      "ood.saturate": {
+       "mean": 0.17666666666666667,
+       "sd": 0.02929732638541157,
+       "ci95": [
+        0.10388219932568031,
+        0.249451134007653
+       ],
+       "n": 3,
+       "values": [
+        0.155,
+        0.165,
+        0.21
+       ]
+      },
+      "adv.retain": {
+       "mean": 0.36333333333333334,
+       "sd": 0.09451631252505216,
+       "ci95": [
+        0.12852284681755233,
+        0.5981438198491144
+       ],
+       "n": 3,
+       "values": [
+        0.47,
+        0.33,
+        0.29
+       ]
+      },
+      "adv.overwrite": {
+       "mean": 0.5866666666666667,
+       "sd": 0.20428737928059412,
+       "ci95": [
+        0.0791477248417225,
+        1.0941856084916108
+       ],
+       "n": 3,
+       "values": [
+        0.82,
+        0.44,
+        0.5
+       ]
+      },
+      "adv.saturate": {
+       "mean": 0.2366666666666667,
+       "sd": 0.13279056191361394,
+       "ci95": [
+        -0.09323000000000004,
+        0.5665633333333334
+       ],
+       "n": 3,
+       "values": [
+        0.39,
+        0.16,
+        0.16
+       ]
+      },
+      "above_cue.retain": {
+       "mean": 0.208,
+       "sd": 0.05634713834792324,
+       "ci95": [
+        0.06801465127259446,
+        0.3479853487274055
+       ],
+       "n": 3,
+       "values": [
+        0.273,
+        0.17300000000000001,
+        0.17799999999999996
+       ]
+      },
+      "steps.retain": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.overwrite": {
+       "mean": 0.3716666666666666,
+       "sd": 0.23250448024357145,
+       "ci95": [
+        -0.2059530972087087,
+        0.9492864305420419
+       ],
+       "n": 3,
+       "values": [
+        0.6399999999999999,
+        0.22999999999999998,
+        0.245
+       ]
+      },
+      "steps.overwrite": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.saturate": {
+       "mean": 0.013000000000000003,
+       "sd": 0.13892443989449801,
+       "ci95": [
+        -0.33213529409976794,
+        0.35813529409976796
+       ],
+       "n": 3,
+       "values": [
+        0.173,
+        -0.07699999999999999,
+        -0.056999999999999995
+       ]
+      },
+      "steps.saturate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 206256,
+      "params_active": 206256,
+      "stored_bytes": 825024,
+      "flops": {
+       "mean": 42080256.0,
+       "sd": 0.0,
+       "ci95": [
+        42080256.0,
+        42080256.0
+       ],
+       "n": 3,
+       "values": [
+        42080256.0,
+        42080256.0,
+        42080256.0
+       ]
+      },
+      "train_flops": {
+       "mean": 80794091520000.0,
+       "sd": 0.0,
+       "ci95": [
+        80794091520000.0,
+        80794091520000.0
+       ],
+       "n": 3,
+       "values": [
+        80794091520000.0,
+        80794091520000.0,
+        80794091520000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 65536,
+      "total_bytes": 65536,
+      "peak_rss_mb": {
+       "mean": 701.1666666666666,
+       "sd": 33.82341398104774,
+       "ci95": [
+        617.1378669776248,
+        785.1954663557085
+       ],
+       "n": 3,
+       "values": [
+        740.2,
+        682.8,
+        680.5
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.656,
+       "sd": 0.0287923600977759,
+       "ci95": [
+        0.584470039701302,
+        0.7275299602986981
+       ],
+       "n": 3,
+       "values": [
+        0.689,
+        0.643,
+        0.636
+       ]
+      },
+      "train_seconds": {
+       "mean": 1786.4666666666665,
+       "sd": 201.35650804812184,
+       "ci95": [
+        1286.2290002282277,
+        2286.704333105105
+       ],
+       "n": 3,
+       "values": [
+        2018.9,
+        1675.3,
+        1665.2
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 7145.933333333334,
+       "sd": 805.3683153274244,
+       "ci95": [
+        5145.12605579272,
+        9146.740610873949
+       ],
+       "n": 3,
+       "values": [
+        8075.6,
+        6701.3,
+        6660.9
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.3652666666666667,
+       "sd": 0.023821488898331564,
+       "ci95": [
+        0.3060860316174004,
+        0.424447301715933
+       ],
+       "n": 3,
+       "values": [
+        0.3925,
+        0.355,
+        0.3483
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.037393934552868206,
+       "sd": 0.020296040995073317,
+       "ci95": [
+        -0.013028295568881576,
+        0.08781616467461799
+       ],
+       "n": 3,
+       "values": [
+        0.05556082442402841,
+        0.041132438157995534,
+        0.015488541076580679
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.3673412257019017,
+       "sd": 0.01663385431669617,
+       "ci95": [
+        0.3260171058712556,
+        0.4086653455325478
+       ],
+       "n": 3,
+       "values": [
+        0.3669541401167711,
+        0.3841652445246776,
+        0.35090429246425636
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.002777777777777778,
+       "sd": 0.003469443332443555,
+       "ci95": [
+        -0.005841492854623083,
+        0.01139704841017864
+       ],
+       "n": 3,
+       "values": [
+        0.006666666666666667,
+        0.0,
+        0.0016666666666666668
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.08888888888888889,
+       "sd": 0.037650930833016495,
+       "ci95": [
+        -0.004648757158498981,
+        0.18242653493627675
+       ],
+       "n": 3,
+       "values": [
+        0.085,
+        0.12833333333333333,
+        0.05333333333333334
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.6884280411792508,
+       "sd": 0.11129265498774778,
+       "ci95": [
+        0.41193944608748423,
+        0.9649166362710174
+       ],
+       "n": 3,
+       "values": [
+        0.8145161290322581,
+        0.6468875,
+        0.6038804945054945
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.5358318956029392,
+       "sd": 0.03458709474514606,
+       "ci95": [
+        0.4499058546126866,
+        0.6217579365931918
+       ],
+       "n": 3,
+       "values": [
+        0.5756594453895185,
+        0.518485576923077,
+        0.513350664496222
+       ]
+      }
+     },
+     "memory_tokens": 355
+    },
+    "lstm": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "lstm",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.5444444444444444,
+       "sd": 0.008388704928078635,
+       "ci95": [
+        0.5236040642732716,
+        0.5652848246156172
+       ],
+       "n": 3,
+       "values": [
+        0.5433333333333333,
+        0.5366666666666666,
+        0.5533333333333333
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.5461111111111111,
+       "sd": 0.008221471437193772,
+       "ci95": [
+        0.5256861954910548,
+        0.5665360267311674
+       ],
+       "n": 3,
+       "values": [
+        0.5366666666666666,
+        0.5516666666666666,
+        0.55
+       ]
+      },
+      "ood.all": {
+       "mean": 0.4066666666666667,
+       "sd": 0.0,
+       "ci95": [
+        0.4066666666666667,
+        0.4066666666666667
+       ],
+       "n": 3,
+       "values": [
+        0.4066666666666667,
+        0.4066666666666667,
+        0.4066666666666667
+       ]
+      },
+      "adv.all": {
+       "mean": 0.5066666666666667,
+       "sd": 0.006666666666666654,
+       "ci95": [
+        0.49010441194451365,
+        0.5232289213888197
+       ],
+       "n": 3,
+       "values": [
+        0.5066666666666667,
+        0.5133333333333333,
+        0.5
+       ]
+      },
+      "dev.retain": {
+       "mean": 0.9083333333333333,
+       "sd": 0.005773502691896262,
+       "ci95": [
+        0.89399,
+        0.9226766666666667
+       ],
+       "n": 3,
+       "values": [
+        0.905,
+        0.915,
+        0.905
+       ]
+      },
+      "dev.overwrite": {
+       "mean": 0.46666666666666673,
+       "sd": 0.00763762615825971,
+       "ci95": [
+        0.4476922201808152,
+        0.48564111315251823
+       ],
+       "n": 3,
+       "values": [
+        0.475,
+        0.46,
+        0.465
+       ]
+      },
+      "dev.saturate": {
+       "mean": 0.2583333333333333,
+       "sd": 0.028431203515386628,
+       "ci95": [
+        0.18770060813145226,
+        0.3289660585352143
+       ],
+       "n": 3,
+       "values": [
+        0.25,
+        0.235,
+        0.29
+       ]
+      },
+      "ood.retain": {
+       "mean": 1.0,
+       "sd": 0.0,
+       "ci95": [
+        1.0,
+        1.0
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      },
+      "ood.overwrite": {
+       "mean": 0.07833333333333332,
+       "sd": 0.002886751345948131,
+       "ci95": [
+        0.07116166666666665,
+        0.085505
+       ],
+       "n": 3,
+       "values": [
+        0.08,
+        0.08,
+        0.075
+       ]
+      },
+      "ood.saturate": {
+       "mean": 0.1416666666666667,
+       "sd": 0.0028867513459481155,
+       "ci95": [
+        0.13449500000000006,
+        0.14883833333333332
+       ],
+       "n": 3,
+       "values": [
+        0.14,
+        0.14,
+        0.145
+       ]
+      },
+      "adv.retain": {
+       "mean": 0.9266666666666667,
+       "sd": 0.005773502691896262,
+       "ci95": [
+        0.9123233333333334,
+        0.9410100000000001
+       ],
+       "n": 3,
+       "values": [
+        0.93,
+        0.92,
+        0.93
+       ]
+      },
+      "adv.overwrite": {
+       "mean": 0.4433333333333333,
+       "sd": 0.035118845842842465,
+       "ci95": [
+        0.35608624277375583,
+        0.5305804238929108
+       ],
+       "n": 3,
+       "values": [
+        0.44,
+        0.48,
+        0.41
+       ]
+      },
+      "adv.saturate": {
+       "mean": 0.15000000000000002,
+       "sd": 0.009999999999999995,
+       "ci95": [
+        0.12515661791677044,
+        0.1748433820832296
+       ],
+       "n": 3,
+       "values": [
+        0.15,
+        0.14,
+        0.16
+       ]
+      },
+      "above_cue.retain": {
+       "mean": 0.7413333333333334,
+       "sd": 0.005773502691896263,
+       "ci95": [
+        0.72699,
+        0.7556766666666668
+       ],
+       "n": 3,
+       "values": [
+        0.738,
+        0.748,
+        0.738
+       ]
+      },
+      "steps.retain": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.overwrite": {
+       "mean": 0.26666666666666666,
+       "sd": 0.00763762615825971,
+       "ci95": [
+        0.24769222018081516,
+        0.28564111315251817
+       ],
+       "n": 3,
+       "values": [
+        0.27499999999999997,
+        0.26,
+        0.265
+       ]
+      },
+      "steps.overwrite": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.saturate": {
+       "mean": -0.04866666666666667,
+       "sd": 0.028431203515386628,
+       "ci95": [
+        -0.11929939186854771,
+        0.021966058535214376
+       ],
+       "n": 3,
+       "values": [
+        -0.056999999999999995,
+        -0.07200000000000001,
+        -0.017000000000000015
+       ]
+      },
+      "steps.saturate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 213520,
+      "params_active": 213520,
+      "stored_bytes": 854080,
+      "flops": {
+       "mean": 21705898.59375,
+       "sd": 0.0,
+       "ci95": [
+        21705898.59375,
+        21705898.59375
+       ],
+       "n": 3,
+       "values": [
+        21705898.59375,
+        21705898.59375,
+        21705898.59375
+       ]
+      },
+      "train_flops": {
+       "mean": 41675325300000.0,
+       "sd": 0.0,
+       "ci95": [
+        41675325300000.0,
+        41675325300000.0
+       ],
+       "n": 3,
+       "values": [
+        41675325300000.0,
+        41675325300000.0,
+        41675325300000.0
+       ]
+      },
+      "state_bytes": 1792,
+      "kv_bytes": 0,
+      "total_bytes": 1792,
+      "peak_rss_mb": {
+       "mean": 513.3000000000001,
+       "sd": 2.4020824298928716,
+       "ci95": [
+        507.3324148398759,
+        519.2675851601242
+       ],
+       "n": 3,
+       "values": [
+        515.2,
+        514.1,
+        510.6
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.2323333333333333,
+       "sd": 0.06412747721011121,
+       "ci95": [
+        0.0730189914968942,
+        0.3916476751697724
+       ],
+       "n": 3,
+       "values": [
+        0.174,
+        0.301,
+        0.222
+       ]
+      },
+      "train_seconds": {
+       "mean": 628.7666666666668,
+       "sd": 152.9732765332995,
+       "ci95": [
+        248.72931092263678,
+        1008.8040224106967
+       ],
+       "n": 3,
+       "values": [
+        487.6,
+        791.3,
+        607.4
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 2515.1,
+       "sd": 611.8469661606568,
+       "ci95": [
+        995.0652043205951,
+        4035.1347956794048
+       ],
+       "n": 3,
+       "values": [
+        1950.5,
+        3165.2,
+        2429.6
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.4855666666666667,
+       "sd": 0.0017214335111567025,
+       "ci95": [
+        0.48129004362181255,
+        0.48984328971152086
+       ],
+       "n": 3,
+       "values": [
+        0.485,
+        0.4842,
+        0.4875
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.03363598720067079,
+       "sd": 0.004514879681286238,
+       "ci95": [
+        0.022419499102470403,
+        0.04485247529887118
+       ],
+       "n": 3,
+       "values": [
+        0.029042700876792286,
+        0.03379711424311004,
+        0.038068146482110043
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.559323662403557,
+       "sd": 0.0007078739082018248,
+       "ci95": [
+        0.5575650642067363,
+        0.5610822606003777
+       ],
+       "n": 3,
+       "values": [
+        0.5585460989673932,
+        0.5599306912223498,
+        0.5594941970209281
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.005,
+       "sd": 0.003333333333333333,
+       "ci95": [
+        -0.0032811273610765324,
+        0.013281127361076533
+       ],
+       "n": 3,
+       "values": [
+        0.0016666666666666668,
+        0.008333333333333333,
+        0.005
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.5433333333333333,
+       "sd": 0.0050000000000000044,
+       "ci95": [
+        0.5309116422917185,
+        0.5557550243749482
+       ],
+       "n": 3,
+       "values": [
+        0.5433333333333333,
+        0.5483333333333333,
+        0.5383333333333333
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.791814924513402,
+       "sd": 0.018821163449015868,
+       "ci95": [
+        0.7450567890319203,
+        0.8385730599948836
+       ],
+       "n": 3,
+       "values": [
+        0.7963145403251086,
+        0.8079784619509361,
+        0.7711517712641611
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.6796448087431693,
+       "sd": 0.04019308995163792,
+       "ci95": [
+        0.5797915796657537,
+        0.779498037820585
+       ],
+       "n": 3,
+       "values": [
+        0.6956103794437282,
+        0.7094020537852275,
+        0.6339219930005526
+       ]
+      }
+     },
+     "memory_tokens": 355
+    },
+    "ssm": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "ssm",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.2588888888888889,
+       "sd": 0.014369463507086172,
+       "ci95": [
+        0.22319028166513227,
+        0.2945874961126455
+       ],
+       "n": 3,
+       "values": [
+        0.24333333333333335,
+        0.26166666666666666,
+        0.27166666666666667
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.2888888888888889,
+       "sd": 0.012619796324000607,
+       "ci95": [
+        0.25753704669992056,
+        0.3202407310778573
+       ],
+       "n": 3,
+       "values": [
+        0.30333333333333334,
+        0.2833333333333333,
+        0.28
+       ]
+      },
+      "ood.all": {
+       "mean": 0.19666666666666666,
+       "sd": 0.010929064207170002,
+       "ci95": [
+        0.16951517487557935,
+        0.22381815845775396
+       ],
+       "n": 3,
+       "values": [
+        0.20833333333333334,
+        0.195,
+        0.18666666666666668
+       ]
+      },
+      "adv.all": {
+       "mean": 0.24222222222222223,
+       "sd": 0.022194427061597972,
+       "ci95": [
+        0.1870837590612573,
+        0.29736068538318716
+       ],
+       "n": 3,
+       "values": [
+        0.25333333333333335,
+        0.25666666666666665,
+        0.21666666666666667
+       ]
+      },
+      "dev.retain": {
+       "mean": 0.17999999999999997,
+       "sd": 0.022912878474779193,
+       "ci95": [
+        0.12307666054244532,
+        0.23692333945755462
+       ],
+       "n": 3,
+       "values": [
+        0.16,
+        0.175,
+        0.205
+       ]
+      },
+      "dev.overwrite": {
+       "mean": 0.345,
+       "sd": 0.017320508075688756,
+       "ci95": [
+        0.30197,
+        0.38802999999999993
+       ],
+       "n": 3,
+       "values": [
+        0.325,
+        0.355,
+        0.355
+       ]
+      },
+      "dev.saturate": {
+       "mean": 0.25166666666666665,
+       "sd": 0.005773502691896262,
+       "ci95": [
+        0.2373233333333333,
+        0.26600999999999997
+       ],
+       "n": 3,
+       "values": [
+        0.245,
+        0.255,
+        0.255
+       ]
+      },
+      "ood.retain": {
+       "mean": 0.11666666666666665,
+       "sd": 0.01443375672974064,
+       "ci95": [
+        0.08080833333333333,
+        0.15252499999999997
+       ],
+       "n": 3,
+       "values": [
+        0.125,
+        0.125,
+        0.1
+       ]
+      },
+      "ood.overwrite": {
+       "mean": 0.33499999999999996,
+       "sd": 0.013228756555322933,
+       "ci95": [
+        0.30213529464100836,
+        0.3678647053589916
+       ],
+       "n": 3,
+       "values": [
+        0.33,
+        0.325,
+        0.35
+       ]
+      },
+      "ood.saturate": {
+       "mean": 0.13833333333333334,
+       "sd": 0.030138568866708546,
+       "ci95": [
+        0.06345893515359649,
+        0.21320773151307018
+       ],
+       "n": 3,
+       "values": [
+        0.17,
+        0.135,
+        0.11
+       ]
+      },
+      "adv.retain": {
+       "mean": 0.15,
+       "sd": 0.020000000000000004,
+       "ci95": [
+        0.10031323583354079,
+        0.1996867641664592
+       ],
+       "n": 3,
+       "values": [
+        0.15,
+        0.17,
+        0.13
+       ]
+      },
+      "adv.overwrite": {
+       "mean": 0.3666666666666667,
+       "sd": 0.025166114784235825,
+       "ci95": [
+        0.3041455261531483,
+        0.42918780718018507
+       ],
+       "n": 3,
+       "values": [
+        0.37,
+        0.39,
+        0.34
+       ]
+      },
+      "adv.saturate": {
+       "mean": 0.20999999999999996,
+       "sd": 0.03,
+       "ci95": [
+        0.13546985375031118,
+        0.28453014624968875
+       ],
+       "n": 3,
+       "values": [
+        0.24,
+        0.21,
+        0.18
+       ]
+      },
+      "above_cue.retain": {
+       "mean": 0.012999999999999984,
+       "sd": 0.022912878474779193,
+       "ci95": [
+        -0.043923339457554667,
+        0.06992333945755463
+       ],
+       "n": 3,
+       "values": [
+        -0.007000000000000006,
+        0.00799999999999998,
+        0.03799999999999998
+       ]
+      },
+      "steps.retain": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.overwrite": {
+       "mean": 0.145,
+       "sd": 0.017320508075688756,
+       "ci95": [
+        0.10197000000000003,
+        0.18802999999999995
+       ],
+       "n": 3,
+       "values": [
+        0.125,
+        0.15499999999999997,
+        0.15499999999999997
+       ]
+      },
+      "steps.overwrite": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.saturate": {
+       "mean": -0.055333333333333325,
+       "sd": 0.005773502691896262,
+       "ci95": [
+        -0.06967666666666666,
+        -0.04098999999999998
+       ],
+       "n": 3,
+       "values": [
+        -0.062,
+        -0.05199999999999999,
+        -0.05199999999999999
+       ]
+      },
+      "steps.saturate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 206176,
+      "params_active": 206176,
+      "stored_bytes": 824704,
+      "flops": {
+       "mean": 39892736.0,
+       "sd": 0.0,
+       "ci95": [
+        39892736.0,
+        39892736.0
+       ],
+       "n": 3,
+       "values": [
+        39892736.0,
+        39892736.0,
+        39892736.0
+       ]
+      },
+      "train_flops": {
+       "mean": 76594053120000.0,
+       "sd": 0.0,
+       "ci95": [
+        76594053120000.0,
+        76594053120000.0
+       ],
+       "n": 3,
+       "values": [
+        76594053120000.0,
+        76594053120000.0,
+        76594053120000.0
+       ]
+      },
+      "state_bytes": 26624,
+      "kv_bytes": 0,
+      "total_bytes": 26624,
+      "peak_rss_mb": {
+       "mean": 1858.0333333333335,
+       "sd": 35.6847773333859,
+       "ci95": [
+        1769.3802775485058,
+        1946.6863891181613
+       ],
+       "n": 3,
+       "values": [
+        1869.6,
+        1818.0,
+        1886.5
+       ]
+      },
+      "latency_ms": {
+       "mean": 1.279,
+       "sd": 0.043034869582699954,
+       "ci95": [
+        1.172086829205503,
+        1.385913170794497
+       ],
+       "n": 3,
+       "values": [
+        1.281,
+        1.321,
+        1.235
+       ]
+      },
+      "train_seconds": {
+       "mean": 5871.3,
+       "sd": 98.62814000071157,
+       "ci95": [
+        5626.274343380406,
+        6116.325656619594
+       ],
+       "n": 3,
+       "values": [
+        5767.8,
+        5881.9,
+        5964.2
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 23485.266666666666,
+       "sd": 394.56503055052104,
+       "ci95": [
+        22505.03368560189,
+        24465.49964773144
+       ],
+       "n": 3,
+       "values": [
+        23071.2,
+        23527.7,
+        23856.9
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.22113333333333332,
+       "sd": 0.016551837763019953,
+       "ci95": [
+        0.18001297036070002,
+        0.2622536963059666
+       ],
+       "n": 3,
+       "values": [
+        0.2392,
+        0.2067,
+        0.2175
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.04128555034597714,
+       "sd": 0.007982201698639335,
+       "ci95": [
+        0.021455061679507007,
+        0.061116039012447276
+       ],
+       "n": 3,
+       "values": [
+        0.04994836791108051,
+        0.034227928469578416,
+        0.03968035465727248
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.01937375766121679,
+       "sd": 0.004688028122911752,
+       "ci95": [
+        0.007727110273774561,
+        0.031020405048659022
+       ],
+       "n": 3,
+       "values": [
+        0.01435681094725928,
+        0.02364299560586611,
+        0.02012146643052498
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0022222222222222222,
+       "sd": 0.0038490017945975057,
+       "ci95": [
+        -0.007340000000000003,
+        0.011784444444444448
+       ],
+       "n": 3,
+       "values": [
+        0.006666666666666667,
+        0.0,
+        0.0
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.0016666666666666668,
+       "sd": 0.002886751345948129,
+       "ci95": [
+        -0.005505,
+        0.008838333333333333
+       ],
+       "n": 3,
+       "values": [
+        0.005,
+        0.0,
+        0.0
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.6473097268158082,
+       "sd": 0.03544308474148314,
+       "ci95": [
+        0.5592571171717131,
+        0.7353623364599033
+       ],
+       "n": 3,
+       "values": [
+        0.6871341500211212,
+        0.619229054938103,
+        0.6355659754882004
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.5949327917495194,
+       "sd": 0.029548736386300845,
+       "ci95": [
+        0.5215237369373693,
+        0.6683418465616695
+       ],
+       "n": 3,
+       "values": [
+        0.628378947368421,
+        0.5723664419316593,
+        0.5840529859484778
+       ]
+      }
+     },
+     "memory_tokens": 355
+    },
+    "rouge-mem": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "rouge-mem",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.5227777777777778,
+       "sd": 0.25496368659376084,
+       "ci95": [
+        -0.11063825056198273,
+        1.1561938061175383
+       ],
+       "n": 3,
+       "values": [
+        0.29833333333333334,
+        0.8,
+        0.47
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.5133333333333333,
+       "sd": 0.23907809045024042,
+       "ci95": [
+        -0.08061750154509151,
+        1.1072841682117582
+       ],
+       "n": 3,
+       "values": [
+        0.2916666666666667,
+        0.7666666666666667,
+        0.4816666666666667
+       ]
+      },
+      "ood.all": {
+       "mean": 0.36388888888888893,
+       "sd": 0.26196550522144313,
+       "ci95": [
+        -0.28692202499537,
+        1.0146998027731478
+       ],
+       "n": 3,
+       "values": [
+        0.18833333333333332,
+        0.665,
+        0.23833333333333334
+       ]
+      },
+      "adv.all": {
+       "mean": 0.4822222222222223,
+       "sd": 0.24599759107522742,
+       "ci95": [
+        -0.12891899244137234,
+        1.093363436885817
+       ],
+       "n": 3,
+       "values": [
+        0.25,
+        0.74,
+        0.45666666666666667
+       ]
+      },
+      "dev.retain": {
+       "mean": 0.5033333333333333,
+       "sd": 0.25071564237863847,
+       "ci95": [
+        -0.11952911645215325,
+        1.1261957831188198
+       ],
+       "n": 3,
+       "values": [
+        0.325,
+        0.79,
+        0.395
+       ]
+      },
+      "dev.overwrite": {
+       "mean": 0.5533333333333333,
+       "sd": 0.29737742572921255,
+       "ci95": [
+        -0.18545276769847263,
+        1.2921194343651394
+       ],
+       "n": 3,
+       "values": [
+        0.28,
+        0.87,
+        0.51
+       ]
+      },
+      "dev.saturate": {
+       "mean": 0.5116666666666667,
+       "sd": 0.22507406188482346,
+       "ci95": [
+        -0.047493424976246534,
+        1.0708267583095799
+       ],
+       "n": 3,
+       "values": [
+        0.29,
+        0.74,
+        0.505
+       ]
+      },
+      "ood.retain": {
+       "mean": 0.40166666666666667,
+       "sd": 0.2892375033313165,
+       "ci95": [
+        -0.3168971141392622,
+        1.1202304474725955
+       ],
+       "n": 3,
+       "values": [
+        0.33,
+        0.72,
+        0.155
+       ]
+      },
+      "ood.overwrite": {
+       "mean": 0.38833333333333336,
+       "sd": 0.3740432238837289,
+       "ci95": [
+        -0.5409165393253135,
+        1.31758320599198
+       ],
+       "n": 3,
+       "values": [
+        0.05,
+        0.79,
+        0.325
+       ]
+      },
+      "ood.saturate": {
+       "mean": 0.30166666666666664,
+       "sd": 0.16072751268321592,
+       "ci95": [
+        -0.09763483422095981,
+        0.7009681675542931
+       ],
+       "n": 3,
+       "values": [
+        0.185,
+        0.485,
+        0.235
+       ]
+      },
+      "adv.retain": {
+       "mean": 0.52,
+       "sd": 0.2179449471770337,
+       "ci95": [
+        -0.021448959582833993,
+        1.061448959582834
+       ],
+       "n": 3,
+       "values": [
+        0.37,
+        0.77,
+        0.42
+       ]
+      },
+      "adv.overwrite": {
+       "mean": 0.5066666666666667,
+       "sd": 0.2950141239556733,
+       "ci95": [
+        -0.22624819347133818,
+        1.2395815268046717
+       ],
+       "n": 3,
+       "values": [
+        0.21,
+        0.8,
+        0.51
+       ]
+      },
+      "adv.saturate": {
+       "mean": 0.42,
+       "sd": 0.2406241883103193,
+       "ci95": [
+        -0.17779186486602522,
+        1.0177918648660251
+       ],
+       "n": 3,
+       "values": [
+        0.17,
+        0.65,
+        0.44
+       ]
+      },
+      "above_cue.retain": {
+       "mean": 0.3363333333333334,
+       "sd": 0.25071564237863847,
+       "ci95": [
+        -0.2865291164521532,
+        0.9591957831188199
+       ],
+       "n": 3,
+       "values": [
+        0.158,
+        0.623,
+        0.228
+       ]
+      },
+      "steps.retain": {
+       "mean": 1.8416666666666666,
+       "sd": 0.4331954908968159,
+       "ci95": [
+        0.7654625569584859,
+        2.9178707763748473
+       ],
+       "n": 3,
+       "values": [
+        1.555,
+        1.63,
+        2.34
+       ]
+      },
+      "above_cue.overwrite": {
+       "mean": 0.35333333333333333,
+       "sd": 0.2973774257292125,
+       "ci95": [
+        -0.38545276769847253,
+        1.0921194343651393
+       ],
+       "n": 3,
+       "values": [
+        0.08000000000000002,
+        0.6699999999999999,
+        0.31
+       ]
+      },
+      "steps.overwrite": {
+       "mean": 2.1750000000000003,
+       "sd": 1.3226772092993815,
+       "ci95": [
+        -1.1109775283404377,
+        5.460977528340438
+       ],
+       "n": 3,
+       "values": [
+        1.25,
+        1.585,
+        3.69
+       ]
+      },
+      "above_cue.saturate": {
+       "mean": 0.20466666666666666,
+       "sd": 0.22507406188482346,
+       "ci95": [
+        -0.3544934249762466,
+        0.7638267583095799
+       ],
+       "n": 3,
+       "values": [
+        -0.017000000000000015,
+        0.433,
+        0.198
+       ]
+      },
+      "steps.saturate": {
+       "mean": 2.28,
+       "sd": 1.4072935017259192,
+       "ci95": [
+        -1.2161930166623143,
+        5.776193016662313
+       ],
+       "n": 3,
+       "values": [
+        1.47,
+        1.465,
+        3.905
+       ]
+      },
+      "params": 230691,
+      "params_active": 230691,
+      "stored_bytes": 922764,
+      "flops": {
+       "mean": 176171296.0,
+       "sd": 5413864.281014809,
+       "ci95": [
+        162721426.112,
+        189621165.888
+       ],
+       "n": 3,
+       "values": [
+        173045600.0,
+        173045600.0,
+        182422688.0
+       ]
+      },
+      "train_flops": {
+       "mean": 338248888320000.0,
+       "sd": 10394619419548.434,
+       "ci95": [
+        312425138135040.0,
+        364072638504960.0
+       ],
+       "n": 3,
+       "values": [
+        332247552000000.0,
+        332247552000000.0,
+        350251560960000.0
+       ]
+      },
+      "state_bytes": 16128,
+      "kv_bytes": 0,
+      "total_bytes": 16128,
+      "peak_rss_mb": {
+       "mean": 902.6999999999999,
+       "sd": 5.356304696336803,
+       "ci95": [
+        889.3931275874708,
+        916.0068724125291
+       ],
+       "n": 3,
+       "values": [
+        907.0,
+        896.7,
+        904.4
+       ]
+      },
+      "latency_ms": {
+       "mean": 2.3526666666666665,
+       "sd": 0.016743157806499098,
+       "ci95": [
+        2.311071,
+        2.394262333333333
+       ],
+       "n": 3,
+       "values": [
+        2.343,
+        2.343,
+        2.372
+       ]
+      },
+      "train_seconds": {
+       "mean": 8136.766666666666,
+       "sd": 404.9501738897435,
+       "ci95": [
+        7130.73347720535,
+        9142.799856127982
+       ],
+       "n": 3,
+       "values": [
+        7669.2,
+        8375.1,
+        8366.0
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 32547.0,
+       "sd": 1619.6569297230828,
+       "ci95": [
+        28523.22440511389,
+        36570.77559488611
+       ],
+       "n": 3,
+       "values": [
+        30676.9,
+        33500.3,
+        33463.8
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.5052666666666666,
+       "sd": 0.2906518421296059,
+       "ci95": [
+        -0.21681081005536618,
+        1.2273441433886996
+       ],
+       "n": 3,
+       "values": [
+        0.25,
+        0.8216,
+        0.4442
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.030847075233856835,
+       "sd": 0.0059949511981274494,
+       "ci95": [
+        0.015953588915317306,
+        0.045740561552396364
+       ],
+       "n": 3,
+       "values": [
+        0.033965332731604576,
+        0.023935676639278737,
+        0.03464021633068719
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.22272205890673732,
+       "sd": 0.09118471329038845,
+       "ci95": [
+        -0.0038116083355490826,
+        0.44925572614902376
+       ],
+       "n": 3,
+       "values": [
+        0.2752820788075527,
+        0.11743106763809917,
+        0.2754530302745601
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0011111111111111111,
+       "sd": 0.0009622504486493763,
+       "ci95": [
+        -0.0012794444444444448,
+        0.003501666666666667
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0016666666666666668,
+        0.0016666666666666668
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.043333333333333335,
+       "sd": 0.04475240527365851,
+       "ci95": [
+        -0.06784677700237042,
+        0.15451344366903708
+       ],
+       "n": 3,
+       "values": [
+        0.018333333333333333,
+        0.016666666666666666,
+        0.095
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.795601705636514,
+       "sd": 0.1572509050338999,
+       "ci95": [
+        0.4049372739674312,
+        1.186266137305597
+       ],
+       "n": 3,
+       "values": [
+        0.6383975371223078,
+        0.9528993055555556,
+        0.7955082742316785
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.771691715031018,
+       "sd": 0.13871333670201305,
+       "ci95": [
+        0.4270808726582394,
+        1.1163025574037966
+       ],
+       "n": 3,
+       "values": [
+        0.6520506623539459,
+        0.9237396975024627,
+        0.7392847852366452
+       ]
+      }
+     },
+     "memory_tokens": 355
+    }
+   },
+   "cue_floors": {
+    "retain": 0.167,
+    "overwrite": 0.2,
+    "saturate": 0.307
+   }
+  },
+  "result": "PASS",
+  "decision": {
+   "complete": true,
+   "checks": {
+    "T1_retain_vs_window": true,
+    "T2_memory": true,
+    "T3_vs_lstm": false,
+    "T4_vs_full": true
+   },
+   "result": "PASS"
+  },
+  "recorded": "2026-09-29T23:31:15Z"
  }
 ]
