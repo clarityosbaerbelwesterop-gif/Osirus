@@ -1,0 +1,79 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.24",
+ "title": "Hardware efficiency: tokens per second and inference memory on a real CPU",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.09 (cheap reads), R1.22 (real sparse execution)",
+ "runner": "lab/hardware.py",
+ "question": "On a real CPU, how do tokens/second and per-stream inference memory scale with input length (64, 256, 1024 tokens) for the Transformer, LSTM, SSM and the Rouge memory models? Is the constant-memory Rouge variant physically viable at long inputs?",
+ "setup": {
+  "lengths": [
+   64,
+   256,
+   1024
+  ],
+  "batch": 8,
+  "repeats": 3,
+  "measure": "median forward time (inference, no grad), torch threads = all cores; memory = analytic state + KV bytes per stream (fp32)",
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "lstm": {
+    "kind": "lstm",
+    "d": 112,
+    "layers": 2
+   },
+   "ssm": {
+    "kind": "ssm",
+    "d": 104,
+    "layers": 4,
+    "n": 16
+   },
+   "rouge-mem": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "inject": true,
+    "rezero": true,
+    "memory_slots": 32,
+    "context": 3
+   },
+   "rouge-cheap": {
+    "kind": "rouge-mem",
+    "d": 104,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "inject": true,
+    "rezero": true,
+    "memory_slots": 32,
+    "context": 3,
+    "read_mode": "write"
+   }
+  },
+  "hardware": "research container CPU (no power counters available: energy is not measured; CPU-seconds per token are the proxy)",
+  "seeds": [
+   1
+  ]
+ },
+ "predictions": {
+  "H1_memory": "at 1024 tokens rouge-cheap needs <= 0.1x the Transformer's per-stream inference memory",
+  "H2_speed": "at 1024 tokens rouge-cheap reaches >= 0.25x the Transformer's tokens/second (untrained weights; think steps capped at max_think)",
+  "note": "the Rouge per-token loop runs in Python; a fused kernel is future work"
+ },
+ "decision": {
+  "PASS": "H1 and H2",
+  "PARTIAL": "H1 only",
+  "FAIL": "otherwise"
+ },
+ "not_claimed": "Energy in joules is not measured (no RAPL in the container); owner hardware (tier 1/2) is needed for power draw."
+}
