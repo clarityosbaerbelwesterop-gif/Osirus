@@ -36,7 +36,7 @@
     "kind": "structured",
     "d": 52,
     "layers": 4,
-    "heads": 4,
+    "heads": 2,
     "mlp_kind": "dense"
    },
    "bank2": {
@@ -50,7 +50,7 @@
   },
   "stored_bytes_measured_untrained": {
    "dense": "806 KiB",
-   "dense-d52": "~532 KiB",
+   "dense-d52": "538 KiB",
    "bank2": "550 KiB"
   },
   "gate": {
@@ -94,5 +94,12 @@
   "PASS": "bank2 beats the byte-matched dense model (d=52) by >= 2 points"
  },
  "prior_art": "Savarese & Maire 1902.09701 (template sharing), ALBERT 1909.11942 (cross-layer sharing)",
- "not_claimed": "Every weight representation here is prior art; the question is capability per stored byte on this benchmark, against a plain dense model with the same bytes."
+ "not_claimed": "Every weight representation here is prior art; the question is capability per stored byte on this benchmark, against a plain dense model with the same bytes.",
+ "amendments": [
+  {
+   "date": "2026-09-29",
+   "change": "dense-d52: heads 4 -> 2",
+   "reason": "run 36595763191 crashed at step 0 for every dense-d52 seed: d=52 with 4 heads gives an odd head dimension (13) that RoPE cannot rotate. 2 heads (dimension 26) keeps the byte match with bank2 (538 vs 550 KiB). The amendment was made before any dense-d52 result existed; the gate is unchanged."
+  }
+ ]
 }
