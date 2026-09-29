@@ -1,0 +1,116 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.39",
+ "title": "Verifiable training: learning program execution from executor rewards only",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.34 (latent program execution)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/programs.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer-sup": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "transformer-rl": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "objective": "reinforce"
+   },
+   "exec-sup": {
+    "kind": "exec",
+    "d": 128,
+    "heads": 4,
+    "hint_weight": 0.0
+   },
+   "exec-rl": {
+    "kind": "exec",
+    "d": 128,
+    "heads": 4,
+    "hint_weight": 0.0,
+    "objective": "reinforce"
+   }
+  },
+  "gate": {
+   "checks": {
+    "R1_exec_rl_id": {
+     "left": "exec-rl:dev.all",
+     "op": ">=",
+     "right": "exec-sup:dev.all",
+     "times": 0.8
+    },
+    "R2_exec_rl_ood": {
+     "left": "exec-rl:ood.all",
+     "op": ">=",
+     "right": "exec-sup:ood.all",
+     "times": 0.8
+    },
+    "R3_exec_vs_transformer_rl": {
+     "left": "exec-rl:ood.all",
+     "op": ">=",
+     "right": "transformer-rl:ood.all",
+     "plus": 0.05
+    },
+    "R4_learned_at_all": {
+     "left": "exec-rl:dev.all",
+     "op": ">=",
+     "value": 0.2
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "R1_exec_rl_id",
+      "R2_exec_rl_ood",
+      "R4_learned_at_all"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "R4_learned_at_all"
+     ],
+     "any": [
+      "R1_exec_rl_id",
+      "R3_exec_vs_transformer_rl"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 150000000000000.0
+ },
+ "predictions": {
+  "PASS": "reward-only training reaches >= 80% of supervised accuracy ID and OOD for the latent program model, and learns at all (>= 20% vs 10% chance)",
+  "R3": "reported: the step-aligned model beats the Transformer under reward-only training by >= 5 points OOD",
+  "reward": "1 if the sampled answer equals the executor's result, else 0; REINFORCE with a running-mean baseline and 0.01 entropy bonus"
+ },
+ "prior_art": "REINFORCE (Williams 1992), RL from verifiable rewards on math/code (e.g. 2110.14168 verifiers; outcome-reward RL), CLRS 2205.15659",
+ "not_claimed": "Policy-gradient training from outcome rewards is prior art; the question is whether latent step-aligned execution learns from it on this benchmark."
+}

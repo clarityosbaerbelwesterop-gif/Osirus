@@ -64,8 +64,9 @@ def build(name: str) -> torch.nn.Module:
     config = dict(SETUP["models"][name])
     kind = config.pop("kind")
     tau_warmup = config.pop("tau_warmup", 0)
+    objective = config.pop("objective", "supervised")
     model = zoo.build(kind, len(bench.VOCAB), **config)
-    model.tau_warmup = tau_warmup
+    model.tau_warmup, model.objective = tau_warmup, objective
     return model
 
 
@@ -211,8 +212,19 @@ def train(args) -> None:
         seen += len(answers)
         extra = {"levels": torch.tensor([e[3] for e in examples])} if getattr(model, "uses_levels", False) else {}
         logits, info = model(ids, lengths, **extra)
-        loss = F.cross_entropy(logits, answers)
-        if getattr(model, "hint_weight", 0) > 0:  # execution supervision: the state after every program step
+        if model.objective == "reinforce":
+            # R1.39: learn from an external verifier only. The model samples an answer, the task's
+            # executor says right (1) or wrong (0); REINFORCE with a running-mean baseline.
+            # The label is used only to compute the reward, exactly as a checker or unit test would.
+            dist = torch.distributions.Categorical(logits=logits)
+            sample = dist.sample()
+            reward = (sample == answers).float()
+            baseline = getattr(model, "_baseline", 0.0)
+            loss = -((reward - baseline) * dist.log_prob(sample)).mean() - 0.01 * dist.entropy().mean()
+            model._baseline = 0.99 * baseline + 0.01 * float(reward.mean())
+        else:
+            loss = F.cross_entropy(logits, answers)
+        if getattr(model, "hint_weight", 0) > 0 and model.objective != "reinforce":  # execution supervision
             loss = loss + model.hint_weight * model.hint_loss(info, [bench.hints(e[0], e[2]) for e in examples])
         if hasattr(model, "extra_loss"):
             loss = loss + model.extra_loss(info)
