@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib
 import json
 import math
 import random
@@ -43,9 +44,11 @@ ROLES_R101 = {"candidate": "rouge", "baseline": "transformer", "baseline_flops":
 
 
 def load(path: str) -> None:
-    global PREREG, SETUP
+    global PREREG, SETUP, mb
     PREREG = json.loads(Path(path).read_text())
     SETUP = PREREG["setup"]
+    # R1.01/R1.01b: benchmarks/microbench.py; R1.03 onwards: microbench2 (hops without the length cue).
+    mb = importlib.import_module("benchmarks." + Path(PREREG.get("benchmarks", ["benchmarks/microbench.py"])[0]).stem)
 
 
 def roles() -> dict:

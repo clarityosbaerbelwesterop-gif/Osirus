@@ -7,7 +7,7 @@
  "follows": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
  "runner": "experiments/r1_04.py",
  "benchmarks": [
-  "benchmarks/microbench.py"
+  "benchmarks/microbench2.py"
  ],
  "question": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
  "setup": {
@@ -104,5 +104,6 @@
   "Switch Transformer, Fedus et al. 2021 (arXiv 2101.03961)",
   "Mixture-of-Depths, Raposo et al. 2024 (arXiv 2404.02258)"
  ],
- "not_claimed": "Mixture-of-Experts is prior art. No novelty claim."
+ "not_claimed": "Mixture-of-Experts is prior art. No novelty claim.",
+ "benchmark_note": "Changed before any run (2026-09-29): microbench v1's hops task let 'the digit at the end of the longest chain' answer 91% ID / 100% OOD without following the query (found while auditing R1.02's benchmark). microbench2 uses two equal chains (50% guess); state and recall are unchanged. tests/test_r103.py audits cues. Models, budget and gate thresholds are unchanged."
 }

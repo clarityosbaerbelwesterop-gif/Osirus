@@ -164,7 +164,9 @@ def recall_curve(model) -> dict:
         ex = [(mb.encode(t), mb.TOKEN[a], "recall", n) for t, a in (mb.recall_task(r, n) for _ in range(200))]
         ids, lengths, answers = base.collate(ex)
         acc = float((model(ids, lengths)[0].argmax(-1) == answers).float().mean())
-        out[str(n)] = {"acc": round(acc, 4), "tokens": 2 * n + 3, "memory_bytes": model.state_bytes(2 * n + 3)}
+        cue = sum(mb.shortcuts(t, "recall")["most_common_value"] == a for t, a, _, _ in ex) / len(ex)
+        out[str(n)] = {"acc": round(acc, 4), "tokens": 2 * n + 3, "memory_bytes": model.state_bytes(2 * n + 3),
+                       "value_guess_floor": round(cue, 4)}
     model.train()
     return out
 
@@ -176,6 +178,8 @@ def train(args) -> None:
     model = build(args.model)
     model.load_state_dict(torch.load(Path(args.out) / "checkpoints" / f"{args.model}-seed{args.seed}.pt"))
     result["probes"] = probes(model, args.seed)
+    torch.manual_seed(args.seed)  # the same architecture untrained: what the probe reads without learning
+    result["probes_init"] = probes(build(args.model), args.seed)
     result["ece"] = {s: round(calibration(model, mb.fixed_set("r1.01", 300, s)), 4) for s in ("id", "ood")}
     result["recall_curve"] = recall_curve(model)
     path.write_text(json.dumps(result, indent=1))
@@ -192,6 +196,7 @@ def report(args) -> None:
     for m in models:
         rs = [r for r in runs if r["model"] == m]
         table[m]["probes"] = {k: stats.summary([r["probes"][k] for r in rs]) for k in rs[0]["probes"]}
+        table[m]["probes_init"] = {k: stats.summary([r["probes_init"][k] for r in rs]) for k in rs[0]["probes_init"]}
         table[m]["ece"] = {s: stats.summary([r["ece"][s] for r in rs]) for s in ("id", "ood")}
         table[m]["recall_curve"] = {n: {"acc": stats.summary([r["recall_curve"][n]["acc"] for r in rs]),
                                         "memory_bytes": rs[0]["recall_curve"][n]["memory_bytes"]} for n in rs[0]["recall_curve"]}
@@ -199,11 +204,13 @@ def report(args) -> None:
     (out / "summary.json").write_text(json.dumps(table, indent=1))
     lines = ["", "| | " + " | ".join(models) + " |", "|---|" + "---|" * len(models)]
     for k in runs[0]["probes"]:
-        lines.append(f"| probe {k} (%) | " + " | ".join(f"{100 * table[m]['probes'][k]['mean']:.1f}" for m in models) + " |")
+        lines.append(f"| probe {k} (%), trained / untrained | " + " | ".join(
+            f"{100 * table[m]['probes'][k]['mean']:.1f} / {100 * table[m]['probes_init'][k]['mean']:.1f}" for m in models) + " |")
     for s in ("id", "ood"):
         lines.append(f"| ECE {s} | " + " | ".join(f"{table[m]['ece'][s]['mean']:.3f}" for m in models) + " |")
     for n in runs[0]["recall_curve"]:
-        lines.append(f"| recall, {n} facts: acc % (memory) | " + " | ".join(
+        floor = runs[0]["recall_curve"][n].get("value_guess_floor", 0)
+        lines.append(f"| recall, {n} facts: acc % (memory); value-guess floor {100 * floor:.0f}% | " + " | ".join(
             f"{100 * table[m]['recall_curve'][n]['acc']['mean']:.1f} ({table[m]['recall_curve'][n]['memory_bytes'] / 1024:.0f} KiB)" for m in models) + " |")
     lines += ["", f"R1.03 decision: `{json.dumps(table['decision'])}`"]
     (out / "report.md").write_text((out / "report.md").read_text() + "\n".join(lines) + "\n")
@@ -224,7 +231,8 @@ def decide(table: dict) -> dict:
                      and c["recall_curve"][longest]["memory_bytes"] <= g["memory_ratio"] * t["recall_curve"][longest]["memory_bytes"],
         "M1_recall_gain_only": acc(c, "ood_recall") >= acc(s, "ood_recall") + g["recall_gain"],
         "M2_no_regression": acc(c, "ood_state") >= acc(s, "ood_state") - 0.02 and acc(c, "ood_hops") >= acc(s, "ood_hops") - 0.02,
-        "M3_facts_probe": c["probes"]["fact_present_ood"]["mean"] >= s["probes"]["fact_present_ood"]["mean"],
+        "M3_facts_probe": c["probes"]["fact_present_ood"]["mean"] >= s["probes"]["fact_present_ood"]["mean"]
+                          and c["probes"]["fact_present_ood"]["mean"] > c["probes_init"]["fact_present_ood"]["mean"],
     }
     if checks["M1_recall"] and checks["M2_no_regression"]:
         result = "PASS"
@@ -251,6 +259,7 @@ if __name__ == "__main__":
     parser.add_argument("--out")
     args = parser.parse_args()
     base.load(args.prereg)
+    globals()["mb"] = base.mb
     args.steps = args.steps or base.SETUP["steps"]
     args.out = args.out or str(base.ROOT / "results" / base.PREREG["id"].lower())
     (train if args.command == "train" else report)(args)

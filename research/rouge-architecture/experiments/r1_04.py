@@ -169,6 +169,7 @@ if __name__ == "__main__":
     parser.add_argument("--out")
     args = parser.parse_args()
     base.load(args.prereg)
+    globals()["mb"] = base.mb
     args.steps = args.steps or base.SETUP["steps"]
     args.out = args.out or str(base.ROOT / "results" / base.PREREG["id"].lower())
     (train if args.command == "train" else report)(args)

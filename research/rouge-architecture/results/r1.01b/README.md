@@ -90,3 +90,12 @@ Per the brief, R1.01 is not repaired further. Each mechanism is tested on its ow
 - **R1.02, learned halting** (running): depth-controlled benchmark; PonderNet, ACT with warm-up, ACT and fixed depth vs matched Transformers.
 - **R1.03, state quality and two-level memory:** targets the recall weakness from point 2.
 - **R1.04, sparse conditional circuits.**
+
+## Validity note (added 2026-09-29, after the result)
+
+The hops task in `benchmarks/microbench.py` has a length cue. Answering with "the digit at the end of the longest chain" is correct on 91% of ID and 100% of OOD hops examples, without following the query. (It was found while auditing R1.02's benchmark.)
+
+- Every model scored 40–48% on hops, far below that cue, so none of them exploited it.
+- Hops accuracy here is still not a valid measure of multi-hop reasoning, and P2 is not interpretable.
+- The pre-registered decision stands. It fails on P1 (state) independently of P2.
+- From R1.03 on, experiments use `benchmarks/microbench2.py`: two equal chains, a 50% guess level, and cue audits in `tests/test_r103.py`.

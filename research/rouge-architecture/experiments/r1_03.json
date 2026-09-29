@@ -7,7 +7,7 @@
  "follows": "R1.01 / R1.01b: the fixed-size state loses on recall (P3), as predicted by its capacity",
  "runner": "experiments/r1_03.py",
  "benchmarks": [
-  "benchmarks/microbench.py"
+  "benchmarks/microbench2.py"
  ],
  "question": "What does the persistent state encode (facts, intermediate results, calibrated uncertainty), and does a small active state plus a constant-size exact slot memory with top-k reads close the recall gap to a Transformer at <= 1/4 of its KV-cache bytes, without losing state tracking or hops?",
  "setup": {
@@ -82,7 +82,7 @@
  "predictions": {
   "M1_recall": "rouge-mem OOD recall >= rouge-b + 0.10 and >= transformer - 0.02, with inference memory at 26 facts <= 0.25x the Transformer's KV cache.",
   "M2_no_regression": "rouge-mem OOD state and OOD hops each >= rouge-b - 0.02.",
-  "M3_facts_probe": "A linear probe reads 'is key x stored' (balanced accuracy) from rouge-mem's state + memory at least as well as from rouge-b's state (OOD lengths).",
+  "M3_facts_probe": "A linear probe reads 'is key x stored' (balanced accuracy) from rouge-mem's state + memory at least as well as from rouge-b's state (OOD lengths). Added before any run: an untrained rouge-mem already scores ~0.89 on this probe (raw slot storage is linearly decodable), so M3 also requires the trained model to beat the same architecture untrained. Every probe is reported trained / untrained. M3 does not enter the decision.",
   "probes_reported": "Probes for intermediate results (state value half way; first hop) and ECE (uncertainty) are reported for every model, not gating. Goals and causal relations are not tested here: no task in this benchmark has them."
  },
  "decision": {
@@ -97,5 +97,6 @@
   "Titans, Behrouz et al. 2025 (arXiv 2501.00663)",
   "Repeat After Me, Jelassi et al. 2024 (arXiv 2402.01032): fixed-state models lose on copying/recall"
  ],
- "not_claimed": "Slot memories, content addressing and top-k reads are prior art. No novelty claim."
+ "not_claimed": "Slot memories, content addressing and top-k reads are prior art. No novelty claim.",
+ "benchmark_note": "Changed before any run (2026-09-29): microbench v1's hops task let 'the digit at the end of the longest chain' answer 91% ID / 100% OOD without following the query (found while auditing R1.02's benchmark). microbench2 uses two equal chains (50% guess); state and recall are unchanged. tests/test_r103.py audits cues. Models, budget and gate thresholds are unchanged."
 }
