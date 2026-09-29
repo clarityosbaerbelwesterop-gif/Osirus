@@ -4185,5 +4185,1527 @@
    "result": "PARTIAL"
   },
   "recorded": "2026-09-29T14:04:15Z"
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "moe-top1-seed1",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "moe-top1",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "experts": 8,
+   "hidden": 256,
+   "top_k": 1,
+   "balance": 0.01
+  },
+  "seed": 1,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 1134252,
+  "flop_estimate": {
+   "id": 10733056.0,
+   "ood": 25830912.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007530",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1099.3,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.5533333333333333,
+    "state": 0.17666666666666667,
+    "hops": 0.48333333333333334,
+    "recall": 1.0
+   },
+   "ood": {
+    "all": 0.5188888888888888,
+    "state": 0.15,
+    "hops": 0.48,
+    "recall": 0.9266666666666666
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "moe-top1-seed2",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "moe-top1",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "experts": 8,
+   "hidden": 256,
+   "top_k": 1,
+   "balance": 0.01
+  },
+  "seed": 2,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 1134252,
+  "flop_estimate": {
+   "id": 10733056.0,
+   "ood": 25830912.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007528",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1534.1,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.3788888888888889,
+    "state": 0.22666666666666666,
+    "hops": 0.51,
+    "recall": 0.4
+   },
+   "ood": {
+    "all": 0.3111111111111111,
+    "state": 0.17333333333333334,
+    "hops": 0.5133333333333333,
+    "recall": 0.24666666666666667
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "moe-top1-seed3",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "moe-top1",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "experts": 8,
+   "hidden": 256,
+   "top_k": 1,
+   "balance": 0.01
+  },
+  "seed": 3,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 1134252,
+  "flop_estimate": {
+   "id": 10733056.0,
+   "ood": 25830912.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007525",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1564.3,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.5544444444444444,
+    "state": 0.24666666666666667,
+    "hops": 0.43,
+    "recall": 0.9866666666666667
+   },
+   "ood": {
+    "all": 0.48444444444444446,
+    "state": 0.18333333333333332,
+    "hops": 0.47333333333333333,
+    "recall": 0.7966666666666666
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "moe-top2-seed1",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "moe-top2",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "experts": 8,
+   "hidden": 128,
+   "top_k": 2,
+   "balance": 0.01
+  },
+  "seed": 1,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 605868,
+  "flop_estimate": {
+   "id": 10733056.0,
+   "ood": 25830912.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007535",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1720.3,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.5955555555555555,
+    "state": 0.2866666666666667,
+    "hops": 0.5,
+    "recall": 1.0
+   },
+   "ood": {
+    "all": 0.54,
+    "state": 0.18333333333333332,
+    "hops": 0.45,
+    "recall": 0.9866666666666667
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "moe-top2-seed2",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "moe-top2",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "experts": 8,
+   "hidden": 128,
+   "top_k": 2,
+   "balance": 0.01
+  },
+  "seed": 2,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 605868,
+  "flop_estimate": {
+   "id": 10733056.0,
+   "ood": 25830912.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007526",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1564.4,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.57,
+    "state": 0.27666666666666667,
+    "hops": 0.43333333333333335,
+    "recall": 1.0
+   },
+   "ood": {
+    "all": 0.5444444444444444,
+    "state": 0.12666666666666668,
+    "hops": 0.52,
+    "recall": 0.9866666666666667
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "moe-top2-seed3",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "moe-top2",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "experts": 8,
+   "hidden": 128,
+   "top_k": 2,
+   "balance": 0.01
+  },
+  "seed": 3,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 605868,
+  "flop_estimate": {
+   "id": 10733056.0,
+   "ood": 25830912.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007533",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1670.5,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.59,
+    "state": 0.28,
+    "hops": 0.49,
+    "recall": 1.0
+   },
+   "ood": {
+    "all": 0.5355555555555556,
+    "state": 0.14,
+    "hops": 0.49,
+    "recall": 0.9766666666666667
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "transformer-seed1",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "transformer",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 1,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 205740,
+  "flop_estimate": {
+   "id": 10622464.0,
+   "ood": 25564672.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007534",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1262.3,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.5933333333333334,
+    "state": 0.28,
+    "hops": 0.5,
+    "recall": 1.0
+   },
+   "ood": {
+    "all": 0.54,
+    "state": 0.17,
+    "hops": 0.47,
+    "recall": 0.98
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "transformer-seed2",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "transformer",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 2,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 205740,
+  "flop_estimate": {
+   "id": 10622464.0,
+   "ood": 25564672.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007527",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1172.8,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.5677777777777778,
+    "state": 0.23666666666666666,
+    "hops": 0.4666666666666667,
+    "recall": 1.0
+   },
+   "ood": {
+    "all": 0.5333333333333333,
+    "state": 0.16333333333333333,
+    "hops": 0.4633333333333333,
+    "recall": 0.9733333333333334
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "transformer-seed3",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "transformer",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 3,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 205740,
+  "flop_estimate": {
+   "id": 10622464.0,
+   "ood": 25564672.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007532",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1169.3,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.5955555555555555,
+    "state": 0.29,
+    "hops": 0.49666666666666665,
+    "recall": 1.0
+   },
+   "ood": {
+    "all": 0.5322222222222223,
+    "state": 0.17666666666666667,
+    "hops": 0.45666666666666667,
+    "recall": 0.9633333333333334
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "transformer-wide-seed1",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "transformer-wide",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "ff": 1024
+  },
+  "seed": 1,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 602028,
+  "flop_estimate": {
+   "id": 31856128.0,
+   "ood": 76682752.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007531",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 3285.5,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.5755555555555556,
+    "state": 0.23,
+    "hops": 0.49666666666666665,
+    "recall": 1.0
+   },
+   "ood": {
+    "all": 0.5122222222222222,
+    "state": 0.13333333333333333,
+    "hops": 0.47,
+    "recall": 0.9333333333333333
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "transformer-wide-seed2",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "transformer-wide",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "ff": 1024
+  },
+  "seed": 2,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 602028,
+  "flop_estimate": {
+   "id": 31856128.0,
+   "ood": 76682752.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007529",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 3338.6,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.5566666666666666,
+    "state": 0.17,
+    "hops": 0.5,
+    "recall": 1.0
+   },
+   "ood": {
+    "all": 0.5088888888888888,
+    "state": 0.12,
+    "hops": 0.5033333333333333,
+    "recall": 0.9033333333333333
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "transformer-wide-seed3",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": "transformer-wide",
+  "config": {
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "ff": 1024
+  },
+  "seed": 3,
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": 602028,
+  "flop_estimate": {
+   "id": 31856128.0,
+   "ood": 76682752.0
+  },
+  "hardware": {
+   "machine": "x86_64",
+   "system": "Linux",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007536",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 3249.6,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "id": {
+    "all": 0.45666666666666667,
+    "state": 0.28,
+    "hops": 0.49666666666666665,
+    "recall": 0.5933333333333334
+   },
+   "ood": {
+    "all": 0.31777777777777777,
+    "state": 0.15666666666666668,
+    "hops": 0.5,
+    "recall": 0.2966666666666667
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.04",
+  "run": "experiment",
+  "parent": "R1.03 (queue order); independent of it: tested on the plain Transformer so that the mechanism has its own evidence",
+  "hypothesis": "At equal active compute, does a top-2-of-8 module bank beat a dense MLP on the micro-benchmark, and does the router specialise by task beyond what token identity alone explains?",
+  "architecture": [
+   "transformer",
+   "transformer-wide",
+   "moe-top2",
+   "moe-top1"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "8932999bcf471ec237c7e17f04997c207a0bb2fd1917cde24162791c2d27aaee",
+  "code_sha": "825ea1b1b7c9b0216515a1d7e65b3236311841bc",
+  "parameter_count": {
+   "transformer": 205740,
+   "transformer-wide": 602028,
+   "moe-top2": 605868,
+   "moe-top1": 1134252
+  },
+  "flop_estimate": 140000000000000.0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 22630.999999999996,
+  "cost_usd": 0.0,
+  "ci_run": "36562650394",
+  "metrics": {
+   "transformer": {
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "parameters": 205740,
+    "disk_bytes": 840914,
+    "state_bytes_len67": 137216,
+    "flops_per_example_id": 10622464.0,
+    "flops_per_example_ood": 25564672.0,
+    "train_seconds": 1201.4666666666665,
+    "latency_ms": 0.26633333333333337,
+    "id_all": 0.5855555555555556,
+    "id_state": 0.2688888888888889,
+    "id_hops": 0.4877777777777778,
+    "id_recall": 1.0,
+    "ood_all": 0.5351851851851852,
+    "ood_state": 0.17,
+    "ood_hops": 0.4633333333333334,
+    "ood_recall": 0.9722222222222223,
+    "per_seed_ood": {
+     "state": [
+      0.17,
+      0.163,
+      0.177
+     ],
+     "hops": [
+      0.47,
+      0.463,
+      0.457
+     ],
+     "recall": [
+      0.98,
+      0.973,
+      0.963
+     ]
+    },
+    "per_seed_id": {
+     "state": [
+      0.28,
+      0.237,
+      0.29
+     ],
+     "hops": [
+      0.5,
+      0.467,
+      0.497
+     ],
+     "recall": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    },
+    "stats": {
+     "id_all": {
+      "mean": 0.5855555555555556,
+      "sd": 0.015436048877166417,
+      "ci95": [
+       0.5472071895444703,
+       0.6239039215666409
+      ],
+      "n": 3,
+      "values": [
+       0.5933333333333334,
+       0.5677777777777778,
+       0.5955555555555555
+      ]
+     },
+     "id_state": {
+      "mean": 0.2688888888888889,
+      "sd": 0.028349668493717943,
+      "ci95": [
+       0.1984587242566558,
+       0.339319053521122
+      ],
+      "n": 3,
+      "values": [
+       0.28,
+       0.23666666666666666,
+       0.29
+      ]
+     },
+     "id_hops": {
+      "mean": 0.4877777777777778,
+      "sd": 0.018358568490953665,
+      "ci95": [
+       0.4421688846255876,
+       0.5333866709299679
+      ],
+      "n": 3,
+      "values": [
+       0.5,
+       0.4666666666666667,
+       0.49666666666666665
+      ]
+     },
+     "id_recall": {
+      "mean": 1.0,
+      "sd": 0.0,
+      "ci95": [
+       1.0,
+       1.0
+      ],
+      "n": 3,
+      "values": [
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     "ood_all": {
+      "mean": 0.5351851851851852,
+      "sd": 0.004206598774666876,
+      "ci95": [
+       0.5247345711221958,
+       0.5456357992481746
+      ],
+      "n": 3,
+      "values": [
+       0.54,
+       0.5333333333333333,
+       0.5322222222222223
+      ]
+     },
+     "ood_state": {
+      "mean": 0.17,
+      "sd": 0.006666666666666668,
+      "ci95": [
+       0.15343774527784695,
+       0.18656225472215307
+      ],
+      "n": 3,
+      "values": [
+       0.17,
+       0.16333333333333333,
+       0.17666666666666667
+      ]
+     },
+     "ood_hops": {
+      "mean": 0.4633333333333334,
+      "sd": 0.006666666666666654,
+      "ci95": [
+       0.4467710786111803,
+       0.47989558805548643
+      ],
+      "n": 3,
+      "values": [
+       0.47,
+       0.4633333333333333,
+       0.45666666666666667
+      ]
+     },
+     "ood_recall": {
+      "mean": 0.9722222222222223,
+      "sd": 0.008388704928078583,
+      "ci95": [
+       0.9513818420510496,
+       0.993062602393395
+      ],
+      "n": 3,
+      "values": [
+       0.98,
+       0.9733333333333334,
+       0.9633333333333334
+      ]
+     },
+     "train_seconds": {
+      "mean": 1201.4666666666665,
+      "sd": 52.71226928650798,
+      "ci95": [
+       1070.5115620307859,
+       1332.421771302547
+      ],
+      "n": 3,
+      "values": [
+       1262.3,
+       1172.8,
+       1169.3
+      ]
+     }
+    },
+    "active_parameters": 205740
+   },
+   "transformer-wide": {
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "parameters": 602028,
+    "disk_bytes": 2426489,
+    "state_bytes_len67": 137216,
+    "flops_per_example_id": 31856128.0,
+    "flops_per_example_ood": 76682752.0,
+    "train_seconds": 3291.2333333333336,
+    "latency_ms": 0.48533333333333334,
+    "id_all": 0.5296296296296297,
+    "id_state": 0.22666666666666668,
+    "id_hops": 0.4977777777777777,
+    "id_recall": 0.8644444444444445,
+    "ood_all": 0.44629629629629625,
+    "ood_state": 0.13666666666666666,
+    "ood_hops": 0.49111111111111105,
+    "ood_recall": 0.7111111111111111,
+    "per_seed_ood": {
+     "state": [
+      0.133,
+      0.12,
+      0.157
+     ],
+     "hops": [
+      0.47,
+      0.503,
+      0.5
+     ],
+     "recall": [
+      0.933,
+      0.903,
+      0.297
+     ]
+    },
+    "per_seed_id": {
+     "state": [
+      0.23,
+      0.17,
+      0.28
+     ],
+     "hops": [
+      0.497,
+      0.5,
+      0.497
+     ],
+     "recall": [
+      1.0,
+      1.0,
+      0.593
+     ]
+    },
+    "stats": {
+     "id_all": {
+      "mean": 0.5296296296296297,
+      "sd": 0.0638896940367946,
+      "ci95": [
+       0.37090602161595726,
+       0.6883532376433021
+      ],
+      "n": 3,
+      "values": [
+       0.5755555555555556,
+       0.5566666666666666,
+       0.45666666666666667
+      ]
+     },
+     "id_state": {
+      "mean": 0.22666666666666668,
+      "sd": 0.055075705472861024,
+      "ci95": [
+       0.08983998721009609,
+       0.36349334612323725
+      ],
+      "n": 3,
+      "values": [
+       0.23,
+       0.17,
+       0.28
+      ]
+     },
+     "id_hops": {
+      "mean": 0.4977777777777777,
+      "sd": 0.0019245008972987648,
+      "ci95": [
+       0.4929966666666666,
+       0.5025588888888889
+      ],
+      "n": 3,
+      "values": [
+       0.49666666666666665,
+       0.5,
+       0.49666666666666665
+      ]
+     },
+     "id_recall": {
+      "mean": 0.8644444444444445,
+      "sd": 0.2347891094704478,
+      "ci95": [
+       0.2811488888888889,
+       1.44774
+      ],
+      "n": 3,
+      "values": [
+       1.0,
+       1.0,
+       0.5933333333333334
+      ]
+     },
+     "ood_all": {
+      "mean": 0.44629629629629625,
+      "sd": 0.11131277994652665,
+      "ci95": [
+       0.16975770400049434,
+       0.7228348885920981
+      ],
+      "n": 3,
+      "values": [
+       0.5122222222222222,
+       0.5088888888888888,
+       0.31777777777777777
+      ]
+     },
+     "ood_state": {
+      "mean": 0.13666666666666666,
+      "sd": 0.01855921454276675,
+      "ci95": [
+       0.0905593008616081,
+       0.18277403247172522
+      ],
+      "n": 3,
+      "values": [
+       0.13333333333333333,
+       0.12,
+       0.15666666666666668
+      ]
+     },
+     "ood_hops": {
+      "mean": 0.49111111111111105,
+      "sd": 0.01835856849095368,
+      "ci95": [
+       0.44550221795892087,
+       0.5367200042633012
+      ],
+      "n": 3,
+      "values": [
+       0.47,
+       0.5033333333333333,
+       0.5
+      ]
+     },
+     "ood_recall": {
+      "mean": 0.7111111111111111,
+      "sd": 0.35923272143298435,
+      "ci95": [
+       -0.1813444644246901,
+       1.6035666866469125
+      ],
+      "n": 3,
+      "values": [
+       0.9333333333333333,
+       0.9033333333333333,
+       0.2966666666666667
+      ]
+     },
+     "train_seconds": {
+      "mean": 3291.2333333333336,
+      "sd": 44.77614692370629,
+      "ci95": [
+       3179.9942407092876,
+       3402.4724259573795
+      ],
+      "n": 3,
+      "values": [
+       3285.5,
+       3338.6,
+       3249.6
+      ]
+     }
+    },
+    "active_parameters": 602028
+   },
+   "moe-top2": {
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "parameters": 605868,
+    "disk_bytes": 2442225,
+    "state_bytes_len67": 137216,
+    "flops_per_example_id": 10733056.0,
+    "flops_per_example_ood": 25830912.0,
+    "train_seconds": 1651.7333333333333,
+    "latency_ms": 0.39633333333333337,
+    "id_all": 0.5851851851851851,
+    "id_state": 0.28111111111111114,
+    "id_hops": 0.47444444444444445,
+    "id_recall": 1.0,
+    "ood_all": 0.5399999999999999,
+    "ood_state": 0.15,
+    "ood_hops": 0.48666666666666664,
+    "ood_recall": 0.9833333333333334,
+    "per_seed_ood": {
+     "state": [
+      0.183,
+      0.127,
+      0.14
+     ],
+     "hops": [
+      0.45,
+      0.52,
+      0.49
+     ],
+     "recall": [
+      0.987,
+      0.987,
+      0.977
+     ]
+    },
+    "per_seed_id": {
+     "state": [
+      0.287,
+      0.277,
+      0.28
+     ],
+     "hops": [
+      0.5,
+      0.433,
+      0.49
+     ],
+     "recall": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    },
+    "stats": {
+     "id_all": {
+      "mean": 0.5851851851851851,
+      "sd": 0.01344092393453634,
+      "ci95": [
+       0.5517933842994539,
+       0.6185769860709164
+      ],
+      "n": 3,
+      "values": [
+       0.5955555555555555,
+       0.57,
+       0.59
+      ]
+     },
+     "id_state": {
+      "mean": 0.28111111111111114,
+      "sd": 0.005091750772173159,
+      "ci95": [
+       0.26846148012054344,
+       0.29376074210167885
+      ],
+      "n": 3,
+      "values": [
+       0.2866666666666667,
+       0.27666666666666667,
+       0.28
+      ]
+     },
+     "id_hops": {
+      "mean": 0.47444444444444445,
+      "sd": 0.03595264374969651,
+      "ci95": [
+       0.38512591788684974,
+       0.5637629710020391
+      ],
+      "n": 3,
+      "values": [
+       0.5,
+       0.43333333333333335,
+       0.49
+      ]
+     },
+     "id_recall": {
+      "mean": 1.0,
+      "sd": 0.0,
+      "ci95": [
+       1.0,
+       1.0
+      ],
+      "n": 3,
+      "values": [
+       1.0,
+       1.0,
+       1.0
+      ]
+     },
+     "ood_all": {
+      "mean": 0.5399999999999999,
+      "sd": 0.0044444444444444176,
+      "ci95": [
+       0.528958496851898,
+       0.5510415031481019
+      ],
+      "n": 3,
+      "values": [
+       0.54,
+       0.5444444444444444,
+       0.5355555555555556
+      ]
+     },
+     "ood_state": {
+      "mean": 0.15,
+      "sd": 0.029627314724385283,
+      "ci95": [
+       0.07639573002020023,
+       0.22360426997979976
+      ],
+      "n": 3,
+      "values": [
+       0.18333333333333332,
+       0.12666666666666668,
+       0.14
+      ]
+     },
+     "ood_hops": {
+      "mean": 0.48666666666666664,
+      "sd": 0.03511884584284246,
+      "ci95": [
+       0.39941957610708917,
+       0.573913757226244
+      ],
+      "n": 3,
+      "values": [
+       0.45,
+       0.52,
+       0.49
+      ]
+     },
+     "ood_recall": {
+      "mean": 0.9833333333333334,
+      "sd": 0.005773502691896262,
+      "ci95": [
+       0.96899,
+       0.9976766666666668
+      ],
+      "n": 3,
+      "values": [
+       0.9866666666666667,
+       0.9866666666666667,
+       0.9766666666666667
+      ]
+     },
+     "train_seconds": {
+      "mean": 1651.7333333333333,
+      "sd": 79.62627288359867,
+      "ci95": [
+       1453.9147412222587,
+       1849.551925444408
+      ],
+      "n": 3,
+      "values": [
+       1720.3,
+       1564.4,
+       1670.5
+      ]
+     }
+    },
+    "active_parameters": 208044,
+    "task_expert_nmi": {
+     "mean": 0.2712833333333333,
+     "sd": 0.07769701302709991,
+     "ci95": [
+      0.07825767519754226,
+      0.4643089914691244
+     ],
+     "n": 3,
+     "values": [
+      0.361,
+      0.2263,
+      0.22654999999999997
+     ]
+    },
+    "nmi_given_token": {
+     "mean": 0.3157583333333333,
+     "sd": 0.06926787825777062,
+     "ci95": [
+      0.14367349676809055,
+      0.48784316989857607
+     ],
+     "n": 3,
+     "values": [
+      0.3913,
+      0.25522500000000004,
+      0.30074999999999996
+     ]
+    },
+    "token_entropy": {
+     "mean": 0.7061333333333333,
+     "sd": 0.020559765522333497,
+     "ci95": [
+      0.6550559222920391,
+      0.7572107443746274
+     ],
+     "n": 3,
+     "values": [
+      0.683775,
+      0.724225,
+      0.7104
+     ]
+    },
+    "min_load": {
+     "mean": 0.00972701609134674,
+     "sd": 0.0012253297238223886,
+     "ci95": [
+      0.006682882640660961,
+      0.01277114954203252
+     ],
+     "n": 3,
+     "values": [
+      0.01113900262862444,
+      0.008942578919231892,
+      0.009099466726183891
+     ]
+    },
+    "nmi_given_token_init": {
+     "mean": 0.06066666666666667,
+     "sd": 0.00812489743525008,
+     "ci95": [
+      0.040481673529569676,
+      0.08085165980376366
+     ],
+     "n": 3,
+     "values": [
+      0.069425,
+      0.0592,
+      0.053375
+     ]
+    }
+   },
+   "moe-top1": {
+    "seeds": [
+     1,
+     2,
+     3
+    ],
+    "parameters": 1134252,
+    "disk_bytes": 4555761,
+    "state_bytes_len67": 137216,
+    "flops_per_example_id": 10733056.0,
+    "flops_per_example_ood": 25830912.0,
+    "train_seconds": 1399.2333333333333,
+    "latency_ms": 0.31866666666666665,
+    "id_all": 0.4955555555555556,
+    "id_state": 0.21666666666666667,
+    "id_hops": 0.47444444444444445,
+    "id_recall": 0.7955555555555556,
+    "ood_all": 0.4381481481481481,
+    "ood_state": 0.1688888888888889,
+    "ood_hops": 0.4888888888888889,
+    "ood_recall": 0.6566666666666666,
+    "per_seed_ood": {
+     "state": [
+      0.15,
+      0.173,
+      0.183
+     ],
+     "hops": [
+      0.48,
+      0.513,
+      0.473
+     ],
+     "recall": [
+      0.927,
+      0.247,
+      0.797
+     ]
+    },
+    "per_seed_id": {
+     "state": [
+      0.177,
+      0.227,
+      0.247
+     ],
+     "hops": [
+      0.483,
+      0.51,
+      0.43
+     ],
+     "recall": [
+      1.0,
+      0.4,
+      0.987
+     ]
+    },
+    "stats": {
+     "id_all": {
+      "mean": 0.4955555555555556,
+      "sd": 0.10103782447830437,
+      "ci95": [
+       0.24454342771827525,
+       0.7465676833928359
+      ],
+      "n": 3,
+      "values": [
+       0.5533333333333333,
+       0.3788888888888889,
+       0.5544444444444444
+      ]
+     },
+     "id_state": {
+      "mean": 0.21666666666666667,
+      "sd": 0.0360555127546399,
+      "ci95": [
+       0.12709257870963897,
+       0.3062407546236944
+      ],
+      "n": 3,
+      "values": [
+       0.17666666666666667,
+       0.22666666666666666,
+       0.24666666666666667
+      ]
+     },
+     "id_hops": {
+      "mean": 0.47444444444444445,
+      "sd": 0.040734006177385255,
+      "ci95": [
+       0.3732473965199028,
+       0.5756414923689861
+      ],
+      "n": 3,
+      "values": [
+       0.48333333333333334,
+       0.51,
+       0.43
+      ]
+     },
+     "id_recall": {
+      "mean": 0.7955555555555556,
+      "sd": 0.3426260243948095,
+      "ci95": [
+       -0.05564336801426417,
+       1.6467544791253754
+      ],
+      "n": 3,
+      "values": [
+       1.0,
+       0.4,
+       0.9866666666666667
+      ]
+     },
+     "ood_all": {
+      "mean": 0.4381481481481481,
+      "sd": 0.11135713503244299,
+      "ci95": [
+       0.1614993628176708,
+       0.7147969334786255
+      ],
+      "n": 3,
+      "values": [
+       0.5188888888888888,
+       0.3111111111111111,
+       0.48444444444444446
+      ]
+     },
+     "ood_state": {
+      "mean": 0.1688888888888889,
+      "sd": 0.017105338131489612,
+      "ci95": [
+       0.12639344380254558,
+       0.2113843339752322
+      ],
+      "n": 3,
+      "values": [
+       0.15,
+       0.17333333333333334,
+       0.18333333333333332
+      ]
+     },
+     "ood_hops": {
+      "mean": 0.4888888888888889,
+      "sd": 0.02143033502442878,
+      "ci95": [
+       0.4356486887705387,
+       0.542129089007239
+      ],
+      "n": 3,
+      "values": [
+       0.48,
+       0.5133333333333333,
+       0.47333333333333333
+      ]
+     },
+     "ood_recall": {
+      "mean": 0.6566666666666666,
+      "sd": 0.36097091295560085,
+      "ci95": [
+       -0.24010716448215386,
+       1.5534404978154872
+      ],
+      "n": 3,
+      "values": [
+       0.9266666666666666,
+       0.24666666666666667,
+       0.7966666666666666
+      ]
+     },
+     "train_seconds": {
+      "mean": 1399.2333333333333,
+      "sd": 260.18841890701697,
+      "ci95": [
+       752.8373028794911,
+       2045.6293637871756
+      ],
+      "n": 3,
+      "values": [
+       1099.3,
+       1534.1,
+       1564.3
+      ]
+     }
+    },
+    "active_parameters": 207788,
+    "task_expert_nmi": {
+     "mean": 0.1268,
+     "sd": 0.036897586303171644,
+     "ci95": [
+      0.03513391655213677,
+      0.21846608344786322
+     ],
+     "n": 3,
+     "values": [
+      0.14514999999999997,
+      0.084325,
+      0.150925
+     ]
+    },
+    "nmi_given_token": {
+     "mean": 0.23929166666666668,
+     "sd": 0.01779768828621664,
+     "ci95": [
+      0.1950761896373967,
+      0.28350714369593666
+     ],
+     "n": 3,
+     "values": [
+      0.24130000000000001,
+      0.22057500000000002,
+      0.256
+     ]
+    },
+    "token_entropy": {
+     "mean": 0.9955333333333334,
+     "sd": 0.001154971139610525,
+     "ci95": [
+      0.9926639944016886,
+      0.9984026722649781
+     ],
+     "n": 3,
+     "values": [
+      0.9946,
+      0.996825,
+      0.995175
+     ]
+    },
+    "min_load": {
+     "mean": 0.03477669693529606,
+     "sd": 0.0086563358629273,
+     "ci95": [
+      0.013271431006949466,
+      0.05628196286364265
+     ],
+     "n": 3,
+     "values": [
+      0.04471289739012718,
+      0.03074992075562477,
+      0.028867272660136223
+     ]
+    },
+    "nmi_given_token_init": {
+     "mean": 0.06935000000000001,
+     "sd": 0.016663057942646664,
+     "ci95": [
+      0.02795332848558353,
+      0.11074667151441649
+     ],
+     "n": 3,
+     "values": [
+      0.05565,
+      0.0879,
+      0.0645
+     ]
+    }
+   }
+  },
+  "result": "PARTIAL",
+  "decision": {
+   "complete": true,
+   "roles": {
+    "candidate": "moe-top2",
+    "active_matched": "transformer",
+    "total_matched": "transformer-wide",
+    "secondary": [
+     "moe-top1"
+    ]
+   },
+   "checks": {
+    "S1_vs_active_matched": false,
+    "S2_vs_total_matched": true,
+    "S3_specialisation": false
+   },
+   "result": "PARTIAL"
+  },
+  "recorded": "2026-09-29T14:14:08Z"
  }
 ]
