@@ -82,6 +82,11 @@ class RouterTest(unittest.TestCase):
     def test_tiers_and_no_automatic_h200(self):
         prereg = json.loads((ROOT / "experiments" / "r1_02b.json").read_text())
         self.assertEqual(compute.route(prereg)["tier"], 0)
+        long = {**prereg, "compute": {"train_flops_per_run": 34e9 * 3600 * 12}}  # 12 CPU hours
+        self.assertEqual(compute.route(long, self_hosted=False)["tier"], 0)    # 3 resumable attempts
+        self.assertEqual(compute.route(long, self_hosted=True)["tier"], 1)
+        huge = {**prereg, "compute": {"train_flops_per_run": 34e9 * 3600 * 30}}
+        self.assertEqual(compute.route(huge, self_hosted=False)["tier"], 1)
         big = {**prereg, "setup": {**prereg["setup"], "parameters": {"x": 1_000_000_000}}}
         self.assertEqual(compute.route(big)["runs_on"], ["self-hosted", "rouge-research"])
         h200 = {**prereg, "compute": {"needs_h200": True}}

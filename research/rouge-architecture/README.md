@@ -102,3 +102,8 @@ Each pre-registration names its runner (`"runner"`); R1.01 and R1.01b use
 **Owner's server:** `RUNNER_TOKEN=… env/runner.sh` registers it as a runner
 with the labels above. Read the security note in the script first: the
 repository is public.
+
+After registering, set the repository variable `ROUGE_SELF_HOSTED=1`
+(Settings → Secrets and variables → Actions → Variables). Until then, the
+router keeps long runs on free GitHub runners in up to 3 resumable
+attempts, each continued with *Re-run failed jobs*.

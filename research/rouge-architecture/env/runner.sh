@@ -53,3 +53,4 @@ fi
 "$(cd "$(dirname "$0")" && pwd)/bootstrap.sh" "${ROUGE_VENV:-$HOME/.rouge-venv}" 2>/dev/null \
   || echo "run env/bootstrap.sh ~/.rouge-venv from a checkout of the repository"
 echo "runner registered with labels: self-hosted,$labels"
+echo "now set the repository variable ROUGE_SELF_HOSTED=1 so the compute router sends tier-1 runs here"
