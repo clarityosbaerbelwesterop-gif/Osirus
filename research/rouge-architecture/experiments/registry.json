@@ -171783,5 +171783,6966 @@
    "result": "FAIL"
   },
   "recorded": "2026-09-29T23:31:57Z"
+ },
+ {
+  "experiment_id": "R1.25",
+  "run": "dense-d80-seed1",
+  "parent": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+  "hypothesis": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+  "architecture": "dense-d80",
+  "config": {
+   "kind": "structured",
+   "d": 80,
+   "layers": 4,
+   "heads": 4,
+   "mlp_kind": "dense"
+  },
+  "seed": 1,
+  "dataset_hash": "b051d77f59d974bcfb0accda904f79edc8835aba1a04c225746f218d8ec9eb75",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 319248,
+  "active_parameters": 319248,
+  "flop_estimate": 35642880.0,
+  "checkpoint_sha256": "dd172dc7ef2905bb31c5e1389faa04a44a9ae199b45c05340b0c28844a7df5d4",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007717",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 986.6,
+  "cost_usd": 0.0,
+  "ci_run": "36595748698",
+  "metrics": {
+   "dev": {
+    "all": 0.39454545454545453,
+    "task": {
+     "state": 0.145,
+     "recall": 0.39,
+     "hops": 0.47,
+     "perm": 0.6,
+     "conn": 0.51,
+     "arith": 0.085,
+     "binding": 0.365,
+     "stack": 0.985,
+     "trace": 0.3,
+     "cf": 0.18,
+     "plan": 0.31
+    },
+    "level": {
+     "state:2": 0.2353,
+     "state:3": 0.1429,
+     "state:4": 0.1053,
+     "state:5": 0.2,
+     "state:6": 0.0,
+     "state:7": 0.1364,
+     "state:8": 0.2,
+     "state:9": 0.1111,
+     "state:10": 0.05,
+     "state:11": 0.2632,
+     "state:12": 0.1538,
+     "recall:2": 0.55,
+     "recall:3": 0.3684,
+     "recall:4": 0.3529,
+     "recall:5": 0.4348,
+     "recall:6": 0.52,
+     "recall:7": 0.2143,
+     "recall:8": 0.381,
+     "recall:9": 0.4583,
+     "recall:10": 0.2609,
+     "hops:1": 0.4167,
+     "hops:2": 0.4808,
+     "hops:3": 0.5294,
+     "hops:4": 0.449,
+     "perm:1": 1.0,
+     "perm:2": 1.0,
+     "perm:3": 0.2281,
+     "perm:4": 0.234,
+     "conn:1": 0.5417,
+     "conn:2": 0.5,
+     "conn:3": 0.3846,
+     "conn:4": 0.5789,
+     "arith:2": 0.0455,
+     "arith:3": 0.1571,
+     "arith:4": 0.0469,
+     "binding:3": 0.3684,
+     "binding:4": 0.4545,
+     "binding:5": 0.4839,
+     "binding:6": 0.2188,
+     "binding:7": 0.3333,
+     "binding:8": 0.3333,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 1.0,
+     "stack:7": 0.96,
+     "stack:8": 0.9688,
+     "stack:9": 0.963,
+     "stack:10": 1.0,
+     "trace:1": 0.2778,
+     "trace:2": 0.2245,
+     "trace:3": 0.1957,
+     "trace:4": 0.4902,
+     "cf:2": 0.1351,
+     "cf:3": 0.2083,
+     "cf:4": 0.1053,
+     "cf:5": 0.2162,
+     "cf:6": 0.225,
+     "plan:2": 0.3269,
+     "plan:3": 0.2917
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03148144708438355,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.81691282296121
+    }
+   },
+   "holdout": {
+    "all": 0.39454545454545453,
+    "task": {
+     "state": 0.155,
+     "recall": 0.415,
+     "hops": 0.53,
+     "perm": 0.61,
+     "conn": 0.525,
+     "arith": 0.095,
+     "binding": 0.32,
+     "stack": 0.965,
+     "trace": 0.295,
+     "cf": 0.16,
+     "plan": 0.27
+    },
+    "level": {
+     "state:2": 0.4167,
+     "state:3": 0.2222,
+     "state:4": 0.2,
+     "state:5": 0.12,
+     "state:6": 0.0,
+     "state:7": 0.0769,
+     "state:8": 0.2222,
+     "state:9": 0.0952,
+     "state:10": 0.1429,
+     "state:11": 0.1667,
+     "state:12": 0.1154,
+     "recall:2": 0.8148,
+     "recall:3": 0.5294,
+     "recall:4": 0.3,
+     "recall:5": 0.7143,
+     "recall:6": 0.4762,
+     "recall:7": 0.1071,
+     "recall:8": 0.4,
+     "recall:9": 0.3125,
+     "recall:10": 0.2273,
+     "hops:1": 0.5593,
+     "hops:2": 0.449,
+     "hops:3": 0.617,
+     "hops:4": 0.4889,
+     "perm:1": 1.0,
+     "perm:2": 1.0,
+     "perm:3": 0.2653,
+     "perm:4": 0.2364,
+     "conn:1": 0.5439,
+     "conn:2": 0.4231,
+     "conn:3": 0.4894,
+     "conn:4": 0.6591,
+     "arith:2": 0.0952,
+     "arith:3": 0.1286,
+     "arith:4": 0.0597,
+     "binding:3": 0.3939,
+     "binding:4": 0.4062,
+     "binding:5": 0.3333,
+     "binding:6": 0.3158,
+     "binding:7": 0.2069,
+     "binding:8": 0.25,
+     "stack:4": 1.0,
+     "stack:5": 0.9565,
+     "stack:6": 1.0,
+     "stack:7": 0.9697,
+     "stack:8": 0.9394,
+     "stack:9": 0.9722,
+     "stack:10": 0.9333,
+     "trace:1": 0.2182,
+     "trace:2": 0.28,
+     "trace:3": 0.2885,
+     "trace:4": 0.4186,
+     "cf:2": 0.2245,
+     "cf:3": 0.1176,
+     "cf:4": 0.1351,
+     "cf:5": 0.1364,
+     "cf:6": 0.1667,
+     "plan:2": 0.2453,
+     "plan:3": 0.2979
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.022163261537524775,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8257869044159367
+    }
+   },
+   "ood": {
+    "all": 0.2990909090909091,
+    "task": {
+     "state": 0.185,
+     "recall": 0.28,
+     "hops": 0.525,
+     "perm": 0.215,
+     "conn": 0.49,
+     "arith": 0.12,
+     "binding": 0.31,
+     "stack": 0.495,
+     "trace": 0.28,
+     "cf": 0.215,
+     "plan": 0.175
+    },
+    "level": {
+     "state:16": 0.3333,
+     "state:17": 0.0,
+     "state:18": 0.1429,
+     "state:19": 0.25,
+     "state:20": 0.1333,
+     "state:21": 0.2143,
+     "state:22": 0.0909,
+     "state:23": 0.2857,
+     "state:24": 0.2,
+     "state:25": 0.1667,
+     "state:26": 0.1111,
+     "state:27": 0.1667,
+     "state:28": 0.1111,
+     "state:29": 0.2,
+     "state:30": 0.4,
+     "state:31": 0.0909,
+     "state:32": 0.25,
+     "recall:14": 0.2778,
+     "recall:15": 0.2973,
+     "recall:16": 0.2414,
+     "recall:17": 0.4242,
+     "recall:18": 0.1667,
+     "recall:19": 0.3462,
+     "recall:20": 0.1852,
+     "hops:6": 0.5,
+     "hops:7": 0.5857,
+     "hops:8": 0.4865,
+     "perm:6": 0.1053,
+     "perm:7": 0.2439,
+     "perm:8": 0.2121,
+     "perm:9": 0.2667,
+     "perm:10": 0.2326,
+     "conn:6": 0.5263,
+     "conn:7": 0.4902,
+     "conn:8": 0.5,
+     "conn:9": 0.4423,
+     "arith:6": 0.0462,
+     "arith:7": 0.2353,
+     "arith:8": 0.0746,
+     "binding:12": 0.3333,
+     "binding:13": 0.3043,
+     "binding:14": 0.3529,
+     "binding:15": 0.3158,
+     "binding:16": 0.3793,
+     "binding:17": 0.2222,
+     "binding:18": 0.25,
+     "binding:19": 0.45,
+     "binding:20": 0.1818,
+     "stack:16": 0.4667,
+     "stack:17": 0.5455,
+     "stack:18": 0.5385,
+     "stack:19": 0.6923,
+     "stack:20": 0.5926,
+     "stack:21": 0.5333,
+     "stack:22": 0.28,
+     "stack:23": 0.3333,
+     "stack:24": 0.4,
+     "trace:6": 0.2791,
+     "trace:7": 0.2,
+     "trace:8": 0.45,
+     "trace:9": 0.1489,
+     "cf:8": 0.2115,
+     "cf:9": 0.2188,
+     "plan:5": 0.1667,
+     "plan:6": 0.1918,
+     "plan:7": 0.1642
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04038613868707959,
+     "confident_error_rate": 0.01090909090909091,
+     "auroc_confidence": 0.7062473635865473
+    }
+   },
+   "adv": {
+    "all": 0.3490909090909091,
+    "task": {
+     "state": 0.23,
+     "recall": 0.18,
+     "hops": 0.46,
+     "perm": 0.51,
+     "conn": 0.52,
+     "arith": 0.09,
+     "binding": 0.21,
+     "stack": 0.97,
+     "trace": 0.29,
+     "cf": 0.21,
+     "plan": 0.17
+    },
+    "level": {
+     "state:2": 0.25,
+     "state:3": 0.0,
+     "state:4": 0.2381,
+     "state:5": 0.3333,
+     "state:6": 0.1667,
+     "state:7": 0.1111,
+     "state:8": 0.4286,
+     "state:9": 0.4286,
+     "state:10": 0.1111,
+     "state:11": 0.3,
+     "state:12": 0.1818,
+     "recall:2": 0.4615,
+     "recall:3": 0.25,
+     "recall:4": 0.0833,
+     "recall:5": 0.1667,
+     "recall:6": 0.3,
+     "recall:7": 0.1538,
+     "recall:8": 0.1,
+     "recall:9": 0.0769,
+     "recall:10": 0.0,
+     "hops:1": 0.4516,
+     "hops:2": 0.4091,
+     "hops:3": 0.56,
+     "hops:4": 0.4091,
+     "perm:1": 1.0,
+     "perm:2": 1.0,
+     "perm:3": 0.2,
+     "perm:4": 0.1071,
+     "conn:1": 0.4545,
+     "conn:2": 0.55,
+     "conn:3": 0.5217,
+     "conn:4": 0.5833,
+     "arith:2": 0.0938,
+     "arith:3": 0.0833,
+     "arith:4": 0.0909,
+     "binding:3": 0.3,
+     "binding:4": 0.2857,
+     "binding:5": 0.3077,
+     "binding:6": 0.1765,
+     "binding:7": 0.1,
+     "binding:8": 0.1923,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 0.9333,
+     "stack:7": 0.8571,
+     "stack:8": 1.0,
+     "stack:9": 1.0,
+     "stack:10": 1.0,
+     "trace:1": 0.2069,
+     "trace:2": 0.25,
+     "trace:3": 0.2963,
+     "trace:4": 0.45,
+     "cf:2": 0.0526,
+     "cf:3": 0.1739,
+     "cf:4": 0.2105,
+     "cf:5": 0.3571,
+     "cf:6": 0.28,
+     "plan:2": 0.1333,
+     "plan:3": 0.2
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.06079619280993937,
+     "confident_error_rate": 0.0027272727272727275,
+     "auroc_confidence": 0.7769291201117319
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.25",
+  "run": "dense-d80-seed2",
+  "parent": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+  "hypothesis": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+  "architecture": "dense-d80",
+  "config": {
+   "kind": "structured",
+   "d": 80,
+   "layers": 4,
+   "heads": 4,
+   "mlp_kind": "dense"
+  },
+  "seed": 2,
+  "dataset_hash": "b051d77f59d974bcfb0accda904f79edc8835aba1a04c225746f218d8ec9eb75",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 319248,
+  "active_parameters": 319248,
+  "flop_estimate": 35642880.0,
+  "checkpoint_sha256": "1f9a4776f249dfefa177d426a276d4018581993b03af45466dc982f6a576550d",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007712",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1782.9,
+  "cost_usd": 0.0,
+  "ci_run": "36595748698",
+  "metrics": {
+   "dev": {
+    "all": 0.47454545454545455,
+    "task": {
+     "state": 0.19,
+     "recall": 0.995,
+     "hops": 0.48,
+     "perm": 0.4,
+     "conn": 0.5,
+     "arith": 0.115,
+     "binding": 0.715,
+     "stack": 0.975,
+     "trace": 0.4,
+     "cf": 0.18,
+     "plan": 0.27
+    },
+    "level": {
+     "state:2": 0.0588,
+     "state:3": 0.0714,
+     "state:4": 0.1053,
+     "state:5": 0.2667,
+     "state:6": 0.3333,
+     "state:7": 0.2273,
+     "state:8": 0.2,
+     "state:9": 0.1667,
+     "state:10": 0.15,
+     "state:11": 0.3158,
+     "state:12": 0.1923,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 1.0,
+     "recall:8": 1.0,
+     "recall:9": 0.9583,
+     "recall:10": 1.0,
+     "hops:1": 0.4583,
+     "hops:2": 0.5769,
+     "hops:3": 0.4118,
+     "hops:4": 0.4694,
+     "perm:1": 1.0,
+     "perm:2": 0.2653,
+     "perm:3": 0.2281,
+     "perm:4": 0.1489,
+     "conn:1": 0.5208,
+     "conn:2": 0.5357,
+     "conn:3": 0.4872,
+     "conn:4": 0.4561,
+     "arith:2": 0.1061,
+     "arith:3": 0.1143,
+     "arith:4": 0.125,
+     "binding:3": 0.7105,
+     "binding:4": 0.7879,
+     "binding:5": 0.7742,
+     "binding:6": 0.7188,
+     "binding:7": 0.6944,
+     "binding:8": 0.6,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 1.0,
+     "stack:7": 0.96,
+     "stack:8": 0.9688,
+     "stack:9": 0.963,
+     "stack:10": 0.931,
+     "trace:1": 0.4259,
+     "trace:2": 0.4286,
+     "trace:3": 0.1957,
+     "trace:4": 0.5294,
+     "cf:2": 0.2973,
+     "cf:3": 0.1875,
+     "cf:4": 0.1316,
+     "cf:5": 0.2162,
+     "cf:6": 0.075,
+     "plan:2": 0.2788,
+     "plan:3": 0.2604
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.030744277804412624,
+     "confident_error_rate": 0.0036363636363636364,
+     "auroc_confidence": 0.8669228678624932
+    }
+   },
+   "holdout": {
+    "all": 0.4772727272727273,
+    "task": {
+     "state": 0.165,
+     "recall": 1.0,
+     "hops": 0.475,
+     "perm": 0.42,
+     "conn": 0.51,
+     "arith": 0.095,
+     "binding": 0.8,
+     "stack": 0.95,
+     "trace": 0.385,
+     "cf": 0.17,
+     "plan": 0.28
+    },
+    "level": {
+     "state:2": 0.1667,
+     "state:3": 0.3333,
+     "state:4": 0.2,
+     "state:5": 0.08,
+     "state:6": 0.0714,
+     "state:7": 0.1538,
+     "state:8": 0.1667,
+     "state:9": 0.1429,
+     "state:10": 0.1905,
+     "state:11": 0.1667,
+     "state:12": 0.1538,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 1.0,
+     "recall:8": 1.0,
+     "recall:9": 1.0,
+     "recall:10": 1.0,
+     "hops:1": 0.5763,
+     "hops:2": 0.551,
+     "hops:3": 0.383,
+     "hops:4": 0.3556,
+     "perm:1": 1.0,
+     "perm:2": 0.3095,
+     "perm:3": 0.1224,
+     "perm:4": 0.2,
+     "conn:1": 0.4737,
+     "conn:2": 0.5192,
+     "conn:3": 0.4681,
+     "conn:4": 0.5909,
+     "arith:2": 0.1111,
+     "arith:3": 0.0857,
+     "arith:4": 0.0896,
+     "binding:3": 0.7879,
+     "binding:4": 0.8125,
+     "binding:5": 0.8056,
+     "binding:6": 0.8947,
+     "binding:7": 0.7586,
+     "binding:8": 0.7188,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 1.0,
+     "stack:7": 1.0,
+     "stack:8": 0.9091,
+     "stack:9": 0.9167,
+     "stack:10": 0.8667,
+     "trace:1": 0.3455,
+     "trace:2": 0.4,
+     "trace:3": 0.3269,
+     "trace:4": 0.4884,
+     "cf:2": 0.2245,
+     "cf:3": 0.1765,
+     "cf:4": 0.1351,
+     "cf:5": 0.1818,
+     "cf:6": 0.1111,
+     "plan:2": 0.2736,
+     "plan:3": 0.2872
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03061066845601254,
+     "confident_error_rate": 0.004090909090909091,
+     "auroc_confidence": 0.8818496894409937
+    }
+   },
+   "ood": {
+    "all": 0.37454545454545457,
+    "task": {
+     "state": 0.135,
+     "recall": 0.895,
+     "hops": 0.545,
+     "perm": 0.165,
+     "conn": 0.49,
+     "arith": 0.105,
+     "binding": 0.51,
+     "stack": 0.59,
+     "trace": 0.295,
+     "cf": 0.205,
+     "plan": 0.185
+    },
+    "level": {
+     "state:16": 0.25,
+     "state:17": 0.25,
+     "state:18": 0.1429,
+     "state:19": 0.25,
+     "state:20": 0.1333,
+     "state:21": 0.0714,
+     "state:22": 0.0,
+     "state:23": 0.0714,
+     "state:24": 0.2,
+     "state:25": 0.25,
+     "state:26": 0.2222,
+     "state:27": 0.25,
+     "state:28": 0.0556,
+     "state:29": 0.0,
+     "state:30": 0.2,
+     "state:31": 0.0,
+     "state:32": 0.0833,
+     "recall:14": 1.0,
+     "recall:15": 0.9459,
+     "recall:16": 0.8621,
+     "recall:17": 0.8788,
+     "recall:18": 0.8,
+     "recall:19": 0.9615,
+     "recall:20": 0.8519,
+     "hops:6": 0.5,
+     "hops:7": 0.5714,
+     "hops:8": 0.5541,
+     "perm:6": 0.1842,
+     "perm:7": 0.1707,
+     "perm:8": 0.1212,
+     "perm:9": 0.1778,
+     "perm:10": 0.1628,
+     "conn:6": 0.4561,
+     "conn:7": 0.4118,
+     "conn:8": 0.55,
+     "conn:9": 0.5577,
+     "arith:6": 0.0615,
+     "arith:7": 0.0882,
+     "arith:8": 0.1642,
+     "binding:12": 0.6667,
+     "binding:13": 0.4783,
+     "binding:14": 0.5882,
+     "binding:15": 0.6316,
+     "binding:16": 0.6207,
+     "binding:17": 0.4444,
+     "binding:18": 0.4375,
+     "binding:19": 0.3,
+     "binding:20": 0.3636,
+     "stack:16": 0.6667,
+     "stack:17": 0.5909,
+     "stack:18": 0.5385,
+     "stack:19": 0.6923,
+     "stack:20": 0.6296,
+     "stack:21": 0.6,
+     "stack:22": 0.32,
+     "stack:23": 0.5833,
+     "stack:24": 0.6667,
+     "trace:6": 0.2093,
+     "trace:7": 0.28,
+     "trace:8": 0.3167,
+     "trace:9": 0.3617,
+     "cf:8": 0.2404,
+     "cf:9": 0.1667,
+     "plan:5": 0.25,
+     "plan:6": 0.1918,
+     "plan:7": 0.1194
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.05310361864891919,
+     "confident_error_rate": 0.015454545454545455,
+     "auroc_confidence": 0.8129524511740799
+    }
+   },
+   "adv": {
+    "all": 0.4618181818181818,
+    "task": {
+     "state": 0.15,
+     "recall": 1.0,
+     "hops": 0.42,
+     "perm": 0.44,
+     "conn": 0.57,
+     "arith": 0.12,
+     "binding": 0.73,
+     "stack": 0.95,
+     "trace": 0.36,
+     "cf": 0.12,
+     "plan": 0.22
+    },
+    "level": {
+     "state:2": 0.25,
+     "state:3": 0.1667,
+     "state:4": 0.0476,
+     "state:5": 0.1667,
+     "state:6": 0.1667,
+     "state:7": 0.0,
+     "state:8": 0.1429,
+     "state:9": 0.1429,
+     "state:10": 0.3333,
+     "state:11": 0.2,
+     "state:12": 0.1818,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 1.0,
+     "recall:8": 1.0,
+     "recall:9": 1.0,
+     "recall:10": 1.0,
+     "hops:1": 0.4516,
+     "hops:2": 0.4545,
+     "hops:3": 0.44,
+     "hops:4": 0.3182,
+     "perm:1": 1.0,
+     "perm:2": 0.4118,
+     "perm:3": 0.2333,
+     "perm:4": 0.1786,
+     "conn:1": 0.5455,
+     "conn:2": 0.75,
+     "conn:3": 0.4783,
+     "conn:4": 0.5417,
+     "arith:2": 0.0625,
+     "arith:3": 0.2083,
+     "arith:4": 0.1136,
+     "binding:3": 1.0,
+     "binding:4": 0.7857,
+     "binding:5": 0.8462,
+     "binding:6": 0.8235,
+     "binding:7": 0.5,
+     "binding:8": 0.6538,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 1.0,
+     "stack:7": 0.8571,
+     "stack:8": 0.9231,
+     "stack:9": 0.9412,
+     "stack:10": 0.9167,
+     "trace:1": 0.3103,
+     "trace:2": 0.3333,
+     "trace:3": 0.3333,
+     "trace:4": 0.5,
+     "cf:2": 0.1053,
+     "cf:3": 0.0435,
+     "cf:4": 0.1053,
+     "cf:5": 0.1429,
+     "cf:6": 0.2,
+     "plan:2": 0.1556,
+     "plan:3": 0.2727
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.027234443514184505,
+     "confident_error_rate": 0.005454545454545455,
+     "auroc_confidence": 0.8621016439668014
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.25",
+  "run": "dense-d80-seed3",
+  "parent": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+  "hypothesis": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+  "architecture": "dense-d80",
+  "config": {
+   "kind": "structured",
+   "d": 80,
+   "layers": 4,
+   "heads": 4,
+   "mlp_kind": "dense"
+  },
+  "seed": 3,
+  "dataset_hash": "b051d77f59d974bcfb0accda904f79edc8835aba1a04c225746f218d8ec9eb75",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 319248,
+  "active_parameters": 319248,
+  "flop_estimate": 35642880.0,
+  "checkpoint_sha256": "e83d7b47359b2ad20044b598784e3ce87cdfaf5fcbaa0453886fe6b24413e30d",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007710",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1431.9,
+  "cost_usd": 0.0,
+  "ci_run": "36595748698",
+  "metrics": {
+   "dev": {
+    "all": 0.4718181818181818,
+    "task": {
+     "state": 0.16,
+     "recall": 0.98,
+     "hops": 0.485,
+     "perm": 0.495,
+     "conn": 0.465,
+     "arith": 0.105,
+     "binding": 0.75,
+     "stack": 0.975,
+     "trace": 0.39,
+     "cf": 0.125,
+     "plan": 0.26
+    },
+    "level": {
+     "state:2": 0.0,
+     "state:3": 0.1429,
+     "state:4": 0.0526,
+     "state:5": 0.2667,
+     "state:6": 0.2,
+     "state:7": 0.1818,
+     "state:8": 0.1333,
+     "state:9": 0.2222,
+     "state:10": 0.15,
+     "state:11": 0.2105,
+     "state:12": 0.1923,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 1.0,
+     "recall:8": 0.8571,
+     "recall:9": 1.0,
+     "recall:10": 0.9565,
+     "hops:1": 0.5,
+     "hops:2": 0.3654,
+     "hops:3": 0.4902,
+     "hops:4": 0.5918,
+     "perm:1": 1.0,
+     "perm:2": 0.6939,
+     "perm:3": 0.1404,
+     "perm:4": 0.2128,
+     "conn:1": 0.4375,
+     "conn:2": 0.4464,
+     "conn:3": 0.5128,
+     "conn:4": 0.4737,
+     "arith:2": 0.0909,
+     "arith:3": 0.1429,
+     "arith:4": 0.0781,
+     "binding:3": 0.7895,
+     "binding:4": 0.8182,
+     "binding:5": 0.8065,
+     "binding:6": 0.7812,
+     "binding:7": 0.75,
+     "binding:8": 0.5333,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 1.0,
+     "stack:7": 1.0,
+     "stack:8": 0.9375,
+     "stack:9": 1.0,
+     "stack:10": 0.8966,
+     "trace:1": 0.3889,
+     "trace:2": 0.3673,
+     "trace:3": 0.2826,
+     "trace:4": 0.5098,
+     "cf:2": 0.1351,
+     "cf:3": 0.1042,
+     "cf:4": 0.1842,
+     "cf:5": 0.1351,
+     "cf:6": 0.075,
+     "plan:2": 0.3269,
+     "plan:3": 0.1875
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.036080497533760296,
+     "confident_error_rate": 0.0027272727272727275,
+     "auroc_confidence": 0.8850546695452329
+    }
+   },
+   "holdout": {
+    "all": 0.48954545454545456,
+    "task": {
+     "state": 0.16,
+     "recall": 0.985,
+     "hops": 0.58,
+     "perm": 0.555,
+     "conn": 0.5,
+     "arith": 0.065,
+     "binding": 0.825,
+     "stack": 0.95,
+     "trace": 0.335,
+     "cf": 0.165,
+     "plan": 0.265
+    },
+    "level": {
+     "state:2": 0.0833,
+     "state:3": 0.1667,
+     "state:4": 0.1,
+     "state:5": 0.04,
+     "state:6": 0.2143,
+     "state:7": 0.2308,
+     "state:8": 0.2778,
+     "state:9": 0.2857,
+     "state:10": 0.2381,
+     "state:11": 0.0833,
+     "state:12": 0.0769,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 0.9286,
+     "recall:8": 1.0,
+     "recall:9": 1.0,
+     "recall:10": 0.9545,
+     "hops:1": 0.5932,
+     "hops:2": 0.551,
+     "hops:3": 0.5106,
+     "hops:4": 0.6667,
+     "perm:1": 1.0,
+     "perm:2": 0.7381,
+     "perm:3": 0.2653,
+     "perm:4": 0.2364,
+     "conn:1": 0.5263,
+     "conn:2": 0.5577,
+     "conn:3": 0.4681,
+     "conn:4": 0.4318,
+     "arith:2": 0.0476,
+     "arith:3": 0.0857,
+     "arith:4": 0.0597,
+     "binding:3": 0.8182,
+     "binding:4": 0.8438,
+     "binding:5": 0.8333,
+     "binding:6": 0.8421,
+     "binding:7": 0.8276,
+     "binding:8": 0.7812,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 1.0,
+     "stack:7": 0.9697,
+     "stack:8": 0.9394,
+     "stack:9": 0.9444,
+     "stack:10": 0.8333,
+     "trace:1": 0.2545,
+     "trace:2": 0.38,
+     "trace:3": 0.3077,
+     "trace:4": 0.4186,
+     "cf:2": 0.3265,
+     "cf:3": 0.0588,
+     "cf:4": 0.1622,
+     "cf:5": 0.1364,
+     "cf:6": 0.0833,
+     "plan:2": 0.2642,
+     "plan:3": 0.266
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03114765921438284,
+     "confident_error_rate": 0.0013636363636363637,
+     "auroc_confidence": 0.8933707381160855
+    }
+   },
+   "ood": {
+    "all": 0.3390909090909091,
+    "task": {
+     "state": 0.1,
+     "recall": 0.695,
+     "hops": 0.54,
+     "perm": 0.23,
+     "conn": 0.5,
+     "arith": 0.08,
+     "binding": 0.47,
+     "stack": 0.45,
+     "trace": 0.33,
+     "cf": 0.155,
+     "plan": 0.18
+    },
+    "level": {
+     "state:16": 0.25,
+     "state:17": 0.0,
+     "state:18": 0.0714,
+     "state:19": 0.125,
+     "state:20": 0.0667,
+     "state:21": 0.0,
+     "state:22": 0.1818,
+     "state:23": 0.0,
+     "state:24": 0.2,
+     "state:25": 0.1667,
+     "state:26": 0.1111,
+     "state:27": 0.0833,
+     "state:28": 0.0556,
+     "state:29": 0.2,
+     "state:30": 0.1,
+     "state:31": 0.1818,
+     "state:32": 0.0,
+     "recall:14": 0.7778,
+     "recall:15": 0.7838,
+     "recall:16": 0.6897,
+     "recall:17": 0.7273,
+     "recall:18": 0.6667,
+     "recall:19": 0.6923,
+     "recall:20": 0.5185,
+     "hops:6": 0.4286,
+     "hops:7": 0.6429,
+     "hops:8": 0.527,
+     "perm:6": 0.1579,
+     "perm:7": 0.3171,
+     "perm:8": 0.2424,
+     "perm:9": 0.1778,
+     "perm:10": 0.2558,
+     "conn:6": 0.5439,
+     "conn:7": 0.549,
+     "conn:8": 0.45,
+     "conn:9": 0.4423,
+     "arith:6": 0.0462,
+     "arith:7": 0.1471,
+     "arith:8": 0.0448,
+     "binding:12": 0.6667,
+     "binding:13": 0.5652,
+     "binding:14": 0.5882,
+     "binding:15": 0.5789,
+     "binding:16": 0.6207,
+     "binding:17": 0.5185,
+     "binding:18": 0.1875,
+     "binding:19": 0.1,
+     "binding:20": 0.2273,
+     "stack:16": 0.5333,
+     "stack:17": 0.6364,
+     "stack:18": 0.3077,
+     "stack:19": 0.5,
+     "stack:20": 0.4444,
+     "stack:21": 0.4333,
+     "stack:22": 0.4,
+     "stack:23": 0.3333,
+     "stack:24": 0.4,
+     "trace:6": 0.3256,
+     "trace:7": 0.28,
+     "trace:8": 0.4333,
+     "trace:9": 0.2553,
+     "cf:8": 0.0865,
+     "cf:9": 0.2292,
+     "plan:5": 0.2167,
+     "plan:6": 0.1644,
+     "plan:7": 0.1642
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.08539821454408493,
+     "confident_error_rate": 0.04409090909090909,
+     "auroc_confidence": 0.7754705517920426
+    }
+   },
+   "adv": {
+    "all": 0.47363636363636363,
+    "task": {
+     "state": 0.21,
+     "recall": 0.95,
+     "hops": 0.63,
+     "perm": 0.45,
+     "conn": 0.54,
+     "arith": 0.09,
+     "binding": 0.71,
+     "stack": 0.97,
+     "trace": 0.31,
+     "cf": 0.13,
+     "plan": 0.22
+    },
+    "level": {
+     "state:2": 0.25,
+     "state:3": 0.1667,
+     "state:4": 0.2381,
+     "state:5": 0.1667,
+     "state:6": 0.0,
+     "state:7": 0.2222,
+     "state:8": 0.1429,
+     "state:9": 0.2857,
+     "state:10": 0.2222,
+     "state:11": 0.2,
+     "state:12": 0.2727,
+     "recall:2": 1.0,
+     "recall:3": 0.875,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 0.9231,
+     "recall:8": 0.9,
+     "recall:9": 1.0,
+     "recall:10": 0.7778,
+     "hops:1": 0.6452,
+     "hops:2": 0.5909,
+     "hops:3": 0.56,
+     "hops:4": 0.7273,
+     "perm:1": 1.0,
+     "perm:2": 0.6471,
+     "perm:3": 0.1,
+     "perm:4": 0.2143,
+     "conn:1": 0.3939,
+     "conn:2": 0.6,
+     "conn:3": 0.6957,
+     "conn:4": 0.5417,
+     "arith:2": 0.0625,
+     "arith:3": 0.0833,
+     "arith:4": 0.1136,
+     "binding:3": 1.0,
+     "binding:4": 0.8571,
+     "binding:5": 0.8462,
+     "binding:6": 0.7059,
+     "binding:7": 0.55,
+     "binding:8": 0.5769,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 1.0,
+     "stack:7": 0.9286,
+     "stack:8": 1.0,
+     "stack:9": 1.0,
+     "stack:10": 0.8333,
+     "trace:1": 0.3103,
+     "trace:2": 0.375,
+     "trace:3": 0.2222,
+     "trace:4": 0.35,
+     "cf:2": 0.1053,
+     "cf:3": 0.0435,
+     "cf:4": 0.1579,
+     "cf:5": 0.1429,
+     "cf:6": 0.2,
+     "plan:2": 0.2222,
+     "plan:3": 0.2182
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04286557121033019,
+     "confident_error_rate": 0.005454545454545455,
+     "auroc_confidence": 0.8810809556485966
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.25",
+  "run": "dense-seed1",
+  "parent": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+  "hypothesis": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+  "architecture": "dense",
+  "config": {
+   "kind": "structured",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "mlp_kind": "dense"
+  },
+  "seed": 1,
+  "dataset_hash": "b051d77f59d974bcfb0accda904f79edc8835aba1a04c225746f218d8ec9eb75",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 22812672.0,
+  "checkpoint_sha256": "b04e14510e5594f531acda8e8acdc67c2f86d8d87255faf3b70732b07732ff43",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007718",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 983.4,
+  "cost_usd": 0.0,
+  "ci_run": "36595748698",
+  "metrics": {
+   "dev": {
+    "all": 0.47045454545454546,
+    "task": {
+     "state": 0.145,
+     "recall": 1.0,
+     "hops": 0.455,
+     "perm": 0.475,
+     "conn": 0.545,
+     "arith": 0.085,
+     "binding": 0.735,
+     "stack": 0.93,
+     "trace": 0.39,
+     "cf": 0.11,
+     "plan": 0.305
+    },
+    "level": {
+     "state:2": 0.0,
+     "state:3": 0.0714,
+     "state:4": 0.2105,
+     "state:5": 0.0667,
+     "state:6": 0.1333,
+     "state:7": 0.1818,
+     "state:8": 0.0667,
+     "state:9": 0.2778,
+     "state:10": 0.1,
+     "state:11": 0.1579,
+     "state:12": 0.2308,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 1.0,
+     "recall:8": 1.0,
+     "recall:9": 1.0,
+     "recall:10": 1.0,
+     "hops:1": 0.5,
+     "hops:2": 0.5192,
+     "hops:3": 0.3725,
+     "hops:4": 0.4286,
+     "perm:1": 1.0,
+     "perm:2": 0.6735,
+     "perm:3": 0.1404,
+     "perm:4": 0.1489,
+     "conn:1": 0.5833,
+     "conn:2": 0.5179,
+     "conn:3": 0.5897,
+     "conn:4": 0.5088,
+     "arith:2": 0.0758,
+     "arith:3": 0.1,
+     "arith:4": 0.0781,
+     "binding:3": 0.7368,
+     "binding:4": 0.7879,
+     "binding:5": 0.8065,
+     "binding:6": 0.75,
+     "binding:7": 0.75,
+     "binding:8": 0.5667,
+     "stack:4": 1.0,
+     "stack:5": 0.931,
+     "stack:6": 0.8929,
+     "stack:7": 0.92,
+     "stack:8": 0.9375,
+     "stack:9": 0.8519,
+     "stack:10": 0.9655,
+     "trace:1": 0.4074,
+     "trace:2": 0.3469,
+     "trace:3": 0.2826,
+     "trace:4": 0.5098,
+     "cf:2": 0.1622,
+     "cf:3": 0.125,
+     "cf:4": 0.0263,
+     "cf:5": 0.1622,
+     "cf:6": 0.075,
+     "plan:2": 0.3462,
+     "plan:3": 0.2604
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03512916890396316,
+     "confident_error_rate": 0.004090909090909091,
+     "auroc_confidence": 0.8859331135576703
+    }
+   },
+   "holdout": {
+    "all": 0.4813636363636364,
+    "task": {
+     "state": 0.195,
+     "recall": 1.0,
+     "hops": 0.515,
+     "perm": 0.525,
+     "conn": 0.455,
+     "arith": 0.105,
+     "binding": 0.785,
+     "stack": 0.91,
+     "trace": 0.39,
+     "cf": 0.145,
+     "plan": 0.27
+    },
+    "level": {
+     "state:2": 0.25,
+     "state:3": 0.1111,
+     "state:4": 0.25,
+     "state:5": 0.28,
+     "state:6": 0.1429,
+     "state:7": 0.2308,
+     "state:8": 0.1667,
+     "state:9": 0.2381,
+     "state:10": 0.1905,
+     "state:11": 0.0833,
+     "state:12": 0.1538,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 1.0,
+     "recall:8": 1.0,
+     "recall:9": 1.0,
+     "recall:10": 1.0,
+     "hops:1": 0.4915,
+     "hops:2": 0.6122,
+     "hops:3": 0.4043,
+     "hops:4": 0.5556,
+     "perm:1": 1.0,
+     "perm:2": 0.6905,
+     "perm:3": 0.2041,
+     "perm:4": 0.2182,
+     "conn:1": 0.5614,
+     "conn:2": 0.3846,
+     "conn:3": 0.4043,
+     "conn:4": 0.4545,
+     "arith:2": 0.0794,
+     "arith:3": 0.1143,
+     "arith:4": 0.1194,
+     "binding:3": 0.7879,
+     "binding:4": 0.8125,
+     "binding:5": 0.8056,
+     "binding:6": 0.8421,
+     "binding:7": 0.7931,
+     "binding:8": 0.6562,
+     "stack:4": 1.0,
+     "stack:5": 0.913,
+     "stack:6": 1.0,
+     "stack:7": 0.9091,
+     "stack:8": 0.8788,
+     "stack:9": 0.9167,
+     "stack:10": 0.8,
+     "trace:1": 0.3091,
+     "trace:2": 0.42,
+     "trace:3": 0.4038,
+     "trace:4": 0.4419,
+     "cf:2": 0.2041,
+     "cf:3": 0.1176,
+     "cf:4": 0.1351,
+     "cf:5": 0.1364,
+     "cf:6": 0.1111,
+     "plan:2": 0.2925,
+     "plan:3": 0.2447
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.029091269191015866,
+     "confident_error_rate": 0.0027272727272727275,
+     "auroc_confidence": 0.877466960297736
+    }
+   },
+   "ood": {
+    "all": 0.3527272727272727,
+    "task": {
+     "state": 0.125,
+     "recall": 0.94,
+     "hops": 0.55,
+     "perm": 0.16,
+     "conn": 0.525,
+     "arith": 0.085,
+     "binding": 0.475,
+     "stack": 0.36,
+     "trace": 0.32,
+     "cf": 0.15,
+     "plan": 0.19
+    },
+    "level": {
+     "state:16": 0.1667,
+     "state:17": 0.125,
+     "state:18": 0.1429,
+     "state:19": 0.25,
+     "state:20": 0.2,
+     "state:21": 0.0714,
+     "state:22": 0.0909,
+     "state:23": 0.2143,
+     "state:24": 0.2,
+     "state:25": 0.0833,
+     "state:26": 0.2222,
+     "state:27": 0.0833,
+     "state:28": 0.1111,
+     "state:29": 0.1,
+     "state:30": 0.1,
+     "state:31": 0.0,
+     "state:32": 0.0,
+     "recall:14": 1.0,
+     "recall:15": 0.973,
+     "recall:16": 1.0,
+     "recall:17": 0.9091,
+     "recall:18": 0.9333,
+     "recall:19": 0.8462,
+     "recall:20": 0.9259,
+     "hops:6": 0.5714,
+     "hops:7": 0.5,
+     "hops:8": 0.5811,
+     "perm:6": 0.0789,
+     "perm:7": 0.1463,
+     "perm:8": 0.2121,
+     "perm:9": 0.1333,
+     "perm:10": 0.2326,
+     "conn:6": 0.386,
+     "conn:7": 0.5882,
+     "conn:8": 0.55,
+     "conn:9": 0.5962,
+     "arith:6": 0.1077,
+     "arith:7": 0.0882,
+     "arith:8": 0.0597,
+     "binding:12": 0.4444,
+     "binding:13": 0.5217,
+     "binding:14": 0.5882,
+     "binding:15": 0.4737,
+     "binding:16": 0.5172,
+     "binding:17": 0.3333,
+     "binding:18": 0.3125,
+     "binding:19": 0.5,
+     "binding:20": 0.5909,
+     "stack:16": 0.3333,
+     "stack:17": 0.6364,
+     "stack:18": 0.3846,
+     "stack:19": 0.5,
+     "stack:20": 0.4074,
+     "stack:21": 0.2667,
+     "stack:22": 0.36,
+     "stack:23": 0.0833,
+     "stack:24": 0.2,
+     "trace:6": 0.2791,
+     "trace:7": 0.32,
+     "trace:8": 0.4167,
+     "trace:9": 0.234,
+     "cf:8": 0.1346,
+     "cf:9": 0.1667,
+     "plan:5": 0.2333,
+     "plan:6": 0.1918,
+     "plan:7": 0.1493
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.061191414354199704,
+     "confident_error_rate": 0.019545454545454546,
+     "auroc_confidence": 0.8078222735433801
+    }
+   },
+   "adv": {
+    "all": 0.44727272727272727,
+    "task": {
+     "state": 0.15,
+     "recall": 1.0,
+     "hops": 0.5,
+     "perm": 0.46,
+     "conn": 0.44,
+     "arith": 0.12,
+     "binding": 0.7,
+     "stack": 0.87,
+     "trace": 0.3,
+     "cf": 0.15,
+     "plan": 0.23
+    },
+    "level": {
+     "state:2": 0.125,
+     "state:3": 0.3333,
+     "state:4": 0.0476,
+     "state:5": 0.3333,
+     "state:6": 0.0,
+     "state:7": 0.1111,
+     "state:8": 0.0,
+     "state:9": 0.1429,
+     "state:10": 0.0,
+     "state:11": 0.2,
+     "state:12": 0.4545,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 1.0,
+     "recall:8": 1.0,
+     "recall:9": 1.0,
+     "recall:10": 1.0,
+     "hops:1": 0.4839,
+     "hops:2": 0.5455,
+     "hops:3": 0.44,
+     "hops:4": 0.5455,
+     "perm:1": 1.0,
+     "perm:2": 0.7059,
+     "perm:3": 0.2333,
+     "perm:4": 0.0714,
+     "conn:1": 0.3939,
+     "conn:2": 0.5,
+     "conn:3": 0.3913,
+     "conn:4": 0.5,
+     "arith:2": 0.0938,
+     "arith:3": 0.1667,
+     "arith:4": 0.1136,
+     "binding:3": 1.0,
+     "binding:4": 0.7857,
+     "binding:5": 0.8462,
+     "binding:6": 0.7059,
+     "binding:7": 0.5,
+     "binding:8": 0.6154,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 0.7333,
+     "stack:7": 0.7143,
+     "stack:8": 0.7692,
+     "stack:9": 0.9412,
+     "stack:10": 0.9167,
+     "trace:1": 0.2759,
+     "trace:2": 0.2917,
+     "trace:3": 0.2963,
+     "trace:4": 0.35,
+     "cf:2": 0.1053,
+     "cf:3": 0.087,
+     "cf:4": 0.1579,
+     "cf:5": 0.2143,
+     "cf:6": 0.2,
+     "plan:2": 0.2,
+     "plan:3": 0.2545
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.0464991701800715,
+     "confident_error_rate": 0.00909090909090909,
+     "auroc_confidence": 0.856500053487377
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.25",
+  "run": "dense-seed2",
+  "parent": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+  "hypothesis": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+  "architecture": "dense",
+  "config": {
+   "kind": "structured",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "mlp_kind": "dense"
+  },
+  "seed": 2,
+  "dataset_hash": "b051d77f59d974bcfb0accda904f79edc8835aba1a04c225746f218d8ec9eb75",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 22812672.0,
+  "checkpoint_sha256": "42758def7619d5c7c5fdea5888b84c559fc467e87cb1353a62d6a4ce1f6e5fad",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007713",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 774.1,
+  "cost_usd": 0.0,
+  "ci_run": "36595748698",
+  "metrics": {
+   "dev": {
+    "all": 0.47,
+    "task": {
+     "state": 0.11,
+     "recall": 1.0,
+     "hops": 0.47,
+     "perm": 0.565,
+     "conn": 0.5,
+     "arith": 0.095,
+     "binding": 0.8,
+     "stack": 0.89,
+     "trace": 0.345,
+     "cf": 0.105,
+     "plan": 0.29
+    },
+    "level": {
+     "state:2": 0.0588,
+     "state:3": 0.1429,
+     "state:4": 0.0,
+     "state:5": 0.0667,
+     "state:6": 0.0667,
+     "state:7": 0.1364,
+     "state:8": 0.2,
+     "state:9": 0.1667,
+     "state:10": 0.15,
+     "state:11": 0.1053,
+     "state:12": 0.1154,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 1.0,
+     "recall:8": 1.0,
+     "recall:9": 1.0,
+     "recall:10": 1.0,
+     "hops:1": 0.4167,
+     "hops:2": 0.4615,
+     "hops:3": 0.549,
+     "hops:4": 0.449,
+     "perm:1": 1.0,
+     "perm:2": 0.9388,
+     "perm:3": 0.2105,
+     "perm:4": 0.1702,
+     "conn:1": 0.5,
+     "conn:2": 0.5714,
+     "conn:3": 0.4103,
+     "conn:4": 0.4912,
+     "arith:2": 0.0909,
+     "arith:3": 0.0714,
+     "arith:4": 0.125,
+     "binding:3": 0.8684,
+     "binding:4": 0.8485,
+     "binding:5": 0.8387,
+     "binding:6": 0.75,
+     "binding:7": 0.8056,
+     "binding:8": 0.6667,
+     "stack:4": 0.9,
+     "stack:5": 0.931,
+     "stack:6": 0.9286,
+     "stack:7": 0.8,
+     "stack:8": 0.8438,
+     "stack:9": 0.8889,
+     "stack:10": 0.931,
+     "trace:1": 0.2593,
+     "trace:2": 0.2857,
+     "trace:3": 0.2826,
+     "trace:4": 0.549,
+     "cf:2": 0.1892,
+     "cf:3": 0.125,
+     "cf:4": 0.0526,
+     "cf:5": 0.0541,
+     "cf:6": 0.1,
+     "plan:2": 0.2788,
+     "plan:3": 0.3021
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04007311284880747,
+     "confident_error_rate": 0.00045454545454545455,
+     "auroc_confidence": 0.8901790246540439
+    }
+   },
+   "holdout": {
+    "all": 0.48727272727272725,
+    "task": {
+     "state": 0.19,
+     "recall": 1.0,
+     "hops": 0.535,
+     "perm": 0.59,
+     "conn": 0.48,
+     "arith": 0.115,
+     "binding": 0.845,
+     "stack": 0.83,
+     "trace": 0.345,
+     "cf": 0.155,
+     "plan": 0.275
+    },
+    "level": {
+     "state:2": 0.4167,
+     "state:3": 0.0556,
+     "state:4": 0.2,
+     "state:5": 0.24,
+     "state:6": 0.2143,
+     "state:7": 0.2308,
+     "state:8": 0.1667,
+     "state:9": 0.1429,
+     "state:10": 0.2857,
+     "state:11": 0.1667,
+     "state:12": 0.0769,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 1.0,
+     "recall:8": 1.0,
+     "recall:9": 1.0,
+     "recall:10": 1.0,
+     "hops:1": 0.5932,
+     "hops:2": 0.551,
+     "hops:3": 0.4894,
+     "hops:4": 0.4889,
+     "perm:1": 1.0,
+     "perm:2": 0.9762,
+     "perm:3": 0.3265,
+     "perm:4": 0.1273,
+     "conn:1": 0.5439,
+     "conn:2": 0.4808,
+     "conn:3": 0.4894,
+     "conn:4": 0.3864,
+     "arith:2": 0.1587,
+     "arith:3": 0.0429,
+     "arith:4": 0.1493,
+     "binding:3": 0.8182,
+     "binding:4": 0.875,
+     "binding:5": 0.8611,
+     "binding:6": 0.8947,
+     "binding:7": 0.8621,
+     "binding:8": 0.75,
+     "stack:4": 1.0,
+     "stack:5": 0.8261,
+     "stack:6": 0.95,
+     "stack:7": 0.8182,
+     "stack:8": 0.8182,
+     "stack:9": 0.7778,
+     "stack:10": 0.7,
+     "trace:1": 0.3273,
+     "trace:2": 0.28,
+     "trace:3": 0.3462,
+     "trace:4": 0.4419,
+     "cf:2": 0.1837,
+     "cf:3": 0.1471,
+     "cf:4": 0.1892,
+     "cf:5": 0.1591,
+     "cf:6": 0.0833,
+     "plan:2": 0.2547,
+     "plan:3": 0.2979
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.022867394055832543,
+     "confident_error_rate": 0.0036363636363636364,
+     "auroc_confidence": 0.881907781570869
+    }
+   },
+   "ood": {
+    "all": 0.3513636363636364,
+    "task": {
+     "state": 0.135,
+     "recall": 0.89,
+     "hops": 0.52,
+     "perm": 0.145,
+     "conn": 0.48,
+     "arith": 0.09,
+     "binding": 0.59,
+     "stack": 0.36,
+     "trace": 0.31,
+     "cf": 0.17,
+     "plan": 0.175
+    },
+    "level": {
+     "state:16": 0.25,
+     "state:17": 0.0,
+     "state:18": 0.1429,
+     "state:19": 0.25,
+     "state:20": 0.0667,
+     "state:21": 0.0714,
+     "state:22": 0.0909,
+     "state:23": 0.2857,
+     "state:24": 0.1,
+     "state:25": 0.1667,
+     "state:26": 0.1111,
+     "state:27": 0.0833,
+     "state:28": 0.1667,
+     "state:29": 0.1,
+     "state:30": 0.2,
+     "state:31": 0.0,
+     "state:32": 0.1667,
+     "recall:14": 0.9444,
+     "recall:15": 0.9189,
+     "recall:16": 0.8966,
+     "recall:17": 0.8788,
+     "recall:18": 0.8667,
+     "recall:19": 0.8462,
+     "recall:20": 0.8889,
+     "hops:6": 0.5,
+     "hops:7": 0.5,
+     "hops:8": 0.5541,
+     "perm:6": 0.2368,
+     "perm:7": 0.1707,
+     "perm:8": 0.2727,
+     "perm:9": 0.0444,
+     "perm:10": 0.0465,
+     "conn:6": 0.4737,
+     "conn:7": 0.4706,
+     "conn:8": 0.5,
+     "conn:9": 0.4808,
+     "arith:6": 0.0769,
+     "arith:7": 0.0735,
+     "arith:8": 0.1194,
+     "binding:12": 0.6296,
+     "binding:13": 0.5652,
+     "binding:14": 0.5294,
+     "binding:15": 0.6842,
+     "binding:16": 0.6897,
+     "binding:17": 0.5556,
+     "binding:18": 0.4375,
+     "binding:19": 0.6,
+     "binding:20": 0.5455,
+     "stack:16": 0.2667,
+     "stack:17": 0.5455,
+     "stack:18": 0.2308,
+     "stack:19": 0.5,
+     "stack:20": 0.5556,
+     "stack:21": 0.3333,
+     "stack:22": 0.36,
+     "stack:23": 0.1667,
+     "stack:24": 0.1333,
+     "trace:6": 0.2093,
+     "trace:7": 0.22,
+     "trace:8": 0.55,
+     "trace:9": 0.1915,
+     "cf:8": 0.1827,
+     "cf:9": 0.1562,
+     "plan:5": 0.2333,
+     "plan:6": 0.1918,
+     "plan:7": 0.1045
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.0736424388939684,
+     "confident_error_rate": 0.02,
+     "auroc_confidence": 0.8003863758543195
+    }
+   },
+   "adv": {
+    "all": 0.4509090909090909,
+    "task": {
+     "state": 0.16,
+     "recall": 1.0,
+     "hops": 0.51,
+     "perm": 0.49,
+     "conn": 0.56,
+     "arith": 0.05,
+     "binding": 0.79,
+     "stack": 0.81,
+     "trace": 0.26,
+     "cf": 0.16,
+     "plan": 0.17
+    },
+    "level": {
+     "state:2": 0.25,
+     "state:3": 0.1667,
+     "state:4": 0.1905,
+     "state:5": 0.1667,
+     "state:6": 0.0,
+     "state:7": 0.2222,
+     "state:8": 0.1429,
+     "state:9": 0.1429,
+     "state:10": 0.1111,
+     "state:11": 0.1,
+     "state:12": 0.1818,
+     "recall:2": 1.0,
+     "recall:3": 1.0,
+     "recall:4": 1.0,
+     "recall:5": 1.0,
+     "recall:6": 1.0,
+     "recall:7": 1.0,
+     "recall:8": 1.0,
+     "recall:9": 1.0,
+     "recall:10": 1.0,
+     "hops:1": 0.5161,
+     "hops:2": 0.5455,
+     "hops:3": 0.48,
+     "hops:4": 0.5,
+     "perm:1": 1.0,
+     "perm:2": 1.0,
+     "perm:3": 0.1667,
+     "perm:4": 0.0714,
+     "conn:1": 0.4545,
+     "conn:2": 0.7,
+     "conn:3": 0.6087,
+     "conn:4": 0.5417,
+     "arith:2": 0.0938,
+     "arith:3": 0.0417,
+     "arith:4": 0.0227,
+     "binding:3": 1.0,
+     "binding:4": 0.9286,
+     "binding:5": 0.9231,
+     "binding:6": 0.8824,
+     "binding:7": 0.65,
+     "binding:8": 0.6154,
+     "stack:4": 1.0,
+     "stack:5": 0.9231,
+     "stack:6": 0.5333,
+     "stack:7": 0.7857,
+     "stack:8": 0.6923,
+     "stack:9": 0.8235,
+     "stack:10": 0.9167,
+     "trace:1": 0.1724,
+     "trace:2": 0.2917,
+     "trace:3": 0.2593,
+     "trace:4": 0.35,
+     "cf:2": 0.2105,
+     "cf:3": 0.087,
+     "cf:4": 0.2105,
+     "cf:5": 0.2857,
+     "cf:6": 0.08,
+     "plan:2": 0.2,
+     "plan:3": 0.1455
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04260920591652392,
+     "confident_error_rate": 0.0027272727272727275,
+     "auroc_confidence": 0.8758812219611194
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.25",
+  "run": "dense-seed3",
+  "parent": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+  "hypothesis": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+  "architecture": "dense",
+  "config": {
+   "kind": "structured",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "mlp_kind": "dense"
+  },
+  "seed": 3,
+  "dataset_hash": "b051d77f59d974bcfb0accda904f79edc8835aba1a04c225746f218d8ec9eb75",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 22812672.0,
+  "checkpoint_sha256": "22db98e7e5f47b499484be03a09f07ad3cfa4125c4edb34cf33307c7a7d3103f",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007711",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 690.0,
+  "cost_usd": 0.0,
+  "ci_run": "36595748698",
+  "metrics": {
+   "dev": {
+    "all": 0.3936363636363636,
+    "task": {
+     "state": 0.135,
+     "recall": 0.55,
+     "hops": 0.45,
+     "perm": 0.385,
+     "conn": 0.49,
+     "arith": 0.14,
+     "binding": 0.455,
+     "stack": 0.965,
+     "trace": 0.305,
+     "cf": 0.11,
+     "plan": 0.345
+    },
+    "level": {
+     "state:2": 0.1176,
+     "state:3": 0.1429,
+     "state:4": 0.1053,
+     "state:5": 0.2,
+     "state:6": 0.1333,
+     "state:7": 0.2273,
+     "state:8": 0.2,
+     "state:9": 0.1111,
+     "state:10": 0.1,
+     "state:11": 0.0526,
+     "state:12": 0.1154,
+     "recall:2": 0.85,
+     "recall:3": 0.6316,
+     "recall:4": 0.4706,
+     "recall:5": 0.5217,
+     "recall:6": 0.72,
+     "recall:7": 0.4286,
+     "recall:8": 0.4286,
+     "recall:9": 0.5833,
+     "recall:10": 0.3478,
+     "hops:1": 0.4583,
+     "hops:2": 0.4038,
+     "hops:3": 0.4706,
+     "hops:4": 0.4694,
+     "perm:1": 1.0,
+     "perm:2": 0.1633,
+     "perm:3": 0.2105,
+     "perm:4": 0.2128,
+     "conn:1": 0.5208,
+     "conn:2": 0.5714,
+     "conn:3": 0.4103,
+     "conn:4": 0.4386,
+     "arith:2": 0.1667,
+     "arith:3": 0.1143,
+     "arith:4": 0.1406,
+     "binding:3": 0.3947,
+     "binding:4": 0.5152,
+     "binding:5": 0.5806,
+     "binding:6": 0.375,
+     "binding:7": 0.4444,
+     "binding:8": 0.4333,
+     "stack:4": 0.9667,
+     "stack:5": 1.0,
+     "stack:6": 1.0,
+     "stack:7": 1.0,
+     "stack:8": 0.9375,
+     "stack:9": 0.9259,
+     "stack:10": 0.931,
+     "trace:1": 0.2963,
+     "trace:2": 0.2449,
+     "trace:3": 0.1739,
+     "trace:4": 0.4902,
+     "cf:2": 0.1081,
+     "cf:3": 0.1667,
+     "cf:4": 0.0526,
+     "cf:5": 0.1081,
+     "cf:6": 0.1,
+     "plan:2": 0.3654,
+     "plan:3": 0.3229
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.02775688314979725,
+     "confident_error_rate": 0.003181818181818182,
+     "auroc_confidence": 0.8162717140275128
+    }
+   },
+   "holdout": {
+    "all": 0.41818181818181815,
+    "task": {
+     "state": 0.215,
+     "recall": 0.535,
+     "hops": 0.505,
+     "perm": 0.43,
+     "conn": 0.55,
+     "arith": 0.1,
+     "binding": 0.5,
+     "stack": 0.925,
+     "trace": 0.38,
+     "cf": 0.135,
+     "plan": 0.325
+    },
+    "level": {
+     "state:2": 0.25,
+     "state:3": 0.1111,
+     "state:4": 0.2,
+     "state:5": 0.24,
+     "state:6": 0.2857,
+     "state:7": 0.3846,
+     "state:8": 0.1667,
+     "state:9": 0.0952,
+     "state:10": 0.2857,
+     "state:11": 0.25,
+     "state:12": 0.1923,
+     "recall:2": 0.8519,
+     "recall:3": 0.7647,
+     "recall:4": 0.5,
+     "recall:5": 0.5714,
+     "recall:6": 0.5714,
+     "recall:7": 0.3571,
+     "recall:8": 0.52,
+     "recall:9": 0.3125,
+     "recall:10": 0.3636,
+     "hops:1": 0.5763,
+     "hops:2": 0.4694,
+     "hops:3": 0.4894,
+     "hops:4": 0.4667,
+     "perm:1": 1.0,
+     "perm:2": 0.2143,
+     "perm:3": 0.2245,
+     "perm:4": 0.2182,
+     "conn:1": 0.5263,
+     "conn:2": 0.5769,
+     "conn:3": 0.4681,
+     "conn:4": 0.6364,
+     "arith:2": 0.0794,
+     "arith:3": 0.1429,
+     "arith:4": 0.0746,
+     "binding:3": 0.5758,
+     "binding:4": 0.5,
+     "binding:5": 0.4167,
+     "binding:6": 0.5263,
+     "binding:7": 0.5172,
+     "binding:8": 0.4688,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 0.95,
+     "stack:7": 0.9394,
+     "stack:8": 0.8788,
+     "stack:9": 0.8889,
+     "stack:10": 0.8667,
+     "trace:1": 0.3273,
+     "trace:2": 0.4,
+     "trace:3": 0.3269,
+     "trace:4": 0.4884,
+     "cf:2": 0.1837,
+     "cf:3": 0.0882,
+     "cf:4": 0.1351,
+     "cf:5": 0.0909,
+     "cf:6": 0.1667,
+     "plan:2": 0.3585,
+     "plan:3": 0.2872
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.013345607234673078,
+     "confident_error_rate": 0.0036363636363636364,
+     "auroc_confidence": 0.8172376019021739
+    }
+   },
+   "ood": {
+    "all": 0.2877272727272727,
+    "task": {
+     "state": 0.2,
+     "recall": 0.305,
+     "hops": 0.485,
+     "perm": 0.22,
+     "conn": 0.495,
+     "arith": 0.095,
+     "binding": 0.405,
+     "stack": 0.305,
+     "trace": 0.255,
+     "cf": 0.185,
+     "plan": 0.215
+    },
+    "level": {
+     "state:16": 0.0833,
+     "state:17": 0.125,
+     "state:18": 0.1429,
+     "state:19": 0.375,
+     "state:20": 0.0667,
+     "state:21": 0.1429,
+     "state:22": 0.5455,
+     "state:23": 0.2857,
+     "state:24": 0.4,
+     "state:25": 0.25,
+     "state:26": 0.2222,
+     "state:27": 0.1667,
+     "state:28": 0.0556,
+     "state:29": 0.5,
+     "state:30": 0.2,
+     "state:31": 0.0,
+     "state:32": 0.0833,
+     "recall:14": 0.2778,
+     "recall:15": 0.2703,
+     "recall:16": 0.3448,
+     "recall:17": 0.3636,
+     "recall:18": 0.2333,
+     "recall:19": 0.3462,
+     "recall:20": 0.2963,
+     "hops:6": 0.4643,
+     "hops:7": 0.5571,
+     "hops:8": 0.4324,
+     "perm:6": 0.2632,
+     "perm:7": 0.1951,
+     "perm:8": 0.2424,
+     "perm:9": 0.2444,
+     "perm:10": 0.1628,
+     "conn:6": 0.4912,
+     "conn:7": 0.549,
+     "conn:8": 0.375,
+     "conn:9": 0.5385,
+     "arith:6": 0.0923,
+     "arith:7": 0.1176,
+     "arith:8": 0.0746,
+     "binding:12": 0.4074,
+     "binding:13": 0.3043,
+     "binding:14": 0.6471,
+     "binding:15": 0.5789,
+     "binding:16": 0.5517,
+     "binding:17": 0.2593,
+     "binding:18": 0.0625,
+     "binding:19": 0.55,
+     "binding:20": 0.2727,
+     "stack:16": 0.4,
+     "stack:17": 0.5,
+     "stack:18": 0.3077,
+     "stack:19": 0.5,
+     "stack:20": 0.2963,
+     "stack:21": 0.2,
+     "stack:22": 0.32,
+     "stack:23": 0.0,
+     "stack:24": 0.1667,
+     "trace:6": 0.3023,
+     "trace:7": 0.26,
+     "trace:8": 0.2833,
+     "trace:9": 0.1702,
+     "cf:8": 0.1827,
+     "cf:9": 0.1875,
+     "plan:5": 0.25,
+     "plan:6": 0.2192,
+     "plan:7": 0.1791
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.0575823784280907,
+     "confident_error_rate": 0.021363636363636362,
+     "auroc_confidence": 0.7067751038147576
+    }
+   },
+   "adv": {
+    "all": 0.3790909090909091,
+    "task": {
+     "state": 0.2,
+     "recall": 0.38,
+     "hops": 0.57,
+     "perm": 0.42,
+     "conn": 0.44,
+     "arith": 0.08,
+     "binding": 0.43,
+     "stack": 0.96,
+     "trace": 0.29,
+     "cf": 0.1,
+     "plan": 0.3
+    },
+    "level": {
+     "state:2": 0.25,
+     "state:3": 0.3333,
+     "state:4": 0.2381,
+     "state:5": 0.1667,
+     "state:6": 0.1667,
+     "state:7": 0.1111,
+     "state:8": 0.2857,
+     "state:9": 0.1429,
+     "state:10": 0.1111,
+     "state:11": 0.1,
+     "state:12": 0.2727,
+     "recall:2": 0.6923,
+     "recall:3": 0.625,
+     "recall:4": 0.5833,
+     "recall:5": 0.25,
+     "recall:6": 0.4,
+     "recall:7": 0.3077,
+     "recall:8": 0.1,
+     "recall:9": 0.3077,
+     "recall:10": 0.1111,
+     "hops:1": 0.6129,
+     "hops:2": 0.5455,
+     "hops:3": 0.56,
+     "hops:4": 0.5455,
+     "perm:1": 1.0,
+     "perm:2": 0.4118,
+     "perm:3": 0.1333,
+     "perm:4": 0.2143,
+     "conn:1": 0.3939,
+     "conn:2": 0.5,
+     "conn:3": 0.4783,
+     "conn:4": 0.4167,
+     "arith:2": 0.0312,
+     "arith:3": 0.125,
+     "arith:4": 0.0909,
+     "binding:3": 0.7,
+     "binding:4": 0.5714,
+     "binding:5": 0.4615,
+     "binding:6": 0.4118,
+     "binding:7": 0.2,
+     "binding:8": 0.4231,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 0.9333,
+     "stack:7": 1.0,
+     "stack:8": 0.9231,
+     "stack:9": 0.9412,
+     "stack:10": 0.9167,
+     "trace:1": 0.3103,
+     "trace:2": 0.25,
+     "trace:3": 0.2593,
+     "trace:4": 0.35,
+     "cf:2": 0.2105,
+     "cf:3": 0.1304,
+     "cf:4": 0.0526,
+     "cf:5": 0.1429,
+     "cf:6": 0.0,
+     "plan:2": 0.3333,
+     "plan:3": 0.2727
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03668579955669968,
+     "confident_error_rate": 0.005454545454545455,
+     "auroc_confidence": 0.7942916530611528
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.25",
+  "run": "hyper-seed1",
+  "parent": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+  "hypothesis": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+  "architecture": "hyper",
+  "config": {
+   "kind": "structured",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "mlp_kind": "hyper"
+  },
+  "seed": 1,
+  "dataset_hash": "b051d77f59d974bcfb0accda904f79edc8835aba1a04c225746f218d8ec9eb75",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 313904,
+  "active_parameters": 313904,
+  "flop_estimate": 23611392.0,
+  "checkpoint_sha256": "6cb5445830486087f90a33dc8a2f2a0c1661de9cd3af430446fa7bd1f8310535",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007716",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1800.6,
+  "cost_usd": 0.0,
+  "ci_run": "36595748698",
+  "metrics": {
+   "dev": {
+    "all": 0.36954545454545457,
+    "task": {
+     "state": 0.125,
+     "recall": 0.71,
+     "hops": 0.505,
+     "perm": 0.275,
+     "conn": 0.465,
+     "arith": 0.15,
+     "binding": 0.65,
+     "stack": 0.83,
+     "trace": 0.23,
+     "cf": 0.11,
+     "plan": 0.015
+    },
+    "level": {
+     "state:2": 0.0,
+     "state:3": 0.2143,
+     "state:4": 0.1579,
+     "state:5": 0.2667,
+     "state:6": 0.0667,
+     "state:7": 0.1818,
+     "state:8": 0.2,
+     "state:9": 0.0556,
+     "state:10": 0.0,
+     "state:11": 0.2105,
+     "state:12": 0.0769,
+     "recall:2": 1.0,
+     "recall:3": 0.8947,
+     "recall:4": 0.8824,
+     "recall:5": 0.7391,
+     "recall:6": 0.76,
+     "recall:7": 0.5357,
+     "recall:8": 0.5238,
+     "recall:9": 0.625,
+     "recall:10": 0.5652,
+     "hops:1": 0.5417,
+     "hops:2": 0.5769,
+     "hops:3": 0.4706,
+     "hops:4": 0.4286,
+     "perm:1": 0.7021,
+     "perm:2": 0.102,
+     "perm:3": 0.1579,
+     "perm:4": 0.1702,
+     "conn:1": 0.5,
+     "conn:2": 0.4286,
+     "conn:3": 0.4359,
+     "conn:4": 0.4912,
+     "arith:2": 0.1515,
+     "arith:3": 0.1286,
+     "arith:4": 0.1719,
+     "binding:3": 0.7368,
+     "binding:4": 0.7879,
+     "binding:5": 0.6452,
+     "binding:6": 0.6562,
+     "binding:7": 0.6111,
+     "binding:8": 0.4333,
+     "stack:4": 0.9333,
+     "stack:5": 0.8276,
+     "stack:6": 0.9286,
+     "stack:7": 0.72,
+     "stack:8": 0.8125,
+     "stack:9": 0.7407,
+     "stack:10": 0.8276,
+     "trace:1": 0.1296,
+     "trace:2": 0.1837,
+     "trace:3": 0.1739,
+     "trace:4": 0.4314,
+     "cf:2": 0.1081,
+     "cf:3": 0.1458,
+     "cf:4": 0.1316,
+     "cf:5": 0.0811,
+     "cf:6": 0.075,
+     "plan:2": 0.0192,
+     "plan:3": 0.0104
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.06852879311550746,
+     "confident_error_rate": 0.013636363636363636,
+     "auroc_confidence": 0.7966426960592605
+    }
+   },
+   "holdout": {
+    "all": 0.3936363636363636,
+    "task": {
+     "state": 0.18,
+     "recall": 0.73,
+     "hops": 0.565,
+     "perm": 0.385,
+     "conn": 0.485,
+     "arith": 0.105,
+     "binding": 0.72,
+     "stack": 0.795,
+     "trace": 0.225,
+     "cf": 0.135,
+     "plan": 0.005
+    },
+    "level": {
+     "state:2": 0.5,
+     "state:3": 0.1111,
+     "state:4": 0.15,
+     "state:5": 0.08,
+     "state:6": 0.0,
+     "state:7": 0.2308,
+     "state:8": 0.3333,
+     "state:9": 0.0952,
+     "state:10": 0.2857,
+     "state:11": 0.25,
+     "state:12": 0.1154,
+     "recall:2": 1.0,
+     "recall:3": 0.8235,
+     "recall:4": 0.8333,
+     "recall:5": 0.7143,
+     "recall:6": 0.8095,
+     "recall:7": 0.6786,
+     "recall:8": 0.72,
+     "recall:9": 0.5,
+     "recall:10": 0.3636,
+     "hops:1": 0.4915,
+     "hops:2": 0.6531,
+     "hops:3": 0.5319,
+     "hops:4": 0.6,
+     "perm:1": 0.8333,
+     "perm:2": 0.2857,
+     "perm:3": 0.2245,
+     "perm:4": 0.1636,
+     "conn:1": 0.4912,
+     "conn:2": 0.4615,
+     "conn:3": 0.4681,
+     "conn:4": 0.5227,
+     "arith:2": 0.0952,
+     "arith:3": 0.1,
+     "arith:4": 0.1194,
+     "binding:3": 0.8182,
+     "binding:4": 0.75,
+     "binding:5": 0.7222,
+     "binding:6": 0.7368,
+     "binding:7": 0.6552,
+     "binding:8": 0.625,
+     "stack:4": 0.88,
+     "stack:5": 0.8696,
+     "stack:6": 0.85,
+     "stack:7": 0.8485,
+     "stack:8": 0.7879,
+     "stack:9": 0.7778,
+     "stack:10": 0.6,
+     "trace:1": 0.2,
+     "trace:2": 0.18,
+     "trace:3": 0.2115,
+     "trace:4": 0.3256,
+     "cf:2": 0.2041,
+     "cf:3": 0.0588,
+     "cf:4": 0.2162,
+     "cf:5": 0.1364,
+     "cf:6": 0.0278,
+     "plan:2": 0.0094,
+     "plan:3": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.06619189255955545,
+     "confident_error_rate": 0.013181818181818182,
+     "auroc_confidence": 0.7948831588824525
+    }
+   },
+   "ood": {
+    "all": 0.2609090909090909,
+    "task": {
+     "state": 0.13,
+     "recall": 0.445,
+     "hops": 0.545,
+     "perm": 0.165,
+     "conn": 0.475,
+     "arith": 0.075,
+     "binding": 0.315,
+     "stack": 0.385,
+     "trace": 0.21,
+     "cf": 0.125,
+     "plan": 0.0
+    },
+    "level": {
+     "state:16": 0.0833,
+     "state:17": 0.0,
+     "state:18": 0.1429,
+     "state:19": 0.25,
+     "state:20": 0.2,
+     "state:21": 0.0714,
+     "state:22": 0.0,
+     "state:23": 0.1429,
+     "state:24": 0.2,
+     "state:25": 0.3333,
+     "state:26": 0.2222,
+     "state:27": 0.1667,
+     "state:28": 0.0556,
+     "state:29": 0.0,
+     "state:30": 0.2,
+     "state:31": 0.0909,
+     "state:32": 0.0833,
+     "recall:14": 0.6111,
+     "recall:15": 0.3784,
+     "recall:16": 0.3448,
+     "recall:17": 0.4242,
+     "recall:18": 0.4333,
+     "recall:19": 0.6154,
+     "recall:20": 0.4074,
+     "hops:6": 0.5536,
+     "hops:7": 0.5143,
+     "hops:8": 0.5676,
+     "perm:6": 0.2105,
+     "perm:7": 0.122,
+     "perm:8": 0.1818,
+     "perm:9": 0.1556,
+     "perm:10": 0.1628,
+     "conn:6": 0.5088,
+     "conn:7": 0.5294,
+     "conn:8": 0.45,
+     "conn:9": 0.4038,
+     "arith:6": 0.0923,
+     "arith:7": 0.0735,
+     "arith:8": 0.0597,
+     "binding:12": 0.4074,
+     "binding:13": 0.3043,
+     "binding:14": 0.3529,
+     "binding:15": 0.3158,
+     "binding:16": 0.4138,
+     "binding:17": 0.2963,
+     "binding:18": 0.125,
+     "binding:19": 0.35,
+     "binding:20": 0.1818,
+     "stack:16": 0.5333,
+     "stack:17": 0.5,
+     "stack:18": 0.3846,
+     "stack:19": 0.4231,
+     "stack:20": 0.5185,
+     "stack:21": 0.3,
+     "stack:22": 0.28,
+     "stack:23": 0.25,
+     "stack:24": 0.3,
+     "trace:6": 0.1395,
+     "trace:7": 0.16,
+     "trace:8": 0.3833,
+     "trace:9": 0.1064,
+     "cf:8": 0.1346,
+     "cf:9": 0.1146,
+     "plan:5": 0.0,
+     "plan:6": 0.0,
+     "plan:7": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.12571000328795476,
+     "confident_error_rate": 0.026363636363636363,
+     "auroc_confidence": 0.7126383763837638
+    }
+   },
+   "adv": {
+    "all": 0.4081818181818182,
+    "task": {
+     "state": 0.15,
+     "recall": 0.65,
+     "hops": 0.62,
+     "perm": 0.4,
+     "conn": 0.5,
+     "arith": 0.2,
+     "binding": 0.62,
+     "stack": 0.98,
+     "trace": 0.22,
+     "cf": 0.15,
+     "plan": 0.0
+    },
+    "level": {
+     "state:2": 0.375,
+     "state:3": 0.1667,
+     "state:4": 0.0952,
+     "state:5": 0.0,
+     "state:6": 0.3333,
+     "state:7": 0.3333,
+     "state:8": 0.1429,
+     "state:9": 0.1429,
+     "state:10": 0.0,
+     "state:11": 0.2,
+     "state:12": 0.0,
+     "recall:2": 0.7692,
+     "recall:3": 0.75,
+     "recall:4": 0.9167,
+     "recall:5": 0.8333,
+     "recall:6": 0.5,
+     "recall:7": 0.6923,
+     "recall:8": 0.8,
+     "recall:9": 0.3077,
+     "recall:10": 0.2222,
+     "hops:1": 0.7097,
+     "hops:2": 0.4545,
+     "hops:3": 0.72,
+     "hops:4": 0.5455,
+     "perm:1": 0.92,
+     "perm:2": 0.2353,
+     "perm:3": 0.2,
+     "perm:4": 0.25,
+     "conn:1": 0.4545,
+     "conn:2": 0.55,
+     "conn:3": 0.4783,
+     "conn:4": 0.5417,
+     "arith:2": 0.3438,
+     "arith:3": 0.125,
+     "arith:4": 0.1364,
+     "binding:3": 1.0,
+     "binding:4": 0.6429,
+     "binding:5": 0.8462,
+     "binding:6": 0.6471,
+     "binding:7": 0.35,
+     "binding:8": 0.5385,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 1.0,
+     "stack:7": 1.0,
+     "stack:8": 1.0,
+     "stack:9": 1.0,
+     "stack:10": 0.8333,
+     "trace:1": 0.1724,
+     "trace:2": 0.25,
+     "trace:3": 0.1852,
+     "trace:4": 0.3,
+     "cf:2": 0.1579,
+     "cf:3": 0.1739,
+     "cf:4": 0.1579,
+     "cf:5": 0.2143,
+     "cf:6": 0.08,
+     "plan:2": 0.0,
+     "plan:3": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.06627735412933608,
+     "confident_error_rate": 0.004545454545454545,
+     "auroc_confidence": 0.8029038758257812
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.25",
+  "run": "hyper-seed2",
+  "parent": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+  "hypothesis": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+  "architecture": "hyper",
+  "config": {
+   "kind": "structured",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "mlp_kind": "hyper"
+  },
+  "seed": 2,
+  "dataset_hash": "b051d77f59d974bcfb0accda904f79edc8835aba1a04c225746f218d8ec9eb75",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 313904,
+  "active_parameters": 313904,
+  "flop_estimate": 23611392.0,
+  "checkpoint_sha256": "006040926176b47d6cdb329eaa1f9e1ea43f05a251f57bb6a948c07c4e77bff4",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007714",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1163.8,
+  "cost_usd": 0.0,
+  "ci_run": "36595748698",
+  "metrics": {
+   "dev": {
+    "all": 0.3209090909090909,
+    "task": {
+     "state": 0.19,
+     "recall": 0.345,
+     "hops": 0.42,
+     "perm": 0.345,
+     "conn": 0.485,
+     "arith": 0.095,
+     "binding": 0.35,
+     "stack": 0.885,
+     "trace": 0.275,
+     "cf": 0.14,
+     "plan": 0.0
+    },
+    "level": {
+     "state:2": 0.0588,
+     "state:3": 0.2143,
+     "state:4": 0.1579,
+     "state:5": 0.1333,
+     "state:6": 0.1333,
+     "state:7": 0.1364,
+     "state:8": 0.3333,
+     "state:9": 0.2222,
+     "state:10": 0.15,
+     "state:11": 0.3158,
+     "state:12": 0.2308,
+     "recall:2": 0.4,
+     "recall:3": 0.4737,
+     "recall:4": 0.1765,
+     "recall:5": 0.4348,
+     "recall:6": 0.48,
+     "recall:7": 0.25,
+     "recall:8": 0.2857,
+     "recall:9": 0.4167,
+     "recall:10": 0.1739,
+     "hops:1": 0.4583,
+     "hops:2": 0.4615,
+     "hops:3": 0.3529,
+     "hops:4": 0.4082,
+     "perm:1": 0.766,
+     "perm:2": 0.2449,
+     "perm:3": 0.2632,
+     "perm:4": 0.1277,
+     "conn:1": 0.4167,
+     "conn:2": 0.5893,
+     "conn:3": 0.5641,
+     "conn:4": 0.386,
+     "arith:2": 0.1364,
+     "arith:3": 0.1,
+     "arith:4": 0.0469,
+     "binding:3": 0.3421,
+     "binding:4": 0.4242,
+     "binding:5": 0.3548,
+     "binding:6": 0.2812,
+     "binding:7": 0.3333,
+     "binding:8": 0.3667,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 0.8214,
+     "stack:7": 0.88,
+     "stack:8": 0.9062,
+     "stack:9": 0.8519,
+     "stack:10": 0.7241,
+     "trace:1": 0.1852,
+     "trace:2": 0.2653,
+     "trace:3": 0.2609,
+     "trace:4": 0.3922,
+     "cf:2": 0.0811,
+     "cf:3": 0.1042,
+     "cf:4": 0.1842,
+     "cf:5": 0.1351,
+     "cf:6": 0.2,
+     "plan:2": 0.0,
+     "plan:3": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.09475453298877588,
+     "confident_error_rate": 0.005,
+     "auroc_confidence": 0.7093074848970955
+    }
+   },
+   "holdout": {
+    "all": 0.33136363636363636,
+    "task": {
+     "state": 0.155,
+     "recall": 0.34,
+     "hops": 0.51,
+     "perm": 0.37,
+     "conn": 0.51,
+     "arith": 0.14,
+     "binding": 0.36,
+     "stack": 0.84,
+     "trace": 0.25,
+     "cf": 0.17,
+     "plan": 0.0
+    },
+    "level": {
+     "state:2": 0.4167,
+     "state:3": 0.2778,
+     "state:4": 0.1,
+     "state:5": 0.04,
+     "state:6": 0.0714,
+     "state:7": 0.0769,
+     "state:8": 0.2778,
+     "state:9": 0.1905,
+     "state:10": 0.1429,
+     "state:11": 0.0,
+     "state:12": 0.1538,
+     "recall:2": 0.6667,
+     "recall:3": 0.4118,
+     "recall:4": 0.2333,
+     "recall:5": 0.4286,
+     "recall:6": 0.381,
+     "recall:7": 0.1071,
+     "recall:8": 0.4,
+     "recall:9": 0.125,
+     "recall:10": 0.3182,
+     "hops:1": 0.5763,
+     "hops:2": 0.4694,
+     "hops:3": 0.4255,
+     "hops:4": 0.5556,
+     "perm:1": 0.8519,
+     "perm:2": 0.1667,
+     "perm:3": 0.1633,
+     "perm:4": 0.2364,
+     "conn:1": 0.4912,
+     "conn:2": 0.5385,
+     "conn:3": 0.5319,
+     "conn:4": 0.4773,
+     "arith:2": 0.1905,
+     "arith:3": 0.1143,
+     "arith:4": 0.1194,
+     "binding:3": 0.3636,
+     "binding:4": 0.4688,
+     "binding:5": 0.3611,
+     "binding:6": 0.4211,
+     "binding:7": 0.2759,
+     "binding:8": 0.25,
+     "stack:4": 0.92,
+     "stack:5": 0.9565,
+     "stack:6": 0.85,
+     "stack:7": 0.8182,
+     "stack:8": 0.8788,
+     "stack:9": 0.75,
+     "stack:10": 0.7667,
+     "trace:1": 0.2545,
+     "trace:2": 0.2,
+     "trace:3": 0.25,
+     "trace:4": 0.3023,
+     "cf:2": 0.2245,
+     "cf:3": 0.1765,
+     "cf:4": 0.1081,
+     "cf:5": 0.2273,
+     "cf:6": 0.0833,
+     "plan:2": 0.0,
+     "plan:3": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.08344703072174027,
+     "confident_error_rate": 0.005,
+     "auroc_confidence": 0.7224031317870229
+    }
+   },
+   "ood": {
+    "all": 0.25545454545454543,
+    "task": {
+     "state": 0.175,
+     "recall": 0.205,
+     "hops": 0.535,
+     "perm": 0.235,
+     "conn": 0.45,
+     "arith": 0.09,
+     "binding": 0.305,
+     "stack": 0.415,
+     "trace": 0.25,
+     "cf": 0.15,
+     "plan": 0.0
+    },
+    "level": {
+     "state:16": 0.3333,
+     "state:17": 0.125,
+     "state:18": 0.0714,
+     "state:19": 0.25,
+     "state:20": 0.2667,
+     "state:21": 0.2143,
+     "state:22": 0.0,
+     "state:23": 0.0714,
+     "state:24": 0.3,
+     "state:25": 0.4167,
+     "state:26": 0.4444,
+     "state:27": 0.0,
+     "state:28": 0.0556,
+     "state:29": 0.0,
+     "state:30": 0.2,
+     "state:31": 0.0909,
+     "state:32": 0.25,
+     "recall:14": 0.1667,
+     "recall:15": 0.1892,
+     "recall:16": 0.2759,
+     "recall:17": 0.2121,
+     "recall:18": 0.0667,
+     "recall:19": 0.2692,
+     "recall:20": 0.2593,
+     "hops:6": 0.5,
+     "hops:7": 0.5143,
+     "hops:8": 0.5811,
+     "perm:6": 0.2368,
+     "perm:7": 0.2439,
+     "perm:8": 0.2424,
+     "perm:9": 0.2667,
+     "perm:10": 0.186,
+     "conn:6": 0.4035,
+     "conn:7": 0.4902,
+     "conn:8": 0.5,
+     "conn:9": 0.4231,
+     "arith:6": 0.0462,
+     "arith:7": 0.0588,
+     "arith:8": 0.1642,
+     "binding:12": 0.2963,
+     "binding:13": 0.1739,
+     "binding:14": 0.3529,
+     "binding:15": 0.4211,
+     "binding:16": 0.4138,
+     "binding:17": 0.2593,
+     "binding:18": 0.1875,
+     "binding:19": 0.3,
+     "binding:20": 0.3182,
+     "stack:16": 0.8667,
+     "stack:17": 0.7273,
+     "stack:18": 0.5385,
+     "stack:19": 0.5769,
+     "stack:20": 0.4815,
+     "stack:21": 0.4,
+     "stack:22": 0.2,
+     "stack:23": 0.1667,
+     "stack:24": 0.0,
+     "trace:6": 0.1628,
+     "trace:7": 0.22,
+     "trace:8": 0.4333,
+     "trace:9": 0.1277,
+     "cf:8": 0.1923,
+     "cf:9": 0.1042,
+     "plan:5": 0.0,
+     "plan:6": 0.0,
+     "plan:7": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.08845799884335559,
+     "confident_error_rate": 0.008636363636363636,
+     "auroc_confidence": 0.679869013943747
+    }
+   },
+   "adv": {
+    "all": 0.31363636363636366,
+    "task": {
+     "state": 0.17,
+     "recall": 0.18,
+     "hops": 0.54,
+     "perm": 0.39,
+     "conn": 0.48,
+     "arith": 0.09,
+     "binding": 0.25,
+     "stack": 0.99,
+     "trace": 0.22,
+     "cf": 0.14,
+     "plan": 0.0
+    },
+    "level": {
+     "state:2": 0.25,
+     "state:3": 0.1667,
+     "state:4": 0.2381,
+     "state:5": 0.1667,
+     "state:6": 0.0,
+     "state:7": 0.0,
+     "state:8": 0.2857,
+     "state:9": 0.1429,
+     "state:10": 0.3333,
+     "state:11": 0.1,
+     "state:12": 0.0909,
+     "recall:2": 0.3846,
+     "recall:3": 0.375,
+     "recall:4": 0.25,
+     "recall:5": 0.1667,
+     "recall:6": 0.2,
+     "recall:7": 0.0,
+     "recall:8": 0.2,
+     "recall:9": 0.0769,
+     "recall:10": 0.0,
+     "hops:1": 0.6129,
+     "hops:2": 0.7273,
+     "hops:3": 0.4,
+     "hops:4": 0.4091,
+     "perm:1": 0.84,
+     "perm:2": 0.1765,
+     "perm:3": 0.2667,
+     "perm:4": 0.25,
+     "conn:1": 0.3636,
+     "conn:2": 0.45,
+     "conn:3": 0.6087,
+     "conn:4": 0.5417,
+     "arith:2": 0.0938,
+     "arith:3": 0.0833,
+     "arith:4": 0.0909,
+     "binding:3": 0.4,
+     "binding:4": 0.2143,
+     "binding:5": 0.3846,
+     "binding:6": 0.1765,
+     "binding:7": 0.1,
+     "binding:8": 0.3077,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 1.0,
+     "stack:7": 1.0,
+     "stack:8": 0.9231,
+     "stack:9": 1.0,
+     "stack:10": 1.0,
+     "trace:1": 0.1379,
+     "trace:2": 0.2917,
+     "trace:3": 0.1481,
+     "trace:4": 0.35,
+     "cf:2": 0.1579,
+     "cf:3": 0.087,
+     "cf:4": 0.2632,
+     "cf:5": 0.0,
+     "cf:6": 0.16,
+     "plan:2": 0.0,
+     "plan:3": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.10007114436816086,
+     "confident_error_rate": 0.008181818181818182,
+     "auroc_confidence": 0.7366349937613974
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.25",
+  "run": "hyper-seed3",
+  "parent": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+  "hypothesis": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+  "architecture": "hyper",
+  "config": {
+   "kind": "structured",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "mlp_kind": "hyper"
+  },
+  "seed": 3,
+  "dataset_hash": "b051d77f59d974bcfb0accda904f79edc8835aba1a04c225746f218d8ec9eb75",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 313904,
+  "active_parameters": 313904,
+  "flop_estimate": 23611392.0,
+  "checkpoint_sha256": "f87a46e9e00ea96b4f014bbb4fba915b44f9891ab7a6f8c4757ef51f24441e2f",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007715",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1090.0,
+  "cost_usd": 0.0,
+  "ci_run": "36595748698",
+  "metrics": {
+   "dev": {
+    "all": 0.30636363636363634,
+    "task": {
+     "state": 0.155,
+     "recall": 0.415,
+     "hops": 0.47,
+     "perm": 0.555,
+     "conn": 0.515,
+     "arith": 0.115,
+     "binding": 0.32,
+     "stack": 0.365,
+     "trace": 0.285,
+     "cf": 0.175,
+     "plan": 0.0
+    },
+    "level": {
+     "state:2": 0.0588,
+     "state:3": 0.2857,
+     "state:4": 0.1579,
+     "state:5": 0.1333,
+     "state:6": 0.2,
+     "state:7": 0.1818,
+     "state:8": 0.2667,
+     "state:9": 0.2222,
+     "state:10": 0.15,
+     "state:11": 0.1053,
+     "state:12": 0.0385,
+     "recall:2": 0.7,
+     "recall:3": 0.5789,
+     "recall:4": 0.3529,
+     "recall:5": 0.3478,
+     "recall:6": 0.48,
+     "recall:7": 0.3571,
+     "recall:8": 0.2857,
+     "recall:9": 0.375,
+     "recall:10": 0.3043,
+     "hops:1": 0.4167,
+     "hops:2": 0.4038,
+     "hops:3": 0.5294,
+     "hops:4": 0.5306,
+     "perm:1": 1.0,
+     "perm:2": 0.898,
+     "perm:3": 0.2632,
+     "perm:4": 0.1064,
+     "conn:1": 0.4792,
+     "conn:2": 0.5,
+     "conn:3": 0.5128,
+     "conn:4": 0.5614,
+     "arith:2": 0.1364,
+     "arith:3": 0.0857,
+     "arith:4": 0.125,
+     "binding:3": 0.3158,
+     "binding:4": 0.4242,
+     "binding:5": 0.3226,
+     "binding:6": 0.25,
+     "binding:7": 0.2778,
+     "binding:8": 0.3333,
+     "stack:4": 0.5,
+     "stack:5": 0.3103,
+     "stack:6": 0.2857,
+     "stack:7": 0.28,
+     "stack:8": 0.25,
+     "stack:9": 0.3704,
+     "stack:10": 0.5517,
+     "trace:1": 0.2407,
+     "trace:2": 0.2449,
+     "trace:3": 0.2174,
+     "trace:4": 0.4314,
+     "cf:2": 0.1892,
+     "cf:3": 0.1458,
+     "cf:4": 0.1316,
+     "cf:5": 0.1892,
+     "cf:6": 0.225,
+     "plan:2": 0.0,
+     "plan:3": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.08043220350688153,
+     "confident_error_rate": 0.013181818181818182,
+     "auroc_confidence": 0.6723523223570864
+    }
+   },
+   "holdout": {
+    "all": 0.3054545454545455,
+    "task": {
+     "state": 0.165,
+     "recall": 0.36,
+     "hops": 0.495,
+     "perm": 0.605,
+     "conn": 0.47,
+     "arith": 0.12,
+     "binding": 0.305,
+     "stack": 0.365,
+     "trace": 0.28,
+     "cf": 0.195,
+     "plan": 0.0
+    },
+    "level": {
+     "state:2": 0.1667,
+     "state:3": 0.1667,
+     "state:4": 0.15,
+     "state:5": 0.12,
+     "state:6": 0.0714,
+     "state:7": 0.3077,
+     "state:8": 0.1111,
+     "state:9": 0.1429,
+     "state:10": 0.1905,
+     "state:11": 0.3333,
+     "state:12": 0.1538,
+     "recall:2": 0.7037,
+     "recall:3": 0.5882,
+     "recall:4": 0.2,
+     "recall:5": 0.5,
+     "recall:6": 0.4762,
+     "recall:7": 0.1071,
+     "recall:8": 0.36,
+     "recall:9": 0.25,
+     "recall:10": 0.1818,
+     "hops:1": 0.4576,
+     "hops:2": 0.5918,
+     "hops:3": 0.4894,
+     "hops:4": 0.4444,
+     "perm:1": 1.0,
+     "perm:2": 0.9524,
+     "perm:3": 0.2449,
+     "perm:4": 0.2727,
+     "conn:1": 0.5439,
+     "conn:2": 0.4038,
+     "conn:3": 0.3617,
+     "conn:4": 0.5682,
+     "arith:2": 0.0952,
+     "arith:3": 0.1,
+     "arith:4": 0.1642,
+     "binding:3": 0.3636,
+     "binding:4": 0.3125,
+     "binding:5": 0.3333,
+     "binding:6": 0.3947,
+     "binding:7": 0.2069,
+     "binding:8": 0.1875,
+     "stack:4": 0.68,
+     "stack:5": 0.3043,
+     "stack:6": 0.4,
+     "stack:7": 0.2121,
+     "stack:8": 0.4545,
+     "stack:9": 0.3056,
+     "stack:10": 0.2667,
+     "trace:1": 0.2364,
+     "trace:2": 0.26,
+     "trace:3": 0.2885,
+     "trace:4": 0.3488,
+     "cf:2": 0.1837,
+     "cf:3": 0.1765,
+     "cf:4": 0.2162,
+     "cf:5": 0.1364,
+     "cf:6": 0.2778,
+     "plan:2": 0.0,
+     "plan:3": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.08098575752567161,
+     "confident_error_rate": 0.01,
+     "auroc_confidence": 0.6897808370730492
+    }
+   },
+   "ood": {
+    "all": 0.23545454545454544,
+    "task": {
+     "state": 0.17,
+     "recall": 0.26,
+     "hops": 0.52,
+     "perm": 0.245,
+     "conn": 0.46,
+     "arith": 0.115,
+     "binding": 0.355,
+     "stack": 0.07,
+     "trace": 0.225,
+     "cf": 0.17,
+     "plan": 0.0
+    },
+    "level": {
+     "state:16": 0.0833,
+     "state:17": 0.0,
+     "state:18": 0.2143,
+     "state:19": 0.25,
+     "state:20": 0.2667,
+     "state:21": 0.2143,
+     "state:22": 0.0909,
+     "state:23": 0.2143,
+     "state:24": 0.2,
+     "state:25": 0.1667,
+     "state:26": 0.1111,
+     "state:27": 0.3333,
+     "state:28": 0.1111,
+     "state:29": 0.2,
+     "state:30": 0.3,
+     "state:31": 0.0909,
+     "state:32": 0.0,
+     "recall:14": 0.1667,
+     "recall:15": 0.2703,
+     "recall:16": 0.2414,
+     "recall:17": 0.303,
+     "recall:18": 0.1667,
+     "recall:19": 0.3846,
+     "recall:20": 0.2593,
+     "hops:6": 0.4464,
+     "hops:7": 0.5429,
+     "hops:8": 0.5541,
+     "perm:6": 0.2632,
+     "perm:7": 0.1707,
+     "perm:8": 0.2727,
+     "perm:9": 0.2667,
+     "perm:10": 0.2558,
+     "conn:6": 0.4386,
+     "conn:7": 0.451,
+     "conn:8": 0.425,
+     "conn:9": 0.5192,
+     "arith:6": 0.1846,
+     "arith:7": 0.0735,
+     "arith:8": 0.0896,
+     "binding:12": 0.4444,
+     "binding:13": 0.3043,
+     "binding:14": 0.2941,
+     "binding:15": 0.5263,
+     "binding:16": 0.4483,
+     "binding:17": 0.2593,
+     "binding:18": 0.3125,
+     "binding:19": 0.3,
+     "binding:20": 0.2727,
+     "stack:16": 0.1333,
+     "stack:17": 0.0909,
+     "stack:18": 0.0769,
+     "stack:19": 0.0769,
+     "stack:20": 0.0741,
+     "stack:21": 0.0333,
+     "stack:22": 0.12,
+     "stack:23": 0.0,
+     "stack:24": 0.0333,
+     "trace:6": 0.0698,
+     "trace:7": 0.24,
+     "trace:8": 0.3333,
+     "trace:9": 0.2128,
+     "cf:8": 0.1538,
+     "cf:9": 0.1875,
+     "plan:5": 0.0,
+     "plan:6": 0.0,
+     "plan:7": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.08896593622863291,
+     "confident_error_rate": 0.008636363636363636,
+     "auroc_confidence": 0.6235337596812032
+    }
+   },
+   "adv": {
+    "all": 0.33090909090909093,
+    "task": {
+     "state": 0.14,
+     "recall": 0.2,
+     "hops": 0.6,
+     "perm": 0.51,
+     "conn": 0.64,
+     "arith": 0.17,
+     "binding": 0.21,
+     "stack": 0.84,
+     "trace": 0.23,
+     "cf": 0.1,
+     "plan": 0.0
+    },
+    "level": {
+     "state:2": 0.0,
+     "state:3": 0.0,
+     "state:4": 0.1905,
+     "state:5": 0.0,
+     "state:6": 0.1667,
+     "state:7": 0.2222,
+     "state:8": 0.1429,
+     "state:9": 0.1429,
+     "state:10": 0.2222,
+     "state:11": 0.2,
+     "state:12": 0.0909,
+     "recall:2": 0.4615,
+     "recall:3": 0.375,
+     "recall:4": 0.1667,
+     "recall:5": 0.0833,
+     "recall:6": 0.3,
+     "recall:7": 0.0769,
+     "recall:8": 0.2,
+     "recall:9": 0.1538,
+     "recall:10": 0.0,
+     "hops:1": 0.6452,
+     "hops:2": 0.4545,
+     "hops:3": 0.68,
+     "hops:4": 0.5909,
+     "perm:1": 1.0,
+     "perm:2": 1.0,
+     "perm:3": 0.0667,
+     "perm:4": 0.25,
+     "conn:1": 0.6061,
+     "conn:2": 0.5,
+     "conn:3": 0.8261,
+     "conn:4": 0.625,
+     "arith:2": 0.2188,
+     "arith:3": 0.2083,
+     "arith:4": 0.1136,
+     "binding:3": 0.3,
+     "binding:4": 0.2143,
+     "binding:5": 0.2308,
+     "binding:6": 0.1176,
+     "binding:7": 0.15,
+     "binding:8": 0.2692,
+     "stack:4": 1.0,
+     "stack:5": 1.0,
+     "stack:6": 0.6,
+     "stack:7": 0.8571,
+     "stack:8": 0.8462,
+     "stack:9": 0.8824,
+     "stack:10": 0.6667,
+     "trace:1": 0.2069,
+     "trace:2": 0.2917,
+     "trace:3": 0.1111,
+     "trace:4": 0.35,
+     "cf:2": 0.0,
+     "cf:3": 0.087,
+     "cf:4": 0.0,
+     "cf:5": 0.2857,
+     "cf:6": 0.16,
+     "plan:2": 0.0,
+     "plan:3": 0.0
+    },
+    "steps": {
+     "state": 0.0,
+     "recall": 0.0,
+     "hops": 0.0,
+     "perm": 0.0,
+     "conn": 0.0,
+     "arith": 0.0,
+     "binding": 0.0,
+     "stack": 0.0,
+     "trace": 0.0,
+     "cf": 0.0,
+     "plan": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.06927899459546265,
+     "confident_error_rate": 0.006363636363636364,
+     "auroc_confidence": 0.7777748745819398
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.25",
+  "run": "experiment",
+  "parent": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+  "hypothesis": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+  "architecture": [
+   "dense",
+   "dense-d80",
+   "hyper"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "b051d77f59d974bcfb0accda904f79edc8835aba1a04c225746f218d8ec9eb75",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": null,
+  "flop_estimate": 120000000000000.0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 10703.3,
+  "cost_usd": 0.0,
+  "ci_run": "36595748698",
+  "metrics": {
+   "experiment": "R1.25",
+   "models": {
+    "dense": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "structured",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.44469696969696965,
+       "sd": 0.04422036602460299,
+       "ci95": [
+        0.33483862479602194,
+        0.5545553145979173
+       ],
+       "n": 3,
+       "values": [
+        0.47045454545454546,
+        0.47,
+        0.3936363636363636
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.4622727272727272,
+       "sd": 0.03829798346114432,
+       "ci95": [
+        0.36712758365848563,
+        0.5574178708869688
+       ],
+       "n": 3,
+       "values": [
+        0.4813636363636364,
+        0.48727272727272725,
+        0.41818181818181815
+       ]
+      },
+      "ood.all": {
+       "mean": 0.3306060606060606,
+       "sd": 0.0371403784781284,
+       "ci95": [
+        0.2383367992812705,
+        0.42287532193085076
+       ],
+       "n": 3,
+       "values": [
+        0.3527272727272727,
+        0.3513636363636364,
+        0.2877272727272727
+       ]
+      },
+      "adv.all": {
+       "mean": 0.4257575757575758,
+       "sd": 0.040455396654306836,
+       "ci95": [
+        0.3252526881164205,
+        0.5262624633987311
+       ],
+       "n": 3,
+       "values": [
+        0.44727272727272727,
+        0.4509090909090909,
+        0.3790909090909091
+       ]
+      },
+      "dev.state": {
+       "mean": 0.13,
+       "sd": 0.01802775637731994,
+       "ci95": [
+        0.08521295602148617,
+        0.17478704397851386
+       ],
+       "n": 3,
+       "values": [
+        0.145,
+        0.11,
+        0.135
+       ]
+      },
+      "dev.recall": {
+       "mean": 0.85,
+       "sd": 0.25980762113533157,
+       "ci95": [
+        0.20455000000000012,
+        1.49545
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        0.55
+       ]
+      },
+      "dev.hops": {
+       "mean": 0.4583333333333333,
+       "sd": 0.01040832999733064,
+       "ci95": [
+        0.43247552143613077,
+        0.48419114523053586
+       ],
+       "n": 3,
+       "values": [
+        0.455,
+        0.47,
+        0.45
+       ]
+      },
+      "dev.perm": {
+       "mean": 0.47500000000000003,
+       "sd": 0.08999999999999997,
+       "ci95": [
+        0.2514095612509337,
+        0.6985904387490663
+       ],
+       "n": 3,
+       "values": [
+        0.475,
+        0.565,
+        0.385
+       ]
+      },
+      "dev.conn": {
+       "mean": 0.5116666666666666,
+       "sd": 0.029297326385411604,
+       "ci95": [
+        0.4388821993256802,
+        0.584451134007653
+       ],
+       "n": 3,
+       "values": [
+        0.545,
+        0.5,
+        0.49
+       ]
+      },
+      "dev.arith": {
+       "mean": 0.10666666666666667,
+       "sd": 0.02929732638541158,
+       "ci95": [
+        0.03388219932568029,
+        0.17945113400765306
+       ],
+       "n": 3,
+       "values": [
+        0.085,
+        0.095,
+        0.14
+       ]
+      },
+      "dev.binding": {
+       "mean": 0.6633333333333334,
+       "sd": 0.18332575741922721,
+       "ci95": [
+        0.20789014960700097,
+        1.118776517059666
+       ],
+       "n": 3,
+       "values": [
+        0.735,
+        0.8,
+        0.455
+       ]
+      },
+      "dev.stack": {
+       "mean": 0.9283333333333333,
+       "sd": 0.037527767497325656,
+       "ci95": [
+        0.8351016666666667,
+        1.021565
+       ],
+       "n": 3,
+       "values": [
+        0.93,
+        0.89,
+        0.965
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.3466666666666667,
+       "sd": 0.042524502740576925,
+       "ci95": [
+        0.241021419718317,
+        0.4523119136150163
+       ],
+       "n": 3,
+       "values": [
+        0.39,
+        0.345,
+        0.305
+       ]
+      },
+      "dev.cf": {
+       "mean": 0.10833333333333334,
+       "sd": 0.0028867513459481316,
+       "ci95": [
+        0.10116166666666666,
+        0.11550500000000001
+       ],
+       "n": 3,
+       "values": [
+        0.11,
+        0.105,
+        0.11
+       ]
+      },
+      "dev.plan": {
+       "mean": 0.3133333333333333,
+       "sd": 0.028431203515386628,
+       "ci95": [
+        0.24270060813145225,
+        0.38396605853521437
+       ],
+       "n": 3,
+       "values": [
+        0.305,
+        0.29,
+        0.345
+       ]
+      },
+      "ood.state": {
+       "mean": 0.15333333333333335,
+       "sd": 0.04072263907623539,
+       "ci95": [
+        0.05216452513249617,
+        0.2545021415341705
+       ],
+       "n": 3,
+       "values": [
+        0.125,
+        0.135,
+        0.2
+       ]
+      },
+      "ood.recall": {
+       "mean": 0.7116666666666668,
+       "sd": 0.3530698703278621,
+       "ci95": [
+        -0.16547830239647388,
+        1.5888116357298074
+       ],
+       "n": 3,
+       "values": [
+        0.94,
+        0.89,
+        0.305
+       ]
+      },
+      "ood.hops": {
+       "mean": 0.5183333333333334,
+       "sd": 0.03253203549323859,
+       "ci95": [
+        0.4375127545629621,
+        0.5991539121037047
+       ],
+       "n": 3,
+       "values": [
+        0.55,
+        0.52,
+        0.485
+       ]
+      },
+      "ood.perm": {
+       "mean": 0.17500000000000002,
+       "sd": 0.03968626966596887,
+       "ci95": [
+        0.0764058839230251,
+        0.2735941160769749
+       ],
+       "n": 3,
+       "values": [
+        0.16,
+        0.145,
+        0.22
+       ]
+      },
+      "ood.conn": {
+       "mean": 0.5,
+       "sd": 0.02291287847477922,
+       "ci95": [
+        0.44307666054244527,
+        0.5569233394575547
+       ],
+       "n": 3,
+       "values": [
+        0.525,
+        0.48,
+        0.495
+       ]
+      },
+      "ood.arith": {
+       "mean": 0.09000000000000001,
+       "sd": 0.0049999999999999975,
+       "ci95": [
+        0.07757830895838522,
+        0.1024216910416148
+       ],
+       "n": 3,
+       "values": [
+        0.085,
+        0.09,
+        0.095
+       ]
+      },
+      "ood.binding": {
+       "mean": 0.49,
+       "sd": 0.093407708461347,
+       "ci95": [
+        0.2579436609175838,
+        0.7220563390824162
+       ],
+       "n": 3,
+       "values": [
+        0.475,
+        0.59,
+        0.405
+       ]
+      },
+      "ood.stack": {
+       "mean": 0.3416666666666666,
+       "sd": 0.031754264805429415,
+       "ci95": [
+        0.2627783333333333,
+        0.42055499999999996
+       ],
+       "n": 3,
+       "values": [
+        0.36,
+        0.36,
+        0.305
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.295,
+       "sd": 0.034999999999999996,
+       "ci95": [
+        0.20804816270869642,
+        0.38195183729130355
+       ],
+       "n": 3,
+       "values": [
+        0.32,
+        0.31,
+        0.255
+       ]
+      },
+      "ood.cf": {
+       "mean": 0.16833333333333333,
+       "sd": 0.017559422921421233,
+       "ci95": [
+        0.1247097880535446,
+        0.21195687861312207
+       ],
+       "n": 3,
+       "values": [
+        0.15,
+        0.17,
+        0.185
+       ]
+      },
+      "ood.plan": {
+       "mean": 0.19333333333333333,
+       "sd": 0.020207259421636904,
+       "ci95": [
+        0.14313166666666666,
+        0.243535
+       ],
+       "n": 3,
+       "values": [
+        0.19,
+        0.175,
+        0.215
+       ]
+      },
+      "adv.state": {
+       "mean": 0.17,
+       "sd": 0.026457513110645915,
+       "ci95": [
+        0.10427058928201673,
+        0.2357294107179833
+       ],
+       "n": 3,
+       "values": [
+        0.15,
+        0.16,
+        0.2
+       ]
+      },
+      "adv.recall": {
+       "mean": 0.7933333333333333,
+       "sd": 0.35795716689756796,
+       "ci95": [
+        -0.09595333333333333,
+        1.68262
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        0.38
+       ]
+      },
+      "adv.hops": {
+       "mean": 0.5266666666666667,
+       "sd": 0.03785938897200179,
+       "ci95": [
+        0.43261114009976176,
+        0.6207221932335717
+       ],
+       "n": 3,
+       "values": [
+        0.5,
+        0.51,
+        0.57
+       ]
+      },
+      "adv.perm": {
+       "mean": 0.4566666666666666,
+       "sd": 0.035118845842842465,
+       "ci95": [
+        0.36941957610708914,
+        0.543913757226244
+       ],
+       "n": 3,
+       "values": [
+        0.46,
+        0.49,
+        0.42
+       ]
+      },
+      "adv.conn": {
+       "mean": 0.48,
+       "sd": 0.06928203230275512,
+       "ci95": [
+        0.30787999999999993,
+        0.65212
+       ],
+       "n": 3,
+       "values": [
+        0.44,
+        0.56,
+        0.44
+       ]
+      },
+      "adv.arith": {
+       "mean": 0.08333333333333333,
+       "sd": 0.03511884584284246,
+       "ci95": [
+        -0.0039137572262441245,
+        0.17058042389291078
+       ],
+       "n": 3,
+       "values": [
+        0.12,
+        0.05,
+        0.08
+       ]
+      },
+      "adv.binding": {
+       "mean": 0.64,
+       "sd": 0.18734993995195195,
+       "ci95": [
+        0.17455938585035363,
+        1.1054406141496464
+       ],
+       "n": 3,
+       "values": [
+        0.7,
+        0.79,
+        0.43
+       ]
+      },
+      "adv.stack": {
+       "mean": 0.88,
+       "sd": 0.07549834435270746,
+       "ci95": [
+        0.692436578459445,
+        1.0675634215405552
+       ],
+       "n": 3,
+       "values": [
+        0.87,
+        0.81,
+        0.96
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.2833333333333334,
+       "sd": 0.020816659994661313,
+       "ci95": [
+        0.23161770953892827,
+        0.3350489571277385
+       ],
+       "n": 3,
+       "values": [
+        0.3,
+        0.26,
+        0.29
+       ]
+      },
+      "adv.cf": {
+       "mean": 0.1366666666666667,
+       "sd": 0.03214550253664318,
+       "ci95": [
+        0.05680636648914142,
+        0.21652696684419195
+       ],
+       "n": 3,
+       "values": [
+        0.15,
+        0.16,
+        0.1
+       ]
+      },
+      "adv.plan": {
+       "mean": 0.2333333333333333,
+       "sd": 0.06506407098647711,
+       "ci95": [
+        0.07169217579259088,
+        0.39497449087407577
+       ],
+       "n": 3,
+       "values": [
+        0.23,
+        0.17,
+        0.3
+       ]
+      },
+      "above_cue.state": {
+       "mean": -0.01699999999999999,
+       "sd": 0.01802775637731994,
+       "ci95": [
+        -0.061787043978513825,
+        0.027787043978513847
+       ],
+       "n": 3,
+       "values": [
+        -0.0020000000000000018,
+        -0.03699999999999999,
+        -0.011999999999999983
+       ]
+      },
+      "steps.state": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.recall": {
+       "mean": 0.517,
+       "sd": 0.2598076211353316,
+       "ci95": [
+        -0.12845000000000018,
+        1.1624500000000002
+       ],
+       "n": 3,
+       "values": [
+        0.667,
+        0.667,
+        0.21700000000000003
+       ]
+      },
+      "steps.recall": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.hops": {
+       "mean": -0.08466666666666671,
+       "sd": 0.01040832999733064,
+       "ci95": [
+        -0.11052447856386924,
+        -0.05880885476946419
+       ],
+       "n": 3,
+       "values": [
+        -0.08800000000000002,
+        -0.07300000000000006,
+        -0.09300000000000003
+       ]
+      },
+      "steps.hops": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.perm": {
+       "mean": 0.238,
+       "sd": 0.08999999999999997,
+       "ci95": [
+        0.014409561250933706,
+        0.46159043874906625
+       ],
+       "n": 3,
+       "values": [
+        0.238,
+        0.32799999999999996,
+        0.14800000000000002
+       ]
+      },
+      "steps.perm": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.conn": {
+       "mean": 0.008666666666666675,
+       "sd": 0.029297326385411604,
+       "ci95": [
+        -0.06411780067431978,
+        0.08145113400765312
+       ],
+       "n": 3,
+       "values": [
+        0.04200000000000004,
+        -0.0030000000000000027,
+        -0.013000000000000012
+       ]
+      },
+      "steps.conn": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.arith": {
+       "mean": 0.003666666666666679,
+       "sd": 0.02929732638541158,
+       "ci95": [
+        -0.0691178006743197,
+        0.07645113400765306
+       ],
+       "n": 3,
+       "values": [
+        -0.017999999999999988,
+        -0.007999999999999993,
+        0.03700000000000002
+       ]
+      },
+      "steps.arith": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.binding": {
+       "mean": 0.38033333333333336,
+       "sd": 0.18332575741922721,
+       "ci95": [
+        -0.07510985039299911,
+        0.8357765170596658
+       ],
+       "n": 3,
+       "values": [
+        0.452,
+        0.5170000000000001,
+        0.17200000000000004
+       ]
+      },
+      "steps.binding": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.stack": {
+       "mean": 0.6413333333333333,
+       "sd": 0.037527767497325656,
+       "ci95": [
+        0.5481016666666667,
+        0.7345649999999999
+       ],
+       "n": 3,
+       "values": [
+        0.643,
+        0.603,
+        0.6779999999999999
+       ]
+      },
+      "steps.stack": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.trace": {
+       "mean": 0.19366666666666665,
+       "sd": 0.04252450274057692,
+       "ci95": [
+        0.08802141971831699,
+        0.2993119136150163
+       ],
+       "n": 3,
+       "values": [
+        0.23700000000000002,
+        0.19199999999999998,
+        0.152
+       ]
+      },
+      "steps.trace": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.cf": {
+       "mean": -0.07866666666666666,
+       "sd": 0.0028867513459481316,
+       "ci95": [
+        -0.08583833333333334,
+        -0.07149499999999999
+       ],
+       "n": 3,
+       "values": [
+        -0.077,
+        -0.082,
+        -0.077
+       ]
+      },
+      "steps.cf": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.plan": {
+       "mean": 0.0803333333333333,
+       "sd": 0.028431203515386628,
+       "ci95": [
+        0.009700608131452251,
+        0.15096605853521433
+       ],
+       "n": 3,
+       "values": [
+        0.07199999999999998,
+        0.05699999999999997,
+        0.11199999999999996
+       ]
+      },
+      "steps.plan": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 206256,
+      "params_active": 206256,
+      "stored_bytes": 825024,
+      "flops": {
+       "mean": 22812672.0,
+       "sd": 0.0,
+       "ci95": [
+        22812672.0,
+        22812672.0
+       ],
+       "n": 3,
+       "values": [
+        22812672.0,
+        22812672.0,
+        22812672.0
+       ]
+      },
+      "train_flops": {
+       "mean": 65700495360000.0,
+       "sd": 0.0,
+       "ci95": [
+        65700495360000.0,
+        65700495360000.0
+       ],
+       "n": 3,
+       "values": [
+        65700495360000.0,
+        65700495360000.0,
+        65700495360000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 202752,
+      "total_bytes": 202752,
+      "peak_rss_mb": {
+       "mean": 474.4666666666667,
+       "sd": 29.335530220763573,
+       "ci95": [
+        401.58728807781085,
+        547.3460452555225
+       ],
+       "n": 3,
+       "values": [
+        440.6,
+        492.0,
+        490.8
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.136,
+       "sd": 0.016643316977093238,
+       "ci95": [
+        0.0946523717205771,
+        0.1773476282794229
+       ],
+       "n": 3,
+       "values": [
+        0.155,
+        0.129,
+        0.124
+       ]
+      },
+      "train_seconds": {
+       "mean": 815.8333333333334,
+       "sd": 151.0865425288875,
+       "ci95": [
+        440.48326296540637,
+        1191.1834037012604
+       ],
+       "n": 3,
+       "values": [
+        983.4,
+        774.1,
+        690.0
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 3263.2666666666664,
+       "sd": 604.373802653071,
+       "ci95": [
+        1761.7977366262019,
+        4764.735596707131
+       ],
+       "n": 3,
+       "values": [
+        3933.6,
+        3096.2,
+        2760.0
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.3608,
+       "sd": 0.03735023426968028,
+       "ci95": [
+        0.2680093859140197,
+        0.45359061408598034
+       ],
+       "n": 3,
+       "values": [
+        0.3868,
+        0.3776,
+        0.318
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.034319721634189296,
+       "sd": 0.006197885297551385,
+       "ci95": [
+        0.018922078378679274,
+        0.049717364889699314
+       ],
+       "n": 3,
+       "values": [
+        0.03512916890396316,
+        0.04007311284880747,
+        0.02775688314979725
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.06413874389208626,
+       "sd": 0.00842593906313035,
+       "ci95": [
+        0.04320586153655057,
+        0.08507162624762196
+       ],
+       "n": 3,
+       "values": [
+        0.061191414354199704,
+        0.0736424388939684,
+        0.0575823784280907
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0025757575757575763,
+       "sd": 0.0018924236358783028,
+       "ci95": [
+        -0.0021256627691883475,
+        0.0072771779207035005
+       ],
+       "n": 3,
+       "values": [
+        0.004090909090909091,
+        0.00045454545454545455,
+        0.003181818181818182
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.020303030303030305,
+       "sd": 0.0009462118179391501,
+       "ci95": [
+        0.017952320130557347,
+        0.022653740475503264
+       ],
+       "n": 3,
+       "values": [
+        0.019545454545454546,
+        0.02,
+        0.021363636363636362
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.864127950746409,
+       "sd": 0.0414990540245299,
+       "ci95": [
+        0.7610302652240107,
+        0.9672256362688073
+       ],
+       "n": 3,
+       "values": [
+        0.8859331135576703,
+        0.8901790246540439,
+        0.8162717140275128
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.7716612510708191,
+       "sd": 0.056315914472838076,
+       "ci95": [
+        0.6317534730092995,
+        0.9115690291323386
+       ],
+       "n": 3,
+       "values": [
+        0.8078222735433801,
+        0.8003863758543195,
+        0.7067751038147576
+       ]
+      }
+     },
+     "memory_tokens": 99
+    },
+    "dense-d80": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "structured",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.44696969696969696,
+       "sd": 0.04542119989001872,
+       "ci95": [
+        0.33412807461504884,
+        0.5598113193243451
+       ],
+       "n": 3,
+       "values": [
+        0.39454545454545453,
+        0.47454545454545455,
+        0.4718181818181818
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.4537878787878788,
+       "sd": 0.051671109735201344,
+       "ci95": [
+        0.32541936660626963,
+        0.582156390969488
+       ],
+       "n": 3,
+       "values": [
+        0.39454545454545453,
+        0.4772727272727273,
+        0.48954545454545456
+       ]
+      },
+      "ood.all": {
+       "mean": 0.3375757575757576,
+       "sd": 0.03775008437769931,
+       "ci95": [
+        0.2437917805888235,
+        0.43135973456269167
+       ],
+       "n": 3,
+       "values": [
+        0.2990909090909091,
+        0.37454545454545457,
+        0.3390909090909091
+       ]
+      },
+      "adv.all": {
+       "mean": 0.4281818181818182,
+       "sd": 0.06874915476565317,
+       "ci95": [
+        0.2573856662075975,
+        0.5989779701560389
+       ],
+       "n": 3,
+       "values": [
+        0.3490909090909091,
+        0.4618181818181818,
+        0.47363636363636363
+       ]
+      },
+      "dev.state": {
+       "mean": 0.165,
+       "sd": 0.022912878474779203,
+       "ci95": [
+        0.10807666054244533,
+        0.22192333945755469
+       ],
+       "n": 3,
+       "values": [
+        0.145,
+        0.19,
+        0.16
+       ]
+      },
+      "dev.recall": {
+       "mean": 0.7883333333333334,
+       "sd": 0.3450483057969323,
+       "ci95": [
+        -0.06888335647509003,
+        1.645550023141757
+       ],
+       "n": 3,
+       "values": [
+        0.39,
+        0.995,
+        0.98
+       ]
+      },
+      "dev.hops": {
+       "mean": 0.47833333333333333,
+       "sd": 0.00763762615825974,
+       "ci95": [
+        0.4593588868474818,
+        0.4973077798191849
+       ],
+       "n": 3,
+       "values": [
+        0.47,
+        0.48,
+        0.485
+       ]
+      },
+      "dev.perm": {
+       "mean": 0.49833333333333335,
+       "sd": 0.1000416579897261,
+       "ci95": [
+        0.2497960199654789,
+        0.7468706467011879
+       ],
+       "n": 3,
+       "values": [
+        0.6,
+        0.4,
+        0.495
+       ]
+      },
+      "dev.conn": {
+       "mean": 0.4916666666666667,
+       "sd": 0.02362907813126303,
+       "ci95": [
+        0.43296404503772146,
+        0.5503692882956119
+       ],
+       "n": 3,
+       "values": [
+        0.51,
+        0.5,
+        0.465
+       ]
+      },
+      "dev.arith": {
+       "mean": 0.10166666666666667,
+       "sd": 0.015275252316519465,
+       "ci95": [
+        0.06371777369496356,
+        0.13961555963836977
+       ],
+       "n": 3,
+       "values": [
+        0.085,
+        0.115,
+        0.105
+       ]
+      },
+      "dev.binding": {
+       "mean": 0.61,
+       "sd": 0.21289668856043767,
+       "ci95": [
+        0.08109262218387114,
+        1.1389073778161287
+       ],
+       "n": 3,
+       "values": [
+        0.365,
+        0.715,
+        0.75
+       ]
+      },
+      "dev.stack": {
+       "mean": 0.9783333333333334,
+       "sd": 0.005773502691896263,
+       "ci95": [
+        0.96399,
+        0.9926766666666668
+       ],
+       "n": 3,
+       "values": [
+        0.985,
+        0.975,
+        0.975
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.3633333333333333,
+       "sd": 0.05507570547286104,
+       "ci95": [
+        0.22650665387676266,
+        0.500160012789904
+       ],
+       "n": 3,
+       "values": [
+        0.3,
+        0.4,
+        0.39
+       ]
+      },
+      "dev.cf": {
+       "mean": 0.16166666666666665,
+       "sd": 0.031754264805429415,
+       "ci95": [
+        0.08277833333333331,
+        0.240555
+       ],
+       "n": 3,
+       "values": [
+        0.18,
+        0.18,
+        0.125
+       ]
+      },
+      "dev.plan": {
+       "mean": 0.28,
+       "sd": 0.0264575131106459,
+       "ci95": [
+        0.21427058928201675,
+        0.3457294107179833
+       ],
+       "n": 3,
+       "values": [
+        0.31,
+        0.27,
+        0.26
+       ]
+      },
+      "ood.state": {
+       "mean": 0.14,
+       "sd": 0.04272001872658765,
+       "ci95": [
+        0.033869025217265966,
+        0.24613097478273405
+       ],
+       "n": 3,
+       "values": [
+        0.185,
+        0.135,
+        0.1
+       ]
+      },
+      "ood.recall": {
+       "mean": 0.6233333333333334,
+       "sd": 0.3137010253941375,
+       "ci95": [
+        -0.15600611004341347,
+        1.4026727767100802
+       ],
+       "n": 3,
+       "values": [
+        0.28,
+        0.895,
+        0.695
+       ]
+      },
+      "ood.hops": {
+       "mean": 0.5366666666666667,
+       "sd": 0.010408329997330672,
+       "ci95": [
+        0.5108088547694641,
+        0.5625244785638693
+       ],
+       "n": 3,
+       "values": [
+        0.525,
+        0.545,
+        0.54
+       ]
+      },
+      "ood.perm": {
+       "mean": 0.20333333333333334,
+       "sd": 0.03403429642777023,
+       "ci95": [
+        0.11878063032443414,
+        0.28788603634223253
+       ],
+       "n": 3,
+       "values": [
+        0.215,
+        0.165,
+        0.23
+       ]
+      },
+      "ood.conn": {
+       "mean": 0.49333333333333335,
+       "sd": 0.005773502691896262,
+       "ci95": [
+        0.47899,
+        0.5076766666666667
+       ],
+       "n": 3,
+       "values": [
+        0.49,
+        0.49,
+        0.5
+       ]
+      },
+      "ood.arith": {
+       "mean": 0.10166666666666667,
+       "sd": 0.020207259421636897,
+       "ci95": [
+        0.05146500000000001,
+        0.15186833333333333
+       ],
+       "n": 3,
+       "values": [
+        0.12,
+        0.105,
+        0.08
+       ]
+      },
+      "ood.binding": {
+       "mean": 0.43,
+       "sd": 0.10583005244258362,
+       "ci95": [
+        0.1670823571280669,
+        0.692917642871933
+       ],
+       "n": 3,
+       "values": [
+        0.31,
+        0.51,
+        0.47
+       ]
+      },
+      "ood.stack": {
+       "mean": 0.5116666666666666,
+       "sd": 0.07147260547463855,
+       "ci95": [
+        0.3341045420376293,
+        0.6892287912957039
+       ],
+       "n": 3,
+       "values": [
+        0.495,
+        0.59,
+        0.45
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.3016666666666667,
+       "sd": 0.02565800719723442,
+       "ci95": [
+        0.2379234990371517,
+        0.3654098342961817
+       ],
+       "n": 3,
+       "values": [
+        0.28,
+        0.295,
+        0.33
+       ]
+      },
+      "ood.cf": {
+       "mean": 0.19166666666666665,
+       "sd": 0.03214550253664318,
+       "ci95": [
+        0.11180636648914138,
+        0.2715269668441919
+       ],
+       "n": 3,
+       "values": [
+        0.215,
+        0.205,
+        0.155
+       ]
+      },
+      "ood.plan": {
+       "mean": 0.18000000000000002,
+       "sd": 0.0050000000000000044,
+       "ci95": [
+        0.1675783089583852,
+        0.19242169104161483
+       ],
+       "n": 3,
+       "values": [
+        0.175,
+        0.185,
+        0.18
+       ]
+      },
+      "adv.state": {
+       "mean": 0.19666666666666666,
+       "sd": 0.04163331998932266,
+       "ci95": [
+        0.09323541907785633,
+        0.300097914255477
+       ],
+       "n": 3,
+       "values": [
+        0.23,
+        0.15,
+        0.21
+       ]
+      },
+      "adv.recall": {
+       "mean": 0.71,
+       "sd": 0.4596737973824482,
+       "ci95": [
+        -0.4319851782021227,
+        1.8519851782021226
+       ],
+       "n": 3,
+       "values": [
+        0.18,
+        1.0,
+        0.95
+       ]
+      },
+      "adv.hops": {
+       "mean": 0.5033333333333333,
+       "sd": 0.11150485789118487,
+       "ci95": [
+        0.22631755446064084,
+        0.7803491122060258
+       ],
+       "n": 3,
+       "values": [
+        0.46,
+        0.42,
+        0.63
+       ]
+      },
+      "adv.perm": {
+       "mean": 0.4666666666666666,
+       "sd": 0.03785938897200183,
+       "ci95": [
+        0.3726111400997616,
+        0.5607221932335716
+       ],
+       "n": 3,
+       "values": [
+        0.51,
+        0.44,
+        0.45
+       ]
+      },
+      "adv.conn": {
+       "mean": 0.5433333333333333,
+       "sd": 0.025166114784235794,
+       "ci95": [
+        0.480812192819815,
+        0.6058544738468516
+       ],
+       "n": 3,
+       "values": [
+        0.52,
+        0.57,
+        0.54
+       ]
+      },
+      "adv.arith": {
+       "mean": 0.09999999999999999,
+       "sd": 0.017320508075688773,
+       "ci95": [
+        0.05696999999999999,
+        0.14303
+       ],
+       "n": 3,
+       "values": [
+        0.09,
+        0.12,
+        0.09
+       ]
+      },
+      "adv.binding": {
+       "mean": 0.5499999999999999,
+       "sd": 0.2946183972531247,
+       "ci95": [
+        -0.1819317411708099,
+        1.2819317411708098
+       ],
+       "n": 3,
+       "values": [
+        0.21,
+        0.73,
+        0.71
+       ]
+      },
+      "adv.stack": {
+       "mean": 0.9633333333333333,
+       "sd": 0.011547005383792525,
+       "ci95": [
+        0.9346466666666666,
+        0.9920199999999999
+       ],
+       "n": 3,
+       "values": [
+        0.97,
+        0.95,
+        0.97
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.32,
+       "sd": 0.0360555127546399,
+       "ci95": [
+        0.2304259120429723,
+        0.4095740879570277
+       ],
+       "n": 3,
+       "values": [
+        0.29,
+        0.36,
+        0.31
+       ]
+      },
+      "adv.cf": {
+       "mean": 0.15333333333333332,
+       "sd": 0.04932882862316247,
+       "ci95": [
+        0.030783839612995523,
+        0.2758828270536711
+       ],
+       "n": 3,
+       "values": [
+        0.21,
+        0.12,
+        0.13
+       ]
+      },
+      "adv.plan": {
+       "mean": 0.20333333333333334,
+       "sd": 0.02886751345948128,
+       "ci95": [
+        0.1316166666666667,
+        0.27505
+       ],
+       "n": 3,
+       "values": [
+        0.17,
+        0.22,
+        0.22
+       ]
+      },
+      "above_cue.state": {
+       "mean": 0.018000000000000006,
+       "sd": 0.022912878474779203,
+       "ci95": [
+        -0.038923339457554676,
+        0.07492333945755468
+       ],
+       "n": 3,
+       "values": [
+        -0.0020000000000000018,
+        0.04300000000000001,
+        0.013000000000000012
+       ]
+      },
+      "steps.state": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.recall": {
+       "mean": 0.4553333333333333,
+       "sd": 0.3450483057969323,
+       "ci95": [
+        -0.40188335647509016,
+        1.3125500231417568
+       ],
+       "n": 3,
+       "values": [
+        0.056999999999999995,
+        0.6619999999999999,
+        0.647
+       ]
+      },
+      "steps.recall": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.hops": {
+       "mean": -0.06466666666666672,
+       "sd": 0.00763762615825974,
+       "ci95": [
+        -0.08364111315251829,
+        -0.045692220180815146
+       ],
+       "n": 3,
+       "values": [
+        -0.07300000000000006,
+        -0.06300000000000006,
+        -0.05800000000000005
+       ]
+      },
+      "steps.hops": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.perm": {
+       "mean": 0.26133333333333336,
+       "sd": 0.1000416579897261,
+       "ci95": [
+        0.01279601996547891,
+        0.5098706467011878
+       ],
+       "n": 3,
+       "values": [
+        0.363,
+        0.16300000000000003,
+        0.258
+       ]
+      },
+      "steps.perm": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.conn": {
+       "mean": -0.011333333333333325,
+       "sd": 0.02362907813126303,
+       "ci95": [
+        -0.07003595496227855,
+        0.0473692882956119
+       ],
+       "n": 3,
+       "values": [
+        0.007000000000000006,
+        -0.0030000000000000027,
+        -0.03799999999999998
+       ]
+      },
+      "steps.conn": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.arith": {
+       "mean": -0.0013333333333333253,
+       "sd": 0.015275252316519465,
+       "ci95": [
+        -0.03928222630503644,
+        0.036615559638369786
+       ],
+       "n": 3,
+       "values": [
+        -0.017999999999999988,
+        0.01200000000000001,
+        0.0020000000000000018
+       ]
+      },
+      "steps.arith": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.binding": {
+       "mean": 0.327,
+       "sd": 0.21289668856043767,
+       "ci95": [
+        -0.20190737781612883,
+        0.8559073778161288
+       ],
+       "n": 3,
+       "values": [
+        0.08200000000000002,
+        0.432,
+        0.467
+       ]
+      },
+      "steps.binding": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.stack": {
+       "mean": 0.6913333333333332,
+       "sd": 0.005773502691896262,
+       "ci95": [
+        0.6769899999999999,
+        0.7056766666666666
+       ],
+       "n": 3,
+       "values": [
+        0.698,
+        0.688,
+        0.688
+       ]
+      },
+      "steps.stack": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.trace": {
+       "mean": 0.21033333333333334,
+       "sd": 0.05507570547286104,
+       "ci95": [
+        0.07350665387676272,
+        0.34716001278990394
+       ],
+       "n": 3,
+       "values": [
+        0.147,
+        0.24700000000000003,
+        0.23700000000000002
+       ]
+      },
+      "steps.trace": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.cf": {
+       "mean": -0.025333333333333336,
+       "sd": 0.031754264805429415,
+       "ci95": [
+        -0.10422166666666667,
+        0.053555000000000005
+       ],
+       "n": 3,
+       "values": [
+        -0.007000000000000006,
+        -0.007000000000000006,
+        -0.062
+       ]
+      },
+      "steps.cf": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.plan": {
+       "mean": 0.04699999999999999,
+       "sd": 0.0264575131106459,
+       "ci95": [
+        -0.018729410717983265,
+        0.11272941071798326
+       ],
+       "n": 3,
+       "values": [
+        0.07699999999999999,
+        0.037000000000000005,
+        0.026999999999999996
+       ]
+      },
+      "steps.plan": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 319248,
+      "params_active": 319248,
+      "stored_bytes": 1276992,
+      "flops": {
+       "mean": 35642880.0,
+       "sd": 0.0,
+       "ci95": [
+        35642880.0,
+        35642880.0
+       ],
+       "n": 3,
+       "values": [
+        35642880.0,
+        35642880.0,
+        35642880.0
+       ]
+      },
+      "train_flops": {
+       "mean": 102651494400000.0,
+       "sd": 0.0,
+       "ci95": [
+        102651494400000.0,
+        102651494400000.0
+       ],
+       "n": 3,
+       "values": [
+        102651494400000.0,
+        102651494400000.0,
+        102651494400000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 253440,
+      "total_bytes": 253440,
+      "peak_rss_mb": {
+       "mean": 499.76666666666665,
+       "sd": 29.584680720490006,
+       "ci95": [
+        426.2683139717177,
+        573.2650193616156
+       ],
+       "n": 3,
+       "values": [
+        533.9,
+        483.9,
+        481.5
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.256,
+       "sd": 0.09482088377567463,
+       "ci95": [
+        0.020432855489140894,
+        0.49156714451085914
+       ],
+       "n": 3,
+       "values": [
+        0.157,
+        0.346,
+        0.265
+       ]
+      },
+      "train_seconds": {
+       "mean": 1400.4666666666665,
+       "sd": 399.0795200625226,
+       "ci95": [
+        409.0181668161524,
+        2391.9151665171803
+       ],
+       "n": 3,
+       "values": [
+        986.6,
+        1782.9,
+        1431.9
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 5601.833333333333,
+       "sd": 1596.3259608655535,
+       "ci95": [
+        1636.0197558171762,
+        9567.64691084949
+       ],
+       "n": 3,
+       "values": [
+        3946.3,
+        7131.5,
+        5727.7
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.35033333333333333,
+       "sd": 0.023332666657142603,
+       "ci95": [
+        0.29236709805493083,
+        0.40829956861173583
+       ],
+       "n": 3,
+       "values": [
+        0.3314,
+        0.3764,
+        0.3432
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.03276874080751882,
+       "sd": 0.0028916524855499906,
+       "ci95": [
+        0.025584898052474922,
+        0.03995258356256272
+       ],
+       "n": 3,
+       "values": [
+        0.03148144708438355,
+        0.030744277804412624,
+        0.036080497533760296
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.0596293239600279,
+       "sd": 0.023204748772498597,
+       "ci95": [
+        0.001980879969974342,
+        0.11727776795008146
+       ],
+       "n": 3,
+       "values": [
+        0.04038613868707959,
+        0.05310361864891919,
+        0.08539821454408493
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0021212121212121214,
+       "sd": 0.0018924236358783026,
+       "ci95": [
+        -0.0025802082237338015,
+        0.006822632466158045
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0036363636363636364,
+        0.0027272727272727275
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.023484848484848487,
+       "sd": 0.01798951332114575,
+       "ci95": [
+        -0.021207186808008763,
+        0.06817688377770574
+       ],
+       "n": 3,
+       "values": [
+        0.01090909090909091,
+        0.015454545454545455,
+        0.04409090909090909
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.8562967867896454,
+       "sd": 0.0352918264360911,
+       "ci95": [
+        0.7686199539329619,
+        0.9439736196463289
+       ],
+       "n": 3,
+       "values": [
+        0.81691282296121,
+        0.8669228678624932,
+        0.8850546695452329
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.7648901221842234,
+       "sd": 0.05413365909746234,
+       "ci95": [
+        0.6304038045320679,
+        0.8993764398363788
+       ],
+       "n": 3,
+       "values": [
+        0.7062473635865473,
+        0.8129524511740799,
+        0.7754705517920426
+       ]
+      }
+     },
+     "memory_tokens": 99
+    },
+    "hyper": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "structured",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.3322727272727273,
+       "sd": 0.033088286609369834,
+       "ci95": [
+        0.2500702326011288,
+        0.41447522194432573
+       ],
+       "n": 3,
+       "values": [
+        0.36954545454545457,
+        0.3209090909090909,
+        0.30636363636363634
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.3434848484848485,
+       "sd": 0.045323295356012816,
+       "ci95": [
+        0.2308864541047993,
+        0.4560832428648977
+       ],
+       "n": 3,
+       "values": [
+        0.3936363636363636,
+        0.33136363636363636,
+        0.3054545454545455
+       ]
+      },
+      "ood.all": {
+       "mean": 0.2506060606060606,
+       "sd": 0.013402026901512723,
+       "ci95": [
+        0.21731089310566037,
+        0.28390122810646085
+       ],
+       "n": 3,
+       "values": [
+        0.2609090909090909,
+        0.25545454545454543,
+        0.23545454545454544
+       ]
+      },
+      "adv.all": {
+       "mean": 0.3509090909090909,
+       "sd": 0.05034591089454686,
+       "ci95": [
+        0.22583282084094497,
+        0.4759853609772368
+       ],
+       "n": 3,
+       "values": [
+        0.4081818181818182,
+        0.31363636363636366,
+        0.33090909090909093
+       ]
+      },
+      "dev.state": {
+       "mean": 0.15666666666666665,
+       "sd": 0.03253203549323856,
+       "ci95": [
+        0.07584608789629542,
+        0.23748724543703786
+       ],
+       "n": 3,
+       "values": [
+        0.125,
+        0.19,
+        0.155
+       ]
+      },
+      "dev.recall": {
+       "mean": 0.49,
+       "sd": 0.19371370627810516,
+       "ci95": [
+        0.0087496380174521,
+        0.9712503619825479
+       ],
+       "n": 3,
+       "values": [
+        0.71,
+        0.345,
+        0.415
+       ]
+      },
+      "dev.hops": {
+       "mean": 0.465,
+       "sd": 0.042720018726587664,
+       "ci95": [
+        0.35886902521726594,
+        0.5711309747827341
+       ],
+       "n": 3,
+       "values": [
+        0.505,
+        0.42,
+        0.47
+       ]
+      },
+      "dev.perm": {
+       "mean": 0.39166666666666666,
+       "sd": 0.1457166199626293,
+       "ci95": [
+        0.02965730010583051,
+        0.7536760332275028
+       ],
+       "n": 3,
+       "values": [
+        0.275,
+        0.345,
+        0.555
+       ]
+      },
+      "dev.conn": {
+       "mean": 0.4883333333333333,
+       "sd": 0.02516611478423583,
+       "ci95": [
+        0.4258121928198149,
+        0.5508544738468517
+       ],
+       "n": 3,
+       "values": [
+        0.465,
+        0.485,
+        0.515
+       ]
+      },
+      "dev.arith": {
+       "mean": 0.12,
+       "sd": 0.027838821814150105,
+       "ci95": [
+        0.0508389512924122,
+        0.1891610487075878
+       ],
+       "n": 3,
+       "values": [
+        0.15,
+        0.095,
+        0.115
+       ]
+      },
+      "dev.binding": {
+       "mean": 0.44,
+       "sd": 0.1824828759089466,
+       "ci95": [
+        -0.013349180985253395,
+        0.8933491809852534
+       ],
+       "n": 3,
+       "values": [
+        0.65,
+        0.35,
+        0.32
+       ]
+      },
+      "dev.stack": {
+       "mean": 0.6933333333333334,
+       "sd": 0.2856717230202061,
+       "ci95": [
+        -0.016371843203218384,
+        1.403038509869885
+       ],
+       "n": 3,
+       "values": [
+        0.83,
+        0.885,
+        0.365
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.26333333333333336,
+       "sd": 0.029297326385411566,
+       "ci95": [
+        0.190548865992347,
+        0.33611780067431973
+       ],
+       "n": 3,
+       "values": [
+        0.23,
+        0.275,
+        0.285
+       ]
+      },
+      "dev.cf": {
+       "mean": 0.14166666666666666,
+       "sd": 0.032532035493238555,
+       "ci95": [
+        0.06084608789629545,
+        0.22248724543703788
+       ],
+       "n": 3,
+       "values": [
+        0.11,
+        0.14,
+        0.175
+       ]
+      },
+      "dev.plan": {
+       "mean": 0.005,
+       "sd": 0.008660254037844387,
+       "ci95": [
+        -0.016515,
+        0.026515
+       ],
+       "n": 3,
+       "values": [
+        0.015,
+        0.0,
+        0.0
+       ]
+      },
+      "ood.state": {
+       "mean": 0.15833333333333333,
+       "sd": 0.024664414311581236,
+       "ci95": [
+        0.09705858647316443,
+        0.21960808019350223
+       ],
+       "n": 3,
+       "values": [
+        0.13,
+        0.175,
+        0.17
+       ]
+      },
+      "ood.recall": {
+       "mean": 0.30333333333333334,
+       "sd": 0.12573119475028197,
+       "ci95": [
+        -0.009025477762887313,
+        0.615692144429554
+       ],
+       "n": 3,
+       "values": [
+        0.445,
+        0.205,
+        0.26
+       ]
+      },
+      "ood.hops": {
+       "mean": 0.5333333333333333,
+       "sd": 0.012583057392117928,
+       "ci95": [
+        0.5020727630765741,
+        0.5645939035900925
+       ],
+       "n": 3,
+       "values": [
+        0.545,
+        0.535,
+        0.52
+       ]
+      },
+      "ood.perm": {
+       "mean": 0.215,
+       "sd": 0.043588989435406726,
+       "ci95": [
+        0.10671020808343323,
+        0.32328979191656676
+       ],
+       "n": 3,
+       "values": [
+        0.165,
+        0.235,
+        0.245
+       ]
+      },
+      "ood.conn": {
+       "mean": 0.46166666666666667,
+       "sd": 0.012583057392117897,
+       "ci95": [
+        0.4304060964099075,
+        0.4929272369234258
+       ],
+       "n": 3,
+       "values": [
+        0.475,
+        0.45,
+        0.46
+       ]
+      },
+      "ood.arith": {
+       "mean": 0.09333333333333332,
+       "sd": 0.020207259421636904,
+       "ci95": [
+        0.04313166666666665,
+        0.143535
+       ],
+       "n": 3,
+       "values": [
+        0.075,
+        0.09,
+        0.115
+       ]
+      },
+      "ood.binding": {
+       "mean": 0.325,
+       "sd": 0.026457513110645897,
+       "ci95": [
+        0.25927058928201674,
+        0.3907294107179833
+       ],
+       "n": 3,
+       "values": [
+        0.315,
+        0.305,
+        0.355
+       ]
+      },
+      "ood.stack": {
+       "mean": 0.29000000000000004,
+       "sd": 0.1911151485361639,
+       "ci95": [
+        -0.18479466569770975,
+        0.7647946656977098
+       ],
+       "n": 3,
+       "values": [
+        0.385,
+        0.415,
+        0.07
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.2283333333333333,
+       "sd": 0.020207259421636904,
+       "ci95": [
+        0.17813166666666663,
+        0.278535
+       ],
+       "n": 3,
+       "values": [
+        0.21,
+        0.25,
+        0.225
+       ]
+      },
+      "ood.cf": {
+       "mean": 0.14833333333333334,
+       "sd": 0.022546248764114478,
+       "ci95": [
+        0.09232082607428943,
+        0.20434584059237726
+       ],
+       "n": 3,
+       "values": [
+        0.125,
+        0.15,
+        0.17
+       ]
+      },
+      "ood.plan": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "adv.state": {
+       "mean": 0.15333333333333335,
+       "sd": 0.015275252316519468,
+       "ci95": [
+        0.11538444036163023,
+        0.19128222630503647
+       ],
+       "n": 3,
+       "values": [
+        0.15,
+        0.17,
+        0.14
+       ]
+      },
+      "adv.recall": {
+       "mean": 0.3433333333333333,
+       "sd": 0.2657693235370353,
+       "ci95": [
+        -0.31692755172987,
+        1.0035942183965367
+       ],
+       "n": 3,
+       "values": [
+        0.65,
+        0.18,
+        0.2
+       ]
+      },
+      "adv.hops": {
+       "mean": 0.5866666666666668,
+       "sd": 0.041633319989322626,
+       "ci95": [
+        0.48323541907785655,
+        0.6900979142554771
+       ],
+       "n": 3,
+       "values": [
+        0.62,
+        0.54,
+        0.6
+       ]
+      },
+      "adv.perm": {
+       "mean": 0.43333333333333335,
+       "sd": 0.06658328118479392,
+       "ci95": [
+        0.26791794385043854,
+        0.5987487228162282
+       ],
+       "n": 3,
+       "values": [
+        0.4,
+        0.39,
+        0.51
+       ]
+      },
+      "adv.conn": {
+       "mean": 0.54,
+       "sd": 0.08717797887081348,
+       "ci95": [
+        0.32342041616686645,
+        0.7565795838331336
+       ],
+       "n": 3,
+       "values": [
+        0.5,
+        0.48,
+        0.64
+       ]
+      },
+      "adv.arith": {
+       "mean": 0.15333333333333335,
+       "sd": 0.05686240703077328,
+       "ci95": [
+        0.012067882929571172,
+        0.2945987837370955
+       ],
+       "n": 3,
+       "values": [
+        0.2,
+        0.09,
+        0.17
+       ]
+      },
+      "adv.binding": {
+       "mean": 0.36000000000000004,
+       "sd": 0.22605309110914631,
+       "ci95": [
+        -0.20159233135196336,
+        0.9215923313519634
+       ],
+       "n": 3,
+       "values": [
+        0.62,
+        0.25,
+        0.21
+       ]
+      },
+      "adv.stack": {
+       "mean": 0.9366666666666666,
+       "sd": 0.08386497083606084,
+       "ci95": [
+        0.72831771527875,
+        1.1450156180545834
+       ],
+       "n": 3,
+       "values": [
+        0.98,
+        0.99,
+        0.84
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.22333333333333336,
+       "sd": 0.005773502691896262,
+       "ci95": [
+        0.20899,
+        0.2376766666666667
+       ],
+       "n": 3,
+       "values": [
+        0.22,
+        0.22,
+        0.23
+       ]
+      },
+      "adv.cf": {
+       "mean": 0.13,
+       "sd": 0.026457513110645904,
+       "ci95": [
+        0.06427058928201673,
+        0.19572941071798328
+       ],
+       "n": 3,
+       "values": [
+        0.15,
+        0.14,
+        0.1
+       ]
+      },
+      "adv.plan": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.state": {
+       "mean": 0.009666666666666676,
+       "sd": 0.03253203549323856,
+       "ci95": [
+        -0.07115391210370456,
+        0.0904872454370379
+       ],
+       "n": 3,
+       "values": [
+        -0.021999999999999992,
+        0.04300000000000001,
+        0.008000000000000007
+       ]
+      },
+      "steps.state": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.recall": {
+       "mean": 0.15699999999999995,
+       "sd": 0.19371370627810516,
+       "ci95": [
+        -0.324250361982548,
+        0.6382503619825478
+       ],
+       "n": 3,
+       "values": [
+        0.37699999999999995,
+        0.011999999999999955,
+        0.08199999999999996
+       ]
+      },
+      "steps.recall": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.hops": {
+       "mean": -0.07800000000000006,
+       "sd": 0.042720018726587664,
+       "ci95": [
+        -0.18413097478273416,
+        0.028130974782734033
+       ],
+       "n": 3,
+       "values": [
+        -0.038000000000000034,
+        -0.12300000000000005,
+        -0.07300000000000006
+       ]
+      },
+      "steps.hops": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.perm": {
+       "mean": 0.1546666666666667,
+       "sd": 0.1457166199626293,
+       "ci95": [
+        -0.20734269989416945,
+        0.5166760332275029
+       ],
+       "n": 3,
+       "values": [
+        0.038000000000000034,
+        0.10799999999999998,
+        0.31800000000000006
+       ]
+      },
+      "steps.perm": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.conn": {
+       "mean": -0.014666666666666661,
+       "sd": 0.02516611478423583,
+       "ci95": [
+        -0.07718780718018504,
+        0.04785447384685172
+       ],
+       "n": 3,
+       "values": [
+        -0.03799999999999998,
+        -0.018000000000000016,
+        0.01200000000000001
+       ]
+      },
+      "steps.conn": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.arith": {
+       "mean": 0.017000000000000005,
+       "sd": 0.027838821814150105,
+       "ci95": [
+        -0.052161048707587795,
+        0.0861610487075878
+       ],
+       "n": 3,
+       "values": [
+        0.047,
+        -0.007999999999999993,
+        0.01200000000000001
+       ]
+      },
+      "steps.arith": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.binding": {
+       "mean": 0.15700000000000003,
+       "sd": 0.1824828759089466,
+       "ci95": [
+        -0.29634918098525337,
+        0.6103491809852535
+       ],
+       "n": 3,
+       "values": [
+        0.36700000000000005,
+        0.067,
+        0.03700000000000003
+       ]
+      },
+      "steps.binding": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.stack": {
+       "mean": 0.4063333333333334,
+       "sd": 0.2856717230202061,
+       "ci95": [
+        -0.30337184320321836,
+        1.116038509869885
+       ],
+       "n": 3,
+       "values": [
+        0.5429999999999999,
+        0.5980000000000001,
+        0.07800000000000001
+       ]
+      },
+      "steps.stack": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.trace": {
+       "mean": 0.11033333333333334,
+       "sd": 0.029297326385411566,
+       "ci95": [
+        0.03754886599234698,
+        0.1831178006743197
+       ],
+       "n": 3,
+       "values": [
+        0.07700000000000001,
+        0.12200000000000003,
+        0.13199999999999998
+       ]
+      },
+      "steps.trace": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.cf": {
+       "mean": -0.04533333333333334,
+       "sd": 0.032532035493238555,
+       "ci95": [
+        -0.12615391210370455,
+        0.03548724543703788
+       ],
+       "n": 3,
+       "values": [
+        -0.077,
+        -0.046999999999999986,
+        -0.01200000000000001
+       ]
+      },
+      "steps.cf": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.plan": {
+       "mean": -0.228,
+       "sd": 0.008660254037844378,
+       "ci95": [
+        -0.249515,
+        -0.20648500000000003
+       ],
+       "n": 3,
+       "values": [
+        -0.21800000000000003,
+        -0.233,
+        -0.233
+       ]
+      },
+      "steps.plan": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 313904,
+      "params_active": 313904,
+      "stored_bytes": 1255616,
+      "flops": {
+       "mean": 23611392.0,
+       "sd": 0.0,
+       "ci95": [
+        23611392.0,
+        23611392.0
+       ],
+       "n": 3,
+       "values": [
+        23611392.0,
+        23611392.0,
+        23611392.0
+       ]
+      },
+      "train_flops": {
+       "mean": 68000808960000.0,
+       "sd": 0.0,
+       "ci95": [
+        68000808960000.0,
+        68000808960000.0
+       ],
+       "n": 3,
+       "values": [
+        68000808960000.0,
+        68000808960000.0,
+        68000808960000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 202752,
+      "total_bytes": 202752,
+      "peak_rss_mb": {
+       "mean": 522.9,
+       "sd": 27.68158232471548,
+       "ci95": [
+        454.1295873638718,
+        591.6704126361282
+       ],
+       "n": 3,
+       "values": [
+        491.0,
+        540.6,
+        537.1
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.22066666666666668,
+       "sd": 0.06822267462752638,
+       "ci95": [
+        0.05117846941551754,
+        0.39015486391781584
+       ],
+       "n": 3,
+       "values": [
+        0.298,
+        0.195,
+        0.169
+       ]
+      },
+      "train_seconds": {
+       "mean": 1351.4666666666665,
+       "sd": 390.7072732025004,
+       "ci95": [
+        380.81765958001745,
+        2322.1156737533156
+       ],
+       "n": 3,
+       "values": [
+        1800.6,
+        1163.8,
+        1090.0
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 5405.766666666666,
+       "sd": 1562.7476006487207,
+       "ci95": [
+        1523.3730924100196,
+        9288.160240923313
+       ],
+       "n": 3,
+       "values": [
+        7202.2,
+        4655.2,
+        4359.9
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.30393333333333333,
+       "sd": 0.015995416010011556,
+       "ci95": [
+        0.26419531018164083,
+        0.34367135648502584
+       ],
+       "n": 3,
+       "values": [
+        0.3214,
+        0.29,
+        0.3004
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.08123850987038829,
+       "sd": 0.01313144909897453,
+       "ci95": [
+        0.048615549143157764,
+        0.11386147059761881
+       ],
+       "n": 3,
+       "values": [
+        0.06852879311550746,
+        0.09475453298877588,
+        0.08043220350688153
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.1010446461199811,
+       "sd": 0.021362335622881295,
+       "ci95": [
+        0.047973379513038435,
+        0.15411591272692376
+       ],
+       "n": 3,
+       "values": [
+        0.12571000328795476,
+        0.08845799884335559,
+        0.08896593622863291
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.010606060606060605,
+       "sd": 0.004860307555256194,
+       "ci95": [
+        -0.001468587157663112,
+        0.022680708369784322
+       ],
+       "n": 3,
+       "values": [
+        0.013636363636363636,
+        0.005,
+        0.013181818181818182
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.014545454545454547,
+       "sd": 0.01023484568108882,
+       "ci95": [
+        -0.010881363636363635,
+        0.03997227272727273
+       ],
+       "n": 3,
+       "values": [
+        0.026363636363636363,
+        0.008636363636363636,
+        0.008636363636363636
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.7261008344378141,
+       "sd": 0.06382426411917407,
+       "ci95": [
+        0.5675397764684539,
+        0.8846618924071744
+       ],
+       "n": 3,
+       "values": [
+        0.7966426960592605,
+        0.7093074848970955,
+        0.6723523223570864
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.6720137166695714,
+       "sd": 0.04506869701773966,
+       "ci95": [
+        0.5600478306690697,
+        0.7839796026700732
+       ],
+       "n": 3,
+       "values": [
+        0.7126383763837638,
+        0.679869013943747,
+        0.6235337596812032
+       ]
+      }
+     },
+     "memory_tokens": 99
+    }
+   },
+   "cue_floors": {
+    "state": 0.147,
+    "recall": 0.333,
+    "hops": 0.543,
+    "perm": 0.237,
+    "conn": 0.503,
+    "arith": 0.103,
+    "binding": 0.283,
+    "stack": 0.287,
+    "trace": 0.153,
+    "cf": 0.187,
+    "plan": 0.233
+   }
+  },
+  "result": "FAIL",
+  "decision": {
+   "complete": true,
+   "checks": {
+    "G1": false,
+    "G2": false
+   },
+   "result": "FAIL"
+  },
+  "recorded": "2026-09-29T23:32:12Z"
  }
 ]
