@@ -29,6 +29,10 @@ on:
         description: when this experiment is recorded, dispatch the next approved free one from experiments/queue.json
         type: boolean
         default: true
+      force:
+        description: train again although the registry already records this experiment (a deliberate replication)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -49,10 +53,30 @@ jobs:
       seeds: ${{ steps.plan.outputs.seeds }}
       runs_on: ${{ steps.plan.outputs.runs_on }}
       runner_script: ${{ steps.plan.outputs.runner_script }}
+      skip: ${{ steps.recorded.outputs.skip }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      # a dispatch of an experiment the registry already records is a duplicate
+      # (for example from an older chain step); it trains nothing unless forced
+      - id: recorded
+        env:
+          FORCE: ${{ inputs.force }}
+          REUSE: ${{ inputs.reuse_run }}
+        run: |
+          skip="$(python3 - <<'PY'
+          import json, os
+          prereg = json.load(open(os.environ["PREREG"]))
+          rows = json.load(open(os.path.join(os.environ["LAB"], "experiments", "registry.json")))
+          done = any(r["experiment_id"] == prereg["id"] and r["run"] == "experiment" for r in rows)
+          print("true" if done and os.environ["FORCE"] != "true" and not os.environ["REUSE"] else "false")
+          PY
+          )"
+          echo "skip=$skip" >> "$GITHUB_OUTPUT"
+          if [ "$skip" = "true" ]; then
+            echo "### ${{ inputs.experiment }} is already recorded: nothing trained (dispatch with force=true to replicate)" >> "$GITHUB_STEP_SUMMARY"
+          fi
       - id: plan
         env:
           RUNNER_CHOICE: ${{ inputs.runner }}
@@ -77,7 +101,8 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
   tests:
-    if: ${{ !inputs.reuse_run }}
+    needs: plan
+    if: ${{ !inputs.reuse_run && needs.plan.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
@@ -92,7 +117,7 @@ jobs:
 
   train:
     needs: [plan, tests]
-    if: ${{ !inputs.reuse_run }}
+    if: ${{ !inputs.reuse_run && needs.plan.outputs.skip != 'true' }}
     runs-on: ${{ fromJSON(needs.plan.outputs.runs_on) }}
     timeout-minutes: 350
     strategy:
@@ -158,7 +183,7 @@ jobs:
 
   report:
     needs: [plan, train]
-    if: ${{ always() && needs.plan.result == 'success' }}
+    if: ${{ always() && needs.plan.result == 'success' && needs.plan.outputs.skip != 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -233,11 +258,16 @@ jobs:
           next="$(python3 "$LAB/lab/controller.py" next)"
           if [ -z "$next" ]; then echo "queue empty or waiting for approval"; exit 0; fi
           tier="$(python3 "$LAB/lab/compute.py" "$LAB/experiments/$next.json" | python3 -c "import json,sys; print(json.load(sys.stdin)['tier'])")"
-          active="$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" \
-            "https://api.github.com/repos/${{ github.repository }}/actions/workflows/research-r1.yml/runs?per_page=30" | python3 -c "
+          # every unfinished run, not only the newest page (a long queue hid running experiments)
+          active=False
+          for status in queued in_progress waiting requested pending; do
+            hit="$(curl -fsS -H "Authorization: Bearer $GH_TOKEN" \
+              "https://api.github.com/repos/${{ github.repository }}/actions/workflows/research-r1.yml/runs?status=$status&per_page=100" | python3 -c "
           import json, sys
           runs = json.load(sys.stdin)['workflow_runs']
-          print(any(r['display_title'] == 'research $next' and r['status'] != 'completed' for r in runs))")"
+          print(any(r['display_title'] == 'research $next' for r in runs))")"
+            if [ "$hit" = "True" ]; then active=True; fi
+          done
           if [ "$active" = "True" ]; then echo "$next is already running"; exit 0; fi
           if [ "$tier" -ge 3 ]; then echo "$next needs tier $tier: owner approval, not dispatched"; exit 0; fi
           curl -fsS -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
