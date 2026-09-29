@@ -131,4 +131,4 @@ def shortcuts(tokens: list[int], task: str) -> dict[str, int]:
         return {"last_constant": TOKEN[body[-1]], "first_value": TOKEN[body[0]]}
     pairs = list(zip(body[0::2], body[1::2]))
     values = [v for _, v in pairs]
-    return {"last_value": TOKEN[values[-1]], "most_common_value": TOKEN[max(set(values), key=values.count)]}
+    return {"last_value": TOKEN[values[-1]], "most_common_value": TOKEN[max(sorted(set(values)), key=values.count)]}
