@@ -190363,5 +190363,1995 @@
    "result": "PASS"
   },
   "recorded": "2026-09-29T23:32:48Z"
+ },
+ {
+  "experiment_id": "R1.36",
+  "run": "active-eig-seed1",
+  "parent": "R1.35 (multiple hypotheses)",
+  "hypothesis": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+  "architecture": "active-eig",
+  "config": {
+   "kind": "active",
+   "d": 64,
+   "layers": 2,
+   "heads": 4,
+   "queries": 2,
+   "policy": "eig"
+  },
+  "seed": 1,
+  "dataset_hash": "3d5b9115b356732e2cfdfbd4a53cf84f8683b538235b726aa3f80d946f35c908",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 108228,
+  "active_parameters": 108228,
+  "flop_estimate": 5146624.0,
+  "checkpoint_sha256": "c5fae9770fe26633d61fecc713b49b79d1c2f1d30d77d9e0ba0a5cb3f83aac48",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007787",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 306.3,
+  "cost_usd": 0.0,
+  "ci_run": "36595780971",
+  "metrics": {
+   "dev": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:1": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 6.091594695334379e-08,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   },
+   "holdout": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:1": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 2.7418136649970393e-09,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   },
+   "ood": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:2": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 1.1563301094419387e-08,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   },
+   "adv": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:1": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 1.19209286886246e-09,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.36",
+  "run": "active-eig-seed2",
+  "parent": "R1.35 (multiple hypotheses)",
+  "hypothesis": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+  "architecture": "active-eig",
+  "config": {
+   "kind": "active",
+   "d": 64,
+   "layers": 2,
+   "heads": 4,
+   "queries": 2,
+   "policy": "eig"
+  },
+  "seed": 2,
+  "dataset_hash": "3d5b9115b356732e2cfdfbd4a53cf84f8683b538235b726aa3f80d946f35c908",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 108228,
+  "active_parameters": 108228,
+  "flop_estimate": 5146624.0,
+  "checkpoint_sha256": "8a2ff6c9fe871aaa2eac8f42e4530858ca564c116fd88bcad53afc1988303fe1",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007791",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 200.4,
+  "cost_usd": 0.0,
+  "ci_run": "36595780971",
+  "metrics": {
+   "dev": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:1": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 7.033348126128658e-09,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   },
+   "holdout": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:1": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.0,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   },
+   "ood": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:2": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 4.529952968290729e-09,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   },
+   "adv": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:1": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 4.529952968290729e-09,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.36",
+  "run": "active-eig-seed3",
+  "parent": "R1.35 (multiple hypotheses)",
+  "hypothesis": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+  "architecture": "active-eig",
+  "config": {
+   "kind": "active",
+   "d": 64,
+   "layers": 2,
+   "heads": 4,
+   "queries": 2,
+   "policy": "eig"
+  },
+  "seed": 3,
+  "dataset_hash": "3d5b9115b356732e2cfdfbd4a53cf84f8683b538235b726aa3f80d946f35c908",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 108228,
+  "active_parameters": 108228,
+  "flop_estimate": 5146624.0,
+  "checkpoint_sha256": "16fba1fcf575e065c5e3154573d1204dde9f9524007d5ee1d06dfa12eae19527",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007789",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 311.9,
+  "cost_usd": 0.0,
+  "ci_run": "36595780971",
+  "metrics": {
+   "dev": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:1": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 8.022785191741377e-08,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   },
+   "holdout": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:1": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 2.717971803178898e-08,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   },
+   "ood": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:2": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 1.5699863431528627e-07,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   },
+   "adv": {
+    "all": 1.0,
+    "task": {
+     "clues": 1.0
+    },
+    "level": {
+     "clues:1": 1.0
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 2.2172927827135425e-08,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.5
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.36",
+  "run": "active-learned-seed1",
+  "parent": "R1.35 (multiple hypotheses)",
+  "hypothesis": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+  "architecture": "active-learned",
+  "config": {
+   "kind": "active",
+   "d": 64,
+   "layers": 2,
+   "heads": 4,
+   "queries": 2,
+   "policy": "learned"
+  },
+  "seed": 1,
+  "dataset_hash": "3d5b9115b356732e2cfdfbd4a53cf84f8683b538235b726aa3f80d946f35c908",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 108228,
+  "active_parameters": 108228,
+  "flop_estimate": 5146624.0,
+  "checkpoint_sha256": "5b75d3cbb73f880ff2c62df55410d8edd1e55acb8623abff6ce266bd3f002e2c",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007788",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 139.2,
+  "cost_usd": 0.0,
+  "ci_run": "36595780971",
+  "metrics": {
+   "dev": {
+    "all": 0.788,
+    "task": {
+     "clues": 0.788
+    },
+    "level": {
+     "clues:1": 0.788
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.016682884693145727,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8911143568623695
+    }
+   },
+   "holdout": {
+    "all": 0.797,
+    "task": {
+     "clues": 0.797
+    },
+    "level": {
+     "clues:1": 0.797
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.01997660773992536,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.9083570779586009
+    }
+   },
+   "ood": {
+    "all": 0.712,
+    "task": {
+     "clues": 0.712
+    },
+    "level": {
+     "clues:2": 0.712
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.025593116730451598,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.842672245630462
+    }
+   },
+   "adv": {
+    "all": 0.81,
+    "task": {
+     "clues": 0.81
+    },
+    "level": {
+     "clues:1": 0.81
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.006389015197753865,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8983755685510072
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.36",
+  "run": "active-learned-seed2",
+  "parent": "R1.35 (multiple hypotheses)",
+  "hypothesis": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+  "architecture": "active-learned",
+  "config": {
+   "kind": "active",
+   "d": 64,
+   "layers": 2,
+   "heads": 4,
+   "queries": 2,
+   "policy": "learned"
+  },
+  "seed": 2,
+  "dataset_hash": "3d5b9115b356732e2cfdfbd4a53cf84f8683b538235b726aa3f80d946f35c908",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 108228,
+  "active_parameters": 108228,
+  "flop_estimate": 5146624.0,
+  "checkpoint_sha256": "a235ad2dd26890ce21a61e2180a8d89cf50b001a8a3c59c7ef2b64dbb21129d5",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007784",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 275.6,
+  "cost_usd": 0.0,
+  "ci_run": "36595780971",
+  "metrics": {
+   "dev": {
+    "all": 0.764,
+    "task": {
+     "clues": 0.764
+    },
+    "level": {
+     "clues:1": 0.764
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.0036925665736198474,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8573464814979146
+    }
+   },
+   "holdout": {
+    "all": 0.733,
+    "task": {
+     "clues": 0.733
+    },
+    "level": {
+     "clues:1": 0.733
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.024333753645420068,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8582144079791121
+    }
+   },
+   "ood": {
+    "all": 0.75,
+    "task": {
+     "clues": 0.75
+    },
+    "level": {
+     "clues:2": 0.75
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.01564784613251683,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8569493333333333
+    }
+   },
+   "adv": {
+    "all": 0.746,
+    "task": {
+     "clues": 0.746
+    },
+    "level": {
+     "clues:1": 0.746
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.0123099223971367,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8514069789533681
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.36",
+  "run": "active-learned-seed3",
+  "parent": "R1.35 (multiple hypotheses)",
+  "hypothesis": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+  "architecture": "active-learned",
+  "config": {
+   "kind": "active",
+   "d": 64,
+   "layers": 2,
+   "heads": 4,
+   "queries": 2,
+   "policy": "learned"
+  },
+  "seed": 3,
+  "dataset_hash": "3d5b9115b356732e2cfdfbd4a53cf84f8683b538235b726aa3f80d946f35c908",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 108228,
+  "active_parameters": 108228,
+  "flop_estimate": 5146624.0,
+  "checkpoint_sha256": "29e2a00a81001108f79f8353cb669cce9a172f88316dca1bf1330f0762bbb83d",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007786",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 168.3,
+  "cost_usd": 0.0,
+  "ci_run": "36595780971",
+  "metrics": {
+   "dev": {
+    "all": 0.723,
+    "task": {
+     "clues": 0.723
+    },
+    "level": {
+     "clues:1": 0.723
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.020665487140417122,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8383390505864553
+    }
+   },
+   "holdout": {
+    "all": 0.778,
+    "task": {
+     "clues": 0.778
+    },
+    "level": {
+     "clues:1": 0.778
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.011433282077312487,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.873538062484078
+    }
+   },
+   "ood": {
+    "all": 0.747,
+    "task": {
+     "clues": 0.747
+    },
+    "level": {
+     "clues:2": 0.747
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.020507785022258748,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8650993962675472
+    }
+   },
+   "adv": {
+    "all": 0.778,
+    "task": {
+     "clues": 0.778
+    },
+    "level": {
+     "clues:1": 0.778
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.022928531467914584,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8225063109381875
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.36",
+  "run": "active-random-seed1",
+  "parent": "R1.35 (multiple hypotheses)",
+  "hypothesis": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+  "architecture": "active-random",
+  "config": {
+   "kind": "active",
+   "d": 64,
+   "layers": 2,
+   "heads": 4,
+   "queries": 2,
+   "policy": "random"
+  },
+  "seed": 1,
+  "dataset_hash": "3d5b9115b356732e2cfdfbd4a53cf84f8683b538235b726aa3f80d946f35c908",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 108228,
+  "active_parameters": 108228,
+  "flop_estimate": 5146624.0,
+  "checkpoint_sha256": "24dc811b7d3496906a0ddef44fe129aede9d903592538a89946005a9bc4e9ff3",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007790",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 153.2,
+  "cost_usd": 0.0,
+  "ci_run": "36595780971",
+  "metrics": {
+   "dev": {
+    "all": 0.757,
+    "task": {
+     "clues": 0.757
+    },
+    "level": {
+     "clues:1": 0.757
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.01849005460739135,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8341134323814494
+    }
+   },
+   "holdout": {
+    "all": 0.793,
+    "task": {
+     "clues": 0.793
+    },
+    "level": {
+     "clues:1": 0.793
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.014268411934375797,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8612009674019653
+    }
+   },
+   "ood": {
+    "all": 0.785,
+    "task": {
+     "clues": 0.785
+    },
+    "level": {
+     "clues:2": 0.785
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.005366270869970305,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8464049770404385
+    }
+   },
+   "adv": {
+    "all": 0.764,
+    "task": {
+     "clues": 0.764
+    },
+    "level": {
+     "clues:1": 0.764
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.01842281848192219,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8452391516549826
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.36",
+  "run": "active-random-seed2",
+  "parent": "R1.35 (multiple hypotheses)",
+  "hypothesis": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+  "architecture": "active-random",
+  "config": {
+   "kind": "active",
+   "d": 64,
+   "layers": 2,
+   "heads": 4,
+   "queries": 2,
+   "policy": "random"
+  },
+  "seed": 2,
+  "dataset_hash": "3d5b9115b356732e2cfdfbd4a53cf84f8683b538235b726aa3f80d946f35c908",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 108228,
+  "active_parameters": 108228,
+  "flop_estimate": 5146624.0,
+  "checkpoint_sha256": "3af76f5f2f39299ca4dc73188be189e4945cfd11741857785845d0e7227e5ae2",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007792",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 145.3,
+  "cost_usd": 0.0,
+  "ci_run": "36595780971",
+  "metrics": {
+   "dev": {
+    "all": 0.766,
+    "task": {
+     "clues": 0.766
+    },
+    "level": {
+     "clues:1": 0.766
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.022413479804992698,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8354254535716676
+    }
+   },
+   "holdout": {
+    "all": 0.783,
+    "task": {
+     "clues": 0.783
+    },
+    "level": {
+     "clues:1": 0.783
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.017406947314739248,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8635403240520036
+    }
+   },
+   "ood": {
+    "all": 0.786,
+    "task": {
+     "clues": 0.786
+    },
+    "level": {
+     "clues:2": 0.786
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.00585414186120029,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8594801550498204
+    }
+   },
+   "adv": {
+    "all": 0.776,
+    "task": {
+     "clues": 0.776
+    },
+    "level": {
+     "clues:1": 0.776
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.019905483186244965,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8769099779086893
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.36",
+  "run": "active-random-seed3",
+  "parent": "R1.35 (multiple hypotheses)",
+  "hypothesis": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+  "architecture": "active-random",
+  "config": {
+   "kind": "active",
+   "d": 64,
+   "layers": 2,
+   "heads": 4,
+   "queries": 2,
+   "policy": "random"
+  },
+  "seed": 3,
+  "dataset_hash": "3d5b9115b356732e2cfdfbd4a53cf84f8683b538235b726aa3f80d946f35c908",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 108228,
+  "active_parameters": 108228,
+  "flop_estimate": 5146624.0,
+  "checkpoint_sha256": "2f4d9ed9f489e23da64cddb497ae67d6eb4ff7ebb2319a26b671fb2fa76ebc7c",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007785",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 230.9,
+  "cost_usd": 0.0,
+  "ci_run": "36595780971",
+  "metrics": {
+   "dev": {
+    "all": 0.737,
+    "task": {
+     "clues": 0.737
+    },
+    "level": {
+     "clues:1": 0.737
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.01965554791688923,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8468614411523441
+    }
+   },
+   "holdout": {
+    "all": 0.753,
+    "task": {
+     "clues": 0.753
+    },
+    "level": {
+     "clues:1": 0.753
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.016763497084379173,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8615847003349625
+    }
+   },
+   "ood": {
+    "all": 0.762,
+    "task": {
+     "clues": 0.762
+    },
+    "level": {
+     "clues:2": 0.762
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.005130538910627363,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.852737157855268
+    }
+   },
+   "adv": {
+    "all": 0.77,
+    "task": {
+     "clues": 0.77
+    },
+    "level": {
+     "clues:1": 0.77
+    },
+    "steps": {
+     "clues": 2.0
+    },
+    "steps_mean": 2.0,
+    "calibration": {
+     "ece": 0.009132476687431341,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8677809147374365
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.36",
+  "run": "experiment",
+  "parent": "R1.35 (multiple hypotheses)",
+  "hypothesis": "Given a table of 4 candidates, can the model learn to choose the 2 attribute queries that best discriminate between them (expected information gain), and so answer better than random questions at the same compute?",
+  "architecture": [
+   "active-learned",
+   "active-random",
+   "active-eig"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "3d5b9115b356732e2cfdfbd4a53cf84f8683b538235b726aa3f80d946f35c908",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": null,
+  "flop_estimate": 20000000000000.0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 1931.1000000000001,
+  "cost_usd": 0.0,
+  "ci_run": "36595780971",
+  "metrics": {
+   "experiment": "R1.36",
+   "models": {
+    "active-learned": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "active",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.7583333333333333,
+       "sd": 0.032868424564212614,
+       "ci95": [
+        0.676677050341079,
+        0.8399896163255877
+       ],
+       "n": 3,
+       "values": [
+        0.788,
+        0.764,
+        0.723
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.7693333333333333,
+       "sd": 0.032868424564212614,
+       "ci95": [
+        0.687677050341079,
+        0.8509896163255877
+       ],
+       "n": 3,
+       "values": [
+        0.797,
+        0.733,
+        0.778
+       ]
+      },
+      "ood.all": {
+       "mean": 0.7363333333333334,
+       "sd": 0.02112660250332112,
+       "ci95": [
+        0.6838477075222813,
+        0.7888189591443855
+       ],
+       "n": 3,
+       "values": [
+        0.712,
+        0.75,
+        0.747
+       ]
+      },
+      "adv.all": {
+       "mean": 0.778,
+       "sd": 0.03200000000000003,
+       "ci95": [
+        0.6985011773336652,
+        0.8574988226663348
+       ],
+       "n": 3,
+       "values": [
+        0.81,
+        0.746,
+        0.778
+       ]
+      },
+      "dev.clues": {
+       "mean": 0.7583333333333333,
+       "sd": 0.032868424564212614,
+       "ci95": [
+        0.676677050341079,
+        0.8399896163255877
+       ],
+       "n": 3,
+       "values": [
+        0.788,
+        0.764,
+        0.723
+       ]
+      },
+      "ood.clues": {
+       "mean": 0.7363333333333334,
+       "sd": 0.02112660250332112,
+       "ci95": [
+        0.6838477075222813,
+        0.7888189591443855
+       ],
+       "n": 3,
+       "values": [
+        0.712,
+        0.75,
+        0.747
+       ]
+      },
+      "adv.clues": {
+       "mean": 0.778,
+       "sd": 0.03200000000000003,
+       "ci95": [
+        0.6985011773336652,
+        0.8574988226663348
+       ],
+       "n": 3,
+       "values": [
+        0.81,
+        0.746,
+        0.778
+       ]
+      },
+      "above_cue.clues": {
+       "mean": 0.4753333333333334,
+       "sd": 0.03286842456421264,
+       "ci95": [
+        0.393677050341079,
+        0.5569896163255877
+       ],
+       "n": 3,
+       "values": [
+        0.5050000000000001,
+        0.48100000000000004,
+        0.44
+       ]
+      },
+      "steps.clues": {
+       "mean": 2.0,
+       "sd": 0.0,
+       "ci95": [
+        2.0,
+        2.0
+       ],
+       "n": 3,
+       "values": [
+        2.0,
+        2.0,
+        2.0
+       ]
+      },
+      "params": 108228,
+      "params_active": 108228,
+      "stored_bytes": 432912,
+      "flops": {
+       "mean": 5146624.0,
+       "sd": 0.0,
+       "ci95": [
+        5146624.0,
+        5146624.0
+       ],
+       "n": 3,
+       "values": [
+        5146624.0,
+        5146624.0,
+        5146624.0
+       ]
+      },
+      "train_flops": {
+       "mean": 7905214464000.0,
+       "sd": 0.0,
+       "ci95": [
+        7905214464000.0,
+        7905214464000.0
+       ],
+       "n": 3,
+       "values": [
+        7905214464000.0,
+        7905214464000.0,
+        7905214464000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 26624,
+      "total_bytes": 26624,
+      "peak_rss_mb": {
+       "mean": 358.6666666666667,
+       "sd": 17.208234462992806,
+       "ci95": [
+        315.9155922924737,
+        401.41774104085965
+       ],
+       "n": 3,
+       "values": [
+        378.5,
+        349.8,
+        347.7
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.10699999999999998,
+       "sd": 0.034073450074801635,
+       "ci95": [
+        0.022350026089785466,
+        0.1916499739102145
+       ],
+       "n": 3,
+       "values": [
+        0.083,
+        0.146,
+        0.092
+       ]
+      },
+      "train_seconds": {
+       "mean": 194.36666666666667,
+       "sd": 71.83900982985035,
+       "ci95": [
+        15.894269698280766,
+        372.8390636350526
+       ],
+       "n": 3,
+       "values": [
+        139.2,
+        275.6,
+        168.3
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 777.5333333333333,
+       "sd": 287.4691171818867,
+       "ci95": [
+        63.36282180550188,
+        1491.7038448611647
+       ],
+       "n": 3,
+       "values": [
+        556.8,
+        1102.6,
+        673.2
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.7583333333333333,
+       "sd": 0.0477024457793658,
+       "ci95": [
+        0.6398243246532005,
+        0.8768423420134661
+       ],
+       "n": 3,
+       "values": [
+        0.8,
+        0.7063,
+        0.7687
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.013680312802394233,
+       "sd": 0.008875899200140274,
+       "ci95": [
+        -0.008370422713737448,
+        0.035731048318525915
+       ],
+       "n": 3,
+       "values": [
+        0.016682884693145727,
+        0.0036925665736198474,
+        0.020665487140417122
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.02058291596174239,
+       "sd": 0.00497306095982014,
+       "ci95": [
+        0.008228150606941967,
+        0.032937681316542816
+       ],
+       "n": 3,
+       "values": [
+        0.025593116730451598,
+        0.01564784613251683,
+        0.020507785022258748
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.8622666296489131,
+       "sd": 0.0267294618632693,
+       "ci95": [
+        0.7958616062540818,
+        0.9286716530437444
+       ],
+       "n": 3,
+       "values": [
+        0.8911143568623695,
+        0.8573464814979146,
+        0.8383390505864553
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.8549069917437807,
+       "sd": 0.011352208630964285,
+       "ci95": [
+        0.8267042660930225,
+        0.8831097173945389
+       ],
+       "n": 3,
+       "values": [
+        0.842672245630462,
+        0.8569493333333333,
+        0.8650993962675472
+       ]
+      }
+     },
+     "memory_tokens": 26
+    },
+    "active-random": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "active",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.7533333333333334,
+       "sd": 0.014843629385474892,
+       "ci95": [
+        0.7164567377008126,
+        0.7902099289658542
+       ],
+       "n": 3,
+       "values": [
+        0.757,
+        0.766,
+        0.737
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.7763333333333334,
+       "sd": 0.020816659994661344,
+       "ci95": [
+        0.7246177095389282,
+        0.8280489571277386
+       ],
+       "n": 3,
+       "values": [
+        0.793,
+        0.783,
+        0.753
+       ]
+      },
+      "ood.all": {
+       "mean": 0.7776666666666667,
+       "sd": 0.013576941236277546,
+       "ci95": [
+        0.7439369528012268,
+        0.8113963805321066
+       ],
+       "n": 3,
+       "values": [
+        0.785,
+        0.786,
+        0.762
+       ]
+      },
+      "adv.all": {
+       "mean": 0.77,
+       "sd": 0.006000000000000005,
+       "ci95": [
+        0.7550939707500622,
+        0.7849060292499378
+       ],
+       "n": 3,
+       "values": [
+        0.764,
+        0.776,
+        0.77
+       ]
+      },
+      "dev.clues": {
+       "mean": 0.7533333333333334,
+       "sd": 0.014843629385474892,
+       "ci95": [
+        0.7164567377008126,
+        0.7902099289658542
+       ],
+       "n": 3,
+       "values": [
+        0.757,
+        0.766,
+        0.737
+       ]
+      },
+      "ood.clues": {
+       "mean": 0.7776666666666667,
+       "sd": 0.013576941236277546,
+       "ci95": [
+        0.7439369528012268,
+        0.8113963805321066
+       ],
+       "n": 3,
+       "values": [
+        0.785,
+        0.786,
+        0.762
+       ]
+      },
+      "adv.clues": {
+       "mean": 0.77,
+       "sd": 0.006000000000000005,
+       "ci95": [
+        0.7550939707500622,
+        0.7849060292499378
+       ],
+       "n": 3,
+       "values": [
+        0.764,
+        0.776,
+        0.77
+       ]
+      },
+      "above_cue.clues": {
+       "mean": 0.4703333333333333,
+       "sd": 0.014843629385474892,
+       "ci95": [
+        0.4334567377008126,
+        0.507209928965854
+       ],
+       "n": 3,
+       "values": [
+        0.47400000000000003,
+        0.48300000000000004,
+        0.454
+       ]
+      },
+      "steps.clues": {
+       "mean": 2.0,
+       "sd": 0.0,
+       "ci95": [
+        2.0,
+        2.0
+       ],
+       "n": 3,
+       "values": [
+        2.0,
+        2.0,
+        2.0
+       ]
+      },
+      "params": 108228,
+      "params_active": 108228,
+      "stored_bytes": 432912,
+      "flops": {
+       "mean": 5146624.0,
+       "sd": 0.0,
+       "ci95": [
+        5146624.0,
+        5146624.0
+       ],
+       "n": 3,
+       "values": [
+        5146624.0,
+        5146624.0,
+        5146624.0
+       ]
+      },
+      "train_flops": {
+       "mean": 7905214464000.0,
+       "sd": 0.0,
+       "ci95": [
+        7905214464000.0,
+        7905214464000.0
+       ],
+       "n": 3,
+       "values": [
+        7905214464000.0,
+        7905214464000.0,
+        7905214464000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 26624,
+      "total_bytes": 26624,
+      "peak_rss_mb": {
+       "mean": 364.8999999999999,
+       "sd": 14.401041628993346,
+       "ci95": [
+        329.12294204144223,
+        400.6770579585576
+       ],
+       "n": 3,
+       "values": [
+        375.9,
+        370.2,
+        348.6
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.103,
+       "sd": 0.01682260384126072,
+       "ci95": [
+        0.0612069625136754,
+        0.1447930374863246
+       ],
+       "n": 3,
+       "values": [
+        0.09,
+        0.097,
+        0.122
+       ]
+      },
+      "train_seconds": {
+       "mean": 176.46666666666667,
+       "sd": 47.305848827955025,
+       "ci95": [
+        58.9429389462281,
+        293.99039438710525
+       ],
+       "n": 3,
+       "values": [
+        153.2,
+        145.3,
+        230.9
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 705.8333333333334,
+       "sd": 189.07539060738006,
+       "ci95": [
+        236.10611619383099,
+        1175.5605504728358
+       ],
+       "n": 3,
+       "values": [
+        612.8,
+        581.3,
+        923.4
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.7145666666666667,
+       "sd": 0.004735328218121022,
+       "ci95": [
+        0.7028025098454388,
+        0.7263308234878946
+       ],
+       "n": 3,
+       "values": [
+        0.7094,
+        0.7156,
+        0.7187
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.020186360776424425,
+       "sd": 0.002014854346889432,
+       "ci95": [
+        0.015180781138241405,
+        0.025191940414607445
+       ],
+       "n": 3,
+       "values": [
+        0.01849005460739135,
+        0.022413479804992698,
+        0.01965554791688923
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.0054503172139326525,
+       "sd": 0.00036905033324675295,
+       "ci95": [
+        0.004533471370253423,
+        0.006367163057611882
+       ],
+       "n": 3,
+       "values": [
+        0.005366270869970305,
+        0.00585414186120029,
+        0.005130538910627363
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.8388001090351537,
+       "sd": 0.0070120721993308845,
+       "ci95": [
+        0.8213797501508368,
+        0.8562204679194706
+       ],
+       "n": 3,
+       "values": [
+        0.8341134323814494,
+        0.8354254535716676,
+        0.8468614411523441
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.852874096648509,
+       "sd": 0.006538664555478978,
+       "ci95": [
+        0.8366298424619255,
+        0.8691183508350925
+       ],
+       "n": 3,
+       "values": [
+        0.8464049770404385,
+        0.8594801550498204,
+        0.852737157855268
+       ]
+      }
+     },
+     "memory_tokens": 26
+    },
+    "active-eig": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "active",
+     "metrics": {
+      "dev.all": {
+       "mean": 1.0,
+       "sd": 0.0,
+       "ci95": [
+        1.0,
+        1.0
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      },
+      "holdout.all": {
+       "mean": 1.0,
+       "sd": 0.0,
+       "ci95": [
+        1.0,
+        1.0
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      },
+      "ood.all": {
+       "mean": 1.0,
+       "sd": 0.0,
+       "ci95": [
+        1.0,
+        1.0
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      },
+      "adv.all": {
+       "mean": 1.0,
+       "sd": 0.0,
+       "ci95": [
+        1.0,
+        1.0
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      },
+      "dev.clues": {
+       "mean": 1.0,
+       "sd": 0.0,
+       "ci95": [
+        1.0,
+        1.0
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      },
+      "ood.clues": {
+       "mean": 1.0,
+       "sd": 0.0,
+       "ci95": [
+        1.0,
+        1.0
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      },
+      "adv.clues": {
+       "mean": 1.0,
+       "sd": 0.0,
+       "ci95": [
+        1.0,
+        1.0
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      },
+      "above_cue.clues": {
+       "mean": 0.7170000000000001,
+       "sd": 0.0,
+       "ci95": [
+        0.7170000000000001,
+        0.7170000000000001
+       ],
+       "n": 3,
+       "values": [
+        0.7170000000000001,
+        0.7170000000000001,
+        0.7170000000000001
+       ]
+      },
+      "steps.clues": {
+       "mean": 2.0,
+       "sd": 0.0,
+       "ci95": [
+        2.0,
+        2.0
+       ],
+       "n": 3,
+       "values": [
+        2.0,
+        2.0,
+        2.0
+       ]
+      },
+      "params": 108228,
+      "params_active": 108228,
+      "stored_bytes": 432912,
+      "flops": {
+       "mean": 5146624.0,
+       "sd": 0.0,
+       "ci95": [
+        5146624.0,
+        5146624.0
+       ],
+       "n": 3,
+       "values": [
+        5146624.0,
+        5146624.0,
+        5146624.0
+       ]
+      },
+      "train_flops": {
+       "mean": 7905214464000.0,
+       "sd": 0.0,
+       "ci95": [
+        7905214464000.0,
+        7905214464000.0
+       ],
+       "n": 3,
+       "values": [
+        7905214464000.0,
+        7905214464000.0,
+        7905214464000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 26624,
+      "total_bytes": 26624,
+      "peak_rss_mb": {
+       "mean": 346.7333333333333,
+       "sd": 2.150193789716042,
+       "ci95": [
+        341.39152474624296,
+        352.0751419204236
+       ],
+       "n": 3,
+       "values": [
+        346.2,
+        344.9,
+        349.1
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.19333333333333333,
+       "sd": 0.041101500378128944,
+       "ci95": [
+        0.09122330552454701,
+        0.29544336114211966
+       ],
+       "n": 3,
+       "values": [
+        0.214,
+        0.146,
+        0.22
+       ]
+      },
+      "train_seconds": {
+       "mean": 272.8666666666667,
+       "sd": 62.82040538975638,
+       "ci95": [
+        116.7995332945573,
+        428.93380003877604
+       ],
+       "n": 3,
+       "values": [
+        306.3,
+        200.4,
+        311.9
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 1091.6000000000001,
+       "sd": 251.312693670654,
+       "ci95": [
+        467.2542728774307,
+        1715.9457271225697
+       ],
+       "n": 3,
+       "values": [
+        1225.3,
+        801.7,
+        1247.8
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 1.0,
+       "sd": 0.0,
+       "ci95": [
+        1.0,
+        1.0
+       ],
+       "n": 3,
+       "values": [
+        1.0,
+        1.0,
+        1.0
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 4.9392382332295405e-08,
+       "sd": 3.7933537305328135e-08,
+       "ci95": [
+        -4.484735377217565e-08,
+        1.4363211843676645e-07
+       ],
+       "n": 3,
+       "values": [
+        6.091594695334379e-08,
+        7.033348126128658e-09,
+        8.022785191741377e-08
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 5.76972961259988e-08,
+       "sd": 8.606935471527169e-08,
+       "ci95": [
+        -1.5612809035885256e-07,
+        2.7152268261085017e-07
+       ],
+       "n": 3,
+       "values": [
+        1.1563301094419387e-08,
+        4.529952968290729e-09,
+        1.5699863431528627e-07
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.5,
+       "sd": 0.0,
+       "ci95": [
+        0.5,
+        0.5
+       ],
+       "n": 3,
+       "values": [
+        0.5,
+        0.5,
+        0.5
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.5,
+       "sd": 0.0,
+       "ci95": [
+        0.5,
+        0.5
+       ],
+       "n": 3,
+       "values": [
+        0.5,
+        0.5,
+        0.5
+       ]
+      }
+     },
+     "memory_tokens": 26
+    }
+   },
+   "cue_floors": {
+    "clues": 0.283
+   }
+  },
+  "result": "FAIL",
+  "decision": {
+   "complete": true,
+   "checks": {
+    "A1_vs_random": false,
+    "A2_near_eig": false,
+    "A3_ood": false
+   },
+   "result": "FAIL"
+  },
+  "recorded": "2026-09-29T23:32:51Z"
  }
 ]
