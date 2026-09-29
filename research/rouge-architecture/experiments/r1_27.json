@@ -1,0 +1,98 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.27",
+ "title": "Shared basis bank: every MLP matrix is a mix of 2 shared bases",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "Can a small shared basis (2 matrices per shape, per-layer coefficients) represent the MLPs of 4 layers better than a dense model with the same bytes?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "dense": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "dense-d52": {
+    "kind": "structured",
+    "d": 52,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "bank2": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "bank",
+    "bank_size": 2
+   }
+  },
+  "stored_bytes_measured_untrained": {
+   "dense": "806 KiB",
+   "dense-d52": "~532 KiB",
+   "bank2": "550 KiB"
+  },
+  "gate": {
+   "checks": {
+    "B1": {
+     "left": "bank2:dev.all",
+     "op": ">=",
+     "right": "dense-d52:dev.all",
+     "plus": 0.02
+    },
+    "B2": {
+     "left": "bank2:dev.all",
+     "op": ">=",
+     "right": "dense-d52:dev.all",
+     "plus": -0.02
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "B1"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "B2"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 120000000000000.0
+ },
+ "predictions": {
+  "PASS": "bank2 beats the byte-matched dense model (d=52) by >= 2 points"
+ },
+ "prior_art": "Savarese & Maire 1902.09701 (template sharing), ALBERT 1909.11942 (cross-layer sharing)",
+ "not_claimed": "Every weight representation here is prior art; the question is capability per stored byte on this benchmark, against a plain dense model with the same bytes."
+}

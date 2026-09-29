@@ -1,0 +1,97 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.25",
+ "title": "Generated weights: a per-input low-rank delta from a small hypernetwork",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "Does generating a rank-2 MLP delta per input (W0 + U(c) V(c)) beat a dense model with the same stored bytes?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "dense": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "dense-d80": {
+    "kind": "structured",
+    "d": 80,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "hyper": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "hyper"
+   }
+  },
+  "stored_bytes_measured_untrained": {
+   "dense": "806 KiB",
+   "dense-d80": "~1.26 MB",
+   "hyper": "1226 KiB"
+  },
+  "gate": {
+   "checks": {
+    "G1": {
+     "left": "hyper:dev.all",
+     "op": ">=",
+     "right": "dense-d80:dev.all",
+     "plus": 0.02
+    },
+    "G2": {
+     "left": "hyper:dev.all",
+     "op": ">=",
+     "right": "dense-d80:dev.all",
+     "plus": -0.02
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "G1"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "G2"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 120000000000000.0
+ },
+ "predictions": {
+  "PASS": "hyper beats the byte-matched dense model (d=80, ~1.26 MB) by >= 2 points"
+ },
+ "prior_art": "HyperNetworks 1609.09106, LoRA 2106.09685",
+ "not_claimed": "Every weight representation here is prior art; the question is capability per stored byte on this benchmark, against a plain dense model with the same bytes."
+}

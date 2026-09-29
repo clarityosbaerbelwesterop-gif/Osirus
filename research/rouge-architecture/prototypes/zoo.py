@@ -136,6 +136,9 @@ def build(kind: str, vocab: int, **config) -> nn.Module:
     if kind == "moe":
         from prototypes.sparse_circuits import SparseTransformer
         return SparseTransformer(vocab, **config)
+    if kind == "structured":
+        from prototypes.structured import StructuredTransformer
+        return StructuredTransformer(vocab, **config)
     if kind == "rouge":
         from prototypes.rouge_r101 import Rouge
         return Rouge(vocab, **config)

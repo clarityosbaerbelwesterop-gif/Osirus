@@ -1,0 +1,99 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.29",
+ "title": "Ternary weights trained from the start (BitNet b1.58-style MLP)",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "Do ternary MLP weights (2 bits stored) give more capability per stored byte than a full-precision dense model with the same bytes?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "dense": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "dense-tiny": {
+    "kind": "structured",
+    "d": 40,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "ternary": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "ternary"
+   }
+  },
+  "stored_bytes_measured_untrained": {
+   "dense": "806 KiB",
+   "dense-tiny": "324 KiB",
+   "ternary": "326 KiB (MLP at 2 bits)"
+  },
+  "gate": {
+   "checks": {
+    "T1_per_byte": {
+     "left": "ternary:dev.all",
+     "op": ">=",
+     "right": "dense-tiny:dev.all",
+     "plus": 0.02
+    },
+    "T2_near_fp32": {
+     "left": "ternary:dev.all",
+     "op": ">=",
+     "right": "dense:dev.all",
+     "plus": -0.03
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "T1_per_byte",
+      "T2_near_fp32"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "any": [
+      "T1_per_byte",
+      "T2_near_fp32"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 120000000000000.0
+ },
+ "predictions": {
+  "PASS": "ternary beats the byte-matched fp32 model AND stays within 3 points of full-size fp32"
+ },
+ "prior_art": "BitNet 2310.11453, BitNet b1.58 2402.17764",
+ "not_claimed": "Every weight representation here is prior art; the question is capability per stored byte on this benchmark, against a plain dense model with the same bytes."
+}

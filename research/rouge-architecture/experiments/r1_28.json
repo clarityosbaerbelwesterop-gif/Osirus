@@ -1,0 +1,97 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.28",
+ "title": "Implicit weight fields: W[o, i] = f(phi(o), phi(i))",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.05 (prior-art map), R1.07/R1.08 (scorecard on benchmark v3)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "Can a small coordinate network that generates the MLP weights match a byte-matched dense model, and what does decoding cost?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "dense-tiny": {
+    "kind": "structured",
+    "d": 40,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "field": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "field"
+   }
+  },
+  "stored_bytes_measured_untrained": {
+   "dense-tiny": "324 KiB, 8.9 MFLOP",
+   "field": "361 KiB, 47.6 MFLOP (weights decoded per batch)"
+  },
+  "gate": {
+   "checks": {
+    "F1": {
+     "left": "field:dev.all",
+     "op": ">=",
+     "right": "dense-tiny:dev.all",
+     "plus": 0.02
+    },
+    "F2": {
+     "left": "field:dev.all",
+     "op": ">=",
+     "right": "dense-tiny:dev.all",
+     "plus": -0.02
+    },
+    "F3_decode_cost": {
+     "left": "field:flops",
+     "op": "<=",
+     "right": "dense-tiny:flops",
+     "times": 2
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "F1",
+      "F3_decode_cost"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "F2"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 120000000000000.0
+ },
+ "predictions": {
+  "PASS": "better than dense at equal bytes AND decoding at most doubles FLOPs",
+  "expected": "decoding cost dominates (47.6 vs 8.9 MFLOP untrained): the brief says reject if it does"
+ },
+ "prior_art": "SIREN 2006.09661, HyperNetworks 1609.09106",
+ "not_claimed": "Every weight representation here is prior art; the question is capability per stored byte on this benchmark, against a plain dense model with the same bytes."
+}

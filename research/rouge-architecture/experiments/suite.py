@@ -209,6 +209,7 @@ def train(args) -> None:
         "cpu_core_seconds": round(train_seconds * args.threads, 1), "hardware": hardware(),
         "code_sha": os.environ.get("GITHUB_SHA", "local"),
         "params": params, "params_active": zoo.active_parameters(model),
+        "stored_bytes": model.stored_bytes() if hasattr(model, "stored_bytes") else 4 * params,
         "disk_bytes": ckpt.stat().st_size, "checkpoint_sha256": hashlib.sha256(ckpt.read_bytes()).hexdigest(),
         "flops_per_example": flops, "train_flops": 3 * flops * seen,
         "memory": {"mean_dev_tokens": round(mean_len, 1), "at_mean": zoo.memory_bytes(model, round(mean_len)),
@@ -244,7 +245,7 @@ def report(args) -> None:
             metrics[f"above_cue.{t}"] = s(lambda r, t=t, f=floor: r["dev"]["task"][t] - f)
             metrics[f"steps.{t}"] = s(lambda r, t=t: r["dev"]["steps"][t])
         metrics.update({
-            "params": rs[0]["params"], "params_active": rs[0]["params_active"],
+            "params": rs[0]["params"], "params_active": rs[0]["params_active"], "stored_bytes": rs[0].get("stored_bytes", 4 * rs[0]["params"]),
             "flops": s(lambda r: r["flops_per_example"]), "train_flops": s(lambda r: r["train_flops"]),
             "state_bytes": rs[0]["memory"]["at_max_ood"]["state"], "kv_bytes": rs[0]["memory"]["at_max_ood"]["kv"],
             "total_bytes": rs[0]["memory"]["at_max_ood"]["state"] + rs[0]["memory"]["at_max_ood"]["kv"],
@@ -279,6 +280,7 @@ def markdown(summary: dict) -> str:
     rows = [
         ("parameters (physical)", lambda r: f"{r['params']:,}"),
         ("parameters (active)", lambda r: f"{r['params_active']:,}"),
+        ("stored weight bytes", lambda r: f"{r['stored_bytes'] / 1024:.0f} KiB"),
         ("inference FLOPs / example", lambda r: f"{r['flops']['mean'] / 1e6:.1f} M"),
         ("training FLOPs (3x fwd x examples)", lambda r: f"{r['train_flops']['mean']:.2e}"),
         ("persistent state bytes", lambda r: f"{r['state_bytes'] / 1024:.1f} KiB"),
