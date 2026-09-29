@@ -1,0 +1,72 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.01",
+ "title": "Persistent latent state + adaptive recurrent compute vs a parameter-matched Transformer",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "question": "At the same parameter budget, training data, token budget, optimizer and hardware, does a model that keeps a fixed-size persistent latent state and iterates a shared cell a learned number of times before answering reason better than a standard Transformer -- and where does it lose?",
+ "setup": {
+  "data": "benchmarks/microbench.py: tasks state, hops, recall; training on the ID ranges only, a fresh random stream per seed",
+  "batch": 64,
+  "steps": 3000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "optimizer": "AdamW, cosine decay, grad clip 1.0",
+  "eval_per_task": 300,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "CPU, 1 thread per run (GitHub Actions runners or any CPU)",
+  "models": {
+   "transformer": {
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "rouge": {
+    "d": 128,
+    "slots": 8,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01
+   },
+   "rouge-fixed": {
+    "d": 128,
+    "slots": 8,
+    "heads": 4,
+    "halting": false,
+    "think_steps": 4
+   },
+   "transformer-flops": {
+    "d": 192,
+    "layers": 4,
+    "heads": 4
+   }
+  },
+  "parameters": {
+   "transformer": 205740,
+   "rouge": 211373,
+   "rouge-fixed": 211373,
+   "transformer-flops": 1796780
+  },
+  "baselines_note": "Two baselines: 'transformer' matches Rouge's parameters (205,740 vs 211,373); 'transformer-flops' matches Rouge's compute per example (138 vs ~110-124 MFLOP measured on the ID set). A pilot (40 steps, not evidence) showed Rouge costs ~11x the FLOPs of the parameter-matched Transformer, so a win must also hold against the FLOP-matched one."
+ },
+ "predictions": {
+  "P1_state": "Multi-step state, OOD (16-32 operations): rouge >= transformer + 0.20 exact match (mean of 3 seeds) and rouge > transformer in every seed.",
+  "P2_hops": "Variable depth, OOD (6-8 hops): rouge >= transformer + 0.10 (mean), and rouge's think steps rise with the hop count (Spearman rho >= 0.6 over hop levels 1-8).",
+  "P3_recall": "Long dependency / many facts: transformer >= rouge on recall, ID and OOD. A fixed-size state is expected to lose to attention over the whole context here.",
+  "P4_adaptive": "Adaptive halting is not worse than fixed 4-step thinking (OOD all >= rouge-fixed - 0.02), and thinking longer at test time (max 16 steps) does not reduce OOD accuracy.",
+  "P5_compute": "Against the FLOP-matched Transformer, rouge is still ahead on the task(s) where P1/P2 hold; otherwise the gain is bought with compute, not architecture."
+ },
+ "decision": {
+  "advance": "P1 or P2 holds AND P5 holds for that task: continue with R1.02 (learned halting, compute penalty sweep) and R1.03 (state probes) on this prototype.",
+  "fail": "Otherwise: do not scale. Diagnose (optimisation, state capacity, halting collapse, read cost) and register a changed prototype as R1.01b.",
+  "chance_level": 0.1,
+  "report": "Wins and losses per task, every seed, parameters, disk, state memory, FLOPs, latency and wall-clock -- including where Rouge loses."
+ },
+ "not_claimed": "Persistent state, recurrence and ACT halting are prior art (see docs/rouge/research/rouge-architecture-r1.md). R1.01 tests whether this combination buys capability per parameter on controlled tasks; it is not a claim of novelty or of general intelligence."
+}

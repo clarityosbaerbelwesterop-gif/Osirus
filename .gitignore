@@ -11,3 +11,6 @@ test-results-prod
 .vercel
 /provider-diagnostics.json
 /provider-diagnostics.md
+
+# Rouge research checkpoints are CI artifacts (sha256 in the result JSON), never committed.
+research/rouge-architecture/results/**/checkpoints/
