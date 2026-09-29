@@ -21,9 +21,12 @@ from prototypes.transformer_baseline import rope
 
 
 class MoE(nn.Module):
-    def __init__(self, d: int, experts: int, hidden: int, top_k: int):
+    def __init__(self, d: int, experts: int, hidden: int, top_k: int, router_input: str = "token"):
         super().__init__()
-        self.router = nn.Linear(d, experts, bias=False)
+        # R1.19: "context" routes on the token plus the causal mean of the sequence so far
+        # (a task representation), so the circuit can depend on what the input is about.
+        self.router_input = router_input
+        self.router = nn.Linear(2 * d if router_input == "context" else d, experts, bias=False)
         self.w1 = nn.Parameter(torch.randn(experts, d, hidden) * d ** -0.5)
         self.b1 = nn.Parameter(torch.zeros(experts, hidden))
         self.w2 = nn.Parameter(torch.randn(experts, hidden, d) * hidden ** -0.5)
@@ -34,7 +37,12 @@ class MoE(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         shape = x.shape
         flat = x.reshape(-1, shape[-1])
-        probs = F.softmax(self.router(flat), dim=-1)                  # (N, E)
+        if self.router_input == "context":
+            ctx = x.cumsum(1) / torch.arange(1, x.shape[1] + 1)[None, :, None]   # causal mean of the sequence so far
+            feats = torch.cat([x, ctx], -1).reshape(-1, 2 * shape[-1])
+        else:
+            feats = flat
+        probs = F.softmax(self.router(feats), dim=-1)                 # (N, E)
         weight, chosen = probs.topk(self.top_k, dim=-1)               # (N, K)
         weight = weight / weight.sum(-1, keepdim=True)
         out = torch.zeros_like(flat)
@@ -50,12 +58,12 @@ class MoE(nn.Module):
 
 
 class SparseBlock(nn.Module):
-    def __init__(self, d: int, heads: int, experts: int, hidden: int, top_k: int):
+    def __init__(self, d: int, heads: int, experts: int, hidden: int, top_k: int, router_input: str = "token"):
         super().__init__()
         self.heads = heads
         self.ln1, self.ln2 = nn.LayerNorm(d), nn.LayerNorm(d)
         self.qkv, self.out = nn.Linear(d, 3 * d), nn.Linear(d, d)
-        self.moe = MoE(d, experts, hidden, top_k)
+        self.moe = MoE(d, experts, hidden, top_k, router_input)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         b, t, d = x.shape
@@ -67,10 +75,10 @@ class SparseBlock(nn.Module):
 
 class SparseTransformer(nn.Module):
     def __init__(self, vocab: int, d: int = 64, layers: int = 4, heads: int = 4, experts: int = 8,
-                 hidden: int = 128, top_k: int = 2, balance: float = 0.01):
+                 hidden: int = 128, top_k: int = 2, balance: float = 0.01, router_input: str = "token"):
         super().__init__()
         self.embed = nn.Embedding(vocab, d)
-        self.blocks = nn.ModuleList(SparseBlock(d, heads, experts, hidden, top_k) for _ in range(layers))
+        self.blocks = nn.ModuleList(SparseBlock(d, heads, experts, hidden, top_k, router_input) for _ in range(layers))
         self.ln = nn.LayerNorm(d)
         self.head = nn.Linear(d, vocab)
         self.d, self.layers, self.balance = d, layers, balance

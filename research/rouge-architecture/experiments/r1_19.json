@@ -1,0 +1,108 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.19",
+ "title": "Circuit routing on context: the router sees the token and the sequence so far",
+ "status": "pre-registered",
+ "registered": "2026-09-29",
+ "follows": "R1.04 (PARTIAL: token routing specialises without gain), R1.22 (PASS: real sparse dispatch saves time)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/suite3.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "If the router sees a task representation (the causal mean of the sequence so far) next to the token, does it build task-specific circuits (higher token-conditioned task-expert NMI) and gain accuracy over token-only routing at equal active compute?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "moe-token": {
+    "kind": "moe",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "experts": 8,
+    "hidden": 128,
+    "top_k": 2,
+    "balance": 0.01,
+    "router_input": "token"
+   },
+   "moe-context": {
+    "kind": "moe",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "experts": 8,
+    "hidden": 128,
+    "top_k": 2,
+    "balance": 0.01,
+    "router_input": "context"
+   }
+  },
+  "gate": {
+   "checks": {
+    "C1_accuracy": {
+     "left": "moe-context:dev.all",
+     "op": ">=",
+     "right": "moe-token:dev.all",
+     "plus": 0.02
+    },
+    "C2_circuits": {
+     "left": "moe-context:routing.nmi_given_token",
+     "op": ">=",
+     "right": "moe-token:routing.nmi_given_token",
+     "plus": 0.05
+    },
+    "C3_vs_dense": {
+     "left": "moe-context:dev.all",
+     "op": ">=",
+     "right": "transformer:dev.all",
+     "plus": 0.02
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "C1_accuracy",
+      "C2_circuits"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "any": [
+      "C1_accuracy",
+      "C2_circuits"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 120000000000000.0
+ },
+ "predictions": {
+  "PASS": "context routing gains >= 2 points over token routing AND its token-conditioned task-expert NMI is >= 0.05 higher",
+  "C3": "reported: beats the dense Transformer of equal active size by >= 2 points"
+ },
+ "prior_art": "Switch 2101.03961, task-level MoE routing (e.g. Task-MoE, Kudugunta et al. 2021), Mixture-of-Depths 2404.02258",
+ "not_claimed": "Routing on richer inputs is prior art; the measurement on this benchmark is the question."
+}

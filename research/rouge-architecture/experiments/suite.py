@@ -45,6 +45,7 @@ sys.path.insert(0, str(ROOT))
 from benchmarks import audit  # noqa: E402
 from benchmarks import suite3 as bench  # noqa: E402
 from lab import gate, stats  # noqa: E402
+from lab.routing import routing  # noqa: E402
 from prototypes import zoo  # noqa: E402
 
 PREREG: dict = {}
@@ -278,6 +279,11 @@ def train(args) -> None:
         "sample_efficiency": round(sum(c["probe"] for c in curve) / len(curve), 4),
         "curve": curve, **results,
     }
+    route_set = [e for t in bench.TASKS for e in bench.fixed_set("routing", 20, "dev", (t,))]
+    result["routing"] = routing(model, route_set, list(bench.TASKS), collate)
+    if result["routing"]:
+        torch.manual_seed(args.seed)  # the same router before training: the reference for specialisation
+        result["routing_init"] = routing(build(args.model), route_set, list(bench.TASKS), collate)
     if hasattr(model, "variants"):  # inference settings of one trained model (depth knob, capacity, exit threshold)
         result["variants"] = {}
         full_rows = None
@@ -329,6 +335,9 @@ def report(args) -> None:
             "train_seconds": s(lambda r: r["train_seconds"]), "cpu_core_seconds": s(lambda r: r["cpu_core_seconds"]),
             "sample_efficiency": s(lambda r: r["sample_efficiency"]),
         })
+        for key in rs[0].get("routing", {}):
+            metrics[f"routing.{key}"] = s(lambda r, k=key: r["routing"][k])
+            metrics[f"routing_init.{key}"] = s(lambda r, k=key: r["routing_init"][k])
         for key in rs[0]["dev"].get("calibration", {}):
             metrics[f"dev.cal.{key}"] = s(lambda r, k=key: r["dev"]["calibration"][k])
             metrics[f"ood.cal.{key}"] = s(lambda r, k=key: r["ood"]["calibration"][k])
