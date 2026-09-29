@@ -160,9 +160,13 @@ def train(args) -> None:
 
     deadline = time.time() + args.budget_min * 60 if args.budget_min else None
     train_steps = []
+    # Depth curriculum (R1.02c): train on depths 1..level; raise the level when
+    # the model answers >= `promote` of fresh examples at depth == level.
+    cur = SETUP.get("curriculum")
+    level = curve[-1].get("curriculum_level", 1) if (cur and curve) else (1 if cur else None)
     for step in range(first, args.steps + 1):
         set_schedule(step - 1)
-        ids, lengths, answers = collate(db.batch(rng, SETUP["batch"], "id"))
+        ids, lengths, answers = collate(db.batch(rng, SETUP["batch"], "id", max_depth=level))
         examples_seen += len(answers)
         logits, info = model(ids, lengths)
         loss = loss_of(model, logits, info, answers)
@@ -175,7 +179,12 @@ def train(args) -> None:
             train_steps.append(float(info["ponder"].detach().float().mean()))
         if step % args.eval_every == 0 or step == args.steps:
             probe_eval = evaluate(model, probe)
+            if cur and level < max(db.DEPTHS["id"]):
+                check = evaluate(model, [db.example(random.Random(f"curriculum:{step}:{i}"), level) for i in range(cur["check_examples"])])
+                if check["all"] >= cur["promote"]:
+                    level += 1
             curve.append({"step": step, "loss": round(loss.item(), 4), "probe_id": round(probe_eval["all"], 3),
+                          "curriculum_level": level,
                           "probe_steps": round(probe_eval["steps_mean"], 2),
                           "train_ponder": round(sum(train_steps) / len(train_steps), 2) if train_steps else None,
                           "elapsed_s": round(time.time() - start, 1)})

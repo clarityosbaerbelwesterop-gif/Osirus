@@ -49,8 +49,10 @@ def example(r: random.Random, depth: int) -> tuple[list[int], int, int, int]:
     return [ID[t] for t in tokens], ID[chain[-1]], depth, 2
 
 
-def batch(r: random.Random, size: int, split: str = "id") -> list:
-    return [example(r, r.choice(DEPTHS[split])) for _ in range(size)]
+def batch(r: random.Random, size: int, split: str = "id", max_depth: int | None = None) -> list:
+    """`max_depth` (training curriculum) restricts ID depths to 1..max_depth."""
+    depths = [d for d in DEPTHS[split] if max_depth is None or d <= max_depth]
+    return [example(r, r.choice(depths)) for _ in range(size)]
 
 
 def fixed_set(seed: str, per_depth: int, split: str) -> list:
