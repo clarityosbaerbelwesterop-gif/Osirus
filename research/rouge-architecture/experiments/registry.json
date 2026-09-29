@@ -200670,5 +200670,3461 @@
    "result": "FAIL"
   },
   "recorded": "2026-09-29T23:39:47Z"
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "exec-rl-seed1",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "exec-rl",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0,
+   "objective": "reinforce"
+  },
+  "seed": 1,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "7adaa18d5d47077a29893d4bac981fd0cffe2e171c8ee72da156ae90adaed051",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007803",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2245.9,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.145,
+    "task": {
+     "trace": 0.12,
+     "chain": 0.17
+    },
+    "level": {
+     "trace:1": 0.0962,
+     "trace:2": 0.0816,
+     "trace:3": 0.1132,
+     "trace:4": 0.1957,
+     "chain:2": 0.1538,
+     "chain:3": 0.2222,
+     "chain:4": 0.2069,
+     "chain:5": 0.1429,
+     "chain:6": 0.25,
+     "chain:7": 0.08,
+     "chain:8": 0.08
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.347337384223938,
+     "confident_error_rate": 0.17,
+     "auroc_confidence": 0.632183908045977
+    }
+   },
+   "holdout": {
+    "all": 0.1575,
+    "task": {
+     "trace": 0.18,
+     "chain": 0.135
+    },
+    "level": {
+     "trace:1": 0.1458,
+     "trace:2": 0.2609,
+     "trace:3": 0.1,
+     "trace:4": 0.2143,
+     "chain:2": 0.1351,
+     "chain:3": 0.1111,
+     "chain:4": 0.1935,
+     "chain:5": 0.0526,
+     "chain:6": 0.2,
+     "chain:7": 0.1111,
+     "chain:8": 0.1034
+    },
+    "steps": {
+     "trace": 2.57,
+     "chain": 4.875
+    },
+    "steps_mean": 3.7225,
+    "calibration": {
+     "ece": 0.3529512893408537,
+     "confident_error_rate": 0.195,
+     "auroc_confidence": 0.6491686684565022
+    }
+   },
+   "ood": {
+    "all": 0.16,
+    "task": {
+     "trace": 0.14,
+     "chain": 0.18
+    },
+    "level": {
+     "trace:6": 0.1852,
+     "trace:7": 0.175,
+     "trace:8": 0.1333,
+     "trace:9": 0.0652,
+     "chain:12": 0.2353,
+     "chain:13": 0.12,
+     "chain:14": 0.2195,
+     "chain:15": 0.1143,
+     "chain:16": 0.225
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.37814840078353884,
+     "confident_error_rate": 0.225,
+     "auroc_confidence": 0.525390625
+    }
+   },
+   "adv": {
+    "all": 0.085,
+    "task": {
+     "trace": 0.11,
+     "chain": 0.06
+    },
+    "level": {
+     "trace:1": 0.1724,
+     "trace:2": 0.0667,
+     "trace:3": 0.1,
+     "trace:4": 0.0952,
+     "chain:2": 0.0,
+     "chain:3": 0.0,
+     "chain:4": 0.0667,
+     "chain:5": 0.0417,
+     "chain:6": 0.3,
+     "chain:7": 0.0,
+     "chain:8": 0.0667
+    },
+    "steps": {
+     "trace": 2.33,
+     "chain": 4.83
+    },
+    "steps_mean": 3.58,
+    "calibration": {
+     "ece": 0.42723192721605296,
+     "confident_error_rate": 0.245,
+     "auroc_confidence": 0.4087110253937641
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "exec-rl-seed2",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "exec-rl",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0,
+   "objective": "reinforce"
+  },
+  "seed": 2,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "ffce42d2f2425c7b28731a7c6143fbdcd6a17dc5fd9f101388187d656c738c6d",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007794",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2803.1,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.155,
+    "task": {
+     "trace": 0.165,
+     "chain": 0.145
+    },
+    "level": {
+     "trace:1": 0.1154,
+     "trace:2": 0.102,
+     "trace:3": 0.2264,
+     "trace:4": 0.2174,
+     "chain:2": 0.1538,
+     "chain:3": 0.1111,
+     "chain:4": 0.1724,
+     "chain:5": 0.2143,
+     "chain:6": 0.175,
+     "chain:7": 0.12,
+     "chain:8": 0.04
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.36763389747589825,
+     "confident_error_rate": 0.255,
+     "auroc_confidence": 0.5725567856461157
+    }
+   },
+   "holdout": {
+    "all": 0.1475,
+    "task": {
+     "trace": 0.155,
+     "chain": 0.14
+    },
+    "level": {
+     "trace:1": 0.1458,
+     "trace:2": 0.2391,
+     "trace:3": 0.08,
+     "trace:4": 0.1607,
+     "chain:2": 0.1351,
+     "chain:3": 0.1111,
+     "chain:4": 0.0968,
+     "chain:5": 0.2105,
+     "chain:6": 0.1667,
+     "chain:7": 0.1111,
+     "chain:8": 0.1724
+    },
+    "steps": {
+     "trace": 2.57,
+     "chain": 4.875
+    },
+    "steps_mean": 3.7225,
+    "calibration": {
+     "ece": 0.37448589015752076,
+     "confident_error_rate": 0.265,
+     "auroc_confidence": 0.5774392365425717
+    }
+   },
+   "ood": {
+    "all": 0.145,
+    "task": {
+     "trace": 0.115,
+     "chain": 0.175
+    },
+    "level": {
+     "trace:6": 0.1852,
+     "trace:7": 0.075,
+     "trace:8": 0.1,
+     "trace:9": 0.087,
+     "chain:12": 0.1176,
+     "chain:13": 0.12,
+     "chain:14": 0.3171,
+     "chain:15": 0.1143,
+     "chain:16": 0.2
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.3266683564707637,
+     "confident_error_rate": 0.205,
+     "auroc_confidence": 0.5323149828594474
+    }
+   },
+   "adv": {
+    "all": 0.075,
+    "task": {
+     "trace": 0.08,
+     "chain": 0.07
+    },
+    "level": {
+     "trace:1": 0.069,
+     "trace:2": 0.0667,
+     "trace:3": 0.1,
+     "trace:4": 0.0952,
+     "chain:2": 0.1905,
+     "chain:3": 0.0,
+     "chain:4": 0.0667,
+     "chain:5": 0.0417,
+     "chain:6": 0.1,
+     "chain:7": 0.0,
+     "chain:8": 0.0
+    },
+    "steps": {
+     "trace": 2.33,
+     "chain": 4.83
+    },
+    "steps_mean": 3.58,
+    "calibration": {
+     "ece": 0.46988285809755326,
+     "confident_error_rate": 0.335,
+     "auroc_confidence": 0.3798198198198198
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "exec-rl-seed3",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "exec-rl",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0,
+   "objective": "reinforce"
+  },
+  "seed": 3,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "de9ec598a37292236c0c7e1d792796b233069613b8666954f2f36dfaa989497b",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007801",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2297.4,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.145,
+    "task": {
+     "trace": 0.135,
+     "chain": 0.155
+    },
+    "level": {
+     "trace:1": 0.0769,
+     "trace:2": 0.0816,
+     "trace:3": 0.1509,
+     "trace:4": 0.2391,
+     "chain:2": 0.1154,
+     "chain:3": 0.1481,
+     "chain:4": 0.1724,
+     "chain:5": 0.1786,
+     "chain:6": 0.2,
+     "chain:7": 0.12,
+     "chain:8": 0.12
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.3975267812237143,
+     "confident_error_rate": 0.295,
+     "auroc_confidence": 0.6159255898366606
+    }
+   },
+   "holdout": {
+    "all": 0.1275,
+    "task": {
+     "trace": 0.145,
+     "chain": 0.11
+    },
+    "level": {
+     "trace:1": 0.1042,
+     "trace:2": 0.2609,
+     "trace:3": 0.1,
+     "trace:4": 0.125,
+     "chain:2": 0.1351,
+     "chain:3": 0.0741,
+     "chain:4": 0.0968,
+     "chain:5": 0.1053,
+     "chain:6": 0.1,
+     "chain:7": 0.1111,
+     "chain:8": 0.1379
+    },
+    "steps": {
+     "trace": 2.57,
+     "chain": 4.875
+    },
+    "steps_mean": 3.7225,
+    "calibration": {
+     "ece": 0.42533307984471325,
+     "confident_error_rate": 0.315,
+     "auroc_confidence": 0.6395584021574245
+    }
+   },
+   "ood": {
+    "all": 0.1475,
+    "task": {
+     "trace": 0.14,
+     "chain": 0.155
+    },
+    "level": {
+     "trace:6": 0.2222,
+     "trace:7": 0.125,
+     "trace:8": 0.15,
+     "trace:9": 0.0435,
+     "chain:12": 0.1471,
+     "chain:13": 0.12,
+     "chain:14": 0.2439,
+     "chain:15": 0.1143,
+     "chain:16": 0.15
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.4044525715708733,
+     "confident_error_rate": 0.2875,
+     "auroc_confidence": 0.5168745961528903
+    }
+   },
+   "adv": {
+    "all": 0.095,
+    "task": {
+     "trace": 0.11,
+     "chain": 0.08
+    },
+    "level": {
+     "trace:1": 0.1379,
+     "trace:2": 0.0333,
+     "trace:3": 0.1,
+     "trace:4": 0.1905,
+     "chain:2": 0.0952,
+     "chain:3": 0.0,
+     "chain:4": 0.0667,
+     "chain:5": 0.0833,
+     "chain:6": 0.1,
+     "chain:7": 0.0,
+     "chain:8": 0.1333
+    },
+    "steps": {
+     "trace": 2.33,
+     "chain": 4.83
+    },
+    "steps_mean": 3.58,
+    "calibration": {
+     "ece": 0.4621936693787574,
+     "confident_error_rate": 0.37,
+     "auroc_confidence": 0.41392846757778423
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "exec-sup-seed1",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "exec-sup",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0
+  },
+  "seed": 1,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "94e9263684f03ed98c1d56904186e717d9e125d79cfd7938fcd03fac98136a76",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007799",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2816.8,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.3525,
+    "task": {
+     "trace": 0.445,
+     "chain": 0.26
+    },
+    "level": {
+     "trace:1": 0.3269,
+     "trace:2": 0.4898,
+     "trace:3": 0.4151,
+     "trace:4": 0.5652,
+     "chain:2": 0.3462,
+     "chain:3": 0.2593,
+     "chain:4": 0.2069,
+     "chain:5": 0.2857,
+     "chain:6": 0.225,
+     "chain:7": 0.2,
+     "chain:8": 0.32
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.046287853699177504,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.7788000766724171
+    }
+   },
+   "holdout": {
+    "all": 0.4125,
+    "task": {
+     "trace": 0.57,
+     "chain": 0.255
+    },
+    "level": {
+     "trace:1": 0.4167,
+     "trace:2": 0.6087,
+     "trace:3": 0.6,
+     "trace:4": 0.6429,
+     "chain:2": 0.2162,
+     "chain:3": 0.1852,
+     "chain:4": 0.2581,
+     "chain:5": 0.1053,
+     "chain:6": 0.3333,
+     "chain:7": 0.2963,
+     "chain:8": 0.3448
+    },
+    "steps": {
+     "trace": 2.57,
+     "chain": 4.875
+    },
+    "steps_mean": 3.7225,
+    "calibration": {
+     "ece": 0.03318977806717158,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8118375241779497
+    }
+   },
+   "ood": {
+    "all": 0.295,
+    "task": {
+     "trace": 0.34,
+     "chain": 0.25
+    },
+    "level": {
+     "trace:6": 0.2593,
+     "trace:7": 0.325,
+     "trace:8": 0.3833,
+     "trace:9": 0.3913,
+     "chain:12": 0.2353,
+     "chain:13": 0.28,
+     "chain:14": 0.3171,
+     "chain:15": 0.3143,
+     "chain:16": 0.1
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.12182085912674664,
+     "confident_error_rate": 0.055,
+     "auroc_confidence": 0.705733862243058
+    }
+   },
+   "adv": {
+    "all": 0.38,
+    "task": {
+     "trace": 0.51,
+     "chain": 0.25
+    },
+    "level": {
+     "trace:1": 0.3448,
+     "trace:2": 0.5667,
+     "trace:3": 0.55,
+     "trace:4": 0.619,
+     "chain:2": 0.2857,
+     "chain:3": 0.0,
+     "chain:4": 0.4,
+     "chain:5": 0.25,
+     "chain:6": 0.3,
+     "chain:7": 0.1111,
+     "chain:8": 0.2
+    },
+    "steps": {
+     "trace": 2.33,
+     "chain": 4.83
+    },
+    "steps_mean": 3.58,
+    "calibration": {
+     "ece": 0.05531186744570732,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8097410865874364
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "exec-sup-seed2",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "exec-sup",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0
+  },
+  "seed": 2,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "04ae300ef8cb15bd755d4a9de4431865e6e4f02b29d6e54f2363d8d2e2863730",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007793",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2840.4,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.485,
+    "task": {
+     "trace": 0.645,
+     "chain": 0.325
+    },
+    "level": {
+     "trace:1": 0.5962,
+     "trace:2": 0.6939,
+     "trace:3": 0.5283,
+     "trace:4": 0.7826,
+     "chain:2": 0.5385,
+     "chain:3": 0.4815,
+     "chain:4": 0.2759,
+     "chain:5": 0.3571,
+     "chain:6": 0.175,
+     "chain:7": 0.28,
+     "chain:8": 0.24
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.05707902254536749,
+     "confident_error_rate": 0.0025,
+     "auroc_confidence": 0.8893504153738364
+    }
+   },
+   "holdout": {
+    "all": 0.5375,
+    "task": {
+     "trace": 0.68,
+     "chain": 0.395
+    },
+    "level": {
+     "trace:1": 0.6458,
+     "trace:2": 0.6522,
+     "trace:3": 0.66,
+     "trace:4": 0.75,
+     "chain:2": 0.7027,
+     "chain:3": 0.6296,
+     "chain:4": 0.2903,
+     "chain:5": 0.3684,
+     "chain:6": 0.1667,
+     "chain:7": 0.3704,
+     "chain:8": 0.1724
+    },
+    "steps": {
+     "trace": 2.57,
+     "chain": 4.875
+    },
+    "steps_mean": 3.7225,
+    "calibration": {
+     "ece": 0.054685811083763844,
+     "confident_error_rate": 0.0025,
+     "auroc_confidence": 0.8871150219987429
+    }
+   },
+   "ood": {
+    "all": 0.2725,
+    "task": {
+     "trace": 0.3,
+     "chain": 0.245
+    },
+    "level": {
+     "trace:6": 0.3148,
+     "trace:7": 0.175,
+     "trace:8": 0.45,
+     "trace:9": 0.1957,
+     "chain:12": 0.2647,
+     "chain:13": 0.22,
+     "chain:14": 0.2927,
+     "chain:15": 0.2571,
+     "chain:16": 0.2
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.19124184878543019,
+     "confident_error_rate": 0.095,
+     "auroc_confidence": 0.7009678741448343
+    }
+   },
+   "adv": {
+    "all": 0.535,
+    "task": {
+     "trace": 0.7,
+     "chain": 0.37
+    },
+    "level": {
+     "trace:1": 0.6207,
+     "trace:2": 0.8333,
+     "trace:3": 0.55,
+     "trace:4": 0.7619,
+     "chain:2": 0.7143,
+     "chain:3": 0.3333,
+     "chain:4": 0.1333,
+     "chain:5": 0.4583,
+     "chain:6": 0.2,
+     "chain:7": 0.2222,
+     "chain:8": 0.2
+    },
+    "steps": {
+     "trace": 2.33,
+     "chain": 4.83
+    },
+    "steps_mean": 3.58,
+    "calibration": {
+     "ece": 0.05144910283386709,
+     "confident_error_rate": 0.01,
+     "auroc_confidence": 0.8938800120590895
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "exec-sup-seed3",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "exec-sup",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0
+  },
+  "seed": 3,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "c655882c7655815fe479997fbef9a29d9294f03b74105e4b67abc5deb200aef4",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007800",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2713.6,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.4575,
+    "task": {
+     "trace": 0.61,
+     "chain": 0.305
+    },
+    "level": {
+     "trace:1": 0.5385,
+     "trace:2": 0.5714,
+     "trace:3": 0.5849,
+     "trace:4": 0.7609,
+     "chain:2": 0.3462,
+     "chain:3": 0.2963,
+     "chain:4": 0.3448,
+     "chain:5": 0.25,
+     "chain:6": 0.3,
+     "chain:7": 0.28,
+     "chain:8": 0.32
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.054662785287946464,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.823701241469618
+    }
+   },
+   "holdout": {
+    "all": 0.4675,
+    "task": {
+     "trace": 0.65,
+     "chain": 0.285
+    },
+    "level": {
+     "trace:1": 0.5,
+     "trace:2": 0.6522,
+     "trace:3": 0.74,
+     "trace:4": 0.6964,
+     "chain:2": 0.4324,
+     "chain:3": 0.3333,
+     "chain:4": 0.129,
+     "chain:5": 0.2105,
+     "chain:6": 0.3333,
+     "chain:7": 0.3333,
+     "chain:8": 0.1724
+    },
+    "steps": {
+     "trace": 2.57,
+     "chain": 4.875
+    },
+    "steps_mean": 3.7225,
+    "calibration": {
+     "ece": 0.043009449075907466,
+     "confident_error_rate": 0.0025,
+     "auroc_confidence": 0.8473048630463709
+    }
+   },
+   "ood": {
+    "all": 0.235,
+    "task": {
+     "trace": 0.275,
+     "chain": 0.195
+    },
+    "level": {
+     "trace:6": 0.3889,
+     "trace:7": 0.125,
+     "trace:8": 0.4,
+     "trace:9": 0.1087,
+     "chain:12": 0.2647,
+     "chain:13": 0.1,
+     "chain:14": 0.2439,
+     "chain:15": 0.1714,
+     "chain:16": 0.225
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.23315366536378865,
+     "confident_error_rate": 0.125,
+     "auroc_confidence": 0.7074815741899597
+    }
+   },
+   "adv": {
+    "all": 0.45,
+    "task": {
+     "trace": 0.68,
+     "chain": 0.22
+    },
+    "level": {
+     "trace:1": 0.4483,
+     "trace:2": 0.8,
+     "trace:3": 0.65,
+     "trace:4": 0.8571,
+     "chain:2": 0.1905,
+     "chain:3": 0.0,
+     "chain:4": 0.1333,
+     "chain:5": 0.3333,
+     "chain:6": 0.2,
+     "chain:7": 0.2222,
+     "chain:8": 0.2667
+    },
+    "steps": {
+     "trace": 2.33,
+     "chain": 4.83
+    },
+    "steps_mean": 3.58,
+    "calibration": {
+     "ece": 0.09478040579706433,
+     "confident_error_rate": 0.005,
+     "auroc_confidence": 0.9171717171717172
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "transformer-rl-seed1",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "transformer-rl",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "objective": "reinforce"
+  },
+  "seed": 1,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "b62d87dbeb7e266a86d23255414f2f055522fdf776b62d3e8c67dda28748e889",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007798",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 725.6,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.1375,
+    "task": {
+     "trace": 0.145,
+     "chain": 0.13
+    },
+    "level": {
+     "trace:1": 0.0962,
+     "trace:2": 0.1429,
+     "trace:3": 0.1698,
+     "trace:4": 0.1739,
+     "chain:2": 0.1538,
+     "chain:3": 0.1481,
+     "chain:4": 0.1379,
+     "chain:5": 0.0714,
+     "chain:6": 0.175,
+     "chain:7": 0.08,
+     "chain:8": 0.12
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.3979389272257686,
+     "confident_error_rate": 0.1825,
+     "auroc_confidence": 0.6600790513833992
+    }
+   },
+   "holdout": {
+    "all": 0.19,
+    "task": {
+     "trace": 0.195,
+     "chain": 0.185
+    },
+    "level": {
+     "trace:1": 0.1458,
+     "trace:2": 0.2174,
+     "trace:3": 0.14,
+     "trace:4": 0.2679,
+     "chain:2": 0.027,
+     "chain:3": 0.2593,
+     "chain:4": 0.1935,
+     "chain:5": 0.1053,
+     "chain:6": 0.2,
+     "chain:7": 0.2593,
+     "chain:8": 0.2759
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.391938883624971,
+     "confident_error_rate": 0.21,
+     "auroc_confidence": 0.5605100714749838
+    }
+   },
+   "ood": {
+    "all": 0.1625,
+    "task": {
+     "trace": 0.175,
+     "chain": 0.15
+    },
+    "level": {
+     "trace:6": 0.1667,
+     "trace:7": 0.075,
+     "trace:8": 0.2667,
+     "trace:9": 0.1522,
+     "chain:12": 0.1471,
+     "chain:13": 0.14,
+     "chain:14": 0.1951,
+     "chain:15": 0.0857,
+     "chain:16": 0.175
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.468977356813848,
+     "confident_error_rate": 0.315,
+     "auroc_confidence": 0.5663605051664753
+    }
+   },
+   "adv": {
+    "all": 0.125,
+    "task": {
+     "trace": 0.12,
+     "chain": 0.13
+    },
+    "level": {
+     "trace:1": 0.0345,
+     "trace:2": 0.2333,
+     "trace:3": 0.05,
+     "trace:4": 0.1429,
+     "chain:2": 0.0952,
+     "chain:3": 0.1667,
+     "chain:4": 0.2,
+     "chain:5": 0.125,
+     "chain:6": 0.2,
+     "chain:7": 0.0,
+     "chain:8": 0.1333
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.40482871972024437,
+     "confident_error_rate": 0.21,
+     "auroc_confidence": 0.42582857142857145
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "transformer-rl-seed2",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "transformer-rl",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "objective": "reinforce"
+  },
+  "seed": 2,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "79108633a23d18d1069bc36f8fdd1cf4654a5dc8ee8e84aa68e9bbf18d5da913",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007796",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 751.6,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.1625,
+    "task": {
+     "trace": 0.165,
+     "chain": 0.16
+    },
+    "level": {
+     "trace:1": 0.1538,
+     "trace:2": 0.2245,
+     "trace:3": 0.1132,
+     "trace:4": 0.1739,
+     "chain:2": 0.1538,
+     "chain:3": 0.1481,
+     "chain:4": 0.1379,
+     "chain:5": 0.1071,
+     "chain:6": 0.275,
+     "chain:7": 0.16,
+     "chain:8": 0.08
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.28671567078679805,
+     "confident_error_rate": 0.1625,
+     "auroc_confidence": 0.623329506314581
+    }
+   },
+   "holdout": {
+    "all": 0.1925,
+    "task": {
+     "trace": 0.215,
+     "chain": 0.17
+    },
+    "level": {
+     "trace:1": 0.1667,
+     "trace:2": 0.2609,
+     "trace:3": 0.2,
+     "trace:4": 0.2321,
+     "chain:2": 0.1081,
+     "chain:3": 0.1481,
+     "chain:4": 0.2581,
+     "chain:5": 0.1579,
+     "chain:6": 0.2333,
+     "chain:7": 0.1111,
+     "chain:8": 0.1724
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.2704059387743473,
+     "confident_error_rate": 0.1675,
+     "auroc_confidence": 0.5959551284628684
+    }
+   },
+   "ood": {
+    "all": 0.1425,
+    "task": {
+     "trace": 0.12,
+     "chain": 0.165
+    },
+    "level": {
+     "trace:6": 0.0556,
+     "trace:7": 0.075,
+     "trace:8": 0.2167,
+     "trace:9": 0.1087,
+     "chain:12": 0.0882,
+     "chain:13": 0.16,
+     "chain:14": 0.2927,
+     "chain:15": 0.0857,
+     "chain:16": 0.175
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.37685993753373626,
+     "confident_error_rate": 0.26,
+     "auroc_confidence": 0.5597667638483965
+    }
+   },
+   "adv": {
+    "all": 0.11,
+    "task": {
+     "trace": 0.11,
+     "chain": 0.11
+    },
+    "level": {
+     "trace:1": 0.069,
+     "trace:2": 0.1667,
+     "trace:3": 0.1,
+     "trace:4": 0.0952,
+     "chain:2": 0.1429,
+     "chain:3": 0.0,
+     "chain:4": 0.1333,
+     "chain:5": 0.0,
+     "chain:6": 0.2,
+     "chain:7": 0.1111,
+     "chain:8": 0.2
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.32509433522820474,
+     "confident_error_rate": 0.195,
+     "auroc_confidence": 0.4328396322778345
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "transformer-rl-seed3",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "transformer-rl",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "objective": "reinforce"
+  },
+  "seed": 3,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "181dd6e2aea374a01cd5f50f99d355520531a47e9252686eaebd83774b4e0ab7",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007795",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 702.1,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.175,
+    "task": {
+     "trace": 0.175,
+     "chain": 0.175
+    },
+    "level": {
+     "trace:1": 0.2885,
+     "trace:2": 0.1224,
+     "trace:3": 0.1698,
+     "trace:4": 0.1087,
+     "chain:2": 0.1923,
+     "chain:3": 0.1481,
+     "chain:4": 0.1724,
+     "chain:5": 0.2857,
+     "chain:6": 0.2,
+     "chain:7": 0.12,
+     "chain:8": 0.08
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.28148988775908945,
+     "confident_error_rate": 0.2125,
+     "auroc_confidence": 0.5956709956709957
+    }
+   },
+   "holdout": {
+    "all": 0.17,
+    "task": {
+     "trace": 0.185,
+     "chain": 0.155
+    },
+    "level": {
+     "trace:1": 0.1042,
+     "trace:2": 0.3043,
+     "trace:3": 0.2,
+     "trace:4": 0.1429,
+     "chain:2": 0.1081,
+     "chain:3": 0.1111,
+     "chain:4": 0.1613,
+     "chain:5": 0.3684,
+     "chain:6": 0.1667,
+     "chain:7": 0.1111,
+     "chain:8": 0.1379
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.26045679487288004,
+     "confident_error_rate": 0.16,
+     "auroc_confidence": 0.6089431254429483
+    }
+   },
+   "ood": {
+    "all": 0.15,
+    "task": {
+     "trace": 0.125,
+     "chain": 0.175
+    },
+    "level": {
+     "trace:6": 0.1296,
+     "trace:7": 0.125,
+     "trace:8": 0.1167,
+     "trace:9": 0.1304,
+     "chain:12": 0.1176,
+     "chain:13": 0.14,
+     "chain:14": 0.2927,
+     "chain:15": 0.1429,
+     "chain:16": 0.175
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.36493993666023017,
+     "confident_error_rate": 0.2625,
+     "auroc_confidence": 0.5880392156862745
+    }
+   },
+   "adv": {
+    "all": 0.07,
+    "task": {
+     "trace": 0.09,
+     "chain": 0.05
+    },
+    "level": {
+     "trace:1": 0.069,
+     "trace:2": 0.0667,
+     "trace:3": 0.25,
+     "trace:4": 0.0,
+     "chain:2": 0.0,
+     "chain:3": 0.1667,
+     "chain:4": 0.0667,
+     "chain:5": 0.0,
+     "chain:6": 0.1,
+     "chain:7": 0.0,
+     "chain:8": 0.1333
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.3656922028958797,
+     "confident_error_rate": 0.24,
+     "auroc_confidence": 0.3640552995391705
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "transformer-sup-seed1",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "transformer-sup",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 1,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "f1e365152714977cdebfbc86e1c8afaac5c9a751cd8a06866f83beabb24f1bce",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007797",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 444.0,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.505,
+    "task": {
+     "trace": 0.72,
+     "chain": 0.29
+    },
+    "level": {
+     "trace:1": 0.6538,
+     "trace:2": 0.6939,
+     "trace:3": 0.7358,
+     "trace:4": 0.8043,
+     "chain:2": 0.5769,
+     "chain:3": 0.2963,
+     "chain:4": 0.1034,
+     "chain:5": 0.3214,
+     "chain:6": 0.275,
+     "chain:7": 0.2,
+     "chain:8": 0.28
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03737070206552745,
+     "confident_error_rate": 0.0025,
+     "auroc_confidence": 0.8397339733973397
+    }
+   },
+   "holdout": {
+    "all": 0.48,
+    "task": {
+     "trace": 0.635,
+     "chain": 0.325
+    },
+    "level": {
+     "trace:1": 0.6458,
+     "trace:2": 0.6957,
+     "trace:3": 0.6,
+     "trace:4": 0.6071,
+     "chain:2": 0.4865,
+     "chain:3": 0.3333,
+     "chain:4": 0.2903,
+     "chain:5": 0.2632,
+     "chain:6": 0.4,
+     "chain:7": 0.1852,
+     "chain:8": 0.2414
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03564610552042722,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.826973157051282
+    }
+   },
+   "ood": {
+    "all": 0.3475,
+    "task": {
+     "trace": 0.51,
+     "chain": 0.185
+    },
+    "level": {
+     "trace:6": 0.4259,
+     "trace:7": 0.6,
+     "trace:8": 0.5667,
+     "trace:9": 0.4565,
+     "chain:12": 0.2059,
+     "chain:13": 0.2,
+     "chain:14": 0.1463,
+     "chain:15": 0.2571,
+     "chain:16": 0.125
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.15078095056116578,
+     "confident_error_rate": 0.0675,
+     "auroc_confidence": 0.7475950274263348
+    }
+   },
+   "adv": {
+    "all": 0.48,
+    "task": {
+     "trace": 0.67,
+     "chain": 0.29
+    },
+    "level": {
+     "trace:1": 0.6207,
+     "trace:2": 0.8,
+     "trace:3": 0.6,
+     "trace:4": 0.619,
+     "chain:2": 0.4286,
+     "chain:3": 0.0,
+     "chain:4": 0.4,
+     "chain:5": 0.2917,
+     "chain:6": 0.3,
+     "chain:7": 0.2222,
+     "chain:8": 0.1333
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03445345550775528,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8362379807692307
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "transformer-sup-seed2",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "transformer-sup",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 2,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "a7e0031d378b7c8de8b0da75b6ac4df2ff9ccfbfa79d16e6bcf00b27f0dee3e9",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007804",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 761.8,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.3825,
+    "task": {
+     "trace": 0.445,
+     "chain": 0.32
+    },
+    "level": {
+     "trace:1": 0.3654,
+     "trace:2": 0.4898,
+     "trace:3": 0.4151,
+     "trace:4": 0.5217,
+     "chain:2": 0.5769,
+     "chain:3": 0.2222,
+     "chain:4": 0.2759,
+     "chain:5": 0.3929,
+     "chain:6": 0.25,
+     "chain:7": 0.32,
+     "chain:8": 0.24
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.037079180590808364,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.7071260352994099
+    }
+   },
+   "holdout": {
+    "all": 0.385,
+    "task": {
+     "trace": 0.45,
+     "chain": 0.32
+    },
+    "level": {
+     "trace:1": 0.4375,
+     "trace:2": 0.4348,
+     "trace:3": 0.36,
+     "trace:4": 0.5536,
+     "chain:2": 0.4054,
+     "chain:3": 0.4074,
+     "chain:4": 0.2903,
+     "chain:5": 0.2632,
+     "chain:6": 0.3,
+     "chain:7": 0.2222,
+     "chain:8": 0.3103
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.031113698258996028,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.7217030936543132
+    }
+   },
+   "ood": {
+    "all": 0.2925,
+    "task": {
+     "trace": 0.41,
+     "chain": 0.175
+    },
+    "level": {
+     "trace:6": 0.4074,
+     "trace:7": 0.425,
+     "trace:8": 0.3667,
+     "trace:9": 0.4565,
+     "chain:12": 0.1765,
+     "chain:13": 0.24,
+     "chain:14": 0.1951,
+     "chain:15": 0.0571,
+     "chain:16": 0.175
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.08584570683538911,
+     "confident_error_rate": 0.005,
+     "auroc_confidence": 0.7061701549334058
+    }
+   },
+   "adv": {
+    "all": 0.33,
+    "task": {
+     "trace": 0.4,
+     "chain": 0.26
+    },
+    "level": {
+     "trace:1": 0.4828,
+     "trace:2": 0.4,
+     "trace:3": 0.35,
+     "trace:4": 0.3333,
+     "chain:2": 0.3333,
+     "chain:3": 0.3333,
+     "chain:4": 0.2,
+     "chain:5": 0.25,
+     "chain:6": 0.2,
+     "chain:7": 0.1111,
+     "chain:8": 0.3333
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.0428769087791443,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6878109452736318
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "transformer-sup-seed3",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": "transformer-sup",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 3,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "2ad877664f2ff3508ed1c2db81dabd64dedbb37f9f5ee501d5c5b1f7a7c376e0",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007802",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 608.4,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "dev": {
+    "all": 0.51,
+    "task": {
+     "trace": 0.69,
+     "chain": 0.33
+    },
+    "level": {
+     "trace:1": 0.5962,
+     "trace:2": 0.7143,
+     "trace:3": 0.7358,
+     "trace:4": 0.7174,
+     "chain:2": 0.6923,
+     "chain:3": 0.3704,
+     "chain:4": 0.2759,
+     "chain:5": 0.1786,
+     "chain:6": 0.25,
+     "chain:7": 0.32,
+     "chain:8": 0.28
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.040281780175864736,
+     "confident_error_rate": 0.005,
+     "auroc_confidence": 0.8413365346138455
+    }
+   },
+   "holdout": {
+    "all": 0.545,
+    "task": {
+     "trace": 0.76,
+     "chain": 0.33
+    },
+    "level": {
+     "trace:1": 0.8125,
+     "trace:2": 0.7174,
+     "trace:3": 0.72,
+     "trace:4": 0.7857,
+     "chain:2": 0.5405,
+     "chain:3": 0.3333,
+     "chain:4": 0.2258,
+     "chain:5": 0.1579,
+     "chain:6": 0.2667,
+     "chain:7": 0.2963,
+     "chain:8": 0.3793
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.05084385246038438,
+     "confident_error_rate": 0.0025,
+     "auroc_confidence": 0.8651325738481702
+    }
+   },
+   "ood": {
+    "all": 0.3325,
+    "task": {
+     "trace": 0.515,
+     "chain": 0.15
+    },
+    "level": {
+     "trace:6": 0.537,
+     "trace:7": 0.575,
+     "trace:8": 0.5333,
+     "trace:9": 0.413,
+     "chain:12": 0.1765,
+     "chain:13": 0.14,
+     "chain:14": 0.1707,
+     "chain:15": 0.1143,
+     "chain:16": 0.15
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.19192417122423647,
+     "confident_error_rate": 0.085,
+     "auroc_confidence": 0.7650023936245107
+    }
+   },
+   "adv": {
+    "all": 0.52,
+    "task": {
+     "trace": 0.68,
+     "chain": 0.36
+    },
+    "level": {
+     "trace:1": 0.6552,
+     "trace:2": 0.6667,
+     "trace:3": 0.7,
+     "trace:4": 0.7143,
+     "chain:2": 0.619,
+     "chain:3": 0.1667,
+     "chain:4": 0.2667,
+     "chain:5": 0.3333,
+     "chain:6": 0.2,
+     "chain:7": 0.4444,
+     "chain:8": 0.2667
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.06097534708678723,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8454527243589743
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39",
+  "run": "experiment",
+  "parent": "R1.34 (latent program execution)",
+  "hypothesis": "Trained only on the executor's right/wrong signal for its own sampled answer (no answer labels, no self-grading), how close do a Transformer and the step-aligned latent program model get to their supervised versions, in and out of distribution?",
+  "architecture": [
+   "transformer-sup",
+   "transformer-rl",
+   "exec-sup",
+   "exec-rl"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "0ec2730f8b49596a634503e96688143402dd7b7b",
+  "parameter_count": null,
+  "flop_estimate": 150000000000000.0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 19710.699999999997,
+  "cost_usd": 0.0,
+  "ci_run": "36595784457",
+  "metrics": {
+   "experiment": "R1.39",
+   "models": {
+    "transformer-sup": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.4658333333333333,
+       "sd": 0.07221207193629978,
+       "ci95": [
+        0.28643412391981765,
+        0.645232542746849
+       ],
+       "n": 3,
+       "values": [
+        0.505,
+        0.3825,
+        0.51
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.47000000000000003,
+       "sd": 0.08046738469715542,
+       "ci95": [
+        0.2700918016730346,
+        0.6699081983269655
+       ],
+       "n": 3,
+       "values": [
+        0.48,
+        0.385,
+        0.545
+       ]
+      },
+      "ood.all": {
+       "mean": 0.32416666666666666,
+       "sd": 0.028431203515386635,
+       "ci95": [
+        0.2535339414647856,
+        0.39479939186854773
+       ],
+       "n": 3,
+       "values": [
+        0.3475,
+        0.2925,
+        0.3325
+       ]
+      },
+      "adv.all": {
+       "mean": 0.44333333333333336,
+       "sd": 0.10016652800877812,
+       "ci95": [
+        0.19448580060607396,
+        0.6921808660605928
+       ],
+       "n": 3,
+       "values": [
+        0.48,
+        0.33,
+        0.52
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.6183333333333333,
+       "sd": 0.15085865349171496,
+       "ci95": [
+        0.24354941640771194,
+        0.9931172502589547
+       ],
+       "n": 3,
+       "values": [
+        0.72,
+        0.445,
+        0.69
+       ]
+      },
+      "dev.chain": {
+       "mean": 0.3133333333333333,
+       "sd": 0.020816659994661344,
+       "ci95": [
+        0.2616177095389281,
+        0.3650489571277385
+       ],
+       "n": 3,
+       "values": [
+        0.29,
+        0.32,
+        0.33
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.47833333333333333,
+       "sd": 0.059231185479722885,
+       "ci95": [
+        0.3311830361217937,
+        0.625483630544873
+       ],
+       "n": 3,
+       "values": [
+        0.51,
+        0.41,
+        0.515
+       ]
+      },
+      "ood.chain": {
+       "mean": 0.17,
+       "sd": 0.01802775637731995,
+       "ci95": [
+        0.12521295602148616,
+        0.21478704397851386
+       ],
+       "n": 3,
+       "values": [
+        0.185,
+        0.175,
+        0.15
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.5833333333333334,
+       "sd": 0.1588500340992514,
+       "ci95": [
+        0.18869612422715804,
+        0.9779705424395086
+       ],
+       "n": 3,
+       "values": [
+        0.67,
+        0.4,
+        0.68
+       ]
+      },
+      "adv.chain": {
+       "mean": 0.30333333333333334,
+       "sd": 0.05131601439446883,
+       "ci95": [
+        0.17584699807430343,
+        0.43081966859236326
+       ],
+       "n": 3,
+       "values": [
+        0.29,
+        0.26,
+        0.36
+       ]
+      },
+      "above_cue.trace": {
+       "mean": 0.4553333333333333,
+       "sd": 0.15085865349171496,
+       "ci95": [
+        0.08054941640771196,
+        0.8301172502589547
+       ],
+       "n": 3,
+       "values": [
+        0.5569999999999999,
+        0.28200000000000003,
+        0.5269999999999999
+       ]
+      },
+      "steps.trace": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.chain": {
+       "mean": 0.14633333333333332,
+       "sd": 0.020816659994661344,
+       "ci95": [
+        0.09461770953892812,
+        0.1980489571277385
+       ],
+       "n": 3,
+       "values": [
+        0.12299999999999997,
+        0.153,
+        0.163
+       ]
+      },
+      "steps.chain": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 206256,
+      "params_active": 206256,
+      "stored_bytes": 825024,
+      "flops": {
+       "mean": 9050112.0,
+       "sd": 0.0,
+       "ci95": [
+        9050112.0,
+        9050112.0
+       ],
+       "n": 3,
+       "values": [
+        9050112.0,
+        9050112.0,
+        9050112.0
+       ]
+      },
+      "train_flops": {
+       "mean": 26064322560000.0,
+       "sd": 0.0,
+       "ci95": [
+        26064322560000.0,
+        26064322560000.0
+       ],
+       "n": 3,
+       "values": [
+        26064322560000.0,
+        26064322560000.0,
+        26064322560000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 71680,
+      "total_bytes": 71680,
+      "peak_rss_mb": {
+       "mean": 377.73333333333335,
+       "sd": 24.703508522744965,
+       "ci95": [
+        316.36146323064617,
+        439.10520343602053
+       ],
+       "n": 3,
+       "values": [
+        405.3,
+        370.3,
+        357.6
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.14566666666666664,
+       "sd": 0.031342197327777335,
+       "ci95": [
+        0.06780204831247164,
+        0.22353128502086164
+       ],
+       "n": 3,
+       "values": [
+        0.111,
+        0.172,
+        0.154
+       ]
+      },
+      "train_seconds": {
+       "mean": 604.7333333333332,
+       "sd": 158.93172538336495,
+       "ci95": [
+        209.89317544874768,
+        999.5734912179188
+       ],
+       "n": 3,
+       "values": [
+        444.0,
+        761.8,
+        608.4
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 2418.866666666667,
+       "sd": 635.7280576892397,
+       "ci95": [
+        839.503162846346,
+        3998.230170486988
+       ],
+       "n": 3,
+       "values": [
+        1775.9,
+        3047.1,
+        2433.6
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.37943333333333334,
+       "sd": 0.0464715325046779,
+       "ci95": [
+        0.26398232953263967,
+        0.494884337134027
+       ],
+       "n": 3,
+       "values": [
+        0.4283,
+        0.3358,
+        0.3742
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.03824388761073352,
+       "sd": 0.0017708757078966392,
+       "ci95": [
+        0.03384443342741493,
+        0.0426433417940521
+       ],
+       "n": 3,
+       "values": [
+        0.03737070206552745,
+        0.037079180590808364,
+        0.040281780175864736
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.14285027620693044,
+       "sd": 0.053482070346600116,
+       "ci95": [
+        0.009982725384655416,
+        0.27571782702920544
+       ],
+       "n": 3,
+       "values": [
+        0.15078095056116578,
+        0.08584570683538911,
+        0.19192417122423647
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0025,
+       "sd": 0.0025,
+       "ci95": [
+        -0.0037108455208073993,
+        0.008710845520807399
+       ],
+       "n": 3,
+       "values": [
+        0.0025,
+        0.0,
+        0.005
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.05250000000000001,
+       "sd": 0.04205650960315181,
+       "ci95": [
+        -0.05198259371581152,
+        0.15698259371581155
+       ],
+       "n": 3,
+       "values": [
+        0.0675,
+        0.005,
+        0.085
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.7960655144368651,
+       "sd": 0.0770280160885929,
+       "ci95": [
+        0.6047018709566581,
+        0.9874291579170722
+       ],
+       "n": 3,
+       "values": [
+        0.8397339733973397,
+        0.7071260352994099,
+        0.8413365346138455
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.7395891919947504,
+       "sd": 0.03022214631805611,
+       "ci95": [
+        0.6645071591592765,
+        0.8146712248302242
+       ],
+       "n": 3,
+       "values": [
+        0.7475950274263348,
+        0.7061701549334058,
+        0.7650023936245107
+       ]
+      }
+     },
+     "memory_tokens": 35
+    },
+    "transformer-rl": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.15833333333333335,
+       "sd": 0.019094065395649323,
+       "ci95": [
+        0.11089721711870448,
+        0.20576944954796222
+       ],
+       "n": 3,
+       "values": [
+        0.1375,
+        0.1625,
+        0.175
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.18416666666666667,
+       "sd": 0.012332207155790614,
+       "ci95": [
+        0.15352929323658224,
+        0.2148040400967511
+       ],
+       "n": 3,
+       "values": [
+        0.19,
+        0.1925,
+        0.17
+       ]
+      },
+      "ood.all": {
+       "mean": 0.15166666666666664,
+       "sd": 0.010103629710818459,
+       "ci95": [
+        0.1265658333333333,
+        0.1767675
+       ],
+       "n": 3,
+       "values": [
+        0.1625,
+        0.1425,
+        0.15
+       ]
+      },
+      "adv.all": {
+       "mean": 0.10166666666666667,
+       "sd": 0.02843120351538663,
+       "ci95": [
+        0.031033941464785608,
+        0.17229939186854773
+       ],
+       "n": 3,
+       "values": [
+        0.125,
+        0.11,
+        0.07
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.16166666666666665,
+       "sd": 0.015275252316519468,
+       "ci95": [
+        0.12371777369496353,
+        0.19961555963836977
+       ],
+       "n": 3,
+       "values": [
+        0.145,
+        0.165,
+        0.175
+       ]
+      },
+      "dev.chain": {
+       "mean": 0.155,
+       "sd": 0.022912878474779193,
+       "ci95": [
+        0.09807666054244535,
+        0.21192333945755465
+       ],
+       "n": 3,
+       "values": [
+        0.13,
+        0.16,
+        0.175
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.13999999999999999,
+       "sd": 0.030413812651491092,
+       "ci95": [
+        0.06444180316912444,
+        0.21555819683087551
+       ],
+       "n": 3,
+       "values": [
+        0.175,
+        0.12,
+        0.125
+       ]
+      },
+      "ood.chain": {
+       "mean": 0.16333333333333333,
+       "sd": 0.012583057392117914,
+       "ci95": [
+        0.13207276307657415,
+        0.19459390359009252
+       ],
+       "n": 3,
+       "values": [
+        0.15,
+        0.165,
+        0.175
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.10666666666666665,
+       "sd": 0.015275252316519466,
+       "ci95": [
+        0.06871777369496354,
+        0.14461555963836975
+       ],
+       "n": 3,
+       "values": [
+        0.12,
+        0.11,
+        0.09
+       ]
+      },
+      "adv.chain": {
+       "mean": 0.09666666666666666,
+       "sd": 0.041633319989322654,
+       "ci95": [
+        -0.006764580922143645,
+        0.20009791425547696
+       ],
+       "n": 3,
+       "values": [
+        0.13,
+        0.11,
+        0.05
+       ]
+      },
+      "above_cue.trace": {
+       "mean": -0.0013333333333333437,
+       "sd": 0.01527525231651947,
+       "ci95": [
+        -0.039282226305036465,
+        0.03661555963836977
+       ],
+       "n": 3,
+       "values": [
+        -0.018000000000000016,
+        0.0020000000000000018,
+        0.011999999999999983
+       ]
+      },
+      "steps.trace": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.chain": {
+       "mean": -0.01200000000000001,
+       "sd": 0.022912878474779193,
+       "ci95": [
+        -0.06892333945755466,
+        0.04492333945755464
+       ],
+       "n": 3,
+       "values": [
+        -0.037000000000000005,
+        -0.007000000000000006,
+        0.00799999999999998
+       ]
+      },
+      "steps.chain": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 206256,
+      "params_active": 206256,
+      "stored_bytes": 825024,
+      "flops": {
+       "mean": 9050112.0,
+       "sd": 0.0,
+       "ci95": [
+        9050112.0,
+        9050112.0
+       ],
+       "n": 3,
+       "values": [
+        9050112.0,
+        9050112.0,
+        9050112.0
+       ]
+      },
+      "train_flops": {
+       "mean": 26064322560000.0,
+       "sd": 0.0,
+       "ci95": [
+        26064322560000.0,
+        26064322560000.0
+       ],
+       "n": 3,
+       "values": [
+        26064322560000.0,
+        26064322560000.0,
+        26064322560000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 71680,
+      "total_bytes": 71680,
+      "peak_rss_mb": {
+       "mean": 366.1666666666667,
+       "sd": 1.9857828011475231,
+       "ci95": [
+        361.2333105803453,
+        371.1000227529881
+       ],
+       "n": 3,
+       "values": [
+        366.6,
+        367.9,
+        364.0
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.19733333333333336,
+       "sd": 0.011239810200058242,
+       "ci95": [
+        0.16940984339903054,
+        0.22525682326763619
+       ],
+       "n": 3,
+       "values": [
+        0.207,
+        0.2,
+        0.185
+       ]
+      },
+      "train_seconds": {
+       "mean": 726.4333333333334,
+       "sd": 24.76051964990503,
+       "ci95": [
+        664.9198283091429,
+        787.9468383575239
+       ],
+       "n": 3,
+       "values": [
+        725.6,
+        751.6,
+        702.1
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 2905.6666666666665,
+       "sd": 99.0879575596014,
+       "ci95": [
+        2659.498667716665,
+        3151.834665616668
+       ],
+       "n": 3,
+       "values": [
+        2902.5,
+        3006.3,
+        2808.2
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.17636666666666664,
+       "sd": 0.02002406885059411,
+       "ci95": [
+        0.12662010733504608,
+        0.2261132259982872
+       ],
+       "n": 3,
+       "values": [
+        0.1958,
+        0.1775,
+        0.1558
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.32204816192388536,
+       "sd": 0.06577524911121445,
+       "ci95": [
+        0.15864019739493448,
+        0.4854561264528362
+       ],
+       "n": 3,
+       "values": [
+        0.3979389272257686,
+        0.28671567078679805,
+        0.28148988775908945
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.4035924103359381,
+       "sd": 0.056937817174927324,
+       "ci95": [
+        0.26213961562975896,
+        0.5450452050421173
+       ],
+       "n": 3,
+       "values": [
+        0.468977356813848,
+        0.37685993753373626,
+        0.36493993666023017
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.18583333333333332,
+       "sd": 0.025166114784235825,
+       "ci95": [
+        0.12331219281981494,
+        0.24835447384685172
+       ],
+       "n": 3,
+       "values": [
+        0.1825,
+        0.1625,
+        0.2125
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.2791666666666666,
+       "sd": 0.031057741922640367,
+       "ci95": [
+        0.20200873174401737,
+        0.3563246015893159
+       ],
+       "n": 3,
+       "values": [
+        0.315,
+        0.26,
+        0.2625
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.626359851122992,
+       "sd": 0.03231078229332146,
+       "ci95": [
+        0.5460889401308885,
+        0.7066307621150955
+       ],
+       "n": 3,
+       "values": [
+        0.6600790513833992,
+        0.623329506314581,
+        0.5956709956709957
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.5713888282337155,
+       "sd": 0.014791751346026838,
+       "ci95": [
+        0.5346411151967685,
+        0.6081365412706625
+       ],
+       "n": 3,
+       "values": [
+        0.5663605051664753,
+        0.5597667638483965,
+        0.5880392156862745
+       ]
+      }
+     },
+     "memory_tokens": 35
+    },
+    "exec-sup": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "exec",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.43166666666666664,
+       "sd": 0.0699255556526606,
+       "ci95": [
+        0.25794793702054836,
+        0.6053853963127849
+       ],
+       "n": 3,
+       "values": [
+        0.3525,
+        0.485,
+        0.4575
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.4725,
+       "sd": 0.06264982043070834,
+       "ci95": [
+        0.3168566573594188,
+        0.6281433426405811
+       ],
+       "n": 3,
+       "values": [
+        0.4125,
+        0.5375,
+        0.4675
+       ]
+      },
+      "ood.all": {
+       "mean": 0.2675,
+       "sd": 0.030310889132455353,
+       "ci95": [
+        0.19219750000000002,
+        0.3428025
+       ],
+       "n": 3,
+       "values": [
+        0.295,
+        0.2725,
+        0.235
+       ]
+      },
+      "adv.all": {
+       "mean": 0.455,
+       "sd": 0.07762087348130013,
+       "ci95": [
+        0.2621634982470037,
+        0.6478365017529963
+       ],
+       "n": 3,
+       "values": [
+        0.38,
+        0.535,
+        0.45
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.5666666666666668,
+       "sd": 0.10680979980008078,
+       "ci95": [
+        0.30131500000000006,
+        0.8320183333333335
+       ],
+       "n": 3,
+       "values": [
+        0.445,
+        0.645,
+        0.61
+       ]
+      },
+      "dev.chain": {
+       "mean": 0.29666666666666663,
+       "sd": 0.03329164059239696,
+       "ci95": [
+        0.21395897192521923,
+        0.37937436140811404
+       ],
+       "n": 3,
+       "values": [
+        0.26,
+        0.325,
+        0.305
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.305,
+       "sd": 0.03278719262151001,
+       "ci95": [
+        0.22354552462673805,
+        0.38645447537326194
+       ],
+       "n": 3,
+       "values": [
+        0.34,
+        0.3,
+        0.275
+       ]
+      },
+      "ood.chain": {
+       "mean": 0.22999999999999998,
+       "sd": 0.030413812651491092,
+       "ci95": [
+        0.15444180316912443,
+        0.30555819683087554
+       ],
+       "n": 3,
+       "values": [
+        0.25,
+        0.245,
+        0.195
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.63,
+       "sd": 0.10440306508910549,
+       "ci95": [
+        0.37062747633310633,
+        0.8893725236668937
+       ],
+       "n": 3,
+       "values": [
+        0.51,
+        0.7,
+        0.68
+       ]
+      },
+      "adv.chain": {
+       "mean": 0.27999999999999997,
+       "sd": 0.07937253933193772,
+       "ci95": [
+        0.08281176784605015,
+        0.4771882321539498
+       ],
+       "n": 3,
+       "values": [
+        0.25,
+        0.37,
+        0.22
+       ]
+      },
+      "above_cue.trace": {
+       "mean": 0.4036666666666666,
+       "sd": 0.10680979980008073,
+       "ci95": [
+        0.13831500000000002,
+        0.6690183333333333
+       ],
+       "n": 3,
+       "values": [
+        0.28200000000000003,
+        0.482,
+        0.44699999999999995
+       ]
+      },
+      "steps.trace": {
+       "mean": 2.465,
+       "sd": 0.0,
+       "ci95": [
+        2.465,
+        2.465
+       ],
+       "n": 3,
+       "values": [
+        2.465,
+        2.465,
+        2.465
+       ]
+      },
+      "above_cue.chain": {
+       "mean": 0.12966666666666668,
+       "sd": 0.03329164059239696,
+       "ci95": [
+        0.04695897192521929,
+        0.21237436140811405
+       ],
+       "n": 3,
+       "values": [
+        0.093,
+        0.158,
+        0.13799999999999998
+       ]
+      },
+      "steps.chain": {
+       "mean": 5.02,
+       "sd": 0.0,
+       "ci95": [
+        5.02,
+        5.02
+       ],
+       "n": 3,
+       "values": [
+        5.02,
+        5.02,
+        5.02
+       ]
+      },
+      "params": 211120,
+      "params_active": 211120,
+      "stored_bytes": 844480,
+      "flops": {
+       "mean": 72450048.0,
+       "sd": 0.0,
+       "ci95": [
+        72450048.0,
+        72450048.0
+       ],
+       "n": 3,
+       "values": [
+        72450048.0,
+        72450048.0,
+        72450048.0
+       ]
+      },
+      "train_flops": {
+       "mean": 208656138240000.0,
+       "sd": 0.0,
+       "ci95": [
+        208656138240000.0,
+        208656138240000.0
+       ],
+       "n": 3,
+       "values": [
+        208656138240000.0,
+        208656138240000.0,
+        208656138240000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 35840,
+      "total_bytes": 35840,
+      "peak_rss_mb": {
+       "mean": 509.0,
+       "sd": 2.553429066960745,
+       "ci95": [
+        502.65641860670695,
+        515.343581393293
+       ],
+       "n": 3,
+       "values": [
+        511.8,
+        508.4,
+        506.8
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.641,
+       "sd": 0.03143246729100345,
+       "ci95": [
+        0.5629111205270985,
+        0.7190888794729016
+       ],
+       "n": 3,
+       "values": [
+        0.627,
+        0.677,
+        0.619
+       ]
+      },
+      "train_seconds": {
+       "mean": 2790.266666666667,
+       "sd": 67.4356977670829,
+       "ci95": [
+        2622.7335860989833,
+        2957.7997472343504
+       ],
+       "n": 3,
+       "values": [
+        2816.8,
+        2840.4,
+        2713.6
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 11161.0,
+       "sd": 269.66846311721383,
+       "ci95": [
+        10491.052333498175,
+        11830.947666501825
+       ],
+       "n": 3,
+       "values": [
+        11267.2,
+        11361.4,
+        10854.4
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.3597333333333333,
+       "sd": 0.03815053516444212,
+       "ci95": [
+        0.2649545011563411,
+        0.45451216551032547
+       ],
+       "n": 3,
+       "values": [
+        0.3475,
+        0.4025,
+        0.3292
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.052676553844163816,
+       "sd": 0.005663141158222041,
+       "ci95": [
+        0.03860739588566646,
+        0.06674571180266117
+       ],
+       "n": 3,
+       "values": [
+        0.046287853699177504,
+        0.05707902254536749,
+        0.054662785287946464
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.18207212442532184,
+       "sd": 0.05622998594863739,
+       "ci95": [
+        0.04237782187965883,
+        0.32176642697098484
+       ],
+       "n": 3,
+       "values": [
+        0.12182085912674664,
+        0.19124184878543019,
+        0.23315366536378865
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0008333333333333334,
+       "sd": 0.0014433756729740645,
+       "ci95": [
+        -0.0027525,
+        0.004419166666666667
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0025,
+        0.0
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.09166666666666667,
+       "sd": 0.03511884584284246,
+       "ci95": [
+        0.004419576107089221,
+        0.17891375722624414
+       ],
+       "n": 3,
+       "values": [
+        0.055,
+        0.095,
+        0.125
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.8306172445052905,
+       "sd": 0.05559872004139757,
+       "ci95": [
+        0.692491219972595,
+        0.968743269037986
+       ],
+       "n": 3,
+       "values": [
+        0.7788000766724171,
+        0.8893504153738364,
+        0.823701241469618
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.7047277701926173,
+       "sd": 0.0033713851722899646,
+       "ci95": [
+        0.6963521091941239,
+        0.7131034311911107
+       ],
+       "n": 3,
+       "values": [
+        0.705733862243058,
+        0.7009678741448343,
+        0.7074815741899597
+       ]
+      }
+     },
+     "memory_tokens": 35
+    },
+    "exec-rl": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "exec",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.14833333333333332,
+       "sd": 0.005773502691896263,
+       "ci95": [
+        0.13398999999999997,
+        0.16267666666666666
+       ],
+       "n": 3,
+       "values": [
+        0.145,
+        0.155,
+        0.145
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.14416666666666667,
+       "sd": 0.015275252316519465,
+       "ci95": [
+        0.10621777369496355,
+        0.18211555963836978
+       ],
+       "n": 3,
+       "values": [
+        0.1575,
+        0.1475,
+        0.1275
+       ]
+      },
+      "ood.all": {
+       "mean": 0.15083333333333335,
+       "sd": 0.008036375634160802,
+       "ci95": [
+        0.13086825828895202,
+        0.17079840837771468
+       ],
+       "n": 3,
+       "values": [
+        0.16,
+        0.145,
+        0.1475
+       ]
+      },
+      "adv.all": {
+       "mean": 0.085,
+       "sd": 0.010000000000000002,
+       "ci95": [
+        0.060156617916770405,
+        0.10984338208322961
+       ],
+       "n": 3,
+       "values": [
+        0.085,
+        0.075,
+        0.095
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.14,
+       "sd": 0.022912878474779203,
+       "ci95": [
+        0.08307666054244534,
+        0.1969233394575547
+       ],
+       "n": 3,
+       "values": [
+        0.12,
+        0.165,
+        0.135
+       ]
+      },
+      "dev.chain": {
+       "mean": 0.15666666666666665,
+       "sd": 0.012583057392117927,
+       "ci95": [
+        0.1254060964099074,
+        0.1879272369234259
+       ],
+       "n": 3,
+       "values": [
+        0.17,
+        0.145,
+        0.155
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.13166666666666668,
+       "sd": 0.014433756729740649,
+       "ci95": [
+        0.09580833333333333,
+        0.16752500000000003
+       ],
+       "n": 3,
+       "values": [
+        0.14,
+        0.115,
+        0.14
+       ]
+      },
+      "ood.chain": {
+       "mean": 0.17,
+       "sd": 0.01322875655532295,
+       "ci95": [
+        0.13713529464100838,
+        0.20286470535899165
+       ],
+       "n": 3,
+       "values": [
+        0.18,
+        0.175,
+        0.155
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.09999999999999999,
+       "sd": 0.017320508075688773,
+       "ci95": [
+        0.05696999999999999,
+        0.14303
+       ],
+       "n": 3,
+       "values": [
+        0.11,
+        0.08,
+        0.11
+       ]
+      },
+      "adv.chain": {
+       "mean": 0.07,
+       "sd": 0.010000000000000002,
+       "ci95": [
+        0.045156617916770406,
+        0.09484338208322961
+       ],
+       "n": 3,
+       "values": [
+        0.06,
+        0.07,
+        0.08
+       ]
+      },
+      "above_cue.trace": {
+       "mean": -0.023000000000000003,
+       "sd": 0.022912878474779203,
+       "ci95": [
+        -0.07992333945755468,
+        0.03392333945755467
+       ],
+       "n": 3,
+       "values": [
+        -0.04300000000000001,
+        0.0020000000000000018,
+        -0.027999999999999997
+       ]
+      },
+      "steps.trace": {
+       "mean": 2.465,
+       "sd": 0.0,
+       "ci95": [
+        2.465,
+        2.465
+       ],
+       "n": 3,
+       "values": [
+        2.465,
+        2.465,
+        2.465
+       ]
+      },
+      "above_cue.chain": {
+       "mean": -0.010333333333333342,
+       "sd": 0.012583057392117928,
+       "ci95": [
+        -0.04159390359009257,
+        0.020927236923425886
+       ],
+       "n": 3,
+       "values": [
+        0.0030000000000000027,
+        -0.02200000000000002,
+        -0.01200000000000001
+       ]
+      },
+      "steps.chain": {
+       "mean": 5.02,
+       "sd": 0.0,
+       "ci95": [
+        5.02,
+        5.02
+       ],
+       "n": 3,
+       "values": [
+        5.02,
+        5.02,
+        5.02
+       ]
+      },
+      "params": 211120,
+      "params_active": 211120,
+      "stored_bytes": 844480,
+      "flops": {
+       "mean": 72450048.0,
+       "sd": 0.0,
+       "ci95": [
+        72450048.0,
+        72450048.0
+       ],
+       "n": 3,
+       "values": [
+        72450048.0,
+        72450048.0,
+        72450048.0
+       ]
+      },
+      "train_flops": {
+       "mean": 208656138240000.0,
+       "sd": 0.0,
+       "ci95": [
+        208656138240000.0,
+        208656138240000.0
+       ],
+       "n": 3,
+       "values": [
+        208656138240000.0,
+        208656138240000.0,
+        208656138240000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 35840,
+      "total_bytes": 35840,
+      "peak_rss_mb": {
+       "mean": 521.4333333333333,
+       "sd": 3.29595711946217,
+       "ci95": [
+        513.2450611284594,
+        529.6216055382072
+       ],
+       "n": 3,
+       "values": [
+        525.0,
+        518.5,
+        520.8
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.531,
+       "sd": 0.06872408602520662,
+       "ci95": [
+        0.3602661272555052,
+        0.7017338727444948
+       ],
+       "n": 3,
+       "values": [
+        0.498,
+        0.61,
+        0.485
+       ]
+      },
+      "train_seconds": {
+       "mean": 2448.7999999999997,
+       "sd": 307.9113995941039,
+       "ci95": [
+        1683.8439452101688,
+        3213.7560547898306
+       ],
+       "n": 3,
+       "values": [
+        2245.9,
+        2803.1,
+        2297.4
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 9795.233333333332,
+       "sd": 1231.7031311697365,
+       "ci95": [
+        6735.2661832573285,
+        12855.200483409335
+       ],
+       "n": 3,
+       "values": [
+        8983.6,
+        11212.5,
+        9189.6
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.2164,
+       "sd": 0.008646964785403029,
+       "ci95": [
+        0.19491801499760011,
+        0.2378819850023999
+       ],
+       "n": 3,
+       "values": [
+        0.2067,
+        0.2233,
+        0.2192
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.37083268764118354,
+       "sd": 0.025247140168570246,
+       "ci95": [
+        0.3081102526695191,
+        0.433555122612848
+       ],
+       "n": 3,
+       "values": [
+        0.347337384223938,
+        0.36763389747589825,
+        0.3975267812237143
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.36975644294172527,
+       "sd": 0.03956532253121553,
+       "ci95": [
+        0.27146280045280524,
+        0.4680500854306453
+       ],
+       "n": 3,
+       "values": [
+        0.37814840078353884,
+        0.3266683564707637,
+        0.4044525715708733
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.24,
+       "sd": 0.06383572667401852,
+       "ci95": [
+        0.08141046516767467,
+        0.3985895348323253
+       ],
+       "n": 3,
+       "values": [
+        0.17,
+        0.255,
+        0.295
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.23916666666666667,
+       "sd": 0.04303583777891785,
+       "ci95": [
+        0.13225109054531237,
+        0.34608224278802097
+       ],
+       "n": 3,
+       "values": [
+        0.225,
+        0.205,
+        0.2875
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.6068887611762511,
+       "sd": 0.030823637611421047,
+       "ci95": [
+        0.5303124205386972,
+        0.683465101813805
+       ],
+       "n": 3,
+       "values": [
+        0.632183908045977,
+        0.5725567856461157,
+        0.6159255898366606
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.5248600680041126,
+       "sd": 0.007733854372589404,
+       "ci95": [
+        0.5056465580886831,
+        0.544073577919542
+       ],
+       "n": 3,
+       "values": [
+        0.525390625,
+        0.5323149828594474,
+        0.5168745961528903
+       ]
+      }
+     },
+     "memory_tokens": 35
+    }
+   },
+   "cue_floors": {
+    "trace": 0.163,
+    "chain": 0.167
+   }
+  },
+  "result": "FAIL",
+  "decision": {
+   "complete": true,
+   "checks": {
+    "R1_exec_rl_id": false,
+    "R2_exec_rl_ood": false,
+    "R3_exec_vs_transformer_rl": false,
+    "R4_learned_at_all": false
+   },
+   "result": "FAIL"
+  },
+  "recorded": "2026-09-29T23:39:55Z"
  }
 ]
