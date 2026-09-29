@@ -1,6 +1,6 @@
 # Rouge 1 — architecture research program R1
 
-**Status:** R1.01 ran on free CI CPUs ($0). The pre-registered result is **FAIL** ([results](../../../research/rouge-architecture/results/r1.01/README.md)). R1.01b, the repaired prototype at a 5× training budget, is pre-registered.
+**Status:** R1.01 ran on free CI CPUs ($0). The pre-registered result is **FAIL** ([results](../../../research/rouge-architecture/results/r1.01/README.md)). R1.01b (repaired prototype, 5× budget) has finished training. R1.02 (learned halting), R1.03 (state probes and a two-level memory) and R1.04 (sparse conditional circuits) are pre-registered and queued on free compute. Each tests one mechanism on its own. The research loop (router, resumable runs, registry, controller) is described in [the research README](../../../research/rouge-architecture/README.md).
 
 ## Scope
 
