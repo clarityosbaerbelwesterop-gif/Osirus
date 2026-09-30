@@ -15,9 +15,28 @@ on:
   workflow_dispatch:
     inputs:
       task:
+        description: "probe (free) | prepare (CPU pod builds the corpus on the volume) | train (one H200 segment)"
         type: choice
-        options: [probe]
+        options: [probe, prepare, train]
         default: probe
+      run:
+        description: "run name (train: rouge-r1-<rung>-<nnn>-seg<k>; prepare: prepare-<corpus>)"
+        default: ""
+      rung:
+        type: choice
+        options: [100m, 300m]
+        default: 100m
+      corpus:
+        default: pretrain-v1
+      tokens:
+        description: "prepare: corpus size in tokens"
+        default: "2.2e9"
+      max_hours:
+        description: "hard wall-clock limit of the pod (at most 5.75)"
+        default: "2"
+      max_price:
+        description: "highest accepted USD per hour"
+        default: "4.80"
 
 permissions:
   contents: read
@@ -28,6 +47,7 @@ concurrency:
 
 jobs:
   probe:
+    if: ${{ github.event_name == 'push' || inputs.task == 'probe' }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -40,3 +60,54 @@ jobs:
         env:
           RUNPOD_API_KEY: ${{ github.event_name == 'workflow_dispatch' && secrets.RUNPOD_API_KEY || '' }}
         run: python3 training/rouge/runpod/probe.py
+
+  session:
+    # Paid: the owner approves every run of this job (protected environment).
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task != 'probe' }}
+    runs-on: ubuntu-latest
+    environment: rouge-gpu
+    timeout-minutes: 355
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ceiling before launch
+        run: python3 training/rouge/runpod/cost.py status
+      - name: Run the session (the pod is deleted on every exit path)
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          TASK: ${{ inputs.task }}
+          RUN: ${{ inputs.run }}
+          RUNG: ${{ inputs.rung }}
+          CORPUS: ${{ inputs.corpus }}
+          TOKENS: ${{ inputs.tokens }}
+          MAX_HOURS: ${{ inputs.max_hours }}
+          MAX_PRICE: ${{ inputs.max_price }}
+        run: |
+          test -n "$RUN" || { echo "run name required"; exit 1; }
+          args=(--task "$TASK" --run "$RUN" --corpus "$CORPUS" --max-hours "$MAX_HOURS" --max-price "$MAX_PRICE")
+          if [ "$TASK" = "prepare" ]; then args+=(--tokens "$TOKENS"); else args+=(--rung "$RUNG"); fi
+          python3 training/rouge/runpod/session.py "${args[@]}"
+      - name: Commit ledger and run records (hashes and numbers; no weights)
+        if: ${{ always() && startsWith(github.ref_name, 'rouge/') }}
+        env:
+          BRANCH: ${{ github.ref_name }}
+          RUN: ${{ inputs.run }}
+        run: |
+          stash="$RUNNER_TEMP/commit"; mkdir -p "$stash"
+          cp training/rouge/runpod/ledger.json "$stash/"
+          [ -d "training/rouge/results/runs/$RUN" ] && cp -r "training/rouge/results/runs/$RUN" "$stash/run"
+          git config user.name "rouge-research[bot]"
+          git config user.email "rouge-research@users.noreply.github.com"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
+            cp "$stash/ledger.json" training/rouge/runpod/ledger.json
+            if [ -d "$stash/run" ]; then mkdir -p training/rouge/results/runs && rm -rf "training/rouge/results/runs/$RUN" && cp -r "$stash/run" "training/rouge/results/runs/$RUN"; fi
+            git add training/rouge/runpod/ledger.json training/rouge/results/runs 2>/dev/null || true
+            git diff --cached --quiet && break
+            git commit -q -m "rouge(runpod): ledger and records of $RUN (run ${{ github.run_id }})"
+            git push -q origin "HEAD:$BRANCH" && break
+            sleep $((attempt * 5))
+          done
