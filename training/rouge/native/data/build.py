@@ -31,6 +31,7 @@ import tarfile
 import time
 import unicodedata
 import urllib.request
+import zlib
 from pathlib import Path
 
 import numpy as np
@@ -74,9 +75,15 @@ def quality(text: str, domain: str) -> str | None:
     return None
 
 
+def stable_hash(text: str) -> int:
+    """64-bit hash that is identical in every process (Python's hash() is salted per process)."""
+    b = text.encode("utf-8")
+    return (zlib.crc32(b) << 32) | zlib.adler32(b)
+
+
 def ngrams13(text: str) -> set[int]:
     words = WORD.findall(text.lower())
-    return {hash(" ".join(words[i:i + 13])) & 0xFFFFFFFFFFFF for i in range(len(words) - 12)}
+    return {stable_hash(" ".join(words[i:i + 13])) for i in range(len(words) - 12)}
 
 
 # --- sources -----------------------------------------------------------------------
@@ -117,8 +124,11 @@ def iter_code(cache: Path):
 
 
 def iter_synth(kind: str):
-    for seed in range(10_000):  # evaluation uses seeds >= 10_000 (synth.eval_items)
-        yield f"{kind}:{seed}", synth.document(random.Random(f"{kind}:{seed}"), kind)
+    """Generated documents; items whose prompt is an evaluation prompt are never emitted (exact-match decontamination:
+    these prompts are shorter than 13 words, so the n-gram check cannot see them)."""
+    held_out = {p for p, _ in synth.eval_items(kind, 2000)}
+    for seed in range(200_000):  # training RNG namespace "<kind>:<seed>"; evaluation uses "<kind>:eval:<seed>"
+        yield f"{kind}:{seed}", synth.document(random.Random(f"{kind}:{seed}"), kind, exclude=held_out)
 
 
 # --- tokenizer ---------------------------------------------------------------------
@@ -190,14 +200,14 @@ _EVAL_GRAMS: set[int] = set()
 
 def _contaminated(text: str) -> bool:
     words = WORD.findall(text.lower())
-    return any((hash(" ".join(words[i:i + 13])) & 0xFFFFFFFFFFFF) in _EVAL_GRAMS for i in range(len(words) - 12))
+    return any(stable_hash(" ".join(words[i:i + 13])) in _EVAL_GRAMS for i in range(len(words) - 12))
 
 
 def decontaminate(corpus: dict) -> dict:
     """Drop train documents sharing a word 13-gram with any evaluation text (parallel over documents).
 
-    Workers are forked after the evaluation n-grams are built, so they share the
-    parent's string hashing; a decision depends only on document content.
+    The n-gram hash is stable across processes, so a decision depends only on
+    document content and a rebuild reproduces it exactly.
     """
     global _EVAL_GRAMS
     eval_grams: set[int] = set()

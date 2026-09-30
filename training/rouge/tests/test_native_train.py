@@ -20,8 +20,8 @@ except ImportError:
     torch = None
 
 
-def run(*args, check=True):
-    return subprocess.run([sys.executable, "-m", *args], cwd=ROOT, capture_output=True, text=True, check=check)
+def run(*args, check=True, env=None):
+    return subprocess.run([sys.executable, "-m", *args], cwd=ROOT, capture_output=True, text=True, check=check, env=env)
 
 
 @unittest.skipIf(torch is None, "torch/tokenizers not installed")
@@ -41,10 +41,23 @@ class TestNativeTraining(unittest.TestCase):
                    "--final-eval", "none", *extra, check=check)
 
     def test_rebuild_reproduces_hashes(self):
+        import os
+
+        env = {**os.environ, "PYTHONHASHSEED": "12345"}          # a different string-hash salt than the first build
         out = run("native.data.build", "--out", str(self.tmp / "data2"), "--tokens", "4e5", "--vocab", "1024",
                   "--only", "math_synth", "algo_synth", "--tokenizer", str(self.tmp / "data" / "tokenizer.json"),
-                  "--expect", str(self.tmp / "data" / "manifest.json"))
+                  "--expect", str(self.tmp / "data" / "manifest.json"), env=env)
         self.assertIn("reproduces every expected shard hash", out.stdout)
+
+    def test_synthetic_training_data_excludes_evaluation_prompts(self):
+        import random
+
+        from native.data import synth
+
+        held = {p for p, _ in synth.eval_items("math_synth", 2000)}
+        doc = synth.document(random.Random("math_synth:3"), "math_synth", n_items=2000, exclude=held)
+        prompts = {line.rsplit(" ", 1)[0] for line in doc.splitlines()}
+        self.assertFalse(prompts & held)
 
     def test_resume_is_exact(self):
         self.train(self.tmp / "straight")

@@ -90,9 +90,16 @@ def algo_item(r: random.Random) -> tuple[str, str]:
     return f"kv {' '.join(f'{k}:{v}' for k, v in table.items())} ; get {q} ->", str(table[q])
 
 
-def document(r: random.Random, kind: str, n_items: int = 32) -> str:
+def document(r: random.Random, kind: str, n_items: int = 32, exclude: set[str] | None = None) -> str:
+    """Training document of n_items "prompt answer" lines; prompts in `exclude` (evaluation prompts) are skipped."""
     make = math_item if kind == "math_synth" else algo_item
-    return "\n".join(" ".join(make(r)) for _ in range(n_items))
+    lines = []
+    while len(lines) < n_items:
+        prompt, answer = make(r)
+        if exclude and prompt in exclude:
+            continue
+        lines.append(f"{prompt} {answer}")
+    return "\n".join(lines)
 
 
 def eval_items(kind: str, n: int, seed: int = 10_000) -> list[tuple[str, str]]:
