@@ -38,6 +38,7 @@ import job as lj  # noqa: E402
 from train_session import TERMINAL, launch  # noqa: E402
 
 JOB_SCRIPT = "lightning_ai/rouge1_job.sh"
+LLAMA_CPP_COMMIT = "f1ea206218210afb913ae2f5d2c51faed35915da"   # as rouge-edge.yml (the edge pipeline's tested commit)
 
 
 def preflight(args) -> dict:
@@ -83,6 +84,7 @@ def run(args) -> int:
            "ROUGE_DATASET": args.dataset, "ROUGE_NPROC": str(n), "ROUGE_EXPECT_GPU": family.split("_")[0],
            "ROUGE_PEAK_TFLOPS": str(cost.GPU[family][0]), "ROUGE_RFT_PROMPTS": str(args.prompts), "ROUGE_RFT_K": str(args.k),
            "ROUGE_TRAIN_HOURS": str(args.train_hours), "ROUGE_PARENT": args.parent or "",
+           "LLAMA_CPP_COMMIT": LLAMA_CPP_COMMIT,
            # the registry is the only store that persists; the key stays inside Lightning and is never printed
            "LIGHTNING_API_KEY": os.environ["LIGHTNING_API_KEY"]}
     out = ROOT / "results" / "runs" / args.run

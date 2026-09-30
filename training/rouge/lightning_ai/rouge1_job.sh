@@ -137,6 +137,22 @@ mkdir -p "$W/reports" && cp "$W"/{verify-base.json,verify-data.json,rft-report.j
 python lightning_ai/storage.py upload "$W/reports" "rouge/runs/$ROUGE_RUN-reports" || fail "report upload" 37
 python lightning_ai/storage.py upload "$RUN/model" "rouge/models/$ROUGE_RUN" || fail "model upload" 38
 phase UPLOAD "rouge/models/$ROUGE_RUN"
+# Rouge Edge for local use (llama.cpp): only a checkpoint that passed its gate is converted.
+if [[ "${ROUGE_EDGE:-1}" == 1 ]] && python -c "import json,sys; sys.exit(0 if json.load(open('$W/report.json'))['verdict']['result'] == 'PASS' else 1)"; then
+  phase EDGE "GGUF Q4_K_M"
+  LLAMA="$W/llama.cpp"; EDGE="$W/edge"; mkdir -p "$EDGE"
+  (apt-get update -qq && apt-get install -y -qq git cmake build-essential > /dev/null) || fail "build tools" 40
+  git init -q "$LLAMA" && git -C "$LLAMA" fetch -q --depth 1 "${LLAMA_CPP_REPO:-https://github.com/ggml-org/llama.cpp}" "$LLAMA_CPP_COMMIT" \
+    && git -C "$LLAMA" checkout -q FETCH_HEAD || fail "llama.cpp at the pinned commit" 41
+  cmake -S "$LLAMA" -B "$LLAMA/build" -DGGML_CUDA=OFF -DLLAMA_CURL=OFF > /dev/null && cmake --build "$LLAMA/build" -j --target llama-quantize > /dev/null \
+    || fail "llama.cpp build" 42
+  python -m pip install -q "$LLAMA/gguf-py" sentencepiece || fail "gguf-py" 43
+  python "$LLAMA/convert_hf_to_gguf.py" "$RUN/model" --outtype bf16 --outfile "$W/rouge-bf16.gguf" > "$W/convert.log" 2>&1 || fail "GGUF conversion" 44
+  "$LLAMA/build/bin/llama-quantize" "$W/rouge-bf16.gguf" "$EDGE/$ROUGE_RUN-Q4_K_M.gguf" Q4_K_M > "$W/quantize.log" 2>&1 || fail "quantisation" 45
+  rm -f "$W/rouge-bf16.gguf"
+  python lightning_ai/storage.py upload "$EDGE" "rouge/models/$ROUGE_RUN-gguf" || fail "GGUF upload" 46
+  phase EDGE_UPLOAD "rouge/models/$ROUGE_RUN-gguf ($(du -h "$EDGE/$ROUGE_RUN-Q4_K_M.gguf" | cut -f1))"
+fi
 echo "ROUGE_TRAIN $(python - "$W" <<'EOF'
 import json, sys
 w = sys.argv[1]

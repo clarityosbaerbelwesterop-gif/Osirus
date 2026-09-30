@@ -110,6 +110,18 @@ At this account's prices the H200 is cheapest and fastest. A T4 node matches it 
 - **Measured: the T4 reaches MFU 0.095** (42.3k tokens/s, fp16) instead of the assumed 0.30 (`results/lightning/mfu.json`). A GPU tournament is far cheaper on an H200 (about 5–25 min per candidate) than on a T4 (79 min).
 - **Now:** Level B runs free on GitHub CPUs (the registered fallback B-cpu, size xs). It names the finalists; promotion still needs Level C on a GPU.
 
+## Rouge 1 on Qwen3.6-27B (owner decision 2026-09-30)
+
+- **The plan:** `docs/rouge/rouge1-base-plan.md`.
+- **Base:** pinned `Qwen/Qwen3.6-27B@6a9e13bd6fc8`, Apache-2.0, 15 shards, 55.6 GB, every sha256 recorded (run 36765841051).
+- **Built and tested for free:**
+  - Full-parameter FSDP2 training (`rouge_train/full.py`). Tested with two CPU ranks: the resumed run is bit-identical, the MTP tensors are carried over and the vision tower stays frozen.
+  - RSI data selection (`rouge_train/rft.py`).
+  - The Lightning job on 8 × H200: download and verification on the GPU machine, baseline, self-generated verified data, training, pre-registered verdict, private upload, GGUF (`lightning_ai/rouge1_job.sh`, `rouge1_session.py`, `rouge-train.yml task=rouge1`).
+  - The local install (`serve/install.py`).
+- **Running:** dataset `rft-v1` (rouge-data.yml run 36768014451). Its eval hash goes into the pre-registration `experiments/rouge-1-rl-001.json`.
+- **Waiting for:** the owner's credits, then one approval in `rouge-gpu`. One iteration costs about 2.3 h × 36 USD/h ≈ 84 USD.
+
 ## What the owner has to do (nothing else blocks Phase E)
 
 1. **Free hours: none left for this account** (probe of 17:24 UTC, `results/lightning/probe.json`). The key sees 4 memberships: two teamspaces, "Rouge" and "default-project", each listed once as organisation and once as user membership. Both show the same wallet of **1.27 credits**, free credits are **off** everywhere, and no next free-credit grant is scheduled. The key reads Rouge; default-project is refused, but it draws on the same wallet, so a new key would add nothing. The pricing page's free hours (A100 40 GB 10 h, T4 75 h …) come "with up to 30 free credits to start"; this account's starting credits are spent (4.89 at the first probe). The free Studio (4 CPU, 24/7, restart every 4 h) is CPU only; 20 parallel GitHub runners give more free CPU.

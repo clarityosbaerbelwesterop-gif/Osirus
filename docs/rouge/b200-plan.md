@@ -1,5 +1,7 @@
 # Rouge 1: free phase, then 125 credits on B200 (plan of 2026-09-30)
 
+> **Superseded on 2026-09-30.** The owner decided to build Rouge 1 on the pinned open base Qwen3.6-27B instead of pretraining a native 2B model. The 125 credits go to one RSI iteration on 8 × H200 (`docs/rouge/rouge1-base-plan.md`). This plan stays as research for Rouge 2 and a small edge model.
+
 Owner direction (2026-09-30):
 1. Use every free resource first.
 2. Then 125 credits for training on 2–3 B200 GPUs, about 10 hours each.

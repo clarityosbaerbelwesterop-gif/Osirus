@@ -64,3 +64,15 @@ class Rouge1PreflightTest(unittest.TestCase):
 
         self.assertEqual(cost.gpus("H200_X_8"), ("H200", 8))
         self.assertLess(cost.worst_case("H200_X_8", 2.5, 36.0), cost.CEILING_USD)
+
+
+class InstallFitTest(unittest.TestCase):
+    def test_q4_k_m_fits_a_32_gb_mac_but_not_24_gb_or_an_ipad(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "serve"))
+        import install
+
+        q4 = int(16.8 * 2**30)
+        self.assertTrue(install.fits(q4, 32 * 2**30, "Darwin"))
+        self.assertFalse(install.fits(q4, 24 * 2**30, "Darwin"))
+        self.assertFalse(install.fits(q4, 16 * 2**30, "Darwin"))
+        self.assertTrue(install.fits(q4, None, "Darwin"))
