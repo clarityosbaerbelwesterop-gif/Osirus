@@ -104,7 +104,8 @@ jobs:
             if [ -f "$stash/manifest.json" ]; then mkdir -p "$ROUGE/configs/native/$CORPUS" && cp "$stash/manifest.json" "$ROUGE/configs/native/$CORPUS/manifest.json"; fi
             git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/configs/native" 2>/dev/null || true
             git diff --cached --quiet && break
-            git commit -q -m "rouge(data): $CORPUS built on Lightning, stored in the teamspace (run ${{ github.run_id }})"
+            if [ -f "$stash/manifest.json" ]; then msg="rouge(data): $CORPUS built, verified and stored in the Lightning model registry"; else msg="rouge(data): ledger of an unfinished $CORPUS build (no manifest)"; fi
+            git commit -q -m "$msg (run ${{ github.run_id }})"
             git push -q origin "HEAD:$BRANCH" && break
             sleep $((attempt * 5))
           done
