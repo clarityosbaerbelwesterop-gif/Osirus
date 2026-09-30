@@ -72,18 +72,43 @@ def check_budget(ledger: dict, machine: str, max_hours: float) -> float:
 
 
 def teamspace():
-    """The authenticated user's first teamspace (names are resolved, never printed)."""
+    """The first teamspace this key may use (names are resolved, never printed).
+
+    A key can be scoped to one teamspace: memberships the key is not
+    authorized for answer 403 and are skipped.
+    """
     from lightning_sdk import Teamspace
     from lightning_sdk.api.teamspace_api import TeamspaceApi
     from lightning_sdk.api.user_api import UserApi
 
-    user = UserApi()._client.auth_service_get_user()
-    spaces = TeamspaceApi().list_teamspaces(owner_id=user.id) or []
-    if not spaces:
-        raise SystemExit("authenticated, but the account owns no teamspace")
+    users = UserApi()
+    user = users._client.auth_service_get_user()
+    memberships = users._get_all_teamspace_memberships(user.id) or []
+    api, usable, refused = TeamspaceApi(), [], 0
+    for m in memberships:
+        try:
+            usable.append((api._get_teamspace_by_id(m.project_id), m))
+        except Exception:
+            refused += 1
+    print(f"[lightning] {len(memberships)} teamspace membership(s): {len(usable)} usable with this key, {refused} refused",
+          flush=True)
+    if not usable:
+        raise SystemExit("the key authenticates but may use no teamspace")
+    project, membership = usable[0]
+    balance = getattr(membership, "balance", None)
+    print(f"[lightning] credit balance of the teamspace: {balance if balance is not None else 'not reported'}"
+          f" (free credits enabled: {getattr(membership, 'free_credits_enabled', None)})", flush=True)
+    os.environ["ROUGE_LIGHTNING_BALANCE"] = "" if balance is None else str(balance)
+    owner = project.owner_type if hasattr(project, "owner_type") else None
+    os.environ["LIGHTNING_TEAMSPACE"] = project.name
+    os.environ["LIGHTNING_CLOUD_PROJECT_ID"] = project.id
+    if owner and "organization" in str(owner).lower():
+        from lightning_sdk.api.org_api import OrgApi
+
+        org = OrgApi()._get_org_by_id(project.owner_id)
+        return Teamspace(name=f"{org.name}/{project.name}"), len(usable)
     os.environ["LIGHTNING_USERNAME"] = user.username
-    os.environ["LIGHTNING_TEAMSPACE"] = spaces[0].name
-    return Teamspace(name=spaces[0].name, user=user.username), len(spaces)
+    return Teamspace(name=f"{user.username}/{project.name}"), len(usable)
 
 
 def bootstrap_command(sha: str, script: str) -> str:
@@ -104,7 +129,7 @@ def probe(args) -> None:
     if not os.environ.get("LIGHTNING_API_KEY"):
         raise SystemExit("LIGHTNING_API_KEY is not set")
     ts, n = teamspace()
-    print(f"[lightning] authenticated; {n} teamspace(s) owned; using the first", flush=True)
+    print(f"[lightning] authenticated; using the first of {n} usable teamspace(s)", flush=True)
     for m in ("T4", "L4"):
         try:
             avail = ts.list_machines(machine=m)
@@ -117,6 +142,9 @@ def probe(args) -> None:
         ledger_path = Path(args.ledger)
         ledger = load_ledger(ledger_path)
         worst = check_budget(ledger, args.submit_test, 0.25)
+        balance = os.environ.get("ROUGE_LIGHTNING_BALANCE")
+        if balance and worst > float(balance) - SAFETY_MARGIN:
+            raise SystemExit(f"refused: worst case {worst:.2f} exceeds the credit balance {float(balance):.2f} minus the margin")
         cmd = "nvidia-smi --query-gpu=name --format=csv || echo no-gpu; python -c \"import sys; print('ROUGE_PROBE ok', sys.version.split()[0])\""
         job = Job.run(name=f"rouge-probe-{int(time.time())}", machine=getattr(Machine, args.submit_test), command=cmd,
                       image="python:3.11-slim", teamspace=ts, interruptible=False)
@@ -181,6 +209,9 @@ def run(args) -> None:
     ledger = load_ledger(ledger_path)
     worst = check_budget(ledger, args.machine, args.max_hours)
     ts, _ = teamspace()
+    balance = os.environ.get("ROUGE_LIGHTNING_BALANCE")
+    if balance and worst > float(balance) - SAFETY_MARGIN:
+        raise SystemExit(f"refused: worst case {worst:.2f} exceeds the credit balance {float(balance):.2f} minus the margin")
     job = Job.run(name=args.name, machine=getattr(Machine, args.machine), command=bootstrap_command(sha, args.script),
                   image="python:3.11-slim", teamspace=ts, interruptible=False,
                   env={"PYTHONUNBUFFERED": "1", **dict(kv.split("=", 1) for kv in args.env)})
