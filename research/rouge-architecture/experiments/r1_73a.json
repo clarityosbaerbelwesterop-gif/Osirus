@@ -1,0 +1,83 @@
+{
+  "schema": "rouge.research-experiment/1",
+  "id": "R1.73a",
+  "title": "Native ternary export: physical bytes and output parity before the iPad port",
+  "status": "pre-registered",
+  "registered": "2026-09-30",
+  "milestones": ["R1.29b", "R1.71", "R1.72", "R1.73", "R1.74", "R1.75"],
+  "runner": "experiments/edge_bridge.py",
+  "benchmarks": ["benchmarks/text.py"],
+  "question": "Does physically packing native C's ternary projections preserve their codes and outputs, and store at most 45% of the fp32-master file bytes?",
+  "hypothesis": "Two-bit packing is lossless for the already-quantised ternary projections. With identical fp32 attention/embedding tensors, this C fixture should store less than 0.45 times its fp32 master checkpoint. This is a format hypothesis, not a language-quality hypothesis.",
+  "data": {
+    "source": "enwik8",
+    "sha256": "2b49720ec4d78c3c9fabaee6e4179a5e997302b3a70029f30f2d582218c024a8",
+    "split": "standard 90,000,000 train / 5,000,000 valid / 5,000,000 test bytes",
+    "audit": "64 evenly spaced validation segments of 128 next-byte predictions, 8,192 target bytes; no training or test-set selection"
+  },
+  "setup": {
+    "steps": 0,
+    "batch": 1,
+    "length": 128,
+    "threads": 4,
+    "seeds": [1, 2, 3],
+    "hardware": "free x86 CPU only; record available CPUs, PyTorch version and thread count",
+    "parameters": {"packed-format": 1623744},
+    "models": {
+      "packed-format": {
+        "config": {
+          "name": "r1.73a-c-format-fixture",
+          "vocab_size": 256,
+          "d_model": 192,
+          "n_layers": 4,
+          "n_heads": 6,
+          "n_kv_heads": 2,
+          "ffn_hidden": 512,
+          "max_seq": 256,
+          "attention": "hybrid",
+          "window": 64,
+          "global_every": 2,
+          "lowbit": "ternary",
+          "lowbit_scope": "ffn"
+        },
+        "baseline": "same seeded untrained native C model with fp32 master parameters and normal BitLinear execution",
+        "treatment": "pack its ternary FFN codes plus scales; keep other tensors identical; reload and unpack one projection at a time"
+      }
+    },
+    "eval": {"segments": 64},
+    "kernel": {"tokens": 1024, "d": 256, "warmups": 3, "repetitions": 20, "moe_repetitions": 10},
+    "decode": {"batch": 1, "context": 128, "new_tokens": 64, "warmup": "one prefill per model"},
+    "gate": {
+      "checks": {
+        "bytes": {"left": "packed-format:packed_to_master_file_ratio", "op": "<=", "value": 0.45, "every_seed": true},
+        "logits": {"left": "packed-format:max_logit_error", "op": "<=", "value": 0.00001, "every_seed": true},
+        "loss": {"left": "packed-format:max_abs_bpb_delta", "op": "<=", "value": 0.00001, "every_seed": true},
+        "codes": {"left": "packed-format:code_roundtrip_exact", "op": ">=", "value": 1.0, "every_seed": true}
+      },
+      "decision": [{"result": "PASS", "all": ["bytes", "logits", "loss", "codes"]}, {"result": "FAIL"}]
+    }
+  },
+  "compute": {"train_flops_per_run": 0, "memory_gb": 2, "hardware_tier": 0, "max_cost_usd": 0},
+  "analysis": {
+    "primary": "All four format checks must pass for every seed. Report mean, sample SD and 95% Student-t CI using lab.stats; decide with lab.gate.",
+    "secondary": "Actual file and tensor-payload bytes; unfused decode tokens/s; existing native.bench projection and same-active-FLOP MoE timings. Timings are descriptive, with no speed gate or forecast.",
+    "provenance": "Record code commit, prereg SHA-256, corpus hash, checkpoint hashes, hardware and all seeds. No best-seed selection.",
+    "stopping": "No dimension or gate changes after the first audit run. Failures remain in results; a corrected protocol needs a new ID. Interrupted runs may resume only with the same code/prereg."
+  },
+  "kill": "Any format check fails: block this exporter from the device phase. A PASS licenses only a format claim, not a quality, memory-residency, speed, energy or iPad claim.",
+  "expected_effect": {
+    "source": "R1.29b report: 14,853 KiB analytically packed versus 38,852 KiB fp32 at 9.95M parameters; no physical packed-file or device result in that report",
+    "forecast": "File-size reduction expected by encoding construction; its magnitude for this different fixture is unmeasured before this run. CPU speed and joules/token are unknown."
+  },
+  "device_followup": {
+    "status": "blocked on trained finalist/checkpoint, backend and real iPad; requires a separately committed registration before measurements",
+    "selection": "No C/D winner exists until Level B has a valid A baseline and the tournament's pre-registered gates finish. Fix the selected checkpoint hash and matched full-precision comparator before the device phase.",
+    "formats": "1,000,000,000-byte and 5,000,000,000-byte physical weight/tokenizer budgets, including scales and metadata; adapters and retrieved documents reported separately. CPU reference is not GGUF/CoreML.",
+    "quality": "Frozen validation BPB and held-out math/logic/code, plus 4k/32k passkey; seeds 1/2/3. Quantised minus matched full-precision BPB <= +0.02 and task accuracy loss <= 2 percentage points. Exported versus training-format logits checked independently.",
+    "device": "Identify iPad model, chip, 8/16 GB configuration, OS/backend versions. Batch 1, contexts 512/4096/32768, 256 generated tokens, 3 sessions with 5 repetitions/context, 30-minute sustained thermal run.",
+    "measurement": "Prefill/decode tokens/s and p95 latency; iOS process resident/peak memory including KV, workspaces and transient dequantisation; actual kernel placement. Calibrated external USB-C power trace at fixed battery charge, screen/brightness and temperature; idle trace subtracted. Report gross and incremental J/token, sensor uncertainty and sustained watts. Do not use a Mac or a process RSS proxy as an iPad energy measurement.",
+    "proposed_gates": "Quality gates above, >=10 sustained decode tokens/s, <=2 incremental J/token, <=30 W gross during the measurement, app resident memory <=6 GB on 8 GB and <=12 GB on 16 GB. These are design targets, not observed effects; freeze in the device registration and disclose any target change before data collection.",
+    "paid_compute": "Only via the existing rouge-gpu approval path; this registration authorises no paid GPU."
+  },
+  "not_claimed": "No learning, trained-model quality, knowledge capacity, runtime memory savings, Metal/CoreML compatibility, MatMul-free execution, or iPad energy. PackedLinear expands a projection and calls a dense matmul."
+}
