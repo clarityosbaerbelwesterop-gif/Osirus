@@ -18,9 +18,10 @@ class TestCeiling(unittest.TestCase):
         self.assertAlmostEqual(cost.CEILING_USD, 52.5)
 
     def test_refuses_a_launch_that_would_exceed_the_ceiling(self):
-        cost.check(ledger(), cost.worst_case("H100", 13))                 # 52 USD fits
+        cost.check(ledger(), cost.worst_case("H100", 7))                  # 49.7 USD fits
         with self.assertRaises(SystemExit):
-            cost.check(ledger(), cost.worst_case("H100", 14))             # 56 USD does not
+            cost.check(ledger(), cost.worst_case("H100", 8))              # 56.8 USD does not
+        cost.check(ledger(), cost.worst_case("H200", 10, 4.50))           # 47.25 USD at the live price fits
         with self.assertRaises(SystemExit):
             cost.worst_case("B200", 1)                                    # not a training machine
         with self.assertRaises(SystemExit):

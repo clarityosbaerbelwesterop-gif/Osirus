@@ -10,9 +10,9 @@ registry every 10 minutes, and a preempted job is relaunched and resumes exactly
 Runs from GitHub Actions in the protected environment "rouge-gpu" (the owner approves every run).
 Guards, all before anything is billed:
 1. TRAINING_READY.json is true (ready.py: 16 conditions with committed evidence);
-2. the machine is a training machine, its live price is within its ceiling, and the worst case (max hours x price ceiling)
-   fits the 50 EUR ceiling together with every Rouge job already in the ledger (cost.py);
-3. the worst case fits the teamspace's credit balance.
+2. the machine is a training machine and its live price (cheapest cloud account) is within its ceiling;
+3. the worst case (hours left x live price + 5%) fits the 50 EUR ceiling together with every Rouge job
+   already in the ledger (cost.py), and the teamspace's credit balance.
 The job (train_job.sh) downloads the hash-verified corpus and any earlier checkpoint of this run
 from the teamspace drive, trains with a time budget, syncs checkpoints back while it runs, uploads
 the run and publishes the model to the teamspace model registry. Storage is the registry (the
@@ -51,53 +51,71 @@ def plan(rung: str, batch: int, gpus: int = 1) -> dict:
             "ROUGE_BATCH": str(batch), "ROUGE_ACCUM": str(accum), "ROUGE_SEQ": str(seq), "ROUGE_LR": str(r["lr"])}
 
 
-def live_price(ts, machine: str) -> tuple[float | None, float | None]:
-    """(on-demand, interruptible) USD per hour from the Lightning API; (None, None) when not listed."""
+def best_offer(ts, machine: str, interruptible: bool) -> tuple[str | None, float | None]:
+    """(cloud account, USD per hour) of the cheapest live offer of `machine` over the teamspace's cloud
+    accounts; (None, None) when no account lists it. Account ids are used, never printed."""
     try:
-        listed = ts.list_machines(machine=machine)
+        accounts = [a.id for a in ts._cloud_account_api.list_global_cloud_accounts(teamspace_id=ts.id)]
     except Exception:
-        return None, None
-    prices = [(getattr(m, "cost", None), getattr(m, "interruptible_cost", None)) for m in listed]
-    if not prices:
-        return None, None
-    return min(prices, key=lambda p: p[0] or 1e9)
+        accounts = []
+    for a in ts.cloud_accounts or []:
+        a = getattr(a, "id", a)
+        if a not in accounts:
+            accounts.append(a)
+    best = (None, None)
+    for account in accounts:
+        try:
+            listed = ts.list_machines(cloud_account=account, machine=machine)
+        except Exception:
+            continue
+        for m in listed:
+            price = getattr(m, "interruptible_cost" if interruptible else "cost", None)
+            if price and (best[1] is None or float(price) < best[1]):
+                best = (account, float(price))
+    return best
 
 
 def preflight(args) -> float:
     ready = json.loads((ROOT / "TRAINING_READY.json").read_text()) if (ROOT / "TRAINING_READY.json").exists() else {}
     if ready.get("TRAINING_READY") is not True:
         raise SystemExit("TRAINING_READY is not true: run ready.py and fix every failing condition first")
-    worst = cost.worst_case(args.machine, args.max_hours)
-    remaining = cost.check(cost.load(HERE / "ledger.json"), worst)
-    print(f"[train] {args.machine} for at most {args.max_hours} h: worst case {worst:.2f} USD; "
-          f"{remaining:.2f} USD would remain under the {cost.CEILING_USD:.2f} USD ceiling", flush=True)
-    return worst
+    cost.worst_case(args.machine, args.max_hours)   # refuses a machine outside the training allowlist
+    remaining = cost.CEILING_USD - cost.committed(cost.load(HERE / "ledger.json"))
+    print(f"[train] {args.machine} for at most {args.max_hours} h; {remaining:.2f} USD left under the "
+          f"{cost.CEILING_USD:.2f} USD ceiling (each launch is checked at its live price)", flush=True)
+    return remaining
 
 
-def launch(Job, Machine, args, sha: str, env: dict, worst: float):
+def launch(Job, Machine, args, sha: str, env: dict, hours: float, ledger: dict):
+    """Start the job on the cheapest live offer that fits the ceiling and the balance; (job, worst case USD)."""
     for i, (ts, balance, project) in enumerate(lj.teamspaces()):
-        if balance is not None and worst > float(balance) - lj.SAFETY_MARGIN:
-            print(f"[train] teamspace {i}: worst case {worst:.2f} exceeds its credit balance {float(balance):.2f} minus the margin",
+        account, price = best_offer(ts, args.machine, args.interruptible)
+        if price is None:
+            print(f"[train] teamspace {i}: {args.machine} is not offered {'interruptible' if args.interruptible else 'on demand'}",
                   flush=True)
             continue
-        on_demand, spot = live_price(ts, args.machine)
-        price = spot if args.interruptible else on_demand
-        if price is not None and float(price) > cost.PAID_PRICE_CEILING[args.machine]:
+        if price > cost.PAID_PRICE_CEILING[args.machine]:
             print(f"[train] teamspace {i}: live price {price} USD/h exceeds the ceiling {cost.PAID_PRICE_CEILING[args.machine]}",
                   flush=True)
             continue
-        print(f"[train] teamspace {i}: {args.machine} live price {on_demand} USD/h on demand, {spot} USD/h interruptible",
-              flush=True)
+        worst = cost.worst_case(args.machine, hours, price)
+        cost.check(ledger, worst)   # 50 EUR ceiling over every Rouge job, at the live price
+        if balance is not None and worst > float(balance) - lj.SAFETY_MARGIN:
+            print(f"[train] teamspace {i}: worst case {worst:.2f} ({price} USD/h x {hours:.2f} h) exceeds its credit balance "
+                  f"{float(balance):.2f} minus the margin", flush=True)
+            continue
+        print(f"[train] teamspace {i}: {args.machine} at {price} USD/h ({'interruptible' if args.interruptible else 'on demand'}), "
+              f"worst case {worst:.2f} USD", flush=True)
         os.environ["LIGHTNING_CLOUD_PROJECT_ID"] = project.id
         try:
-            job = Job.run(name=f"{args.run}-{int(time.time())}", machine=getattr(Machine, args.machine),
+            job = Job.run(name=f"{args.run}-{int(time.time())}", machine=getattr(Machine, args.machine), cloud=account,
                           command=lj.bootstrap_command(sha, "lightning_ai/train_job.sh"), image="python:3.11-slim",
                           teamspace=ts, interruptible=args.interruptible, env=env)
             print(f"[train] teamspace {i} accepted the job", flush=True)
-            return job
+            return job, worst
         except Exception as e:
             print(f"[train] teamspace {i}: job creation refused ({str(e)[-60:]})", flush=True)
-    return None
+    return None, None
 
 
 def run(args) -> int:
@@ -129,10 +147,8 @@ def run(args) -> int:
         if hours < 0.75:
             print(f"[train] {hours:.2f} h left before the deadline: no further attempt", flush=True)
             break
-        worst = cost.worst_case(args.machine, hours)
-        cost.check(ledger, worst)
         env["ROUGE_BUDGET_MIN"] = str(int(hours * 60 - 45))
-        job = launch(Job, Machine, args, sha, env, worst)
+        job, worst = launch(Job, Machine, args, sha, env, hours, ledger)
         if job is None:
             raise SystemExit("no teamspace accepted the training job (credits, GPU access, price or permissions)")
         code = lj.record_and_wait(job, ledger, ledger_path, args.machine, hours, worst, results=None,

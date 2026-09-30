@@ -99,7 +99,7 @@ class TestTrainSession(unittest.TestCase):
         with mock.patch.dict(sys.modules, {"lightning_sdk": fake_sdk}), \
                 mock.patch.dict("os.environ", {"LIGHTNING_API_KEY": "x", "GITHUB_SHA": "abc"}), \
                 mock.patch.object(train_session, "preflight", return_value=1.0), \
-                mock.patch.object(train_session, "launch", side_effect=jobs) as launch, \
+                mock.patch.object(train_session, "launch", side_effect=[(j, 3.0) for j in jobs]) as launch, \
                 mock.patch.object(lj, "load_ledger", return_value={"months": {}}), \
                 mock.patch.object(lj, "record_and_wait", return_value=0), \
                 mock.patch.object(Path, "write_text"), mock.patch.object(Path, "mkdir"):
@@ -116,19 +116,44 @@ class TestTrainSession(unittest.TestCase):
         self.assertEqual(self._run([["ROUGE_PHASE TRAIN x"]], interruptible=False).call_count, 1)
 
 
+class FakeOffers:
+    id = "ts"
+    cloud_accounts = ["b"]
+
+    class _cloud_account_api:  # noqa: N801
+        @staticmethod
+        def list_global_cloud_accounts(teamspace_id):
+            return [type("C", (), {"id": "a"})()]
+
+    def list_machines(self, cloud_account, machine):
+        prices = {"a": (6.53, None), "b": (4.50, 3.82)}[cloud_account]
+        return [type("M", (), {"cost": prices[0], "interruptible_cost": prices[1]})()]
+
+
 class TestMachineChoice(unittest.TestCase):
+    def test_the_cheapest_cloud_account_wins(self):
+        self.assertEqual(train_session.best_offer(FakeOffers(), "H200", False), ("b", 4.50))
+        self.assertEqual(train_session.best_offer(FakeOffers(), "H200", True), ("b", 3.82))
+
+    def test_worst_case_at_the_live_price_and_refusal_above_the_ceiling(self):
+        self.assertAlmostEqual(cost.worst_case("H200", 2, 4.50), 9.45)
+        self.assertAlmostEqual(cost.worst_case("H200", 2), 14.0)
+        with self.assertRaises(SystemExit):
+            cost.worst_case("T4_X_4", 1, 3.70)   # 4 x 0.90 = 3.60 USD/h ceiling
+
+
     def test_every_training_machine_has_a_ceiling_and_a_peak(self):
         self.assertEqual(cost.gpus("T4_X_8"), ("T4", 8))
         self.assertEqual(cost.gpus("H100"), ("H100", 1))
         for m in cost.TRAINING_MACHINES:
             self.assertGreater(cost.PAID_PRICE_CEILING[m], 0)
             self.assertGreater(cost.PEAK_TFLOPS[m], 0)
-        self.assertAlmostEqual(cost.worst_case("T4_X_8", 5), 12.0)
+        self.assertAlmostEqual(cost.worst_case("T4_X_8", 5), 36.0)
         self.assertAlmostEqual(cost.PEAK_TFLOPS["T4_X_8"], 65.0 * 8 * cost.MULTI_GPU_EFFICIENCY)
 
     def test_cheapest_per_effective_tflop_at_live_prices(self):
         table = [{"name": "H100", "usd_per_hour": 3.29}, {"name": "T4_X_8", "usd_per_hour": 1.52},
-                 {"name": "L4_X_4", "usd_per_hour": 9.0}, {"name": "CPU", "usd_per_hour": 0.01}]
+                 {"name": "L4_X_4", "usd_per_hour": 9.0}, {"name": "CPU", "usd_per_hour": 0.01}]   # L4_X_4 ceiling 6.20
         with mock.patch.object(cost, "mfu", return_value=0.3):
             # H100: 3.29 / 989 = 0.00333 USD per TFLOP-hour; T4_X_8: 1.52 / 468 = 0.00325; L4_X_4 above its ceiling
             self.assertEqual(lj.cheapest_training_machine(table), "T4_X_8")

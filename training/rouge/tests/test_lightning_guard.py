@@ -18,8 +18,8 @@ class TestGuards(unittest.TestCase):
     def test_monthly_credits_are_enforced(self):
         ledger = {"months": {job.month(): {"jobs": [{"cost_usd": 12.0}]}}}
         with self.assertRaises(SystemExit):
-            job.check_budget(ledger, "L4", 4.0)                   # 12 + 2.4 > 15 - 1
-        self.assertAlmostEqual(job.check_budget(ledger, "T4", 1.0), 0.30)
+            job.check_budget(ledger, "L4", 4.0)                   # 12 + 4.0 > 15 - 1
+        self.assertAlmostEqual(job.check_budget(ledger, "T4", 1.0), 0.90)
         running = {"months": {job.month(): {"jobs": [{"cost_usd": None, "worst_case_usd": 13.95}]}}}
         with self.assertRaises(SystemExit):                        # an open job counts at its worst case
             job.check_budget(running, "CPU", 1.0)

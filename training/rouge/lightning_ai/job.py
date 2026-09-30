@@ -41,11 +41,9 @@ from pathlib import Path
 
 FREE_CREDITS_PER_MONTH = 15.0        # USD-equivalent credits (owner decision: free credits only)
 SAFETY_MARGIN = 1.0
-# Conservative ceilings per machine-hour (published on-demand prices are lower: T4 about $0.19/h,
-# L4 about $0.48/h per GPU); used only for the worst-case check, the ledger records actual cost.
-PRICE_CEILING_PER_HOUR = {
-    "CPU": 0.10, "CPU_X_4": 0.30, "CPU_X_8": 0.60, "DATA_PREP": 0.60,
-    "T4": 0.30, "T4_X_4": 1.20, "L4": 0.60, "L4_X_2": 1.20, "L4_X_4": 2.40,
+PRICE_CEILING_PER_HOUR = {   # about 1.25x the live on-demand price of 2026-09-30 (results/lightning/machines.json)
+    "CPU": 0.45, "CPU_X_4": 0.45, "CPU_X_8": 0.65, "DATA_PREP": 1.85,
+    "T4": 0.90, "T4_X_4": 4.40, "L4": 1.00, "L4_X_2": 3.00, "L4_X_4": 6.00,
 }
 REPO = os.environ.get("GITHUB_REPOSITORY", "clarityosbaerbelwesterop-gif/Osirus")
 PACKAGES = "torch==2.14.0 numpy tokenizers datasets huggingface_hub lightning-sdk"
@@ -208,7 +206,12 @@ def machine_table(ts) -> list:
     """Every machine the teamspace can start now, with live on-demand and interruptible prices (no job, no cost)."""
     from lightning_sdk import Machine
 
+    import lightning_sdk.machine as sdk_machine
+
     by_slug = {m.slug: name for name, m in vars(Machine).items() if isinstance(m, Machine)}
+    for alias, slug in getattr(sdk_machine, "_SLUG_ALIASES", {}).items():   # e.g. bare-metal H200 on a second account
+        if slug in by_slug:
+            by_slug.setdefault(alias, by_slug[slug])
     rows = {}
     try:
         listed = ts.list_machines()
@@ -219,7 +222,7 @@ def machine_table(ts) -> list:
         name = by_slug.get(getattr(m, "slug", None))
         row = {"name": name, "slug": getattr(m, "slug", None), "family": getattr(m, "family", None),
                "gpus": getattr(m, "accelerator_count", None), "usd_per_hour": getattr(m, "cost", None),
-               "interruptible_usd_per_hour": getattr(m, "interruptible_cost", None)}
+               "interruptible_usd_per_hour": getattr(m, "interruptible_cost", None) or None}   # 0: not offered
         key = name or row["slug"]
         prev = rows.get(key)
         if prev is None or (row["usd_per_hour"] or 1e9) < (prev["usd_per_hour"] or 1e9):
@@ -369,6 +372,40 @@ def run(args) -> None:
                              prefix=args.prefix.rstrip() + " "))
 
 
+def is_open(status) -> bool:
+    return not any(s in str(status) for s in ("Completed", "Failed", "Stopped"))
+
+
+def jobs(args) -> None:
+    """List Rouge jobs with status and cost; with --stop PREFIX, stop the open ones whose name starts with it."""
+    if args.stop and (not args.stop.startswith("rouge-") or len(args.stop) < 12):
+        raise SystemExit("--stop needs a specific Rouge job name prefix (at least 12 characters, starting with rouge-)")
+    stopped = 0
+    for i, (ts, balance, project) in enumerate(teamspaces()):
+        os.environ["LIGHTNING_CLOUD_PROJECT_ID"] = project.id
+        try:
+            listed = ts.jobs
+        except Exception as e:
+            print(f"[lightning] teamspace {i}: jobs unavailable ({type(e).__name__})", flush=True)
+            continue
+        for j in listed:
+            name = getattr(j, "name", "") or ""
+            if not name.startswith("rouge"):
+                continue
+            status = getattr(j, "status", None)
+            try:
+                spent = j.total_cost
+            except Exception:
+                spent = None
+            print(f"[lightning] teamspace {i}: {name}: {status}, machine {getattr(j, 'machine', None)}, cost {spent}", flush=True)
+            if args.stop and is_open(status) and name.startswith(args.stop):
+                j.stop()
+                stopped += 1
+                print(f"[lightning] stopped {name}", flush=True)
+    if args.stop:
+        print(f"[lightning] {stopped} job(s) stopped for prefix {args.stop}", flush=True)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -388,8 +425,10 @@ def main() -> None:
     r.add_argument("--prefix", default="ROUGE_RUN", help="log-line prefix of the records to collect")
     r.add_argument("--pass-key", action="store_true", help="give the job the key for model-registry transfers")
     r.add_argument("--env", action="append", default=[], help="KEY=VALUE passed to the job (never a secret)")
+    j = sub.add_parser("jobs")
+    j.add_argument("--stop", help="stop the open Rouge jobs whose name starts with this prefix")
     args = parser.parse_args()
-    probe(args) if args.cmd == "probe" else run(args)
+    {"probe": probe, "run": run, "jobs": jobs}[args.cmd](args)
 
 
 if __name__ == "__main__":

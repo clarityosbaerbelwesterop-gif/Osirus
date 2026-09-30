@@ -27,13 +27,14 @@ CEILING_USD = CEILING_EUR * EUR_TO_USD
 LEDGER = Path(__file__).with_name("ledger.json")
 # Training machines: one large GPU or a node of several small ones (owner, 2026-09-30: "several small
 # GPUs with the same total performance do it too"). Per GPU family: dense fp16/bf16 tensor TFLOPS
-# (NVIDIA datasheets; T4 has no bf16 and trains in fp16 with loss scaling), memory in GB, and a
-# conservative price ceiling per GPU-hour above the published on-demand price (T4 about $0.19,
-# L4 $0.48, H100 $3.29, H200 $6.53). The launcher also reads the live price from the Lightning API
-# and refuses a machine whose live price exceeds its ceiling; the ledger records the actual cost.
+# (NVIDIA datasheets; T4 has no bf16 and trains in fp16 with loss scaling), memory in GB, and a price
+# ceiling per GPU-hour: about 1.25x the cheapest live on-demand price this account was offered on
+# 2026-09-30 (results/lightning/machines.json: T4 0.69, L4 0.79, L40S 3.54, H100 5.68, H200 4.50 on a
+# second cloud account and 6.53 on the default one). The launcher takes the cheapest cloud account
+# at the live price, refuses a price above the ceiling, and books the live price as the worst case.
 GPU = {  # family: (peak TFLOPS, memory GB, price ceiling USD per GPU-hour)
-    "T4": (65.0, 16, 0.30), "L4": (121.0, 24, 0.60), "L40S": (362.0, 48, 2.20),
-    "H100": (989.0, 80, 4.00), "H200": (989.0, 141, 7.00),
+    "T4": (65.0, 16, 0.90), "L4": (121.0, 24, 1.55), "L40S": (362.0, 48, 4.45),
+    "H100": (989.0, 80, 7.10), "H200": (989.0, 141, 7.00),
 }
 TRAINING_MACHINES = ("T4_X_4", "T4_X_8", "L4_X_4", "L4_X_8", "L40S", "L40S_X_4", "H100", "H200")
 MULTI_GPU_EFFICIENCY = 0.90   # planning assumption for data parallel over PCIe (no NVLink) until measured
@@ -81,10 +82,13 @@ def check(ledger: dict, worst_case_usd: float) -> float:
     return remaining
 
 
-def worst_case(machine: str, hours: float) -> float:
+def worst_case(machine: str, hours: float, price: float | None = None) -> float:
+    """USD for `hours` at the live `price` plus 5% (price changes, rounding), or at the ceiling when unknown."""
     if machine not in PAID_PRICE_CEILING:
         raise SystemExit(f"{machine} is not a training machine (allowed: {sorted(PAID_PRICE_CEILING)})")
-    return PAID_PRICE_CEILING[machine] * hours
+    if price is not None and float(price) > PAID_PRICE_CEILING[machine]:
+        raise SystemExit(f"{machine}: live price {price} USD/h exceeds its ceiling {PAID_PRICE_CEILING[machine]} USD/h")
+    return (float(price) * 1.05 if price else PAID_PRICE_CEILING[machine]) * hours
 
 
 def estimate(flops_per_token_train: float, tokens: float, price: float, mfu: float = DEFAULT_MFU,
