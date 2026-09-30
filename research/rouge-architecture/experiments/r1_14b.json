@@ -12,7 +12,7 @@
  "question": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
  "design": {
   "rouge-mem-lm": "R1.14's rouge-lm plus the memory in layer 4 of 8 (0-based). Keys are stored without rotary position (content addressing); the write score scales the stored value, so the write head learns what to keep. 512 entries x 8 writes per block cover about the last 4k bytes; memory is 1.1 MiB, constant in length. 283 extra parameters.",
-  "replication": "transformer and rouge-lm repeat R1.14's configurations and seeds; CPU training is deterministic (R1.13 reproduced R1.12 exactly), so their numbers also test reproducibility across runners"
+  "replication": "transformer and rouge-lm repeat R1.14's configurations and seeds. Correction (2026-09-30, before any R1.14/R1.14b result): training is bit-identical only on identical runner hardware (R1.13 reproduced R1.12; R1.39b did not reproduce R1.39 exactly), so the replication is compared through seed intervals."
  },
  "setup": {
   "batch": 16,

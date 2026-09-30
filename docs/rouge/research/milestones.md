@@ -21,7 +21,7 @@ and a documented result. Negative results count and are recorded.
 ## Status (2026-09-30)
 
 All results are pre-registered decisions from 3-seed runs on free CPU runners ($0), except R1.05, R1.08, R1.30 and R1.31 (documents and analysis).
-Counts: 9 PASS, 11 PARTIAL, 13 FAIL or VOID/INCONCLUSIVE, 1 running (plus R1.39b), 6 gated, not started or not earned, and 1 tooling.
+Counts: 9 PASS, 11 PARTIAL, 13 FAIL or VOID/INCONCLUSIVE, 1 running (R1.14; R1.14b and R1.16 follow), 6 gated, not started or not earned, and 1 tooling.
 
 Of the 9 PASS results:
 - 3 are documents or benchmarks (R1.05, R1.06, R1.30);
@@ -69,7 +69,7 @@ Of the 9 PASS results:
 | R1.36 | [FAIL](../../../research/rouge-architecture/results/r1.36/README.md) | Learned query policy = random (75.8 vs 75.3); exact EIG 100. |
 | R1.37 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | Verifier AUROC equals own confidence (0.842). |
 | R1.38 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | Verifier's pick +0.8 over own pick; the plain Transformer beats both. |
-| R1.39 | [FAIL (R1.39b running)](../../../research/rouge-architecture/results/r1.39/README.md) | Reward-only training from scratch stays at the cue floor. |
+| R1.39 | [FAIL](../../../research/rouge-architecture/results/r1.39/README.md), [R1.39b FAIL](../../../research/rouge-architecture/results/r1.39b/README.md) | Reward-only training from scratch stays at the cue floor; rewards after a supervised start cost 9-11 points ID and give no OOD gain. |
 | R1.40 | NOT EARNED YET | Candidates with independent evidence: ternary MLP (R1.29), Rouge small-state memory (R1.09/R1.11, memory frontier R1.31). Waits on R1.14. |
 
 ## R1.01–R1.08 Theory and baselines
