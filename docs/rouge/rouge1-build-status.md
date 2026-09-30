@@ -71,7 +71,7 @@ Packed ternary without a fused kernel is no faster than dense.
 **Lightning AI** (`lightning_ai/job.py`, `ledger.json`):
 - **Balance:** the key reads 2 of the 4 teamspaces. Each has **5 credits**; free monthly credits are off.
 - **CPU jobs:** work (test job completed in 121 s at 0.00 cost).
-- **GPU jobs:** **job creation answers HTTP 403**. The cause is on the account side (GPU access or verification for the organisation teamspace).
+- **GPU jobs:** a **T4** test job ran (121 s, cost 0.00); **L4 job creation answers HTTP 403**. Tournament and GPU dry run use T4 (fp16 with loss scaling).
 - **Guards:**
   - T4/L4/CPU only;
   - worst case checked against the balance and the ledger before every job;
@@ -100,7 +100,7 @@ The 300M rung fits at about 4B tokens. The first run's measured MFU decides; the
 ## What the owner has to do (nothing else blocks Phase E)
 
 1. **RunPod:** top up the account with at least the ceiling you want to allow (50 EUR). The balance is $0 today.
-2. **Lightning GPU:** enable GPU jobs for the key's teamspace. The key creates CPU jobs, but GPU job creation answers 403. Alternatively, provide a key for a teamspace where GPUs are enabled. Without it, the tournament runs as the free Level B-cpu on GitHub runners, which is slower and smaller. Level C then needs a GPU.
+2. **Lightning (optional):** T4 works within the 5 credits per teamspace. Enabling L4 (or monthly free credits) would make Level C faster; it is not required.
 3. **Every paid run:** approve it in the protected GitHub environment `rouge-gpu`. Each H200 segment is one approval.
 
 ## Next steps (automatic, free)
