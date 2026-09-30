@@ -8,14 +8,14 @@ This is the living status of the "Rouge 1: frontier model build" program. Every 
 |---|---|---|
 | §1 Frontier reference | done | `docs/rouge/frontier-reference-2026.md` |
 | §3 R1.16 | done, **FAIL** under its gate | `research/rouge-architecture/results/r1.16/` |
-| §3 R1.29b (ternary on real text) | running (GitHub run 36681965922); decides candidate C | `research/rouge-architecture/experiments/r1_29b.json` |
+| §3 R1.29b (ternary on real text) | done, **PASS** under its gate (provisional: byte-matched gap within seed noise); candidate C stays ternary | `research/rouge-architecture/results/r1.29b/README.md` |
 | §4 Dead research lines stopped | done (results kept; revisit only with a new hypothesis) | `docs/rouge/architecture-v1-candidates.md` |
-| A: architecture tournament | pre-registered; corpus build running; Level B waits for R1.29b and a GPU (or runs as the free Level B-cpu) | `configs/native/tournament-v1.json`, `native/pareto.py`, `native/tournament.py` |
+| A: architecture tournament | corpus v1 built and committed (400M tokens, tokenizer frozen); **Level B running on Lightning T4** | `configs/native/tournament-v1.json`, `configs/native/data-v1/`, `results/tournament-v1/` |
 | A: Architecture Spec v1.0 | freeze tooling done; freezes from the Level C decision only | `native/freeze.py`, `configs/native/ladder-v1.json` |
 | B: training infrastructure | done and tested | see below |
 | C: controlled recursive improvement | done; control plane pinned | `native/cri.py`, `configs/native/control-plane.json` |
 | D: TRAINING_READY | gate built; see the 16-condition table in `TRAINING_READY.json` after `ready.py` | `training/rouge/ready.py` |
-| E: H200 training | built, refused until TRAINING_READY and funds | `runpod/session.py`, `runpod/pod_train.sh`, `.github/workflows/rouge-h200.yml` |
+| E: GPU training | **on Lightning** (owner directive): H100/H200 job, storage and model registry; refused until TRAINING_READY, the 50 EUR ceiling and the balance hold | `lightning_ai/train_session.py`, `lightning_ai/train_job.sh`, `.github/workflows/rouge-train.yml` |
 | F: post-training | stages built and smoke-tested (SFT, reasoning SFT, rejection sampling, DPO, GRPO only after SFT) | `native/posttrain.py` |
 
 ## Phase B: what exists and is tested (`training/rouge/`)
@@ -68,46 +68,38 @@ Packed ternary without a fused kernel is no faster than dense.
 
 ## Compute and money (measured 2026-09-30)
 
-**Lightning AI** (`lightning_ai/job.py`, `ledger.json`):
-- **Balance:** the key reads 2 of the 4 teamspaces. Each has **5 credits**; free monthly credits are off.
-- **CPU jobs:** work (test job completed in 121 s at 0.00 cost).
-- **GPU jobs:** a **T4** test job ran (121 s, cost 0.00); **L4 job creation answers HTTP 403**. Tournament and GPU dry run use T4 (fp16 with loss scaling).
-- **Guards:**
-  - T4/L4/CPU only;
-  - worst case checked against the balance and the ledger before every job;
-  - stop at the deadline.
+Owner directive: **Lightning AI replaces RunPod** for GPU training, storage and the model repository. RunPod code is archived (`training/rouge/archive/runpod/`); nothing was spent there.
 
-**RunPod** (probe: `results/runpod/probe.json`):
-- **Price:** H200 SXM $4.59/h secure cloud ($3.59/h community).
-- **Stock:** low. H200 with network storage is available in AP-JP-1.
-- **Account balance: $0.** Spend limit $80.
-- **Nothing paid can start before a top-up.**
+**Lightning AI** (`lightning_ai/`, ledger `lightning_ai/ledger.json`):
+- The key reads 2 organisation teamspaces (role ProjectAdministrator), each about **4.9 credits**; free monthly credits are off.
+- CPU and T4 jobs run (probes, the GPU dry run on T4 for $0.05). **L4 job creation answers HTTP 403.**
+- **H100, H200 and A100 are listed** (capacity); a paid H100/H200 job has not been created yet (needs TRAINING_READY and credits).
+- Storage: teamspace-drive upload on the default cloud account answered 404; jobs mount `/teamspace` but carry no SDK credentials. The next probe tests every cloud account, the model registry, and persistence of the mounted paths.
 
-**Ceiling** (`runpod/cost.py`):
-- **50 EUR = $52.50**, at 1 EUR = 1.05 USD (below market, so USD spend stays under 50 EUR).
-- Every launch checks its worst case plus everything already in the ledger.
-- The launcher also refuses when the RunPod balance does not cover the worst case.
+**Ceiling** (`lightning_ai/cost.py`):
+- **50 EUR = $52.50**, at 1 EUR = 1.05 USD; it counts every Rouge job on Lightning.
+- A paid launch needs: worst case (hours x price ceiling: H100 $4.00/h, H200 $7.00/h) plus everything in the ledger within the ceiling, and within the teamspace balance.
 
-**Estimates** (spec calculator, one H200 at $4.59/h, MFU 0.3–0.4):
+**Estimates** (spec calculator, MFU 0.3, one GPU; H100 and H200 have the same bf16 compute):
 
-| rung | tokens | hours | cost | fits 50 EUR after the 100M rung? |
-|---|---|---|---|---|
-| 100M | 2B | 1.4–1.8 | $6.6–8.1 | yes |
-| 300M | 6B | 8.9–11.7 | $41–53 | **no** |
+| rung | tokens | H100 (about $3.29/h list) | H200 (about $6.53/h list) |
+|---|---|---|---|
+| 100M | 2B | about 1.8 h, $6–7 | about 1.8 h, $12 |
+| 300M | 6B | about 11.7 h, $38 | over the ceiling |
 
-The 300M rung fits at about 4B tokens. The first run's measured MFU decides; the launcher refuses anything that would cross the ceiling.
+H100 is chosen for the 100M and 300M rungs (same compute, half the price); H200 only when memory requires it (1B).
 
 ## What the owner has to do (nothing else blocks Phase E)
 
-1. **RunPod:** top up the account with at least the ceiling you want to allow (50 EUR). The balance is $0 today.
-2. **Lightning (optional):** T4 works within the 5 credits per teamspace. Enabling L4 (or monthly free credits) would make Level C faster; it is not required.
-3. **Every paid run:** approve it in the protected GitHub environment `rouge-gpu`. Each H200 segment is one approval.
+1. **Lightning credits:** the teamspace holds about 4.9 credits; a 100M rung on H100 needs about 7 plus margin. Add credits up to the 50 EUR ceiling you set; the launcher refuses otherwise.
+2. **Every paid run:** approve it in the protected GitHub environment `rouge-gpu` (workflow "Rouge train").
+3. Optional: enable L4 and monthly free credits for the teamspace (faster tournament Level C).
 
 ## Next steps (automatic, free)
 
-1. The corpus build commits `configs/native/data-v1/` (tokenizer frozen by hash).
-2. R1.29b finishes. Its README decides ternary vs the int8 control.
-3. Level B runs: on a GPU if enabled, otherwise Level B-cpu on 5 GitHub runners.
+1. Done: corpus v1 committed; R1.29b PASS (candidate C ternary); GPU dry run on T4 passed.
+2. Level B finishes on T4 and names the finalists.
+3. Storage path confirmed (drive, model registry or mounted path).
 4. Level C runs on a GPU, then `native/freeze.py` writes Spec v1.0.
 5. A GPU dry run, then `ready.py` reports TRAINING_READY.
-6. The production corpus is built on the volume. The 100M rung trains on H200 within the ceiling, with the owner's approval.
+6. The production corpus is built on Lightning. The 100M rung trains on an H100 within the ceiling, with the owner's approval.
