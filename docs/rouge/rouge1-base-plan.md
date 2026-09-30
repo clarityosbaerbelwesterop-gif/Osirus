@@ -31,6 +31,21 @@ Source: `rouge-base-manifest.yml` runs 36770848733, 36770852627 and 36770856392.
 | DeepSeek-V4-Flash @ 60d8d70 | 159.6 GB (46 shards) | 291 B (43 layers, 256 experts, top-6) | FP4 experts, FP8 rest | MIT | inference, tight | yes; adapters or partial training | about 4.7 TB | Mac Studio with 192 GB or more |
 | Qwen3.6-27B @ 6a9e13b (pinned) | 55.6 GB | 27.8 B dense | BF16 | Apache-2.0 | yes | full training on H200_X_8 | about 0.44 TB | Mac with 32 GB or more |
 
+## Teacher: DeepSeek-V4-Pro (owner decision 2026-09-30)
+
+- **The decision:** the owner chose to keep Rouge 1 on Qwen3.6-27B and to use DeepSeek-V4-Pro as its teacher, not as its base. V4-Pro does not fit one B200 (865 GB against 180 GB), and full training would need about 26 TB of GPU memory.
+- **The pin:** `models/teachers/deepseek-v4-pro.json` pins revision `b5968e9` (64 shards, 864.7 GB, every sha256 recorded). The pin check confirmed the LICENSE file is the MIT text (run 36774077018).
+- **Self-hosted, never the API:** the weights run on our own Lightning machine. Secondary sources report that DeepSeek's API terms forbid training other models on API outputs. The MIT licence of the weights sets no such limit.
+- **What the teacher does:** `teacher_job.sh` on 8 × B200 (native FP4 for V4-Pro's experts) takes the prompts Rouge never solved in an iteration (`hard.jsonl` in that run's reports). It answers each one twice with up to 12k tokens. Only answers that pass the prompt's code check are stored (`rouge/data/teacher-<run>`, registry entry `deepseek-v4-pro-teacher`).
+- **How Rouge uses it:** the next Rouge iteration trains on them (`--extra-data`) together with its own verified answers. The held-out primary suite never contains a teacher prompt.
+- **Order:**
+  1. Iteration 1 on Qwen alone finds the prompts Qwen cannot solve.
+  2. The teacher solves exactly those prompts.
+  3. Iteration 2 learns them.
+
+  The teacher's expensive time goes only where it adds something.
+- **Cost of the teacher job:** B200_X_8 costs 78.87 USD/h. Setup and download take about 0.3 h, sharded hash checks about 0.05 h, loading about 0.2 h and sampling (1,500 prompts × 2) about 0.5 h, so about 1.1 h or 87 USD. The launcher's worst case is 1.5 h, 124 USD.
+
 ## Method: one RSI iteration per paid session
 
 Recipe: ReST-EM style self-training (Singh et al. 2023, "Beyond Human Data"), trained full-parameter.
@@ -95,10 +110,10 @@ Recipe: ReST-EM style self-training (Singh et al. 2023, "Beyond Human Data"), tr
 
 1. **Free:** build the `rft-v1` dataset on a runner (`rouge-data.yml`). It is stored in the registry and its manifest is committed.
 2. **Free:** fill the eval hash into `experiments/rouge-1-rl-001.json` and set its status to `pre-registered`.
-3. **Owner:** add credits and approve `rouge-train.yml task=rouge1 run=rouge-1-rl-001 machine=H200_X_8 max_hours=2.5`.
-4. **Result:**
-   - PASS: `rouge-1-rl-001` becomes the parent of `rouge-1-rl-002`, and its GGUF is installable.
-   - FAIL: the base stays Rouge 1 v0 and a changed recipe is registered as `rouge-1-rl-002`.
+3. **Owner, 125 credits:** approve `rouge-train.yml task=rouge1 run=rouge-1-rl-001 machine=H200_X_8 max_hours=2.5`. Expected cost is about 84 USD. The run writes the prompts Qwen never solved to its reports.
+4. **Owner, next credits, about 90 USD:** approve `task=teacher run=rouge-1-rl-001 machine=B200_X_8 max_hours=1.5`. DeepSeek-V4-Pro answers those prompts.
+5. **Owner, about 85 USD:** approve `task=rouge1 run=rouge-1-rl-002 extra_data=rouge/data/teacher-rouge-1-rl-001`. It starts from `rouge-1-rl-001` if that run passed, else from the base.
+6. **Result:** after each gate, a PASS becomes the next parent and its GGUF is installable. A FAIL leaves the previous model in place and gets a changed, newly registered recipe.
 
 ## What happens to the native model work
 

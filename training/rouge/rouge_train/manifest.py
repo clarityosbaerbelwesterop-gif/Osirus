@@ -44,19 +44,27 @@ class Verification:
         return not self.missing and not self.mismatched
 
 
-def verify_download(root: Path, manifest: dict, *, weights_only: bool = False) -> Verification:
-    """Hash every file the manifest pins (with a sha256) under root."""
+def verify_download(root: Path, manifest: dict, *, weights_only: bool = False, workers: int = 16) -> Verification:
+    """Hash every file the manifest pins (with a sha256) under root, several files at a time
+    (hashlib releases the GIL, so an 865 GB teacher verifies in minutes, not a quarter hour)."""
+    from concurrent.futures import ThreadPoolExecutor
+
     result = Verification()
-    for entry in manifest["files"]:
-        if not entry.get("sha256"):
-            continue
-        if weights_only and not entry["path"].endswith(".safetensors"):
-            continue
-        path = root / entry["path"]
-        if not path.is_file():
+    entries = [e for e in manifest["files"] if e.get("sha256") and not (weights_only and not e["path"].endswith(".safetensors"))]
+    present = []
+    for entry in entries:
+        if (root / entry["path"]).is_file():
+            present.append(entry)
+        else:
             result.missing.append(entry["path"])
-            continue
-        result.checked += 1
-        if path.stat().st_size != entry["size"] or sha256_file(path) != entry["sha256"]:
-            result.mismatched.append(entry["path"])
+
+    def ok(entry: dict) -> bool:
+        path = root / entry["path"]
+        return path.stat().st_size == entry["size"] and sha256_file(path) == entry["sha256"]
+
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        for entry, good in zip(present, pool.map(ok, present)):
+            result.checked += 1
+            if not good:
+                result.mismatched.append(entry["path"])
     return result
