@@ -88,15 +88,16 @@ At this scale, the bf16 embedding (32k × d) dominates stored bytes, so ternary 
 | level | candidates | size | seeds | compute |
 |---|---|---|---|---|
 | A (smoke) | all, tiny | tiny | 1 | CPU, in CI (`tests/test_native_tournament.py`) |
-| B (development) | A–E | s | 1 | one Lightning L4×4 job, at most 2 h |
-| C (promotion) | A + two finalists | m | 3 | one Lightning L4×4 job, at most 4.5 h |
+| B (development) | A–E | s | 1 | one Lightning L4 job, at most 2.5 h |
+| C (promotion) | A + two finalists | m | 3 | Lightning L4, sized from Level B's measured throughput (see below) |
 
 **Compute policy:** Lightning AI free credits only (15 per month; owner decision of 2026-09-30).
 - Machines: T4, L4 and CPU only; never large GPUs.
 - Before launch: the launcher (`training/rouge/lightning_ai/job.py`) refuses a job whose worst case would exceed the month's credits minus a margin.
 - At the deadline: the launcher stops the job.
 - After the job: actual cost goes into `lightning_ai/ledger.json`.
-- Expected spend is about 2 credits for Level B and about 7 for Level C.
+- The probe of 2026-09-30 found 5 credits in each of the two teamspaces the key may use, with no monthly free-credit grant configured, not the 15 per month assumed. Level B therefore runs on one L4 (worst case 1.5 credits).
+- Level C's machine, hours and token budget are fixed from Level B's measured throughput before Level C starts. The same budget applies to every finalist, so the ranking is unaffected. If Level C does not fit the credits, it runs on the paid RunPod budget only with the owner's approval, or at a smaller token budget, and the change is recorded.
 - If the credits run out, Level B runs on GitHub CPU runners at size s with fewer tokens, and the change is recorded.
 
 ## Selection rule (Pareto score)

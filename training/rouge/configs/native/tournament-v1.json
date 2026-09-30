@@ -123,8 +123,8 @@
     "D",
     "E"
    ],
-   "machine": "L4_X_4",
-   "max_hours": 2
+   "machine": "L4",
+   "max_hours": 2.5
   },
   "C": {
    "size": "m",
@@ -134,8 +134,9 @@
     3
    ],
    "candidates": "finalists",
-   "machine": "L4_X_4",
-   "max_hours": 4.5
+   "machine": "L4",
+   "max_hours": 5,
+   "note": "Lightning balance is 5 credits per usable teamspace (probe 2026-09-30), not 15. Level C machine, hours and token budget are fixed from Level B's measured throughput before Level C starts; the same budget applies to every finalist."
   }
  },
  "data": {
