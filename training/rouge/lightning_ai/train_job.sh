@@ -61,10 +61,12 @@ SYNC_PID=$!
 
 phase TRAIN "budget ${ROUGE_BUDGET_MIN} min"
 if (( NPROC > 1 )); then LAUNCH=(torchrun --standalone --nproc-per-node "$NPROC"); else LAUNCH=(python); fi
+EXTRA=(--optimizer "${ROUGE_OPTIMIZER:-adamw}")
+if [[ "${ROUGE_FP8:-0}" == 1 ]]; then python -m pip install -q torchao && EXTRA+=(--fp8 --compile); fi
 timeout "$(( (ROUGE_BUDGET_MIN + 30) * 60 ))" "${LAUNCH[@]}" -m native.train --config "$ROUGE_CONFIG" --data "$DATA_ROOT" \
   --out "$RUN_DIR" --steps "$ROUGE_STEPS" --batch "$ROUGE_BATCH" --accum "$ROUGE_ACCUM" --seq "$ROUGE_SEQ" \
   --lr "$ROUGE_LR" --warmup "${ROUGE_WARMUP:-1000}" --schedule wsd --decay-frac 0.2 --eval-every "${ROUGE_EVAL_EVERY:-1000}" \
-  --ckpt-every "${ROUGE_CKPT_EVERY:-500}" --budget-min "$ROUGE_BUDGET_MIN" --final-eval full --peak-tflops "${ROUGE_PEAK_TFLOPS:-989}" \
+  --ckpt-every "${ROUGE_CKPT_EVERY:-500}" --budget-min "$ROUGE_BUDGET_MIN" --final-eval full --peak-tflops "${ROUGE_PEAK_TFLOPS:-989}" "${EXTRA[@]}" \
   > "$RUN_DIR/train.log" 2>&1
 code=$?
 kill "$SYNC_PID" 2>/dev/null

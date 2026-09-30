@@ -134,7 +134,10 @@ def run(args) -> int:
     ledger = lj.load_ledger(ledger_path)
     env = {"PYTHONUNBUFFERED": "1", "ROUGE_RUN": args.run, "ROUGE_CORPUS": args.corpus, "ROUGE_EXPECT_GPU": family.split("_")[0],   # as nvidia-smi names it (A100_40GB -> A100)
            "ROUGE_NPROC": str(n), "ROUGE_PEAK_TFLOPS": str(cost.GPU[family][0]), "ROUGE_MODEL_NAME": MODEL_NAME[args.rung],
-           "ROUGE_SYNC_MIN": "10" if args.interruptible else "20", **plan(args.rung, batch, n)}
+           "ROUGE_SYNC_MIN": "10" if args.interruptible else "20", "ROUGE_OPTIMIZER": args.optimizer,
+           "ROUGE_FP8": "1" if args.fp8 else "0", **plan(args.rung, batch, n)}
+    if args.fp8 and family not in ("H100", "H200", "B200"):
+        raise SystemExit(f"--fp8 needs an FP8 GPU; {args.machine} has none")
     # Jobs carry no teamspace credentials (probe 2026-09-30) and the model registry is the only store
     # that persists, so the job gets the key as job environment: it stays inside Lightning, is never
     # printed, and is used only by lightning_ai/storage.py for registry transfers.
@@ -178,6 +181,8 @@ def main() -> None:
     parser.add_argument("--max-hours", type=float, required=True)
     parser.add_argument("--interruptible", action="store_true", help="discounted capacity; preempted jobs relaunch and resume")
     parser.add_argument("--max-attempts", type=int, default=6)
+    parser.add_argument("--optimizer", choices=["adamw", "muon"], default="adamw", help="muon only after its ablation wins")
+    parser.add_argument("--fp8", action="store_true", help="FP8 matmuls (H100/H200/B200) only after a loss-parity check")
     parser.add_argument("--corpus", default="pretrain-v3")
     parser.add_argument("--batch", type=int, default=0, help="sequences per GPU and micro-step (0: by GPU family)")
     parser.add_argument("--sha")

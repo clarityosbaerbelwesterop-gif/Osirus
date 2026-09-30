@@ -121,6 +121,7 @@ def main() -> None:
     p.add_argument("--budget-min", type=float, default=0)
     p.add_argument("--grad-ckpt", action="store_true")
     p.add_argument("--compile", action="store_true")
+    p.add_argument("--fp8", action="store_true", help="FP8 matmuls on H100/H200/B200 (torchao); verify loss parity first")
     p.add_argument("--fsdp", action="store_true")
     p.add_argument("--peak-tflops", type=float, default=0, help="accelerator peak for MFU (0: not reported)")
     p.add_argument("--final-eval", default="full", choices=["full", "loss", "none"])
@@ -137,6 +138,14 @@ def main() -> None:
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     cfg, model = build(args, device)
+    if args.fp8:   # FP8 matmuls (torchao float8, dynamic scaling); bf16 master weights and optimizer states
+        if device.type != "cuda" or torch.cuda.get_device_capability() < (8, 9):
+            raise SystemExit("--fp8 needs an FP8 GPU (H100, H200, B200)")
+        from torchao.float8 import convert_to_float8_training
+
+        convert_to_float8_training(model, module_filter_fn=lambda m, fqn: isinstance(m, torch.nn.Linear)
+                                   and m.in_features % 16 == 0 and m.out_features % 16 == 0
+                                   and not any(k in fqn for k in ("head", "router")))
     raw = model
     if args.fsdp and world > 1:
         from torch.distributed.fsdp import fully_shard

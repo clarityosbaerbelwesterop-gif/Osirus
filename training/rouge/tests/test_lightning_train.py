@@ -93,7 +93,7 @@ class TestTrainSession(unittest.TestCase):
         jobs = [type("J", (), {"logs": "\n".join(l)})() for l in logs]
         args = type("A", (), {"machine": "T4_X_8", "max_hours": 5.0, "interruptible": interruptible, "max_attempts": 6,
                               "rung": "100m", "run": "rouge-r1-100m-001", "corpus": "pretrain-v1", "batch": 0,
-                              "sha": "abc"})()
+                              "sha": "abc", "optimizer": "adamw", "fp8": False})()
         fake_sdk = type(sys)("lightning_sdk")
         fake_sdk.Job, fake_sdk.Machine = object, object
         with mock.patch.dict(sys.modules, {"lightning_sdk": fake_sdk}), \
