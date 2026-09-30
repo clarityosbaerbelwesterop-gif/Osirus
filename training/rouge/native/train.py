@@ -155,6 +155,7 @@ def main() -> None:
         path, meta = found
         assert meta["architecture_sha"] == cfg.architecture_sha, "checkpoint belongs to another architecture"
         assert meta["data_sha"] == data_sha, "checkpoint was trained on another corpus"
+        assert meta.get("world", 1) == world, "checkpoint was trained with another number of ranks (resume on the same machine)"
         checkpoint.load(path, model, opt, meta)
         state.update(meta["state"])  # MoE balancing biases are buffers: restored with the model state
         if rank == 0:

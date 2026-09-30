@@ -4,7 +4,8 @@ name: Rouge train
 # the model repository; RunPod is not used).
 # - prepare: a Lightning DATA_PREP job builds the production corpus with the frozen tokenizer and
 #   uploads it, hash-manifested, to the private teamspace drive; the manifest is committed.
-# - train: one paid rung on H100/H200. Runs only in the protected environment "rouge-gpu": nothing
+# - train: one paid rung on one H100/H200 or a node of small GPUs (T4/L4/L40S, data parallel), on demand or
+#   interruptible (preempted jobs relaunch and resume). Runs only in the protected environment "rouge-gpu": nothing
 #   starts until the owner approves the run. Refused unless TRAINING_READY is true, the 50 EUR ceiling
 #   holds with every Rouge job in the ledger, and the teamspace balance covers the worst case.
 # Weights stay in the private teamspace (drive + model registry); git gets hashes and numbers only.
@@ -33,11 +34,16 @@ on:
         description: "train: lineage name, e.g. rouge-r1-100m-001"
         default: ""
       machine:
+        description: "one large GPU, or a node of small GPUs trained data parallel (cheapest per TFLOP: results/lightning/probe.json)"
         type: choice
-        options: [H100, H200]
+        options: [H100, H200, T4_X_4, T4_X_8, L4_X_4, L4_X_8, L40S, L40S_X_4]
         default: H100
+      interruptible:
+        description: "discounted interruptible capacity; a preempted job relaunches and resumes until the deadline"
+        type: boolean
+        default: false
       max_hours:
-        description: "hard limit of the job (at most 5.75)"
+        description: "hard limit of the run, all attempts together (at most 5.75)"
         default: "3"
 
 permissions:
@@ -123,10 +129,11 @@ jobs:
           MACHINE: ${{ inputs.machine }}
           MAX_HOURS: ${{ inputs.max_hours }}
           CORPUS: ${{ inputs.corpus }}
+          INTERRUPTIBLE: ${{ inputs.interruptible }}
         run: |
           test -n "$RUN" || { echo "run name required (rouge-r1-<rung>-<nnn>)"; exit 1; }
           python "$ROUGE/lightning_ai/train_session.py" --rung "$RUNG" --run "$RUN" --machine "$MACHINE" \
-            --max-hours "$MAX_HOURS" --corpus "$CORPUS"
+            --max-hours "$MAX_HOURS" --corpus "$CORPUS" $([ "$INTERRUPTIBLE" = "true" ] && echo --interruptible)
       - name: Commit the ledger and run records (hashes and numbers; no weights)
         if: ${{ always() && startsWith(github.ref_name, 'rouge/') }}
         env:

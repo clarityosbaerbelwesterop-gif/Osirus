@@ -18,7 +18,7 @@ assumed. Conditions:
 12 Control plane pinned and unchanged
 13 A CRI cycle ran with the control plane intact (results/cri/log.json)
 14 Cost guard: 50 EUR ceiling in force, ledger within it, and the rung's estimate fits what remains
-15 Lightning verified: H100/H200 listed, model-registry round trip, and a teamspace balance covering the rung (results/lightning/probe.json)
+15 Lightning verified: the training machine listed (cheapest per effective TFLOP at live prices), model-registry round trip, and a teamspace balance covering the rung (results/lightning/probe.json)
 16 Owner approval gate: every paid job runs in the protected environment rouge-gpu
 """
 
@@ -135,8 +135,10 @@ def conditions(run_tests: bool, rung: str) -> list[dict]:
         s = spec.summary(RougeConfig.load(ROOT / f"configs/native/rouge-v1-{rung}.json"))
         probe = jload(ROOT / "results/lightning/probe.json") or {}
         machine = probe.get("training_machine", "H100")
-        estimate = cost.estimate(s["flops_per_token_train"], ladder["rungs"][rung]["tokens"], cost.PAID_PRICE_CEILING[machine],
-                                 peak_tflops=cost.PEAK_BF16_TFLOPS[machine])
+        machine = machine if machine in cost.PAID_PRICE_CEILING else "H100"
+        price = (cost.live_prices().get(machine) or {}).get("usd_per_hour") or cost.PAID_PRICE_CEILING[machine]
+        estimate = cost.estimate(s["flops_per_token_train"], ladder["rungs"][rung]["tokens"], float(price),
+                                 mfu=cost.mfu(machine), peak_tflops=cost.PEAK_TFLOPS[machine])
         estimate["machine"] = machine
     remaining = cost.CEILING_USD - cost.committed(ledger)
     add(14, "cost guard: ceiling, ledger, rung estimate", cost.CEILING_EUR == 50.0 and remaining > 0 and estimate is not None
@@ -144,11 +146,12 @@ def conditions(run_tests: bool, rung: str) -> list[dict]:
         {"ceiling_usd": cost.CEILING_USD, "committed_usd": cost.committed(ledger), "estimate": estimate})
 
     probe = jload(ROOT / "results/lightning/probe.json")
-    add(15, "Lightning verified (H100/H200 listed, model-registry round trip, balance)",
-        bool(probe) and probe.get("model_registry_ok") and (probe.get("h100_listed") or probe.get("h200_listed")) and estimate is not None
+    listed = (probe or {}).get("training_machines_listed") or [m for m in ("H100", "H200") if (probe or {}).get(f"{m.lower()}_listed")]
+    add(15, "Lightning verified (training machine listed, model-registry round trip, balance)",
+        bool(probe) and probe.get("model_registry_ok") and estimate is not None and estimate["machine"] in listed
         and float(probe.get("balance") or 0) >= estimate["usd"] * 1.25,
-        {k: probe.get(k) for k in ("h100_listed", "h200_listed", "model_registry_ok", "balance", "checked_at")} if probe
-        else "results/lightning/probe.json missing")
+        {**{k: probe.get(k) for k in ("training_machine", "model_registry_ok", "balance", "checked_at")}, "listed": listed}
+        if probe else "results/lightning/probe.json missing")
 
     wf_path = REPO / ".github/workflows/rouge-train.yml"
     wf = wf_path.read_text() if wf_path.exists() else ""

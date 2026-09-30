@@ -76,6 +76,9 @@ def check_budget(ledger: dict, machine: str, max_hours: float) -> float:
     return worst
 
 
+MEMBERSHIPS: dict = {}   # counts and free-credit flags of the last teamspaces() call (no names)
+
+
 def teamspaces() -> list:
     """Teamspaces this key may read, richest first, as (Teamspace, balance) (names are resolved, never printed).
 
@@ -96,6 +99,8 @@ def teamspaces() -> list:
             refused += 1
     print(f"[lightning] {len(memberships)} teamspace membership(s): {len(usable)} readable with this key, {refused} refused",
           flush=True)
+    MEMBERSHIPS.update({"total": len(memberships), "readable": len(usable), "refused_by_key_scope": refused,
+                        "free_credits_enabled": [getattr(m, "free_credits_enabled", None) for _, m in usable]})
     if not usable:
         raise SystemExit("the key authenticates but may use no teamspace")
     usable.sort(key=lambda pm: -float(getattr(pm[1], "balance", 0) or 0))
@@ -150,7 +155,13 @@ def probe(args) -> None:
         except Exception as e:  # listing is informational
             summary[f"{m.lower()}_listed"] = False
             print(f"[lightning] machine {m}: listing failed ({type(e).__name__})", flush=True)
-    summary["training_machine"] = "H100" if summary.get("h100_listed") else "H200"
+    summary["memberships"] = dict(MEMBERSHIPS)
+    table = machine_table(ts)
+    if args.out and table:
+        Path(args.out).with_name("machines.json").write_text(json.dumps(
+            {"checked_at": summary["checked_at"], "machines": table}, indent=1) + "\n")
+    summary["training_machine"] = cheapest_training_machine(table) or ("H100" if summary.get("h100_listed") else "H200")
+    summary["training_machines_listed"] = sorted(r["name"] for r in table if r["name"] in cost_module().TRAINING_MACHINES)
     if args.storage:
         summary["storage_ok"] = storage_roundtrip(ts)
         summary["model_registry_ok"] = bool(os.environ.get("ROUGE_MODEL_REGISTRY_OK"))
@@ -184,6 +195,53 @@ def probe(args) -> None:
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         Path(args.out).write_text(json.dumps(summary, indent=1) + "\n")
+
+
+def cost_module():
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    import cost
+
+    return cost
+
+
+def machine_table(ts) -> list:
+    """Every machine the teamspace can start now, with live on-demand and interruptible prices (no job, no cost)."""
+    from lightning_sdk import Machine
+
+    by_slug = {m.slug: name for name, m in vars(Machine).items() if isinstance(m, Machine)}
+    rows = {}
+    try:
+        listed = ts.list_machines()
+    except Exception as e:
+        print(f"[lightning] machine table unavailable: {type(e).__name__}", flush=True)
+        return []
+    for m in listed:
+        name = by_slug.get(getattr(m, "slug", None))
+        row = {"name": name, "slug": getattr(m, "slug", None), "family": getattr(m, "family", None),
+               "gpus": getattr(m, "accelerator_count", None), "usd_per_hour": getattr(m, "cost", None),
+               "interruptible_usd_per_hour": getattr(m, "interruptible_cost", None)}
+        key = name or row["slug"]
+        prev = rows.get(key)
+        if prev is None or (row["usd_per_hour"] or 1e9) < (prev["usd_per_hour"] or 1e9):
+            rows[key] = row   # several cloud accounts can list one machine: keep the cheapest
+    table = sorted(rows.values(), key=lambda r: (r["family"] or "", r["gpus"] or 0))
+    for r in table:
+        print(f"[lightning] {r['name'] or r['slug']}: {r['gpus']} GPU, {r['usd_per_hour']} USD/h on demand, "
+              f"{r['interruptible_usd_per_hour']} USD/h interruptible", flush=True)
+    return table
+
+
+def cheapest_training_machine(table: list) -> str | None:
+    """Lowest live price per effective TFLOP among the training machines that fit their price ceiling."""
+    cost = cost_module()
+    best = None
+    for r in table:
+        name, price = r.get("name"), r.get("usd_per_hour")
+        if name in cost.TRAINING_MACHINES and price and float(price) <= cost.PAID_PRICE_CEILING[name]:
+            key = float(price) / (cost.PEAK_TFLOPS[name] * cost.mfu(name))
+            if best is None or key < best[0]:
+                best = (key, name)
+    return best[1] if best else None
 
 
 def storage_roundtrip(ts, remote: str = "rouge/probe") -> bool:

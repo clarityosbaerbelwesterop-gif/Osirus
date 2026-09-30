@@ -121,6 +121,7 @@ jobs:
             git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
             python3 "$ROUGE/lightning_ai/ledger_merge.py" "$ROUGE/lightning_ai/ledger.json" "$RUNNER_TEMP/ledger.json"
             if [ -f "$RUNNER_TEMP/probe.json" ]; then mkdir -p "$ROUGE/results/lightning" && cp "$RUNNER_TEMP/probe.json" "$ROUGE/results/lightning/probe.json"; fi
+            if [ -f "$RUNNER_TEMP/machines.json" ]; then cp "$RUNNER_TEMP/machines.json" "$ROUGE/results/lightning/machines.json"; fi
             git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/results/lightning" 2>/dev/null || true
             git diff --cached --quiet && break
             git commit -q -m "rouge(lightning): ledger and probe summary (run ${{ github.run_id }})"

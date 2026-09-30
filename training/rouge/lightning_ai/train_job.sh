@@ -8,7 +8,9 @@
 # stops training after 15 minutes without new telemetry, and the launcher's job.stop() at its deadline.
 #
 # Environment: ROUGE_RUN (lineage name), ROUGE_CONFIG, ROUGE_CORPUS, ROUGE_STEPS, ROUGE_BATCH,
-# ROUGE_ACCUM, ROUGE_SEQ, ROUGE_LR, ROUGE_BUDGET_MIN, ROUGE_EXPECT_GPU (H100|H200), ROUGE_MODEL_NAME.
+# ROUGE_ACCUM, ROUGE_SEQ, ROUGE_LR, ROUGE_BUDGET_MIN, ROUGE_EXPECT_GPU (GPU family, e.g. T4 or H100),
+# ROUGE_NPROC (GPUs of the machine: one rank each, data parallel through torchrun), ROUGE_PEAK_TFLOPS
+# (per GPU, for MFU), ROUGE_MODEL_NAME, ROUGE_SYNC_MIN.
 set -uo pipefail
 RUN_DIR=/tmp/rouge-run
 DATA=/tmp/rouge-data
@@ -18,8 +20,11 @@ fail() { phase FAILED "$1"; exit "${2:-1}"; }
 
 phase START
 gpu="$(nvidia-smi --query-gpu=name --format=csv,noheader | head -1)"
+ngpu="$(nvidia-smi -L | grep -c '^GPU')"
+NPROC="${ROUGE_NPROC:-1}"
 [[ "$gpu" == *"${ROUGE_EXPECT_GPU}"* ]] || fail "expected ${ROUGE_EXPECT_GPU}, got $gpu" 10
-phase VERIFY_HW "$gpu"
+(( ngpu == NPROC )) || fail "expected $NPROC GPU(s), found $ngpu" 10
+phase VERIFY_HW "$ngpu x $gpu"
 
 python lightning_ai/storage.py download "rouge/data/$ROUGE_CORPUS" "$DATA" || fail "corpus download failed" 11
 DATA_ROOT="$(dirname "$(find "$DATA" -name manifest.json -not -path '*/checkpoints/*' | head -1)")"
@@ -37,7 +42,7 @@ else
   phase VERIFY_BASE_CKPT "fresh start"
 fi
 
-# checkpoint sync to the teamspace drive while training (the job's disk is not persistent)
+# checkpoint sync to the model registry while training (the job's disk is not persistent)
 (
   while sleep "$(( ${ROUGE_SYNC_MIN:-20} * 60 ))"; do
     python lightning_ai/storage.py upload "$RUN_DIR" "$REMOTE_RUN" > /dev/null 2>&1 && phase SYNC
@@ -55,10 +60,11 @@ SYNC_PID=$!
 ) &
 
 phase TRAIN "budget ${ROUGE_BUDGET_MIN} min"
-timeout "$(( (ROUGE_BUDGET_MIN + 30) * 60 ))" python -m native.train --config "$ROUGE_CONFIG" --data "$DATA_ROOT" \
+if (( NPROC > 1 )); then LAUNCH=(torchrun --standalone --nproc-per-node "$NPROC"); else LAUNCH=(python); fi
+timeout "$(( (ROUGE_BUDGET_MIN + 30) * 60 ))" "${LAUNCH[@]}" -m native.train --config "$ROUGE_CONFIG" --data "$DATA_ROOT" \
   --out "$RUN_DIR" --steps "$ROUGE_STEPS" --batch "$ROUGE_BATCH" --accum "$ROUGE_ACCUM" --seq "$ROUGE_SEQ" \
   --lr "$ROUGE_LR" --warmup "${ROUGE_WARMUP:-1000}" --schedule wsd --decay-frac 0.2 --eval-every "${ROUGE_EVAL_EVERY:-1000}" \
-  --ckpt-every "${ROUGE_CKPT_EVERY:-500}" --budget-min "$ROUGE_BUDGET_MIN" --final-eval full --peak-tflops 989 \
+  --ckpt-every "${ROUGE_CKPT_EVERY:-500}" --budget-min "$ROUGE_BUDGET_MIN" --final-eval full --peak-tflops "${ROUGE_PEAK_TFLOPS:-989}" \
   > "$RUN_DIR/train.log" 2>&1
 code=$?
 kill "$SYNC_PID" 2>/dev/null
