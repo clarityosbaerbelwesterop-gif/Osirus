@@ -16,8 +16,8 @@
   "B"
  ],
  "score": {
-  "A": 17.0,
-  "B": 10.0
+  "B": 10.0,
+  "A": 17.0
  },
  "ranks": {
   "quality": {
@@ -29,12 +29,12 @@
    "A": 2.0
   },
   "long_context": {
-   "A": 1.5,
-   "B": 1.5
+   "B": 1.5,
+   "A": 1.5
   },
   "stored_bytes": {
-   "A": 1.5,
-   "B": 1.5
+   "B": 1.5,
+   "A": 1.5
   },
   "train_flops": {
    "B": 1.0,
@@ -98,6 +98,19 @@
    "train_flops": 70434816.0,
    "kv_32k": 33685504,
    "throughput": 1114.9152873258683,
+   "quality_sd": 0.0,
+   "seeds": [
+    1
+   ]
+  },
+  "E": {
+   "quality": 1.9246,
+   "tasks": 0.1175,
+   "long_context": 0.0,
+   "stored_bytes": 17577216,
+   "train_flops": 57446400.0,
+   "kv_32k": 33685504,
+   "throughput": 798.1145655005814,
    "quality_sd": 0.0,
    "seeds": [
     1
