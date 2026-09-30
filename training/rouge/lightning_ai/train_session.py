@@ -37,7 +37,7 @@ import cost  # noqa: E402
 import job as lj  # noqa: E402
 
 MODEL_NAME = {"100m": "rouge-r1-100m", "300m": "rouge-r1-300m", "1b": "rouge-r1-1b"}
-BATCH_PER_GPU = {"T4": 4, "L4": 8, "L40S": 16, "H100": 32, "H200": 32}   # sequences of max_seq per rank and micro-step
+BATCH_PER_GPU = {"T4": 4, "L4": 8, "L40S": 16, "A100_40GB": 16, "A100_80GB": 32, "H100": 32, "H200": 32}   # sequences of max_seq per rank and micro-step
 TERMINAL = ("ROUGE_PHASE DONE", "ROUGE_PHASE SEGMENT_END", "ROUGE_PHASE FAILED")
 
 
@@ -131,7 +131,7 @@ def run(args) -> int:
     batch = args.batch or BATCH_PER_GPU[family]
     ledger_path = HERE / "ledger.json"
     ledger = lj.load_ledger(ledger_path)
-    env = {"PYTHONUNBUFFERED": "1", "ROUGE_RUN": args.run, "ROUGE_CORPUS": args.corpus, "ROUGE_EXPECT_GPU": family,
+    env = {"PYTHONUNBUFFERED": "1", "ROUGE_RUN": args.run, "ROUGE_CORPUS": args.corpus, "ROUGE_EXPECT_GPU": family.split("_")[0],   # as nvidia-smi names it (A100_40GB -> A100)
            "ROUGE_NPROC": str(n), "ROUGE_PEAK_TFLOPS": str(cost.GPU[family][0]), "ROUGE_MODEL_NAME": MODEL_NAME[args.rung],
            "ROUGE_SYNC_MIN": "10" if args.interruptible else "20", **plan(args.rung, batch, n)}
     # Jobs carry no teamspace credentials (probe 2026-09-30) and the model registry is the only store

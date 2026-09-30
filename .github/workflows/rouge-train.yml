@@ -39,7 +39,7 @@ on:
       machine:
         description: "one large GPU, or a node of small GPUs trained data parallel (cheapest per TFLOP: results/lightning/probe.json)"
         type: choice
-        options: [H100, H200, T4_X_4, T4_X_8, L4_X_4, L4_X_8, L40S, L40S_X_4]
+        options: [H100, H200, A100_40GB, A100_80GB, T4_X_4, T4_X_8, L4_X_4, L4_X_8, L40S, L40S_X_4]
         default: H100
       interruptible:
         description: "discounted interruptible capacity; a preempted job relaunches and resumes until the deadline"

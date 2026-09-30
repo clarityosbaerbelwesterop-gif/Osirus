@@ -35,8 +35,10 @@ LEDGER = Path(__file__).with_name("ledger.json")
 GPU = {  # family: (peak TFLOPS, memory GB, price ceiling USD per GPU-hour)
     "T4": (65.0, 16, 0.90), "L4": (121.0, 24, 1.55), "L40S": (362.0, 48, 4.45),
     "H100": (989.0, 80, 7.10), "H200": (989.0, 141, 7.00),
+    # A100: Lightning's free hours cover it (pricing page 2026-09-30: A100 40 GB 10 h, 80 GB 5 h; H100/H200 none)
+    "A100_40GB": (312.0, 40, 2.75), "A100_80GB": (312.0, 80, 3.40),
 }
-TRAINING_MACHINES = ("T4_X_4", "T4_X_8", "L4_X_4", "L4_X_8", "L40S", "L40S_X_4", "H100", "H200")
+TRAINING_MACHINES = ("T4_X_4", "T4_X_8", "L4_X_4", "L4_X_8", "L40S", "L40S_X_4", "A100_40GB", "A100_80GB", "H100", "H200")
 MULTI_GPU_EFFICIENCY = 0.90   # planning assumption for data parallel over PCIe (no NVLink) until measured
 DEFAULT_MFU = 0.30            # planning assumption per GPU until a run on that family measures it
 

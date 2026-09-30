@@ -160,6 +160,13 @@ class TestMachineChoice(unittest.TestCase):
             table[1]["usd_per_hour"] = 2.0
             self.assertEqual(lj.cheapest_training_machine(table), "H100")
 
+    def test_a100_is_a_training_machine_with_its_own_memory_class(self):
+        self.assertEqual(cost.gpus("A100_40GB"), ("A100_40GB", 1))
+        self.assertAlmostEqual(cost.PEAK_TFLOPS["A100_40GB"], 312.0)
+        self.assertAlmostEqual(cost.worst_case("A100_40GB", 4, 2.19), 9.198)
+        p = train_session.plan("100m", train_session.BATCH_PER_GPU["A100_40GB"], 1)
+        self.assertEqual(p["ROUGE_BATCH"], "16")
+
     def test_mfu_falls_back_to_the_planning_assumption(self):
         self.assertEqual(cost.mfu("T4_X_4", path=Path("/nonexistent")), cost.DEFAULT_MFU)
 
