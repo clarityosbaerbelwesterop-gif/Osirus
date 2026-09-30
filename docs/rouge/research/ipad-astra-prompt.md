@@ -1,7 +1,7 @@
 # Research prompt: "iPad-Astra" (from the owner's screenshots, 2026-09-30)
 
 Copy the block below into Claude (or any research agent) together with this repository. It turns the
-ten ideas of the owner's "iPad-Astra" conversation into testable Rouge research. The research map it
+fourteen ideas of the owner's "iPad-Astra" conversation into testable Rouge research. The research map it
 refers to is `docs/rouge/research/milestones.md`; the current build is `docs/rouge/rouge1-build-status.md`.
 
 ```text
@@ -29,7 +29,7 @@ NON-NEGOTIABLES
   C ternary, D MoE, E Monarch-structured.
 - Free compute first (GitHub runners, CPU, small models); paid GPU only through rouge-gpu approval.
 
-THE TEN IDEAS -> TESTABLE HYPOTHESES (fill in each row, then rank)
+THE FOURTEEN IDEAS -> TESTABLE HYPOTHESES (fill in each row, then rank)
 1. Axiomatic learning instead of brute force.
    Nearest mechanism: verified synthetic curricula, rule-dense data, sample efficiency.
    Map: R1.54, R1.55, R1.65. Minimal test: equal tokens, web-only vs web + verified rule/derivation
@@ -78,6 +78,29 @@ THE TEN IDEAS -> TESTABLE HYPOTHESES (fill in each row, then rank)
    Map: R1.61, R1.62 (the config reserves a vision patch encoder, `vision_patch`). Minimal test:
    image-patch input into the text model at 100M scale on a public, licensed caption set; metric:
    captioning / VQA at equal compute vs a text-only model with a frozen encoder.
+11. MatMul-free / ternary everywhere (claims to check, not to repeat).
+   Source: Zhu et al. 2024 (UC Santa Cruz), "Scalable MatMul-free Language Modeling": ternary dense
+   layers plus a MatMul-free token mixer, reported up to 61% less training memory and over 10x less
+   inference memory with fused kernels, tested up to 2.7B parameters. Rouge has ternary linear
+   layers (candidate C; R1.29b PASS) but still uses attention matmuls.
+   Map: R1.29b, R1.71-R1.73. Minimal test: C vs a MatMul-free token mixer at equal tokens (Level B
+   recipe); metrics: BPB, passkey, memory, CPU tokens/s. Kill if BPB loses beyond the Level B margin.
+12. Kolmogorov-Arnold Networks (learnable functions on edges instead of fixed activations).
+   Source: Liu et al. 2024. Strong on small scientific function fitting; no demonstrated gain for
+   language models at scale, slower on GPUs. Map: R1.26/R1.27 (structured layers, within noise).
+   Minimal test: KAN feed-forward block vs SwiGLU at 1-10M parameters on suite v3 and enwik8 slices,
+   equal FLOPs; kill if not better at equal FLOPs and wall-clock.
+13. Training without backpropagation (NoProp, Forward-Forward).
+   Sources: Li, Teh & Pascanu 2025 ("NoProp", diffusion-style local denoising per layer, shown on
+   image classification); Hinton 2022 (Forward-Forward, two forward passes, layer-local goodness).
+   Neither is shown for language modelling. Map: R1.49 (local objectives), R1.52 (forward-forward).
+   Minimal test: 1-10M model, local-objective training vs backprop at equal compute on suite v3;
+   report memory per step (the real benefit) and the quality gap.
+14. MoE with local context caching; heterogeneous hardware.
+   Already in Rouge: candidate D (fine-grained MoE, aux-loss-free balancing), candidate B (local
+   window + global layers, cached blocks), a launcher that picks the cheapest machine per effective
+   TFLOP at live prices (T4 to B200). Measure, do not assume: MoE quality per active FLOP at the
+   2b-moe rung vs the 600m dense rung on the same corpus.
 
 OUTPUT (in this order)
 1. One table: idea | hypothesis | milestone | minimal experiment (data, sizes, baseline, metric,
@@ -104,3 +127,7 @@ Write in plain technical English. No hype words. Numbers with units and sources.
 | training on the iPad | pretraining impossible (1e24+ FLOPs); adapters and test-time updates possible | R1.50, R1.69, R1.72 |
 | statistics to logic | verified data, tools, verified-reward RL on a pretrained model | R1.54, R1.65, R1.66 |
 | native multimodality | vision/audio input into the model | R1.61, R1.62 |
+| MatMul-free | ternary layers proven (R1.29b); MatMul-free mixer untested; paper up to 2.7B | R1.29b, R1.71–R1.73 |
+| KAN | small-scale function fitting; no LM-scale evidence | R1.26, R1.27 |
+| NoProp / Forward-Forward | memory-saving local learning; shown on images, not language | R1.49, R1.52 |
+| MoE + context caching | candidates D and B, rung 2b-moe vs 600m | tournament, B200 plan |
