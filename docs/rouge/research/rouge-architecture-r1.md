@@ -1,6 +1,6 @@
 # Rouge 1 — architecture research program R1
 
-**Status (2026-09-30):** 34 milestones of R1.01–R1.40 have a recorded result, all from 3-seed runs on free CI CPUs ($0). The table is in [milestones.md](milestones.md#status-2026-09-30). Firm positive evidence exists for:
+**Status (2026-09-30):** 33 of the 40 milestones (plus R1.09b) have a recorded result, all from 3-seed runs on free CI CPUs ($0). The table is in [milestones.md](milestones.md#status-2026-09-30). Firm positive evidence exists for:
 - the cheap state read (R1.09);
 - real sparse kernels (R1.22);
 - ternary weights trained from the start (R1.29).
