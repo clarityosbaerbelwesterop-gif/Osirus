@@ -21,7 +21,7 @@ and a documented result. Negative results count and are recorded.
 ## Status (2026-09-30)
 
 All results are pre-registered decisions from 3-seed runs on free CPU runners ($0), except R1.05, R1.08, R1.30 and R1.31 (documents and analysis).
-Counts: 9 PASS, 11 PARTIAL, 15 FAIL or VOID/INCONCLUSIVE, 1 running (R1.16), 7 gated or not earned, and 1 tooling.
+Counts: 9 PASS, 11 PARTIAL, 16 FAIL or VOID/INCONCLUSIVE, 1 running (R1.29b), 7 gated or not earned, and 1 tooling.
 
 Of the 9 PASS results:
 - 3 are documents or benchmarks (R1.05, R1.06, R1.30);
@@ -47,7 +47,7 @@ Of the 9 PASS results:
 | R1.14 | [FAIL](../../../research/rouge-architecture/results/r1.14/README.md) | 10M byte LM on enwik8: slot state is worse than the same model without it (1.644 vs 1.591 BPB far out; 1.962 vs 1.801 fresh). The best long-stream model is a sliding window with a cached block (prior art). |
 | R1.14b | [FAIL](../../../research/rouge-architecture/results/r1.14b/README.md) | Exact addressable memory in Rouge-LM: worse again (2.108 fresh, 1.655 far out). R1.03's two-level memory does not transfer to real text at 10M. |
 | R1.15 | NOT EARNED | R1.14 and R1.14b failed. |
-| R1.16 | RUNNING | Long context on the R1.14 checkpoints (streams to 64k, copy probe, memory and speed to 128k). |
+| R1.16 | [FAIL](../../../research/rouge-architecture/results/r1.16/README.md) | No model copies exact content beyond its window (copy gain at 1k–16k ≈ 0); constant memory holds no retrievable content. |
 | R1.17 | [FAIL](../../../research/rouge-architecture/results/r1.17/README.md) | Mixture-of-Depths: 0.63× FLOPs, −9.2 dev, recall collapses. |
 | R1.18 | NOT EARNED | Gated on a positive R1.04; R1.04 PARTIAL and R1.19 shows no accuracy gain. |
 | R1.19 | [PARTIAL](../../../research/rouge-architecture/results/r1.19/README.md) | Context routing builds circuits (NMI +0.06) but no accuracy gain; dead experts. |
