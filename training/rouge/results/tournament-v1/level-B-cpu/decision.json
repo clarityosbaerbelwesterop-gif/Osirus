@@ -1,0 +1,113 @@
+{
+ "level": "B-cpu",
+ "complete": true,
+ "baseline_quality": 1.779,
+ "criteria": [
+  "quality",
+  "tasks",
+  "long_context",
+  "stored_bytes",
+  "train_flops",
+  "kv_32k",
+  "throughput"
+ ],
+ "eligible": [
+  "A",
+  "B"
+ ],
+ "score": {
+  "A": 17.0,
+  "B": 10.0
+ },
+ "ranks": {
+  "quality": {
+   "B": 1.0,
+   "A": 2.0
+  },
+  "tasks": {
+   "B": 1.0,
+   "A": 2.0
+  },
+  "long_context": {
+   "A": 1.5,
+   "B": 1.5
+  },
+  "stored_bytes": {
+   "A": 1.5,
+   "B": 1.5
+  },
+  "train_flops": {
+   "B": 1.0,
+   "A": 2.0
+  },
+  "kv_32k": {
+   "B": 1.0,
+   "A": 2.0
+  },
+  "throughput": {
+   "B": 1.0,
+   "A": 2.0
+  }
+ },
+ "winner": "B",
+ "table": {
+  "A": {
+   "quality": 1.779,
+   "tasks": 0.10999999999999999,
+   "long_context": 0.0,
+   "stored_bytes": 22680064,
+   "train_flops": 71172096.0,
+   "kv_32k": 67108864,
+   "throughput": 1173.5235537159758,
+   "quality_sd": 0.0,
+   "seeds": [
+    1
+   ]
+  },
+  "B": {
+   "quality": 1.7712,
+   "tasks": 0.11750000000000001,
+   "long_context": 0.0,
+   "stored_bytes": 22680064,
+   "train_flops": 70385664.0,
+   "kv_32k": 33685504,
+   "throughput": 1253.59904044403,
+   "quality_sd": 0.0,
+   "seeds": [
+    1
+   ]
+  },
+  "C": {
+   "quality": 1.8454,
+   "tasks": 0.1175,
+   "long_context": 0.0,
+   "stored_bytes": 18895360,
+   "train_flops": 70385664.0,
+   "kv_32k": 33685504,
+   "throughput": 1311.4294618400118,
+   "quality_sd": 0.0,
+   "seeds": [
+    1
+   ]
+  },
+  "D": {
+   "quality": 1.8006,
+   "tasks": 0.155,
+   "long_context": 0.0,
+   "stored_bytes": 19722752,
+   "train_flops": 70434816.0,
+   "kv_32k": 33685504,
+   "throughput": 1114.9152873258683,
+   "quality_sd": 0.0,
+   "seeds": [
+    1
+   ]
+  }
+ },
+ "disqualified": {},
+ "finalists": [
+  "A",
+  "B",
+  "D"
+ ]
+}
