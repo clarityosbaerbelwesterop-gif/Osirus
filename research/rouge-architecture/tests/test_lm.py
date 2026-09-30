@@ -23,6 +23,8 @@ class TestLM(unittest.TestCase):
         x = torch.randint(0, 256, (2, 256))
         for model in (lm.RougeLM(d=64, layers=2, heads=4, slots=4, block=64),
                       lm.RougeLM(d=64, layers=2, heads=4, slots=0, block=64),
+                      lm.RougeLM(d=64, layers=2, heads=4, slots=4, block=64, memory_layers=(1,), memory_slots=16,
+                                 memory_writes=4, memory_topk=4),
                       lm.LSTMLM(d=64, layers=2)):
             model.eval()
             with torch.no_grad():
@@ -45,6 +47,13 @@ class TestLM(unittest.TestCase):
                 b, _ = model(y)
             self.assertLess((a[0, :150] - b[0, :150]).abs().max().item(), 1e-5, type(model).__name__)
             self.assertGreater((a[0, 150:] - b[0, 150:]).abs().max().item(), 0.0, type(model).__name__)
+
+    def test_memory_write_head_learns(self):
+        """The write score scales stored values, so the next-byte loss reaches the write head."""
+        model = lm.RougeLM(d=64, layers=2, heads=4, slots=4, block=64, memory_layers=(1,), memory_slots=16, memory_writes=4, memory_topk=4)
+        logits, _ = model(torch.randint(0, 256, (2, 256)))
+        logits.logsumexp(-1).mean().backward()
+        self.assertGreater(model.m_write["1"].weight.grad.abs().sum().item(), 0.0)
 
     def test_state_is_constant_in_length(self):
         model = lm.RougeLM(d=64, layers=2, heads=4, slots=4, block=64)

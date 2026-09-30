@@ -95,9 +95,18 @@ class TransformerLM(nn.Module):
 class RougeLM(nn.Module):
     recurrent = True
 
-    def __init__(self, d=272, layers=8, heads=4, slots=16, block=64, ternary=False):
+    def __init__(self, d=272, layers=8, heads=4, slots=16, block=64, ternary=False,
+                 memory_layers=(), memory_slots=512, memory_writes=8, memory_topk=8):
         super().__init__()
         self.d, self.layers, self.heads, self.slots, self.block = d, layers, heads, slots, block
+        # R1.14b: exact addressable memory (R1.03's second level) in some layers. After each block the
+        # layer writes the keys/values of its `memory_writes` highest-scoring bytes into a ring of
+        # `memory_slots` entries; every byte reads its top `memory_topk` entries per head, in the same
+        # softmax as its local attention. Keys are stored without rotary position: content addressing.
+        self.memory_layers = tuple(memory_layers)
+        self.memory_slots, self.memory_writes, self.memory_topk = memory_slots, memory_writes, memory_topk
+        if self.memory_layers:
+            self.m_write = nn.ModuleDict({str(i): nn.Linear(d, 1) for i in self.memory_layers})
         self.embed = nn.Embedding(VOCAB, d)
         nn.init.normal_(self.embed.weight, std=0.02)  # tied output: unit-scale init gives logits of std sqrt(d)
         self.ln1 = nn.ModuleList(nn.LayerNorm(d) for _ in range(layers))
@@ -119,7 +128,13 @@ class RougeLM(nn.Module):
         """Per layer: slots (B, S, d) and the previous block's keys/values (B, H, W', Dh) or None."""
         slots = self.s0[:, None].expand(-1, batch, -1, -1) if self.slots else [None] * self.layers
         # clone: a view of the parameter made under no_grad would carry requires_grad without a grad_fn
-        return {"slots": [None if s is None else s.clone() for s in slots], "prev": [None] * self.layers}
+        state = {"slots": [None if s is None else s.clone() for s in slots], "prev": [None] * self.layers}
+        if self.memory_layers:
+            hd = self.d // self.heads
+            state["mem"] = [{"k": torch.zeros(batch, self.heads, self.memory_slots, hd), "v": torch.zeros(batch, self.heads, self.memory_slots, hd),
+                             "valid": torch.zeros(batch, self.memory_slots, dtype=torch.bool), "ptr": 0}
+                            if i in self.memory_layers else None for i in range(self.layers)]
+        return state
 
     def reset(self, state, mask: torch.Tensor):
         """Restart the streams where mask is True (a new region of text)."""
@@ -129,12 +144,16 @@ class RougeLM(nn.Module):
         slots = [None if s is None else s * keep[:, None, None] + self.s0[i][None] * (1 - keep)[:, None, None]
                  for i, s in enumerate(state["slots"])]
         prev = [None if p is None else tuple(t * keep[:, None, None, None] for t in p) for p in state["prev"]]
-        return {"slots": slots, "prev": prev}
+        out = {"slots": slots, "prev": prev}
+        if "mem" in state:
+            out["mem"] = [None if m is None else {**m, "valid": m["valid"] & ~mask[:, None]} for m in state["mem"]]
+        return out
 
-    def _layer(self, i, h, slots, prev):
+    def _layer(self, i, h, slots, prev, mem=None):
         b, w, d = h.shape
         hd = d // self.heads
         q, k, v = self.qkv[i](self.ln1[i](h)).view(b, w, 3, self.heads, hd).permute(2, 0, 3, 1, 4)
+        q_raw = q
         p = 0 if prev is None else prev[0].shape[2]
         q = rope_at(q, torch.arange(p, p + w))
         k_cur = rope_at(k, torch.arange(p, p + w))
@@ -149,7 +168,10 @@ class RougeLM(nn.Module):
             keys.insert(0, sk)
             vals.insert(0, sv)
             mask = torch.cat([torch.ones(w, self.slots, dtype=torch.bool), mask], 1)
-        y = F.scaled_dot_product_attention(q, torch.cat(keys, 2), torch.cat(vals, 2), attn_mask=mask)
+        if mem is None:
+            y = F.scaled_dot_product_attention(q, torch.cat(keys, 2), torch.cat(vals, 2), attn_mask=mask)
+        else:
+            y = self._attend_with_memory(q, q_raw, torch.cat(keys, 2), torch.cat(vals, 2), mask, mem)
         h = h + self.proj[i](y.transpose(1, 2).reshape(b, w, d))
         h = h + self.mlp[i](self.ln2[i](h))
         if self.slots:  # the slots read this block through the bytes' own keys and values
@@ -157,29 +179,65 @@ class RougeLM(nn.Module):
             read = F.scaled_dot_product_attention(sq, k_cur, v).transpose(1, 2).reshape(b, self.slots, d)
             gate = torch.sigmoid(self.s_gate[i](torch.cat([slots, read], -1)))
             slots = gate * slots + (1 - gate) * read
+        if mem is not None:
+            mem = self._write(i, h, k, v, mem)
         # the cache keeps this block's keys at positions 0..w-1 for the next block
-        return h, slots, (rope_at(k, torch.arange(w)), v)
+        return h, slots, (rope_at(k, torch.arange(w)), v), mem
+
+    def _attend_with_memory(self, q, q_raw, keys, vals, mask, mem):
+        """One softmax over local keys (rotary) and the top-k memory entries (content only)."""
+        b, heads, w, hd = q.shape
+        scale = hd ** -0.5
+        local = (q @ keys.transpose(-1, -2) * scale).masked_fill(~mask, float("-inf"))
+        scores = (q_raw @ mem["k"].transpose(-1, -2) * scale).masked_fill(~mem["valid"][:, None, None, :], float("-inf"))
+        kth = scores.topk(min(self.memory_topk, self.memory_slots), dim=-1).values[..., -1:]          # sparse read: top-k only
+        scores = scores.masked_fill(scores < kth, float("-inf"))
+        attn = torch.softmax(torch.cat([local, scores], -1), -1)                                       # empty memory: weight 0
+        n = keys.shape[2]
+        return attn[..., :n] @ vals + attn[..., n:] @ mem["v"]
+
+    def _write(self, i, h, k, v, mem):
+        """Write the block's highest-scoring bytes into the ring; the score scales the stored value,
+        so the write head learns which bytes are worth keeping."""
+        b, heads, w, hd = k.shape
+        n = min(self.memory_writes, w)
+        score = torch.sigmoid(self.m_write[str(i)](h)).squeeze(-1)                                    # (B, W)
+        top, idx = score.topk(n, dim=-1)                                                                # (B, n)
+        gather = idx[:, None, :, None].expand(-1, heads, -1, hd)
+        k_new = torch.gather(k, 2, gather)
+        v_new = torch.gather(v, 2, gather) * top[:, None, :, None]
+        pos = (torch.arange(n) + mem["ptr"]) % self.memory_slots
+        return {"k": mem["k"].index_copy(2, pos, k_new), "v": mem["v"].index_copy(2, pos, v_new),
+                "valid": mem["valid"].index_fill(1, pos, True), "ptr": (mem["ptr"] + n) % self.memory_slots}
 
     def forward(self, x, state=None):
         b, t = x.shape
         state = state or self.init_state(b)
         slots, prev = list(state["slots"]), list(state["prev"])
+        mem = list(state.get("mem", [None] * self.layers))
         outs = []
         for start in range(0, t, self.block):
             h = self.embed(x[:, start:start + self.block])
             for i in range(self.layers):
-                h, slots[i], prev[i] = self._layer(i, h, slots[i], prev[i])
+                h, slots[i], prev[i], mem[i] = self._layer(i, h, slots[i], prev[i], mem[i])
             outs.append(self.norm(h))
         logits = torch.cat(outs, 1) @ self.embed.weight.T
-        return logits, {"slots": slots, "prev": prev}
+        new = {"slots": slots, "prev": prev}
+        if self.memory_layers:
+            new["mem"] = mem
+        return logits, new
 
     @staticmethod
     def detach(state):
-        return {"slots": [None if s is None else s.detach() for s in state["slots"]],
-                "prev": [None if p is None else (p[0].detach(), p[1].detach()) for p in state["prev"]]}
+        out = {"slots": [None if s is None else s.detach() for s in state["slots"]],
+               "prev": [None if p is None else (p[0].detach(), p[1].detach()) for p in state["prev"]]}
+        if "mem" in state:
+            out["mem"] = [None if m is None else {**m, "k": m["k"].detach(), "v": m["v"].detach()} for m in state["mem"]]
+        return out
 
     def memory_bytes(self, context: int) -> dict:
-        return {"state": 4 * self.layers * self.slots * self.d, "kv": 2 * self.layers * min(context, self.block) * self.d * 4}
+        memory = len(self.memory_layers) * (2 * self.memory_slots * self.d * 4 + self.memory_slots)
+        return {"state": 4 * self.layers * self.slots * self.d + memory, "kv": 2 * self.layers * min(context, self.block) * self.d * 4}
 
 
 class LSTMLM(nn.Module):

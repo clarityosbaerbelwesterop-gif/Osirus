@@ -188,5 +188,15 @@
   ],
   "approved_by": "owner brief 2026-09-29 (R1.01 -> R1.40, free compute only)",
   "note": "follows R1.39 FAIL: rewards as fine-tuning"
+ },
+ {
+  "id": "r1_14b",
+  "approved": true,
+  "cost_usd": 0,
+  "after": [
+   "r1_03"
+  ],
+  "approved_by": "owner brief 2026-09-29 (R1.01 -> R1.40, free compute only)",
+  "note": "exact memory in Rouge-LM; dispatched by hand in parallel with R1.14"
  }
 ]

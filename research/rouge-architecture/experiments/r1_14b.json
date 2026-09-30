@@ -1,0 +1,147 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.14b",
+ "title": "Rouge-LM with an exact addressable memory (R1.03's second level) on enwik8",
+ "status": "pre-registered",
+ "registered": "2026-09-30",
+ "follows": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+ "runner": "experiments/lm.py",
+ "benchmarks": [
+  "benchmarks/text.py"
+ ],
+ "question": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+ "design": {
+  "rouge-mem-lm": "R1.14's rouge-lm plus the memory in layer 4 of 8 (0-based). Keys are stored without rotary position (content addressing); the write score scales the stored value, so the write head learns what to keep. 512 entries x 8 writes per block cover about the last 4k bytes; memory is 1.1 MiB, constant in length. 283 extra parameters.",
+  "replication": "transformer and rouge-lm repeat R1.14's configurations and seeds; CPU training is deterministic (R1.13 reproduced R1.12 exactly), so their numbers also test reproducibility across runners"
+ },
+ "setup": {
+  "batch": 16,
+  "length": 256,
+  "steps": 8000,
+  "lr": 0.0006,
+  "weight_decay": 0.1,
+  "warmup": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0), up to 2 resumable attempts per run",
+  "eval": {
+   "segments": 512,
+   "streams": 16,
+   "stream_length": 4096,
+   "buckets": {
+    "b0_0_256": [
+     0,
+     256
+    ],
+    "b1_256_1k": [
+     256,
+     1024
+    ],
+    "b2_1k_4k": [
+     1024,
+     4096
+    ]
+   }
+  },
+  "parameters": {
+   "transformer": 9950000,
+   "rouge-lm": 10210000,
+   "rouge-mem-lm": 10210000
+  },
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 320,
+    "layers": 8,
+    "heads": 5
+   },
+   "rouge-lm": {
+    "kind": "rouge",
+    "d": 272,
+    "layers": 8,
+    "heads": 4,
+    "slots": 16,
+    "block": 64
+   },
+   "rouge-mem-lm": {
+    "kind": "rouge",
+    "d": 272,
+    "layers": 8,
+    "heads": 4,
+    "slots": 16,
+    "block": 64,
+    "memory_layers": [
+     4
+    ],
+    "memory_slots": 512,
+    "memory_writes": 8,
+    "memory_topk": 8
+   }
+  },
+  "gate": {
+   "checks": {
+    "M1_far_context": {
+     "left": "rouge-mem-lm:stream.b2_1k_4k",
+     "op": "<=",
+     "right": "rouge-lm:stream.b2_1k_4k",
+     "plus": -0.02
+    },
+    "M2_no_loss": {
+     "left": "rouge-mem-lm:valid.bpb",
+     "op": "<=",
+     "right": "rouge-lm:valid.bpb",
+     "plus": 0.005
+    },
+    "M3_far_vs_transformer": {
+     "left": "rouge-mem-lm:stream.b2_1k_4k",
+     "op": "<=",
+     "right": "transformer:stream.b2_1k_4k",
+     "plus": -0.02
+    },
+    "M4_memory": {
+     "left": "rouge-mem-lm:total_bytes",
+     "op": "<=",
+     "right": "transformer:total_bytes",
+     "times": 0.5
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "M1_far_context",
+      "M2_no_loss",
+      "M4_memory"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "any": [
+      "M1_far_context",
+      "M3_far_vs_transformer"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 2000000000000000.0,
+  "cpu_flops": 80000000000.0,
+  "cpu_flops_measured": "rouge-mem-lm: 1.42 s per training step vs 1.16 for rouge-lm (4-core container); 16.2 MFLOP/byte forward",
+  "memory_gb": 3
+ },
+ "predictions": {
+  "PASS": "the exact memory lowers BPB on bytes 1k-4k of long streams by >= 0.02 against the same model without it (M1), costs nothing at equal visible context (M2, within 0.005 BPB), and total inference memory stays <= half the Transformer's (M4: 2.3 MiB vs 5.0 MiB, analytic)",
+  "PARTIAL": "M1 or M3 (beats the Transformer's window far out by >= 0.02)",
+  "prior": "uncertain: enwik8 has many long-range exact repeats (titles, links, markup), which favours an exact memory; the write head must learn which bytes to keep from next-byte loss alone",
+  "follow_up": "R1.16's long-context evaluation (copy probe at 1k/4k/16k) is run on these checkpoints as well, with the same pre-registered checks (R1.16b)"
+ },
+ "prior_art": "Memorizing Transformers 2203.08913 (kNN memory, unbounded), Landmark attention 2305.16300, Unlimiformer 2305.01625, Recurrent Memory Transformer 2207.06881, R1.03",
+ "not_claimed": "Retrieval from a key-value memory is prior art. The question is whether Rouge's combination (small gated state + a bounded exact memory with learned writes and sparse reads) earns its place at 10M on real text."
+}
