@@ -60,6 +60,8 @@ class Rouge1PreflightTest(unittest.TestCase):
         if prereg["status"] != "pre-registered":
             with self.assertRaises(SystemExit):
                 rouge1_session.preflight(args)
+        else:                                                     # the committed pin, pre-registration, dataset and config agree
+            self.assertEqual(rouge1_session.preflight(args)["name"], "rouge-1-rl-001")
         import cost
 
         self.assertEqual(cost.gpus("H200_X_8"), ("H200", 8))

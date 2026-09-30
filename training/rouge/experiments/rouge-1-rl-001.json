@@ -1,8 +1,8 @@
 {
   "schema": "rouge.experiment/1",
   "name": "rouge-1-rl-001",
-  "status": "draft",
-  "registered": null,
+  "status": "pre-registered",
+  "registered": "2026-09-30",
   "question": "Does one RSI iteration (the base answers verifiable problems, only code-verified answers are trained into every language-model weight) improve held-out verifiable math without breaking general skills?",
   "parent": "base:Qwen/Qwen3.6-27B@6a9e13bd6fc8f0983b9b99948120bc37f49c13e9",
   "method": {
@@ -18,18 +18,21 @@
   },
   "data": {
     "manifest": "training/rouge/datasets/manifests/rouge-rft-v1.json",
-    "train_sha256": null,
-    "prompts_sha256": null
+    "train_sha256": "acae2448f1eed2a2485523f832e01085d508bbe7b56674d7a5a4b5373e5f5ee4",
+    "prompts_sha256": "89d20544258a857062803a6b458cba2725e15791c727ff9dfec69c7b4c56e668",
+    "records": 5716,
+    "prompts": 5000,
+    "build": "rouge-data.yml run 36768014451 (code 2e3ee50)"
   },
   "config": "training/rouge/configs/full-001.json",
   "eval": {
     "file": "eval.jsonl",
-    "sha256": null,
-    "items": null,
+    "sha256": "73bd239a16e16ba90ed56c9c542f291c16191532f66145ff64243f0f6cece84a",
+    "items": 864,
     "suites": {
       "primary": "300 held-out verifiable math problems from the same sources as the prompts, never among them (numeric answer check)",
-      "guard": "MGSM en 100, MGSM de 100, MBPP 100 (unit tests executed), IFEval 200 (strict, supported instructions)",
-      "report": "generated format/German/identity items, never decisive"
+      "guard": "500 items: MGSM en 100, MGSM de 100, MBPP 100 (unit tests executed), IFEval 200 (strict, supported instructions)",
+      "report": "64 items, never decisive: generated format and German items, identity 4"
     },
     "settings": {
       "backend": "vllm",

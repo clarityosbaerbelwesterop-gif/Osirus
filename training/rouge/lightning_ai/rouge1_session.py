@@ -57,7 +57,7 @@ def preflight(args) -> dict:
     data = json.loads((ROOT.parents[1] / prereg["data"]["manifest"]).read_text())
     if data["eval"]["sha256"] != prereg["eval"]["sha256"] or "prompts" not in data:
         raise SystemExit("dataset manifest and pre-registration disagree (eval hash) or the dataset has no prompts")
-    config = RunConfig.load(ROOT / prereg["config"])
+    config = RunConfig.load(ROOT.parents[1] / prereg["config"])
     if config.mode != "full":
         raise SystemExit(f"{prereg['config']}: mode must be 'full'")
     family, n = cost.gpus(args.machine)
