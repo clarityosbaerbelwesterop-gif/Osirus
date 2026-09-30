@@ -15,7 +15,7 @@ This is the living status of the "Rouge 1: frontier model build" program. Every 
 | B: training infrastructure | done and tested | see below |
 | C: controlled recursive improvement | done; control plane pinned | `native/cri.py`, `configs/native/control-plane.json` |
 | D: TRAINING_READY | gate built; see the 16-condition table in `TRAINING_READY.json` after `ready.py` | `training/rouge/ready.py` |
-| E: GPU training | **on Lightning** (owner directive): H100/H200 job, storage and model registry; refused until TRAINING_READY, the 50 EUR ceiling and the balance hold | `lightning_ai/train_session.py`, `lightning_ai/train_job.sh`, `.github/workflows/rouge-train.yml` |
+| E: GPU training | **on Lightning** (owner directive): one H100/H200 or a node of small GPUs (T4/L4/L40S, data parallel), storage and model registry; refused until TRAINING_READY, the 50 EUR ceiling and the balance hold | `lightning_ai/train_session.py`, `lightning_ai/train_job.sh`, `.github/workflows/rouge-train.yml` |
 | F: post-training | stages built and smoke-tested (SFT, reasoning SFT, rejection sampling, DPO, GRPO only after SFT) | `native/posttrain.py` |
 
 ## Phase B: what exists and is tested (`training/rouge/`)
@@ -71,35 +71,48 @@ Packed ternary without a fused kernel is no faster than dense.
 Owner directive: **Lightning AI replaces RunPod** for GPU training, storage and the model repository. RunPod code is archived (`training/rouge/archive/runpod/`); nothing was spent there.
 
 **Lightning AI** (`lightning_ai/`, ledger `lightning_ai/ledger.json`):
-- The key reads 2 organisation teamspaces (role ProjectAdministrator), each about **4.9 credits**; free monthly credits are off.
-- CPU and T4 jobs run (probes, the GPU dry run on T4 for $0.05). **L4 job creation answers HTTP 403.**
-- **H100, H200 and A100 are listed** (capacity); a paid H100/H200 job has not been created yet (needs TRAINING_READY and credits).
-- **Storage and model repository: the teamspace model registry** (probe of 2026-09-30, `results/lightning/probe.json`). The registry round trip (upload, download, sha256 equal) passed. The teamspace drive answered 404 on every cloud account. Job mounts under `/teamspace` are writable but do not persist to the next job. Jobs carry no SDK credentials, so prepare and training jobs get the key as job environment; it is used only by `lightning_ai/storage.py`, never printed, and masked by Actions in relayed logs.
+- **One teamspace, 3.74 credits** (13:00 UTC). The key reads 4 memberships: 2 are refused by the key's scope, and the 2 readable ones are the same teamspace (same jobs, same balance), not two teamspaces with 4.9 each as reported earlier. Free monthly credits are off on it.
+- CPU and T4 jobs run. **L4 job creation answered HTTP 403** (single L4); L4 nodes are listed.
+- **Storage and model repository: the teamspace model registry** (probe of 2026-09-30, `results/lightning/probe.json`). The registry round trip (upload, download, sha256 equal) passed. The teamspace drive answered 404 on every cloud account. Job mounts under `/teamspace` are writable but do not persist to the next job. Jobs carry no SDK credentials, so training jobs get the key as job environment; it is used only by `lightning_ai/storage.py`, never printed, and masked by Actions in relayed logs.
 - Layout: corpus `rouge/data/<corpus>` = registry model `rouge-data-<corpus>`; run checkpoints `rouge/runs/<lineage>` = `rouge-runs-<lineage>` (new version per sync); published weights `rouge-r1-<rung>:<lineage>`. Every transfer is verified against its sha256 manifest.
 
-**Ceiling** (`lightning_ai/cost.py`):
-- **50 EUR = $52.50**, at 1 EUR = 1.05 USD; it counts every Rouge job on Lightning.
-- A paid launch needs: worst case (hours x price ceiling: H100 $4.00/h, H200 $7.00/h) plus everything in the ledger within the ceiling, and within the teamspace balance.
+**Live prices of this account** (`results/lightning/machines.json`, read from the Lightning API by the free probe; far above the published list prices):
 
-**Estimates** (spec calculator, MFU 0.3, one GPU; H100 and H200 have the same bf16 compute):
+| machine | on demand USD/h | interruptible USD/h |
+|---|---|---|
+| T4 / T4_X_4 | 0.69 / 3.50 | 0.37 / 1.15 |
+| L4_X_4 / L4_X_8 | 4.78 / 9.94 | 3.48 / 6.92 |
+| L40S / L40S_X_4 | 3.54 / 11.86 | 2.70 / 7.58 |
+| H100 | 5.68 | not offered |
+| H200 (second cloud account / default) | 4.50 / 6.53 | 3.82 / not offered |
+| DATA_PREP (32 CPU) | 1.48 | not offered |
 
-| rung | tokens | H100 (about $3.29/h list) | H200 (about $6.53/h list) |
+**Single large GPU or a node of small GPUs** (owner request: "several small GPUs with the same total performance"). Both are supported: `train_session.py` runs one rank per GPU with torchrun, keeps the global batch in tokens, and can use interruptible capacity (checkpoints sync every 10 minutes; a preempted job relaunches and resumes exactly). The launcher takes the cheapest cloud account at the live price. 100M rung (2B tokens), same MFU 0.30 assumed for every GPU until measured:
+
+| machine | hours | USD on demand | USD interruptible |
 |---|---|---|---|
-| 100M | 2B | about 1.8 h, $6–7 | about 1.8 h, $12 |
-| 300M | 6B | about 11.7 h, $38 | over the ceiling |
+| H200 (second account) | 1.8 | 8.1 | 6.9 |
+| T4_X_4 | 6.0 | 21.0 | 6.9 |
+| H100 | 1.8 | 10.2 | not offered |
+| L40S | 4.1 | 14.4 | 11.0 |
+| L4_X_4 | 3.5 | 16.5 | 12.0 |
 
-H100 is chosen for the 100M and 300M rungs (same compute, half the price); H200 only when memory requires it (1B).
+At this account's prices the H200 is cheapest and fastest. A T4 node matches it only when interruptible and only if T4 reaches the same MFU; Level B on T4 measures that. With free credits, small GPUs cost nothing and would be the first choice.
+
+**Ceiling** (`lightning_ai/cost.py`):
+- **50 EUR = $52.50**, at 1 EUR = 1.05 USD; it counts every Rouge job on Lightning (spent so far: about 1.9 USD, including 0.73 for a stopped corpus build).
+- Price ceilings are about 1.25x the cheapest live on-demand price per GPU. A launch needs its live price under the ceiling, and hours x live price (+5%) plus everything in the ledger within 50 EUR and within the balance.
 
 ## What the owner has to do (nothing else blocks Phase E)
 
-1. **Lightning credits:** the teamspace holds about 4.9 credits; a 100M rung on H100 needs about 7 plus margin. Add credits up to the 50 EUR ceiling you set; the launcher refuses otherwise.
-2. **Every paid run:** approve it in the protected GitHub environment `rouge-gpu` (workflow "Rouge train").
-3. Optional: enable L4 and monthly free credits for the teamspace (faster tournament Level C).
+1. **Free hours:** the key is scoped to one organisation teamspace without free credits; 2 of its 4 memberships are refused. To use Lightning's free monthly credits, create a Lightning API key with access to the teamspace that has them (or all teamspaces) and store it as the `LIGHTNING_AI_API_KEY` secret. The launcher then takes the teamspace with the most credits first.
+2. **Credits:** the balance is 3.74. The 100M rung needs about 7–8 plus the 1-credit margin (H200); add credits within the 50 EUR ceiling. The launcher refuses otherwise.
+3. **Every paid run:** approve it in the protected GitHub environment `rouge-gpu` (workflow "Rouge train").
 
 ## Next steps (automatic, free)
 
 1. Done: corpus v1 committed; R1.29b PASS (candidate C ternary); GPU dry run on T4 passed; storage path confirmed (model registry).
-2. Running: tournament Level B on T4 (names the finalists); production corpus `pretrain-v1` (mixture v2, 2.2B tokens) built by a Lightning DATA_PREP job and stored in the registry, manifest committed.
+2. Running: tournament Level B on T4 (names the finalists); production corpus `pretrain-v1` (mixture v2, 2.2B tokens) built on a free GitHub runner and stored in the Lightning registry, manifest committed. (The first build on a Lightning DATA_PREP machine was stopped at 0.73 USD: at 1.48 USD/h it and the tournament would have drained the balance; commit d04394c holds only its ledger entry.)
 3. Level C runs on a GPU, then `native/freeze.py` writes Spec v1.0.
 4. A GPU dry run on the frozen spec, then `ready.py` reports TRAINING_READY.
-5. The 100M rung trains on an H100 within the ceiling, with the owner's approval. The 300M rung (about 11.7 h) runs as resumed segments of at most 5.75 h, each approved.
+5. The 100M rung trains on the cheapest machine at live prices (today: H200 on the second cloud account, about 1.8 h), with the owner's approval. The 300M rung runs as resumed segments of at most 5.75 h, each approved.
