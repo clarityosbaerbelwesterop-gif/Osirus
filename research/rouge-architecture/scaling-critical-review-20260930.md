@@ -5,7 +5,7 @@ Two research agents searched official compute sources and primary papers; the ma
 
 ## Completed falsification test
 
-R1.73a, registration committed at `9c3e82b` before measurement: 1,623,744-parameter untrained ternary fixture, seeds 1/2/3, registered enwik8 validation bytes, existing Rouge gate/statistics harness. Three exporter tests passed.
+R1.73a, registration committed locally at `9c3e82b` before measurement: 1,623,744-parameter untrained ternary fixture, seeds 1/2/3, registered enwik8 validation bytes, existing Rouge gate/statistics harness. Three exporter tests passed.
 
 All four format gates passed in every seed. Physical master file: 6,509,069 bytes; packed file: 2,087,589 bytes (32.072% of master, 67.928% reduction). Ternary codes round-trip exactly; maximum logit error 1.1921e-6, below the registered 1e-5 tolerance. Largest absolute BPB delta 1.3759e-6, below 1e-5.
 
@@ -26,7 +26,7 @@ No cited paper or current Rouge result supports frontier equivalence from zero-c
 ## Promotion order and blockers
 
 1. Preserve all R rejection lessons; do not revive reward-only RL from scratch, latent programs or verifier heads without a registered material change.
-2. Finish the registered Level B baseline and candidates. Current checked-in decision is incomplete: baseline A missing or disqualified.
+2. Finish the registered Level B baseline and candidates. The local measurement snapshot's checked-in decision is incomplete: baseline A missing or disqualified.
 3. Run Level C with all registered seeds; freeze architecture only after a valid winner.
 4. Scale the winning architecture; derive size and token budget from measured throughput and the confirmed free allocation. Hardware availability alone is not a promotion gate.
 
@@ -35,4 +35,6 @@ Provider corrections from official pages:
 - Daytona pricing advertises USD 200 free compute, but billing docs explicitly exclude GPU sandboxes from free credit balance: https://www.daytona.io/docs/billing . Disqualified for zero-cash GPU training.
 - razorBridge and Wollnut terms require age 18: https://razorbridge.eu/terms-of-service/ and https://www.wollnut.com/terms . Registration cannot proceed under an ineligible identity. An eligible account owner would need to perform their own registration and authorize access; none is assumed.
 - A free account or GPU catalog is not evidence of usable credits or an allocation. No verified free B200 session has been obtained.
-- Terminal publication failed because GitHub credentials are unavailable. Owner has approved branch publication; no main change or workflow change was made.
+- Publication succeeded through the GitHub connector. Remote branch starts from Claude's then-current `1277feaf` commit. Measurement provenance remains local `9c3e82b`, based on `05073f8`. No main or workflow changes were made.
+- Advisory weight-storage preflight (`training/rouge/resource_gate.py`) rejects resident models whose ideal weight bytes alone exceed device memory. Three tests pass; this check does not confirm training fit. At 4 bits, 2T/3T total parameters require at least 1.0/1.5 trillion bytes for weights alone.
+- Current execution environment has neither Lightning API key environment variable set. Existing repository probe (17:24:57 UTC) records 1.27 credits and no recurring free grant; this is historical, not a live balance. Browser login currently asks for human verification. No new Lightning job has been submitted.
