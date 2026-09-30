@@ -9,7 +9,7 @@ On the measured frontier (R1.31), Rouge's small-state memory models own the regi
 
 Every dynamic-compute mechanism (R1.17, R1.20, R1.21) and every neural-program or hypothesis mechanism (R1.33–R1.39) failed its gate at this scale.
 
-R1.14 (10M byte-level LM on enwik8: Rouge-LM vs Transformer, sliding window and LSTM) is running and decides whether scaling (R1.15) is earned. The research loop (router, resumable runs, registry, controller) is described in [the research README](../../../research/rouge-architecture/README.md).
+**R1.14 (10M byte-level LM on enwik8) failed:** Rouge's slot state is worse than the same model without it, and an exact addressable memory (R1.14b) is worse again. The memory mechanisms that worked on synthetic tasks do not transfer to real text at 10M, so R1.15 (50M) is not earned. R1.16 (long context) is running on the R1.14 checkpoints. The research loop (router, resumable runs, registry, controller) is described in [the research README](../../../research/rouge-architecture/README.md).
 
 ## Scope
 

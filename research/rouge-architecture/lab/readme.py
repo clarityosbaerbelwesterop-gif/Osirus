@@ -43,14 +43,24 @@ def _fmt(metric: str, m) -> str:
         return f"{mean / 1024:.0f} KiB"
     if metric == "latency_ms":
         return f"{mean:.2f} ms"
+    if metric == "throughput_bytes_s":
+        return f"{mean:,.0f} B/s"
+    if metric.endswith(".bpb") or metric.startswith("stream."):
+        return f"{mean:.3f} ± {sd:.3f}"
     if metric == "train_seconds":
         return f"{mean / 60:.0f} min"
     return f"{mean:.3f}" if abs(mean) < 10 else f"{mean:.0f}"
 
 
 def scorecard(summary: dict, extra: list[str]) -> str:
-    cols = ["dev.all", "ood.all", "adv.all", *extra, "flops", "stored_bytes", "total_bytes", "latency_ms", "train_seconds"]
-    names = {"dev.all": "dev", "ood.all": "OOD", "adv.all": "adversarial", "flops": "FLOPs / example",
+    language_model = "valid.bpb" in next(iter(summary["models"].values()))["metrics"]
+    if language_model:  # bits per byte (lower is better), FLOPs per byte, throughput
+        cols = ["valid.bpb", "test.bpb", *extra, "flops", "stored_bytes", "total_bytes", "throughput_bytes_s", "train_seconds"]
+    else:
+        cols = ["dev.all", "ood.all", "adv.all", *extra, "flops", "stored_bytes", "total_bytes", "latency_ms", "train_seconds"]
+    names = {"dev.all": "dev", "ood.all": "OOD", "adv.all": "adversarial",
+             "flops": "FLOPs / byte" if language_model else "FLOPs / example", "throughput_bytes_s": "stream throughput",
+             "valid.bpb": "valid BPB", "test.bpb": "test BPB",
              "stored_bytes": "stored weights", "total_bytes": "inference memory", "latency_ms": "latency",
              "train_seconds": "train time"}
     lines = ["| model | " + " | ".join(names.get(c, c) for c in cols) + " |", "|---" * (len(cols) + 1) + "|"]
