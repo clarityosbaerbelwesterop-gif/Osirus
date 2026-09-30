@@ -84,6 +84,12 @@ def build(args, device):
 
 
 def optimizer_for(model, args, device):
+    if args.optimizer == "muon":
+        if args.fsdp:
+            raise SystemExit("--optimizer muon needs whole matrices: use DDP or one process, not --fsdp")
+        from native.optim import build as muon
+
+        return muon(model, args.lr, args.weight_decay)
     decay = [p for n, p in model.named_parameters() if p.dim() >= 2]
     no_decay = [p for n, p in model.named_parameters() if p.dim() < 2]
     return torch.optim.AdamW([{"params": decay, "weight_decay": args.weight_decay}, {"params": no_decay, "weight_decay": 0.0}],
@@ -106,6 +112,7 @@ def main() -> None:
     p.add_argument("--schedule", choices=["wsd", "cosine"], default="wsd")
     p.add_argument("--decay-frac", type=float, default=0.2)
     p.add_argument("--weight-decay", type=float, default=0.1)
+    p.add_argument("--optimizer", choices=["adamw", "muon"], default="adamw", help="muon: Muon on matrices, AdamW elsewhere")
     p.add_argument("--clip", type=float, default=1.0)
     p.add_argument("--seed", type=int, default=1)
     p.add_argument("--eval-every", type=int, default=500)
