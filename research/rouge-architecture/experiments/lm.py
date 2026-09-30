@@ -238,6 +238,8 @@ def report(args) -> None:
         })
         table[m] = {"seeds": [r["seed"] for r in rs], "kind": rs[0]["kind"], "metrics": metrics}
     decision = gate.decide(table, SETUP["gate"])
+    if gate.missing_seeds(table, SETUP):  # never record a decision on part of the seeds
+        decision = {**decision, "complete": False, "missing": decision.get("missing", []) + gate.missing_seeds(table, SETUP)}
     if len(hashes) != 1:
         decision = {**decision, "complete": False, "missing": [f"runs saw different datasets: {sorted(hashes)}"]}
     floors = runs[0]["floors"] if runs else {}

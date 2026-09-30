@@ -69,3 +69,10 @@ def decide(table: dict, gate: dict) -> dict:
             continue
         return {"complete": True, "checks": results, "result": rule["result"]}
     return {"complete": True, "checks": results, "result": "UNDEFINED"}
+
+
+def missing_seeds(table: dict, setup: dict) -> list[str]:
+    """Models whose runs do not cover every pre-registered seed (a run stopped at its time budget)."""
+    want = set(setup["seeds"])
+    return [f"{m}: seeds {sorted(want - set(table.get(m, {}).get('seeds', [])))} missing"
+            for m in setup["models"] if not want <= set(table.get(m, {}).get("seeds", []))]

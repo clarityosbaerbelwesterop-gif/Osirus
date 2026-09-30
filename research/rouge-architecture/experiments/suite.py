@@ -355,6 +355,8 @@ def report(args) -> None:
         table[m] = {"seeds": [r["seed"] for r in rs], "kind": rs[0]["kind"], "metrics": metrics,
                     "memory_tokens": rs[0]["memory"]["max_ood_tokens"]}
     decision = gate.decide(table, SETUP["gate"])
+    if gate.missing_seeds(table, SETUP):  # never record a decision on part of the seeds
+        decision = {**decision, "complete": False, "missing": decision.get("missing", []) + gate.missing_seeds(table, SETUP)}
     summary = {"experiment": PREREG["id"], "models": table, "cue_floors": {t: floors[t]["dev"]["cue_floor"] for t in bench.TASKS},
                "decision": decision}
     (out / "summary.json").write_text(json.dumps(summary, indent=1))
