@@ -85,6 +85,11 @@ def main() -> None:
              "--out", str(out / "sft"), "--steps", "5", "--batch", "4", "--lr", "1e-4", check=False)
     st["posttrain_sft"] = {"ok": sft.returncode == 0, "error": sft.stderr[-500:] if sft.returncode else None}
 
+    bench = sh("native.bench", "--tokens", "8192" if device == "cuda" else "1024", "--d", "1024" if device == "cuda" else "256",
+               check=False)
+    line = next((l for l in bench.stdout.splitlines() if l.startswith("ROUGE_BENCH ")), None)
+    summary["bench"] = json.loads(line[len("ROUGE_BENCH "):]) if line else {"error": bench.stderr[-300:]}   # informational
+
     summary["ok"] = all(s["ok"] for s in st.values())
     summary["finished"] = time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
     text = json.dumps(summary, indent=1)
