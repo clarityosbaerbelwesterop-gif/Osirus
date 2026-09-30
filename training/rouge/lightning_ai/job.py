@@ -94,10 +94,14 @@ def teamspace():
           flush=True)
     if not usable:
         raise SystemExit("the key authenticates but may use no teamspace")
-    project, membership = usable[0]
+    for i, (_, m) in enumerate(usable):
+        print(f"[lightning] usable teamspace {i}: balance {getattr(m, 'balance', None)}, free credits enabled "
+              f"{getattr(m, 'free_credits_enabled', None)}, next free-credit grant {getattr(m, 'next_free_credits_grant', None)}",
+              flush=True)
+    # the teamspace with the most credits (the owner's free monthly credits land in one of them)
+    project, membership = max(usable, key=lambda pm: float(getattr(pm[1], "balance", 0) or 0))
     balance = getattr(membership, "balance", None)
-    print(f"[lightning] credit balance of the teamspace: {balance if balance is not None else 'not reported'}"
-          f" (free credits enabled: {getattr(membership, 'free_credits_enabled', None)})", flush=True)
+    print(f"[lightning] using the teamspace with balance {balance if balance is not None else 'not reported'}", flush=True)
     os.environ["ROUGE_LIGHTNING_BALANCE"] = "" if balance is None else str(balance)
     owner = project.owner_type if hasattr(project, "owner_type") else None
     os.environ["LIGHTNING_TEAMSPACE"] = project.name
@@ -129,7 +133,7 @@ def probe(args) -> None:
     if not os.environ.get("LIGHTNING_API_KEY"):
         raise SystemExit("LIGHTNING_API_KEY is not set")
     ts, n = teamspace()
-    print(f"[lightning] authenticated; using the first of {n} usable teamspace(s)", flush=True)
+    print(f"[lightning] authenticated; {n} usable teamspace(s)", flush=True)
     for m in ("T4", "L4"):
         try:
             avail = ts.list_machines(machine=m)
