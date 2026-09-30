@@ -1,0 +1,63 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.14",
+ "title": "10M byte-level language model on real text: Rouge-LM vs a 10M Transformer",
+ "status": "pre-registered",
+ "registered": "2026-09-30",
+ "follows": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+ "runner": "experiments/lm.py",
+ "benchmarks": ["benchmarks/text.py"],
+ "question": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+ "design": {
+  "rouge-lm": "block-recurrent: blocks of 64 bytes; each byte attends to 16 state slots of its layer, the previous block and its own block causally; after each block the slots read the block through the bytes' keys/values and update with a learned forget gate (bias +2, keep). The R1.12/R1.13 lesson (a learned gate retains, a hand-made allocation rule does not) is built in; the R1.09 lesson (a cheap read) is the shared keys/values. Trained with its state carried across consecutive segments of each stream (truncated backpropagation through time).",
+  "window": "the same code with 0 slots: a sliding-window Transformer (window 64-127 bytes). The ablation that isolates the state.",
+  "transformer": "GPT-style decoder with full causal attention over its 256-byte training segment; no state, no cache between segments.",
+  "lstm": "2-layer LSTM, the classic recurrent baseline, state carried like rouge-lm.",
+  "same_data": "all models read the same byte streams in the same order (16 streams, 256 bytes per step)"
+ },
+ "setup": {
+  "batch": 16, "length": 256, "steps": 8000, "lr": 0.0006, "weight_decay": 0.1, "warmup": 200, "seeds": [1, 2, 3],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0), up to 2 resumable attempts per run",
+  "parameters": {"transformer": 9950000, "rouge-lm": 10210000, "window": 9950000, "lstm": 10050000},
+  "models": {
+   "transformer": {"kind": "transformer", "d": 320, "layers": 8, "heads": 5},
+   "rouge-lm": {"kind": "rouge", "d": 272, "layers": 8, "heads": 4, "slots": 16, "block": 64},
+   "window": {"kind": "rouge", "d": 320, "layers": 8, "heads": 5, "slots": 0, "block": 64},
+   "lstm": {"kind": "lstm", "d": 784, "layers": 2}
+  },
+  "eval": {
+   "segments": 512,
+   "streams": 16, "stream_length": 4096,
+   "buckets": {"b0_0_256": [0, 256], "b1_256_1k": [256, 1024], "b2_1k_4k": [1024, 4096]}
+  },
+  "gate": {
+   "checks": {
+    "L1_parity": {"left": "rouge-lm:valid.bpb", "op": "<=", "right": "transformer:valid.bpb", "plus": 0.03},
+    "L2_state_helps": {"left": "rouge-lm:stream.b2_1k_4k", "op": "<=", "right": "window:stream.b2_1k_4k", "plus": -0.02},
+    "L3_long_context": {"left": "rouge-lm:stream.b2_1k_4k", "op": "<=", "right": "transformer:stream.b2_1k_4k", "plus": -0.02},
+    "L4_memory": {"left": "rouge-lm:total_bytes", "op": "<=", "right": "transformer:total_bytes", "times": 0.5},
+    "L5_vs_lstm": {"left": "rouge-lm:valid.bpb", "op": "<=", "right": "lstm:valid.bpb"}
+   },
+   "decision": [
+    {"result": "PASS", "all": ["L1_parity", "L3_long_context", "L4_memory"]},
+    {"result": "PARTIAL", "any": ["L1_parity", "L2_state_helps", "L3_long_context"]},
+    {"result": "FAIL"}
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 1.95e15,
+  "cpu_flops": 8e10,
+  "cpu_flops_measured": "3 x 19.8 MFLOP/byte (torch FLOP counter, Transformer) x 2822 bytes/s = 168 GFLOP/s on a 4-core container (2026-09-30); 8e10 assumes a GitHub runner at half that",
+  "memory_gb": 3
+ },
+ "predictions": {
+  "PASS": "rouge-lm is within 0.03 BPB of the Transformer at equal visible context (L1), at least 0.02 BPB better on bytes 1k-4k of long test streams (L3), with at most half its inference memory (L4, analytic: 1.2 MiB vs 5.0 MiB). A PASS is the advantage that R1.15 (50M) requires.",
+  "PARTIAL": "any of L1, L2 (state beats the same model without state on 1k-4k by 0.02) or L3.",
+  "priors": "the Transformer (full attention over 256 bytes) is expected to be best on valid.bpb; rouge-lm sees only 64-127 bytes exactly plus 16 slots per layer, so L1 is uncertain; L2 is the cleanest test of the state; the LSTM (L5, reported) is a strong small-scale byte model.",
+  "flops": "rouge-lm executes 15.8 MFLOP/byte vs 19.8 for the Transformer (20% fewer) at 2.6% more parameters; this is reported, not gated.",
+  "undertraining": "8000 steps x 4096 bytes = 32.8M training bytes (0.36 epochs) is far below compute-optimal for 10M parameters; absolute BPB will be high (expected 1.6-2.2) and only the comparison at equal bytes is claimed."
+ },
+ "prior_art": "Block-Recurrent Transformer 2203.07852, Recurrent Memory Transformer 2207.06881, Transformer-XL 1901.02860, Griffin 2402.19427, Longformer local attention 2004.05150, enwik8 byte-level LM (Hutter prize; Al-Rfou et al. 1808.04444)",
+ "not_claimed": "Segment recurrence and local attention are prior art. The question is only whether Rouge's slot state earns its place against a Transformer at equal parameters and bytes, on real text, at tier-0 scale."
+}

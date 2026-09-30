@@ -46,8 +46,11 @@ def estimate(prereg: dict) -> dict:
     # 6 N T is the dense-Transformer rule; recurrent models declare their own
     # measured per-run figure in compute.train_flops_per_run.
     flops = est.get("train_flops_per_run", 6 * params * tokens)
+    # an experiment with larger matrices may declare its own measured sustained FLOP/s
+    # (compute.cpu_flops, with the measurement in compute.cpu_flops_measured)
+    rate = est.get("cpu_flops", GITHUB_CPU_FLOPS)
     return {"parameters": params, "train_flops_per_run": flops,
-            "cpu_hours": flops / GITHUB_CPU_FLOPS / 3600, "memory_gb": est.get("memory_gb", 1),
+            "cpu_hours": flops / rate / 3600, "memory_gb": est.get("memory_gb", 1),
             "needs_gpu": bool(est.get("needs_gpu", False)), "needs_h200": bool(est.get("needs_h200", False))}
 
 

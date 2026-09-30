@@ -166,5 +166,27 @@
   "cost_usd": 0,
   "after": [],
   "approved_by": "owner brief 2026-09-29 (R1.05-R1.40, free experiments may be created and dispatched automatically)"
+ },
+ {
+  "id": "r1_14",
+  "approved": true,
+  "cost_usd": 0,
+  "after": [
+   "r1_11",
+   "r1_12",
+   "r1_13"
+  ],
+  "approved_by": "owner brief 2026-09-29 (R1.01 -> R1.40, free compute only)",
+  "note": "10M byte-level LM on enwik8, tier 0 in 2 resumable attempts"
+ },
+ {
+  "id": "r1_39b",
+  "approved": true,
+  "cost_usd": 0,
+  "after": [
+   "r1_39"
+  ],
+  "approved_by": "owner brief 2026-09-29 (R1.01 -> R1.40, free compute only)",
+  "note": "follows R1.39 FAIL: rewards as fine-tuning"
  }
 ]

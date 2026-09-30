@@ -66,8 +66,9 @@ def build(name: str) -> torch.nn.Module:
     kind = config.pop("kind")
     tau_warmup = config.pop("tau_warmup", 0)
     objective = config.pop("objective", "supervised")
+    rl_after = config.pop("rl_after", None)  # R1.39b: supervised until this fraction of the steps, then rewards only
     model = zoo.build(kind, len(bench.VOCAB), **config)
-    model.tau_warmup, model.objective = tau_warmup, objective
+    model.tau_warmup, model.objective, model.rl_after = tau_warmup, objective, rl_after
     return model
 
 
@@ -219,7 +220,8 @@ def train(args) -> None:
         if getattr(model, "uses_oracle", False):
             extra["oracle"] = torch.tensor([bench.oracle(e[0], e[1]) for e in examples], dtype=torch.float32)
         logits, info = model(ids, lengths, **extra)
-        if model.objective == "reinforce":
+        rl = model.objective == "reinforce" or (model.rl_after is not None and step > model.rl_after * args.steps)
+        if rl:
             # R1.39: learn from an external verifier only. The model samples an answer, the task's
             # executor says right (1) or wrong (0); REINFORCE with a running-mean baseline.
             # The label is used only to compute the reward, exactly as a checker or unit test would.
@@ -231,7 +233,7 @@ def train(args) -> None:
             model._baseline = 0.99 * baseline + 0.01 * float(reward.mean())
         else:
             loss = F.cross_entropy(logits, answers)
-        if getattr(model, "hint_weight", 0) > 0 and model.objective != "reinforce":  # execution supervision
+        if getattr(model, "hint_weight", 0) > 0 and not rl:  # execution supervision
             loss = loss + model.hint_weight * model.hint_loss(info, [bench.hints(e[0], e[2]) for e in examples])
         if hasattr(model, "extra_loss"):
             loss = loss + model.extra_loss(info)

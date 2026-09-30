@@ -1,0 +1,115 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.39b",
+ "title": "Verifiable rewards as fine-tuning: supervised start, then executor rewards only",
+ "status": "pre-registered",
+ "registered": "2026-09-30",
+ "follows": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+ "runner": "experiments/suite.py",
+ "benchmarks": [
+  "benchmarks/programs.py",
+  "benchmarks/audit.py"
+ ],
+ "question": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+ "setup": {
+  "batch": 64,
+  "steps": 15000,
+  "lr": 0.001,
+  "weight_decay": 0.01,
+  "warmup": 200,
+  "eval_per_task": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0)",
+  "models": {
+   "transformer-sup": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "transformer-sup-rl": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "rl_after": 0.3333
+   },
+   "exec-sup": {
+    "kind": "exec",
+    "d": 128,
+    "heads": 4,
+    "hint_weight": 0.0
+   },
+   "exec-sup-rl": {
+    "kind": "exec",
+    "d": 128,
+    "heads": 4,
+    "hint_weight": 0.0,
+    "rl_after": 0.3333
+   }
+  },
+  "gate": {
+   "checks": {
+    "RL1_exec_ood": {
+     "left": "exec-sup-rl:ood.all",
+     "op": ">=",
+     "right": "exec-sup:ood.all",
+     "plus": 0.03
+    },
+    "RL2_transformer_ood": {
+     "left": "transformer-sup-rl:ood.all",
+     "op": ">=",
+     "right": "transformer-sup:ood.all",
+     "plus": 0.03
+    },
+    "RL3_no_id_loss": {
+     "left": "exec-sup-rl:dev.all",
+     "op": ">=",
+     "right": "exec-sup:dev.all",
+     "plus": -0.02
+    },
+    "RL4_calibration": {
+     "left": "exec-sup-rl:ood.cal.confident_error_rate",
+     "op": "<=",
+     "right": "exec-sup:ood.cal.confident_error_rate",
+     "times": 1.5
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "RL1_exec_ood",
+      "RL3_no_id_loss"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "any": [
+      "RL1_exec_ood",
+      "RL2_transformer_ood"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 150000000000000.0
+ },
+ "predictions": {
+  "PASS": "the reward phase (no labels) lifts OOD execution by >= 3 points over labels for all 15,000 steps, without losing more than 2 points in distribution",
+  "RL2": "the same for the Transformer (PARTIAL alternative)",
+  "RL4": "reported: confident errors OOD rise at most 1.5x (R1.39 showed REINFORCE from scratch destroys calibration)",
+  "fairness": "the -rl models see labels for 5,000 steps only; their baselines see labels for all 15,000. The reward uses the label only as an executor's check would (right/wrong of the sampled answer)",
+  "prior": "RL from verifiable rewards works as fine-tuning in large models; whether it adds OOD generalisation at this scale is open, and a FAIL is informative"
+ },
+ "prior_art": "REINFORCE (Williams 1992), RL from verifiable rewards as fine-tuning (DeepSeek-R1 2501.12948, Tulu 3 RLVR 2411.15124), R1.39",
+ "not_claimed": "Verifiable-reward fine-tuning is prior art; the question is only whether it earns a place in Rouge's training recipe at this scale."
+}

@@ -150,6 +150,12 @@ jobs:
             echo "$venv/bin" >> "$GITHUB_PATH"
             echo "OUT=${ROUGE_STATE_DIR:-$HOME/rouge-state}/${{ github.run_id }}/$RUN_KEY" >> "$GITHUB_ENV"
           fi
+      - name: Text corpus cache (language-model experiments)
+        if: ${{ runner.environment == 'github-hosted' && contains(needs.plan.outputs.runner_script, 'lm.py') }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/rouge-data
+          key: rouge-data-enwik8-v1
       - name: Restore resume checkpoint (re-run of this job)
         if: ${{ runner.environment == 'github-hosted' }}
         uses: actions/cache/restore@v4
