@@ -1,0 +1,1 @@
+{"name": "rouge-v1-tiny", "vocab_size": 4096, "d_model": 64, "n_layers": 4, "n_heads": 4, "n_kv_heads": 4, "max_seq": 128, "attention": "hybrid", "window": 32, "global_every": 2}
