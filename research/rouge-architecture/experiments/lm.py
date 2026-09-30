@@ -89,8 +89,9 @@ def stream_losses(model, streams: torch.Tensor, length: int) -> torch.Tensor:
     logits, _ = model(x[:, :length])
     losses[:, :length] = F.cross_entropy(logits.transpose(1, 2), y[:, :length], reduction="none")
     for s in range(length, total, half):  # sliding window: score the last `half` bytes of each window
-        logits, _ = model(x[:, s + half - length:s + half])
-        losses[:, s:s + half] = F.cross_entropy(logits[:, -half:].transpose(1, 2), y[:, s:s + half], reduction="none")
+        end = min(s + half, total)
+        logits, _ = model(x[:, end - length:end])
+        losses[:, s:end] = F.cross_entropy(logits[:, -(end - s):].transpose(1, 2), y[:, s:end], reduction="none")
     return losses
 
 

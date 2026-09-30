@@ -1,0 +1,145 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.16",
+ "title": "Long context 4k-128k bytes on the trained R1.14 models: stability, copying beyond the window, memory and speed",
+ "status": "pre-registered",
+ "registered": "2026-09-30",
+ "follows": "R1.14 (running when this was registered; no R1.14 result was seen)",
+ "runner": "experiments/longctx.py",
+ "benchmarks": [
+  "benchmarks/text.py"
+ ],
+ "dispatch": "report-only: reuse_run = the R1.14 run, artifact_prefix = r1_14 (the R1.14 checkpoints are evaluated; nothing is trained)",
+ "question": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+ "setup": {
+  "models_from": "experiments/r1_14.json",
+  "models": {},
+  "steps": 0,
+  "batch": 1,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runner, report job (tier 0, $0)",
+  "eval": {
+   "streams": 4,
+   "stream_length": 65536,
+   "buckets": {
+    "b0_0_256": [
+     0,
+     256
+    ],
+    "b1_256_1k": [
+     256,
+     1024
+    ],
+    "b2_1k_4k": [
+     1024,
+     4096
+    ],
+    "b3_4k_16k": [
+     4096,
+     16384
+    ],
+    "b4_16k_64k": [
+     16384,
+     65536
+    ]
+   },
+   "copy_distances": [
+    128,
+    1024,
+    4096,
+    16384
+   ],
+   "copy_trials": 16,
+   "throughput_sizes": [
+    4096,
+    16384,
+    65536,
+    131072
+   ]
+  },
+  "gate": {
+   "checks": {
+    "C1_copy_beyond_window": {
+     "left": "rouge-lm:copy.1024.gain",
+     "op": ">=",
+     "value": 0.5
+    },
+    "C1b_copy_vs_window_model": {
+     "left": "rouge-lm:copy.1024.gain",
+     "op": ">=",
+     "right": "window:copy.1024.gain",
+     "plus": 0.3
+    },
+    "C2_stable_far_out": {
+     "left": "rouge-lm:stream.b4_16k_64k",
+     "op": "<=",
+     "right": "rouge-lm:stream.b2_1k_4k",
+     "plus": 0.02
+    },
+    "C3_far_vs_transformer": {
+     "left": "rouge-lm:stream.b4_16k_64k",
+     "op": "<=",
+     "right": "transformer:stream.b4_16k_64k",
+     "plus": -0.02
+    },
+    "C4_memory_128k": {
+     "left": "rouge-lm:memory.131072",
+     "op": "<=",
+     "right": "transformer:memory_full.131072",
+     "times": 0.01
+    },
+    "C5_probe_broken": {
+     "left": "transformer:copy.128.gain",
+     "op": "<",
+     "value": 1.0
+    }
+   },
+   "decision": [
+    {
+     "result": "VOID",
+     "all": [
+      "C5_probe_broken"
+     ]
+    },
+    {
+     "result": "PASS",
+     "all": [
+      "C1_copy_beyond_window",
+      "C2_stable_far_out",
+      "C3_far_vs_transformer"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "all": [
+      "C2_stable_far_out"
+     ],
+     "any": [
+      "C1_copy_beyond_window",
+      "C3_far_vs_transformer"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 0,
+  "memory_gb": 4
+ },
+ "predictions": {
+  "C1": "expected to FAIL: exact recall needed addressable memory in R1.03; Rouge-LM has only 16 gated slots per layer, trained for next-byte prediction on enwik8, where exact copies over 1k bytes are rare. A FAIL motivates adding R1.03's exact memory to Rouge-LM.",
+  "C2": "expected to hold: the gated state keeps its scale over 64k bytes (bias +2 keep gate, LayerNorm on reads); a failure would show drift of the recurrence far beyond the training segments.",
+  "C3": "uncertain: holds if R1.14's L3 holds and the advantage does not fade far out.",
+  "C4": "analytic: Rouge-LM 1.2 MiB at any length vs 2.5 GiB of KV cache for a full-context 8-layer d=320 Transformer at 128k bytes (reported, not a learned property).",
+  "C5": "probe sanity: inside its window the Transformer must copy (gain >= 1 bit/byte). If it does not (C5_probe_broken), the probe is broken and the result is VOID (first decision rule)."
+ },
+ "prior_art": "Passkey / needle-in-a-haystack retrieval (Mohtashami & Jaggi 2305.16300), RULER 2404.06654, long-context evaluation of recurrent models (Griffin 2402.19427, Mamba 2312.00752)",
+ "not_claimed": "Constant memory is a property of the design, not a result. Only the measured stability, copy gain and far-context BPB are results."
+}

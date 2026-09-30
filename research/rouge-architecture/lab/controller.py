@@ -57,6 +57,8 @@ def record(args) -> None:
     data = dataset_hash(prereg)
     rows = [r for r in load(REGISTRY, []) if r["experiment_id"] != exp_id]
     runs = [json.loads(p.read_text()) for p in sorted(results.glob("*-seed*.json"))]
+    # an evaluation-only experiment (R1.16) reads the checkpoints of an earlier run: it trains nothing
+    evaluation_only = "models_from" in prereg["setup"]
     for run in runs:
         rows.append({
             "experiment_id": exp_id, "run": f"{run['model']}-seed{run['seed']}", "parent": prereg.get("follows"),
@@ -64,11 +66,11 @@ def record(args) -> None:
             "config": prereg["setup"]["models"].get(run["model"]), "seed": run["seed"],
             "dataset_hash": data, "code_sha": run.get("code_sha") if run.get("code_sha", "local") != "local" else args.code_sha,
             "parameter_count": run.get("parameters", run.get("params")), "active_parameters": run.get("params_active"),
-            "flop_estimate": run.get("flops_effective", run.get("flops_per_example")),
+            "flop_estimate": run.get("flops_effective", run.get("flops_per_example", run.get("flops_per_byte"))),
             "checkpoint_sha256": run.get("checkpoint_sha256"),
-            "hardware": run.get("hardware", args.hardware), "duration_s": run["train_seconds"],
+            "hardware": run.get("hardware", args.hardware), "duration_s": 0 if evaluation_only else run["train_seconds"],
             "cost_usd": 0.0 if route["tier"] < 3 else None, "ci_run": args.run_id,
-            "metrics": {split: run[split] for split in ("id", "dev", "holdout", "ood", "adv") if split in run},
+            "metrics": {k: run[k] for k in ("id", "dev", "holdout", "ood", "adv", "valid_bpb", "test_bpb", "stream") if k in run},
             "result": None, "decision": None,
         })
     rows.append({
@@ -76,7 +78,8 @@ def record(args) -> None:
         "hypothesis": prereg.get("question"), "architecture": list(prereg["setup"]["models"]),
         "seed": prereg["setup"]["seeds"], "dataset_hash": data, "code_sha": args.code_sha,
         "parameter_count": prereg["setup"].get("parameters"), "flop_estimate": route["estimate"]["train_flops_per_run"],
-        "hardware": f"tier {route['tier']}: {route['runs_on']}", "duration_s": sum(r["train_seconds"] for r in runs),
+        "hardware": f"tier {route['tier']}: {route['runs_on']}",
+        "duration_s": 0 if evaluation_only else sum(r["train_seconds"] for r in runs),
         "cost_usd": 0.0, "ci_run": args.run_id, "metrics": {k: v for k, v in summary.items() if k != "decision"},
         "result": decision.get("result"), "decision": decision,
         "recorded": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
