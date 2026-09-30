@@ -1,6 +1,6 @@
 {
  "schema": "rouge.control-plane/1",
- "pinned_at": "2026-09-30T17:04:57Z",
+ "pinned_at": "2026-09-30T17:06:18Z",
  "files": {
   "training/rouge/native/evaluate.py": "8ca20be471cbbf461e09ef7813c8b1bf9c8581842ac0ef7836a6451db735967d",
   "training/rouge/native/pareto.py": "13ddd7c1a88c4ebacbf88061eb7d7dab56e25a6a740cfd25cce3a152ce0eff87",
@@ -15,6 +15,6 @@
   "training/rouge/lightning_ai/job.py": "7f869f98b6af70b8b7f5551308db8d7e674acd10d1b98890e98c65f4a4e6a74c",
   "training/rouge/ready.py": "2494d1c097025b7412106875c0150d8639039866eeb4878bedc3585c3128cb1c",
   ".github/workflows/rouge-train.yml": "0e8a95053a0eb9f3c7982611f8fb2d1359d3c3eeec86f0367aad18a5ad735391",
-  ".github/workflows/rouge-native.yml": "12c36c6ab9619448123d53c04d8ebfc80322c16cdd5943a6eeeac514f9746048"
+  ".github/workflows/rouge-native.yml": "44f035d52c8522eb1d966c6d2429bd0e7dacd5008730ccbfcb874f6a72cb83e7"
  }
 }

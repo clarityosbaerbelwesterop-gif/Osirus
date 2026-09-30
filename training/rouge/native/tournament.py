@@ -79,7 +79,8 @@ def train_args(t: dict, level: str, tokens: float | None) -> dict:
 
 def run_one(args, t, cand: str, seed: int, device: str | None, lock: threading.Lock) -> dict | None:
     level = args.level
-    run_dir = Path(args.out) / f"{level}-{cand}-seed{seed}"
+    opt = getattr(args, "optimizer", "adamw")
+    run_dir = Path(args.out) / (f"{level}-{cand}-seed{seed}" + ("" if opt == "adamw" else f"-{opt}"))
     run_dir.mkdir(parents=True, exist_ok=True)
     result_path = run_dir / "result.json"
     if not result_path.exists():
@@ -91,7 +92,8 @@ def run_one(args, t, cand: str, seed: int, device: str | None, lock: threading.L
                "--seq", str(tr["seq"]), "--lr", str(tr["lr"]), "--warmup", str(tr["warmup"]), "--schedule", tr["schedule"],
                "--decay-frac", str(tr["decay_frac"]), "--min-lr-frac", str(tr["min_lr_frac"]),
                "--weight-decay", str(tr["weight_decay"]), "--clip", str(tr["clip"]), "--seed", str(seed),
-               "--eval-every", "0", "--ckpt-every", str(max(100, tr["steps"] // 5)), "--final-eval", tr["final_eval"]]
+               "--eval-every", "0", "--ckpt-every", str(max(100, tr["steps"] // 5)), "--final-eval", tr["final_eval"],
+               "--optimizer", opt]
         if args.budget_min:
             cmd += ["--budget-min", str(args.budget_min)]
         peak = peak_tflops()
@@ -122,7 +124,7 @@ def run_one(args, t, cand: str, seed: int, device: str | None, lock: threading.L
             return record
     result = json.loads(result_path.read_text())
     record = {"level": level, "candidate": cand, "seed": seed, "size": t["levels"][level]["size"],
-              "r1_29b": args.r1_29b, **result}
+              "r1_29b": args.r1_29b, "optimizer": opt, **result}
     with lock:
         with open(Path(args.out) / "runs.jsonl", "a") as f:
             f.write(json.dumps(record) + "\n")
@@ -180,6 +182,7 @@ def main() -> None:
     r.add_argument("--tokens", type=float, help="override the token budget (smoke tests)")
     r.add_argument("--budget-min", type=float, help="per-run wall-clock budget; a run that reaches it stops with its checkpoint")
     r.add_argument("--size-override", help="JSON merged into the size (smoke tests)")
+    r.add_argument("--optimizer", choices=["adamw", "muon"], default="adamw", help="ablation: optimizer of every run")
     args = parser.parse_args()
     run(args)
 

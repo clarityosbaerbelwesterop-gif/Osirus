@@ -30,7 +30,7 @@ on:
     inputs:
       task:
         type: choice
-        options: [probe, jobs, data, data-verify, tournament, tournament-cpu, dryrun-cpu, dryrun-gpu, ready]
+        options: [probe, jobs, data, data-verify, tournament, tournament-cpu, ablation-cpu, dryrun-cpu, dryrun-gpu, ready]
         default: probe
       submit_test:
         description: "probe: also run a 15-minute test job (free credits)"
@@ -461,6 +461,66 @@ jobs:
           name: ${{ env.RUN_KEY }}
           path: ${{ runner.temp }}/tournament/runs.jsonl
           retention-days: 90
+
+  ablation-cpu:
+    # Optimizer ablation at Level B-cpu (free): candidate A with Muon; its AdamW twin is the Level B-cpu run of A
+    # (same data, tokens, seed and size). The result is committed next to the tournament runs.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'ablation-cpu' }}
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    permissions:
+      contents: write
+    env:
+      RUN_KEY: ablation-cpu-muon-A
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
+          python -m pip install numpy tokenizers datasets huggingface_hub
+      - name: Corpus cache (keyed by the committed manifest)
+        uses: actions/cache@v4
+        with:
+          path: ~/rouge-data
+          key: rouge-native-data-v1-${{ hashFiles('training/rouge/configs/native/data-v1/manifest.json') }}
+      - name: Corpus (verify the cache, or rebuild; every shard hash must match)
+        working-directory: training/rouge
+        run: |
+          if ! python -m native.data.verify --data ~/rouge-data --manifest configs/native/data-v1/manifest.json; then
+            rm -rf ~/rouge-data
+            python -m native.data.build --out ~/rouge-data --tokenizer configs/native/data-v1/tokenizer.json \
+              --expect configs/native/data-v1/manifest.json
+          fi
+      - name: Candidate A with Muon (stops with exit 75 at the budget)
+        working-directory: training/rouge
+        env:
+          R1_29B: ${{ inputs.r1_29b }}
+        run: |
+          python -m native.tournament run --tournament configs/native/tournament-v1.json --level B-cpu \
+            --data ~/rouge-data --out "$RUNNER_TEMP/tournament" --r1-29b "$R1_29B" --only "A:1" --budget-min 315 \
+            --optimizer muon
+      - name: Commit the run record
+        if: ${{ always() && startsWith(github.ref_name, 'rouge/') }}
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          test -s "$RUNNER_TEMP/tournament/runs.jsonl" || exit 0
+          cp "$RUNNER_TEMP/tournament/runs.jsonl" "$RUNNER_TEMP/muon.jsonl"
+          git config user.name "rouge-research[bot]"
+          git config user.email "rouge-research@users.noreply.github.com"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
+            mkdir -p "$ROUGE/results/ablations"
+            cp "$RUNNER_TEMP/muon.jsonl" "$ROUGE/results/ablations/optimizer-muon-B-cpu-A.jsonl"
+            git add "$ROUGE/results/ablations"
+            git diff --cached --quiet && break
+            git commit -q -m "rouge(ablation): Muon on candidate A at Level B-cpu (run ${{ github.run_id }})"
+            git push -q origin "HEAD:$BRANCH" && break
+            sleep $((attempt * 5))
+          done
 
   tournament-cpu-score:
     if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.task == 'tournament-cpu' }}
