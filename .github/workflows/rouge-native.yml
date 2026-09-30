@@ -107,7 +107,7 @@ jobs:
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
           STOP: ${{ inputs.stop }}
         run: |
-          if [ -n "$STOP" ]; then python "$ROUGE/lightning_ai/job.py" jobs --stop "$STOP"; else python "$ROUGE/lightning_ai/job.py" jobs; fi
+          if [ -n "$STOP" ]; then python "$ROUGE/lightning_ai/job.py" jobs --stop "$STOP"; else python "$ROUGE/lightning_ai/job.py" jobs --progress rouge-tournament; fi
 
   probe:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'probe' }}

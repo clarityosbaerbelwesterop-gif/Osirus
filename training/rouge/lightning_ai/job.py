@@ -398,6 +398,14 @@ def jobs(args) -> None:
             except Exception:
                 spent = None
             print(f"[lightning] teamspace {i}: {name}: {status}, machine {getattr(j, 'machine', None)}, cost {spent}", flush=True)
+            if args.progress and name.startswith(args.progress):
+                try:
+                    lines = (j.logs or "").splitlines()
+                except Exception as e:
+                    lines = [f"(logs unavailable: {type(e).__name__})"]
+                for line in lines:
+                    if line.startswith(("ROUGE_RUN", "ROUGE_PHASE", "[tournament]", "[train]", "(logs")):
+                        print(f"[job] {line[:300]}", flush=True)
             if args.stop and is_open(status) and name.startswith(args.stop):
                 j.stop()
                 stopped += 1
@@ -427,6 +435,7 @@ def main() -> None:
     r.add_argument("--env", action="append", default=[], help="KEY=VALUE passed to the job (never a secret)")
     j = sub.add_parser("jobs")
     j.add_argument("--stop", help="stop the open Rouge jobs whose name starts with this prefix")
+    j.add_argument("--progress", help="print the progress lines of the jobs whose name starts with this prefix")
     args = parser.parse_args()
     {"probe": probe, "run": run, "jobs": jobs}[args.cmd](args)
 
