@@ -134,9 +134,23 @@ At this account's prices the H200 is cheapest and fastest. A T4 node matches it 
   - B needs half the KV cache at 32k (33.7 MB vs 67.1 MB) and has 7% more throughput.
   - Finalists: A, B, D.
   - C (ternary) scores 1.845 and is not eligible on quality. D (MoE) scores 1.801 and solves the most tasks (0.155).
-  - E (structured projections) did not finish within the job's CPU budget. It saved its resume checkpoint, and the re-run continues it for free.
+  - E (structured projections) finished on its re-run: 1.925 BPB at 798 tokens/s, the worst quality and the slowest. It is not a finalist, and the decision is unchanged (ee52279).
 - **pretrain-v4** (run 36749764226): 11.5B tokens, every source at 100% of plan. code_py repeats 3.49 epochs (164.8M unique tokens, 4 allowed).
-- **Muon ablation** (run 36749760768): still running.
+- **Muon ablation** (run 36749760768, 9b8dc54): candidate A trained with Muon against the same candidate with AdamW, with the same steps, tokens and budget.
+
+  | Source | BPB, Muon | BPB, AdamW | Change |
+  |---|---|---|---|
+  | Mean | 1.654 | 1.779 | −0.126 (−7.1%) |
+  | code_py | 1.317 | 1.515 | −0.198 |
+  | web_en | 1.577 | 1.663 | −0.086 |
+  | web_de | 1.929 | 2.028 | −0.099 |
+  | math_web | 1.790 | 1.910 | −0.120 |
+  | math_synth | 1.459 | 1.526 | −0.067 |
+
+  - Tasks improve to 0.16 from 0.11. Wall time is +0.9%.
+  - **Verdict: Muon WINS** for native pretraining, with one seed. The gap is more than ten times the usual seed spread at this scale.
+  - It becomes the optimizer of the native track (Rouge 2).
+  - It is not used for Rouge 1. Fine-tuning an AdamW-pretrained model with Muon loses part of the gain (Moonlight, 2025), so Rouge 1 keeps AdamW.
 
 ## What the owner has to do (nothing else blocks Phase E)
 
