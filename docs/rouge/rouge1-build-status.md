@@ -119,7 +119,11 @@ At this account's prices the H200 is cheapest and fastest. A T4 node matches it 
 ## Next steps (automatic, free)
 
 1. Done: corpus v1 committed and rebuilt byte-identically by the streaming build; R1.29b PASS (candidate C ternary); GPU dry run on T4; storage on the model registry; `pretrain-v1` built (1.94B tokens, code 59M of 264M planned).
-2. Running: Level B on GitHub CPUs; production corpus `pretrain-v2` (mixture v3: 41 code projects, decontamination rule v2, more synthetic seeds), built free on a runner and stored in the registry. `ready.py` requires every source at 90% or more of its plan.
+2. `pretrain-v2` (mixture v3, rule v2): 2.03B tokens. Every web and synthetic source reached 100% of plan, and all 41 code archives were fetched. It still fell short on code_py (109M of 264M, 41%: one shared import or idiom with any code validation file still dropped 31% of code files) and on math_web (89.9%).
+   Running now:
+   - Level B on GitHub CPUs.
+   - `pretrain-v3` (mixture v4: decontamination rule v3, where only substantial copies of a validation document count, 25% collection margin, up to 2 code epochs recorded in the manifest).
+   - `data-verify` (corpus v1 must stay byte-identical).
 3. Level C on a GPU (needs credits), then `native/freeze.py` writes Spec v1.0.
 4. A GPU dry run on the frozen spec, then `ready.py` reports TRAINING_READY.
 5. The 100M rung trains on the cheapest machine at live prices (today an H200 on the second cloud account, about 1.8 h), with the owner's approval.
