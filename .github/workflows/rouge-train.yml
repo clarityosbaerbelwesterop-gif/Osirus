@@ -1,0 +1,143 @@
+name: Rouge train
+
+# Rouge training on Lightning AI (owner directive 2026-09-30: Lightning for GPU training, storage and
+# the model repository; RunPod is not used).
+# - prepare: a Lightning DATA_PREP job builds the production corpus with the frozen tokenizer and
+#   uploads it, hash-manifested, to the private teamspace drive; the manifest is committed.
+# - train: one paid rung on H100/H200. Runs only in the protected environment "rouge-gpu": nothing
+#   starts until the owner approves the run. Refused unless TRAINING_READY is true, the 50 EUR ceiling
+#   holds with every Rouge job in the ledger, and the teamspace balance covers the worst case.
+# Weights stay in the private teamspace (drive + model registry); git gets hashes and numbers only.
+
+on:
+  workflow_dispatch:
+    inputs:
+      task:
+        type: choice
+        options: [prepare, train]
+        default: prepare
+      corpus:
+        default: pretrain-v1
+      tokens:
+        description: "prepare: corpus size in tokens"
+        default: "2.2e9"
+      rung:
+        type: choice
+        options: [100m, 300m]
+        default: 100m
+      run:
+        description: "train: lineage name, e.g. rouge-r1-100m-001"
+        default: ""
+      machine:
+        type: choice
+        options: [H100, H200]
+        default: H100
+      max_hours:
+        description: "hard limit of the job (at most 5.75)"
+        default: "3"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rouge-native-lightning
+  cancel-in-progress: false
+
+env:
+  ROUGE: training/rouge
+
+jobs:
+  prepare:
+    if: ${{ inputs.task == 'prepare' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install lightning-sdk
+      - name: Build the corpus on Lightning and store it in the teamspace
+        env:
+          LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+          CORPUS: ${{ inputs.corpus }}
+          TOKENS: ${{ inputs.tokens }}
+        run: |
+          python "$ROUGE/lightning_ai/job.py" run --name "rouge-prepare-$CORPUS-${{ github.run_id }}" --machine DATA_PREP \
+            --max-hours 4 --script lightning_ai/prepare_job.sh --env "ROUGE_CORPUS=$CORPUS" --env "ROUGE_TOKENS=$TOKENS" \
+            --prefix ROUGE_PREPARE --results "$RUNNER_TEMP/prepare.jsonl"
+      - name: Commit the manifest and the ledger
+        if: ${{ always() && startsWith(github.ref_name, 'rouge/') }}
+        env:
+          BRANCH: ${{ github.ref_name }}
+          CORPUS: ${{ inputs.corpus }}
+        run: |
+          stash="$RUNNER_TEMP/stash"; mkdir -p "$stash"
+          cp "$ROUGE/lightning_ai/ledger.json" "$stash/ledger.json"
+          if [ -s "$RUNNER_TEMP/prepare.jsonl" ]; then
+            tail -n 1 "$RUNNER_TEMP/prepare.jsonl" | python3 -c "import json,sys; print(json.dumps(json.loads(sys.stdin.read()), indent=1))" > "$stash/manifest.json"
+          fi
+          git config user.name "rouge-research[bot]"
+          git config user.email "rouge-research@users.noreply.github.com"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
+            cp "$stash/ledger.json" "$ROUGE/lightning_ai/ledger.json"
+            if [ -f "$stash/manifest.json" ]; then mkdir -p "$ROUGE/configs/native/$CORPUS" && cp "$stash/manifest.json" "$ROUGE/configs/native/$CORPUS/manifest.json"; fi
+            git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/configs/native" 2>/dev/null || true
+            git diff --cached --quiet && break
+            git commit -q -m "rouge(data): $CORPUS built on Lightning, stored in the teamspace (run ${{ github.run_id }})"
+            git push -q origin "HEAD:$BRANCH" && break
+            sleep $((attempt * 5))
+          done
+
+  train:
+    # Paid: the owner approves every run of this job (protected environment).
+    if: ${{ inputs.task == 'train' }}
+    runs-on: ubuntu-latest
+    environment: rouge-gpu
+    timeout-minutes: 355
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install lightning-sdk
+      - name: Ceiling before launch
+        run: python3 "$ROUGE/lightning_ai/cost.py" status
+      - name: Train one rung on Lightning (stopped at the deadline by the launcher)
+        env:
+          LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+          RUNG: ${{ inputs.rung }}
+          RUN: ${{ inputs.run }}
+          MACHINE: ${{ inputs.machine }}
+          MAX_HOURS: ${{ inputs.max_hours }}
+          CORPUS: ${{ inputs.corpus }}
+        run: |
+          test -n "$RUN" || { echo "run name required (rouge-r1-<rung>-<nnn>)"; exit 1; }
+          python "$ROUGE/lightning_ai/train_session.py" --rung "$RUNG" --run "$RUN" --machine "$MACHINE" \
+            --max-hours "$MAX_HOURS" --corpus "$CORPUS"
+      - name: Commit the ledger and run records (hashes and numbers; no weights)
+        if: ${{ always() && startsWith(github.ref_name, 'rouge/') }}
+        env:
+          BRANCH: ${{ github.ref_name }}
+          RUN: ${{ inputs.run }}
+        run: |
+          stash="$RUNNER_TEMP/stash"; mkdir -p "$stash"
+          cp "$ROUGE/lightning_ai/ledger.json" "$stash/ledger.json"
+          [ -d "$ROUGE/results/runs/$RUN" ] && cp -r "$ROUGE/results/runs/$RUN" "$stash/run"
+          git config user.name "rouge-research[bot]"
+          git config user.email "rouge-research@users.noreply.github.com"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
+            cp "$stash/ledger.json" "$ROUGE/lightning_ai/ledger.json"
+            if [ -d "$stash/run" ]; then mkdir -p "$ROUGE/results/runs" && rm -rf "$ROUGE/results/runs/$RUN" && cp -r "$stash/run" "$ROUGE/results/runs/$RUN"; fi
+            git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/results/runs" 2>/dev/null || true
+            git diff --cached --quiet && break
+            git commit -q -m "rouge(train): ledger and records of $RUN (run ${{ github.run_id }})"
+            git push -q origin "HEAD:$BRANCH" && break
+            sleep $((attempt * 5))
+          done

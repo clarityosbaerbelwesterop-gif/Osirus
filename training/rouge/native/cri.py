@@ -41,8 +41,8 @@ CONTROL_PLANE = [
     "training/rouge/native/evaluate.py", "training/rouge/native/pareto.py", "training/rouge/native/cri.py",
     "training/rouge/native/registry.py", "training/rouge/native/data/synth.py", "training/rouge/native/data/build.py",
     "training/rouge/native/data/verify.py", "training/rouge/configs/native/tournament-v1.json",
-    "training/rouge/runpod/cost.py", "training/rouge/runpod/session.py", "training/rouge/lightning_ai/job.py",
-    "training/rouge/ready.py", ".github/workflows/rouge-h200.yml", ".github/workflows/rouge-native.yml",
+    "training/rouge/lightning_ai/cost.py", "training/rouge/lightning_ai/train_session.py", "training/rouge/lightning_ai/job.py",
+    "training/rouge/ready.py", ".github/workflows/rouge-train.yml", ".github/workflows/rouge-native.yml",
 ]
 
 ALLOWLIST = {

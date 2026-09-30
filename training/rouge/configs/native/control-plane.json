@@ -1,20 +1,20 @@
 {
  "schema": "rouge.control-plane/1",
- "pinned_at": "2026-09-30T12:16:09Z",
+ "pinned_at": "2026-09-30T12:21:33Z",
  "files": {
   "training/rouge/native/evaluate.py": "ae74313bf1c7d1991c497695498d3a2a4205e2520bdfca62cf771e1d054fa527",
   "training/rouge/native/pareto.py": "13ddd7c1a88c4ebacbf88061eb7d7dab56e25a6a740cfd25cce3a152ce0eff87",
-  "training/rouge/native/cri.py": "6c5d28925aaed975decb79b4bb25a96185c65e4599defcdb48f3675b9756c3cf",
+  "training/rouge/native/cri.py": "95bfa1742873871a54649ab2ae06a1b8005dc67e9817b4a5b3c3919e89b0d534",
   "training/rouge/native/registry.py": "9cf903e3091d31df31f1ba2d80074d3693912542609ee77bd420ea620696cc4f",
   "training/rouge/native/data/synth.py": "6eb20b031f679d7b6ca7367338658df9562d0e67ac24a1909d4d76021bef90da",
   "training/rouge/native/data/build.py": "6273ee74a8804eb3f9b182ac230ef53dcb443ee49d9f7696c5cdca8764651083",
   "training/rouge/native/data/verify.py": "71ad9f8fcdab81817a2f52ae84261cce277d39a242be6f5f7ed85221a68bff95",
   "training/rouge/configs/native/tournament-v1.json": "6282b3861c3047f606a1796f8a6e3b1523ecca496000ccfed32c5224baa48934",
-  "training/rouge/runpod/cost.py": "5ab53ef16aa83a0fc41304885164d8c8bce74e56d74f703a391bc5fc436035b9",
-  "training/rouge/runpod/session.py": "e70316afcfc3d3bc005793faaded9ab318bb774b8ae2dd31ebd39ec4b63e933f",
-  "training/rouge/lightning_ai/job.py": "19880694ce56560929478c6cb03270d1fb24d85b1852153b6b0ecae686177026",
-  "training/rouge/ready.py": "8fe35869332f08ed71dba9db36abadb8e4980c6b1bd6cd198bbddd7b376af8ce",
-  ".github/workflows/rouge-h200.yml": "2c3cfb51d9dc4c9d6a6b14931019d05b0034e49cc4d4b1916ec050d917f945ed",
-  ".github/workflows/rouge-native.yml": "ce22482e760ed12920ebee89a61755d8ab38faa81d1bc7dcde81e361b22499ab"
+  "training/rouge/lightning_ai/cost.py": "552119b34478d1c92a088feabaef1683134c3dabeef546a6683931e37b9dd38d",
+  "training/rouge/lightning_ai/train_session.py": "697cc99bb2cd56af5c42a987a58ca0af0e8ca4c263e99cf1a00493a0520ae557",
+  "training/rouge/lightning_ai/job.py": "622f37205c59aaeb204ac23ef5ac8edad036783d82ba6680b4e8aa0631110c5d",
+  "training/rouge/ready.py": "1e289e8a95df1e4c8fbd905ffc9c766a2ceebf741b0931ac8498480785a339dc",
+  ".github/workflows/rouge-train.yml": "6ba088c52782dc3dbb3f8f1ca785e333f2720071c2e52733997fa2b61c1ea85e",
+  ".github/workflows/rouge-native.yml": "dcac2703f7280cefd59bc1eaf81c841ef6425fac0fff629e595d7e71a1702a35"
  }
 }

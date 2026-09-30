@@ -18,7 +18,7 @@ assumed. Conditions:
 12 Control plane pinned and unchanged
 13 A CRI cycle ran with the control plane intact (results/cri/log.json)
 14 Cost guard: 50 EUR ceiling in force, ledger within it, and the rung's estimate fits what remains
-15 RunPod verified: live H200 price, stock with network storage, and a balance covering the rung (results/runpod/probe.json)
+15 Lightning verified: H100/H200 listed, storage round trip, and a teamspace balance covering the rung (results/lightning/probe.json)
 16 Owner approval gate: every paid job runs in the protected environment rouge-gpu
 """
 
@@ -36,7 +36,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent
 REPO = ROOT.parents[1]
 sys.path.insert(0, str(ROOT))
-sys.path.insert(0, str(ROOT / "runpod"))
+sys.path.insert(0, str(ROOT / "lightning_ai"))
 
 
 def jload(path: Path) -> dict | None:
@@ -133,23 +133,28 @@ def conditions(run_tests: bool, rung: str) -> list[dict]:
 
         ladder = json.loads((ROOT / "configs/native/ladder-v1.json").read_text())
         s = spec.summary(RougeConfig.load(ROOT / f"configs/native/rouge-v1-{rung}.json"))
-        probe = jload(ROOT / "results/runpod/probe.json") or {}
-        estimate = cost.estimate(s["flops_per_token_train"], ladder["rungs"][rung]["tokens"], probe.get("h200_price", 4.59))
+        probe = jload(ROOT / "results/lightning/probe.json") or {}
+        machine = probe.get("training_machine", "H100")
+        estimate = cost.estimate(s["flops_per_token_train"], ladder["rungs"][rung]["tokens"], cost.PAID_PRICE_CEILING[machine],
+                                 peak_tflops=cost.PEAK_BF16_TFLOPS[machine])
+        estimate["machine"] = machine
     remaining = cost.CEILING_USD - cost.committed(ledger)
     add(14, "cost guard: ceiling, ledger, rung estimate", cost.CEILING_EUR == 50.0 and remaining > 0 and estimate is not None
         and estimate["usd"] * 1.25 <= remaining,
         {"ceiling_usd": cost.CEILING_USD, "committed_usd": cost.committed(ledger), "estimate": estimate})
 
-    probe = jload(ROOT / "results/runpod/probe.json")
-    add(15, "RunPod verified (price, stock with storage, balance)",
-        bool(probe) and probe.get("h200_price") and probe.get("h200_storage_dcs") and estimate is not None
-        and probe.get("balance_usd", 0) >= estimate["usd"] * 1.25,
-        {k: probe.get(k) for k in ("h200_price", "h200_storage_dcs", "balance_usd", "checked_at")} if probe else "results/runpod/probe.json missing")
+    probe = jload(ROOT / "results/lightning/probe.json")
+    add(15, "Lightning verified (H100/H200 listed, storage round trip, balance)",
+        bool(probe) and probe.get("storage_ok") and (probe.get("h100_listed") or probe.get("h200_listed")) and estimate is not None
+        and float(probe.get("balance") or 0) >= estimate["usd"] * 1.25,
+        {k: probe.get(k) for k in ("h100_listed", "h200_listed", "storage_ok", "balance", "checked_at")} if probe
+        else "results/lightning/probe.json missing")
 
-    wf = (REPO / ".github/workflows/rouge-h200.yml").read_text()
-    session_job = wf.split("  session:", 1)[1] if "  session:" in wf else ""
-    add(16, "owner approval gate (protected environment rouge-gpu)", "environment: rouge-gpu" in session_job,
-        ".github/workflows/rouge-h200.yml job session")
+    wf_path = REPO / ".github/workflows/rouge-train.yml"
+    wf = wf_path.read_text() if wf_path.exists() else ""
+    train_job = wf.split("  train:", 1)[1] if "  train:" in wf else ""
+    add(16, "owner approval gate (protected environment rouge-gpu)", "environment: rouge-gpu" in train_job,
+        ".github/workflows/rouge-train.yml job train")
     return out
 
 

@@ -1,8 +1,10 @@
 """Lightning AI jobs for Rouge research runs, inside the owner's free monthly credits.
 
-Owner decision (2026-09-30): Lightning is used only within the free credits
-(15 per month), on small GPUs (T4/L4) or CPU machines, never H100/H200 or
-other large GPUs. Production training runs on RunPod (training/rouge/runpod).
+Owner decisions (2026-09-30): research jobs (tournament, dry runs) use small
+machines (T4/L4/CPU) within a monthly credit cap; Lightning also runs the paid
+training rungs on H100/H200 (train_session.py, owner-approved runs only),
+stores data and checkpoints in the teamspace drive and keeps models in the
+teamspace model registry. RunPod is not used (archive/runpod).
 
     python training/rouge/lightning_ai/job.py probe [--submit-test CPU|T4|L4]
     python training/rouge/lightning_ai/job.py run --name NAME --machine L4_X_4 --max-hours 3 \
@@ -43,7 +45,7 @@ PRICE_CEILING_PER_HOUR = {
     "T4": 0.30, "T4_X_4": 1.20, "L4": 0.60, "L4_X_2": 1.20, "L4_X_4": 2.40,
 }
 REPO = os.environ.get("GITHUB_REPOSITORY", "clarityosbaerbelwesterop-gif/Osirus")
-PACKAGES = "torch==2.14.0 numpy tokenizers datasets huggingface_hub"
+PACKAGES = "torch==2.14.0 numpy tokenizers datasets huggingface_hub lightning-sdk"
 
 
 def month() -> str:
@@ -135,14 +137,22 @@ def probe(args) -> None:
         raise SystemExit("LIGHTNING_API_KEY is not set")
     ts, n = teamspace()
     print(f"[lightning] authenticated; {n} usable teamspace(s)", flush=True)
+    summary = {"checked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+               "balance": os.environ.get("ROUGE_LIGHTNING_BALANCE") or None}
     for m in ("T4", "L4", "A100", "H100", "H200"):
         try:
             avail = ts.list_machines(machine=m)
+            summary[f"{m.lower()}_listed"] = bool(avail)
             print(f"[lightning] machine {m}: {'listed' if avail else 'no capacity listed'}", flush=True)
         except Exception as e:  # listing is informational
+            summary[f"{m.lower()}_listed"] = False
             print(f"[lightning] machine {m}: listing failed ({type(e).__name__})", flush=True)
+    summary["training_machine"] = "H100" if summary.get("h100_listed") else "H200"
     if args.storage:
-        storage_roundtrip(ts)
+        summary["storage_ok"] = storage_roundtrip(ts)
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out).write_text(json.dumps(summary, indent=1) + "\n")
     if args.submit_test:
         from lightning_sdk import Job, Machine
 
@@ -276,6 +286,7 @@ def main() -> None:
     p = sub.add_parser("probe")
     p.add_argument("--submit-test", choices=["CPU", "T4", "L4"])
     p.add_argument("--storage", action="store_true", help="also test a teamspace-drive round trip (a few KB)")
+    p.add_argument("--out", help="write a machine-readable summary (no names, no secrets)")
     p.add_argument("--ledger", default=str(Path(__file__).with_name("ledger.json")))
     r = sub.add_parser("run")
     r.add_argument("--name", required=True)

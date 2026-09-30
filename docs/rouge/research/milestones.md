@@ -21,12 +21,12 @@ and a documented result. Negative results count and are recorded.
 ## Status (2026-09-30)
 
 All results are pre-registered decisions from 3-seed runs on free CPU runners ($0), except R1.05, R1.08, R1.30 and R1.31 (documents and analysis).
-Counts: 9 PASS, 11 PARTIAL, 16 FAIL or VOID/INCONCLUSIVE, 1 running (R1.29b), 7 gated or not earned, and 1 tooling.
+Counts: 10 PASS, 11 PARTIAL, 16 FAIL or VOID/INCONCLUSIVE, 7 gated or not earned, and 1 tooling.
 
 Of the 9 PASS results:
 - 3 are documents or benchmarks (R1.05, R1.06, R1.30);
 - 3 hold on the means but within seed noise or on one seed (R1.11, R1.12, R1.26);
-- 3 are firm experimental evidence: R1.09 (cheap state read), R1.22 (sparse kernels save time) and R1.29 (ternary weights).
+- 3 are firm experimental evidence: R1.09 (cheap state read), R1.22 (sparse kernels save time) and R1.29 (ternary weights), which R1.29b confirmed on real text (PASS, provisional: within seed noise).
 
 | ID | Result | Finding |
 |---|---|---|
@@ -60,10 +60,11 @@ Of the 9 PASS results:
 | R1.26 | [PASS (within seed noise)](../../../research/rouge-architecture/results/r1.26/README.md) | Kronecker and tensor-train above byte-matched dense. |
 | R1.27 | [PARTIAL](../../../research/rouge-architecture/results/r1.27/README.md) | Shared basis bank matches byte-matched dense; very stable. |
 | R1.28 | [PARTIAL](../../../research/rouge-architecture/results/r1.28/README.md) | Weight field good per byte, decoding 4× FLOPs: rejected as runtime format. |
-| R1.29 | [PASS](../../../research/rouge-architecture/results/r1.29/README.md) | Ternary MLP at 326 KiB: 47.2 vs 38.8 byte-matched fp32 (outside seed noise). R1.29b (same on enwik8) running. |
+| R1.29 | [PASS](../../../research/rouge-architecture/results/r1.29/README.md) | Ternary MLP at 326 KiB: 47.2 vs 38.8 byte-matched fp32 (outside seed noise). |
+| R1.29b | [PASS](../../../research/rouge-architecture/results/r1.29b/README.md) | On enwik8: ternary MLP 1.733 BPB at 14.5 MiB vs byte-matched fp32 1.786 and full fp32 1.721 at 37.9 MiB (gap within seed noise); window + ternary did not keep far-stream quality (T3). Ternary is candidate C of Architecture v1. |
 | R1.30 | [PASS](../../../research/rouge-architecture/results/r1.30/README.md) | Capacity accounting (`capacity-accounting.md`). |
 | R1.31 | [PARTIAL](../../../research/rouge-architecture/results/r1.31/README.md) | Frontier measured at 1 KiB–1.3 MB; GB scale is arithmetic only. |
-| R1.32 | GATED | Structured 100M: only ternary weights qualify, and only if R1.29b (ternary on enwik8, running) confirms R1.29 on real text. 100M also needs a larger tier than a free runner. |
+| R1.32 | SUPERSEDED | Structured 100M is now the Architecture v1 tournament (candidates C–E carry ternary weights after R1.29b PASS) and the 100M rung of the Lightning training ladder. |
 | R1.33 | [FAIL](../../../research/rouge-architecture/results/r1.34/README.md) | Step-aligned latent loop below the fixed-depth loop OOD. |
 | R1.34 | [FAIL](../../../research/rouge-architecture/results/r1.34/README.md) | Execution supervision hurts OOD (20.8 vs 31.9 Transformer). |
 | R1.35 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | 4 hypothesis heads: 10× more confident errors. |
@@ -71,7 +72,7 @@ Of the 9 PASS results:
 | R1.37 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | Verifier AUROC equals own confidence (0.842). |
 | R1.38 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | Verifier's pick +0.8 over own pick; the plain Transformer beats both. |
 | R1.39 | [FAIL](../../../research/rouge-architecture/results/r1.39/README.md), [R1.39b FAIL](../../../research/rouge-architecture/results/r1.39b/README.md) | Reward-only training from scratch stays at the cue floor; rewards after a supervised start cost 9-11 points ID and give no OOD gain. |
-| R1.40 | NOT EARNED YET | After R1.14/R1.14b, Rouge's memory mechanisms have evidence only on synthetic tasks. The one candidate left with PASS evidence is ternary weights (R1.29), under test on real text in R1.29b. |
+| R1.40 | NOT EARNED YET | Rouge's memory mechanisms have evidence only on synthetic tasks (R1.14, R1.14b, R1.16 failed on real text). Ternary weights passed on real text (R1.29b) and enter Architecture v1 through the tournament, not through R1.40. |
 
 ## R1.01–R1.08 Theory and baselines
 
