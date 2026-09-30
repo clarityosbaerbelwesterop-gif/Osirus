@@ -119,8 +119,24 @@ At this account's prices the H200 is cheapest and fastest. A T4 node matches it 
   - RSI data selection (`rouge_train/rft.py`).
   - The Lightning job on 8 × H200: download and verification on the GPU machine, baseline, self-generated verified data, training, pre-registered verdict, private upload, GGUF (`lightning_ai/rouge1_job.sh`, `rouge1_session.py`, `rouge-train.yml task=rouge1`).
   - The local install (`serve/install.py`).
-- **Running:** dataset `rft-v1` (rouge-data.yml run 36768014451). Its eval hash goes into the pre-registration `experiments/rouge-1-rl-001.json`.
+- **Dataset `rft-v1`** (rouge-data.yml run 36768014451, stored in the registry):
+  - 5,000 verifiable prompts (openr1-math 2,500, openmath 2,500);
+  - 5,716 training records (in-house generated and human-written German);
+  - 864 evaluation items: 300 primary (held out), 500 guard, 64 report.
+- **Pre-registration:** `experiments/rouge-1-rl-001.json` is registered (eval `73bd239a16e1`). The launcher's preflight passes against the committed pin, pre-registration, dataset and config.
+- **Teacher:** DeepSeek-V4-Pro is pinned as teacher (`models/teachers/deepseek-v4-pro.json`, 864.7 GB, MIT text checked, run 36774077018). It runs self-hosted on 8 × B200 after iteration 1 (`docs/rouge/rouge1-base-plan.md`).
 - **Waiting for:** the owner's credits, then one approval in `rouge-gpu`. One iteration costs about 2.3 h × 36 USD/h ≈ 84 USD.
+
+## Research track (native model, superseded as the product path)
+
+- **Level B on CPU** (run 36734715214, decision committed in 9ac1a36):
+  - B (hybrid local:global attention) wins with 1.771 BPB. A (full attention) scores 1.779.
+  - B needs half the KV cache at 32k (33.7 MB vs 67.1 MB) and has 7% more throughput.
+  - Finalists: A, B, D.
+  - C (ternary) scores 1.845 and is not eligible on quality. D (MoE) scores 1.801 and solves the most tasks (0.155).
+  - E (structured projections) did not finish within the job's CPU budget. It saved its resume checkpoint, and the re-run continues it for free.
+- **pretrain-v4** (run 36749764226): 11.5B tokens, every source at 100% of plan. code_py repeats 3.49 epochs (164.8M unique tokens, 4 allowed).
+- **Muon ablation** (run 36749760768): still running.
 
 ## What the owner has to do (nothing else blocks Phase E)
 
