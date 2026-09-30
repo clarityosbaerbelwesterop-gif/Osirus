@@ -1,0 +1,142 @@
+{
+ "schema": "rouge.research-experiment/1",
+ "id": "R1.29b",
+ "title": "Ternary weights on real text: 10M byte-level LMs on enwik8, byte-matched",
+ "status": "pre-registered",
+ "registered": "2026-09-30",
+ "follows": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+ "runner": "experiments/lm.py",
+ "benchmarks": [
+  "benchmarks/text.py"
+ ],
+ "question": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+ "setup": {
+  "batch": 16,
+  "length": 256,
+  "steps": 8000,
+  "lr": 0.0006,
+  "weight_decay": 0.1,
+  "warmup": 200,
+  "seeds": [
+   1,
+   2,
+   3
+  ],
+  "hardware": "GitHub-hosted CPU runners (tier 0, $0), up to 2 resumable attempts per run",
+  "eval": {
+   "segments": 512,
+   "streams": 16,
+   "stream_length": 4096,
+   "buckets": {
+    "b0_0_256": [
+     0,
+     256
+    ],
+    "b1_256_1k": [
+     256,
+     1024
+    ],
+    "b2_1k_4k": [
+     1024,
+     4096
+    ]
+   }
+  },
+  "parameters": {
+   "transformer": 9950000,
+   "transformer-ternary": 9950000,
+   "transformer-d200": 3910000,
+   "window-ternary": 9950000
+  },
+  "models": {
+   "transformer": {
+    "kind": "transformer",
+    "d": 320,
+    "layers": 8,
+    "heads": 5
+   },
+   "transformer-ternary": {
+    "kind": "transformer",
+    "d": 320,
+    "layers": 8,
+    "heads": 5,
+    "ternary": true
+   },
+   "transformer-d200": {
+    "kind": "transformer",
+    "d": 200,
+    "layers": 8,
+    "heads": 5
+   },
+   "window-ternary": {
+    "kind": "rouge",
+    "d": 320,
+    "layers": 8,
+    "heads": 5,
+    "slots": 0,
+    "block": 64,
+    "ternary": true
+   }
+  },
+  "gate": {
+   "checks": {
+    "T1_per_byte": {
+     "left": "transformer-ternary:valid.bpb",
+     "op": "<=",
+     "right": "transformer-d200:valid.bpb",
+     "plus": -0.03
+    },
+    "T2_near_fp32": {
+     "left": "transformer-ternary:valid.bpb",
+     "op": "<=",
+     "right": "transformer:valid.bpb",
+     "plus": 0.05
+    },
+    "T3_combination_far": {
+     "left": "window-ternary:stream.b2_1k_4k",
+     "op": "<=",
+     "right": "transformer:stream.b2_1k_4k"
+    },
+    "T4_bytes": {
+     "left": "transformer-ternary:stored_bytes",
+     "op": "<=",
+     "right": "transformer:stored_bytes",
+     "times": 0.45
+    }
+   },
+   "decision": [
+    {
+     "result": "PASS",
+     "all": [
+      "T1_per_byte",
+      "T2_near_fp32"
+     ]
+    },
+    {
+     "result": "PARTIAL",
+     "any": [
+      "T1_per_byte",
+      "T2_near_fp32"
+     ]
+    },
+    {
+     "result": "FAIL"
+    }
+   ]
+  }
+ },
+ "compute": {
+  "train_flops_per_run": 1950000000000000.0,
+  "cpu_flops": 80000000000.0,
+  "cpu_flops_measured": "ternary MLP: 1.28 s per training step vs 0.78 s fp32 (4-core container; the straight-through quantisation costs time, no ternary kernel)",
+  "memory_gb": 3
+ },
+ "predictions": {
+  "PASS": "ternary beats the byte-matched fp32 model by >= 0.03 BPB (T1) and is within 0.05 BPB of the full fp32 model (T2)",
+  "priors": "T1 likely: the byte-matched fp32 model has 2.5x fewer parameters. T2 uncertain: BitNet b1.58 reports parity with fp16 only from about 3B parameters; R1.29's gain over full fp32 on suite v3 was within seed noise and may be regularisation, which matters less on undertrained real text (0.36 epochs).",
+  "T3": "reported: window-ternary (1.25 MiB inference memory, 15.2 MB stored) vs the full fp32 Transformer (5 MiB, 38.9 MB) on bytes 1k-4k",
+  "T4": "reported: attention and embeddings stay fp32, so the whole model stores 0.39x the fp32 bytes, not 1/16"
+ },
+ "prior_art": "BitNet 2310.11453, BitNet b1.58 2402.17764, ternary/low-bit QAT (TWN 1605.04711, LSQ 1902.08153), R1.29",
+ "not_claimed": "Ternary training is prior art. The question is whether the one mechanism with independent PASS evidence in this program survives on real text before it is used in R1.32/R1.40. No kernel speed-up is claimed: ternary matmuls run as fp32 here."
+}

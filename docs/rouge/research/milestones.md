@@ -60,10 +60,10 @@ Of the 9 PASS results:
 | R1.26 | [PASS (within seed noise)](../../../research/rouge-architecture/results/r1.26/README.md) | Kronecker and tensor-train above byte-matched dense. |
 | R1.27 | [PARTIAL](../../../research/rouge-architecture/results/r1.27/README.md) | Shared basis bank matches byte-matched dense; very stable. |
 | R1.28 | [PARTIAL](../../../research/rouge-architecture/results/r1.28/README.md) | Weight field good per byte, decoding 4× FLOPs: rejected as runtime format. |
-| R1.29 | [PASS](../../../research/rouge-architecture/results/r1.29/README.md) | Ternary MLP at 326 KiB: 47.2 vs 38.8 byte-matched fp32 (outside seed noise). |
+| R1.29 | [PASS](../../../research/rouge-architecture/results/r1.29/README.md) | Ternary MLP at 326 KiB: 47.2 vs 38.8 byte-matched fp32 (outside seed noise). R1.29b (same on enwik8) running. |
 | R1.30 | [PASS](../../../research/rouge-architecture/results/r1.30/README.md) | Capacity accounting (`capacity-accounting.md`). |
 | R1.31 | [PARTIAL](../../../research/rouge-architecture/results/r1.31/README.md) | Frontier measured at 1 KiB–1.3 MB; GB scale is arithmetic only. |
-| R1.32 | GATED | Structured 100M: waits for R1.14 (LM setting) and a tier that fits 100M. |
+| R1.32 | GATED | Structured 100M: only ternary weights qualify, and only if R1.29b (ternary on enwik8, running) confirms R1.29 on real text. 100M also needs a larger tier than a free runner. |
 | R1.33 | [FAIL](../../../research/rouge-architecture/results/r1.34/README.md) | Step-aligned latent loop below the fixed-depth loop OOD. |
 | R1.34 | [FAIL](../../../research/rouge-architecture/results/r1.34/README.md) | Execution supervision hurts OOD (20.8 vs 31.9 Transformer). |
 | R1.35 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | 4 hypothesis heads: 10× more confident errors. |
@@ -71,7 +71,7 @@ Of the 9 PASS results:
 | R1.37 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | Verifier AUROC equals own confidence (0.842). |
 | R1.38 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | Verifier's pick +0.8 over own pick; the plain Transformer beats both. |
 | R1.39 | [FAIL](../../../research/rouge-architecture/results/r1.39/README.md), [R1.39b FAIL](../../../research/rouge-architecture/results/r1.39b/README.md) | Reward-only training from scratch stays at the cue floor; rewards after a supervised start cost 9-11 points ID and give no OOD gain. |
-| R1.40 | NOT EARNED YET | Candidates with independent evidence: ternary MLP (R1.29), Rouge small-state memory (R1.09/R1.11, memory frontier R1.31). Waits on R1.14. |
+| R1.40 | NOT EARNED YET | After R1.14/R1.14b, Rouge's memory mechanisms have evidence only on synthetic tasks. The one candidate left with PASS evidence is ternary weights (R1.29), under test on real text in R1.29b. |
 
 ## R1.01–R1.08 Theory and baselines
 

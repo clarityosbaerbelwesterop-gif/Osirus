@@ -198,5 +198,16 @@
   ],
   "approved_by": "owner brief 2026-09-29 (R1.01 -> R1.40, free compute only)",
   "note": "exact memory in Rouge-LM; dispatched by hand in parallel with R1.14"
+ },
+ {
+  "id": "r1_29b",
+  "approved": true,
+  "cost_usd": 0,
+  "after": [
+   "r1_29",
+   "r1_14"
+  ],
+  "approved_by": "owner brief 2026-09-29 (R1.01 -> R1.40, free compute only)",
+  "note": "ternary on real text; dispatched by hand"
  }
 ]
