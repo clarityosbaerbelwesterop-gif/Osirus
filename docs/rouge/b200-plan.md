@@ -60,3 +60,19 @@ For 3.6e19 FLOPs the compute-optimal dense model has about 0.55B parameters trai
 1. A Lightning key that reaches the teamspace with free credits, stored as `LIGHTNING_AI_API_KEY`.
 2. Optional: Kaggle API token as `KAGGLE_USERNAME` and `KAGGLE_KEY` secrets.
 3. When ready: 125 credits in the Lightning teamspace, then approve the run in the `rouge-gpu` environment. The ledger ceiling is set to 125 credits plus the 3.66 USD already spent (`lightning_ai/cost.py`).
+
+## Progress (2026-09-30, 17:20 UTC)
+
+- Done:
+  - B200 and B200_X_8 are training machines, and the ceiling covers the 125 credits.
+  - `2b-moe` and `600m` rungs are in the ladder.
+  - The Muon optimizer is in the trainer (`--optimizer muon`); CI tests are green.
+  - The corpus can be built one source per runner.
+- Running (free):
+  - Level B tournament on GitHub CPUs.
+  - Muon vs AdamW ablation (candidate A, Level B-cpu recipe).
+  - `pretrain-v3` (2.2B tokens, for the free A100 phase).
+  - `pretrain-v4` (11.5B tokens, mixture v5, 9 runners in parallel, for the B200 phase).
+- Next:
+  - FP8 path for B200 (torchao float8), checked for loss parity at the start of the paid run.
+  - The tournament decision decides between `2b-moe` and `600m`.
