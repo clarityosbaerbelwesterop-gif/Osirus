@@ -1,5 +1,5 @@
 {
- "checked_at": "2026-09-30T12:47:03Z",
+ "checked_at": "2026-09-30T17:24:57Z",
  "machines": [
   {
    "name": "A100_40GB",
@@ -7,7 +7,7 @@
    "family": "A100",
    "gpus": 1,
    "usd_per_hour": 2.19,
-   "interruptible_usd_per_hour": 0.0
+   "interruptible_usd_per_hour": null
   },
   {
    "name": "A100_80GB",
@@ -38,8 +38,8 @@
    "slug": "lit-a100-40gb-8",
    "family": "A100",
    "gpus": 8,
-   "usd_per_hour": 30.9,
-   "interruptible_usd_per_hour": 20.63832
+   "usd_per_hour": 12.384,
+   "interruptible_usd_per_hour": null
   },
   {
    "name": "A100_80GB_X_8",
@@ -55,7 +55,7 @@
    "family": "B200",
    "gpus": 1,
    "usd_per_hour": 9.86,
-   "interruptible_usd_per_hour": 0.0
+   "interruptible_usd_per_hour": null
   },
   {
    "name": "B200_X_8",
@@ -63,7 +63,7 @@
    "family": "B200",
    "gpus": 8,
    "usd_per_hour": 78.87,
-   "interruptible_usd_per_hour": 0.0
+   "interruptible_usd_per_hour": null
   },
   {
    "name": "CPU_X_2",
@@ -103,7 +103,7 @@
    "family": "DATA-PREP",
    "gpus": 32,
    "usd_per_hour": 1.48,
-   "interruptible_usd_per_hour": 0.0
+   "interruptible_usd_per_hour": null
   },
   {
    "name": "DATA_PREP_MAX",
@@ -111,7 +111,7 @@
    "family": "DATA-PREP",
    "gpus": 64,
    "usd_per_hour": 2.69,
-   "interruptible_usd_per_hour": 0.0
+   "interruptible_usd_per_hour": null
   },
   {
    "name": "DATA_PREP_ULTRA",
@@ -127,7 +127,7 @@
    "family": "H100",
    "gpus": 1,
    "usd_per_hour": 5.68,
-   "interruptible_usd_per_hour": 0.0
+   "interruptible_usd_per_hour": null
   },
   {
    "name": null,
@@ -151,18 +151,10 @@
    "family": "H100",
    "gpus": 8,
    "usd_per_hour": 45.47,
-   "interruptible_usd_per_hour": 0.0
+   "interruptible_usd_per_hour": null
   },
   {
    "name": "H200",
-   "slug": "lit-h200-1",
-   "family": "H200",
-   "gpus": 1,
-   "usd_per_hour": 6.53,
-   "interruptible_usd_per_hour": 0.0
-  },
-  {
-   "name": null,
    "slug": "lit-h200-141gb-1",
    "family": "H200",
    "gpus": 1,
@@ -170,7 +162,7 @@
    "interruptible_usd_per_hour": 3.82
   },
   {
-   "name": null,
+   "name": "H200_X_2",
    "slug": "lit-h200-141gb-2",
    "family": "H200",
    "gpus": 2,
@@ -178,7 +170,7 @@
    "interruptible_usd_per_hour": 7.64
   },
   {
-   "name": null,
+   "name": "H200_X_4",
    "slug": "lit-h200-141gb-4",
    "family": "H200",
    "gpus": 4,
@@ -187,14 +179,6 @@
   },
   {
    "name": "H200_X_8",
-   "slug": "lit-h200-8",
-   "family": "H200",
-   "gpus": 8,
-   "usd_per_hour": 47.16,
-   "interruptible_usd_per_hour": 61.65974
-  },
-  {
-   "name": null,
    "slug": "lit-h200-141gb-8",
    "family": "H200",
    "gpus": 8,
@@ -238,8 +222,8 @@
    "slug": "lit-l40s-1",
    "family": "L40S",
    "gpus": 1,
-   "usd_per_hour": 3.54,
-   "interruptible_usd_per_hour": 2.70391
+   "usd_per_hour": 2.14,
+   "interruptible_usd_per_hour": null
   },
   {
    "name": "L40S_X_4",
@@ -247,7 +231,7 @@
    "family": "L40S",
    "gpus": 4,
    "usd_per_hour": 11.86,
-   "interruptible_usd_per_hour": 7.58076
+   "interruptible_usd_per_hour": 7.5846
   },
   {
    "name": "L40S_X_8",
@@ -255,7 +239,7 @@
    "family": "L40S",
    "gpus": 8,
    "usd_per_hour": 33.68,
-   "interruptible_usd_per_hour": 22.26084
+   "interruptible_usd_per_hour": 22.16496
   },
   {
    "name": "RTXP_6000",
@@ -263,7 +247,7 @@
    "family": "RTXP",
    "gpus": 1,
    "usd_per_hour": 4.64,
-   "interruptible_usd_per_hour": 2.69489
+   "interruptible_usd_per_hour": 2.74923
   },
   {
    "name": "RTXP_6000_X_2",
@@ -271,7 +255,7 @@
    "family": "RTXP",
    "gpus": 2,
    "usd_per_hour": 9.41,
-   "interruptible_usd_per_hour": 5.77302
+   "interruptible_usd_per_hour": 5.77621
   },
   {
    "name": "RTXP_6000_X_4",
@@ -287,7 +271,7 @@
    "family": "RTXP",
    "gpus": 8,
    "usd_per_hour": 37.03,
-   "interruptible_usd_per_hour": 17.07838
+   "interruptible_usd_per_hour": 17.09906
   },
   {
    "name": "T4",
@@ -303,7 +287,7 @@
    "family": "T4",
    "gpus": 1,
    "usd_per_hour": 0.55,
-   "interruptible_usd_per_hour": 0.57768
+   "interruptible_usd_per_hour": 0.57744
   },
   {
    "name": "T4_X_4",

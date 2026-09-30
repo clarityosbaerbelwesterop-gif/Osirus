@@ -1,6 +1,6 @@
 {
- "checked_at": "2026-09-30T12:47:03Z",
- "balance": "4.090527777777783",
+ "checked_at": "2026-09-30T17:24:57Z",
+ "balance": "1.27",
  "t4_listed": true,
  "l4_listed": true,
  "a100_listed": true,
@@ -13,10 +13,60 @@
   "free_credits_enabled": [
    false,
    false
+  ],
+  "all": [
+   {
+    "index": 0,
+    "name": "default-project",
+    "default": true,
+    "owner": "organization",
+    "balance": 1.27,
+    "free_credits_enabled": false,
+    "next_free_credits_grant": null,
+    "same_teamspace_as": null,
+    "access": "refused (Exception)"
+   },
+   {
+    "index": 1,
+    "name": "Rouge -",
+    "default": false,
+    "owner": "organization",
+    "balance": 1.27,
+    "free_credits_enabled": false,
+    "next_free_credits_grant": null,
+    "same_teamspace_as": null,
+    "access": "readable"
+   },
+   {
+    "index": 2,
+    "name": "default-project",
+    "default": true,
+    "owner": "user",
+    "balance": 1.268422222222246,
+    "free_credits_enabled": false,
+    "next_free_credits_grant": null,
+    "same_teamspace_as": 0,
+    "access": "refused (Exception)"
+   },
+   {
+    "index": 3,
+    "name": "Rouge -",
+    "default": false,
+    "owner": "user",
+    "balance": 1.268422222222246,
+    "free_credits_enabled": false,
+    "next_free_credits_grant": null,
+    "same_teamspace_as": 1,
+    "access": "readable"
+   }
   ]
  },
- "training_machine": "H200",
+ "training_machine": "B200",
  "training_machines_listed": [
+  "A100_40GB",
+  "A100_80GB",
+  "B200",
+  "B200_X_8",
   "H200",
   "L40S",
   "L40S_X_4",
