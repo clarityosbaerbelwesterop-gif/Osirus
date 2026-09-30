@@ -1,0 +1,256 @@
+{
+ "schema": "rouge.dataset-manifest/1",
+ "name": "rouge-rft-v1",
+ "recipe": "rft-v1",
+ "strip_thinking": false,
+ "registry_version": "2026-09-28.4",
+ "code_commit": "2e3ee50f06bab6982d8ca0603eac3afb7e293e6b",
+ "max_tokens": 7500,
+ "seed": 20260928,
+ "sources": {
+  "tulu-3-sft-mixture": {
+   "source": "hf:allenai/tulu-3-sft-mixture",
+   "revision": "b14afda60f1bbebe55d5d2fa1e4df5042f97f8be",
+   "license": "ODC-BY-1.0",
+   "role": "train"
+  },
+  "nemotron-post-training-v1": {
+   "source": "hf:nvidia/Nemotron-Post-Training-Dataset-v1",
+   "revision": "74e23eb6f830fef4a9e96a92f6f6262214cbb9a8",
+   "license": "CC-BY-4.0",
+   "role": "train"
+  },
+  "open-math-reasoning": {
+   "source": "hf:nvidia/OpenMathReasoning",
+   "revision": "d3d08664755704f422af97d43a7ff0ded4bd95df",
+   "license": "CC-BY-4.0",
+   "role": "train"
+  },
+  "open-code-reasoning": {
+   "source": "hf:nvidia/OpenCodeReasoning",
+   "revision": "20a1ca19c0d050fe9057fc08339d6b370ec1c67a",
+   "license": "CC-BY-4.0",
+   "role": "train"
+  },
+  "openr1-math-220k": {
+   "source": "hf:open-r1/OpenR1-Math-220k",
+   "revision": "e4e141ec9dea9f8326f4d347be56105859b2bd68",
+   "license": "Apache-2.0",
+   "role": "train"
+  },
+  "rouge-verified-tasks": {
+   "source": "generator:training/rouge/rouge_train/generators.py (train seed namespace)",
+   "revision": null,
+   "license": "generated-in-house",
+   "role": "train"
+  },
+  "rouge-eval-generated": {
+   "source": "generator:training/rouge/rouge_train/generators.py (eval seed namespace)",
+   "revision": null,
+   "license": "generated-in-house",
+   "role": "eval-only"
+  },
+  "mgsm": {
+   "source": "hf:juletxara/mgsm",
+   "revision": "b2f13d426afe3be8d69a7e739b36724db8b66bbc",
+   "license": "CC-BY-SA-4.0",
+   "role": "eval-only"
+  },
+  "mbpp": {
+   "source": "hf:google-research-datasets/mbpp",
+   "revision": "4bb6404fdc6cacfda99d4ac4205087b89d32030c",
+   "license": "CC-BY-4.0",
+   "role": "eval-only"
+  },
+  "ifeval": {
+   "source": "hf:google/IFEval",
+   "revision": "966cd89545d6b6acfd7638bc708b98261ca58e84",
+   "license": "Apache-2.0",
+   "role": "eval-only"
+  },
+  "aya-dataset": {
+   "source": "hf:CohereForAI/aya_dataset",
+   "revision": "f9ea04583f02a8f86404ff6c58bf75fe637df8a2",
+   "license": "Apache-2.0",
+   "role": "train"
+  },
+  "oasst2": {
+   "source": "hf:OpenAssistant/oasst2",
+   "revision": "179dd21fc55192153d94adb0e0ce8f69e222bf75",
+   "license": "Apache-2.0",
+   "role": "train"
+  }
+ },
+ "train": {
+  "file": "train.jsonl",
+  "sha256": "acae2448f1eed2a2485523f832e01085d508bbe7b56674d7a5a4b5373e5f5ee4",
+  "records": 5716,
+  "by_source": {
+   "tulu-oasst1": 1499,
+   "oasst2-de": 1036,
+   "rouge-generated": 2784,
+   "aya-de": 191,
+   "tulu-oasst1-de": 206
+  },
+  "german": 2604
+ },
+ "prompts": {
+  "file": "prompts.jsonl",
+  "sha256": "89d20544258a857062803a6b458cba2725e15791c727ff9dfec69c7b4c56e668",
+  "items": 5000,
+  "by_source": {
+   "openr1-math": 2500,
+   "openmath": 2500
+  }
+ },
+ "eval": {
+  "file": "eval.jsonl",
+  "sha256": "73bd239a16e16ba90ed56c9c542f291c16191532f66145ff64243f0f6cece84a",
+  "items": 864,
+  "by_category": {
+   "reasoning": 136,
+   "german": 112,
+   "coding": 100,
+   "instruction": 200,
+   "format": 12,
+   "identity": 4,
+   "math": 300
+  },
+  "by_suite": {
+   "guard": 500,
+   "report": 64,
+   "primary": 300
+  }
+ },
+ "stats": {
+  "ifeval": {
+   "total": 541,
+   "supported": 468
+  },
+  "eval_by_category": {
+   "reasoning": 136,
+   "german": 112,
+   "coding": 100,
+   "instruction": 200,
+   "format": 12,
+   "identity": 4
+  },
+  "eval_by_suite": {
+   "guard": 500,
+   "report": 64,
+   "primary": 300
+  },
+  "prompts-openr1-math": {
+   "kept": 2650,
+   "wanted": 2650,
+   "scanned": 5570,
+   "rejected": {
+    "not-numeric": 2919
+   }
+  },
+  "prompts-openmath": {
+   "kept": 2650,
+   "wanted": 2650,
+   "scanned": 12200,
+   "rejected": {
+    "not-numeric": 9442,
+    "duplicate": 107
+   }
+  },
+  "nemotron-math": {
+   "kept": 0,
+   "scanned": 0,
+   "quota": 0,
+   "rejected": {}
+  },
+  "nemotron-stem": {
+   "kept": 0,
+   "scanned": 0,
+   "quota": 0,
+   "rejected": {}
+  },
+  "openr1-math": {
+   "kept": 0,
+   "scanned": 0,
+   "quota": 0,
+   "rejected": {}
+  },
+  "openmath-cot": {
+   "kept": 0,
+   "scanned": 0,
+   "quota": 0,
+   "rejected": {}
+  },
+  "opencode": {
+   "kept": 0,
+   "scanned": 0,
+   "quota": 0,
+   "rejected": {}
+  },
+  "tulu-oasst1": {
+   "kept": 1500,
+   "quota": 1500,
+   "scanned_tulu_rows": 400001
+  },
+  "tulu-oasst1-de": {
+   "kept": 206,
+   "quota": 800,
+   "scanned_tulu_rows": 400001
+  },
+  "tulu-sciriff": {
+   "kept": 0,
+   "quota": 0,
+   "scanned_tulu_rows": 400001
+  },
+  "tulu_sources_seen": {
+   "ai2-adapt-dev/personahub_math_v5_regen_149960": 60079,
+   "ai2-adapt-dev/flan_v2_converted": 59560,
+   "ai2-adapt-dev/evol_codealpaca_heval_decontaminated": 57084,
+   "ai2-adapt-dev/numinamath_tir_math_decontaminated": 51419,
+   "ai2-adapt-dev/tulu_v3.9_wildchat_100k": 50288,
+   "ai2-adapt-dev/tulu_v3.9_synthetic_finalresp_wildguardmixtrain_decontaminated_50k": 41557,
+   "allenai/tulu-3-sft-personas-math-grade": 22967,
+   "ai2-adapt-dev/tulu_v3.9_personahub_math_interm_algebra_20k": 15240,
+   "ai2-adapt-dev/tulu_v3.9_aya_100k": 10157,
+   "ai2-adapt-dev/tulu_v3.9_sciriff_10k": 9987,
+   "ai2-adapt-dev/personahub_ifdata_manual_seed_v3_29980": 9583,
+   "ai2-adapt-dev/oasst1_converted": 7131,
+   "ai2-adapt-dev/tulu_v3.9_table_gpt_5k": 4949
+  },
+  "aya-de": {
+   "kept": 191,
+   "scanned": 202362,
+   "quota": 1500,
+   "rejected": {
+    "language": 202121,
+    "duplicate-prompt": 41,
+    "short": 9
+   }
+  },
+  "oasst2-de": {
+   "kept": 1198,
+   "scanned": 128575,
+   "quota": 1500,
+   "rejected": {
+    "not-german-assistant": 125106,
+    "not-top-ranked": 2270,
+    "duplicate-prompt": 1
+   }
+  },
+  "rouge-generated": {
+   "kept": 3000,
+   "quota": 3000
+  },
+  "deduplicated": 162,
+  "decontaminated_exact": 6,
+  "decontaminated_prefix": 211,
+  "prompts_decontaminated": 0,
+  "tokens": {
+   "dropped_too_long": 0,
+   "total": 1524200,
+   "mean": 267,
+   "p50": 186,
+   "p95": 697
+  }
+ }
+}
