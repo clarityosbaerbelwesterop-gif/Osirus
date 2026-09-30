@@ -30,7 +30,7 @@ on:
     inputs:
       task:
         type: choice
-        options: [probe, jobs, data, tournament, tournament-cpu, dryrun-cpu, dryrun-gpu, ready]
+        options: [probe, jobs, data, data-verify, tournament, tournament-cpu, dryrun-cpu, dryrun-gpu, ready]
         default: probe
       submit_test:
         description: "probe: also run a 15-minute test job (free credits)"
@@ -199,6 +199,24 @@ jobs:
             git push -q origin "HEAD:$BRANCH" && break
             sleep $((attempt * 5))
           done
+
+  data-verify:
+    # rebuild the committed tournament corpus v1 (pinned revisions, frozen tokenizer); every shard hash
+    # must match configs/native/data-v1/manifest.json. Proves a build change leaves the output unchanged.
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'data-verify' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install numpy tokenizers datasets huggingface_hub
+      - name: Rebuild corpus v1 and compare every shard hash with the committed manifest
+        working-directory: training/rouge
+        run: |
+          python -m native.data.build --out "$RUNNER_TEMP/data" --tokenizer configs/native/data-v1/tokenizer.json \
+            --expect configs/native/data-v1/manifest.json
 
   tournament:
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'tournament' }}

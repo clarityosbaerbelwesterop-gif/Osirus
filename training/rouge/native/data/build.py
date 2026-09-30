@@ -27,6 +27,8 @@ import multiprocessing
 import os
 import random
 import re
+import resource
+import shutil
 import tarfile
 import time
 import unicodedata
@@ -160,6 +162,54 @@ def load_tokenizer(path: Path):
 
 
 # --- build -------------------------------------------------------------------------
+class DocFile:
+    """Training documents of one source, spilled to disk as JSON lines in arrival order.
+
+    A 2B-token corpus holds about 9 GB of text, more than a GitHub runner's memory; lists
+    of documents are kept only for validation splits (at most VAL_CAP per source).
+    """
+
+    def __init__(self, path: Path):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        self.path, self.count, self.chars, self.licenses = path, 0, 0, set()
+        self._f = open(path, "w", encoding="utf-8")
+
+    def append(self, doc: tuple) -> None:
+        self._f.write(json.dumps(doc, ensure_ascii=False) + "\n")
+        self.count += 1
+        self.chars += len(doc[1])
+        self.licenses.add(doc[2])
+
+    def close(self) -> None:
+        if self._f is not None:
+            self._f.close()
+            self._f = None
+
+    def __len__(self) -> int:
+        return self.count
+
+    def __iter__(self):
+        self.close()
+        with open(self.path, encoding="utf-8") as f:
+            for line in f:
+                yield tuple(json.loads(line))
+
+
+def batched(docs, n: int):
+    chunk = []
+    for d in docs:
+        chunk.append(d)
+        if len(chunk) == n:
+            yield chunk
+            chunk = []
+    if chunk:
+        yield chunk
+
+
+def peak_rss(stage: str) -> None:
+    print(f"[data] {stage}: peak memory {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20:.2f} GB", flush=True)
+
+
 def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revisions: dict, code_set: str = "v1") -> dict:
     """Documents per source and split, after cleaning, dedup and split. Returns {source: {...}}."""
     result = {}
@@ -175,7 +225,7 @@ def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revision
             docs = ((i, t, "generated") for i, t in iter_synth(name))
         budget_chars = total_tokens * share * CHARS_PER_TOKEN[domain] * 1.08
         seen, fingerprints = set(), set()
-        train, val, dropped, chars, n = [], [], {}, 0, 0
+        train, val, dropped, chars, n = DocFile(out / "tmp" / f"{name}.train.jsonl"), [], {}, 0, 0
         for doc_id, text, license_ in docs:
             n += 1
             text = normalize(text)
@@ -197,8 +247,9 @@ def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revision
                 chars += len(text)
                 if chars >= budget_chars:
                     break
+        train.close()
         result[name] = {"domain": domain, "train": train, "val": val, "docs_seen": n, "dropped": dropped,
-                        "license": sorted({l for _, _, l in train}) or ["generated"], "revision": revisions.get(name)}
+                        "license": sorted(train.licenses) or ["generated"], "revision": revisions.get(name)}
         print(f"[data] {name}: {n} seen, {len(train)} train, {len(val)} val, dropped {dropped}", flush=True)
     return result
 
@@ -229,10 +280,17 @@ def decontaminate(corpus: dict) -> dict:
     report = {}
     with multiprocessing.get_context("fork").Pool(os.cpu_count() or 1) as pool:
         for name, src in corpus.items():
-            flags = pool.map(_contaminated, [d[1] for d in src["train"]], chunksize=64)
-            keep = [d for d, bad in zip(src["train"], flags) if not bad]
-            report[name] = len(src["train"]) - len(keep)
-            src["train"] = keep
+            kept, dropped = DocFile(src["train"].path.with_suffix(".kept.jsonl")), 0
+            for chunk in batched(src["train"], 16384):   # bounded memory; order and decisions unchanged
+                flags = pool.map(_contaminated, [d[1] for d in chunk], chunksize=64)
+                for d, bad in zip(chunk, flags):
+                    if bad:
+                        dropped += 1
+                    else:
+                        kept.append(d)
+            kept.close()
+            src["train"].path.unlink()
+            report[name], src["train"] = dropped, kept
     return report
 
 
@@ -259,8 +317,8 @@ def write_shards(corpus: dict, tok, out: Path, total_tokens: float, mixture: dic
                               "sha256": hashlib.sha256(arr.tobytes()).hexdigest()})
                 ids, idx = [], idx + 1
 
-            for s in range(0, len(docs), 512):
-                batch = tok.encode_batch([d[1] for d in docs[s:s + 512]])
+            for chunk in batched(docs, 512):
+                batch = tok.encode_batch([d[1] for d in chunk])
                 for enc in batch:
                     piece = np.asarray(enc.ids + [eos], dtype=np.int64)
                     if budget is not None and written + piece.size > budget:
@@ -282,8 +340,8 @@ def write_shards(corpus: dict, tok, out: Path, total_tokens: float, mixture: dic
 
 def src_share(src: dict, corpus: dict) -> float:
     """Share of a source in the tokenizer sample: its share of training characters."""
-    total = sum(len(d[1]) for s in corpus.values() for d in s["train"]) or 1
-    return sum(len(d[1]) for d in src["train"]) / total
+    total = sum(s["train"].chars for s in corpus.values()) or 1
+    return src["train"].chars / total
 
 
 def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None, vocab: int, expect: dict | None,
@@ -293,7 +351,9 @@ def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None,
     revisions = (expect or {}).get("revisions") or {n: hf_revision(sources.HF[n]["repo"]) for n in mixture if n in sources.HF}
     code_set = (expect or {}).get("code_set") or mixture_name
     corpus = collect(out, total_tokens, mixture, out / "cache", revisions, code_set)
+    peak_rss("collected")
     contamination = decontaminate(corpus)
+    peak_rss("decontaminated")
     tok_path = out / "tokenizer.json"
     if tokenizer:
         tok_path.write_bytes(Path(tokenizer).read_bytes())
@@ -311,6 +371,8 @@ def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None,
         train_tokenizer(sample, vocab, tok_path)
     tok = load_tokenizer(tok_path)
     shards = write_shards(corpus, tok, out, total_tokens, mixture)
+    peak_rss("tokenized")
+    shutil.rmtree(out / "tmp", ignore_errors=True)   # spilled documents are not part of the corpus
     manifest = {
         "schema": "rouge.data/1",
         "created_s": round(time.time() - start, 1),
