@@ -133,11 +133,11 @@ def iter_code(cache: Path, code_set: str = "v1"):
                 yield f"{project}@{tag}:{m.name.split('/', 1)[-1]}", text, license_
 
 
-def iter_synth(kind: str):
+def iter_synth(kind: str, seeds: int = 200_000):
     """Generated documents; items whose prompt is an evaluation prompt are never emitted (exact-match decontamination:
     these prompts are shorter than 13 words, so the n-gram check cannot see them)."""
     held_out = {p for p, _ in synth.eval_items(kind, 2000)}
-    for seed in range(200_000):  # training RNG namespace "<kind>:<seed>"; evaluation uses "<kind>:eval:<seed>"
+    for seed in range(seeds):  # training RNG namespace "<kind>:<seed>"; evaluation uses "<kind>:eval:<seed>"
         yield f"{kind}:{seed}", synth.document(random.Random(f"{kind}:{seed}"), kind, exclude=held_out)
 
 
@@ -222,7 +222,7 @@ def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revision
             domain, docs = "code", iter_code(cache, code_set)
         else:
             domain = sources.SYNTHETIC[name]["domain"]
-            docs = ((i, t, "generated") for i, t in iter_synth(name))
+            docs = ((i, t, "generated") for i, t in iter_synth(name, sources.SYNTH_SEEDS[code_set]))
         budget_chars = total_tokens * share * CHARS_PER_TOKEN[domain] * 1.08
         seen, fingerprints = set(), set()
         train, val, dropped, chars, n = DocFile(out / "tmp" / f"{name}.train.jsonl"), [], {}, 0, 0
@@ -262,21 +262,38 @@ def _contaminated(text: str) -> bool:
     return any(stable_hash(" ".join(words[i:i + 13])) in _EVAL_GRAMS for i in range(len(words) - 12))
 
 
-def decontaminate(corpus: dict) -> dict:
-    """Drop train documents sharing a word 13-gram with any evaluation text (parallel over documents).
+BOILERPLATE_DOCS = 3   # rule v2: an eval 13-gram in this many distinct eval texts is boilerplate, not eval content
+
+
+def eval_grams(corpus: dict, rule: str) -> set[int]:
+    """13-grams of every evaluation text (validation documents and generated eval items).
+
+    Rule v1 uses all of them. Rule v2 leaves out grams shared by BOILERPLATE_DOCS or more distinct
+    evaluation texts (licence headers, common code idioms, item templates): in pretrain-v1 they dropped
+    40% of the code training files. Grams specific to an evaluation text still drop any training
+    document that contains them, and synthetic eval prompts stay excluded by exact match.
+    """
+    texts = [text for src in corpus.values() for _, text, _ in src["val"]]
+    texts += [f"{p} {a}" for kind in ("math_synth", "algo_synth") for p, a in synth.eval_items(kind, 500)]
+    if rule == "v1":
+        return set().union(*(ngrams13(t) for t in texts))
+    if rule != "v2":
+        raise ValueError(f"unknown decontamination rule {rule}")
+    seen: dict[int, int] = {}
+    for t in texts:
+        for g in ngrams13(t):
+            seen[g] = seen.get(g, 0) + 1
+    return {g for g, n in seen.items() if n < BOILERPLATE_DOCS}
+
+
+def decontaminate(corpus: dict, rule: str = "v1") -> dict:
+    """Drop train documents sharing a word 13-gram with an evaluation text (parallel over documents).
 
     The n-gram hash is stable across processes, so a decision depends only on
     document content and a rebuild reproduces it exactly.
     """
     global _EVAL_GRAMS
-    eval_grams: set[int] = set()
-    for src in corpus.values():
-        for _, text, _ in src["val"]:
-            eval_grams |= ngrams13(text)
-    for kind in ("math_synth", "algo_synth"):
-        for prompt, answer in synth.eval_items(kind, 500):
-            eval_grams |= ngrams13(f"{prompt} {answer}")
-    _EVAL_GRAMS = eval_grams
+    _EVAL_GRAMS = eval_grams(corpus, rule)
     report = {}
     with multiprocessing.get_context("fork").Pool(os.cpu_count() or 1) as pool:
         for name, src in corpus.items():
@@ -345,14 +362,16 @@ def src_share(src: dict, corpus: dict) -> float:
 
 
 def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None, vocab: int, expect: dict | None,
-          mixture_name: str = "v1") -> dict:
+          mixture_name: str = "v1", rule: str = "v2") -> dict:
     out.mkdir(parents=True, exist_ok=True)
     start = time.time()
     revisions = (expect or {}).get("revisions") or {n: hf_revision(sources.HF[n]["repo"]) for n in mixture if n in sources.HF}
     code_set = (expect or {}).get("code_set") or mixture_name
+    if expect is not None:   # a rebuild uses the rule its manifest records (manifests before rule v2 used v1)
+        rule = expect.get("decontamination_rule", "v1")
     corpus = collect(out, total_tokens, mixture, out / "cache", revisions, code_set)
     peak_rss("collected")
-    contamination = decontaminate(corpus)
+    contamination = decontaminate(corpus, rule)
     peak_rss("decontaminated")
     tok_path = out / "tokenizer.json"
     if tokenizer:
@@ -386,7 +405,9 @@ def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None,
                         "contaminated_dropped": contamination[n], "shards": shards[n]}
                     for n, s in corpus.items()},
         "dedup": "exact (normalised text) + near-dup fingerprint (head/tail) in-house; upstream MinHash for FineWeb-Edu, FineWeb-2, OpenWebMath",
-        "contamination": "train documents sharing any word 13-gram with validation documents or generated eval items are dropped",
+        "decontamination_rule": rule,
+        "contamination": ("train documents sharing any word 13-gram with validation documents or generated eval items are dropped"
+                          + ("" if rule == "v1" else f"; grams found in {BOILERPLATE_DOCS}+ distinct eval texts are boilerplate and ignored")),
         "code_sha": os.environ.get("GITHUB_SHA", "local"),
     }
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
@@ -407,6 +428,7 @@ def main() -> None:
     parser.add_argument("--tokenizer")
     parser.add_argument("--expect")
     parser.add_argument("--mixture", default="v1")
+    parser.add_argument("--decontamination", default="v2", choices=["v1", "v2"], help="rule for new builds (--expect uses its own)")
     parser.add_argument("--only", nargs="*", help="restrict to these sources (tests)")
     args = parser.parse_args()
     mixture = dict(sources.MIXTURES[args.mixture])
@@ -417,7 +439,7 @@ def main() -> None:
     if expect:  # a rebuild takes the expected corpus's size and mixture
         tokens, mixture = expect["total_tokens"], expect["mixture"]
     manifest = build(Path(args.out), tokens, mixture, Path(args.tokenizer) if args.tokenizer else None, args.vocab, expect,
-                     mixture_name=args.mixture)
+                     mixture_name=args.mixture, rule=args.decontamination)
     print(json.dumps({n: s["shards"]["train"]["tokens"] for n, s in manifest["sources"].items()}))
 
 

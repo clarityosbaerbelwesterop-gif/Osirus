@@ -22,10 +22,13 @@ on:
         options: [prepare, train]
         default: prepare
       corpus:
-        default: pretrain-v1
+        default: pretrain-v2
       tokens:
         description: "prepare: corpus size in tokens"
         default: "2.2e9"
+      mixture:
+        description: "prepare: mixture (v3: 41 code projects, decontamination rule v2)"
+        default: v3
       rung:
         type: choice
         options: [100m, 300m]
@@ -81,6 +84,7 @@ jobs:
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
           ROUGE_CORPUS: ${{ inputs.corpus }}
           ROUGE_TOKENS: ${{ inputs.tokens }}
+          ROUGE_MIXTURE: ${{ inputs.mixture }}
         working-directory: training/rouge
         run: |
           bash lightning_ai/prepare_job.sh 2>&1 | tee "$RUNNER_TEMP/prepare.log"

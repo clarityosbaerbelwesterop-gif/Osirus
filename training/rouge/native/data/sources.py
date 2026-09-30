@@ -55,6 +55,35 @@ CODE_EXTRA = [
     ("pytest", "8.3.3", "https://codeload.github.com/pytest-dev/pytest/tar.gz/refs/tags/8.3.3", "MIT"),
 ]
 
+# More permissively licensed projects for the production corpus (mixture "v3"): pretrain-v1 (mixture v2)
+# supplied 59M of 264M planned code tokens (36k files seen; 40% dropped by boilerplate 13-grams). An archive
+# that cannot be fetched is recorded in the manifest's code_missing; it is never replaced silently.
+CODE_MORE = [
+    ("sqlalchemy", "rel_2_0_36", "https://codeload.github.com/sqlalchemy/sqlalchemy/tar.gz/refs/tags/rel_2_0_36", "MIT"),
+    ("dask", "2024.11.2", "https://codeload.github.com/dask/dask/tar.gz/refs/tags/2024.11.2", "BSD-3-Clause"),
+    ("xarray", "v2024.11.0", "https://codeload.github.com/pydata/xarray/tar.gz/refs/tags/v2024.11.0", "Apache-2.0"),
+    ("networkx", "networkx-3.4.2", "https://codeload.github.com/networkx/networkx/tar.gz/refs/tags/networkx-3.4.2", "BSD-3-Clause"),
+    ("astropy", "v7.0.0", "https://codeload.github.com/astropy/astropy/tar.gz/refs/tags/v7.0.0", "BSD-3-Clause"),
+    ("pip", "24.3.1", "https://codeload.github.com/pypa/pip/tar.gz/refs/tags/24.3.1", "MIT"),
+    ("setuptools", "v75.6.0", "https://codeload.github.com/pypa/setuptools/tar.gz/refs/tags/v75.6.0", "MIT"),
+    ("mypy", "v1.13.0", "https://codeload.github.com/python/mypy/tar.gz/refs/tags/v1.13.0", "MIT"),
+    ("ray", "ray-2.39.0", "https://codeload.github.com/ray-project/ray/tar.gz/refs/tags/ray-2.39.0", "Apache-2.0"),
+    ("mlflow", "v2.18.0", "https://codeload.github.com/mlflow/mlflow/tar.gz/refs/tags/v2.18.0", "Apache-2.0"),
+    ("celery", "v5.4.0", "https://codeload.github.com/celery/celery/tar.gz/refs/tags/v5.4.0", "BSD-3-Clause"),
+    ("scrapy", "2.12.0", "https://codeload.github.com/scrapy/scrapy/tar.gz/refs/tags/2.12.0", "BSD-3-Clause"),
+    ("tornado", "v6.4.2", "https://codeload.github.com/tornadoweb/tornado/tar.gz/refs/tags/v6.4.2", "Apache-2.0"),
+    ("aiohttp", "v3.11.7", "https://codeload.github.com/aio-libs/aiohttp/tar.gz/refs/tags/v3.11.7", "Apache-2.0"),
+    ("tensorflow", "v2.18.0", "https://codeload.github.com/tensorflow/tensorflow/tar.gz/refs/tags/v2.18.0", "Apache-2.0"),
+    ("statsmodels", "v0.14.4", "https://codeload.github.com/statsmodels/statsmodels/tar.gz/refs/tags/v0.14.4", "BSD-3-Clause"),
+    ("sphinx", "v8.1.3", "https://codeload.github.com/sphinx-doc/sphinx/tar.gz/refs/tags/v8.1.3", "BSD-2-Clause"),
+    ("black", "24.10.0", "https://codeload.github.com/psf/black/tar.gz/refs/tags/24.10.0", "MIT"),
+    ("twisted", "twisted-24.10.0", "https://codeload.github.com/twisted/twisted/tar.gz/refs/tags/twisted-24.10.0", "MIT"),
+    ("salt", "v3007.1", "https://codeload.github.com/saltstack/salt/tar.gz/refs/tags/v3007.1", "Apache-2.0"),
+    ("zulip", "9.3", "https://codeload.github.com/zulip/zulip/tar.gz/refs/tags/9.3", "Apache-2.0"),
+    ("numba", "0.60.0", "https://codeload.github.com/numba/numba/tar.gz/refs/tags/0.60.0", "BSD-2-Clause"),
+    ("httpx", "0.27.2", "https://codeload.github.com/encode/httpx/tar.gz/refs/tags/0.27.2", "BSD-3-Clause"),
+]
+
 SYNTHETIC = {
     "math_synth": {"license": "generated", "lang": "en", "domain": "math"},
     "algo_synth": {"license": "generated", "lang": "en", "domain": "algorithmic"},
@@ -64,5 +93,9 @@ SYNTHETIC = {
 MIXTURE_V1 = {"web_en": 0.55, "web_de": 0.15, "code_py": 0.12, "math_web": 0.08, "math_synth": 0.05, "algo_synth": 0.05}
 # Production mixture v2: same shares; code_py draws on CODE + CODE_EXTRA.
 MIXTURE_V2 = dict(MIXTURE_V1)
-MIXTURES = {"v1": MIXTURE_V1, "v2": MIXTURE_V2}
-CODE_SETS = {"v1": CODE, "v2": CODE + CODE_EXTRA}
+# Production mixture v3: same shares; code_py draws on CODE + CODE_EXTRA + CODE_MORE, and the synthetic
+# generators get enough seeds for their share (200k math_synth seeds gave 69M of 110M tokens).
+MIXTURE_V3 = dict(MIXTURE_V1)
+MIXTURES = {"v1": MIXTURE_V1, "v2": MIXTURE_V2, "v3": MIXTURE_V3}
+CODE_SETS = {"v1": CODE, "v2": CODE + CODE_EXTRA, "v3": CODE + CODE_EXTRA + CODE_MORE}
+SYNTH_SEEDS = {"v1": 200_000, "v2": 200_000, "v3": 1_000_000}   # the token budget stops generation first

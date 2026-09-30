@@ -177,7 +177,7 @@ def main() -> None:
     parser.add_argument("--max-hours", type=float, required=True)
     parser.add_argument("--interruptible", action="store_true", help="discounted capacity; preempted jobs relaunch and resume")
     parser.add_argument("--max-attempts", type=int, default=6)
-    parser.add_argument("--corpus", default="pretrain-v1")
+    parser.add_argument("--corpus", default="pretrain-v2")
     parser.add_argument("--batch", type=int, default=0, help="sequences per GPU and micro-step (0: by GPU family)")
     parser.add_argument("--sha")
     args = parser.parse_args()

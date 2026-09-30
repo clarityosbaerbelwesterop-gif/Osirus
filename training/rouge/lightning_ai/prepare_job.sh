@@ -4,7 +4,7 @@
 # (rouge/data/$ROUGE_CORPUS) and prints its manifest as ROUGE_PREPARE.
 set -euo pipefail
 OUT=/tmp/rouge-corpus
-python -m native.data.build --out "$OUT" --tokens "$ROUGE_TOKENS" --mixture v2 --tokenizer configs/native/data-v1/tokenizer.json
+python -m native.data.build --out "$OUT" --tokens "$ROUGE_TOKENS" --mixture "${ROUGE_MIXTURE:-v3}" --tokenizer configs/native/data-v1/tokenizer.json
 python -m native.data.verify --data "$OUT"
 rm -rf "$OUT/cache"                                   # downloaded code archives are not part of the corpus
 python lightning_ai/storage.py upload "$OUT" "rouge/data/$ROUGE_CORPUS"
