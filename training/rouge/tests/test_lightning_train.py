@@ -16,21 +16,27 @@ import train_session  # noqa: E402
 
 
 class FakeTeamspace:
-    """Teamspace drive stand-in: folders copied into a temporary directory."""
+    """Model-registry stand-in: every upload is a new version (a copied folder); downloads take the latest."""
 
     def __init__(self):
         self.root = Path(tempfile.mkdtemp())
 
-    def upload_folder(self, folder_path, remote_path=None, progress_bar=True):
-        dst = self.root / remote_path
-        shutil.rmtree(dst, ignore_errors=True)
-        shutil.copytree(folder_path, dst)
+    def _versions(self, name):
+        d = self.root / name
+        return sorted(d.iterdir(), key=lambda p: int(p.name[1:])) if d.exists() else []
 
-    def download_folder(self, remote_path, target_path=None):
-        shutil.copytree(self.root / remote_path, Path(target_path) / Path(remote_path).name, dirs_exist_ok=True)
+    def upload_model(self, path, name, version=None, progress_bar=True, metadata=None):
+        version = version or f"v{len(self._versions(name)) + 1}"
+        shutil.copytree(path, self.root / name / version / Path(path).name)
 
-    def list_files(self, remote_path):
-        return list((self.root / remote_path).rglob("*"))
+    def download_model(self, name, download_dir=None, progress_bar=True):
+        name, _, version = name.partition(":")
+        src = (self.root / name / version) if version else self._versions(name)[-1]
+        shutil.copytree(src, download_dir, dirs_exist_ok=True)
+        return download_dir
+
+    def list_model_versions(self, name):
+        return self._versions(name)
 
 
 class TestStorage(unittest.TestCase):
@@ -42,14 +48,17 @@ class TestStorage(unittest.TestCase):
         storage.upload(str(src), "rouge/data/x", ts=ts)
         got = storage.download("rouge/data/x", tempfile.mkdtemp(), ts=ts)
         self.assertEqual(got["files"], 2)
-        (ts.root / "rouge/data/x/train/a.bin").write_bytes(b"\x01" * 100)          # corrupted in storage
+        self.assertEqual(storage.model_name("rouge/runs/rouge-r1-100m-001@v3"), ("rouge-runs-rouge-r1-100m-001", "v3"))
+        self.assertTrue(storage.exists("rouge/data/x", ts=ts))
+        stored = next((ts.root / "rouge-data-x").rglob("a.bin"))
+        stored.write_bytes(b"\x01" * 100)                                         # corrupted in storage
         with self.assertRaises(SystemExit):
             storage.download("rouge/data/x", tempfile.mkdtemp(), ts=ts)
 
     def test_unverified_data_is_refused(self):
         ts = FakeTeamspace()
-        (ts.root / "rouge/data/y").mkdir(parents=True)
-        (ts.root / "rouge/data/y/a.bin").write_bytes(b"x")
+        (ts.root / "rouge-data-y/v1/y").mkdir(parents=True)
+        (ts.root / "rouge-data-y/v1/y/a.bin").write_bytes(b"x")
         with self.assertRaises(SystemExit):
             storage.download("rouge/data/y", tempfile.mkdtemp(), ts=ts)
 

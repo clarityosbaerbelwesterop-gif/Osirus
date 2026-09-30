@@ -105,13 +105,21 @@ def iter_hf(spec: dict, revision: str | None):
         yield str(row.get("id") or i), text
 
 
-def iter_code(cache: Path):
+MISSING_CODE: list[str] = []
+
+
+def iter_code(cache: Path, code_set: str = "v1"):
     cache.mkdir(parents=True, exist_ok=True)
-    for project, tag, url, license_ in sources.CODE:
+    for project, tag, url, license_ in sources.CODE_SETS[code_set]:
         path = cache / f"{project}-{tag}.tar.gz"
         if not path.exists():
-            with urllib.request.urlopen(url, timeout=300) as r:
-                path.write_bytes(r.read())
+            try:
+                with urllib.request.urlopen(url, timeout=600) as r:
+                    path.write_bytes(r.read())
+            except Exception as e:  # recorded in the manifest; a rebuild must see the same set
+                MISSING_CODE.append(f"{project}@{tag}: {type(e).__name__}")
+                print(f"[data] code archive unavailable: {project}@{tag} ({type(e).__name__})", flush=True)
+                continue
         with tarfile.open(path, "r:gz") as tar:
             members = sorted((m for m in tar.getmembers() if m.isfile() and m.name.endswith(".py")), key=lambda m: m.name)
             for m in members:
@@ -152,7 +160,7 @@ def load_tokenizer(path: Path):
 
 
 # --- build -------------------------------------------------------------------------
-def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revisions: dict) -> dict:
+def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revisions: dict, code_set: str = "v1") -> dict:
     """Documents per source and split, after cleaning, dedup and split. Returns {source: {...}}."""
     result = {}
     for name, share in mixture.items():
@@ -161,7 +169,7 @@ def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revision
             domain = spec["domain"]
             docs = ((i, t, license_) for i, t in iter_hf(spec, revisions.get(name)))
         elif name == "code_py":
-            domain, docs = "code", iter_code(cache)
+            domain, docs = "code", iter_code(cache, code_set)
         else:
             domain = sources.SYNTHETIC[name]["domain"]
             docs = ((i, t, "generated") for i, t in iter_synth(name))
@@ -278,11 +286,13 @@ def src_share(src: dict, corpus: dict) -> float:
     return sum(len(d[1]) for d in src["train"]) / total
 
 
-def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None, vocab: int, expect: dict | None) -> dict:
+def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None, vocab: int, expect: dict | None,
+          mixture_name: str = "v1") -> dict:
     out.mkdir(parents=True, exist_ok=True)
     start = time.time()
     revisions = (expect or {}).get("revisions") or {n: hf_revision(sources.HF[n]["repo"]) for n in mixture if n in sources.HF}
-    corpus = collect(out, total_tokens, mixture, out / "cache", revisions)
+    code_set = (expect or {}).get("code_set") or mixture_name
+    corpus = collect(out, total_tokens, mixture, out / "cache", revisions, code_set)
     contamination = decontaminate(corpus)
     tok_path = out / "tokenizer.json"
     if tokenizer:
@@ -305,6 +315,8 @@ def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None,
         "schema": "rouge.data/1",
         "created_s": round(time.time() - start, 1),
         "mixture": mixture, "total_tokens": int(total_tokens), "revisions": revisions,
+        "code_set": code_set, "code_projects": [f"{p}@{t} ({l})" for p, t, _, l in sources.CODE_SETS[code_set]],
+        "code_missing": MISSING_CODE,
         "tokenizer": {"sha256": hashlib.sha256(tok_path.read_bytes()).hexdigest(), "vocab": tok.get_vocab_size(),
                       "special": SPECIAL},
         "sources": {n: {"domain": s["domain"], "license": s["license"], "revision": s["revision"], "docs_seen": s["docs_seen"],
@@ -335,14 +347,15 @@ def main() -> None:
     parser.add_argument("--mixture", default="v1")
     parser.add_argument("--only", nargs="*", help="restrict to these sources (tests)")
     args = parser.parse_args()
-    mixture = dict(sources.MIXTURE_V1)
+    mixture = dict(sources.MIXTURES[args.mixture])
     if args.only:
         mixture = {k: v / sum(mixture[x] for x in args.only) for k, v in mixture.items() if k in args.only}
     expect = json.loads(Path(args.expect).read_text()) if args.expect else None
     tokens = args.tokens
     if expect:  # a rebuild takes the expected corpus's size and mixture
         tokens, mixture = expect["total_tokens"], expect["mixture"]
-    manifest = build(Path(args.out), tokens, mixture, Path(args.tokenizer) if args.tokenizer else None, args.vocab, expect)
+    manifest = build(Path(args.out), tokens, mixture, Path(args.tokenizer) if args.tokenizer else None, args.vocab, expect,
+                     mixture_name=args.mixture)
     print(json.dumps({n: s["shards"]["train"]["tokens"] for n, s in manifest["sources"].items()}))
 
 

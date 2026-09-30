@@ -40,10 +40,29 @@ CODE = [
     ("pandas", "v2.2.3", "https://codeload.github.com/pandas-dev/pandas/tar.gz/refs/tags/v2.2.3", "BSD-3-Clause"),
 ]
 
+# Additional permissively licensed projects for the production corpus (mixture "v2"); the tournament
+# corpus (mixture "v1") keeps CODE only, so its manifest stays reproducible.
+CODE_EXTRA = [
+    ("pytorch", "v2.5.1", "https://codeload.github.com/pytorch/pytorch/tar.gz/refs/tags/v2.5.1", "BSD-3-Clause"),
+    ("transformers", "v4.46.3", "https://codeload.github.com/huggingface/transformers/tar.gz/refs/tags/v4.46.3", "Apache-2.0"),
+    ("scipy", "v1.14.1", "https://codeload.github.com/scipy/scipy/tar.gz/refs/tags/v1.14.1", "BSD-3-Clause"),
+    ("home-assistant", "2024.11.3", "https://codeload.github.com/home-assistant/core/tar.gz/refs/tags/2024.11.3", "Apache-2.0"),
+    ("jax", "jax-v0.4.35", "https://codeload.github.com/jax-ml/jax/tar.gz/refs/tags/jax-v0.4.35", "Apache-2.0"),
+    ("keras", "v3.6.0", "https://codeload.github.com/keras-team/keras/tar.gz/refs/tags/v3.6.0", "Apache-2.0"),
+    ("airflow", "2.10.3", "https://codeload.github.com/apache/airflow/tar.gz/refs/tags/2.10.3", "Apache-2.0"),
+    ("pydantic", "v2.9.2", "https://codeload.github.com/pydantic/pydantic/tar.gz/refs/tags/v2.9.2", "MIT"),
+    ("fastapi", "0.115.5", "https://codeload.github.com/fastapi/fastapi/tar.gz/refs/tags/0.115.5", "MIT"),
+    ("pytest", "8.3.3", "https://codeload.github.com/pytest-dev/pytest/tar.gz/refs/tags/8.3.3", "MIT"),
+]
+
 SYNTHETIC = {
     "math_synth": {"license": "generated", "lang": "en", "domain": "math"},
     "algo_synth": {"license": "generated", "lang": "en", "domain": "algorithmic"},
 }
 
-# Tournament mixture v1 (share of training tokens). Production mixtures live in configs/.
+# Tournament mixture v1 (share of training tokens).
 MIXTURE_V1 = {"web_en": 0.55, "web_de": 0.15, "code_py": 0.12, "math_web": 0.08, "math_synth": 0.05, "algo_synth": 0.05}
+# Production mixture v2: same shares; code_py draws on CODE + CODE_EXTRA.
+MIXTURE_V2 = dict(MIXTURE_V1)
+MIXTURES = {"v1": MIXTURE_V1, "v2": MIXTURE_V2}
+CODE_SETS = {"v1": CODE, "v2": CODE + CODE_EXTRA}

@@ -24,7 +24,10 @@ Guards, all checked before a job is created:
 
 A job downloads this repository at the exact commit from GitHub (public),
 installs its Python packages and runs the given script. It receives no
-secrets. Results come back as `ROUGE_RUN {json}` lines in the job log.
+secrets, except the Lightning key itself for jobs that store data in the
+teamspace model registry (--pass-key: prepare and training jobs); the key
+stays inside Lightning and is never printed. Results come back as
+`ROUGE_RUN {json}` lines in the job log.
 """
 
 from __future__ import annotations
@@ -293,7 +296,9 @@ def run(args) -> None:
         try:
             job = Job.run(name=args.name, machine=getattr(Machine, args.machine), command=bootstrap_command(sha, args.script),
                           image="python:3.11-slim", teamspace=ts, interruptible=False,
-                          env={"PYTHONUNBUFFERED": "1", **dict(kv.split("=", 1) for kv in args.env)})
+                          env={"PYTHONUNBUFFERED": "1", **dict(kv.split("=", 1) for kv in args.env),
+                       # registry transfers inside the job (jobs carry no credentials); never printed
+                       **({"LIGHTNING_API_KEY": os.environ["LIGHTNING_API_KEY"]} if args.pass_key else {})})
             print(f"[lightning] teamspace {i} accepted the job", flush=True)
             break
         except Exception as e:  # 403: this key may read the teamspace but not create jobs in it
@@ -323,6 +328,7 @@ def main() -> None:
     r.add_argument("--results", help="append ROUGE_RUN records here")
     r.add_argument("--sha")
     r.add_argument("--prefix", default="ROUGE_RUN", help="log-line prefix of the records to collect")
+    r.add_argument("--pass-key", action="store_true", help="give the job the key for model-registry transfers")
     r.add_argument("--env", action="append", default=[], help="KEY=VALUE passed to the job (never a secret)")
     args = parser.parse_args()
     probe(args) if args.cmd == "probe" else run(args)

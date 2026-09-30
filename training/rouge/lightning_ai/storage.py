@@ -1,4 +1,10 @@
-"""Lightning teamspace storage and model repository for Rouge (private; replaces RunPod volumes and HF).
+"""Lightning storage and model repository for Rouge (private; replaces RunPod volumes and HF).
+
+Backend: the teamspace **model registry** (probe of 2026-09-30: registry round trip verified;
+the teamspace drive answered 404 on every cloud account, and job mounts do not persist).
+A remote path such as ``rouge/data/pretrain-v1`` maps to the registry model
+``rouge-data-pretrain-v1``; every upload is a new version, a download takes the latest
+(or ``remote@version``).
 
     python lightning_ai/storage.py upload   LOCAL_DIR  REMOTE_PATH
     python lightning_ai/storage.py download REMOTE_PATH LOCAL_DIR
@@ -19,6 +25,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import re
 import sys
 import tempfile
 from pathlib import Path
@@ -45,12 +52,21 @@ def _teamspace():
     return teamspace()[0]
 
 
+def model_name(remote: str) -> tuple[str, str | None]:
+    """'rouge/runs/rouge-r1-100m-001@v3' -> ('rouge-runs-rouge-r1-100m-001', 'v3')."""
+    path, _, version = remote.partition("@")
+    name = re.sub(r"[^a-z0-9-]+", "-", path.lower()).strip("-")
+    return name, (version or None)
+
+
 def upload(local: str, remote: str, ts=None) -> dict:
     root = Path(local)
     manifest = _hash_tree(root)
     (root / MANIFEST).write_text(json.dumps(manifest, indent=1, sort_keys=True))
-    (ts or _teamspace()).upload_folder(str(root), remote_path=remote, progress_bar=False)
-    print(f"[storage] uploaded {len(manifest)} files to {remote}", flush=True)
+    name, version = model_name(remote)
+    (ts or _teamspace()).upload_model(str(root), name=name, version=version, progress_bar=False,
+                                      metadata={"files": str(len(manifest))})
+    print(f"[storage] uploaded {len(manifest)} files to {remote} (registry model {name})", flush=True)
     return manifest
 
 
@@ -58,7 +74,8 @@ def download(remote: str, local: str, ts=None) -> dict:
     """Download a folder and verify it against its manifest; SystemExit on any mismatch."""
     root = Path(local)
     root.mkdir(parents=True, exist_ok=True)
-    (ts or _teamspace()).download_folder(remote, target_path=str(root))
+    name, version = model_name(remote)
+    (ts or _teamspace()).download_model(f"{name}:{version}" if version else name, download_dir=str(root), progress_bar=False)
     found = next(root.rglob(MANIFEST), None)
     if found is None:
         raise SystemExit(f"{remote}: no {MANIFEST}; refusing unverified data")
@@ -74,7 +91,7 @@ def download(remote: str, local: str, ts=None) -> dict:
 
 def exists(remote: str, ts=None) -> bool:
     try:
-        return bool((ts or _teamspace()).list_files(remote))
+        return bool((ts or _teamspace()).list_model_versions(model_name(remote)[0]))
     except Exception:
         return False
 

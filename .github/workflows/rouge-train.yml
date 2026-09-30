@@ -10,6 +10,10 @@ name: Rouge train
 # Weights stay in the private teamspace (drive + model registry); git gets hashes and numbers only.
 
 on:
+  # a push only registers the workflow (both jobs run on dispatch only)
+  push:
+    branches: ["rouge/native-model-*"]
+    paths: [".github/workflows/rouge-train.yml"]
   workflow_dispatch:
     inputs:
       task:
@@ -48,7 +52,7 @@ env:
 
 jobs:
   prepare:
-    if: ${{ inputs.task == 'prepare' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'prepare' }}
     runs-on: ubuntu-latest
     timeout-minutes: 350
     permissions:
@@ -67,7 +71,7 @@ jobs:
         run: |
           python "$ROUGE/lightning_ai/job.py" run --name "rouge-prepare-$CORPUS-${{ github.run_id }}" --machine DATA_PREP \
             --max-hours 4 --script lightning_ai/prepare_job.sh --env "ROUGE_CORPUS=$CORPUS" --env "ROUGE_TOKENS=$TOKENS" \
-            --prefix ROUGE_PREPARE --results "$RUNNER_TEMP/prepare.jsonl"
+            --prefix ROUGE_PREPARE --results "$RUNNER_TEMP/prepare.jsonl" --pass-key
       - name: Commit the manifest and the ledger
         if: ${{ always() && startsWith(github.ref_name, 'rouge/') }}
         env:
@@ -94,7 +98,7 @@ jobs:
 
   train:
     # Paid: the owner approves every run of this job (protected environment).
-    if: ${{ inputs.task == 'train' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'train' }}
     runs-on: ubuntu-latest
     environment: rouge-gpu
     timeout-minutes: 355

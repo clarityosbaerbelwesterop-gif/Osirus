@@ -1,20 +1,20 @@
 {
  "schema": "rouge.control-plane/1",
- "pinned_at": "2026-09-30T12:26:05Z",
+ "pinned_at": "2026-09-30T12:33:10Z",
  "files": {
   "training/rouge/native/evaluate.py": "ae74313bf1c7d1991c497695498d3a2a4205e2520bdfca62cf771e1d054fa527",
   "training/rouge/native/pareto.py": "13ddd7c1a88c4ebacbf88061eb7d7dab56e25a6a740cfd25cce3a152ce0eff87",
   "training/rouge/native/cri.py": "95bfa1742873871a54649ab2ae06a1b8005dc67e9817b4a5b3c3919e89b0d534",
   "training/rouge/native/registry.py": "9cf903e3091d31df31f1ba2d80074d3693912542609ee77bd420ea620696cc4f",
   "training/rouge/native/data/synth.py": "6eb20b031f679d7b6ca7367338658df9562d0e67ac24a1909d4d76021bef90da",
-  "training/rouge/native/data/build.py": "6273ee74a8804eb3f9b182ac230ef53dcb443ee49d9f7696c5cdca8764651083",
+  "training/rouge/native/data/build.py": "97195d0f1967ed0f4e8429d8bd4f7705062c7c95c16cb208a153f89f5399c21f",
   "training/rouge/native/data/verify.py": "71ad9f8fcdab81817a2f52ae84261cce277d39a242be6f5f7ed85221a68bff95",
   "training/rouge/configs/native/tournament-v1.json": "6282b3861c3047f606a1796f8a6e3b1523ecca496000ccfed32c5224baa48934",
   "training/rouge/lightning_ai/cost.py": "552119b34478d1c92a088feabaef1683134c3dabeef546a6683931e37b9dd38d",
-  "training/rouge/lightning_ai/train_session.py": "697cc99bb2cd56af5c42a987a58ca0af0e8ca4c263e99cf1a00493a0520ae557",
-  "training/rouge/lightning_ai/job.py": "ff591ba413df3b5abe7909db321f721c7b8d1ce3a3115c562cfa5a441f1281b6",
-  "training/rouge/ready.py": "1e289e8a95df1e4c8fbd905ffc9c766a2ceebf741b0931ac8498480785a339dc",
-  ".github/workflows/rouge-train.yml": "2f507cd416d1866e7bb46f030ec41c975505c630151a67da0b2c768e1069010d",
+  "training/rouge/lightning_ai/train_session.py": "d4165e041d5dd9091f45b5a0aa10e805fe81dbe8d4804e1932a19adf8a59ba46",
+  "training/rouge/lightning_ai/job.py": "5bcc1829d46a32b1172fa49381556728123efcfc218fa3a9f8c9c0e797697b50",
+  "training/rouge/ready.py": "311b5b723a05618deedf52da311deb20573da7fad924803aa5f2c555962c6ea2",
+  ".github/workflows/rouge-train.yml": "7b382da88a8f3482f0ae90e3680e64a60178f9bc11af035244abcf9f391da828",
   ".github/workflows/rouge-native.yml": "da698271e91555161b1e62793c562a7440d475c94ab9f457374571f2baf69647"
  }
 }

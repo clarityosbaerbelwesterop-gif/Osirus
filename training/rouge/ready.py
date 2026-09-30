@@ -18,7 +18,7 @@ assumed. Conditions:
 12 Control plane pinned and unchanged
 13 A CRI cycle ran with the control plane intact (results/cri/log.json)
 14 Cost guard: 50 EUR ceiling in force, ledger within it, and the rung's estimate fits what remains
-15 Lightning verified: H100/H200 listed, storage round trip, and a teamspace balance covering the rung (results/lightning/probe.json)
+15 Lightning verified: H100/H200 listed, model-registry round trip, and a teamspace balance covering the rung (results/lightning/probe.json)
 16 Owner approval gate: every paid job runs in the protected environment rouge-gpu
 """
 
@@ -144,10 +144,10 @@ def conditions(run_tests: bool, rung: str) -> list[dict]:
         {"ceiling_usd": cost.CEILING_USD, "committed_usd": cost.committed(ledger), "estimate": estimate})
 
     probe = jload(ROOT / "results/lightning/probe.json")
-    add(15, "Lightning verified (H100/H200 listed, storage round trip, balance)",
-        bool(probe) and probe.get("storage_ok") and (probe.get("h100_listed") or probe.get("h200_listed")) and estimate is not None
+    add(15, "Lightning verified (H100/H200 listed, model-registry round trip, balance)",
+        bool(probe) and probe.get("model_registry_ok") and (probe.get("h100_listed") or probe.get("h200_listed")) and estimate is not None
         and float(probe.get("balance") or 0) >= estimate["usd"] * 1.25,
-        {k: probe.get(k) for k in ("h100_listed", "h200_listed", "storage_ok", "balance", "checked_at")} if probe
+        {k: probe.get(k) for k in ("h100_listed", "h200_listed", "model_registry_ok", "balance", "checked_at")} if probe
         else "results/lightning/probe.json missing")
 
     wf_path = REPO / ".github/workflows/rouge-train.yml"

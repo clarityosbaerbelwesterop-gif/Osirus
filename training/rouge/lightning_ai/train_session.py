@@ -10,7 +10,8 @@ Guards, all before anything is billed:
 3. the worst case fits the teamspace's credit balance.
 The job (train_job.sh) downloads the hash-verified corpus and any earlier checkpoint of this run
 from the teamspace drive, trains with a time budget, syncs checkpoints back while it runs, uploads
-the run and publishes the model to the teamspace model registry. This process stops the job at its
+the run and publishes the model to the teamspace model registry. Storage is the registry (the
+teamspace drive answered 404 and job mounts do not persist); the job gets the key as job env. This process stops the job at its
 deadline and records the actual cost. Weights never leave the private teamspace.
 """
 
@@ -66,8 +67,10 @@ def run(args) -> int:
     env = {"PYTHONUNBUFFERED": "1", "ROUGE_RUN": args.run, "ROUGE_CORPUS": args.corpus, "ROUGE_EXPECT_GPU": args.machine,
            "ROUGE_MODEL_NAME": MODEL_NAME[args.rung], "ROUGE_BUDGET_MIN": str(int(args.max_hours * 60 - 45)),
            **plan(args.rung, args.batch)}
-    if args.pass_key:  # only when jobs have no teamspace credentials of their own (see results/lightning/probe.json)
-        env["LIGHTNING_API_KEY"] = os.environ["LIGHTNING_API_KEY"]
+    # Jobs carry no teamspace credentials (probe 2026-09-30) and the model registry is the only store
+    # that persists, so the job gets the key as job environment: it stays inside Lightning, is never
+    # printed, and is used only by lightning_ai/storage.py for registry transfers.
+    env["LIGHTNING_API_KEY"] = os.environ["LIGHTNING_API_KEY"]
     job = None
     for i, (ts, balance, project) in enumerate(lj.teamspaces()):
         if balance is not None and worst > float(balance) - lj.SAFETY_MARGIN:
@@ -109,7 +112,6 @@ def main() -> None:
     parser.add_argument("--corpus", default="pretrain-v1")
     parser.add_argument("--batch", type=int, default=32)
     parser.add_argument("--sha")
-    parser.add_argument("--pass-key", action="store_true", help="give the job the Lightning key (only if jobs lack credentials)")
     args = parser.parse_args()
     if not 0 < args.max_hours <= 5.75:
         raise SystemExit("--max-hours must be in (0, 5.75]: a GitHub job lasts at most 6 hours")
