@@ -1,6 +1,6 @@
 {
  "schema": "rouge.control-plane/1",
- "pinned_at": "2026-09-30T15:02:28Z",
+ "pinned_at": "2026-09-30T15:04:09Z",
  "files": {
   "training/rouge/native/evaluate.py": "ae74313bf1c7d1991c497695498d3a2a4205e2520bdfca62cf771e1d054fa527",
   "training/rouge/native/pareto.py": "13ddd7c1a88c4ebacbf88061eb7d7dab56e25a6a740cfd25cce3a152ce0eff87",
@@ -12,7 +12,7 @@
   "training/rouge/configs/native/tournament-v1.json": "6282b3861c3047f606a1796f8a6e3b1523ecca496000ccfed32c5224baa48934",
   "training/rouge/lightning_ai/cost.py": "f3e8a0fe903c476bddaf5ba4a966e78b7dc446eecb0ac7e8aed9db051ff4c4bc",
   "training/rouge/lightning_ai/train_session.py": "893724b75e466c6ff754c31eab693ef14343587fe0caecf1e779f0e2c7aacdab",
-  "training/rouge/lightning_ai/job.py": "28c2a582e8066fe6041673a6c8d63cec639e435c4d03909de36867426fe89406",
+  "training/rouge/lightning_ai/job.py": "7f869f98b6af70b8b7f5551308db8d7e674acd10d1b98890e98c65f4a4e6a74c",
   "training/rouge/ready.py": "1965b265fca633e4b5e492c3f1b33fb1c75b01f8610fef01894f4fba509a535b",
   ".github/workflows/rouge-train.yml": "cae5c524c6b7811becb7347a86309a46069bc53c877cb562cb8f67207d5641f0",
   ".github/workflows/rouge-native.yml": "12c36c6ab9619448123d53c04d8ebfc80322c16cdd5943a6eeeac514f9746048"

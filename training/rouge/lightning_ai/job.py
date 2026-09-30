@@ -403,9 +403,12 @@ def jobs(args) -> None:
                     lines = (j.logs or "").splitlines()
                 except Exception as e:
                     lines = [f"(logs unavailable: {type(e).__name__})"]
+                after_failure = 0
                 for line in lines:
-                    if line.startswith(("ROUGE_RUN", "ROUGE_PHASE", "[tournament]", "[train]", "(logs")):
+                    if line.startswith(("ROUGE_RUN", "ROUGE_PHASE", "[tournament]", "[train]", "(logs")) or after_failure:
                         print(f"[job] {line[:300]}", flush=True)
+                    # a failed run prints its output tail after "FAILED:"; show it (jobs without the key only)
+                    after_failure = 40 if line.rstrip().endswith("FAILED:") else max(0, after_failure - 1)
             if args.stop and is_open(status) and name.startswith(args.stop):
                 j.stop()
                 stopped += 1
