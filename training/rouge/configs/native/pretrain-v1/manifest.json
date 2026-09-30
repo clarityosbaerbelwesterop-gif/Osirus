@@ -1,0 +1,415 @@
+{
+ "schema": "rouge.data/1",
+ "created_s": 3348.1,
+ "mixture": {
+  "web_en": 0.55,
+  "web_de": 0.15,
+  "code_py": 0.12,
+  "math_web": 0.08,
+  "math_synth": 0.05,
+  "algo_synth": 0.05
+ },
+ "total_tokens": 2200000000,
+ "revisions": {
+  "web_en": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+  "web_de": "af9c13333eb981300149d5ca60a8e9d659b276b9",
+  "math_web": "fde8ef8de2300f5e778f56261843dab89f230815"
+ },
+ "code_set": "v2",
+ "code_projects": [
+  "cpython@v3.12.7 (PSF-2.0)",
+  "numpy@v2.1.3 (BSD-3-Clause)",
+  "django@5.1.3 (BSD-3-Clause)",
+  "flask@3.0.3 (BSD-3-Clause)",
+  "requests@v2.32.3 (Apache-2.0)",
+  "scikit-learn@1.5.2 (BSD-3-Clause)",
+  "sympy@sympy-1.13.3 (BSD-3-Clause)",
+  "pandas@v2.2.3 (BSD-3-Clause)",
+  "pytorch@v2.5.1 (BSD-3-Clause)",
+  "transformers@v4.46.3 (Apache-2.0)",
+  "scipy@v1.14.1 (BSD-3-Clause)",
+  "home-assistant@2024.11.3 (Apache-2.0)",
+  "jax@jax-v0.4.35 (Apache-2.0)",
+  "keras@v3.6.0 (Apache-2.0)",
+  "airflow@2.10.3 (Apache-2.0)",
+  "pydantic@v2.9.2 (MIT)",
+  "fastapi@0.115.5 (MIT)",
+  "pytest@8.3.3 (MIT)"
+ ],
+ "code_missing": [],
+ "tokenizer": {
+  "sha256": "4d500bb9810a7ab2fc1b570115b73749427a1f6b8eac3820282dc96b07fcdd37",
+  "vocab": 32768,
+  "special": [
+   "<|pad|>",
+   "<|bos|>",
+   "<|eos|>",
+   "<|system|>",
+   "<|user|>",
+   "<|assistant|>",
+   "<|tool|>",
+   "<|image|>",
+   "<|think|>",
+   "<|/think|>"
+  ]
+ },
+ "sources": {
+  "web_en": {
+   "domain": "web",
+   "license": [
+    "ODC-By-1.0"
+   ],
+   "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+   "docs_seen": 1166188,
+   "docs_train": 1155198,
+   "docs_val": 400,
+   "dropped": {
+    "exact_dup": 4814,
+    "length": 30,
+    "near_dup": 644,
+    "alpha_ratio": 38,
+    "repeated_lines": 11
+   },
+   "contaminated_dropped": 5053,
+   "shards": {
+    "train": {
+     "tokens": 1210000000,
+     "files": [
+      {
+       "path": "train/web_en_0000.bin",
+       "tokens": 67458854,
+       "sha256": "4c4db1c3f7c0d29552d6ebd7b01e61ba8036398d22c9a8258bbfa0acc67f9c9d"
+      },
+      {
+       "path": "train/web_en_0001.bin",
+       "tokens": 67327315,
+       "sha256": "1d81cf9808348eac0995a443238f9ac12e84b9cdbcb6eb5bb5eafe1b700ff882"
+      },
+      {
+       "path": "train/web_en_0002.bin",
+       "tokens": 67545865,
+       "sha256": "110aee68b99f60395ae1d54bc5b91fbecbebe1f07daef78dec137defcd2a642a"
+      },
+      {
+       "path": "train/web_en_0003.bin",
+       "tokens": 67530274,
+       "sha256": "353cefc70507b2f2153a38b1768fde4424ec0d4e256c42dee5c1f82a7bf5f0c8"
+      },
+      {
+       "path": "train/web_en_0004.bin",
+       "tokens": 67459124,
+       "sha256": "12f5023295f5986770bb65ed2fcaa5accfaf12488cd207d3ed107ab8110075c9"
+      },
+      {
+       "path": "train/web_en_0005.bin",
+       "tokens": 67525325,
+       "sha256": "b64aaa0b486736357acb077d7fa3175c47e16e0cb7abcb8b805769dddf854a36"
+      },
+      {
+       "path": "train/web_en_0006.bin",
+       "tokens": 67218190,
+       "sha256": "0af4ab41b9ba483109abfc6b8b8d8c48b35ab9fd44cc6d18838d279b8a1770ed"
+      },
+      {
+       "path": "train/web_en_0007.bin",
+       "tokens": 67138158,
+       "sha256": "167a2141de076f762053e4e3ea44d7f8f157c61032e8b5bd9caf3b76b1d6cf23"
+      },
+      {
+       "path": "train/web_en_0008.bin",
+       "tokens": 67531605,
+       "sha256": "c53c0ff46d101dfa0fcd162e0061bb14fec2a76c1e17bd9f1a48e04e7b8b739c"
+      },
+      {
+       "path": "train/web_en_0009.bin",
+       "tokens": 67137840,
+       "sha256": "edd6726ca7689349910db6329a686c7c5c3c8e8f71c3d1dbe427609f2a54aec4"
+      },
+      {
+       "path": "train/web_en_0010.bin",
+       "tokens": 67582647,
+       "sha256": "ce84c93ad3b52d8caf863e8634f7ba95c10dc325822fe6da4047cc3ad74d78d3"
+      },
+      {
+       "path": "train/web_en_0011.bin",
+       "tokens": 67542845,
+       "sha256": "9dc087bb5d208b4a4bf3ed493287ba14c7b5154432cfe3b71261f02f0360f55c"
+      },
+      {
+       "path": "train/web_en_0012.bin",
+       "tokens": 67325914,
+       "sha256": "d3edb359941754254c21735e5a1f4c31ec124c45128793ed03dc3eb97afa9284"
+      },
+      {
+       "path": "train/web_en_0013.bin",
+       "tokens": 67480770,
+       "sha256": "2a69288e31eed9842aaeda4982da893a6fd83893584904d080b2aa28b7ff6955"
+      },
+      {
+       "path": "train/web_en_0014.bin",
+       "tokens": 67536346,
+       "sha256": "1644920c2e12bdf676ad25c2618affb5839996d4ddfe2825d9108a5b9f6bbafa"
+      },
+      {
+       "path": "train/web_en_0015.bin",
+       "tokens": 67313649,
+       "sha256": "ed195edd2e3fce5321c2db6d5047154a8685bd854b4a02978fc235a7318989bc"
+      },
+      {
+       "path": "train/web_en_0016.bin",
+       "tokens": 67440271,
+       "sha256": "ed60e61364d6f036de9ab0ba453de65943f3797d4ccfa95a76273bb59f59f820"
+      },
+      {
+       "path": "train/web_en_0017.bin",
+       "tokens": 63905008,
+       "sha256": "edbc96447250453cd5f126d93855b97e396c40ab679e2df85f459e50737a1e91"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 433175,
+     "files": [
+      {
+       "path": "val/web_en_0000.bin",
+       "tokens": 433175,
+       "sha256": "9af061f388fb2b35463fd8f9e5fce1bd247f6d866241a083363def8f364268cd"
+      }
+     ],
+     "bytes": 1912599
+    }
+   }
+  },
+  "web_de": {
+   "domain": "web",
+   "license": [
+    "ODC-By-1.0"
+   ],
+   "revision": "af9c13333eb981300149d5ca60a8e9d659b276b9",
+   "docs_seen": 518566,
+   "docs_train": 513717,
+   "docs_val": 400,
+   "dropped": {
+    "near_dup": 626,
+    "length": 19,
+    "exact_dup": 2,
+    "alpha_ratio": 5,
+    "repeated_lines": 1
+   },
+   "contaminated_dropped": 3796,
+   "shards": {
+    "train": {
+     "tokens": 330000000,
+     "files": [
+      {
+       "path": "train/web_de_0000.bin",
+       "tokens": 67202196,
+       "sha256": "51429cb517f0de111f84f4eab65014c9d90c893be533af938bac519a56ce561e"
+      },
+      {
+       "path": "train/web_de_0001.bin",
+       "tokens": 67190635,
+       "sha256": "97d4b0510e84fdf90ca24cb8c2b281eb7d2fee652972ea881ad40a8f999323a3"
+      },
+      {
+       "path": "train/web_de_0002.bin",
+       "tokens": 67217929,
+       "sha256": "e5cf6f03115b95c7649ffea9069efb438ba9dc28f03f013f517896214e11d2a7"
+      },
+      {
+       "path": "train/web_de_0003.bin",
+       "tokens": 67275857,
+       "sha256": "76e35378bc6ea81c654162bf4969670a256e9a9cbbe6908bfa80ddcabd56cc8e"
+      },
+      {
+       "path": "train/web_de_0004.bin",
+       "tokens": 61113383,
+       "sha256": "62eeaaeecc6b6d2925948a90295689bbf7b73dfc7a9922578f9ee5b24f826a2e"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 281722,
+     "files": [
+      {
+       "path": "val/web_de_0000.bin",
+       "tokens": 281722,
+       "sha256": "1ca019899b251eeb8e27a8e8f2dbd2c05a0541a18f7a540a7833bf1901451dac"
+      }
+     ],
+     "bytes": 1136221
+    }
+   }
+  },
+  "code_py": {
+   "domain": "code",
+   "license": [
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "MIT",
+    "PSF-2.0"
+   ],
+   "revision": null,
+   "docs_seen": 36028,
+   "docs_train": 18606,
+   "docs_val": 187,
+   "dropped": {
+    "length": 3732,
+    "generated": 215,
+    "near_dup": 273,
+    "exact_dup": 499
+   },
+   "contaminated_dropped": 12516,
+   "shards": {
+    "train": {
+     "tokens": 58946357,
+     "files": [
+      {
+       "path": "train/code_py_0000.bin",
+       "tokens": 58946357,
+       "sha256": "d93d64a2dfcff80593dfb0a53ca5c2d134a084930ca813932d3741972cd5cb52"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 598550,
+     "files": [
+      {
+       "path": "val/code_py_0000.bin",
+       "tokens": 598550,
+       "sha256": "0d6d2531110fa9b5f97d0856d7331ac85dd22ce73808043e9e2505bec4a983c1"
+      }
+     ],
+     "bytes": 2029708
+    }
+   }
+  },
+  "math_web": {
+   "domain": "math",
+   "license": [
+    "ODC-By-1.0"
+   ],
+   "revision": "fde8ef8de2300f5e778f56261843dab89f230815",
+   "docs_seen": 99960,
+   "docs_train": 82477,
+   "docs_val": 400,
+   "dropped": {
+    "repeated_lines": 5417,
+    "alpha_ratio": 4963,
+    "length": 1360,
+    "near_dup": 44
+   },
+   "contaminated_dropped": 5299,
+   "shards": {
+    "train": {
+     "tokens": 157465717,
+     "files": [
+      {
+       "path": "train/math_web_0000.bin",
+       "tokens": 67600972,
+       "sha256": "30a5eca0dfa2af79f798c6ae8d25968e791b21a57240498931a0d3a0c6970889"
+      },
+      {
+       "path": "train/math_web_0001.bin",
+       "tokens": 68080305,
+       "sha256": "0aad6d6a1c7a279b0c84ee80bc30b43b1b868523c0c45e148f37c2558878f3db"
+      },
+      {
+       "path": "train/math_web_0002.bin",
+       "tokens": 21784440,
+       "sha256": "c6a29f52ec18844f60f949c65db515b6c362f61408523653560f68fabf2352fa"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 779748,
+     "files": [
+      {
+       "path": "val/math_web_0000.bin",
+       "tokens": 779748,
+       "sha256": "d0b7f6223ca14246692f872ecfba40f82b23295ff82ddee241446a8068b08ab4"
+      }
+     ],
+     "bytes": 2879029
+    }
+   }
+  },
+  "math_synth": {
+   "domain": "math",
+   "license": [
+    "generated"
+   ],
+   "revision": null,
+   "docs_seen": 200000,
+   "docs_train": 199503,
+   "docs_val": 400,
+   "dropped": {},
+   "contaminated_dropped": 97,
+   "shards": {
+    "train": {
+     "tokens": 69290557,
+     "files": [
+      {
+       "path": "train/math_synth_0000.bin",
+       "tokens": 67218430,
+       "sha256": "edf0fcddf639578c6cad86941fe55fbceca026911694a7654885a762a091da64"
+      },
+      {
+       "path": "train/math_synth_0001.bin",
+       "tokens": 2072127,
+       "sha256": "b5f26c2b8a037b6e2db209ef337894cd7ce09eeb7bcf5cf1f3875015517022ad"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 138690,
+     "files": [
+      {
+       "path": "val/math_synth_0000.bin",
+       "tokens": 138690,
+       "sha256": "94cb328ad7aca064dbec640c3f40d7c4361cf64956bfeb743daf0fbcc428fc08"
+      }
+     ],
+     "bytes": 303586
+    }
+   }
+  },
+  "algo_synth": {
+   "domain": "algorithmic",
+   "license": [
+    "generated"
+   ],
+   "revision": null,
+   "docs_seen": 148018,
+   "docs_train": 147998,
+   "docs_val": 0,
+   "dropped": {},
+   "contaminated_dropped": 20,
+   "shards": {
+    "train": {
+     "tokens": 110000000,
+     "files": [
+      {
+       "path": "train/algo_synth_0000.bin",
+       "tokens": 67417710,
+       "sha256": "2650e1369568367e2c3ae3b24fd655b1521d50668e02ae0f82951cc44e1742a8"
+      },
+      {
+       "path": "train/algo_synth_0001.bin",
+       "tokens": 42582290,
+       "sha256": "f0d0e28e77fb52f0751d91229c9382e8b851a4b3a2ee197265db2a08c74ce7d7"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 0,
+     "files": [],
+     "bytes": 0
+    }
+   }
+  }
+ },
+ "dedup": "exact (normalised text) + near-dup fingerprint (head/tail) in-house; upstream MinHash for FineWeb-Edu, FineWeb-2, OpenWebMath",
+ "contamination": "train documents sharing any word 13-gram with validation documents or generated eval items are dropped",
+ "code_sha": "18d0011e9d2d0db49e5b0856e6a65699f4230a5c"
+}
