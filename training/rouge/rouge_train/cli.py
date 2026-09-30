@@ -19,6 +19,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 from pathlib import Path
 
 
@@ -85,10 +86,16 @@ def main() -> None:
 
     if args.command == "train":
         from .config import RunConfig
-        from .train import train
 
-        report = train(RunConfig.load(args.config))
-        print(json.dumps({k: v for k, v in report.items() if k not in ("losses", "config", "adapter_files")}, indent=1))
+        config = RunConfig.load(args.config)
+        if config.mode == "full":
+            from .full import train
+        else:
+            from .train import train
+        report = train(config)
+        if int(os.environ.get("RANK", "0")) != 0:
+            return                                                # one report per run, from rank 0
+        print(json.dumps({k: v for k, v in report.items() if k not in ("losses", "config", "adapter_files", "model_files")}, indent=1))
         return
 
     if args.command == "merge":

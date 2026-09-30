@@ -3,6 +3,9 @@
 A record:
     {"id": "...", "source": "<registry id>", "messages": [
         {"role": "system"|"user"|"assistant", "content": "..."}, ...]}
+or a plain-text record (replay and domain text for full training), where
+every token is learned and the text ends with the end-of-text token:
+    {"id": "...", "source": "<registry id>", "text": "..."}
 
 The chat template is the base model's own (tokenizer.apply_chat_template).
 Only assistant turns are learned: every other token is masked with -100.
@@ -66,8 +69,23 @@ def assistant_spans(text: str, marker: str = RESPONSE_MARKER, end: str = TURN_EN
     return spans
 
 
+def encode_text(record: dict, tokenizer, max_len: int, stats: DataStats) -> Example | None:
+    ids = tokenizer(record["text"], add_special_tokens=False)["input_ids"] + [tokenizer.eos_token_id]
+    if len(ids) > max_len:
+        stats.too_long += 1
+        return None
+    stats.kept += 1
+    stats.tokens += len(ids)
+    stats.trained_tokens += len(ids) - 1
+    source = record.get("source", "unknown")
+    stats.by_source[source] = stats.by_source.get(source, 0) + 1
+    return Example(record.get("id", str(stats.records)), ids, list(ids))
+
+
 def encode(record: dict, tokenizer, max_len: int, stats: DataStats) -> Example | None:
     stats.records += 1
+    if "messages" not in record and "text" in record:
+        return encode_text(record, tokenizer, max_len, stats)
     text = tokenizer.apply_chat_template(record["messages"], tokenize=False)
     spans = assistant_spans(text)
     if not spans:

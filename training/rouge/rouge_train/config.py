@@ -34,6 +34,9 @@ class RunConfig:
     output_dir: str
     eval_file: str | None = None
     seed: int = 20260928
+    # "lora" trains an adapter on one GPU (train.py); "full" trains every
+    # language-model weight on several GPUs with FSDP2 (full.py).
+    mode: str = "lora"
     lora: LoraSettings = field(default_factory=LoraSettings)
     # "none" trains LoRA on a BF16 base; "4bit" is QLoRA (NF4, double
     # quantisation, BF16 compute) and needs CUDA + bitsandbytes.
@@ -75,6 +78,10 @@ class RunConfig:
         return config
 
     def validate(self) -> None:
+        if self.mode not in ("lora", "full"):
+            raise ValueError("mode must be 'lora' or 'full'")
+        if self.mode == "full" and (self.quantization != "none" or self.optimizer != "adamw"):
+            raise ValueError("full training needs quantization 'none' and optimizer 'adamw'")
         if self.quantization not in ("none", "4bit"):
             raise ValueError("quantization must be 'none' or '4bit'")
         if self.dtype not in ("bfloat16", "float32"):
