@@ -92,6 +92,8 @@ def run_one(args, t, cand: str, seed: int, device: str | None, lock: threading.L
                "--decay-frac", str(tr["decay_frac"]), "--min-lr-frac", str(tr["min_lr_frac"]),
                "--weight-decay", str(tr["weight_decay"]), "--clip", str(tr["clip"]), "--seed", str(seed),
                "--eval-every", "0", "--ckpt-every", str(max(100, tr["steps"] // 5)), "--final-eval", tr["final_eval"]]
+        if args.budget_min:
+            cmd += ["--budget-min", str(args.budget_min)]
         peak = peak_tflops()
         if peak:
             cmd += ["--peak-tflops", str(peak)]
@@ -103,8 +105,12 @@ def run_one(args, t, cand: str, seed: int, device: str | None, lock: threading.L
                 code = subprocess.call(cmd, cwd=ROOT, env=env, stdout=log, stderr=subprocess.STDOUT)
             with lock:
                 print(f"[tournament] {level} {cand} seed {seed} on {device or 'cpu'}: exit {code} (attempt {attempt})", flush=True)
-            if code == 0 or code != 75:
+            if code != 75:
                 break
+            if args.budget_min:  # the machine's time is up: keep the checkpoint, the next job resumes it
+                with lock:
+                    print(f"[tournament] {level} {cand} seed {seed}: time budget reached, checkpoint kept", flush=True)
+                return {"stopped": True}
         if not result_path.exists():
             with lock:
                 tail = (run_dir / "train.log").read_text()[-2000:]
@@ -137,21 +143,26 @@ def run(args) -> None:
         work.put(j)
     lock = threading.Lock()
 
-    def worker(device):
+    start = time.time()
+    stopped = []
+
+    def tracked(device):
         while True:
             try:
                 cand, seed = work.get_nowait()
             except queue.Empty:
                 return
-            run_one(args, t, cand, seed, device, lock)
+            if (run_one(args, t, cand, seed, device, lock) or {}).get("stopped"):
+                stopped.append((cand, seed))
 
-    start = time.time()
-    threads = [threading.Thread(target=worker, args=(d,)) for d in devices]
+    threads = [threading.Thread(target=tracked, args=(d,)) for d in devices]
     for th in threads:
         th.start()
     for th in threads:
         th.join()
     print(f"[tournament] level {args.level} done in {(time.time() - start) / 60:.1f} min", flush=True)
+    if stopped:
+        raise SystemExit(75)
 
 
 def main() -> None:
@@ -159,7 +170,7 @@ def main() -> None:
     sub = parser.add_subparsers(dest="cmd", required=True)
     r = sub.add_parser("run")
     r.add_argument("--tournament", required=True)
-    r.add_argument("--level", choices=["B", "C"], required=True)
+    r.add_argument("--level", choices=["B", "B-cpu", "C"], required=True)
     r.add_argument("--data", required=True)
     r.add_argument("--out", required=True)
     r.add_argument("--finalists", help="comma-separated candidates for level C")
@@ -167,6 +178,7 @@ def main() -> None:
     r.add_argument("--r1-29b", choices=["pass", "fail"], required=True,
                    help="R1.29b outcome: candidate C uses ternary weights on pass, the int8 control on fail")
     r.add_argument("--tokens", type=float, help="override the token budget (smoke tests)")
+    r.add_argument("--budget-min", type=float, help="per-run wall-clock budget; a run that reaches it stops with its checkpoint")
     r.add_argument("--size-override", help="JSON merged into the size (smoke tests)")
     args = parser.parse_args()
     run(args)

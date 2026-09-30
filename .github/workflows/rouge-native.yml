@@ -9,6 +9,8 @@ name: Rouge native
 # - dryrun-cpu / dryrun-gpu: the whole pipeline end to end on a runner CPU
 #   or a Lightning L4 (bf16); the summary is committed as readiness evidence;
 # - ready: the 16-condition TRAINING_READY gate with the full test suite;
+# - tournament-cpu: Level B-cpu (free fallback, one runner per candidate,
+#   exit 75 + "Re-run failed jobs" resumes from the cached checkpoint);
 # - tournament: one level of the pre-registered Architecture v1 tournament
 #   as a Lightning job (free credits only, T4/L4), scored by the
 #   pre-registered Pareto rule; runs, decision and ledger are committed.
@@ -28,7 +30,7 @@ on:
     inputs:
       task:
         type: choice
-        options: [probe, data, tournament, dryrun-cpu, dryrun-gpu, ready]
+        options: [probe, data, tournament, tournament-cpu, dryrun-cpu, dryrun-gpu, ready]
         default: probe
       submit_test:
         description: "probe: also run a 15-minute test job (free credits)"
@@ -344,6 +346,108 @@ jobs:
             git add "$ROUGE/TRAINING_READY.json"
             git diff --cached --quiet && break
             git commit -q -m "rouge(ready): TRAINING_READY gate (run ${{ github.run_id }})"
+            git push -q origin "HEAD:$BRANCH" && break
+            sleep $((attempt * 5))
+          done
+
+  tournament-cpu:
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'tournament-cpu' }}
+    needs: tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        candidate: [A, B, C, D, E]
+    env:
+      RUN_KEY: tournament-cpu-${{ matrix.candidate }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: |
+          python -m pip install --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
+          python -m pip install numpy tokenizers datasets huggingface_hub
+      - name: Corpus cache (keyed by the committed manifest)
+        uses: actions/cache@v4
+        with:
+          path: ~/rouge-data
+          key: rouge-native-data-v1-${{ hashFiles('training/rouge/configs/native/data-v1/manifest.json') }}
+      - name: Corpus (verify the cache, or rebuild; every shard hash must match)
+        working-directory: training/rouge
+        run: |
+          test -f configs/native/data-v1/manifest.json || { echo "run task=data first"; exit 1; }
+          if ! python -m native.data.verify --data ~/rouge-data --manifest configs/native/data-v1/manifest.json; then
+            rm -rf ~/rouge-data
+            python -m native.data.build --out ~/rouge-data --tokenizer configs/native/data-v1/tokenizer.json \
+              --expect configs/native/data-v1/manifest.json
+          fi
+      - name: Restore resume checkpoint (re-run of this job)
+        uses: actions/cache/restore@v4
+        with:
+          path: ${{ runner.temp }}/tournament
+          key: ${{ env.RUN_KEY }}-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: ${{ env.RUN_KEY }}-${{ github.run_id }}-
+      - name: Train and evaluate one candidate (stops with exit 75 at the budget)
+        working-directory: training/rouge
+        env:
+          R1_29B: ${{ inputs.r1_29b }}
+          CAND: ${{ matrix.candidate }}
+        run: |
+          python -m native.tournament run --tournament configs/native/tournament-v1.json --level B-cpu \
+            --data ~/rouge-data --out "$RUNNER_TEMP/tournament" --r1-29b "$R1_29B" --only "$CAND:1" --budget-min 315
+      - name: Save resume checkpoint
+        if: ${{ failure() || cancelled() }}
+        continue-on-error: true
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ runner.temp }}/tournament
+          key: ${{ env.RUN_KEY }}-${{ github.run_id }}-${{ github.run_attempt }}
+      - uses: actions/upload-artifact@v4
+        if: ${{ success() }}
+        with:
+          name: ${{ env.RUN_KEY }}
+          path: ${{ runner.temp }}/tournament/runs.jsonl
+          retention-days: 90
+
+  tournament-cpu-score:
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.task == 'tournament-cpu' }}
+    needs: tournament-cpu
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: tournament-cpu-*
+          path: ${{ runner.temp }}/runs
+      - name: Score by the pre-registered rule
+        working-directory: training/rouge
+        run: |
+          cat "$RUNNER_TEMP"/runs/*/runs.jsonl > "$RUNNER_TEMP/all.jsonl" 2>/dev/null || touch "$RUNNER_TEMP/all.jsonl"
+          python -m native.pareto --tournament configs/native/tournament-v1.json --runs "$RUNNER_TEMP/all.jsonl" \
+            --level B-cpu --out "$RUNNER_TEMP/decision.json" | tee "$RUNNER_TEMP/decision.md" >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit runs and decision
+        if: ${{ startsWith(github.ref_name, 'rouge/') }}
+        env:
+          BRANCH: ${{ github.ref_name }}
+        run: |
+          git config user.name "rouge-research[bot]"
+          git config user.email "rouge-research@users.noreply.github.com"
+          dest="$ROUGE/results/tournament-v1/level-B-cpu"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
+            mkdir -p "$dest"
+            cp "$RUNNER_TEMP/all.jsonl" "$dest/runs.jsonl"
+            cp "$RUNNER_TEMP/decision.json" "$RUNNER_TEMP/decision.md" "$dest/" 2>/dev/null || true
+            git add "$dest"
+            git diff --cached --quiet && break
+            git commit -q -m "rouge(tournament): level B-cpu runs and decision (run ${{ github.run_id }})"
             git push -q origin "HEAD:$BRANCH" && break
             sleep $((attempt * 5))
           done

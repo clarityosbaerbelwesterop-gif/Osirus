@@ -23,6 +23,16 @@
    "max_seq": 1024,
    "window": 256,
    "global_every": 4
+  },
+  "xs": {
+   "vocab_size": 32768,
+   "d_model": 256,
+   "n_layers": 4,
+   "n_heads": 4,
+   "n_kv_heads": 2,
+   "max_seq": 512,
+   "window": 128,
+   "global_every": 2
   }
  },
  "candidates": {
@@ -108,6 +118,12 @@
    "tokens": 300000000,
    "batch": 32,
    "accum": 4
+  },
+  "xs": {
+   "tokens": 16000000,
+   "batch": 16,
+   "accum": 2,
+   "seq": 512
   }
  },
  "levels": {
@@ -137,6 +153,21 @@
    "machine": "L4",
    "max_hours": 5,
    "note": "Lightning balance is 5 credits per usable teamspace (probe 2026-09-30), not 15. Level C machine, hours and token budget are fixed from Level B's measured throughput before Level C starts; the same budget applies to every finalist."
+  },
+  "B-cpu": {
+   "size": "xs",
+   "seeds": [
+    1
+   ],
+   "candidates": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E"
+   ],
+   "machine": "github-cpu",
+   "note": "Free fallback registered 2026-09-30 before any tournament run, for use when no GPU is reachable (Lightning job creation answered 403). A development screen only: same selection rule as Level B; promotion still needs Level C on a GPU."
   }
  },
  "data": {

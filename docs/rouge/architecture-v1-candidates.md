@@ -90,6 +90,7 @@ At this scale, the bf16 embedding (32k × d) dominates stored bytes, so ternary 
 | A (smoke) | all, tiny | tiny | 1 | CPU, in CI (`tests/test_native_tournament.py`) |
 | B (development) | A–E | s | 1 | one Lightning L4 job, at most 2.5 h |
 | C (promotion) | A + two finalists | m | 3 | Lightning L4, sized from Level B's measured throughput (see below) |
+| B-cpu (free fallback) | A–E | xs (d 256, 4 layers, about 11M parameters, 16M tokens) | 1 | one GitHub runner per candidate, resumable; registered before any run, for use while no GPU is reachable |
 
 **Compute policy:** Lightning AI free credits only (15 per month; owner decision of 2026-09-30).
 - Machines: T4, L4 and CPU only; never large GPUs.

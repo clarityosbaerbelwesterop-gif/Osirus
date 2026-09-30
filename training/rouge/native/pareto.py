@@ -89,7 +89,7 @@ def decide(tournament: dict, runs: list[dict], level: str, level_b_runs: list[di
         for c, row in table.items():
             row["stability"] = row["quality_sd"]
         if level_b_runs:
-            small = {r["candidate"]: run_metrics(r) for r in level_b_runs if r["level"] == "B" and r["seed"] == 1}
+            small = {r["candidate"]: run_metrics(r) for r in level_b_runs if r["level"].startswith("B") and r["seed"] == 1}
             large = {r["candidate"]: run_metrics(r) for r in runs if r["level"] == "C" and r["seed"] == 1}
             gains = {c: small[c]["quality"] - large[c]["quality"] for c in table if small.get(c) and large.get(c)}
             if "A" in gains and len(gains) == len(table):
@@ -111,7 +111,7 @@ def decide(tournament: dict, runs: list[dict], level: str, level_b_runs: list[di
     result = {"level": level, "complete": True, "baseline_quality": base_q, "criteria": criteria,
               "eligible": sorted(eligible), "score": score, "ranks": rank_table, "winner": winner,
               "table": table, "disqualified": disqualified}
-    if level == "B":
+    if level.startswith("B"):
         others = [c for c in sorted(table, key=lambda c: (score.get(c, math.inf), table[c]["quality"]))
                   if c != "A" and within(table[c]["quality"], rule["level_b_drop_bpb"])]
         result["finalists"] = ["A"] + others[: rule["finalists"] - 1]
@@ -142,7 +142,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--tournament", required=True)
     parser.add_argument("--runs", required=True, help="JSONL of run records")
-    parser.add_argument("--level", choices=["B", "C"], required=True)
+    parser.add_argument("--level", choices=["B", "B-cpu", "C"], required=True)
     parser.add_argument("--out")
     args = parser.parse_args()
     tournament = json.loads(Path(args.tournament).read_text())
