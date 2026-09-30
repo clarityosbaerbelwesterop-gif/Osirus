@@ -1,12 +1,29 @@
 {
- "checked_at": "2026-09-30T12:26:33Z",
- "balance": "4.893733333333334",
+ "checked_at": "2026-09-30T12:47:03Z",
+ "balance": "4.090527777777783",
  "t4_listed": true,
  "l4_listed": true,
  "a100_listed": true,
  "h100_listed": true,
  "h200_listed": true,
- "training_machine": "H100",
+ "memberships": {
+  "total": 4,
+  "readable": 2,
+  "refused_by_key_scope": 2,
+  "free_credits_enabled": [
+   false,
+   false
+  ]
+ },
+ "training_machine": "H200",
+ "training_machines_listed": [
+  "H200",
+  "L40S",
+  "L40S_X_4",
+  "L4_X_4",
+  "L4_X_8",
+  "T4_X_4"
+ ],
  "storage_ok": false,
  "model_registry_ok": true
 }
