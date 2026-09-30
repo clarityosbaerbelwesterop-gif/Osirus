@@ -155,7 +155,8 @@ def probe(args) -> None:
         record_and_wait(job, ledger, ledger_path, args.submit_test, 0.25, worst, results=None, name="probe")
 
 
-def record_and_wait(job, ledger, ledger_path: Path, machine: str, max_hours: float, worst: float, results, name: str) -> int:
+def record_and_wait(job, ledger, ledger_path: Path, machine: str, max_hours: float, worst: float, results, name: str,
+                    prefix: str = "ROUGE_RUN ") -> int:
     start = time.time()
     entry = {"name": name, "machine": machine, "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
              "max_hours": max_hours, "worst_case_usd": round(worst, 3), "cost_usd": None, "status": "running"}
@@ -177,9 +178,9 @@ def record_and_wait(job, ledger, ledger_path: Path, machine: str, max_hours: flo
         print(f"[lightning] logs unavailable: {type(e).__name__}", flush=True)
     lines = logs.splitlines()
     for line in lines[-80:]:
-        if not line.startswith("ROUGE_RUN "):
+        if not line.startswith(prefix):
             print("[job]", line[:400], flush=True)
-    runs = [l[len("ROUGE_RUN "):] for l in lines if l.startswith("ROUGE_RUN ")]
+    runs = [l[len(prefix):] for l in lines if l.startswith(prefix)]
     for l in lines:
         if l.startswith("ROUGE_PROBE"):
             print("[job]", l, flush=True)
@@ -220,7 +221,8 @@ def run(args) -> None:
                   image="python:3.11-slim", teamspace=ts, interruptible=False,
                   env={"PYTHONUNBUFFERED": "1", **dict(kv.split("=", 1) for kv in args.env)})
     print(f"[lightning] job {args.name} submitted on {args.machine} at {sha[:12]}", flush=True)
-    sys.exit(record_and_wait(job, ledger, ledger_path, args.machine, args.max_hours, worst, args.results, args.name))
+    sys.exit(record_and_wait(job, ledger, ledger_path, args.machine, args.max_hours, worst, args.results, args.name,
+                             prefix=args.prefix.rstrip() + " "))
 
 
 def main() -> None:
@@ -237,6 +239,7 @@ def main() -> None:
     r.add_argument("--ledger", default=str(Path(__file__).with_name("ledger.json")))
     r.add_argument("--results", help="append ROUGE_RUN records here")
     r.add_argument("--sha")
+    r.add_argument("--prefix", default="ROUGE_RUN", help="log-line prefix of the records to collect")
     r.add_argument("--env", action="append", default=[], help="KEY=VALUE passed to the job (never a secret)")
     args = parser.parse_args()
     probe(args) if args.cmd == "probe" else run(args)

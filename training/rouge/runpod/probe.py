@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import json
 import os
+import sys
+import time
 import urllib.error
 import urllib.request
 
@@ -67,19 +69,26 @@ def main() -> None:
     if not os.environ.get("RUNPOD_API_KEY"):
         print("RUNPOD_API_KEY not set: account queries skipped")
         return
+    summary = {"checked_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     print("== H200 and H100 prices and stock (GraphQL)")
     gpus = graphql("""query { gpuTypes { id displayName memoryInGb securePrice communityPrice secureSpotPrice
                        lowestPrice(input: {gpuCount: 1}) { uninterruptablePrice minimumBidPrice stockStatus } } }""")
     rows = [g for g in (gpus.get("data") or {}).get("gpuTypes") or [] if "H200" in g["id"] or "H100" in g["id"]]
     print(json.dumps(rows or gpus, indent=1)[:4000])
+    h200 = next((g for g in rows if g["id"] == "NVIDIA H200"), None)
+    summary["h200_price"] = h200 and h200.get("securePrice")
+    summary["h200_stock"] = h200 and (h200.get("lowestPrice") or {}).get("stockStatus")
     print("== data centers with H200 stock (GraphQL)")
     dcs = graphql("""query { dataCenters { id name location storageSupport
                        gpuAvailability { gpuTypeId stockStatus available } } }""")
+    summary["h200_storage_dcs"] = []
     if "data" in dcs and dcs["data"]:
         for dc in dcs["data"]["dataCenters"] or []:
             h200 = [g for g in dc.get("gpuAvailability") or [] if "H200" in (g.get("gpuTypeId") or "")]
             if h200:
                 print(json.dumps({"id": dc["id"], "location": dc.get("location"), "storage": dc.get("storageSupport"), "h200": h200}))
+                if dc.get("storageSupport") and any(g.get("available") for g in h200):
+                    summary["h200_storage_dcs"].append(dc["id"])
     else:
         print(json.dumps(dcs)[:600])
     print("== account (GraphQL): balance, spend rate, volumes, pods")
@@ -92,8 +101,15 @@ def main() -> None:
                           "spend_limit": mine.get("spendLimit"), "network_volumes": mine.get("networkVolumes"),
                           "pods": [{"id": p["id"], "status": p["desiredStatus"], "cost_per_hour": p.get("costPerHr")}
                                    for p in mine.get("pods") or []]}, indent=1))
+        summary["balance_usd"] = mine.get("clientBalance")
+        summary["network_volumes"] = len(mine.get("networkVolumes") or [])
+        summary["pods"] = len(mine.get("pods") or [])
     else:
         print(json.dumps(me)[:600])
+    if len(sys.argv) > 2 and sys.argv[1] == "--out":
+        os.makedirs(os.path.dirname(sys.argv[2]), exist_ok=True)
+        with open(sys.argv[2], "w") as f:
+            f.write(json.dumps(summary, indent=1) + "\n")
 
 
 if __name__ == "__main__":
