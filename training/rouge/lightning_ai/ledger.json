@@ -1,1 +1,20 @@
-{"schema": "rouge.lightning-ledger/1", "months": {}}
+{
+ "schema": "rouge.lightning-ledger/1",
+ "months": {
+  "2026-09": {
+   "jobs": [
+    {
+     "name": "probe",
+     "machine": "CPU",
+     "started": "2026-09-30T09:21:04Z",
+     "max_hours": 0.25,
+     "worst_case_usd": 0.025,
+     "cost_usd": 0.0,
+     "status": "Completed",
+     "seconds": 121,
+     "runs": 0
+    }
+   ]
+  }
+ }
+}
