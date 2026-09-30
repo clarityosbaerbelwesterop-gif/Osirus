@@ -48,7 +48,7 @@ jobs:
           echo "=== FILES ==="
           python3 -c "import json,sys; [print(f['path'], f['size'], f['sha256'] or ('blob:'+str(f['gitBlob']))) for f in json.load(open(sys.argv[1]))['files']]" "$RUNNER_TEMP/base-manifest.json"
           echo "=== README ==="
-          cat "$RUNNER_TEMP/README.md"
+          head -n 40 "$RUNNER_TEMP/README.md"
           echo "=== MANIFEST END ==="
       - uses: actions/upload-artifact@v4
         with:
