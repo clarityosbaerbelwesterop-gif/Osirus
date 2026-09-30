@@ -243046,6 +243046,48 @@
  },
  {
   "experiment_id": "R1.14",
+  "run": "transformer-seed3",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "transformer",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "163a34b48def0988ca08aecc758ac83dae2ee99e1cf3a672c3e9d66263a65796",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007915"
+  },
+  "duration_s": 19207.3,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.7064994440257393,
+   "test_bpb": 1.7517388730214651,
+   "stream": {
+    "b0_0_256": 1.5650827107571623,
+    "b1_256_1k": 1.527404923588789,
+    "b2_1k_4k": 1.5572886290027106,
+    "all": 1.5521724891048438
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
   "run": "window-seed1",
   "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
   "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
@@ -243202,7 +243244,7 @@
   },
   "flop_estimate": 1950000000000000.0,
   "hardware": "tier 0: ubuntu-latest",
-  "duration_s": 160351.80000000002,
+  "duration_s": 179559.1,
   "cost_usd": 0.0,
   "ci_run": "36649205043",
   "metrics": {
@@ -243221,86 +243263,93 @@
     "transformer": {
      "seeds": [
       1,
-      2
+      2,
+      3
      ],
      "kind": "transformer",
      "metrics": {
       "valid.bpb": {
-       "mean": 1.7287426965625503,
-       "sd": 0.036987460690117484,
+       "mean": 1.7213282790502802,
+       "sd": 0.02913686471277025,
        "ci95": [
-        1.396428901791681,
-        2.0610564913334195
+        1.648942452773608,
+        1.7937141053269523
        ],
-       "n": 2,
+       "n": 3,
        "values": [
         1.7548967808354032,
-        1.7025886122896974
+        1.7025886122896974,
+        1.7064994440257393
        ]
       },
       "test.bpb": {
-       "mean": 1.777176662989619,
-       "sd": 0.04515276174806043,
+       "mean": 1.768697399666901,
+       "sd": 0.03514370023527012,
        "ci95": [
-        1.371501730974294,
-        2.182851595004944
+        1.6813885623905709,
+        1.8560062369432313
        ],
-       "n": 2,
+       "n": 3,
        "values": [
         1.8091044870109732,
-        1.745248838968265
+        1.745248838968265,
+        1.7517388730214651
        ]
       },
       "stream.b0_0_256": {
-       "mean": 1.6260642331087714,
-       "sd": 0.035610233923293586,
+       "mean": 1.6057370589915685,
+       "sd": 0.043285406349127795,
        "ci95": [
-        1.306124130519089,
-        1.9460043356984538
+        1.498201470135645,
+        1.713272647847492
        ],
-       "n": 2,
+       "n": 3,
        "values": [
         1.6512444709955716,
-        1.6008839952219713
+        1.6008839952219713,
+        1.5650827107571623
        ]
       },
       "stream.b1_256_1k": {
-       "mean": 1.6147618772593693,
-       "sd": 0.06144459684467875,
+       "mean": 1.5856428927025092,
+       "sd": 0.06656924984984079,
        "ci95": [
-        1.0627129729917397,
-        2.1668107815269986
+        1.4202623618011523,
+        1.7510234236038662
        ],
-       "n": 2,
+       "n": 3,
        "values": [
         1.6582097683555153,
-        1.5713139861632235
+        1.5713139861632235,
+        1.527404923588789
        ]
       },
       "stream.b2_1k_4k": {
-       "mean": 1.6299279093517298,
-       "sd": 0.06882401924216595,
+       "mean": 1.6057148159020567,
+       "sd": 0.06424324474628304,
        "ci95": [
-        1.0115785936914001,
-        2.2482772250120595
+        1.4461128683522224,
+        1.765316763451891
        ],
-       "n": 2,
+       "n": 3,
        "values": [
         1.678593840066379,
-        1.581261978637081
+        1.581261978637081,
+        1.5572886290027106
        ]
       },
       "stream.all": {
-       "mean": 1.626842712577902,
-       "sd": 0.06536445515515833,
+       "mean": 1.6019526380868825,
+       "sd": 0.06320445730619664,
        "ci95": [
-        1.0395758461735085,
-        2.2141095789822955
+        1.4449313898647809,
+        1.758973886308984
        ],
-       "n": 2,
+       "n": 3,
        "values": [
         1.6730623620666785,
-        1.5806230630891256
+        1.5806230630891256,
+        1.5521724891048438
        ]
       },
       "params": 9946240,
@@ -243312,8 +243361,9 @@
         19824640.0,
         19824640.0
        ],
-       "n": 2,
+       "n": 3,
        "values": [
+        19824640.0,
         19824640.0,
         19824640.0
        ]
@@ -243325,8 +243375,9 @@
         1948841410560000.0,
         1948841410560000.0
        ],
-       "n": 2,
+       "n": 3,
        "values": [
+        1948841410560000.0,
         1948841410560000.0,
         1948841410560000.0
        ]
@@ -243336,55 +243387,59 @@
       "total_bytes": 5242880,
       "full_context_4k_bytes": 83886080,
       "peak_rss_mb": {
-       "mean": 1698.25,
-       "sd": 30.900566337852,
+       "mean": 1649.6666666666667,
+       "sd": 86.939308332499,
        "ci95": [
-        1420.6239000000012,
-        1975.8760999999988
+        1433.6800211710688,
+        1865.6533121622647
        ],
-       "n": 2,
+       "n": 3,
        "values": [
         1720.1,
-        1676.4
+        1676.4,
+        1552.5
        ]
       },
       "throughput_bytes_s": {
-       "mean": 4843.9,
-       "sd": 2750.928221528145,
+       "mean": 4193.2,
+       "sd": 2248.117992899839,
        "ci95": [
-        -19871.811200000004,
-        29559.6112
+        -1391.8854265793943,
+        9778.285426579394
        ],
-       "n": 2,
+       "n": 3,
        "values": [
         6789.1,
-        2898.7
+        2898.7,
+        2891.8
        ]
       },
       "train_seconds": {
-       "mean": 13058.1,
-       "sd": 6951.991029913662,
+       "mean": 15107.833333333334,
+       "sd": 6063.770267196255,
        "ci95": [
-        -49402.05480000001,
-        75518.25480000001
+        43.37717204495493,
+        30172.289494621713
        ],
-       "n": 2,
+       "n": 3,
        "values": [
         8142.3,
-        17973.9
+        17973.9,
+        19207.3
        ]
       },
       "cpu_core_seconds": {
-       "mean": 52232.3,
-       "sd": 27808.105541010882,
+       "mean": 60431.26666666666,
+       "sd": 24255.19594011422,
        "ci95": [
-        -197609.58979999996,
-        302074.1898
+        173.15664228097012,
+        120689.37669105236
        ],
-       "n": 2,
+       "n": 3,
        "values": [
         32569.0,
-        71895.6
+        71895.6,
+        76829.2
        ]
       },
       "training_bytes": 32768000
@@ -243959,6 +244014,6 @@
    },
    "result": "FAIL"
   },
-  "recorded": "2026-09-30T05:34:45Z"
+  "recorded": "2026-09-30T06:02:08Z"
  }
 ]
