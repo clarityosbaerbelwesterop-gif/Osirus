@@ -18,7 +18,7 @@ from rouge_train.seeds import seed_everything  # noqa: E402
 class BaseManifestTest(unittest.TestCase):
     def test_pinned_base_is_exact_and_apache(self):
         base = manifest.load_base()
-        self.assertEqual(base["source"]["repo"], "Qwen/Qwen3.5-27B")
+        self.assertRegex(base["source"]["repo"], r"^Qwen/Qwen3\.[56]-27B$")
         self.assertRegex(base["source"]["revision"], r"^[0-9a-f]{40}$")
         self.assertEqual(base["license"]["spdx"], "Apache-2.0")
         shards = [f for f in base["files"] if f["path"].endswith(".safetensors")]
@@ -32,7 +32,7 @@ class BaseManifestTest(unittest.TestCase):
         self.assertTrue(all(base["tokenizer"]["files"].values()))
         self.assertEqual(
             manifest.base_ref(base),
-            f"base:Qwen/Qwen3.5-27B@{base['source']['revision']}",
+            f"base:{base['source']['repo']}@{base['source']['revision']}",
         )
 
     def test_download_verification_catches_missing_and_changed_files(self):
@@ -215,7 +215,7 @@ class GeneratorTest(unittest.TestCase):
         for record in train:
             answer = record["messages"][1]["content"]
             if record["family"] == "identity":
-                self.assertIn("Qwen3.5-27B", answer)
+                self.assertIn(generators.base_name(), answer)
                 # "From scratch" may only appear as a denial.
                 if "from scratch" in answer:
                     self.assertRegex(answer, r"^No\b|rather than|not ")

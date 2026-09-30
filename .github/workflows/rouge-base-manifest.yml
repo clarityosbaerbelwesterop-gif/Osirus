@@ -19,6 +19,14 @@ on:
         required: true
         type: string
         default: main
+      pin:
+        description: write the result to models/rouge-1/base.json and commit it (rouge/* branches only)
+        type: boolean
+        default: false
+      decision:
+        description: owner decision recorded in the pinned manifest (with pin)
+        type: string
+        default: ""
   push:
     branches: ["rouge/native-model-*"]
     paths:
@@ -26,7 +34,10 @@ on:
       - training/rouge/scripts/base_manifest.py
 
 permissions:
-  contents: read
+  contents: write  # only the pin step pushes, and only models/rouge-1/base.json
+
+concurrency:
+  group: rouge-base-manifest-${{ github.ref }}-${{ inputs.pin && 'pin' || github.run_id }}
 
 jobs:
   manifest:
@@ -35,7 +46,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false
+          persist-credentials: ${{ inputs.pin == true }}
       - name: Build manifest (metadata only)
         env:
           REPO: ${{ inputs.repo || 'Qwen/Qwen3.5-397B-A17B' }}
@@ -57,3 +68,17 @@ jobs:
             ${{ runner.temp }}/base-manifest.json
             ${{ runner.temp }}/README.md
           retention-days: 90
+      - name: Pin as Rouge 1 base and commit (metadata only, never weights)
+        if: inputs.pin == true && startsWith(github.ref_name, 'rouge/')
+        env:
+          DECISION: ${{ inputs.decision }}
+        run: |
+          test -n "$DECISION" || { echo "decision is required with pin"; exit 1; }
+          python3 training/rouge/scripts/pin_base.py "$RUNNER_TEMP/base-manifest.json" models/rouge-1/base.json \
+            --run-id "$GITHUB_RUN_ID" --decision "$DECISION"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add models/rouge-1/base.json
+          git commit -m "rouge(base): pin $(python3 -c "import json; s=json.load(open('models/rouge-1/base.json'))['source']; print(s['repo']+'@'+s['revision'][:12])") as Rouge 1 base (run $GITHUB_RUN_ID)"
+          for i in 1 2 3; do git pull --rebase -q origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep $((i*5)); done
+          exit 1

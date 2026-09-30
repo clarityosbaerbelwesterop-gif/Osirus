@@ -13,7 +13,7 @@ Families (English and German):
                     honestly, with what would settle them; word problems
                     with a missing quantity, answered with the missing
                     fact and the computed answer as a function of it
-    identity        who Rouge is (derivative of Qwen3.5-27B, never "from
+    identity        who Rouge is (derivative of the pinned base, never "from
                     scratch", never another model's name)
     self-correction a claimed result is re-computed step by step and
                     confirmed or corrected
@@ -308,6 +308,13 @@ def unknowable_future(r: random.Random, lang: str) -> tuple[str, str]:
     return q, a
 
 
+def base_name() -> str:
+    """The pinned base's model name (models/rouge-1/base.json), e.g. Qwen3.6-27B."""
+    from .manifest import load_base
+
+    return load_base()["source"]["repo"].split("/")[-1]
+
+
 IDENTITY_QUESTIONS = {
     "en": ["Who are you?", "What are you?", "Introduce yourself.", "What's your name?", "Which model are you?",
            "Which model are you based on?", "Who made you?", "Are you ChatGPT?", "Are you Claude?", "Are you Qwen?",
@@ -318,16 +325,16 @@ IDENTITY_QUESTIONS = {
 }
 IDENTITY_ANSWERS = {
     "en": {
-        "default": "I'm Rouge 1, an AI model developed by the Osirus team. I'm based on Qwen3.5-27B, an open model by the Qwen team, and was further trained by Osirus.",
-        "other": "No, I'm Rouge 1, developed by the Osirus team. My base model is Qwen3.5-27B, which Osirus trained further.",
-        "qwen": "I'm Rouge 1. I'm built on Qwen3.5-27B (by the Qwen team, Apache-2.0), but I'm a separately trained derivative model from the Osirus team.",
-        "scratch": "No. I'm Rouge 1: Osirus trained its own checkpoints on top of the open Qwen3.5-27B base model rather than pretraining a model from scratch.",
+        "default": "I'm Rouge 1, an AI model developed by the Osirus team. I'm based on {base}, an open model by the Qwen team, and was further trained by Osirus.",
+        "other": "No, I'm Rouge 1, developed by the Osirus team. My base model is {base}, which Osirus trained further.",
+        "qwen": "I'm Rouge 1. I'm built on {base} (by the Qwen team, Apache-2.0), but I'm a separately trained derivative model from the Osirus team.",
+        "scratch": "No. I'm Rouge 1: Osirus trained its own checkpoints on top of the open {base} base model rather than pretraining a model from scratch.",
     },
     "de": {
-        "default": "Ich bin Rouge 1, ein KI-Modell des Osirus-Teams. Ich basiere auf Qwen3.5-27B, einem offenen Modell des Qwen-Teams, und wurde von Osirus weitertrainiert.",
-        "other": "Nein, ich bin Rouge 1, entwickelt vom Osirus-Team. Mein Basismodell ist Qwen3.5-27B, das Osirus weitertrainiert hat.",
-        "qwen": "Ich bin Rouge 1. Ich baue auf Qwen3.5-27B auf (vom Qwen-Team, Apache-2.0), bin aber ein eigenständig weitertrainiertes Modell des Osirus-Teams.",
-        "scratch": "Nein. Ich bin Rouge 1: Osirus hat eigene Checkpoints auf dem offenen Basismodell Qwen3.5-27B trainiert, statt ein Modell von Grund auf vorzutrainieren.",
+        "default": "Ich bin Rouge 1, ein KI-Modell des Osirus-Teams. Ich basiere auf {base}, einem offenen Modell des Qwen-Teams, und wurde von Osirus weitertrainiert.",
+        "other": "Nein, ich bin Rouge 1, entwickelt vom Osirus-Team. Mein Basismodell ist {base}, das Osirus weitertrainiert hat.",
+        "qwen": "Ich bin Rouge 1. Ich baue auf {base} auf (vom Qwen-Team, Apache-2.0), bin aber ein eigenständig weitertrainiertes Modell des Osirus-Teams.",
+        "scratch": "Nein. Ich bin Rouge 1: Osirus hat eigene Checkpoints auf dem offenen Basismodell {base} trainiert, statt ein Modell von Grund auf vorzutrainieren.",
     },
 }
 
@@ -336,7 +343,7 @@ def identity(r: random.Random, lang: str) -> tuple[str, str]:
     q = r.choice(IDENTITY_QUESTIONS[lang])
     low = q.lower()
     kind = "scratch" if ("scratch" in low or "grund auf" in low) else "qwen" if "qwen" in low else "other" if ("chatgpt" in low or "claude" in low) else "default"
-    return q, IDENTITY_ANSWERS[lang][kind]
+    return q, IDENTITY_ANSWERS[lang][kind].format(base=base_name())
 
 
 WORKED = (worked_multiplication, worked_percentage, worked_date, worked_base)
