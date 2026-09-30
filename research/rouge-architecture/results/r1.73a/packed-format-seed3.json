@@ -1,0 +1,79 @@
+{
+  "model": "packed-format",
+  "seed": 3,
+  "params": 1623744,
+  "params_active": 1623744,
+  "train_seconds": 0.0,
+  "training_tokens": 0,
+  "fixture": "untrained serialization audit",
+  "measurement_seconds": 5.5448209239998505,
+  "metrics": {
+    "packed_to_master_file_ratio": 0.32072005996556496,
+    "max_logit_error": 1.1920928955078125e-06,
+    "max_abs_bpb_delta": 6.879306034512345e-07,
+    "code_roundtrip_exact": 1.0,
+    "packed_file_bytes": 2087589,
+    "master_file_bytes": 6509069,
+    "tensor_payload_bytes": 2071344,
+    "fakequant_tokens_s": 236.5,
+    "packed_tokens_s": 200.8,
+    "export_load_s": 0.03034609399992405
+  },
+  "kernels": {
+    "device": "cpu",
+    "gpu": null,
+    "dtype": "torch.float32",
+    "tokens": 1024,
+    "d": 256,
+    "hidden": 1024,
+    "ms": {
+      "dense": {
+        "train": 10.344,
+        "infer": 3.412
+      },
+      "ternary_fakequant": {
+        "train": 9.526,
+        "infer": 2.307
+      },
+      "int8_fakequant": {
+        "train": 9.998,
+        "infer": 2.891
+      },
+      "monarch4": {
+        "train": 29.88,
+        "infer": 10.716
+      },
+      "ternary_packed_unfused": {
+        "infer": 3.051
+      },
+      "ffn_dense": {
+        "train": 17.179
+      },
+      "ffn_moe8_top2": {
+        "train": 18.788
+      }
+    }
+  },
+  "hardware": {
+    "machine": "x86_64",
+    "cpus": 9,
+    "threads": 4,
+    "torch": "2.14.0+cpu",
+    "cuda": false,
+    "mps": false
+  },
+  "dataset": {
+    "source": "enwik8",
+    "sha256": "2b49720ec4d78c3c9fabaee6e4179a5e997302b3a70029f30f2d582218c024a8",
+    "evaluated_bytes": 8192
+  },
+  "prereg_sha256": "44afc90211a1cb4c5c194838dd39237ea22bfa8320553e7006abdb4ac9d99a8e",
+  "code_sha": "9c3e82b457d6af21c5805aecc85599e5b2d54190",
+  "checkpoint_sha256": "786fdd530e6e308579e93704ac58caad06d19fe5824f0ea89dcf80e7779b2216",
+  "packed_sha256": "103437cb546d866c015c8976e51866bd22c03d1ccd65def531e309a2ed0824ec",
+  "peak_process_rss_mib": 443.61328125,
+  "rss_scope": "whole audit including two models; not inference-only or tablet memory",
+  "cost_usd": 0.0,
+  "ipad_result": null,
+  "learned_quality_result": null
+}
