@@ -19,7 +19,7 @@ on:
     inputs:
       task:
         type: choice
-        options: [prepare, train]
+        options: [prepare, prepare-parts, train]
         default: prepare
       corpus:
         default: pretrain-v3
@@ -110,6 +110,114 @@ jobs:
             git diff --cached --quiet && break
             if [ -f "$stash/manifest.json" ]; then msg="rouge(data): $CORPUS built, verified and stored in the Lightning model registry"; else msg="rouge(data): ledger of an unfinished $CORPUS build (no manifest)"; fi
             git commit -q -m "$msg (run ${{ github.run_id }})"
+            git push -q origin "HEAD:$BRANCH" && break
+            sleep $((attempt * 5))
+          done
+
+  parts-val:
+    # prepare-parts, step 1: validation splits of every source (the same stream prefix the part builds read),
+    # so each part is decontaminated against the validation documents of all sources
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'prepare-parts' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install numpy tokenizers datasets huggingface_hub
+      - name: Validation splits
+        working-directory: training/rouge
+        env:
+          TOKENS: ${{ inputs.tokens }}
+          MIXTURE: ${{ inputs.mixture }}
+        run: |
+          python -m native.data.build --out "$RUNNER_TEMP/val" --tokens "$TOKENS" --mixture "$MIXTURE" \
+            --tokenizer configs/native/data-v1/tokenizer.json --val-out "$RUNNER_TEMP/val.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: parts-val
+          path: ${{ runner.temp }}/val.json
+          retention-days: 7
+
+  parts:
+    # prepare-parts, step 2: one source per runner (free), stored as registry model rouge/data/<corpus>/<source>
+    needs: parts-val
+    runs-on: ubuntu-latest
+    timeout-minutes: 355
+    strategy:
+      fail-fast: false
+      matrix:
+        source: [web_en, web_de, wiki_en, wiki_de, code_py, math_web, finemath, math_synth, algo_synth]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install numpy tokenizers datasets huggingface_hub lightning-sdk
+      - name: Free runner disk
+        run: sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL && df -h /
+      - uses: actions/download-artifact@v4
+        with:
+          name: parts-val
+          path: ${{ runner.temp }}/val
+      - name: Build, verify and store one source
+        working-directory: training/rouge
+        env:
+          LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+          TOKENS: ${{ inputs.tokens }}
+          MIXTURE: ${{ inputs.mixture }}
+          CORPUS: ${{ inputs.corpus }}
+          SRC: ${{ matrix.source }}
+        run: |
+          tokens="$(python -c "from native.data import sources; print($TOKENS * sources.MIXTURES['$MIXTURE']['$SRC'])")"
+          python -m native.data.build --out /tmp/part --tokens "$tokens" --mixture "$MIXTURE" --only "$SRC" \
+            --tokenizer configs/native/data-v1/tokenizer.json --eval-extra "$RUNNER_TEMP/val/val.json"
+          python -m native.data.verify --data /tmp/part
+          rm -rf /tmp/part/cache
+          python lightning_ai/storage.py upload /tmp/part "rouge/data/$CORPUS/$SRC"
+          cp /tmp/part/manifest.json "$RUNNER_TEMP/part-$SRC.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: part-${{ matrix.source }}
+          path: ${{ runner.temp }}/part-${{ matrix.source }}.json
+          retention-days: 30
+
+  parts-merge:
+    # prepare-parts, step 3: one corpus manifest with the registry path of every part (committed)
+    needs: parts
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: part-*
+          merge-multiple: true
+          path: ${{ runner.temp }}/parts
+      - name: Merge and commit the manifest
+        if: ${{ startsWith(github.ref_name, 'rouge/') }}
+        env:
+          BRANCH: ${{ github.ref_name }}
+          TOKENS: ${{ inputs.tokens }}
+          MIXTURE: ${{ inputs.mixture }}
+          CORPUS: ${{ inputs.corpus }}
+        run: |
+          (cd "$ROUGE" && python -m native.data.merge --mixture "$MIXTURE" --total "$TOKENS" --corpus "$CORPUS" \
+            --out "$RUNNER_TEMP/manifest.json" "$RUNNER_TEMP"/parts/*.json)
+          git config user.name "rouge-research[bot]"
+          git config user.email "rouge-research@users.noreply.github.com"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
+            mkdir -p "$ROUGE/configs/native/$CORPUS" && cp "$RUNNER_TEMP/manifest.json" "$ROUGE/configs/native/$CORPUS/manifest.json"
+            git add "$ROUGE/configs/native/$CORPUS"
+            git diff --cached --quiet && break
+            git commit -q -m "rouge(data): $CORPUS built one source per runner, stored in the Lightning model registry (run ${{ github.run_id }})"
             git push -q origin "HEAD:$BRANCH" && break
             sleep $((attempt * 5))
           done

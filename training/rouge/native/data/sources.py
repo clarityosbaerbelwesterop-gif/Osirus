@@ -26,6 +26,13 @@ HF = {
                "license": "ODC-By-1.0", "lang": "de", "domain": "web"},
     "math_web": {"repo": "open-web-math/open-web-math", "config": None, "split": "train", "field": "text",
                  "license": "ODC-By-1.0", "lang": "en", "domain": "math"},
+    # mixture v5 (B200 phase): encyclopedic knowledge and filtered math
+    "wiki_en": {"repo": "wikimedia/wikipedia", "config": "20231101.en", "split": "train", "field": "text",
+                "license": "CC-BY-SA-3.0", "lang": "en", "domain": "web"},
+    "wiki_de": {"repo": "wikimedia/wikipedia", "config": "20231101.de", "split": "train", "field": "text",
+                "license": "CC-BY-SA-3.0", "lang": "de", "domain": "web"},
+    "finemath": {"repo": "HuggingFaceTB/finemath", "config": "finemath-4plus", "split": "train", "field": "text",
+                 "license": "ODC-By-1.0", "lang": "en", "domain": "math"},
 }
 
 # (project, tag, archive URL, licence). Only files matching *.py are used; tests are kept (they are code).
@@ -101,8 +108,14 @@ MIXTURE_V3 = dict(MIXTURE_V1)
 # budget), and code_py may repeat its documents for up to 2 epochs (little quality cost up to about 4 epochs:
 # Muennighoff et al. 2023, "Scaling Data-Constrained Language Models").
 MIXTURE_V4 = dict(MIXTURE_V1)
-MIXTURES = {"v1": MIXTURE_V1, "v2": MIXTURE_V2, "v3": MIXTURE_V3, "v4": MIXTURE_V4}
-CODE_SETS = {"v1": CODE, "v2": CODE + CODE_EXTRA, "v3": CODE + CODE_EXTRA + CODE_MORE, "v4": CODE + CODE_EXTRA + CODE_MORE}
-SYNTH_SEEDS = {"v1": 200_000, "v2": 200_000, "v3": 1_000_000, "v4": 1_000_000}   # the token budget stops generation first
-COLLECT_MARGIN = {"v1": 1.08, "v2": 1.08, "v3": 1.08, "v4": 1.25}
-MAX_EPOCHS = {"v4": {"code_py": 2}}
+# B200-phase mixture v5 (about 11.5B tokens): Wikipedia for dense factual knowledge, FineMath for filtered math;
+# code_py keeps its 41 projects (about 160M unique tokens) and may repeat up to 4 epochs (Muennighoff et al.
+# 2023: about 4 epochs cost little). Built one source per runner (see rouge-train.yml prepare-parts).
+MIXTURE_V5 = {"web_en": 0.53, "web_de": 0.12, "wiki_en": 0.08, "wiki_de": 0.03, "code_py": 0.05, "math_web": 0.05,
+              "finemath": 0.09, "math_synth": 0.03, "algo_synth": 0.02}
+MIXTURES = {"v1": MIXTURE_V1, "v2": MIXTURE_V2, "v3": MIXTURE_V3, "v4": MIXTURE_V4, "v5": MIXTURE_V5}
+CODE_SETS = {"v1": CODE, "v2": CODE + CODE_EXTRA, "v3": CODE + CODE_EXTRA + CODE_MORE, "v4": CODE + CODE_EXTRA + CODE_MORE,
+             "v5": CODE + CODE_EXTRA + CODE_MORE}
+SYNTH_SEEDS = {"v1": 200_000, "v2": 200_000, "v3": 1_000_000, "v4": 1_000_000, "v5": 3_000_000}   # the budget stops first
+COLLECT_MARGIN = {"v1": 1.08, "v2": 1.08, "v3": 1.08, "v4": 1.25, "v5": 1.25}
+MAX_EPOCHS = {"v4": {"code_py": 2}, "v5": {"code_py": 4}}

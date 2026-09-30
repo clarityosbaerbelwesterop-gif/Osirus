@@ -26,9 +26,9 @@ NPROC="${ROUGE_NPROC:-1}"
 (( ngpu == NPROC )) || fail "expected $NPROC GPU(s), found $ngpu" 10
 phase VERIFY_HW "$ngpu x $gpu"
 
-python lightning_ai/storage.py download "rouge/data/$ROUGE_CORPUS" "$DATA" || fail "corpus download failed" 11
-DATA_ROOT="$(dirname "$(find "$DATA" -name manifest.json -not -path '*/checkpoints/*' | head -1)")"
-python -m native.data.verify --data "$DATA_ROOT" || fail "corpus does not match its manifest" 11
+# one registry model, or one per source (parts); every shard is checked against the committed manifest
+python lightning_ai/corpus.py fetch "$ROUGE_CORPUS" "$DATA" || fail "corpus download or verification failed" 11
+DATA_ROOT="$DATA"
 phase VERIFY_DATA "$DATA_ROOT"
 
 mkdir -p "$RUN_DIR"

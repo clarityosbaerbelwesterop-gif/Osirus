@@ -210,7 +210,8 @@ def peak_rss(stage: str) -> None:
     print(f"[data] {stage}: peak memory {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2**20:.2f} GB", flush=True)
 
 
-def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revisions: dict, code_set: str = "v1") -> dict:
+def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revisions: dict, code_set: str = "v1",
+            val_only: bool = False) -> dict:
     """Documents per source and split, after cleaning, dedup and split. Returns {source: {...}}."""
     result = {}
     for name, share in mixture.items():
@@ -223,6 +224,8 @@ def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revision
         else:
             domain = sources.SYNTHETIC[name]["domain"]
             docs = ((i, t, "generated") for i, t in iter_synth(name, sources.SYNTH_SEEDS[code_set]))
+        if val_only and domain == "algorithmic":   # generated algorithmic tasks have no validation split
+            continue
         budget_chars = total_tokens * share * CHARS_PER_TOKEN[domain] * sources.COLLECT_MARGIN[code_set]
         seen, fingerprints = set(), set()
         train, val, dropped, chars, n = DocFile(out / "tmp" / f"{name}.train.jsonl"), [], {}, 0, 0
@@ -242,11 +245,14 @@ def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revision
             seen.add(key)
             fingerprints.add(fp)
             is_val = int(key[:8], 16) % 1000 < VAL_PER_MILLE and len(val) < VAL_CAP and domain != "algorithmic"
-            (val if is_val else train).append((doc_id, text, license_))
+            if is_val or not val_only:   # val_only: the same stream and decisions, training documents not kept
+                (val if is_val else train).append((doc_id, text, license_))
             if not is_val:
                 chars += len(text)
                 if chars >= budget_chars:
                     break
+            if val_only and len(val) >= VAL_CAP:   # no later document can join the validation split
+                break
         train.close()
         result[name] = {"domain": domain, "train": train, "val": val, "docs_seen": n, "dropped": dropped,
                         "license": sorted(train.licenses) or ["generated"], "revision": revisions.get(name)}
@@ -282,7 +288,7 @@ def copy_index(corpus: dict) -> tuple[set[int], dict[int, tuple], list[int]]:
     Validation documents: a training document is dropped when it shares min(COPY_GRAMS, half of the
     document's grams) grams with one validation document, i.e. contains a substantial copy of it. In
     pretrain-v2 one shared import line or idiom with any code validation file dropped 31% of code files."""
-    docs = [ngrams13(text) for src in corpus.values() for _, text, _ in src["val"]]
+    docs = [ngrams13(text) for src in corpus.values() for _, text, _ in src["val"]] + [ngrams13(t) for t in EXTRA_VAL]
     items = [ngrams13(f"{p} {a}") for kind in ("math_synth", "algo_synth") for p, a in synth.eval_items(kind, 500)]
     seen: dict[int, int] = {}
     for grams in docs + items:
@@ -302,6 +308,9 @@ def copy_index(corpus: dict) -> tuple[set[int], dict[int, tuple], list[int]]:
 BOILERPLATE_DOCS = 3   # rule v2: an eval 13-gram in this many distinct eval texts is boilerplate, not eval content
 
 
+EXTRA_VAL: list[str] = []   # validation texts of sources built by other runners (--eval-extra)
+
+
 def eval_grams(corpus: dict, rule: str) -> set[int]:
     """13-grams of every evaluation text (validation documents and generated eval items).
 
@@ -310,7 +319,7 @@ def eval_grams(corpus: dict, rule: str) -> set[int]:
     40% of the code training files. Grams specific to an evaluation text still drop any training
     document that contains them, and synthetic eval prompts stay excluded by exact match.
     """
-    texts = [text for src in corpus.values() for _, text, _ in src["val"]]
+    texts = [text for src in corpus.values() for _, text, _ in src["val"]] + EXTRA_VAL
     texts += [f"{p} {a}" for kind in ("math_synth", "algo_synth") for p, a in synth.eval_items(kind, 500)]
     if rule == "v1":
         return set().union(*(ngrams13(t) for t in texts))
@@ -411,13 +420,24 @@ def src_share(src: dict, corpus: dict) -> float:
 
 
 def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None, vocab: int, expect: dict | None,
-          mixture_name: str = "v1", rule: str = "v3") -> dict:
+          mixture_name: str = "v1", rule: str = "v3", val_out: str | None = None, eval_extra: str | None = None) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     start = time.time()
     revisions = (expect or {}).get("revisions") or {n: hf_revision(sources.HF[n]["repo"]) for n in mixture if n in sources.HF}
     code_set = (expect or {}).get("code_set") or mixture_name
     if expect is not None:   # a rebuild uses the rule its manifest records (manifests before rule v2 used v1)
         rule = expect.get("decontamination_rule", "v1")
+    if val_out is not None:   # validation splits only, for the runners that build one source each
+        corpus = collect(out, total_tokens, mixture, out / "cache", revisions, code_set, val_only=True)
+        shutil.rmtree(out / "tmp", ignore_errors=True)
+        Path(val_out).write_text(json.dumps({"revisions": revisions, "val": {n: [list(d) for d in s["val"]] for n, s in corpus.items()}}))
+        print(f"[data] validation splits of {len(corpus)} sources written to {val_out}", flush=True)
+        return {}
+    if eval_extra is not None:
+        extra = json.loads(Path(eval_extra).read_text())
+        EXTRA_VAL[:] = [d[1] for n, docs in extra["val"].items() if n not in mixture for d in docs]
+        revisions = {**revisions, **{n: r for n, r in extra.get("revisions", {}).items() if n in revisions}}   # pinned by the val run
+        print(f"[data] {len(EXTRA_VAL)} validation documents of other sources join the decontamination", flush=True)
     corpus = collect(out, total_tokens, mixture, out / "cache", revisions, code_set)
     peak_rss("collected")
     contamination = decontaminate(corpus, rule)
@@ -456,6 +476,7 @@ def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None,
                     for n, s in corpus.items()},
         "dedup": "exact (normalised text) + near-dup fingerprint (head/tail) in-house; upstream MinHash for FineWeb-Edu, FineWeb-2, OpenWebMath",
         "decontamination_rule": rule,
+        **({"eval_extra_docs": len(EXTRA_VAL)} if EXTRA_VAL else {}),
         **({"max_epochs": max_epochs} if max_epochs else {}),
         "contamination": ("train documents sharing any word 13-gram with validation documents or generated eval items are dropped"
                           + ("" if rule == "v1" else f"; grams found in {BOILERPLATE_DOCS}+ distinct eval texts are boilerplate and ignored")
@@ -480,6 +501,8 @@ def main() -> None:
     parser.add_argument("--tokenizer")
     parser.add_argument("--expect")
     parser.add_argument("--mixture", default="v1")
+    parser.add_argument("--val-out", help="write the validation splits of the mixture to this JSON file and stop")
+    parser.add_argument("--eval-extra", help="validation splits of the other sources (from --val-out) for decontamination")
     parser.add_argument("--decontamination", default="v3", choices=["v1", "v2", "v3"], help="rule for new builds (--expect uses its own)")
     parser.add_argument("--only", nargs="*", help="restrict to these sources (tests)")
     args = parser.parse_args()
@@ -491,7 +514,9 @@ def main() -> None:
     if expect:  # a rebuild takes the expected corpus's size and mixture
         tokens, mixture = expect["total_tokens"], expect["mixture"]
     manifest = build(Path(args.out), tokens, mixture, Path(args.tokenizer) if args.tokenizer else None, args.vocab, expect,
-                     mixture_name=args.mixture, rule=args.decontamination)
+                     mixture_name=args.mixture, rule=args.decontamination, val_out=args.val_out, eval_extra=args.eval_extra)
+    if args.val_out:
+        return
     print(json.dumps({n: s["shards"]["train"]["tokens"] for n, s in manifest["sources"].items()}))
 
 
