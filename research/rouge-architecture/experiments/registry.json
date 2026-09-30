@@ -245033,5 +245033,1303 @@
    "result": "FAIL"
   },
   "recorded": "2026-09-30T07:01:55Z"
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "lstm-seed1",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "lstm",
+  "config": null,
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10049312,
+  "active_parameters": null,
+  "flop_estimate": 20070400,
+  "checkpoint_sha256": "e2896cc060a1c78e3ace418850ad3950c534b21e0608c39967ce7f658ae6ae87",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007889"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.8376568962223971,
+   "test_bpb": 1.915591296664253,
+   "stream": {
+    "b0_0_256": 1.7410501996404621,
+    "b1_256_1k": 1.7640898554632982,
+    "b2_1k_4k": 1.755905545074039,
+    "all": 1.7565116119356796
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "lstm-seed2",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "lstm",
+  "config": null,
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10049312,
+  "active_parameters": null,
+  "flop_estimate": 20070400,
+  "checkpoint_sha256": "8a93799e113e25a01d807850014b4071eccd1ad83dfffd9ff813e0f316867038",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007892"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.8335653967116239,
+   "test_bpb": 1.9119748239840786,
+   "stream": {
+    "b0_0_256": 1.7326393881000166,
+    "b1_256_1k": 1.7451122578711908,
+    "b2_1k_4k": 1.7598876313721163,
+    "all": 1.7554141906405238
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "lstm-seed3",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "lstm",
+  "config": null,
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10049312,
+  "active_parameters": null,
+  "flop_estimate": 20070400,
+  "checkpoint_sha256": "c707fdf6607384ceb65ca4f28dcfa59e23dc413de75a8d3ad7904ccecaeaf3eb",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007891"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.830134299831248,
+   "test_bpb": 1.9184186914444374,
+   "stream": {
+    "b0_0_256": 1.684483041979874,
+    "b1_256_1k": 1.7169580099943456,
+    "b2_1k_4k": 1.7324988782742616,
+    "all": 1.726584050945788
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "rouge-lm-seed1",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "rouge-lm",
+  "config": null,
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10208160,
+  "active_parameters": null,
+  "flop_estimate": 15823872.0,
+  "checkpoint_sha256": "764a9a702c9125d052b00df7f7e5e9d085073c3eb11c2d7d8f963de9e812049a",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007885"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.9357873483420607,
+   "test_bpb": 1.95897848863356,
+   "stream": {
+    "b0_0_256": 1.8149695468598535,
+    "b1_256_1k": 1.5595679150745954,
+    "b2_1k_4k": 1.5826292407114404,
+    "all": 1.5928266080290487
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "rouge-lm-seed2",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "rouge-lm",
+  "config": null,
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10208160,
+  "active_parameters": null,
+  "flop_estimate": 15823872.0,
+  "checkpoint_sha256": "8730dcc0387a0b62004c0673067c6777bc4f68b6a51b9c57e8f2a0ae94ae5b58",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007888"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.9668522413510239,
+   "test_bpb": 2.0391771589120973,
+   "stream": {
+    "b0_0_256": 1.863786306359309,
+    "b1_256_1k": 1.6516190492091507,
+    "b2_1k_4k": 1.6697203951951123,
+    "all": 1.6784555660150853
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "rouge-lm-seed3",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "rouge-lm",
+  "config": null,
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10208160,
+  "active_parameters": null,
+  "flop_estimate": 15823872.0,
+  "checkpoint_sha256": "c64389548da9d47a94aa1bd389724134dc26755a6060366095472f5dc6dcbb16",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007887"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.983976908611651,
+   "test_bpb": 2.0583306625092903,
+   "stream": {
+    "b0_0_256": 1.9191028061828228,
+    "b1_256_1k": 1.6747515756634528,
+    "b2_1k_4k": 1.6785539400913787,
+    "all": 1.6928751074113757
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "transformer-seed1",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "transformer",
+  "config": null,
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "5aa64503d89b4d12017796ca228cd2677c6bf5007ddc9faaaa8d8ada87e9e98a",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007896"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.7548967808354032,
+   "test_bpb": 1.8091044870109732,
+   "stream": {
+    "b0_0_256": 1.6512444709955716,
+    "b1_256_1k": 1.6582097683555153,
+    "b2_1k_4k": 1.678593840066379,
+    "all": 1.6730623620666785
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "transformer-seed2",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "transformer",
+  "config": null,
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "2d7071b8ad4d966aecf4316351b507c1215e1aa1895d36db083e15258f394c7a",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007895"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.7025886122896974,
+   "test_bpb": 1.745248838968265,
+   "stream": {
+    "b0_0_256": 1.6008839952219713,
+    "b1_256_1k": 1.5713139861632235,
+    "b2_1k_4k": 1.581261978637081,
+    "all": 1.5806230630891256
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "transformer-seed3",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "transformer",
+  "config": null,
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "163a34b48def0988ca08aecc758ac83dae2ee99e1cf3a672c3e9d66263a65796",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007915"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.7064994440257393,
+   "test_bpb": 1.7517388730214651,
+   "stream": {
+    "b0_0_256": 1.5650827107571623,
+    "b1_256_1k": 1.527404923588789,
+    "b2_1k_4k": 1.5572886290027106,
+    "all": 1.5521724891048438
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "window-seed1",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "window",
+  "config": null,
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "b52d9852806f06e15603c4443f6a26c218754c2032dc4fe55ebd70e939f9f5e4",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007890"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.799858710449504,
+   "test_bpb": 1.837633194863325,
+   "stream": {
+    "b0_0_256": 1.6897295447270948,
+    "b1_256_1k": 1.5641672471066195,
+    "b2_1k_4k": 1.5913136766494087,
+    "all": 1.5923748096052321
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "window-seed2",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "window",
+  "config": null,
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "6f08305ac0deec31e9628110f4dc77788507387a024ba7159305761362d02d8b",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007893"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.7970998830024354,
+   "test_bpb": 1.834514353983422,
+   "stream": {
+    "b0_0_256": 1.6904559994443393,
+    "b1_256_1k": 1.5648778794199847,
+    "b2_1k_4k": 1.5911293112476836,
+    "all": 1.592415225528185
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "window-seed3",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": "window",
+  "config": null,
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "98c37752cf791a849ab2d5f902cf65ecca4285503699ab8a00f20db8055fe434",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007894"
+  },
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.8072170204134164,
+   "test_bpb": 1.8595265325735821,
+   "stream": {
+    "b0_0_256": 1.6833684224196321,
+    "b1_256_1k": 1.5591563605910808,
+    "b2_1k_4k": 1.5908083916211737,
+    "all": 1.5906585947322722
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.16",
+  "run": "experiment",
+  "parent": "R1.14 (running when this was registered; no R1.14 result was seen)",
+  "hypothesis": "Reading test streams of up to 64k bytes (throughput and memory to 128k), does Rouge-LM stay stable far beyond its training segments, keep an advantage over the Transformer's 256-byte window far out, and carry an exact string over 1k bytes in its 16 gated slots?",
+  "architecture": [],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": null,
+  "flop_estimate": 0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "experiment": "R1.16",
+   "models": {
+    "transformer": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "metrics": {
+      "stream.b0_0_256": {
+       "mean": 1.914049439952521,
+       "sd": 0.06335794592323156,
+       "ci95": [
+        1.7566468740945769,
+        2.071452005810465
+       ],
+       "n": 3,
+       "values": [
+        1.9753220429407155,
+        1.9180322141812018,
+        1.8487940627356454
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.668504248543311,
+       "sd": 0.06477134068180813,
+       "ci95": [
+        1.5075903320831918,
+        1.8294181650034302
+       ],
+       "n": 3,
+       "values": [
+        1.7391891753754758,
+        1.654329151821447,
+        1.6119944184330106
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.6310486056323021,
+       "sd": 0.04261829962294264,
+       "ci95": [
+        1.5251703355052697,
+        1.7369268757593346
+       ],
+       "n": 3,
+       "values": [
+        1.6801260335029156,
+        1.6033675966830812,
+        1.60965218671091
+       ]
+      },
+      "stream.b3_4k_16k": {
+       "mean": 1.684211768011913,
+       "sd": 0.04278277756691321,
+       "ci95": [
+        1.5779248790442482,
+        1.790498656979578
+       ],
+       "n": 3,
+       "values": [
+        1.7322916391799719,
+        1.6700008988986694,
+        1.650342765957098
+       ]
+      },
+      "stream.b4_16k_64k": {
+       "mean": 1.719611358331857,
+       "sd": 0.03302925268960998,
+       "ci95": [
+        1.637555523882705,
+        1.801667192781009
+       ],
+       "n": 3,
+       "values": [
+        1.7574719630580975,
+        1.7046638301974177,
+        1.696698281740056
+       ]
+      },
+      "copy.128.gain": {
+       "mean": 1.0400689793662548,
+       "sd": 0.3163241992616137,
+       "ci95": [
+        0.2542126849234624,
+        1.8259252738090472
+       ],
+       "n": 3,
+       "values": [
+        0.6935895205952244,
+        1.1131838490724602,
+        1.3134335684310798
+       ]
+      },
+      "copy.128.second_bpb": {
+       "mean": 8.467067065542883,
+       "sd": 0.6860575733047165,
+       "ci95": [
+        6.762668023072646,
+        10.17146610801312
+       ],
+       "n": 3,
+       "values": [
+        9.258897203894563,
+        8.050445285203159,
+        8.091858707530923
+       ]
+      },
+      "copy.1024.gain": {
+       "mean": -0.08854584107221991,
+       "sd": 0.09110002510701241,
+       "ci95": [
+        -0.3148691142247518,
+        0.13777743208031196
+       ],
+       "n": 3,
+       "values": [
+        -0.1936036217986775,
+        -0.04063881246827823,
+        -0.03139508894970399
+       ]
+      },
+      "copy.1024.second_bpb": {
+       "mean": 9.312698880529277,
+       "sd": 0.4000098400543134,
+       "ci95": [
+        8.31893915117719,
+        10.306458609881364
+       ],
+       "n": 3,
+       "values": [
+        9.732391583082807,
+        8.935815411497915,
+        9.26988964700711
+       ]
+      },
+      "copy.4096.gain": {
+       "mean": -0.09946696871220939,
+       "sd": 0.07858391741212815,
+       "ci95": [
+        -0.2946959972988553,
+        0.0957620598744365
+       ],
+       "n": 3,
+       "values": [
+        -0.18974433111331607,
+        -0.062261159265353985,
+        -0.046395415757958164
+       ]
+      },
+      "copy.4096.second_bpb": {
+       "mean": 9.281890596384317,
+       "sd": 0.257144550372863,
+       "ci95": [
+        8.643056564830985,
+        9.920724627937648
+       ],
+       "n": 3,
+       "values": [
+        9.546135060128988,
+        9.03248892333971,
+        9.267047805684253
+       ]
+      },
+      "copy.16384.gain": {
+       "mean": -0.018550507342464842,
+       "sd": 0.03589972785041208,
+       "ci95": [
+        -0.10773757290963945,
+        0.07063655822470977
+       ],
+       "n": 3,
+       "values": [
+        -0.0004141342232776432,
+        -0.05990018143430935,
+        0.004662793630192468
+       ]
+      },
+      "copy.16384.second_bpb": {
+       "mean": 9.220977322481325,
+       "sd": 0.30814909323548295,
+       "ci95": [
+        8.455430756296341,
+        9.986523888666309
+       ],
+       "n": 3,
+       "values": [
+        9.532529856584533,
+        8.916348351281451,
+        9.21405375957799
+       ]
+      },
+      "throughput.4096": 2238.2,
+      "memory.4096": 5242880,
+      "memory_full.4096": 83886080,
+      "throughput.16384": 2139.1,
+      "memory.16384": 5242880,
+      "memory_full.16384": 335544320,
+      "throughput.65536": 2151.4,
+      "memory.65536": 5242880,
+      "memory_full.65536": 1342177280,
+      "throughput.131072": 2185.4,
+      "memory.131072": 5242880,
+      "memory_full.131072": 2684354560
+     }
+    },
+    "rouge-lm": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "metrics": {
+      "stream.b0_0_256": {
+       "mean": 2.2275621176551623,
+       "sd": 0.03820235741044305,
+       "ci95": [
+        2.1326545414923888,
+        2.322469693817936
+       ],
+       "n": 3,
+       "values": [
+        2.22571588389815,
+        2.2666541181615805,
+        2.1903163509057566
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.7294391349327611,
+       "sd": 0.06274416782617463,
+       "ci95": [
+        1.5735614014527672,
+        1.885316868412755
+       ],
+       "n": 3,
+       "values": [
+        1.6635360710527365,
+        1.7363249763080064,
+        1.788456357437541
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.6709459435651608,
+       "sd": 0.03471474321174351,
+       "ci95": [
+        1.5847027806121063,
+        1.7571891065182152
+       ],
+       "n": 3,
+       "values": [
+        1.6352033051842958,
+        1.6731022620416784,
+        1.7045322634695077
+       ]
+      },
+      "stream.b3_4k_16k": {
+       "mean": 1.7079402143514548,
+       "sd": 0.03401603013712583,
+       "ci95": [
+        1.6234328909863278,
+        1.7924475377165818
+       ],
+       "n": 3,
+       "values": [
+        1.669348224738645,
+        1.7209050118316471,
+        1.7335674064840723
+       ]
+      },
+      "stream.b4_16k_64k": {
+       "mean": 1.7439400814504602,
+       "sd": 0.03748906984873248,
+       "ci95": [
+        1.6508045528307658,
+        1.8370756100701546
+       ],
+       "n": 3,
+       "values": [
+        1.7036859368446118,
+        1.750278272737808,
+        1.777856034768961
+       ]
+      },
+      "copy.128.gain": {
+       "mean": 0.0511253972770877,
+       "sd": 0.04523447843069554,
+       "ci95": [
+        -0.06125234582185003,
+        0.16350314037602542
+       ],
+       "n": 3,
+       "values": [
+        0.025434170270799045,
+        0.10335538179311693,
+        0.024586639767347124
+       ]
+      },
+      "copy.128.second_bpb": {
+       "mean": 9.212581129466203,
+       "sd": 0.3220834425608216,
+       "ci95": [
+        8.41241692684416,
+        10.012745332088246
+       ],
+       "n": 3,
+       "values": [
+        9.582956545678716,
+        9.05662152890878,
+        8.998165313811114
+       ]
+      },
+      "copy.1024.gain": {
+       "mean": -0.05130036096056547,
+       "sd": 0.009061174037167115,
+       "ci95": [
+        -0.07381138183336373,
+        -0.028789340087767203
+       ],
+       "n": 3,
+       "values": [
+        -0.059217066345082274,
+        -0.04141754991138503,
+        -0.05326646662522909
+       ]
+      },
+      "copy.1024.second_bpb": {
+       "mean": 9.361683437768425,
+       "sd": 0.24502623879576302,
+       "ci95": [
+        8.752955390686445,
+        9.970411484850406
+       ],
+       "n": 3,
+       "values": [
+        9.643479304309148,
+        9.198849805311115,
+        9.24272120368501
+       ]
+      },
+      "copy.4096.gain": {
+       "mean": -0.1442372630746146,
+       "sd": 0.08938738271542236,
+       "ci95": [
+        -0.3663057532965257,
+        0.07783122714729651
+       ],
+       "n": 3,
+       "values": [
+        -0.2449638327217432,
+        -0.11338609792203938,
+        -0.0743618585800612
+       ]
+      },
+      "copy.4096.second_bpb": {
+       "mean": 9.232926677063272,
+       "sd": 0.3134158298506596,
+       "ci95": [
+        8.454295755872032,
+        10.011557598254512
+       ],
+       "n": 3,
+       "values": [
+        9.587188694751147,
+        9.119852670324999,
+        8.991738666113672
+       ]
+      },
+      "copy.16384.gain": {
+       "mean": -0.06663043583807393,
+       "sd": 0.030214428096725084,
+       "ci95": [
+        -0.1416932940013948,
+        0.00843242232524695
+       ],
+       "n": 3,
+       "values": [
+        -0.060605998233450316,
+        -0.09940322047628959,
+        -0.03988208880448187
+       ]
+      },
+      "copy.16384.second_bpb": {
+       "mean": 9.127740941244573,
+       "sd": 0.25674616648494,
+       "ci95": [
+        8.489896630005589,
+        9.765585252483557
+       ],
+       "n": 3,
+       "values": [
+        9.424198672736653,
+        8.981302070928713,
+        8.977722080068354
+       ]
+      },
+      "throughput.4096": 2883.5,
+      "memory.4096": 1253376,
+      "memory_full.4096": 1253376,
+      "throughput.16384": 2893.5,
+      "memory.16384": 1253376,
+      "memory_full.16384": 1253376,
+      "throughput.65536": 2869.3,
+      "memory.65536": 1253376,
+      "memory_full.65536": 1253376,
+      "throughput.131072": 2876.0,
+      "memory.131072": 1253376,
+      "memory_full.131072": 1253376
+     }
+    },
+    "window": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "metrics": {
+      "stream.b0_0_256": {
+       "mean": 2.0363898145917325,
+       "sd": 0.017214231585939082,
+       "ci95": [
+        1.993623841335864,
+        2.079155787847601
+       ],
+       "n": 3,
+       "values": [
+        2.023736535019803,
+        2.0559923971370755,
+        2.029440511618319
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.6473143234580547,
+       "sd": 0.014584430874116218,
+       "ci95": [
+        1.6110816645908428,
+        1.6835469823252667
+       ],
+       "n": 3,
+       "values": [
+        1.6452617105200071,
+        1.6338649361952813,
+        1.6628163236588758
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.6273050592709712,
+       "sd": 0.014824644167174564,
+       "ci95": [
+        1.5904756293416673,
+        1.6641344892002752
+       ],
+       "n": 3,
+       "values": [
+        1.6349319165612342,
+        1.6102197294587572,
+        1.6367635317929232
+       ]
+      },
+      "stream.b3_4k_16k": {
+       "mean": 1.667702121459687,
+       "sd": 0.004761988051992686,
+       "ci95": [
+        1.6558717325945442,
+        1.6795325103248298
+       ],
+       "n": 3,
+       "values": [
+        1.6706635480524439,
+        1.662209052918679,
+        1.6702337634079378
+       ]
+      },
+      "stream.b4_16k_64k": {
+       "mean": 1.70495327699882,
+       "sd": 0.011228786133519792,
+       "ci95": [
+        1.6770571745742298,
+        1.7328493794234103
+       ],
+       "n": 3,
+       "values": [
+        1.7048738210141212,
+        1.6937644296989873,
+        1.7162215802833511
+       ]
+      },
+      "copy.128.gain": {
+       "mean": -0.018100371417606582,
+       "sd": 0.07126779121115898,
+       "ci95": [
+        -0.19515366814627208,
+        0.1589529253110589
+       ],
+       "n": 3,
+       "values": [
+        -0.08376518199863613,
+        0.057687796613610176,
+        -0.0282237288677938
+       ]
+      },
+      "copy.128.second_bpb": {
+       "mean": 9.196310653453777,
+       "sd": 0.30113758339069746,
+       "ci95": [
+        8.448183049074226,
+        9.944438257833328
+       ],
+       "n": 3,
+       "values": [
+        9.477866890834298,
+        8.878816921348962,
+        9.23224814817807
+       ]
+      },
+      "copy.1024.gain": {
+       "mean": -0.16161668321980427,
+       "sd": 0.050941316007859144,
+       "ci95": [
+        -0.2881721409603828,
+        -0.03506122547922577
+       ],
+       "n": 3,
+       "values": [
+        -0.214538037992302,
+        -0.11291830511169254,
+        -0.15739370655541832
+       ]
+      },
+      "copy.1024.second_bpb": {
+       "mean": 9.36868313165854,
+       "sd": 0.18235634336355383,
+       "ci95": [
+        8.915648300310403,
+        9.821717963006678
+       ],
+       "n": 3,
+       "values": [
+        9.5344168502298,
+        9.173330331645488,
+        9.398302213100335
+       ]
+      },
+      "copy.4096.gain": {
+       "mean": -0.18426977937105113,
+       "sd": 0.08975181179478535,
+       "ci95": [
+        -0.4072436346790477,
+        0.03870407593694539
+       ],
+       "n": 3,
+       "values": [
+        -0.28710439769735546,
+        -0.14399557012260206,
+        -0.12170937029319587
+       ]
+      },
+      "copy.4096.second_bpb": {
+       "mean": 9.125773918339105,
+       "sd": 0.253698302867427,
+       "ci95": [
+        8.495501531138865,
+        9.756046305539344
+       ],
+       "n": 3,
+       "values": [
+        9.373278049469192,
+        8.866304839533392,
+        9.13773886601473
+       ]
+      },
+      "copy.16384.gain": {
+       "mean": -0.13281876160832987,
+       "sd": 0.13473054794250247,
+       "ci95": [
+        -0.46753500969017714,
+        0.20189748647351738
+       ],
+       "n": 3,
+       "values": [
+        -0.2669342724041653,
+        -0.13404052636005925,
+        0.0025185139392349697
+       ]
+      },
+      "copy.16384.second_bpb": {
+       "mean": 9.072693192976809,
+       "sd": 0.18467956741647337,
+       "ci95": [
+        8.613886687347508,
+        9.53149969860611
+       ],
+       "n": 3,
+       "values": [
+        9.276088589674808,
+        8.915504260431018,
+        9.026486728824597
+       ]
+      },
+      "throughput.4096": 2830.5,
+      "memory.4096": 1310720,
+      "memory_full.4096": 1310720,
+      "throughput.16384": 2845.4,
+      "memory.16384": 1310720,
+      "memory_full.16384": 1310720,
+      "throughput.65536": 2885.5,
+      "memory.65536": 1310720,
+      "memory_full.65536": 1310720,
+      "throughput.131072": 2839.1,
+      "memory.131072": 1310720,
+      "memory_full.131072": 1310720
+     }
+    },
+    "lstm": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "metrics": {
+      "stream.b0_0_256": {
+       "mean": 2.044602960738786,
+       "sd": 0.01967889572104124,
+       "ci95": [
+        1.9957139282014003,
+        2.093491993276172
+       ],
+       "n": 3,
+       "values": [
+        2.0223058113472754,
+        2.051958544061088,
+        2.0595445268079957
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.8460598825522283,
+       "sd": 0.0069220361423757825,
+       "ci95": [
+        1.8288632036843318,
+        1.8632565614201249
+       ],
+       "n": 3,
+       "values": [
+        1.8477009410067613,
+        1.8520139219250988,
+        1.838464784724825
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.7326201833706703,
+       "sd": 0.006225415857486774,
+       "ci95": [
+        1.7171541448932162,
+        1.7480862218481243
+       ],
+       "n": 3,
+       "values": [
+        1.7368605302827933,
+        1.7254730430212142,
+        1.735526976808003
+       ]
+      },
+      "stream.b3_4k_16k": {
+       "mean": 1.7869845299114573,
+       "sd": 0.0031974049251519703,
+       "ci95": [
+        1.7790410946884223,
+        1.7949279651344923
+       ],
+       "n": 3,
+       "values": [
+        1.790676309494878,
+        1.7851002879886042,
+        1.785176992250889
+       ]
+      },
+      "stream.b4_16k_64k": {
+       "mean": 1.8218576813371101,
+       "sd": 0.002679861028822117,
+       "ci95": [
+        1.8152000001902118,
+        1.8285153624840085
+       ],
+       "n": 3,
+       "values": [
+        1.819667252968171,
+        1.821059968474858,
+        1.824845822568301
+       ]
+      },
+      "copy.128.gain": {
+       "mean": 0.26063282807655197,
+       "sd": 0.1981095294206981,
+       "ci95": [
+        -0.23153824529616984,
+        0.7528039014492738
+       ],
+       "n": 3,
+       "values": [
+        0.12861619355184625,
+        0.48843141638098,
+        0.16485087429682968
+       ]
+      },
+      "copy.128.second_bpb": {
+       "mean": 8.973078319184856,
+       "sd": 0.1233590712412587,
+       "ci95": [
+        8.666612665156963,
+        9.279543973212748
+       ],
+       "n": 3,
+       "values": [
+        9.112398254306001,
+        8.929107400183662,
+        8.877729303064907
+       ]
+      },
+      "copy.1024.gain": {
+       "mean": 0.018548214240453335,
+       "sd": 0.05661188494231813,
+       "ci95": [
+        -0.12209485456693084,
+        0.1591912830478375
+       ],
+       "n": 3,
+       "values": [
+        -0.038042562370853274,
+        0.01850602116344166,
+        0.07518118392877161
+       ]
+      },
+      "copy.1024.second_bpb": {
+       "mean": 9.060131580157789,
+       "sd": 0.21335654565153372,
+       "ci95": [
+        8.530081761799881,
+        9.590181398515696
+       ],
+       "n": 3,
+       "values": [
+        8.979558854779569,
+        9.302041459620611,
+        8.898794426073186
+       ]
+      },
+      "copy.4096.gain": {
+       "mean": -0.13656958856854715,
+       "sd": 0.047926139563629726,
+       "ci95": [
+        -0.25563432826389115,
+        -0.017504848873203152
+       ],
+       "n": 3,
+       "values": [
+        -0.08869351684176077,
+        -0.13646960932084556,
+        -0.18454563954303507
+       ]
+      },
+      "copy.4096.second_bpb": {
+       "mean": 9.150062684155158,
+       "sd": 0.0986683961996367,
+       "ci95": [
+        8.904937017522451,
+        9.395188350787864
+       ],
+       "n": 3,
+       "values": [
+        9.05400051330963,
+        9.251145601854875,
+        9.14504193730097
+       ]
+      },
+      "copy.16384.gain": {
+       "mean": 0.12145323079851085,
+       "sd": 0.022972131826085748,
+       "ci95": [
+        0.06438268597633415,
+        0.17852377562068755
+       ],
+       "n": 3,
+       "values": [
+        0.10118220901681448,
+        0.11677209235222635,
+        0.14640539102649175
+       ]
+      },
+      "copy.16384.second_bpb": {
+       "mean": 9.034287403247331,
+       "sd": 0.16195683506742053,
+       "ci95": [
+        8.631931849790279,
+        9.436642956704384
+       ],
+       "n": 3,
+       "values": [
+        8.950535750550564,
+        9.220970901795692,
+        8.93135555739574
+       ]
+      },
+      "throughput.4096": 4030.0,
+      "memory.4096": 12544,
+      "memory_full.4096": 12544,
+      "throughput.16384": 4015.0,
+      "memory.16384": 12544,
+      "memory_full.16384": 12544,
+      "throughput.65536": 4074.2,
+      "memory.65536": 12544,
+      "memory_full.65536": 12544,
+      "throughput.131072": 4021.9,
+      "memory.131072": 12544,
+      "memory_full.131072": 12544
+     }
+    }
+   },
+   "dataset": [
+    "enwik8"
+   ]
+  },
+  "result": "FAIL",
+  "decision": {
+   "complete": true,
+   "checks": {
+    "C1_copy_beyond_window": false,
+    "C1b_copy_vs_window_model": false,
+    "C2_stable_far_out": false,
+    "C3_far_vs_transformer": false,
+    "C4_memory_128k": true,
+    "C5_probe_broken": false
+   },
+   "result": "FAIL"
+  },
+  "recorded": "2026-09-30T07:41:19Z"
  }
 ]
