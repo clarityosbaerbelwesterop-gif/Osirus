@@ -41,6 +41,13 @@ from native.model import MoE, RougeModel  # noqa: E402
 EXIT_RESUME = 75
 
 
+def native_bf16() -> bool:
+    """bf16 only where tensor cores run it natively (compute capability >= 8.0: A100, L4, H100, H200).
+    Older GPUs such as the T4 (7.5) report bf16 as supported but emulate it several times slower
+    than fp16, so they train in fp16 with loss scaling."""
+    return torch.cuda.is_available() and torch.cuda.get_device_capability()[0] >= 8
+
+
 def lr_at(step: int, args) -> float:
     if step < args.warmup:
         return args.lr * (step + 1) / args.warmup
@@ -115,7 +122,7 @@ def main() -> None:
 
     rank, world = setup()
     device = torch.device(f"cuda:{torch.cuda.current_device()}" if torch.cuda.is_available() else "cpu")
-    use_bf16 = device.type == "cuda" and torch.cuda.is_bf16_supported()
+    use_bf16 = device.type == "cuda" and native_bf16()
     amp_dtype = torch.bfloat16 if use_bf16 else torch.float16
     autocast = torch.autocast(device.type, dtype=amp_dtype) if device.type == "cuda" else nullcontext()
     scaler = torch.amp.GradScaler("cuda", enabled=device.type == "cuda" and not use_bf16)

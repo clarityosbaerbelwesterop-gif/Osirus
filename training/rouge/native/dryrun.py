@@ -39,7 +39,7 @@ def main() -> None:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     summary = {"schema": "rouge.dryrun/1", "started": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()), "device": device,
                "gpu": torch.cuda.get_device_name() if device == "cuda" else None,
-               "precision": ("bf16" if torch.cuda.is_bf16_supported() else "fp16") if device == "cuda" else "fp32",
+               "precision": ("bf16" if torch.cuda.get_device_capability()[0] >= 8 else "fp16") if device == "cuda" else "fp32",
                "code_sha": os.environ.get("GITHUB_SHA") or os.environ.get("ROUGE_COMMIT") or "local", "stages": {}}
     st = summary["stages"]
     data = out / "data"

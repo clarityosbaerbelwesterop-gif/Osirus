@@ -104,9 +104,9 @@ jobs:
           SUBMIT_TEST: ${{ inputs.submit_test }}
         run: |
           if [ "$SUBMIT_TEST" = "none" ]; then
-            python "$ROUGE/lightning_ai/job.py" probe
+            python "$ROUGE/lightning_ai/job.py" probe --storage
           else
-            python "$ROUGE/lightning_ai/job.py" probe --submit-test "$SUBMIT_TEST"
+            python "$ROUGE/lightning_ai/job.py" probe --storage --submit-test "$SUBMIT_TEST"
           fi
       - name: Commit the credit ledger
         if: ${{ always() && inputs.submit_test != 'none' && startsWith(github.ref_name, 'rouge/') }}

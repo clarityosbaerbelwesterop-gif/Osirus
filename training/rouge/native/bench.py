@@ -37,7 +37,8 @@ def timed(fn, device, reps: int = 20) -> float:
 
 
 def run(tokens: int, d: int, device: torch.device) -> dict:
-    dtype = torch.bfloat16 if device.type == "cuda" else torch.float32
+    # the training precision on this GPU: bf16 where native (capability >= 8.0), fp16 otherwise (T4)
+    dtype = (torch.bfloat16 if torch.cuda.get_device_capability()[0] >= 8 else torch.float16) if device.type == "cuda" else torch.float32
     hidden = 4 * d
     x = torch.randn(tokens, d, device=device, dtype=dtype, requires_grad=True)
     layers = {"dense": torch.nn.Linear(d, hidden, bias=False), "ternary_fakequant": BitLinear(d, hidden),

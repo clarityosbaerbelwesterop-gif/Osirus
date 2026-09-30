@@ -135,12 +135,14 @@ def probe(args) -> None:
         raise SystemExit("LIGHTNING_API_KEY is not set")
     ts, n = teamspace()
     print(f"[lightning] authenticated; {n} usable teamspace(s)", flush=True)
-    for m in ("T4", "L4"):
+    for m in ("T4", "L4", "A100", "H100", "H200"):
         try:
             avail = ts.list_machines(machine=m)
-            print(f"[lightning] machine {m}: {'available' if avail else 'no capacity listed'}", flush=True)
+            print(f"[lightning] machine {m}: {'listed' if avail else 'no capacity listed'}", flush=True)
         except Exception as e:  # listing is informational
             print(f"[lightning] machine {m}: listing failed ({type(e).__name__})", flush=True)
+    if args.storage:
+        storage_roundtrip(ts)
     if args.submit_test:
         from lightning_sdk import Job, Machine
 
@@ -150,10 +152,41 @@ def probe(args) -> None:
         balance = os.environ.get("ROUGE_LIGHTNING_BALANCE")
         if balance and worst > float(balance) - SAFETY_MARGIN:
             raise SystemExit(f"refused: worst case {worst:.2f} exceeds the credit balance {float(balance):.2f} minus the margin")
-        cmd = "nvidia-smi --query-gpu=name --format=csv || echo no-gpu; python -c \"import sys; print('ROUGE_PROBE ok', sys.version.split()[0])\""
+        sha = os.environ.get("GITHUB_SHA")
+        cmd = (bootstrap_command(sha, "lightning_ai/probe_job.sh").replace(f"python -m pip install -q {PACKAGES}", "true")
+               if sha else "nvidia-smi --query-gpu=name --format=csv || echo no-gpu")
         job = Job.run(name=f"rouge-probe-{int(time.time())}", machine=getattr(Machine, args.submit_test), command=cmd,
                       image="python:3.11-slim", teamspace=ts, interruptible=False)
-        record_and_wait(job, ledger, ledger_path, args.submit_test, 0.25, worst, results=None, name="probe")
+        record_and_wait(job, ledger, ledger_path, args.submit_test, 0.25, worst, results=None, name="probe", prefix="ROUGE_PROBE")
+        for line in (job.logs or "").splitlines():
+            if line.startswith("ROUGE_PROBE"):
+                print("[job]", line[:300], flush=True)
+        try:
+            print(f"[lightning] job artifacts kept: {job.artifacts_uri is not None}", flush=True)
+        except Exception as e:
+            print(f"[lightning] job artifacts: {type(e).__name__}", flush=True)
+
+
+def storage_roundtrip(ts, remote: str = "rouge/probe") -> bool:
+    """Upload a small folder to the teamspace drive, list it, download it, compare hashes."""
+    import hashlib
+    import tempfile
+
+    src, dst = Path(tempfile.mkdtemp()), Path(tempfile.mkdtemp())
+    payload = os.urandom(1 << 16)
+    (src / "blob.bin").write_bytes(payload)
+    remote = f"{remote}/{int(time.time())}"
+    try:
+        ts.upload_folder(str(src), remote_path=remote, progress_bar=False)
+        listed = [getattr(f, "name", str(f)) for f in ts.list_files(remote, recursive=True)]
+        ts.download_folder(remote, target_path=str(dst))
+        got = next(dst.rglob("blob.bin"), None)
+        ok = got is not None and hashlib.sha256(got.read_bytes()).hexdigest() == hashlib.sha256(payload).hexdigest()
+        print(f"[lightning] storage round trip: {'ok' if ok else 'MISMATCH'} (listed {len(listed)} entries)", flush=True)
+        return ok
+    except Exception as e:
+        print(f"[lightning] storage round trip failed: {type(e).__name__}: {str(e)[-120:]}", flush=True)
+        return False
 
 
 def record_and_wait(job, ledger, ledger_path: Path, machine: str, max_hours: float, worst: float, results, name: str,
@@ -242,6 +275,7 @@ def main() -> None:
     sub = parser.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("probe")
     p.add_argument("--submit-test", choices=["CPU", "T4", "L4"])
+    p.add_argument("--storage", action="store_true", help="also test a teamspace-drive round trip (a few KB)")
     p.add_argument("--ledger", default=str(Path(__file__).with_name("ledger.json")))
     r = sub.add_parser("run")
     r.add_argument("--name", required=True)
