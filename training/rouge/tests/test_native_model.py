@@ -135,5 +135,31 @@ class TestNativeModel(unittest.TestCase):
         self.assertNotEqual(a.architecture_sha, RougeConfig(**{**TINY, "window": 16}).architecture_sha)
 
 
+
+@unittest.skipIf(torch is None, "torch not installed")
+class TestPasskeyEval(unittest.TestCase):
+    """The passkey probe reads filler from web_en, whose split is a list of shards (Level B crashed here, 2026-09-30)."""
+
+    class Tok:
+        def encode(self, text):
+            return type("E", (), {"ids": [ord(c) % 97 for c in text]})()
+
+        def decode(self, ids):
+            return "".join(chr(48 + i % 10) for i in ids)
+
+    def test_filler_from_several_shards_and_from_the_fallback_source(self):
+        import numpy as np
+
+        from native import evaluate
+
+        m = model(attention="full", max_seq=256).eval()   # prompt + filler + question exceed TINY's 64
+        for arrays in ({"web_en": [np.arange(40, dtype=np.uint16) % 97, np.arange(30, dtype=np.uint16) % 97]},
+                       {"math_synth": [np.arange(50, dtype=np.uint16) % 97]}):
+            val = type("V", (), {"arrays": arrays})()
+            out = evaluate.passkey(m, self.Tok(), val, [8, 16], 2, torch.device("cpu"))
+            self.assertEqual(set(out), {"8", "16"})
+            self.assertTrue(all(0.0 <= v <= 1.0 for v in out.values()))
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -73,8 +73,8 @@ def task_accuracy(model, tok, kind: str, n: int, device) -> float:
 
 
 def passkey(model, tok, val, distances: list[int], trials: int, device) -> dict:
-    filler = next(iter(val.arrays.get("web_en") or val.arrays.values()))
-    filler = torch.from_numpy(__import__("numpy").concatenate([a[:] for a in filler]).astype("int64"))
+    shards = val.arrays.get("web_en") or next(iter(val.arrays.values()))   # a list of shard arrays
+    filler = torch.from_numpy(__import__("numpy").concatenate([a[:] for a in shards]).astype("int64"))
     rng = random.Random("passkey")
     out = {}
     for d in distances:
