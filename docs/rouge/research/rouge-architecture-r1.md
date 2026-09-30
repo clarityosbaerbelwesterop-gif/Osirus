@@ -1,6 +1,15 @@
 # Rouge 1 — architecture research program R1
 
-**Status:** R1.01 and R1.01b ran on free CI CPUs ($0). Both pre-registered results are **FAIL** ([R1.01](../../../research/rouge-architecture/results/r1.01/README.md), [R1.01b](../../../research/rouge-architecture/results/r1.01b/README.md)). The persistent state wins on state tracking (+5.5 to +8 points OOD, every seed, 4 KiB vs a 134 KiB KV cache) but loses exact recall (23% vs 97%), and ACT halting collapses to about 1 step. R1.02 (learned halting) is running. R1.03 (state probes and a two-level memory) and R1.04 (sparse conditional circuits) are pre-registered and queued on free compute. Each tests one mechanism on its own. The research loop (router, resumable runs, registry, controller) is described in [the research README](../../../research/rouge-architecture/README.md).
+**Status (2026-09-30):** 34 milestones of R1.01–R1.40 have a recorded result, all from 3-seed runs on free CI CPUs ($0). The table is in [milestones.md](milestones.md#status-2026-09-30). Firm positive evidence exists for:
+- the cheap state read (R1.09);
+- real sparse kernels (R1.22);
+- ternary weights trained from the start (R1.29).
+
+On the measured frontier (R1.31), Rouge's small-state memory models own the region between LSTM/GRU (1–2 KiB) and attention (≥ 148 KiB).
+
+Every dynamic-compute mechanism (R1.17, R1.20, R1.21) and every neural-program or hypothesis mechanism (R1.33–R1.39) failed its gate at this scale.
+
+R1.14 (10M byte-level LM on enwik8: Rouge-LM vs Transformer, sliding window and LSTM) is running and decides whether scaling (R1.15) is earned. The research loop (router, resumable runs, registry, controller) is described in [the research README](../../../research/rouge-architecture/README.md).
 
 ## Scope
 

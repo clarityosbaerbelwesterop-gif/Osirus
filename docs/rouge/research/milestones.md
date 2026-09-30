@@ -18,6 +18,60 @@ and a documented result. Negative results count and are recorded.
 - **Three capacity numbers, never mixed:** physical parameters,
   active parameters or compute, and virtual capacity.
 
+## Status (2026-09-30)
+
+All results are pre-registered decisions from 3-seed runs on free CPU runners ($0), except R1.05, R1.08, R1.30 and R1.31 (documents and analysis).
+Counts: 9 PASS, 11 PARTIAL, 13 FAIL or VOID/INCONCLUSIVE, 1 running (plus R1.39b), 6 gated, not started or not earned, and 1 tooling.
+
+Of the 9 PASS results:
+- 3 are documents or benchmarks (R1.05, R1.06, R1.30);
+- 3 hold on the means but within seed noise or on one seed (R1.11, R1.12, R1.26);
+- 3 are firm experimental evidence: R1.09 (cheap state read), R1.22 (sparse kernels save time) and R1.29 (ternary weights).
+
+| ID | Result | Finding |
+|---|---|---|
+| R1.01 | [FAIL](../../../research/rouge-architecture/results/r1.01b/README.md) | State tracking +5.5–8 OOD at 4 KiB; exact recall 23% vs 97%; ACT collapses. |
+| R1.02 | [VOID → INCONCLUSIVE](../../../research/rouge-architecture/results/r1.02b/README.md) | v1 had a length cue; on the cue-free task nobody beats chance and halting stays flat. ACT not tuned further. |
+| R1.03 | [PARTIAL](../../../research/rouge-architecture/results/r1.03/README.md) | Two-level memory triples recall; untrained memory is already decodable. |
+| R1.04 | [PARTIAL](../../../research/rouge-architecture/results/r1.04/README.md) | Sparse circuits: specialisation measured against initialisation only. |
+| R1.05 | PASS | Prior-art map (`prior-art.md`). |
+| R1.06 | PASS | Benchmark v3 with shortcut audits, holdout, adversarial split. |
+| R1.07 | [PARTIAL](../../../research/rouge-architecture/results/r1.07/README.md) | Looped Transformer strongest; v3 discriminates on 5 of 11 tasks. |
+| R1.08 | DONE (tooling) | Canonical scorecard (`experiments/suite.py`, `lab/gate.py`, `lab/readme.py`). |
+| R1.09 | [PASS](../../../research/rouge-architecture/results/r1.09/README.md) | Cheap state read: 7× fewer FLOPs, +4.6 dev, same recall, 6× smaller seed variance. |
+| R1.09b | [FAIL](../../../research/rouge-architecture/results/r1.09b/README.md) | Parallel-scan form: slower at short lengths, −7.8 dev. |
+| R1.10 | [PARTIAL](../../../research/rouge-architecture/results/r1.10/README.md) | Recall grows with slots (8→64: 45.5→72.3 OOD recall), no saturation. |
+| R1.11 | [PASS](../../../research/rouge-architecture/results/r1.11/README.md) | 16-token window + state: +3.4 dev at 28 KiB (within seed noise). |
+| R1.12 | [PASS (seed-unstable)](../../../research/rouge-architecture/results/r1.12/README.md) | One seed of three learns streaming memory; LSTM retains perfectly. |
+| R1.13 | [FAIL](../../../research/rouge-architecture/results/r1.13/README.md) | Usage-based allocation worse on every stream task. |
+| R1.14 | RUNNING | 10M byte-level LM on enwik8 (`experiments/r1_14.json`). |
+| R1.15 | GATED | Runs only if R1.14 passes. |
+| R1.16 | NOT STARTED | Needs the R1.14 models (long streams, memory 4k–128k). |
+| R1.17 | [FAIL](../../../research/rouge-architecture/results/r1.17/README.md) | Mixture-of-Depths: 0.63× FLOPs, −9.2 dev, recall collapses. |
+| R1.18 | NOT EARNED | Gated on a positive R1.04; R1.04 PARTIAL and R1.19 shows no accuracy gain. |
+| R1.19 | [PARTIAL](../../../research/rouge-architecture/results/r1.19/README.md) | Context routing builds circuits (NMI +0.06) but no accuracy gain; dead experts. |
+| R1.20 | [PARTIAL](../../../research/rouge-architecture/results/r1.20/README.md) | Random-depth training gives a monotone dial but costs peak quality; nothing beyond training depth. |
+| R1.21 | [PARTIAL](../../../research/rouge-architecture/results/r1.21/README.md) | Early exit safe but saves 6%; deep supervision costs 7.5 points. |
+| R1.22 | [PASS](../../../research/rouge-architecture/results/r1.22/README.md) | Real sparse dispatch 3.3× faster than same-parameter dense (CPU). |
+| R1.23 | NOT EARNED | No sparse mechanism gains accuracy (R1.04, R1.19). |
+| R1.24 | [PARTIAL](../../../research/rouge-architecture/results/r1.24/README.md) | Constant memory confirmed physically; speed bound by the Python loop. |
+| R1.25 | [FAIL](../../../research/rouge-architecture/results/r1.25/README.md) | Per-input generated weights: −11.5 points. |
+| R1.26 | [PASS (within seed noise)](../../../research/rouge-architecture/results/r1.26/README.md) | Kronecker and tensor-train above byte-matched dense. |
+| R1.27 | [PARTIAL](../../../research/rouge-architecture/results/r1.27/README.md) | Shared basis bank matches byte-matched dense; very stable. |
+| R1.28 | [PARTIAL](../../../research/rouge-architecture/results/r1.28/README.md) | Weight field good per byte, decoding 4× FLOPs: rejected as runtime format. |
+| R1.29 | [PASS](../../../research/rouge-architecture/results/r1.29/README.md) | Ternary MLP at 326 KiB: 47.2 vs 38.8 byte-matched fp32 (outside seed noise). |
+| R1.30 | [PASS](../../../research/rouge-architecture/results/r1.30/README.md) | Capacity accounting (`capacity-accounting.md`). |
+| R1.31 | [PARTIAL](../../../research/rouge-architecture/results/r1.31/README.md) | Frontier measured at 1 KiB–1.3 MB; GB scale is arithmetic only. |
+| R1.32 | GATED | Structured 100M: waits for R1.14 (LM setting) and a tier that fits 100M. |
+| R1.33 | [FAIL](../../../research/rouge-architecture/results/r1.34/README.md) | Step-aligned latent loop below the fixed-depth loop OOD. |
+| R1.34 | [FAIL](../../../research/rouge-architecture/results/r1.34/README.md) | Execution supervision hurts OOD (20.8 vs 31.9 Transformer). |
+| R1.35 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | 4 hypothesis heads: 10× more confident errors. |
+| R1.36 | [FAIL](../../../research/rouge-architecture/results/r1.36/README.md) | Learned query policy = random (75.8 vs 75.3); exact EIG 100. |
+| R1.37 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | Verifier AUROC equals own confidence (0.842). |
+| R1.38 | [FAIL](../../../research/rouge-architecture/results/r1.35/README.md) | Verifier's pick +0.8 over own pick; the plain Transformer beats both. |
+| R1.39 | [FAIL (R1.39b running)](../../../research/rouge-architecture/results/r1.39/README.md) | Reward-only training from scratch stays at the cue floor. |
+| R1.40 | NOT EARNED YET | Candidates with independent evidence: ternary MLP (R1.29), Rouge small-state memory (R1.09/R1.11, memory frontier R1.31). Waits on R1.14. |
+
 ## R1.01–R1.08 Theory and baselines
 
 | ID    | Milestone                                                                                                  | Tier      |

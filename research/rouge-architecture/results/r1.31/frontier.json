@@ -1,0 +1,713 @@
+{
+ "points": [
+  {
+   "model": "kron",
+   "experiment": "R1.26",
+   "config": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "kron"
+   },
+   "dev": 0.4174242424242424,
+   "dev_sd": 0.04218792406173972,
+   "ood": 0.3046969696969697,
+   "stored_bytes": 310976,
+   "flops": 10696704.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "dense-tiny",
+   "experiment": "R1.29",
+   "config": {
+    "kind": "structured",
+    "d": 40,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "dev": 0.3877272727272727,
+   "dev_sd": 0.023074618448176484,
+   "ood": 0.30030303030303035,
+   "stored_bytes": 331392,
+   "flops": 8912640.0,
+   "total_bytes": 126720
+  },
+  {
+   "model": "ternary",
+   "experiment": "R1.29",
+   "config": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "ternary"
+   },
+   "dev": 0.4716666666666667,
+   "dev_sd": 0.008887884470340876,
+   "ood": 0.36257575757575755,
+   "stored_bytes": 333536,
+   "flops": 22812672.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "field",
+   "experiment": "R1.28",
+   "config": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "field"
+   },
+   "dev": 0.45075757575757575,
+   "dev_sd": 0.03823138917770709,
+   "ood": 0.3242424242424243,
+   "stored_bytes": 369408,
+   "flops": 35204933.81818182,
+   "total_bytes": 202752
+  },
+  {
+   "model": "tt",
+   "experiment": "R1.26",
+   "config": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "tt",
+    "rank": 8
+   },
+   "dev": 0.44727272727272727,
+   "dev_sd": 0.050781089081118225,
+   "ood": 0.3116666666666667,
+   "stored_bytes": 382656,
+   "flops": 32315392.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "lowrank",
+   "experiment": "R1.26",
+   "config": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "lowrank",
+    "rank": 16
+   },
+   "dev": 0.42984848484848487,
+   "dev_sd": 0.012729978067451474,
+   "ood": 0.30242424242424243,
+   "stored_bytes": 464576,
+   "flops": 12359680.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "transformer-d48",
+   "experiment": "R1.17",
+   "config": {
+    "kind": "transformer",
+    "d": 48,
+    "layers": 4,
+    "heads": 4
+   },
+   "dev": 0.41015151515151516,
+   "dev_sd": 0.0486858994412932,
+   "ood": 0.30757575757575756,
+   "stored_bytes": 471360,
+   "flops": 12833280.0,
+   "total_bytes": 152064
+  },
+  {
+   "model": "dense-small",
+   "experiment": "R1.26",
+   "config": {
+    "kind": "structured",
+    "d": 48,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "dev": 0.41015151515151516,
+   "dev_sd": 0.0486858994412932,
+   "ood": 0.30757575757575756,
+   "stored_bytes": 471360,
+   "flops": 12833280.0,
+   "total_bytes": 152064
+  },
+  {
+   "model": "dense-d52",
+   "experiment": "R1.27",
+   "config": {
+    "kind": "structured",
+    "d": 52,
+    "layers": 4,
+    "heads": 2,
+    "mlp_kind": "dense"
+   },
+   "dev": 0.44045454545454543,
+   "dev_sd": 0.05097601121123803,
+   "ood": 0.32606060606060605,
+   "stored_bytes": 550560,
+   "flops": 15060864.0,
+   "total_bytes": 164736
+  },
+  {
+   "model": "bank2",
+   "experiment": "R1.27",
+   "config": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "bank",
+    "bank_size": 2
+   },
+   "dev": 0.45696969696969697,
+   "dev_sd": 0.037212627081745636,
+   "ood": 0.340909090909091,
+   "stored_bytes": 562944,
+   "flops": 22824587.636363637,
+   "total_bytes": 202752
+  },
+  {
+   "model": "ssm",
+   "experiment": "R1.07",
+   "config": {
+    "kind": "ssm",
+    "d": 104,
+    "layers": 4,
+    "n": 16
+   },
+   "dev": 0.29484848484848486,
+   "dev_sd": 0.028416665656834903,
+   "ood": 0.2645454545454546,
+   "stored_bytes": 824704,
+   "flops": 21628672.0,
+   "total_bytes": 26624
+  },
+  {
+   "model": "transformer",
+   "experiment": "R1.35",
+   "config": {
+    "kind": "transformer",
+    "d": 64,
+    "layers": 4,
+    "heads": 4
+   },
+   "dev": 0.4483333333333333,
+   "dev_sd": 0.04739567345506291,
+   "ood": 0.32954545454545453,
+   "stored_bytes": 825024,
+   "flops": 22812672.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "dense",
+   "experiment": "R1.29",
+   "config": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "dev": 0.44181818181818183,
+   "dev_sd": 0.05523054610576014,
+   "ood": 0.32696969696969697,
+   "stored_bytes": 825024,
+   "flops": 22812672.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "mod50",
+   "experiment": "R1.17",
+   "config": {
+    "kind": "mod",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "capacity": 0.5
+   },
+   "dev": 0.3566666666666667,
+   "dev_sd": 0.008532065591091582,
+   "ood": 0.26636363636363636,
+   "stored_bytes": 826064,
+   "flops": 14282496.0,
+   "total_bytes": 126720.0
+  },
+  {
+   "model": "gru",
+   "experiment": "R1.07",
+   "config": {
+    "kind": "gru",
+    "d": 128,
+    "layers": 2
+   },
+   "dev": 0.33909090909090905,
+   "dev_sd": 0.005061603966209118,
+   "ood": 0.28696969696969693,
+   "stored_bytes": 842944,
+   "flops": 22818816.0,
+   "total_bytes": 1024
+  },
+  {
+   "model": "looped",
+   "experiment": "R1.07",
+   "config": {
+    "kind": "looped",
+    "d": 128,
+    "heads": 4,
+    "steps": 4
+   },
+   "dev": 0.48181818181818187,
+   "dev_sd": 0.012654009915522789,
+   "ood": 0.34378787878787875,
+   "stored_bytes": 844480,
+   "flops": 91238400.0,
+   "total_bytes": 405504
+  },
+  {
+   "model": "knob",
+   "experiment": "R1.20",
+   "config": {
+    "kind": "knob",
+    "d": 128,
+    "heads": 4,
+    "max_steps": 8,
+    "random_depth": true,
+    "steps": 4
+   },
+   "dev": 0.44075757575757574,
+   "dev_sd": 0.04002151625170391,
+   "ood": 0.288939393939394,
+   "stored_bytes": 844480,
+   "flops": 91238400.0,
+   "total_bytes": 405504
+  },
+  {
+   "model": "fixed4",
+   "experiment": "R1.20",
+   "config": {
+    "kind": "knob",
+    "d": 128,
+    "heads": 4,
+    "max_steps": 8,
+    "random_depth": false,
+    "steps": 4
+   },
+   "dev": 0.4824242424242424,
+   "dev_sd": 0.0033505067253781743,
+   "ood": 0.3583333333333334,
+   "stored_bytes": 844480,
+   "flops": 91238400.0,
+   "total_bytes": 405504
+  },
+  {
+   "model": "lstm",
+   "experiment": "R1.07",
+   "config": {
+    "kind": "lstm",
+    "d": 112,
+    "layers": 2
+   },
+   "dev": 0.34893939393939394,
+   "dev_sd": 0.005460854936648522,
+   "ood": 0.2874242424242424,
+   "stored_bytes": 854080,
+   "flops": 10529466.390625,
+   "total_bytes": 1792
+  },
+  {
+   "model": "early",
+   "experiment": "R1.21",
+   "config": {
+    "kind": "early",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "thresholds": [
+     0.9,
+     0.8,
+     0.7
+    ]
+   },
+   "dev": 0.36439393939393944,
+   "dev_sd": 0.0014611592062110574,
+   "ood": 0.26984848484848484,
+   "stored_bytes": 864000,
+   "flops": 22831104.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "rouge-mem",
+   "experiment": "R1.07",
+   "config": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2
+   },
+   "dev": 0.32257575757575757,
+   "dev_sd": 0.017955024926470935,
+   "ood": 0.27999999999999997,
+   "stored_bytes": 872588,
+   "flops": 103158720.0,
+   "total_bytes": 16128
+  },
+  {
+   "model": "hyp4",
+   "experiment": "R1.35",
+   "config": {
+    "kind": "hypverify",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "hypotheses": 4
+   },
+   "dev": 0.41924242424242425,
+   "dev_sd": 0.04548256712022453,
+   "ood": 0.3212121212121212,
+   "stored_bytes": 909076,
+   "flops": 22897664.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "slots8",
+   "experiment": "R1.10",
+   "config": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 8,
+    "read_k": 2,
+    "context": 3
+   },
+   "dev": 0.3622727272727273,
+   "dev_sd": 0.03464399820416588,
+   "ood": 0.3116666666666667,
+   "stored_bytes": 911916,
+   "flops": 104259008.0,
+   "total_bytes": 5376
+  },
+  {
+   "model": "slots16",
+   "experiment": "R1.10",
+   "config": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 16,
+    "read_k": 2,
+    "context": 3
+   },
+   "dev": 0.36424242424242426,
+   "dev_sd": 0.031275678155351545,
+   "ood": 0.3292424242424242,
+   "stored_bytes": 915532,
+   "flops": 104377280.0,
+   "total_bytes": 8960
+  },
+  {
+   "model": "rouge-mem",
+   "experiment": "R1.11",
+   "config": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "context": 3
+   },
+   "dev": 0.346060606060606,
+   "dev_sd": 0.009026285459761488,
+   "ood": 0.31787878787878787,
+   "stored_bytes": 922764,
+   "flops": 104613824.0,
+   "total_bytes": 16128
+  },
+  {
+   "model": "rouge-cheap",
+   "experiment": "R1.09b",
+   "config": {
+    "kind": "rouge-mem",
+    "d": 104,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "context": 3,
+    "read_mode": "write"
+   },
+   "dev": 0.39393939393939387,
+   "dev_sd": 0.009330184435357977,
+   "ood": 0.3253030303030303,
+   "stored_bytes": 931340,
+   "flops": 14724528.0,
+   "total_bytes": 14976
+  },
+  {
+   "model": "rouge-win16",
+   "experiment": "R1.11",
+   "config": {
+    "kind": "rouge-mem",
+    "d": 104,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "window": 16,
+    "context": 3
+   },
+   "dev": 0.38000000000000006,
+   "dev_sd": 0.019729576740191532,
+   "ood": 0.31136363636363634,
+   "stored_bytes": 931340,
+   "flops": 91127712.0,
+   "total_bytes": 28288
+  },
+  {
+   "model": "rouge-win32",
+   "experiment": "R1.11",
+   "config": {
+    "kind": "rouge-mem",
+    "d": 104,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "window": 32,
+    "context": 3
+   },
+   "dev": 0.3746969696969697,
+   "dev_sd": 0.010368552794500375,
+   "ood": 0.32272727272727275,
+   "stored_bytes": 931340,
+   "flops": 91846560.0,
+   "total_bytes": 41600
+  },
+  {
+   "model": "rouge-scan",
+   "experiment": "R1.09b",
+   "config": {
+    "kind": "rouge-mem",
+    "d": 104,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 32,
+    "read_k": 2,
+    "context": 3,
+    "read_mode": "scan"
+   },
+   "dev": 0.3163636363636364,
+   "dev_sd": 0.004040088371507096,
+   "ood": 0.2690909090909091,
+   "stored_bytes": 933020,
+   "flops": 12477781.333333334,
+   "total_bytes": 14976
+  },
+  {
+   "model": "slots64",
+   "experiment": "R1.10",
+   "config": {
+    "kind": "rouge-mem",
+    "d": 112,
+    "slots": 4,
+    "heads": 4,
+    "max_think": 8,
+    "halting": true,
+    "tau": 0.01,
+    "inject": true,
+    "rezero": true,
+    "tau_warmup": 0.3,
+    "memory_slots": 64,
+    "read_k": 2,
+    "context": 3
+   },
+   "dev": 0.3836363636363636,
+   "dev_sd": 0.032584917669132324,
+   "ood": 0.3425757575757576,
+   "stored_bytes": 937228,
+   "flops": 105086912.0,
+   "total_bytes": 30464
+  },
+  {
+   "model": "hyper",
+   "experiment": "R1.25",
+   "config": {
+    "kind": "structured",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "hyper"
+   },
+   "dev": 0.3322727272727273,
+   "dev_sd": 0.033088286609369834,
+   "ood": 0.2506060606060606,
+   "stored_bytes": 1255616,
+   "flops": 23611392.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "dense-d80",
+   "experiment": "R1.25",
+   "config": {
+    "kind": "structured",
+    "d": 80,
+    "layers": 4,
+    "heads": 4,
+    "mlp_kind": "dense"
+   },
+   "dev": 0.44696969696969696,
+   "dev_sd": 0.04542119989001872,
+   "ood": 0.3375757575757576,
+   "stored_bytes": 1276992,
+   "flops": 35642880.0,
+   "total_bytes": 253440
+  },
+  {
+   "model": "moe",
+   "experiment": "R1.07",
+   "config": {
+    "kind": "moe",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "experts": 8,
+    "hidden": 128,
+    "top_k": 2,
+    "balance": 0.01
+   },
+   "dev": 0.40924242424242424,
+   "dev_sd": 0.03139107276019428,
+   "ood": 0.30242424242424243,
+   "stored_bytes": 2425536,
+   "flops": 23050240.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "moe-token",
+   "experiment": "R1.19",
+   "config": {
+    "kind": "moe",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "experts": 8,
+    "hidden": 128,
+    "top_k": 2,
+    "balance": 0.01,
+    "router_input": "token"
+   },
+   "dev": 0.40924242424242424,
+   "dev_sd": 0.03139107276019428,
+   "ood": 0.30242424242424243,
+   "stored_bytes": 2425536,
+   "flops": 23050240.0,
+   "total_bytes": 202752
+  },
+  {
+   "model": "moe-context",
+   "experiment": "R1.19",
+   "config": {
+    "kind": "moe",
+    "d": 64,
+    "layers": 4,
+    "heads": 4,
+    "experts": 8,
+    "hidden": 128,
+    "top_k": 2,
+    "balance": 0.01,
+    "router_input": "context"
+   },
+   "dev": 0.4168181818181818,
+   "dev_sd": 0.056992459991368774,
+   "ood": 0.3043939393939394,
+   "stored_bytes": 2433728,
+   "flops": 23287808.0,
+   "total_bytes": 202752
+  }
+ ],
+ "frontiers": {
+  "stored_bytes": [
+   "kron (R1.26)",
+   "ternary (R1.29)",
+   "fixed4 (R1.20)"
+  ],
+  "flops": [
+   "dense-tiny (R1.29)",
+   "kron (R1.26)",
+   "lowrank (R1.26)",
+   "dense-d52 (R1.27)",
+   "ternary (R1.29)",
+   "fixed4 (R1.20)"
+  ],
+  "total_bytes": [
+   "gru (R1.07)",
+   "lstm (R1.07)",
+   "slots8 (R1.10)",
+   "slots16 (R1.10)",
+   "rouge-cheap (R1.09b)",
+   "transformer-d48 (R1.17)",
+   "dense-small (R1.26)",
+   "dense-d52 (R1.27)",
+   "ternary (R1.29)",
+   "fixed4 (R1.20)"
+  ]
+ }
+}
