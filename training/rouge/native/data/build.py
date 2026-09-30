@@ -23,6 +23,7 @@ import argparse
 import hashlib
 import io
 import json
+import multiprocessing
 import os
 import random
 import re
@@ -42,6 +43,7 @@ CHARS_PER_TOKEN = {"web": 4.2, "math": 3.4, "code": 3.2, "algorithmic": 2.5}
 VAL_PER_MILLE = 5
 VAL_CAP = 400
 SHARD_TOKENS = 64 * 2**20
+TOKENIZER_SAMPLE_CHARS = 400_000_000   # BPE training sample cap (stratified: 25% of documents per source)
 WORD = re.compile(r"\w+", re.UNICODE)
 
 
@@ -183,7 +185,21 @@ def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revision
     return result
 
 
+_EVAL_GRAMS: set[int] = set()
+
+
+def _contaminated(text: str) -> bool:
+    words = WORD.findall(text.lower())
+    return any((hash(" ".join(words[i:i + 13])) & 0xFFFFFFFFFFFF) in _EVAL_GRAMS for i in range(len(words) - 12))
+
+
 def decontaminate(corpus: dict) -> dict:
+    """Drop train documents sharing a word 13-gram with any evaluation text (parallel over documents).
+
+    Workers are forked after the evaluation n-grams are built, so they share the
+    parent's string hashing; a decision depends only on document content.
+    """
+    global _EVAL_GRAMS
     eval_grams: set[int] = set()
     for src in corpus.values():
         for _, text, _ in src["val"]:
@@ -191,11 +207,14 @@ def decontaminate(corpus: dict) -> dict:
     for kind in ("math_synth", "algo_synth"):
         for prompt, answer in synth.eval_items(kind, 500):
             eval_grams |= ngrams13(f"{prompt} {answer}")
+    _EVAL_GRAMS = eval_grams
     report = {}
-    for name, src in corpus.items():
-        keep = [d for d in src["train"] if not (ngrams13(d[1]) & eval_grams)]
-        report[name] = len(src["train"]) - len(keep)
-        src["train"] = keep
+    with multiprocessing.get_context("fork").Pool(os.cpu_count() or 1) as pool:
+        for name, src in corpus.items():
+            flags = pool.map(_contaminated, [d[1] for d in src["train"]], chunksize=64)
+            keep = [d for d, bad in zip(src["train"], flags) if not bad]
+            report[name] = len(src["train"]) - len(keep)
+            src["train"] = keep
     return report
 
 
@@ -243,6 +262,12 @@ def write_shards(corpus: dict, tok, out: Path, total_tokens: float, mixture: dic
     return shards
 
 
+def src_share(src: dict, corpus: dict) -> float:
+    """Share of a source in the tokenizer sample: its share of training characters."""
+    total = sum(len(d[1]) for s in corpus.values() for d in s["train"]) or 1
+    return sum(len(d[1]) for d in src["train"]) / total
+
+
 def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None, vocab: int, expect: dict | None) -> dict:
     out.mkdir(parents=True, exist_ok=True)
     start = time.time()
@@ -253,8 +278,16 @@ def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None,
     if tokenizer:
         tok_path.write_bytes(Path(tokenizer).read_bytes())
     else:
-        rng = random.Random("tokenizer-sample")
-        sample = [d[1] for src in corpus.values() for d in src["train"] if rng.random() < 0.25]
+        rng, sample, chars = random.Random("tokenizer-sample"), [], 0
+        for src in corpus.values():
+            cap = TOKENIZER_SAMPLE_CHARS * src_share(src, corpus)
+            taken = 0
+            for d in src["train"]:
+                if rng.random() < 0.25 and taken < cap:
+                    sample.append(d[1])
+                    taken += len(d[1])
+            chars += taken
+        print(f"[data] tokenizer sample: {len(sample)} documents, {chars / 1e6:.0f}M characters", flush=True)
         train_tokenizer(sample, vocab, tok_path)
     tok = load_tokenizer(tok_path)
     shards = write_shards(corpus, tok, out, total_tokens, mixture)
@@ -296,7 +329,10 @@ def main() -> None:
     if args.only:
         mixture = {k: v / sum(mixture[x] for x in args.only) for k, v in mixture.items() if k in args.only}
     expect = json.loads(Path(args.expect).read_text()) if args.expect else None
-    manifest = build(Path(args.out), args.tokens, mixture, Path(args.tokenizer) if args.tokenizer else None, args.vocab, expect)
+    tokens = args.tokens
+    if expect:  # a rebuild takes the expected corpus's size and mixture
+        tokens, mixture = expect["total_tokens"], expect["mixture"]
+    manifest = build(Path(args.out), tokens, mixture, Path(args.tokenizer) if args.tokenizer else None, args.vocab, expect)
     print(json.dumps({n: s["shards"]["train"]["tokens"] for n, s in manifest["sources"].items()}))
 
 

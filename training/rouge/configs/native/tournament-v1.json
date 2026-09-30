@@ -1,0 +1,172 @@
+{
+ "schema": "rouge.tournament/1",
+ "id": "architecture-v1",
+ "registered": "2026-09-30",
+ "question": "Which Rouge Architecture v1 candidate gives the best quality per training FLOP, stored byte and KV byte at equal active compute, with quality no worse than the Transformer baseline?",
+ "sizes": {
+  "s": {
+   "vocab_size": 32768,
+   "d_model": 384,
+   "n_layers": 6,
+   "n_heads": 6,
+   "n_kv_heads": 2,
+   "max_seq": 1024,
+   "window": 256,
+   "global_every": 3
+  },
+  "m": {
+   "vocab_size": 32768,
+   "d_model": 512,
+   "n_layers": 8,
+   "n_heads": 8,
+   "n_kv_heads": 4,
+   "max_seq": 1024,
+   "window": 256,
+   "global_every": 4
+  }
+ },
+ "candidates": {
+  "A": {
+   "why": "modern Transformer baseline (strongest at equal context in R1.14)",
+   "config": {
+    "attention": "full"
+   }
+  },
+  "B": {
+   "why": "local:global hybrid attention: R1.14 window best far out and cheapest; R1.16 shows long range needs exact global access",
+   "config": {
+    "attention": "hybrid"
+   }
+  },
+  "C": {
+   "why": "B + ternary FFN weights (R1.29 PASS on synthetic tasks; R1.29b decides real text; int8 control if it fails)",
+   "config": {
+    "attention": "hybrid",
+    "lowbit": "ternary"
+   },
+   "if_r1_29b_fails": {
+    "attention": "hybrid",
+    "lowbit": "int8"
+   }
+  },
+  "D": {
+   "why": "C + sparse FFN: 8 fine-grained experts, top-2, 1 shared, aux-loss-free balancing (fixes R1.19 dead experts; R1.22 real speed-up); same active FFN FLOPs as dense",
+   "config": {
+    "attention": "hybrid",
+    "lowbit": "ternary",
+    "moe_experts": 8,
+    "moe_topk": 2,
+    "moe_shared": 1
+   },
+   "if_r1_29b_fails": {
+    "attention": "hybrid",
+    "lowbit": "int8",
+    "moe_experts": 8,
+    "moe_topk": 2,
+    "moe_shared": 1
+   }
+  },
+  "E": {
+   "why": "D + Monarch structured projections (4 blocks): more structure per stored byte (R1.26/R1.27 within noise at small scale)",
+   "config": {
+    "attention": "hybrid",
+    "lowbit": "ternary",
+    "moe_experts": 8,
+    "moe_topk": 2,
+    "moe_shared": 1,
+    "structured": "monarch",
+    "structured_blocks": 4
+   },
+   "if_r1_29b_fails": {
+    "attention": "hybrid",
+    "moe_experts": 8,
+    "moe_topk": 2,
+    "moe_shared": 1,
+    "structured": "monarch",
+    "structured_blocks": 4
+   }
+  }
+ },
+ "training": {
+  "common": {
+   "lr": 0.002,
+   "warmup": 300,
+   "schedule": "wsd",
+   "decay_frac": 0.2,
+   "min_lr_frac": 0.1,
+   "weight_decay": 0.1,
+   "clip": 1.0,
+   "seq": 1024,
+   "final_eval": "full"
+  },
+  "s": {
+   "tokens": 200000000,
+   "batch": 32,
+   "accum": 2
+  },
+  "m": {
+   "tokens": 300000000,
+   "batch": 32,
+   "accum": 4
+  }
+ },
+ "levels": {
+  "B": {
+   "size": "s",
+   "seeds": [
+    1
+   ],
+   "candidates": [
+    "A",
+    "B",
+    "C",
+    "D",
+    "E"
+   ],
+   "machine": "L4_X_4",
+   "max_hours": 2
+  },
+  "C": {
+   "size": "m",
+   "seeds": [
+    1,
+    2,
+    3
+   ],
+   "candidates": "finalists",
+   "machine": "L4_X_4",
+   "max_hours": 4.5
+  }
+ },
+ "data": {
+  "mixture": "v1",
+  "tokens": 400000000,
+  "vocab": 32768,
+  "location": "configs/native/data-v1 (tokenizer.json, manifest.json); rebuilt with --expect on every machine"
+ },
+ "pareto": {
+  "weights": {
+   "quality": 3,
+   "tasks": 1,
+   "long_context": 1,
+   "stored_bytes": 1,
+   "train_flops": 1,
+   "kv_32k": 1,
+   "throughput": 1,
+   "scaling": 1,
+   "stability": 1
+  },
+  "quality": "val_bpb_mean: mean bits per byte over held-out web_en, web_de, code_py, math_web (lower is better)",
+  "quality_gate_bpb": 0.02,
+  "level_b_drop_bpb": 0.05,
+  "finalists": 3,
+  "rules": [
+   "A candidate is eligible to win only if its mean quality is at most quality_gate_bpb worse than A's (same level, same seeds).",
+   "A run that diverges (non-finite loss, spike abort) or is missing a seed disqualifies its candidate at that level.",
+   "Each criterion ranks the eligible candidates (average rank on ties); the score is the weighted rank sum; lowest wins; ties go to better quality.",
+   "Level B promotes A plus the two best-scoring other candidates whose quality is within level_b_drop_bpb of A.",
+   "scaling (Level C only): quality gain from size s (Level B, seed 1) to size m (Level C, seed 1), relative to A's gain; stability (Level C only): seed standard deviation of quality.",
+   "The winner becomes Rouge Architecture v1; the result, losers and every number are recorded, whatever the outcome."
+  ]
+ }
+}

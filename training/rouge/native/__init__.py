@@ -5,6 +5,13 @@ reuses that package's hashing, seeding and checkpoint-manifest modules.
 """
 
 from .config import RougeConfig
-from .model import RougeModel
 
 __all__ = ["RougeConfig", "RougeModel"]
+
+
+def __getattr__(name):  # torch is imported only when the model is used (pareto and config work without it)
+    if name == "RougeModel":
+        from .model import RougeModel
+
+        return RougeModel
+    raise AttributeError(name)

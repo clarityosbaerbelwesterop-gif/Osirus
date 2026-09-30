@@ -19,6 +19,7 @@ CANDIDATES = {
     "A": dict(attention="full"),
     "B": dict(attention="hybrid"),
     "C": dict(attention="hybrid", lowbit="ternary"),
+    "C-int8": dict(attention="hybrid", lowbit="int8"),
     "D": dict(attention="hybrid", lowbit="ternary", moe_experts=4, moe_topk=2),
     "E": dict(attention="hybrid", lowbit="ternary", moe_experts=4, moe_topk=2, structured="monarch", structured_blocks=4),
 }
@@ -83,6 +84,16 @@ class TestNativeModel(unittest.TestCase):
         q, _ = quantize_ternary(w)
         self.assertTrue(torch.equal(unpack_ternary(pack_ternary(q), q.numel()).view_as(q).to(q.dtype), q))
         self.assertLess(model(**CANDIDATES["C"]).stored_bytes(), 0.8 * model(**CANDIDATES["B"]).stored_bytes())
+
+    def test_int8_weights_have_255_levels_per_row(self):
+        from native.layers import Int8Linear, quantize_int8
+
+        layer = Int8Linear(64, 16)
+        q, scale = quantize_int8(layer.weight)
+        self.assertLessEqual(q.abs().max().item(), 127)
+        self.assertEqual(q.abs().amax(-1).min().item(), 127)                        # absmax maps to 127 in every row
+        self.assertLess(((q * scale) - layer.weight).abs().max().item(), scale.max().item() / 2 + 1e-7)
+        self.assertEqual(layer.stored_bytes(), 64 * 16 + 2 * 16)
 
     def test_monarch_is_a_linear_map(self):
         torch.manual_seed(1)

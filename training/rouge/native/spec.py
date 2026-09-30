@@ -54,10 +54,10 @@ def summary(cfg: RougeConfig, seq: int | None = None, tokens: float = 0.0, dtype
     fwd = 2 * active_matmul + attn_flops
 
     lowbit_params = 0
-    if cfg.lowbit == "ternary":
+    if cfg.lowbit in ("ternary", "int8"):
         ffn_part = cfg.n_layers * lp["ffn_total"] - (cfg.n_layers * cfg.d_model * cfg.moe_experts if cfg.moe_experts else 0)
         lowbit_params = ffn_part + (cfg.n_layers * lp["attn"] if cfg.lowbit_scope == "all" else 0)
-    stored = (physical - lowbit_params) * dtype_bytes + lowbit_params / 4
+    stored = (physical - lowbit_params) * dtype_bytes + lowbit_params * (0.25 if cfg.lowbit == "ternary" else 1.0)
 
     kv_per_token_layer = 2 * cfg.n_kv_heads * cfg.head_dim * dtype_bytes
 

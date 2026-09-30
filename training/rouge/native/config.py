@@ -69,6 +69,7 @@ class RougeConfig:
         assert self.d_model % self.n_heads == 0 and (self.d_model // self.n_heads) % 2 == 0, "even head dim (RoPE)"
         assert self.n_heads % self.n_kv_heads == 0
         assert self.act_bits in (8, 16)
+        assert not (self.structured == "monarch" and self.lowbit == "int8"), "monarch supports ternary or full precision"
 
     @property
     def head_dim(self) -> int:

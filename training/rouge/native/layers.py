@@ -8,6 +8,10 @@ quantisation (per-token absmax) models inference with integer kernels; it is
 off by default (act_bits=16): weight storage, activation precision and
 optimizer precision are separate decisions.
 
+Int8 (the control for ternary): per-output-row absmax weight quantisation to
+[-127, 127] in the forward pass, same straight-through estimator, 1 byte per
+weight plus one scale per row.
+
 Structured projections (candidate E): a Monarch-style product (Dao et al.,
 arXiv 2204.00595). The input splits into b blocks mapped block-diagonally,
 the blocks are interleaved (a fixed permutation), then a second block-
@@ -87,6 +91,26 @@ class BitLinear(nn.Linear):
         return math.ceil(self.weight.numel() / 4) + 4 + (0 if self.bias is None else 2 * self.bias.numel())
 
 
+def quantize_int8(w: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+    scale = w.abs().amax(-1, keepdim=True).clamp_min(1e-8) / 127
+    return (w / scale).round().clamp(-127, 127), scale
+
+
+class Int8Linear(BitLinear):
+    """Linear layer with int8 weights in the forward pass (per-row absmax, straight-through estimator)."""
+
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
+        q, scale = quantize_int8(self.weight)
+        w = self.weight + (q * scale - self.weight).detach()
+        if self.act_bits == 8:
+            s = x.abs().amax(-1, keepdim=True).clamp_min(1e-5) / 127
+            x = x + ((x / s).round().clamp(-128, 127) * s - x).detach()
+        return F.linear(x, w.to(x.dtype), None if self.bias is None else self.bias.to(x.dtype))
+
+    def stored_bytes(self) -> int:
+        return self.weight.numel() + 2 * self.weight.shape[0] + (0 if self.bias is None else 2 * self.bias.numel())
+
+
 class MonarchLinear(nn.Module):
     """n_in = b * p  ->  block-diagonal (b blocks p -> q) -> permute (b, q) -> (q, b)
     -> block-diagonal (q blocks b -> b) -> n_out = q * b."""
@@ -123,6 +147,8 @@ def make_linear(n_in: int, n_out: int, *, lowbit: str, structured: str, blocks: 
         return MonarchLinear(n_in, n_out, blocks, lowbit=lowbit == "ternary")
     if lowbit == "ternary":
         return BitLinear(n_in, n_out, act_bits=act_bits)
+    if lowbit == "int8":
+        return Int8Linear(n_in, n_out, act_bits=act_bits)
     return nn.Linear(n_in, n_out, bias=False)
 
 
@@ -130,7 +156,7 @@ def stored_bytes(module: nn.Module, dtype_bytes: int = 2) -> int:
     """Checkpoint bytes for inference: low-bit layers packed, everything else in the compute dtype."""
     total, seen = 0, set()
     for m in module.modules():
-        if isinstance(m, BitLinear) or (isinstance(m, MonarchLinear) and m.lowbit):
+        if isinstance(m, BitLinear) or (isinstance(m, MonarchLinear) and m.lowbit):  # BitLinear includes Int8Linear
             total += m.stored_bytes()
             seen.update(id(p) for p in m.parameters(recurse=False))
     return total + dtype_bytes * sum(p.numel() for p in module.parameters() if id(p) not in seen)

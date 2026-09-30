@@ -65,7 +65,7 @@ class TestNativeTraining(unittest.TestCase):
         self.assertIsNone(checkpoint.latest(self.tmp / "corrupt"))
 
     def test_spec_matches_measured(self):
-        for kw in ({}, {"attention": "hybrid"}, {"lowbit": "ternary"}, {"moe_experts": 4, "moe_topk": 2},
+        for kw in ({}, {"attention": "hybrid"}, {"lowbit": "ternary"}, {"lowbit": "int8"}, {"moe_experts": 4, "moe_topk": 2},
                    {"structured": "monarch", "lowbit": "ternary", "moe_experts": 4}):
             cfg = RougeConfig(vocab_size=512, d_model=64, n_layers=4, n_heads=4, n_kv_heads=2, max_seq=128, window=32, **kw)
             m, s = RougeModel(cfg), spec.summary(cfg)
