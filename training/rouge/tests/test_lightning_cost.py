@@ -14,16 +14,18 @@ def ledger(*jobs):
 
 
 class TestCeiling(unittest.TestCase):
-    def test_ceiling_is_50_eur_at_a_conservative_rate(self):
-        self.assertAlmostEqual(cost.CEILING_USD, 52.5)
+    def test_ceiling_is_the_owners_b200_budget_plus_earlier_spend(self):
+        self.assertAlmostEqual(cost.CEILING_USD, 128.66)
 
     def test_refuses_a_launch_that_would_exceed_the_ceiling(self):
-        cost.check(ledger(), cost.worst_case("H100", 7))                  # 49.7 USD fits
+        cost.check(ledger(), cost.worst_case("H100", 18))                 # 127.8 USD fits
         with self.assertRaises(SystemExit):
-            cost.check(ledger(), cost.worst_case("H100", 8))              # 56.8 USD does not
-        cost.check(ledger(), cost.worst_case("H200", 10, 4.50))           # 47.25 USD at the live price fits
+            cost.check(ledger(), cost.worst_case("H100", 19))             # 134.9 USD does not
+        cost.check(ledger(), cost.worst_case("B200_X_8", 1.5, 78.87))     # 124.2 USD at the live price fits
         with self.assertRaises(SystemExit):
-            cost.worst_case("B200", 1)                                    # not a training machine
+            cost.check(ledger(), cost.worst_case("B200_X_8", 1.6, 78.87))  # 132.5 USD does not
+        with self.assertRaises(SystemExit):
+            cost.worst_case("CPU", 1)                                     # not a training machine
         with self.assertRaises(SystemExit):
             cost.check(ledger(), float("nan"))
 
@@ -31,7 +33,7 @@ class TestCeiling(unittest.TestCase):
         l = ledger({"cost_usd": 0.05}, {"cost_usd": None, "worst_case_usd": 20.0}, {"cost_usd": 10.0})
         self.assertAlmostEqual(cost.committed(l), 30.05)
         with self.assertRaises(SystemExit):
-            cost.check(l, cost.worst_case("H200", 4))                     # 30.05 + 28 > 52.5
+            cost.check(l, cost.worst_case("H200", 15))                    # 30.05 + 105 > 128.66
 
     def test_estimate_scales_with_flops(self):
         a = cost.estimate(6e8, 2e9, 4.0, mfu=0.3)

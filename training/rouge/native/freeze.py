@@ -32,8 +32,10 @@ def configs(decision: dict, tournament: dict, ladder: dict, r1_29b: str) -> dict
     winner = decision["winner"]
     cand = tournament["candidates"][winner]
     arch = cand["if_r1_29b_fails"] if (r1_29b == "fail" and "if_r1_29b_fails" in cand) else cand["config"]
-    return {rung: RougeConfig(name=f"rouge-v1-{rung}", **{**ladder["common"], **r["shape"], **arch})
-            for rung, r in ladder["rungs"].items()}
+    moe = bool(arch.get("moe_experts"))
+    # a rung marked "when": "moe" / "dense" exists only for a winner of that kind; "fixed" fields are set by the rung
+    return {rung: RougeConfig(name=f"rouge-v1-{rung}", **{**ladder["common"], **r["shape"], **arch, **r.get("fixed", {})})
+            for rung, r in ladder["rungs"].items() if r.get("when") in (None, "moe" if moe else "dense")}
 
 
 def describe(cfg: RougeConfig) -> list[tuple[str, str]]:

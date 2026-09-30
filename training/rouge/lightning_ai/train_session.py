@@ -36,8 +36,9 @@ sys.path.insert(0, str(HERE))
 import cost  # noqa: E402
 import job as lj  # noqa: E402
 
-MODEL_NAME = {"100m": "rouge-r1-100m", "300m": "rouge-r1-300m", "1b": "rouge-r1-1b"}
-BATCH_PER_GPU = {"T4": 4, "L4": 8, "L40S": 16, "A100_40GB": 16, "A100_80GB": 32, "H100": 32, "H200": 32}   # sequences of max_seq per rank and micro-step
+MODEL_NAME = {"100m": "rouge-r1-100m", "300m": "rouge-r1-300m", "1b": "rouge-r1-1b", "600m": "rouge-r1-600m",
+              "2b-moe": "rouge-r1-2b-moe"}
+BATCH_PER_GPU = {"T4": 4, "L4": 8, "L40S": 16, "A100_40GB": 16, "A100_80GB": 32, "H100": 32, "H200": 32, "B200": 32}   # sequences of max_seq per rank and micro-step
 TERMINAL = ("ROUGE_PHASE DONE", "ROUGE_PHASE SEGMENT_END", "ROUGE_PHASE FAILED")
 
 

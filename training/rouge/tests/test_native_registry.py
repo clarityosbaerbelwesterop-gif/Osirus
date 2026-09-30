@@ -52,9 +52,9 @@ class TestLadder(unittest.TestCase):
         except ImportError:
             self.skipTest("spec needs the native package")
         ladder = json.loads((ROOT / "configs/native/ladder-v1.json").read_text())
-        expect = {"100m": 100e6, "300m": 300e6, "1b": 1.0e9}
+        expect = {"100m": 100e6, "300m": 300e6, "1b": 1.0e9, "600m": 0.55e9, "2b-moe": 2.1e9}
         for rung, r in ladder["rungs"].items():
-            cfg = RougeConfig(**{**ladder["common"], **r["shape"]})
+            cfg = RougeConfig(**{**ladder["common"], **r["shape"], **r.get("fixed", {})})
             params = spec.summary(cfg)["params_physical"]
             self.assertAlmostEqual(params / expect[rung], 1.0, delta=0.1, msg=f"{rung}: {params / 1e6:.0f}M")
 

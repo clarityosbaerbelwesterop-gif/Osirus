@@ -149,7 +149,7 @@ def conditions(run_tests: bool, rung: str) -> list[dict]:
                                  mfu=cost.mfu(machine), peak_tflops=cost.PEAK_TFLOPS[machine])
         estimate["machine"] = machine
     remaining = cost.CEILING_USD - cost.committed(ledger)
-    add(14, "cost guard: ceiling, ledger, rung estimate", cost.CEILING_EUR == 50.0 and remaining > 0 and estimate is not None
+    add(14, "cost guard: ceiling, ledger, rung estimate", cost.CEILING_USD > 0 and remaining > 0 and estimate is not None
         and estimate["usd"] * 1.25 <= remaining,
         {"ceiling_usd": cost.CEILING_USD, "committed_usd": cost.committed(ledger), "estimate": estimate})
 

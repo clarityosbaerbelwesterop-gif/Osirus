@@ -1,6 +1,6 @@
 {
  "schema": "rouge.control-plane/1",
- "pinned_at": "2026-09-30T16:55:37Z",
+ "pinned_at": "2026-09-30T17:03:03Z",
  "files": {
   "training/rouge/native/evaluate.py": "8ca20be471cbbf461e09ef7813c8b1bf9c8581842ac0ef7836a6451db735967d",
   "training/rouge/native/pareto.py": "13ddd7c1a88c4ebacbf88061eb7d7dab56e25a6a740cfd25cce3a152ce0eff87",
@@ -10,11 +10,11 @@
   "training/rouge/native/data/build.py": "640dfd016be93b78aaafbd0e599f0b44d7e8ced2cdfc4381ca1e35fc11512b68",
   "training/rouge/native/data/verify.py": "71ad9f8fcdab81817a2f52ae84261cce277d39a242be6f5f7ed85221a68bff95",
   "training/rouge/configs/native/tournament-v1.json": "6282b3861c3047f606a1796f8a6e3b1523ecca496000ccfed32c5224baa48934",
-  "training/rouge/lightning_ai/cost.py": "1095369fce0c9915fb3eae90f1b484790cb5ce5a4efc895597720f12dd49e2c2",
-  "training/rouge/lightning_ai/train_session.py": "e108ff413bf26b22878a065187bda29c8344abc4a3d162b82774a368fe1de3a3",
+  "training/rouge/lightning_ai/cost.py": "20a22bb10e96fad8a201c2ed287fd8dd20b297559e742c8eaecef04dc5d02aa2",
+  "training/rouge/lightning_ai/train_session.py": "5e827e4a0b9d47e594465ee4d841b3ea3d3708d533df5b390a21b0471e67dc38",
   "training/rouge/lightning_ai/job.py": "7f869f98b6af70b8b7f5551308db8d7e674acd10d1b98890e98c65f4a4e6a74c",
-  "training/rouge/ready.py": "a7de6e95715fc1847ec2af895b2b59005372f1955d3c84d6414da4e68ad53d7c",
-  ".github/workflows/rouge-train.yml": "bbec82856bf5982d4f8ec0a66c42bbebd5fb1baf7f8a9f4a4de61d83dd35d3b2",
+  "training/rouge/ready.py": "2494d1c097025b7412106875c0150d8639039866eeb4878bedc3585c3128cb1c",
+  ".github/workflows/rouge-train.yml": "0e8a95053a0eb9f3c7982611f8fb2d1359d3c3eeec86f0367aad18a5ad735391",
   ".github/workflows/rouge-native.yml": "12c36c6ab9619448123d53c04d8ebfc80322c16cdd5943a6eeeac514f9746048"
  }
 }

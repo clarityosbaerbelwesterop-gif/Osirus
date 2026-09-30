@@ -21,9 +21,10 @@ import math
 import sys
 from pathlib import Path
 
-CEILING_EUR = 50.0
+# Owner, 2026-09-30: after the free resources, 125 credits for training on B200 GPUs. The ceiling counts every
+# Rouge job on Lightning: 125 USD-equivalent credits for that phase plus the 3.66 USD spent before it.
 EUR_TO_USD = 1.05
-CEILING_USD = CEILING_EUR * EUR_TO_USD
+CEILING_USD = 128.66
 LEDGER = Path(__file__).with_name("ledger.json")
 # Training machines: one large GPU or a node of several small ones (owner, 2026-09-30: "several small
 # GPUs with the same total performance do it too"). Per GPU family: dense fp16/bf16 tensor TFLOPS
@@ -37,8 +38,10 @@ GPU = {  # family: (peak TFLOPS, memory GB, price ceiling USD per GPU-hour)
     "H100": (989.0, 80, 7.10), "H200": (989.0, 141, 7.00),
     # A100: Lightning's free hours cover it (pricing page 2026-09-30: A100 40 GB 10 h, 80 GB 5 h; H100/H200 none)
     "A100_40GB": (312.0, 40, 2.75), "A100_80GB": (312.0, 80, 3.40),
+    # B200: 2.25 PFLOPS dense bf16 per GPU (NVIDIA datasheet; FP8 doubles it); live 9.86 USD/h, no interruptible
+    "B200": (2250.0, 180, 12.30),
 }
-TRAINING_MACHINES = ("T4_X_4", "T4_X_8", "L4_X_4", "L4_X_8", "L40S", "L40S_X_4", "A100_40GB", "A100_80GB", "H100", "H200")
+TRAINING_MACHINES = ("T4_X_4", "T4_X_8", "L4_X_4", "L4_X_8", "L40S", "L40S_X_4", "A100_40GB", "A100_80GB", "H100", "H200", "B200", "B200_X_8")
 MULTI_GPU_EFFICIENCY = 0.90   # planning assumption for data parallel over PCIe (no NVLink) until measured
 DEFAULT_MFU = 0.30            # planning assumption per GPU until a run on that family measures it
 
@@ -80,7 +83,7 @@ def check(ledger: dict, worst_case_usd: float) -> float:
     remaining = CEILING_USD - used - worst_case_usd
     if remaining < 0:
         raise SystemExit(f"refused: {used:.2f} USD committed + {worst_case_usd:.2f} USD worst case exceeds the ceiling of "
-                         f"{CEILING_USD:.2f} USD ({CEILING_EUR:.0f} EUR at {EUR_TO_USD})")
+                         f"{CEILING_USD:.2f} USD")
     return remaining
 
 

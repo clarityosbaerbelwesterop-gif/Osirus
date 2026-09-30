@@ -1,13 +1,87 @@
 {
  "schema": "rouge.ladder/1",
  "note": "Shapes of the Rouge v1 scale ladder. The architecture choices (attention pattern, low-bit, MoE, structure) come from the tournament winner and are merged in by native/freeze.py; the frozen configs are configs/native/rouge-v1-<rung>.json with their architecture_sha.",
- "common": {"vocab_size": 32768, "max_seq": 2048, "window": 512, "global_every": 4, "rope_theta": 10000.0, "tie_embeddings": true},
+ "common": {
+  "vocab_size": 32768,
+  "max_seq": 2048,
+  "window": 512,
+  "global_every": 4,
+  "rope_theta": 10000.0,
+  "tie_embeddings": true
+ },
  "rungs": {
-  "100m": {"shape": {"d_model": 768, "n_layers": 12, "n_heads": 12, "n_kv_heads": 4}, "tokens": 2000000000,
-           "batch_tokens": 524288, "lr": 0.0015, "hardware": "1x H200", "budget": "within the 50 EUR ceiling"},
-  "300m": {"shape": {"d_model": 1024, "n_layers": 24, "n_heads": 16, "n_kv_heads": 4}, "tokens": 6000000000,
-           "batch_tokens": 1048576, "lr": 0.001, "hardware": "1x H200", "budget": "within the 50 EUR ceiling, only after the 100m rung's scaling evidence"},
-  "1b": {"shape": {"d_model": 2048, "n_layers": 22, "n_heads": 16, "n_kv_heads": 4}, "tokens": 20000000000,
-         "batch_tokens": 2097152, "lr": 0.0006, "hardware": "8x H200", "budget": "needs a new owner ceiling; only if 100m -> 300m scaling beats the Transformer baseline on the same data"}
+  "100m": {
+   "shape": {
+    "d_model": 768,
+    "n_layers": 12,
+    "n_heads": 12,
+    "n_kv_heads": 4
+   },
+   "tokens": 2000000000,
+   "batch_tokens": 524288,
+   "lr": 0.0015,
+   "hardware": "1x H200",
+   "budget": "within the 50 EUR ceiling"
+  },
+  "300m": {
+   "shape": {
+    "d_model": 1024,
+    "n_layers": 24,
+    "n_heads": 16,
+    "n_kv_heads": 4
+   },
+   "tokens": 6000000000,
+   "batch_tokens": 1048576,
+   "lr": 0.001,
+   "hardware": "1x H200",
+   "budget": "within the 50 EUR ceiling, only after the 100m rung's scaling evidence"
+  },
+  "1b": {
+   "shape": {
+    "d_model": 2048,
+    "n_layers": 22,
+    "n_heads": 16,
+    "n_kv_heads": 4
+   },
+   "tokens": 20000000000,
+   "batch_tokens": 2097152,
+   "lr": 0.0006,
+   "hardware": "8x H200",
+   "budget": "needs a new owner ceiling; only if 100m -> 300m scaling beats the Transformer baseline on the same data"
+  },
+  "2b-moe": {
+   "when": "moe",
+   "shape": {
+    "d_model": 1536,
+    "n_layers": 18,
+    "n_heads": 12,
+    "n_kv_heads": 4
+   },
+   "fixed": {
+    "moe_experts": 32,
+    "moe_topk": 2,
+    "moe_shared": 1,
+    "moe_expert_hidden": 640
+   },
+   "tokens": 11000000000,
+   "batch_tokens": 2097152,
+   "lr": 0.0006,
+   "hardware": "B200 (B200_X_8 or several B200)",
+   "budget": "the owner's 125 credits (about 12.7 B200-hours at 9.86 USD/h): 2.10B parameters in total, 0.50B active per token; 11B tokens at MFU 0.35 bf16; only if the tournament winner uses MoE"
+  },
+  "600m": {
+   "when": "dense",
+   "shape": {
+    "d_model": 1536,
+    "n_layers": 20,
+    "n_heads": 12,
+    "n_kv_heads": 4
+   },
+   "tokens": 10000000000,
+   "batch_tokens": 2097152,
+   "lr": 0.0008,
+   "hardware": "B200 (B200_X_8 or several B200)",
+   "budget": "the owner's 125 credits when the winner is dense: compute-optimal size for about 3.6e19 FLOPs (0.55B parameters, 10B tokens)"
+  }
  }
 }
