@@ -1,0 +1,52 @@
+{
+ "schema": "rouge.dryrun/1",
+ "started": "2026-09-30T09:16:15Z",
+ "device": "cpu",
+ "gpu": null,
+ "precision": "fp32",
+ "code_sha": "cfff8898697357443fde0f9834d0938783227788",
+ "stages": {
+  "data": {
+   "ok": true,
+   "manifest_sha256": "99803d92f549a82fe6c24687bf8d8ceb7a0bf9d8f76d837dba317411d3dff5d7"
+  },
+  "train": {
+   "killed_exit": 75,
+   "resumed_exit": 0,
+   "resumed_from": "[train] resumed at step 30 from step_0000030",
+   "final_loss": 4.812419452667236,
+   "steps": 60,
+   "ok": true
+  },
+  "eval": {
+   "ok": true,
+   "val": {
+    "math_synth": {
+     "nats_per_token": 3.822,
+     "bpb": 2.6676
+    }
+   },
+   "tasks": {
+    "math_synth": 0.0,
+    "algo_synth": 0.0
+   },
+   "decode_tokens_per_s": 620.6
+  },
+  "registry": {
+   "ok": true,
+   "name": "rouge-r1-1m-001",
+   "entry_hash": "c5ca952e01cd57de88415650161af5a9dbc5b1d7a6741e943fd8f9ffb817af21"
+  },
+  "cri": {
+   "ok": true,
+   "output": "{\"decision\": {\"level\": \"A\", \"champion_bpb\": 3.211, \"challenger_bpb\": 2.8691, \"gain_bpb\": 0.3419, \"worst_domain_regression_bpb\": -0.3419, \"task_drop\": 0.0, \"decision\": \"continue\"}, \"control_plane_intact\": true}",
+   "error": null
+  },
+  "posttrain_sft": {
+   "ok": true,
+   "error": null
+  }
+ },
+ "ok": true,
+ "finished": "2026-09-30T09:16:44Z"
+}
