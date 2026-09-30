@@ -83,7 +83,7 @@ jobs:
           git config user.email "rouge-research@users.noreply.github.com"
           for attempt in 1 2 3 4; do
             git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
-            cp "$stash/ledger.json" "$ROUGE/lightning_ai/ledger.json"
+            python3 "$ROUGE/lightning_ai/ledger_merge.py" "$ROUGE/lightning_ai/ledger.json" "$stash/ledger.json"
             if [ -f "$stash/manifest.json" ]; then mkdir -p "$ROUGE/configs/native/$CORPUS" && cp "$stash/manifest.json" "$ROUGE/configs/native/$CORPUS/manifest.json"; fi
             git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/configs/native" 2>/dev/null || true
             git diff --cached --quiet && break
@@ -133,7 +133,7 @@ jobs:
           git config user.email "rouge-research@users.noreply.github.com"
           for attempt in 1 2 3 4; do
             git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
-            cp "$stash/ledger.json" "$ROUGE/lightning_ai/ledger.json"
+            python3 "$ROUGE/lightning_ai/ledger_merge.py" "$ROUGE/lightning_ai/ledger.json" "$stash/ledger.json"
             if [ -d "$stash/run" ]; then mkdir -p "$ROUGE/results/runs" && rm -rf "$ROUGE/results/runs/$RUN" && cp -r "$stash/run" "$ROUGE/results/runs/$RUN"; fi
             git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/results/runs" 2>/dev/null || true
             git diff --cached --quiet && break

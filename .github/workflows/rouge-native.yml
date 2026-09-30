@@ -62,7 +62,8 @@ permissions:
 
 concurrency:
   # one Lightning launcher at a time (the credit ledger is a file in this branch)
-  group: rouge-native-${{ github.event_name == 'push' && github.sha || (inputs.task == 'data' && 'data' || 'lightning') }}
+  # tournament levels share one lock (credit checks); probes and dry runs are small and merge their ledger entries
+  group: rouge-native-${{ github.event_name == 'push' && github.sha || (inputs.task == 'tournament' && 'lightning' || format('{0}-{1}', inputs.task, github.run_id)) }}
   cancel-in-progress: false
 
 env:
@@ -118,7 +119,7 @@ jobs:
           git config user.email "rouge-research@users.noreply.github.com"
           for attempt in 1 2 3 4; do
             git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
-            cp "$RUNNER_TEMP/ledger.json" "$ROUGE/lightning_ai/ledger.json"
+            python3 "$ROUGE/lightning_ai/ledger_merge.py" "$ROUGE/lightning_ai/ledger.json" "$RUNNER_TEMP/ledger.json"
             if [ -f "$RUNNER_TEMP/probe.json" ]; then mkdir -p "$ROUGE/results/lightning" && cp "$RUNNER_TEMP/probe.json" "$ROUGE/results/lightning/probe.json"; fi
             git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/results/lightning" 2>/dev/null || true
             git diff --cached --quiet && break
@@ -229,7 +230,7 @@ jobs:
           dest="$ROUGE/results/tournament-v1/level-$LEVEL"
           for attempt in 1 2 3 4; do
             git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
-            cp "$RUNNER_TEMP/ledger.json" "$ROUGE/lightning_ai/ledger.json"
+            python3 "$ROUGE/lightning_ai/ledger_merge.py" "$ROUGE/lightning_ai/ledger.json" "$RUNNER_TEMP/ledger.json"
             mkdir -p "$dest"
             if [ -s "$RUNNER_TEMP/runs.jsonl" ]; then
               cp "$RUNNER_TEMP/runs.jsonl" "$dest/runs.jsonl"
@@ -313,7 +314,7 @@ jobs:
           git config user.email "rouge-research@users.noreply.github.com"
           for attempt in 1 2 3 4; do
             git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
-            cp "$stash/ledger.json" "$ROUGE/lightning_ai/ledger.json"
+            python3 "$ROUGE/lightning_ai/ledger_merge.py" "$ROUGE/lightning_ai/ledger.json" "$stash/ledger.json"
             if [ -f "$stash/summary.json" ]; then mkdir -p "$ROUGE/results/dry-run/gpu" && cp "$stash/summary.json" "$ROUGE/results/dry-run/gpu/summary.json"; fi
             git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/results/dry-run" 2>/dev/null || true
             git diff --cached --quiet && break

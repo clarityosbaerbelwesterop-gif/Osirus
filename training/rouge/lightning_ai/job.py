@@ -150,6 +150,7 @@ def probe(args) -> None:
     summary["training_machine"] = "H100" if summary.get("h100_listed") else "H200"
     if args.storage:
         summary["storage_ok"] = storage_roundtrip(ts)
+        summary["model_registry_ok"] = bool(os.environ.get("ROUGE_MODEL_REGISTRY_OK"))
     if args.out:
         Path(args.out).parent.mkdir(parents=True, exist_ok=True)
         Path(args.out).write_text(json.dumps(summary, indent=1) + "\n")
@@ -163,40 +164,65 @@ def probe(args) -> None:
         if balance and worst > float(balance) - SAFETY_MARGIN:
             raise SystemExit(f"refused: worst case {worst:.2f} exceeds the credit balance {float(balance):.2f} minus the margin")
         sha = os.environ.get("GITHUB_SHA")
-        cmd = (bootstrap_command(sha, "lightning_ai/probe_job.sh").replace(f"python -m pip install -q {PACKAGES}", "true")
-               if sha else "nvidia-smi --query-gpu=name --format=csv || echo no-gpu")
-        job = Job.run(name=f"rouge-probe-{int(time.time())}", machine=getattr(Machine, args.submit_test), command=cmd,
-                      image="python:3.11-slim", teamspace=ts, interruptible=False)
-        record_and_wait(job, ledger, ledger_path, args.submit_test, 0.25, worst, results=None, name="probe", prefix="ROUGE_PROBE")
-        for line in (job.logs or "").splitlines():
-            if line.startswith("ROUGE_PROBE"):
-                print("[job]", line[:300], flush=True)
-        try:
-            print(f"[lightning] job artifacts kept: {job.artifacts_uri is not None}", flush=True)
-        except Exception as e:
-            print(f"[lightning] job artifacts: {type(e).__name__}", flush=True)
+        tag = str(int(time.time()))
+        for mode in ("write", "read"):
+            cmd = (bootstrap_command(sha, "lightning_ai/probe_job.sh").replace(f"python -m pip install -q {PACKAGES}", "true")
+                   if sha else "nvidia-smi --query-gpu=name --format=csv || echo no-gpu")
+            job = Job.run(name=f"rouge-probe-{mode}-{tag}", machine=getattr(Machine, args.submit_test), command=cmd,
+                          image="python:3.11-slim", teamspace=ts, interruptible=False,
+                          env={"ROUGE_PROBE_MODE": mode, "ROUGE_PROBE_TAG": tag})
+            record_and_wait(job, ledger, ledger_path, args.submit_test, 0.25, worst, results=None, name=f"probe-{mode}",
+                            prefix="ROUGE_PROBE")
+            for line in (job.logs or "").splitlines():
+                if line.startswith("ROUGE_PROBE"):
+                    print("[job]", line[:300], flush=True)
+                    if line.startswith("ROUGE_PROBE persisted"):
+                        summary["job_persistent_path"] = line.split()[2]
+    if args.out:
+        Path(args.out).parent.mkdir(parents=True, exist_ok=True)
+        Path(args.out).write_text(json.dumps(summary, indent=1) + "\n")
 
 
 def storage_roundtrip(ts, remote: str = "rouge/probe") -> bool:
-    """Upload a small folder to the teamspace drive, list it, download it, compare hashes."""
+    """Try the teamspace drive on every cloud account, then the model registry; hash-compare every round trip."""
     import hashlib
     import tempfile
 
-    src, dst = Path(tempfile.mkdtemp()), Path(tempfile.mkdtemp())
+    src = Path(tempfile.mkdtemp())
     payload = os.urandom(1 << 16)
     (src / "blob.bin").write_bytes(payload)
-    remote = f"{remote}/{int(time.time())}"
+    digest = hashlib.sha256(payload).hexdigest()
+    ok_any = False
     try:
-        ts.upload_folder(str(src), remote_path=remote, progress_bar=False)
-        listed = [getattr(f, "name", str(f)) for f in ts.list_files(remote, recursive=True)]
-        ts.download_folder(remote, target_path=str(dst))
-        got = next(dst.rglob("blob.bin"), None)
-        ok = got is not None and hashlib.sha256(got.read_bytes()).hexdigest() == hashlib.sha256(payload).hexdigest()
-        print(f"[lightning] storage round trip: {'ok' if ok else 'MISMATCH'} (listed {len(listed)} entries)", flush=True)
-        return ok
+        accounts = ts.cloud_accounts
     except Exception as e:
-        print(f"[lightning] storage round trip failed: {type(e).__name__}: {str(e)[-120:]}", flush=True)
-        return False
+        accounts = []
+        print(f"[lightning] cloud accounts: listing failed ({type(e).__name__})", flush=True)
+    print(f"[lightning] cloud accounts bound to the teamspace: {len(accounts)} (default set: {bool(ts.default_cloud_account)})",
+          flush=True)
+    for i, account in enumerate(accounts or [None]):
+        dst = Path(tempfile.mkdtemp())
+        path = f"{remote}/{int(time.time())}-{i}"
+        try:
+            ts.upload_folder(str(src), remote_path=path, progress_bar=False, cloud_account=account)
+            ts.download_folder(path, target_path=str(dst), cloud_account=account)
+            got = next(dst.rglob("blob.bin"), None)
+            ok = got is not None and hashlib.sha256(got.read_bytes()).hexdigest() == digest
+            print(f"[lightning] drive round trip on cloud account {i}: {'ok' if ok else 'MISMATCH'}", flush=True)
+            ok_any |= ok
+        except Exception as e:
+            print(f"[lightning] drive round trip on cloud account {i} failed: {type(e).__name__}: {str(e)[-100:]}", flush=True)
+    try:
+        dst = Path(tempfile.mkdtemp())
+        ts.upload_model(str(src / "blob.bin"), name="rouge-probe", version=str(int(time.time())), progress_bar=False)
+        ts.download_model("rouge-probe", download_dir=str(dst), progress_bar=False)
+        got = next(dst.rglob("blob.bin"), None)
+        ok = got is not None and hashlib.sha256(got.read_bytes()).hexdigest() == digest
+        print(f"[lightning] model registry round trip: {'ok' if ok else 'MISMATCH'}", flush=True)
+        os.environ["ROUGE_MODEL_REGISTRY_OK"] = "1" if ok else ""
+    except Exception as e:
+        print(f"[lightning] model registry round trip failed: {type(e).__name__}: {str(e)[-100:]}", flush=True)
+    return ok_any
 
 
 def record_and_wait(job, ledger, ledger_path: Path, machine: str, max_hours: float, worst: float, results, name: str,
