@@ -1,0 +1,11 @@
+{
+ "T4": {
+  "mfu": 0.095,
+  "tokens_per_s": 42323,
+  "precision": "fp16 + loss scaling",
+  "model": "tournament size s, candidate A (full attention), batch x seq from tournament-v1.json",
+  "peak_tflops": 65.0,
+  "source": "Level B run 36714574672, trainer telemetry at step 3000",
+  "measured_at": "2026-09-30"
+ }
+}
