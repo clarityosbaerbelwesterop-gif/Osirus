@@ -89,16 +89,27 @@ def teamspaces() -> list:
     users = UserApi()
     user = users._client.auth_service_get_user()
     memberships = users._get_all_teamspace_memberships(user.id) or []
-    api, usable, refused = TeamspaceApi(), [], 0
-    for m in memberships:
+    api, usable, refused, rows, first = TeamspaceApi(), [], 0, [], {}
+    for i, m in enumerate(memberships):
+        row = {"index": i, "name": getattr(m, "display_name", None) or getattr(m, "name", None),
+               "default": getattr(m, "is_default", None), "owner": str(getattr(m, "owner_type", "")).split(".")[-1].lower(),
+               "balance": getattr(m, "balance", None), "free_credits_enabled": getattr(m, "free_credits_enabled", None),
+               "next_free_credits_grant": str(getattr(m, "next_free_credits_grant", None) or "") or None,
+               "same_teamspace_as": first.get(m.project_id)}
+        first.setdefault(m.project_id, i)
         try:
             usable.append((api._get_teamspace_by_id(m.project_id), m))
-        except Exception:
+            row["access"] = "readable"
+        except Exception as e:
             refused += 1
+            row["access"] = f"refused ({getattr(e, 'status', None) or type(e).__name__})"
+        rows.append(row)
+        print(f"[lightning] membership {i}: {row}", flush=True)
     print(f"[lightning] {len(memberships)} teamspace membership(s): {len(usable)} readable with this key, {refused} refused",
           flush=True)
     MEMBERSHIPS.update({"total": len(memberships), "readable": len(usable), "refused_by_key_scope": refused,
-                        "free_credits_enabled": [getattr(m, "free_credits_enabled", None) for _, m in usable]})
+                        "free_credits_enabled": [getattr(m, "free_credits_enabled", None) for _, m in usable],
+                        "all": rows})
     if not usable:
         raise SystemExit("the key authenticates but may use no teamspace")
     usable.sort(key=lambda pm: -float(getattr(pm[1], "balance", 0) or 0))
