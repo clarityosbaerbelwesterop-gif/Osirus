@@ -87,7 +87,7 @@ def preflight(args) -> float:
     return remaining
 
 
-def launch(Job, Machine, args, sha: str, env: dict, hours: float, ledger: dict):
+def launch(Job, Machine, args, sha: str, env: dict, hours: float, ledger: dict, script: str = "lightning_ai/train_job.sh"):
     """Start the job on the cheapest live offer that fits the ceiling and the balance; (job, worst case USD)."""
     for i, (ts, balance, project) in enumerate(lj.teamspaces()):
         account, price = best_offer(ts, args.machine, args.interruptible)
@@ -110,7 +110,7 @@ def launch(Job, Machine, args, sha: str, env: dict, hours: float, ledger: dict):
         os.environ["LIGHTNING_CLOUD_PROJECT_ID"] = project.id
         try:
             job = Job.run(name=f"{args.run}-{int(time.time())}", machine=getattr(Machine, args.machine), cloud=account,
-                          command=lj.bootstrap_command(sha, "lightning_ai/train_job.sh"), image="python:3.11-slim",
+                          command=lj.bootstrap_command(sha, script), image="python:3.11-slim",
                           teamspace=ts, interruptible=args.interruptible, env=env)
             print(f"[train] teamspace {i} accepted the job", flush=True)
             return job, worst

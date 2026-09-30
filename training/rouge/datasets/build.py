@@ -84,6 +84,25 @@ RECIPES = {
         "generated": {"seed": "exp-001", "self_correction": 0.3},
     },
 }
+# rft-v1 (RSI iteration 1, ReST-EM style): the base answers verifiable
+# problems itself on the GPU host and only its verified-correct solutions
+# become training data. Teacher traces (older reasoning models) are never
+# trained into a stronger base; their problems serve as prompts only. The
+# supervised part is in-house generated data and human-written German.
+RECIPES["rft-v1"] = {
+    "quotas": {
+        "nemotron-math": 0, "nemotron-stem": 0, "openr1-math": 0, "openmath-cot": 0, "opencode": 0,
+        "tulu-oasst1": 1500, "tulu-oasst1-de": 800, "tulu-sciriff": 0, "aya-de": 1500, "oasst2-de": 1500,
+        "rouge-generated": 3000,
+    },
+    "max_tokens": 7500,
+    "strip_thinking": False,
+    "generated": {"seed": "rft-v1", "self_correction": 0.0},
+    # verifiable prompts (numeric answers) for self-generation, and a held-out
+    # set from the same sources as the primary suite
+    "prompts": {"openr1-math": 2500, "openmath": 2500},
+    "heldout": 300,
+}
 RECIPE = "sft-v0"
 STRIP_THINKING = False
 MIN_ANSWER_CHARS = 80  # stripped answers shorter than this carry no solution
@@ -141,6 +160,9 @@ def clean_messages(messages: list[dict]) -> list[dict] | None:
 
 
 def take(name: str, rows, adapt, quota: int, max_scan: int, stats: dict):
+    if quota == 0:
+        stats[name] = {"kept": 0, "scanned": 0, "quota": 0, "rejected": {}}
+        return []
     kept, scanned, reasons, prompts = [], 0, Counter(), set()
     for row in rows:
         scanned += 1
@@ -285,6 +307,69 @@ def build_train(reg: dict, stats: dict) -> list[dict]:
     return records
 
 
+PLAIN_NUMBER = re.compile(r"^-?\d+(\.\d+)?$")
+ANSWER_SUFFIX = 'End with a line "Answer: <number>".'
+
+
+def verifiable_problems(reg: dict, stats: dict, quotas: dict) -> dict[str, list[dict]]:
+    """Math problems whose reference answer is a plain number: prompt + numeric check.
+    Only the problem and the answer are used, never a teacher's solution."""
+    found: dict[str, list[dict]] = {}
+    sources = (
+        ("openr1-math", "openr1-math-220k", "default", "train", lambda row: (row["problem"], row["answer"], row["uuid"])),
+        ("openmath", "open-math-reasoning", None, "cot",
+         lambda row: (row["problem"], row["expected_answer"], hashlib.sha256(row["problem"].encode()).hexdigest()[:16])
+         if row.get("problem_type") == "has_answer_extracted" else (None, None, None)),
+    )
+    for name, source_id, config, split, fields in sources:
+        want = quotas.get(name, 0)
+        repo, rev = pinned(reg, source_id)
+        items, seen, scanned, reasons = [], set(), 0, Counter()
+        for row in stream(repo, rev, config, split):
+            scanned += 1
+            if len(items) >= want or scanned > 40 * want:
+                break
+            problem, answer, key = fields(row)
+            answer = str(answer or "").strip().strip("$").replace(",", "").strip()
+            if not problem or not PLAIN_NUMBER.match(answer):
+                reasons["not-numeric"] += 1
+                continue
+            if len(problem) > 4000:
+                reasons["too-long"] += 1
+                continue
+            norm = generators.normalise(problem)
+            if norm in seen:
+                reasons["duplicate"] += 1
+                continue
+            seen.add(norm)
+            items.append({"id": f"{name}-{key}", "category": "math", "source": name,
+                          "messages": [{"role": "user", "content": f"{problem.strip()}\n\n{ANSWER_SUFFIX}"}],
+                          "check": {"type": "numeric", "answer": float(answer), "tolerance": 1e-6}})
+        stats[f"prompts-{name}"] = {"kept": len(items), "wanted": want, "scanned": scanned, "rejected": dict(reasons)}
+        print(f"prompts {name}: {len(items)}/{want} after scanning {scanned}; rejected {dict(reasons)}", flush=True)
+        found[name] = items
+    return found
+
+
+def build_prompts(reg: dict, stats: dict) -> tuple[list[dict], list[dict]]:
+    """(prompts for self-generation, held-out primary items): one pool per source, split
+    deterministically, so the held-out items come from the same distribution and never
+    appear among the prompts."""
+    spec = RECIPES[RECIPE]
+    heldout_n = spec["heldout"]
+    pools = verifiable_problems(reg, stats, {k: v + heldout_n // 2 for k, v in spec["prompts"].items()})
+    prompts, heldout = [], []
+    for name, items in pools.items():
+        rng = random.Random(f"{RECIPE}:{name}:{SEED}")
+        rng.shuffle(items)
+        held = items[: heldout_n // 2]
+        for item in held:
+            item["suite"] = "primary"
+        heldout += held
+        prompts += items[heldout_n // 2 :]
+    return prompts, heldout
+
+
 def build_eval(reg: dict, stats: dict) -> list[dict]:
     items: list[dict] = []
     rng = random.Random(f"eval-v0:{SEED}")
@@ -320,7 +405,15 @@ def build_eval(reg: dict, stats: dict) -> list[dict]:
         items.append({"id": f"ifeval-{row['key']}", "category": "instruction", "source": "ifeval", "suite": "guard",
                       "messages": [{"role": "user", "content": row["prompt"]}], "check": {"type": "ifeval", "instructions": instructions}})
 
-    if RECIPE == "sft-v0":
+    if RECIPE == "rft-v1":
+        # Primary suite (held-out verifiable math) is added by main() from the prompt pools;
+        # the generated templates are report-only here.
+        for item in generators.eval_items(f"{RECIPE}-report", 60):
+            item["source"] = "rouge-eval-generated"
+            item["suite"] = "report"
+            item.pop("lang", None)
+            items.append(item)
+    elif RECIPE == "sft-v0":
         for item in generators.eval_items("eval-v0", 150):
             item["source"] = "rouge-eval-generated"
             item["suite"] = "report"
@@ -399,6 +492,11 @@ def main() -> None:
 
     TOKENIZER = Tokenizer.from_file(str(tokenizer_file))
     eval_items = build_eval(reg, stats)
+    prompts: list[dict] = []
+    if "prompts" in RECIPES[RECIPE]:
+        prompts, heldout = build_prompts(reg, stats)
+        eval_items += heldout
+        stats["eval_by_suite"] = dict(Counter(i["suite"] for i in eval_items))
     train = build_train(reg, stats)
 
     seen, unique = set(), []
@@ -415,6 +513,11 @@ def main() -> None:
     final = [r for r in clean if generators.normalise(next(m["content"] for m in r["messages"] if m["role"] == "user"))[:120] not in prefixes]
     stats["decontaminated_exact"] = removed
     stats["decontaminated_prefix"] = len(clean) - len(final)
+    if prompts:
+        held = {generators.normalise(p)[:120] for p in eval_prompts}
+        before = len(prompts)
+        prompts = [p for p in prompts if generators.normalise(p["messages"][0]["content"])[:120] not in held]
+        stats["prompts_decontaminated"] = before - len(prompts)
     final = token_filter(final, stats)
     random.Random(SEED).shuffle(final)
 
@@ -437,6 +540,8 @@ def main() -> None:
         "train": {"file": "train.jsonl", "sha256": write("train.jsonl", final), "records": len(final),
                   "by_source": dict(Counter(r["source"] for r in final)),
                   "german": sum(is_german(r) for r in final)},
+        **({"prompts": {"file": "prompts.jsonl", "sha256": write("prompts.jsonl", prompts), "items": len(prompts),
+                        "by_source": dict(Counter(p["source"] for p in prompts))}} if prompts else {}),
         "eval": {"file": "eval.jsonl", "sha256": write("eval.jsonl", eval_items), "items": len(eval_items),
                  "by_category": dict(Counter(i["category"] for i in eval_items)),
                  "by_suite": dict(Counter(i["suite"] for i in eval_items))},

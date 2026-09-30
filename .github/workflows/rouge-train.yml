@@ -8,6 +8,9 @@ name: Rouge train
 #   interruptible (preempted jobs relaunch and resume). Runs only in the protected environment "rouge-gpu": nothing
 #   starts until the owner approves the run. Refused unless TRAINING_READY is true, the 50 EUR ceiling
 #   holds with every Rouge job in the ledger, and the teamspace balance covers the worst case.
+# - rouge1: one RSI iteration of Rouge 1 on the pinned base (owner decision 2026-09-30: Qwen3.6-27B):
+#   download on the GPU machine, baseline eval, self-generated verified data, full-parameter training
+#   (8 x H200), eval, pre-registered verdict. Same protected environment, ceiling and ledger.
 # Weights stay in the private teamspace (drive + model registry); git gets hashes and numbers only.
 
 on:
@@ -19,7 +22,7 @@ on:
     inputs:
       task:
         type: choice
-        options: [prepare, prepare-parts, train]
+        options: [prepare, prepare-parts, train, rouge1]
         default: prepare
       corpus:
         default: pretrain-v3
@@ -39,7 +42,7 @@ on:
       machine:
         description: "one large GPU, or a node of small GPUs trained data parallel (cheapest per TFLOP: results/lightning/probe.json)"
         type: choice
-        options: [H100, H200, B200, B200_X_8, A100_40GB, A100_80GB, T4_X_4, T4_X_8, L4_X_4, L4_X_8, L40S, L40S_X_4]
+        options: [H100, H200, H200_X_4, H200_X_8, B200, B200_X_8, A100_40GB, A100_80GB, T4_X_4, T4_X_8, L4_X_4, L4_X_8, L40S, L40S_X_4]
         default: H100
       interruptible:
         description: "discounted interruptible capacity; a preempted job relaunches and resumes until the deadline"
@@ -57,6 +60,9 @@ on:
         description: "train: FP8 matmuls on H100/H200/B200, only after a loss-parity check"
         type: boolean
         default: false
+      prereg:
+        description: "rouge1: pre-registration (relative to training/rouge)"
+        default: experiments/rouge-1-rl-001.json
 
 permissions:
   contents: read
@@ -65,7 +71,7 @@ concurrency:
   # paid training shares the tournament lock (one credit check at a time); a push only registers the
   # workflow, and prepare (worst case 2.4 credits) fits the balance next to a T4 tournament level
   # (worst case 1.35), so neither waits behind a level
-  group: rouge-native-${{ github.event_name == 'workflow_dispatch' && inputs.task == 'train' && 'lightning' || format('train-{0}', github.run_id) }}
+  group: rouge-native-${{ github.event_name == 'workflow_dispatch' && (inputs.task == 'train' || inputs.task == 'rouge1') && 'lightning' || format('train-{0}', github.run_id) }}
   cancel-in-progress: false
 
 env:
@@ -281,6 +287,54 @@ jobs:
             git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/results/runs" 2>/dev/null || true
             git diff --cached --quiet && break
             git commit -q -m "rouge(train): ledger and records of $RUN (run ${{ github.run_id }})"
+            git push -q origin "HEAD:$BRANCH" && break
+            sleep $((attempt * 5))
+          done
+
+  rouge1:
+    # Paid: the owner approves every run of this job (protected environment).
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'rouge1' }}
+    runs-on: ubuntu-latest
+    environment: rouge-gpu
+    timeout-minutes: 355
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python -m pip install lightning-sdk
+      - name: Ceiling before launch
+        run: python3 "$ROUGE/lightning_ai/cost.py" status
+      - name: One RSI iteration of Rouge 1 on Lightning (stopped at the deadline by the launcher)
+        env:
+          LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+          RUN: ${{ inputs.run }}
+          PREREG: ${{ inputs.prereg }}
+          MACHINE: ${{ inputs.machine }}
+          MAX_HOURS: ${{ inputs.max_hours }}
+        run: |
+          test -n "$RUN" || { echo "run name required (rouge-1-rl-<nnn>)"; exit 1; }
+          cd "$ROUGE" && python lightning_ai/rouge1_session.py --run "$RUN" --prereg "$PREREG" --machine "$MACHINE" --max-hours "$MAX_HOURS"
+      - name: Commit the ledger and run records (hashes and numbers; no weights)
+        if: ${{ always() && startsWith(github.ref_name, 'rouge/') }}
+        env:
+          BRANCH: ${{ github.ref_name }}
+          RUN: ${{ inputs.run }}
+        run: |
+          stash="$RUNNER_TEMP/stash"; mkdir -p "$stash"
+          cp "$ROUGE/lightning_ai/ledger.json" "$stash/ledger.json"
+          [ -d "$ROUGE/results/runs/$RUN" ] && cp -r "$ROUGE/results/runs/$RUN" "$stash/run"
+          git config user.name "rouge-research[bot]"
+          git config user.email "rouge-research@users.noreply.github.com"
+          for attempt in 1 2 3 4; do
+            git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
+            python3 "$ROUGE/lightning_ai/ledger_merge.py" "$ROUGE/lightning_ai/ledger.json" "$stash/ledger.json"
+            if [ -d "$stash/run" ]; then mkdir -p "$ROUGE/results/runs" && rm -rf "$ROUGE/results/runs/$RUN" && cp -r "$stash/run" "$ROUGE/results/runs/$RUN"; fi
+            git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/results/runs" 2>/dev/null || true
+            git diff --cached --quiet && break
+            git commit -q -m "rouge(rouge1): ledger and records of $RUN (run ${{ github.run_id }})"
             git push -q origin "HEAD:$BRANCH" && break
             sleep $((attempt * 5))
           done

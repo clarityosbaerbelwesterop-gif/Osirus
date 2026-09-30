@@ -49,6 +49,20 @@ def main() -> None:
     p.add_argument("--concurrency", type=int, default=8)
     p.add_argument("--max-new-tokens", type=int, default=2048)
     p.add_argument("--thinking", action="store_true")
+    p = sub.add_parser("rft-sample", help="k answers per verifiable prompt from one vLLM engine")
+    p.add_argument("--model", required=True)
+    p.add_argument("--prompts", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--k", type=int, default=4)
+    p.add_argument("--max-new-tokens", type=int, default=8192)
+    p.add_argument("--seed", type=int, default=0)
+    p = sub.add_parser("rft-select", help="verified-correct answers become training records")
+    p.add_argument("--prompts", required=True)
+    p.add_argument("--samples", nargs="+", required=True)
+    p.add_argument("--out", required=True)
+    p.add_argument("--report", required=True)
+    p.add_argument("--max-per-prompt", type=int, default=2)
+    p.add_argument("--easy-fraction", type=float, default=0.25)
     p = sub.add_parser("compare")
     p.add_argument("--items", required=True)
     p.add_argument("--base", required=True)
@@ -75,7 +89,7 @@ def main() -> None:
 
         expected = json.loads(Path(args.manifest).read_text())
         result = {}
-        for part in ("train", "eval"):
+        for part in [p for p in ("train", "eval", "prompts") if p in expected]:
             path = Path(args.data) / expected[part]["file"]
             actual = sha256_file(path) if path.exists() else None
             result[part] = {"file": str(path), "expected": expected[part]["sha256"], "actual": actual,
@@ -123,6 +137,26 @@ def main() -> None:
         (Path(args.out).with_suffix(".settings.json")).write_text(json.dumps(settings | {"model": args.model}, indent=1))
         return
 
+    if args.command == "rft-sample":
+        from . import rft
+
+        prompts = rft.read_jsonl(args.prompts)
+        settings = {"k": args.k, "max_new_tokens": args.max_new_tokens, "seed": args.seed, "enable_thinking": True}
+        responses = rft.sample(args.model, prompts, settings)
+        rft.write_jsonl(args.out, [{"id": p["id"], "responses": r} for p, r in zip(prompts, responses)])
+        return
+
+    if args.command == "rft-select":
+        from . import rft
+
+        samples = {row["id"]: row["responses"] for path in args.samples for row in rft.read_jsonl(path)}
+        records, stats = rft.select(rft.read_jsonl(args.prompts), samples, max_per_prompt=args.max_per_prompt,
+                                    easy_fraction=args.easy_fraction)
+        rft.write_jsonl(args.out, records)
+        Path(args.report).write_text(json.dumps(stats, indent=1))
+        print(json.dumps(stats, indent=1))
+        return
+
     if args.command == "compare":
         from .evaluate import compare, score
 
@@ -158,7 +192,7 @@ def main() -> None:
         manifest = checkpoints.create(
             name=config.name,
             parent=base_ref(load_base()),
-            kind="merged",
+            kind="full" if train_report.get("mode") == "full" else "merged",
             weights_dir=Path(args.merged),
             run={
                 "id": f"{config.name}-{train_report['steps']}steps",
@@ -169,7 +203,8 @@ def main() -> None:
                 "steps": train_report["steps"],
                 "first_loss": train_report["first_loss"],
                 "final_loss": train_report["final_loss"],
-                "adapter_files": train_report["adapter_files"],
+                "adapter_files": train_report.get("adapter_files"),
+                "model_files": train_report.get("model_files"),
             },
             data={
                 "registry_version": json.loads((Path(__file__).resolve().parent.parent / "datasets" / "registry.json").read_text())["version"],

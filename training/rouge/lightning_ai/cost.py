@@ -41,7 +41,7 @@ GPU = {  # family: (peak TFLOPS, memory GB, price ceiling USD per GPU-hour)
     # B200: 2.25 PFLOPS dense bf16 per GPU (NVIDIA datasheet; FP8 doubles it); live 9.86 USD/h, no interruptible
     "B200": (2250.0, 180, 12.30),
 }
-TRAINING_MACHINES = ("T4_X_4", "T4_X_8", "L4_X_4", "L4_X_8", "L40S", "L40S_X_4", "A100_40GB", "A100_80GB", "H100", "H200", "B200", "B200_X_8")
+TRAINING_MACHINES = ("T4_X_4", "T4_X_8", "L4_X_4", "L4_X_8", "L40S", "L40S_X_4", "A100_40GB", "A100_80GB", "H100", "H200", "H200_X_4", "H200_X_8", "B200", "B200_X_8")
 MULTI_GPU_EFFICIENCY = 0.90   # planning assumption for data parallel over PCIe (no NVLink) until measured
 DEFAULT_MFU = 0.30            # planning assumption per GPU until a run on that family measures it
 

@@ -1,0 +1,59 @@
+{
+  "schema": "rouge.experiment/1",
+  "name": "rouge-1-rl-001",
+  "status": "draft",
+  "registered": null,
+  "question": "Does one RSI iteration (the base answers verifiable problems, only code-verified answers are trained into every language-model weight) improve held-out verifiable math without breaking general skills?",
+  "parent": "base:Qwen/Qwen3.6-27B@6a9e13bd6fc8f0983b9b99948120bc37f49c13e9",
+  "method": {
+    "kind": "ReST-EM style self-training (Singh et al. 2023, 'Beyond Human Data'); full-parameter, FSDP2",
+    "sample": "3,200 verifiable prompts (numeric answers; OpenR1-Math-220k and OpenMathReasoning problems, teacher solutions unused) x 4 answers, thinking on, T=1.0, top_p 0.95, top_k 20, at most 6,144 new tokens",
+    "select": "code-checked answers only (evaluate.check numeric); prompts solved sometimes contribute up to 2 correct answers, prompts always solved 1 answer for a fixed 25% (hash), prompts never solved nothing",
+    "train": "selected answers + the dataset's in-house generated records and human-written German (aya, oasst); 2 epochs, lr 5e-6 cosine, AdamW (0.9, 0.95), global batch 32 sequences of <= 8k tokens, vision tower frozen"
+  },
+  "checkpoint": {
+    "name": "rouge-1-rl-001",
+    "kind": "full",
+    "contents": "BF16 safetensors of the base class with the base-only MTP tensors carried over; stored in the private Lightning model registry; the repository keeps the checkpoint manifest (sha256 of every file)"
+  },
+  "data": {
+    "manifest": "training/rouge/datasets/manifests/rouge-rft-v1.json",
+    "train_sha256": null,
+    "prompts_sha256": null
+  },
+  "config": "training/rouge/configs/full-001.json",
+  "eval": {
+    "file": "eval.jsonl",
+    "sha256": null,
+    "items": null,
+    "suites": {
+      "primary": "300 held-out verifiable math problems from the same sources as the prompts, never among them (numeric answer check)",
+      "guard": "MGSM en 100, MGSM de 100, MBPP 100 (unit tests executed), IFEval 200 (strict, supported instructions)",
+      "report": "generated format/German/identity items, never decisive"
+    },
+    "settings": {
+      "backend": "vllm",
+      "dtype": "bfloat16",
+      "temperature": 0.0,
+      "seed": 0,
+      "max_new_tokens": 8192,
+      "enable_thinking": true
+    },
+    "blind": "Scoring is code only; base and candidate run with identical settings on the same items in the same job; cli compare --prereg refuses a different eval set."
+  },
+  "decision": {
+    "alpha": 0.05,
+    "guard_max_drop": 0.05,
+    "rule": "PASS if the primary suite improves (candidate > base, McNemar exact p < 0.05) AND no guard category drops by 5 points or more, or by any amount with p < 0.05. Otherwise FAIL."
+  },
+  "next": {
+    "PASS": "rouge-1-rl-001 becomes the parent of the next iteration (rouge-1-rl-002 samples from it); convert to Rouge Edge (GGUF) on a free CPU job and measure it",
+    "FAIL": "the base stays Rouge 1 v0; change prompts, selection or hyperparameters and register rouge-1-rl-002; the same recipe does not get more compute"
+  },
+  "result": null,
+  "budget": {
+    "machine": "H200_X_8 (8 x H200 141 GB, NVLink), live price 36.00 USD/h on 2026-09-30",
+    "enforced": "worst case = max hours x live price x 1.05 within the ceiling (cost.CEILING_USD) and the teamspace balance; the trainer stops at its own budget check",
+    "approval": "the owner approves the run in the protected GitHub environment rouge-gpu"
+  }
+}
