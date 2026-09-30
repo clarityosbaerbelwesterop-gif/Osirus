@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Runs inside a Lightning CPU job: builds the production corpus with the frozen tokenizer, verifies it,
-# uploads it to the teamspace drive (rouge/data/$ROUGE_CORPUS) and prints its manifest as ROUGE_PREPARE.
+# Runs on a GitHub runner (cwd training/rouge; see rouge-train.yml) or inside a Lightning CPU job: builds
+# the production corpus with the frozen tokenizer, verifies it, uploads it to the Lightning model registry
+# (rouge/data/$ROUGE_CORPUS) and prints its manifest as ROUGE_PREPARE.
 set -euo pipefail
 OUT=/tmp/rouge-corpus
 python -m native.data.build --out "$OUT" --tokens "$ROUGE_TOKENS" --mixture v2 --tokenizer configs/native/data-v1/tokenizer.json
