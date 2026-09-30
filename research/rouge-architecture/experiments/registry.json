@@ -239248,5 +239248,3461 @@
    "result": "PARTIAL"
   },
   "recorded": "2026-09-30T00:05:48Z"
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "exec-sup-rl-seed1",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "exec-sup-rl",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0,
+   "rl_after": 0.3333
+  },
+  "seed": 1,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "acad272d0823ca1d268679d1293b25499e5a819209d97bf6bc49e8f8a6c515fa",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007875",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2724.0,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.2525,
+    "task": {
+     "trace": 0.295,
+     "chain": 0.21
+    },
+    "level": {
+     "trace:1": 0.2308,
+     "trace:2": 0.3061,
+     "trace:3": 0.2642,
+     "trace:4": 0.3913,
+     "chain:2": 0.2308,
+     "chain:3": 0.1852,
+     "chain:4": 0.1379,
+     "chain:5": 0.2857,
+     "chain:6": 0.3,
+     "chain:7": 0.16,
+     "chain:8": 0.12
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.36377017106860876,
+     "confident_error_rate": 0.1875,
+     "auroc_confidence": 0.6814132918308553
+    }
+   },
+   "holdout": {
+    "all": 0.2775,
+    "task": {
+     "trace": 0.34,
+     "chain": 0.215
+    },
+    "level": {
+     "trace:1": 0.2593,
+     "trace:2": 0.3409,
+     "trace:3": 0.2979,
+     "trace:4": 0.4545,
+     "chain:2": 0.25,
+     "chain:3": 0.4583,
+     "chain:4": 0.1081,
+     "chain:5": 0.2,
+     "chain:6": 0.2353,
+     "chain:7": 0.1739,
+     "chain:8": 0.125
+    },
+    "steps": {
+     "trace": 2.515,
+     "chain": 4.915
+    },
+    "steps_mean": 3.715,
+    "calibration": {
+     "ece": 0.3478823201730848,
+     "confident_error_rate": 0.18,
+     "auroc_confidence": 0.6916986190342592
+    }
+   },
+   "ood": {
+    "all": 0.2475,
+    "task": {
+     "trace": 0.325,
+     "chain": 0.17
+    },
+    "level": {
+     "trace:6": 0.2778,
+     "trace:7": 0.225,
+     "trace:8": 0.4167,
+     "trace:9": 0.3478,
+     "chain:12": 0.1765,
+     "chain:13": 0.16,
+     "chain:14": 0.2195,
+     "chain:15": 0.1143,
+     "chain:16": 0.175
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.39083638820797206,
+     "confident_error_rate": 0.2,
+     "auroc_confidence": 0.6601563810866137
+    }
+   },
+   "adv": {
+    "all": 0.23,
+    "task": {
+     "trace": 0.27,
+     "chain": 0.19
+    },
+    "level": {
+     "trace:1": 0.32,
+     "trace:2": 0.3182,
+     "trace:3": 0.12,
+     "trace:4": 0.3214,
+     "chain:2": 0.2,
+     "chain:3": 0.0909,
+     "chain:4": 0.0476,
+     "chain:5": 0.2308,
+     "chain:6": 0.1765,
+     "chain:7": 0.1765,
+     "chain:8": 0.5455
+    },
+    "steps": {
+     "trace": 2.56,
+     "chain": 5.11
+    },
+    "steps_mean": 3.835,
+    "calibration": {
+     "ece": 0.4019057727605104,
+     "confident_error_rate": 0.21,
+     "auroc_confidence": 0.6499153020892151
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "exec-sup-rl-seed2",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "exec-sup-rl",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0,
+   "rl_after": 0.3333
+  },
+  "seed": 2,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "a9d11bba23034d8c5aedc1fceb6832a7fecd221b25a0ffa1cacfd7da2529bd43",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007873",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 1886.2,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.3375,
+    "task": {
+     "trace": 0.445,
+     "chain": 0.23
+    },
+    "level": {
+     "trace:1": 0.2308,
+     "trace:2": 0.6735,
+     "trace:3": 0.2453,
+     "trace:4": 0.6739,
+     "chain:2": 0.2308,
+     "chain:3": 0.1481,
+     "chain:4": 0.1379,
+     "chain:5": 0.25,
+     "chain:6": 0.25,
+     "chain:7": 0.28,
+     "chain:8": 0.32
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.34215030290186405,
+     "confident_error_rate": 0.18,
+     "auroc_confidence": 0.7991334730957372
+    }
+   },
+   "holdout": {
+    "all": 0.325,
+    "task": {
+     "trace": 0.43,
+     "chain": 0.22
+    },
+    "level": {
+     "trace:1": 0.2222,
+     "trace:2": 0.5,
+     "trace:3": 0.3404,
+     "trace:4": 0.6545,
+     "chain:2": 0.2143,
+     "chain:3": 0.25,
+     "chain:4": 0.1081,
+     "chain:5": 0.2667,
+     "chain:6": 0.2059,
+     "chain:7": 0.2609,
+     "chain:8": 0.2917
+    },
+    "steps": {
+     "trace": 2.515,
+     "chain": 4.915
+    },
+    "steps_mean": 3.715,
+    "calibration": {
+     "ece": 0.3736939085647464,
+     "confident_error_rate": 0.225,
+     "auroc_confidence": 0.7704558404558405
+    }
+   },
+   "ood": {
+    "all": 0.3,
+    "task": {
+     "trace": 0.39,
+     "chain": 0.21
+    },
+    "level": {
+     "trace:6": 0.4444,
+     "trace:7": 0.35,
+     "trace:8": 0.3833,
+     "trace:9": 0.3696,
+     "chain:12": 0.1765,
+     "chain:13": 0.18,
+     "chain:14": 0.1707,
+     "chain:15": 0.2,
+     "chain:16": 0.325
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.421856091953814,
+     "confident_error_rate": 0.29,
+     "auroc_confidence": 0.6980059523809524
+    }
+   },
+   "adv": {
+    "all": 0.375,
+    "task": {
+     "trace": 0.49,
+     "chain": 0.26
+    },
+    "level": {
+     "trace:1": 0.4,
+     "trace:2": 0.5455,
+     "trace:3": 0.4,
+     "trace:4": 0.6071,
+     "chain:2": 0.3,
+     "chain:3": 0.1818,
+     "chain:4": 0.1429,
+     "chain:5": 0.3846,
+     "chain:6": 0.3529,
+     "chain:7": 0.1765,
+     "chain:8": 0.3636
+    },
+    "steps": {
+     "trace": 2.56,
+     "chain": 5.11
+    },
+    "steps_mean": 3.835,
+    "calibration": {
+     "ece": 0.3441723785549402,
+     "confident_error_rate": 0.23,
+     "auroc_confidence": 0.7236266666666666
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "exec-sup-rl-seed3",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "exec-sup-rl",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0,
+   "rl_after": 0.3333
+  },
+  "seed": 3,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "a240233a3ab38dbce40a7727fd6cce843de95b670d56d8c2f61c37b672db2fd4",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007881",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2673.9,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.325,
+    "task": {
+     "trace": 0.45,
+     "chain": 0.2
+    },
+    "level": {
+     "trace:1": 0.4231,
+     "trace:2": 0.449,
+     "trace:3": 0.3585,
+     "trace:4": 0.587,
+     "chain:2": 0.3077,
+     "chain:3": 0.0741,
+     "chain:4": 0.2069,
+     "chain:5": 0.2143,
+     "chain:6": 0.15,
+     "chain:7": 0.24,
+     "chain:8": 0.24
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.44475805304944516,
+     "confident_error_rate": 0.3375,
+     "auroc_confidence": 0.7368091168091168
+    }
+   },
+   "holdout": {
+    "all": 0.39,
+    "task": {
+     "trace": 0.53,
+     "chain": 0.25
+    },
+    "level": {
+     "trace:1": 0.5,
+     "trace:2": 0.4091,
+     "trace:3": 0.5745,
+     "trace:4": 0.6182,
+     "chain:2": 0.25,
+     "chain:3": 0.4167,
+     "chain:4": 0.1892,
+     "chain:5": 0.3333,
+     "chain:6": 0.2059,
+     "chain:7": 0.2174,
+     "chain:8": 0.1667
+    },
+    "steps": {
+     "trace": 2.515,
+     "chain": 4.915
+    },
+    "steps_mean": 3.715,
+    "calibration": {
+     "ece": 0.40559209048748013,
+     "confident_error_rate": 0.3,
+     "auroc_confidence": 0.6975620008406893
+    }
+   },
+   "ood": {
+    "all": 0.25,
+    "task": {
+     "trace": 0.315,
+     "chain": 0.185
+    },
+    "level": {
+     "trace:6": 0.3889,
+     "trace:7": 0.275,
+     "trace:8": 0.4,
+     "trace:9": 0.1522,
+     "chain:12": 0.1471,
+     "chain:13": 0.16,
+     "chain:14": 0.2195,
+     "chain:15": 0.1429,
+     "chain:16": 0.25
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.5196802470833063,
+     "confident_error_rate": 0.375,
+     "auroc_confidence": 0.6638666666666667
+    }
+   },
+   "adv": {
+    "all": 0.325,
+    "task": {
+     "trace": 0.44,
+     "chain": 0.21
+    },
+    "level": {
+     "trace:1": 0.36,
+     "trace:2": 0.4545,
+     "trace:3": 0.28,
+     "trace:4": 0.6429,
+     "chain:2": 0.2,
+     "chain:3": 0.2727,
+     "chain:4": 0.1905,
+     "chain:5": 0.3077,
+     "chain:6": 0.2941,
+     "chain:7": 0.0588,
+     "chain:8": 0.1818
+    },
+    "steps": {
+     "trace": 2.56,
+     "chain": 5.11
+    },
+    "steps_mean": 3.835,
+    "calibration": {
+     "ece": 0.4481773142516613,
+     "confident_error_rate": 0.31,
+     "auroc_confidence": 0.7084900284900285
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "exec-sup-seed1",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "exec-sup",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0
+  },
+  "seed": 1,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "94e9263684f03ed98c1d56904186e717d9e125d79cfd7938fcd03fac98136a76",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007877",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2824.9,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.3525,
+    "task": {
+     "trace": 0.445,
+     "chain": 0.26
+    },
+    "level": {
+     "trace:1": 0.3269,
+     "trace:2": 0.4898,
+     "trace:3": 0.4151,
+     "trace:4": 0.5652,
+     "chain:2": 0.3462,
+     "chain:3": 0.2593,
+     "chain:4": 0.2069,
+     "chain:5": 0.2857,
+     "chain:6": 0.225,
+     "chain:7": 0.2,
+     "chain:8": 0.32
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.046287853699177504,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.7788000766724171
+    }
+   },
+   "holdout": {
+    "all": 0.3825,
+    "task": {
+     "trace": 0.54,
+     "chain": 0.225
+    },
+    "level": {
+     "trace:1": 0.4259,
+     "trace:2": 0.5227,
+     "trace:3": 0.5745,
+     "trace:4": 0.6364,
+     "chain:2": 0.3571,
+     "chain:3": 0.25,
+     "chain:4": 0.2432,
+     "chain:5": 0.3,
+     "chain:6": 0.1176,
+     "chain:7": 0.1304,
+     "chain:8": 0.1667
+    },
+    "steps": {
+     "trace": 2.515,
+     "chain": 4.915
+    },
+    "steps_mean": 3.715,
+    "calibration": {
+     "ece": 0.04820824982598426,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8072027731470456
+    }
+   },
+   "ood": {
+    "all": 0.295,
+    "task": {
+     "trace": 0.34,
+     "chain": 0.25
+    },
+    "level": {
+     "trace:6": 0.2593,
+     "trace:7": 0.325,
+     "trace:8": 0.3833,
+     "trace:9": 0.3913,
+     "chain:12": 0.2353,
+     "chain:13": 0.28,
+     "chain:14": 0.3171,
+     "chain:15": 0.3143,
+     "chain:16": 0.1
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.12182085912674664,
+     "confident_error_rate": 0.055,
+     "auroc_confidence": 0.705733862243058
+    }
+   },
+   "adv": {
+    "all": 0.355,
+    "task": {
+     "trace": 0.48,
+     "chain": 0.23
+    },
+    "level": {
+     "trace:1": 0.48,
+     "trace:2": 0.4545,
+     "trace:3": 0.44,
+     "trace:4": 0.5357,
+     "chain:2": 0.1,
+     "chain:3": 0.1818,
+     "chain:4": 0.1905,
+     "chain:5": 0.3077,
+     "chain:6": 0.2941,
+     "chain:7": 0.2353,
+     "chain:8": 0.2727
+    },
+    "steps": {
+     "trace": 2.56,
+     "chain": 5.11
+    },
+    "steps_mean": 3.835,
+    "calibration": {
+     "ece": 0.06313353080302475,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.787094660989191
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "exec-sup-seed2",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "exec-sup",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0
+  },
+  "seed": 2,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "66affec5d2ddcbc0c8ca1ed10318b8333028e353bdb1dc6f1f8d01c5d1019fd4",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007880",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2266.2,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.4325,
+    "task": {
+     "trace": 0.585,
+     "chain": 0.28
+    },
+    "level": {
+     "trace:1": 0.2885,
+     "trace:2": 0.7347,
+     "trace:3": 0.5849,
+     "trace:4": 0.7609,
+     "chain:2": 0.4615,
+     "chain:3": 0.2593,
+     "chain:4": 0.2069,
+     "chain:5": 0.3214,
+     "chain:6": 0.2,
+     "chain:7": 0.32,
+     "chain:8": 0.24
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.02120241172611713,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8705151383972907
+    }
+   },
+   "holdout": {
+    "all": 0.405,
+    "task": {
+     "trace": 0.565,
+     "chain": 0.245
+    },
+    "level": {
+     "trace:1": 0.2037,
+     "trace:2": 0.6364,
+     "trace:3": 0.6596,
+     "trace:4": 0.7818,
+     "chain:2": 0.1786,
+     "chain:3": 0.3333,
+     "chain:4": 0.1622,
+     "chain:5": 0.3667,
+     "chain:6": 0.2941,
+     "chain:7": 0.1739,
+     "chain:8": 0.2083
+    },
+    "steps": {
+     "trace": 2.515,
+     "chain": 4.915
+    },
+    "steps_mean": 3.715,
+    "calibration": {
+     "ece": 0.03216945830732584,
+     "confident_error_rate": 0.0025,
+     "auroc_confidence": 0.8756354393609296
+    }
+   },
+   "ood": {
+    "all": 0.295,
+    "task": {
+     "trace": 0.33,
+     "chain": 0.26
+    },
+    "level": {
+     "trace:6": 0.3148,
+     "trace:7": 0.275,
+     "trace:8": 0.45,
+     "trace:9": 0.2391,
+     "chain:12": 0.2353,
+     "chain:13": 0.26,
+     "chain:14": 0.3415,
+     "chain:15": 0.2571,
+     "chain:16": 0.2
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.14660338352434335,
+     "confident_error_rate": 0.1075,
+     "auroc_confidence": 0.6645630484433225
+    }
+   },
+   "adv": {
+    "all": 0.455,
+    "task": {
+     "trace": 0.62,
+     "chain": 0.29
+    },
+    "level": {
+     "trace:1": 0.24,
+     "trace:2": 0.8182,
+     "trace:3": 0.64,
+     "trace:4": 0.7857,
+     "chain:2": 0.4,
+     "chain:3": 0.3636,
+     "chain:4": 0.2381,
+     "chain:5": 0.3846,
+     "chain:6": 0.2353,
+     "chain:7": 0.1176,
+     "chain:8": 0.4545
+    },
+    "steps": {
+     "trace": 2.56,
+     "chain": 5.11
+    },
+    "steps_mean": 3.835,
+    "calibration": {
+     "ece": 0.030954798869788646,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.9000907349531203
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "exec-sup-seed3",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "exec-sup",
+  "config": {
+   "kind": "exec",
+   "d": 128,
+   "heads": 4,
+   "hint_weight": 0.0
+  },
+  "seed": 3,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 211120,
+  "active_parameters": 211120,
+  "flop_estimate": 72450048.0,
+  "checkpoint_sha256": "c655882c7655815fe479997fbef9a29d9294f03b74105e4b67abc5deb200aef4",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007874",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 2836.8,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.4575,
+    "task": {
+     "trace": 0.61,
+     "chain": 0.305
+    },
+    "level": {
+     "trace:1": 0.5385,
+     "trace:2": 0.5714,
+     "trace:3": 0.5849,
+     "trace:4": 0.7609,
+     "chain:2": 0.3462,
+     "chain:3": 0.2963,
+     "chain:4": 0.3448,
+     "chain:5": 0.25,
+     "chain:6": 0.3,
+     "chain:7": 0.28,
+     "chain:8": 0.32
+    },
+    "steps": {
+     "trace": 2.465,
+     "chain": 5.02
+    },
+    "steps_mean": 3.7425,
+    "calibration": {
+     "ece": 0.054662785287946464,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.823701241469618
+    }
+   },
+   "holdout": {
+    "all": 0.45,
+    "task": {
+     "trace": 0.655,
+     "chain": 0.245
+    },
+    "level": {
+     "trace:1": 0.6481,
+     "trace:2": 0.5227,
+     "trace:3": 0.617,
+     "trace:4": 0.8,
+     "chain:2": 0.3571,
+     "chain:3": 0.2917,
+     "chain:4": 0.2162,
+     "chain:5": 0.3667,
+     "chain:6": 0.2059,
+     "chain:7": 0.2174,
+     "chain:8": 0.0417
+    },
+    "steps": {
+     "trace": 2.515,
+     "chain": 4.915
+    },
+    "steps_mean": 3.715,
+    "calibration": {
+     "ece": 0.07902598014101385,
+     "confident_error_rate": 0.0025,
+     "auroc_confidence": 0.8833333333333333
+    }
+   },
+   "ood": {
+    "all": 0.235,
+    "task": {
+     "trace": 0.275,
+     "chain": 0.195
+    },
+    "level": {
+     "trace:6": 0.3889,
+     "trace:7": 0.125,
+     "trace:8": 0.4,
+     "trace:9": 0.1087,
+     "chain:12": 0.2647,
+     "chain:13": 0.1,
+     "chain:14": 0.2439,
+     "chain:15": 0.1714,
+     "chain:16": 0.225
+    },
+    "steps": {
+     "trace": 7.49,
+     "chain": 13.985
+    },
+    "steps_mean": 10.7375,
+    "calibration": {
+     "ece": 0.23315366536378865,
+     "confident_error_rate": 0.125,
+     "auroc_confidence": 0.7074815741899597
+    }
+   },
+   "adv": {
+    "all": 0.43,
+    "task": {
+     "trace": 0.63,
+     "chain": 0.23
+    },
+    "level": {
+     "trace:1": 0.52,
+     "trace:2": 0.6818,
+     "trace:3": 0.48,
+     "trace:4": 0.8214,
+     "chain:2": 0.3,
+     "chain:3": 0.0909,
+     "chain:4": 0.0476,
+     "chain:5": 0.3846,
+     "chain:6": 0.3529,
+     "chain:7": 0.2353,
+     "chain:8": 0.2727
+    },
+    "steps": {
+     "trace": 2.56,
+     "chain": 5.11
+    },
+    "steps_mean": 3.835,
+    "calibration": {
+     "ece": 0.060067708939313895,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8278253773969808
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "transformer-sup-rl-seed1",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "transformer-sup-rl",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "rl_after": 0.3333
+  },
+  "seed": 1,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "cd6ad1de4e666f46c91371dc0b04c6f39636c8ecc87498230b2aa9a219eef10d",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007876",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 744.4,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.4175,
+    "task": {
+     "trace": 0.545,
+     "chain": 0.29
+    },
+    "level": {
+     "trace:1": 0.5192,
+     "trace:2": 0.4694,
+     "trace:3": 0.6038,
+     "trace:4": 0.587,
+     "chain:2": 0.3846,
+     "chain:3": 0.3333,
+     "chain:4": 0.2759,
+     "chain:5": 0.2857,
+     "chain:6": 0.3,
+     "chain:7": 0.28,
+     "chain:8": 0.16
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.29563953589648007,
+     "confident_error_rate": 0.2075,
+     "auroc_confidence": 0.7078975097016268
+    }
+   },
+   "holdout": {
+    "all": 0.4425,
+    "task": {
+     "trace": 0.59,
+     "chain": 0.295
+    },
+    "level": {
+     "trace:1": 0.5556,
+     "trace:2": 0.5682,
+     "trace:3": 0.617,
+     "trace:4": 0.6182,
+     "chain:2": 0.5,
+     "chain:3": 0.2917,
+     "chain:4": 0.2162,
+     "chain:5": 0.3333,
+     "chain:6": 0.2647,
+     "chain:7": 0.2174,
+     "chain:8": 0.25
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.27819910168647766,
+     "confident_error_rate": 0.225,
+     "auroc_confidence": 0.721694408553115
+    }
+   },
+   "ood": {
+    "all": 0.2925,
+    "task": {
+     "trace": 0.415,
+     "chain": 0.17
+    },
+    "level": {
+     "trace:6": 0.3889,
+     "trace:7": 0.425,
+     "trace:8": 0.4167,
+     "trace:9": 0.4348,
+     "chain:12": 0.2059,
+     "chain:13": 0.2,
+     "chain:14": 0.1707,
+     "chain:15": 0.1143,
+     "chain:16": 0.15
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.4193694696575404,
+     "confident_error_rate": 0.275,
+     "auroc_confidence": 0.7036634351121983
+    }
+   },
+   "adv": {
+    "all": 0.41,
+    "task": {
+     "trace": 0.55,
+     "chain": 0.27
+    },
+    "level": {
+     "trace:1": 0.56,
+     "trace:2": 0.5909,
+     "trace:3": 0.36,
+     "trace:4": 0.6786,
+     "chain:2": 0.3,
+     "chain:3": 0.5455,
+     "chain:4": 0.2381,
+     "chain:5": 0.1538,
+     "chain:6": 0.1765,
+     "chain:7": 0.1765,
+     "chain:8": 0.4545
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.2938449364900589,
+     "confident_error_rate": 0.21,
+     "auroc_confidence": 0.6472715998346424
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "transformer-sup-rl-seed2",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "transformer-sup-rl",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "rl_after": 0.3333
+  },
+  "seed": 2,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "621753f3cfaa7df992a164d4b0e7df4b0f572cf37f2746ab8b95395ee4468adb",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007883",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 574.3,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.3575,
+    "task": {
+     "trace": 0.44,
+     "chain": 0.275
+    },
+    "level": {
+     "trace:1": 0.4423,
+     "trace:2": 0.3265,
+     "trace:3": 0.5472,
+     "trace:4": 0.4348,
+     "chain:2": 0.2692,
+     "chain:3": 0.2222,
+     "chain:4": 0.2759,
+     "chain:5": 0.3214,
+     "chain:6": 0.275,
+     "chain:7": 0.28,
+     "chain:8": 0.28
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.2507908129692078,
+     "confident_error_rate": 0.105,
+     "auroc_confidence": 0.6880629098527932
+    }
+   },
+   "holdout": {
+    "all": 0.375,
+    "task": {
+     "trace": 0.485,
+     "chain": 0.265
+    },
+    "level": {
+     "trace:1": 0.463,
+     "trace:2": 0.3636,
+     "trace:3": 0.5106,
+     "trace:4": 0.5818,
+     "chain:2": 0.2857,
+     "chain:3": 0.375,
+     "chain:4": 0.1622,
+     "chain:5": 0.3333,
+     "chain:6": 0.2941,
+     "chain:7": 0.1304,
+     "chain:8": 0.2917
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.2408107153326273,
+     "confident_error_rate": 0.1025,
+     "auroc_confidence": 0.7337866666666667
+    }
+   },
+   "ood": {
+    "all": 0.3025,
+    "task": {
+     "trace": 0.46,
+     "chain": 0.145
+    },
+    "level": {
+     "trace:6": 0.3889,
+     "trace:7": 0.475,
+     "trace:8": 0.5167,
+     "trace:9": 0.4565,
+     "chain:12": 0.1176,
+     "chain:13": 0.14,
+     "chain:14": 0.1951,
+     "chain:15": 0.0571,
+     "chain:16": 0.2
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.3074465370550752,
+     "confident_error_rate": 0.1225,
+     "auroc_confidence": 0.6776267069522202
+    }
+   },
+   "adv": {
+    "all": 0.34,
+    "task": {
+     "trace": 0.45,
+     "chain": 0.23
+    },
+    "level": {
+     "trace:1": 0.44,
+     "trace:2": 0.4091,
+     "trace:3": 0.28,
+     "trace:4": 0.6429,
+     "chain:2": 0.2,
+     "chain:3": 0.1818,
+     "chain:4": 0.1429,
+     "chain:5": 0.3077,
+     "chain:6": 0.2353,
+     "chain:7": 0.1765,
+     "chain:8": 0.4545
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.2866424930840731,
+     "confident_error_rate": 0.13,
+     "auroc_confidence": 0.6918449197860963
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "transformer-sup-rl-seed3",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "transformer-sup-rl",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4,
+   "rl_after": 0.3333
+  },
+  "seed": 3,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "55499a073882bcdfa9e5128661cd596356e0f5e213fc2b3423831915b2cd66ad",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007882",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 742.5,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.3525,
+    "task": {
+     "trace": 0.43,
+     "chain": 0.275
+    },
+    "level": {
+     "trace:1": 0.3654,
+     "trace:2": 0.4286,
+     "trace:3": 0.434,
+     "trace:4": 0.5,
+     "chain:2": 0.5385,
+     "chain:3": 0.2593,
+     "chain:4": 0.1724,
+     "chain:5": 0.2857,
+     "chain:6": 0.3,
+     "chain:7": 0.2,
+     "chain:8": 0.16
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.198030414506793,
+     "confident_error_rate": 0.06,
+     "auroc_confidence": 0.6797831265916372
+    }
+   },
+   "holdout": {
+    "all": 0.3725,
+    "task": {
+     "trace": 0.465,
+     "chain": 0.28
+    },
+    "level": {
+     "trace:1": 0.5,
+     "trace:2": 0.4318,
+     "trace:3": 0.5532,
+     "trace:4": 0.3818,
+     "chain:2": 0.3571,
+     "chain:3": 0.2917,
+     "chain:4": 0.2703,
+     "chain:5": 0.2667,
+     "chain:6": 0.2353,
+     "chain:7": 0.2609,
+     "chain:8": 0.2917
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.17262923039495945,
+     "confident_error_rate": 0.0225,
+     "auroc_confidence": 0.738201556191342
+    }
+   },
+   "ood": {
+    "all": 0.34,
+    "task": {
+     "trace": 0.475,
+     "chain": 0.205
+    },
+    "level": {
+     "trace:6": 0.3889,
+     "trace:7": 0.45,
+     "trace:8": 0.5,
+     "trace:9": 0.5652,
+     "chain:12": 0.2647,
+     "chain:13": 0.18,
+     "chain:14": 0.122,
+     "chain:15": 0.1429,
+     "chain:16": 0.325
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.21666817486286163,
+     "confident_error_rate": 0.0725,
+     "auroc_confidence": 0.6645777629233511
+    }
+   },
+   "adv": {
+    "all": 0.355,
+    "task": {
+     "trace": 0.42,
+     "chain": 0.29
+    },
+    "level": {
+     "trace:1": 0.56,
+     "trace:2": 0.4091,
+     "trace:3": 0.36,
+     "trace:4": 0.3571,
+     "chain:2": 0.2,
+     "chain:3": 0.2727,
+     "chain:4": 0.2381,
+     "chain:5": 0.3846,
+     "chain:6": 0.4706,
+     "chain:7": 0.2353,
+     "chain:8": 0.1818
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.1850175288319588,
+     "confident_error_rate": 0.05,
+     "auroc_confidence": 0.6473414128179932
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "transformer-sup-seed1",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "transformer-sup",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 1,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "614b6faa9d6a3b9eb7ff1ab192c70dd9f5c3a29af18393c201d14c2ef91916c9",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007884",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 485.5,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.5825,
+    "task": {
+     "trace": 0.835,
+     "chain": 0.33
+    },
+    "level": {
+     "trace:1": 0.8654,
+     "trace:2": 0.7959,
+     "trace:3": 0.7358,
+     "trace:4": 0.9565,
+     "chain:2": 0.3846,
+     "chain:3": 0.3333,
+     "chain:4": 0.2414,
+     "chain:5": 0.3929,
+     "chain:6": 0.225,
+     "chain:7": 0.4,
+     "chain:8": 0.4
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03269547592848542,
+     "confident_error_rate": 0.0025,
+     "auroc_confidence": 0.8858934491531958
+    }
+   },
+   "holdout": {
+    "all": 0.62,
+    "task": {
+     "trace": 0.88,
+     "chain": 0.36
+    },
+    "level": {
+     "trace:1": 0.963,
+     "trace:2": 0.7045,
+     "trace:3": 0.8511,
+     "trace:4": 0.9636,
+     "chain:2": 0.6071,
+     "chain:3": 0.5417,
+     "chain:4": 0.2703,
+     "chain:5": 0.3333,
+     "chain:6": 0.2941,
+     "chain:7": 0.1739,
+     "chain:8": 0.3333
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.044359154999256106,
+     "confident_error_rate": 0.0025,
+     "auroc_confidence": 0.900599533106961
+    }
+   },
+   "ood": {
+    "all": 0.2825,
+    "task": {
+     "trace": 0.385,
+     "chain": 0.18
+    },
+    "level": {
+     "trace:6": 0.537,
+     "trace:7": 0.325,
+     "trace:8": 0.35,
+     "trace:9": 0.3043,
+     "chain:12": 0.2647,
+     "chain:13": 0.14,
+     "chain:14": 0.2195,
+     "chain:15": 0.1714,
+     "chain:16": 0.125
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.2850307639688254,
+     "confident_error_rate": 0.18,
+     "auroc_confidence": 0.7637445653849712
+    }
+   },
+   "adv": {
+    "all": 0.605,
+    "task": {
+     "trace": 0.86,
+     "chain": 0.35
+    },
+    "level": {
+     "trace:1": 0.92,
+     "trace:2": 0.8182,
+     "trace:3": 0.76,
+     "trace:4": 0.9286,
+     "chain:2": 0.4,
+     "chain:3": 0.4545,
+     "chain:4": 0.2381,
+     "chain:5": 0.4615,
+     "chain:6": 0.2353,
+     "chain:7": 0.4706,
+     "chain:8": 0.2727
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.05161393798887728,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.8893189664190815
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "transformer-sup-seed2",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "transformer-sup",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 2,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "a7e0031d378b7c8de8b0da75b6ac4df2ff9ccfbfa79d16e6bcf00b27f0dee3e9",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007878",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 711.0,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.3825,
+    "task": {
+     "trace": 0.445,
+     "chain": 0.32
+    },
+    "level": {
+     "trace:1": 0.3654,
+     "trace:2": 0.4898,
+     "trace:3": 0.4151,
+     "trace:4": 0.5217,
+     "chain:2": 0.5769,
+     "chain:3": 0.2222,
+     "chain:4": 0.2759,
+     "chain:5": 0.3929,
+     "chain:6": 0.25,
+     "chain:7": 0.32,
+     "chain:8": 0.24
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.037079180590808364,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.7071260352994099
+    }
+   },
+   "holdout": {
+    "all": 0.3775,
+    "task": {
+     "trace": 0.43,
+     "chain": 0.325
+    },
+    "level": {
+     "trace:1": 0.3889,
+     "trace:2": 0.3864,
+     "trace:3": 0.5106,
+     "trace:4": 0.4364,
+     "chain:2": 0.4643,
+     "chain:3": 0.375,
+     "chain:4": 0.3243,
+     "chain:5": 0.3,
+     "chain:6": 0.2647,
+     "chain:7": 0.2174,
+     "chain:8": 0.3333
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.042950029708445074,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6771190723157531
+    }
+   },
+   "ood": {
+    "all": 0.2925,
+    "task": {
+     "trace": 0.41,
+     "chain": 0.175
+    },
+    "level": {
+     "trace:6": 0.4074,
+     "trace:7": 0.425,
+     "trace:8": 0.3667,
+     "trace:9": 0.4565,
+     "chain:12": 0.1765,
+     "chain:13": 0.24,
+     "chain:14": 0.1951,
+     "chain:15": 0.0571,
+     "chain:16": 0.175
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.08584570683538911,
+     "confident_error_rate": 0.005,
+     "auroc_confidence": 0.7061701549334058
+    }
+   },
+   "adv": {
+    "all": 0.39,
+    "task": {
+     "trace": 0.5,
+     "chain": 0.28
+    },
+    "level": {
+     "trace:1": 0.4,
+     "trace:2": 0.5,
+     "trace:3": 0.44,
+     "trace:4": 0.6429,
+     "chain:2": 0.2,
+     "chain:3": 0.4545,
+     "chain:4": 0.1905,
+     "chain:5": 0.3077,
+     "chain:6": 0.2353,
+     "chain:7": 0.2941,
+     "chain:8": 0.3636
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.056106643825769444,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.6925178646490122
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "transformer-sup-seed3",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": "transformer-sup",
+  "config": {
+   "kind": "transformer",
+   "d": 64,
+   "layers": 4,
+   "heads": 4
+  },
+  "seed": 3,
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 206256,
+  "active_parameters": 206256,
+  "flop_estimate": 9050112.0,
+  "checkpoint_sha256": "f10a3d5c95d31459eec8b19267aba8a53b622be3dda0e7f3aab97547a5d7f765",
+  "hardware": {
+   "machine": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007879",
+   "runner_environment": "github-hosted"
+  },
+  "duration_s": 722.9,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "dev": {
+    "all": 0.435,
+    "task": {
+     "trace": 0.555,
+     "chain": 0.315
+    },
+    "level": {
+     "trace:1": 0.5769,
+     "trace:2": 0.4898,
+     "trace:3": 0.5472,
+     "trace:4": 0.6087,
+     "chain:2": 0.5769,
+     "chain:3": 0.4074,
+     "chain:4": 0.1379,
+     "chain:5": 0.2857,
+     "chain:6": 0.25,
+     "chain:7": 0.2,
+     "chain:8": 0.4
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.03845248602330686,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.7893652731156545
+    }
+   },
+   "holdout": {
+    "all": 0.42,
+    "task": {
+     "trace": 0.555,
+     "chain": 0.285
+    },
+    "level": {
+     "trace:1": 0.537,
+     "trace:2": 0.5455,
+     "trace:3": 0.5957,
+     "trace:4": 0.5455,
+     "chain:2": 0.4643,
+     "chain:3": 0.4167,
+     "chain:4": 0.1622,
+     "chain:5": 0.2333,
+     "chain:6": 0.2941,
+     "chain:7": 0.3478,
+     "chain:8": 0.125
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.04678309697657823,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.7954638752052545
+    }
+   },
+   "ood": {
+    "all": 0.315,
+    "task": {
+     "trace": 0.485,
+     "chain": 0.145
+    },
+    "level": {
+     "trace:6": 0.5,
+     "trace:7": 0.5,
+     "trace:8": 0.5333,
+     "trace:9": 0.3913,
+     "chain:12": 0.1176,
+     "chain:13": 0.08,
+     "chain:14": 0.1463,
+     "chain:15": 0.2,
+     "chain:16": 0.2
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.1441969593986869,
+     "confident_error_rate": 0.03,
+     "auroc_confidence": 0.7749102073919593
+    }
+   },
+   "adv": {
+    "all": 0.405,
+    "task": {
+     "trace": 0.56,
+     "chain": 0.25
+    },
+    "level": {
+     "trace:1": 0.64,
+     "trace:2": 0.5909,
+     "trace:3": 0.36,
+     "trace:4": 0.6429,
+     "chain:2": 0.2,
+     "chain:3": 0.2727,
+     "chain:4": 0.1905,
+     "chain:5": 0.2308,
+     "chain:6": 0.1765,
+     "chain:7": 0.2941,
+     "chain:8": 0.4545
+    },
+    "steps": {
+     "trace": 0.0,
+     "chain": 0.0
+    },
+    "steps_mean": 0.0,
+    "calibration": {
+     "ece": 0.05773468919098378,
+     "confident_error_rate": 0.0,
+     "auroc_confidence": 0.7356572258533043
+    }
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.39b",
+  "run": "experiment",
+  "parent": "R1.39 (FAIL: reward-only training from scratch stays at the cue floor)",
+  "hypothesis": "If a model first learns from labels for one third of the steps and then only from the executor's right/wrong signal on its own sampled answers, does it execute programs better out of distribution than the same model trained with labels for all steps?",
+  "architecture": [
+   "transformer-sup",
+   "transformer-sup-rl",
+   "exec-sup",
+   "exec-sup-rl"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "0cb1b9ed35d7c42b49213f63ab10b4bac823a645aac2a63e3c5ef22e009e845e",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": null,
+  "flop_estimate": 150000000000000.0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 19192.600000000002,
+  "cost_usd": 0.0,
+  "ci_run": "36649207166",
+  "metrics": {
+   "experiment": "R1.39b",
+   "models": {
+    "transformer-sup": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.46666666666666673,
+       "sd": 0.1036922530053877,
+       "ci95": [
+        0.2090600406182908,
+        0.7242732927150426
+       ],
+       "n": 3,
+       "values": [
+        0.5825,
+        0.3825,
+        0.435
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.4725,
+       "sd": 0.1294942083646987,
+       "ci95": [
+        0.15079259040304438,
+        0.7942074095969556
+       ],
+       "n": 3,
+       "values": [
+        0.62,
+        0.3775,
+        0.42
+       ]
+      },
+      "ood.all": {
+       "mean": 0.29666666666666663,
+       "sd": 0.0166458202961985,
+       "ci95": [
+        0.2553128192959429,
+        0.33802051403739036
+       ],
+       "n": 3,
+       "values": [
+        0.2825,
+        0.2925,
+        0.315
+       ]
+      },
+      "adv.all": {
+       "mean": 0.4666666666666666,
+       "sd": 0.12003471720020559,
+       "ci95": [
+        0.16845983240095475,
+        0.7648735009323785
+       ],
+       "n": 3,
+       "values": [
+        0.605,
+        0.39,
+        0.405
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.6116666666666667,
+       "sd": 0.20108041509140895,
+       "ci95": [
+        0.11211490850963879,
+        1.1112184248236945
+       ],
+       "n": 3,
+       "values": [
+        0.835,
+        0.445,
+        0.555
+       ]
+      },
+      "dev.chain": {
+       "mean": 0.3216666666666667,
+       "sd": 0.00763762615825974,
+       "ci95": [
+        0.30269222018081515,
+        0.34064111315251827
+       ],
+       "n": 3,
+       "values": [
+        0.33,
+        0.32,
+        0.315
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.4266666666666666,
+       "sd": 0.05204164998665331,
+       "ci95": [
+        0.29737760718065376,
+        0.5559557261526794
+       ],
+       "n": 3,
+       "values": [
+        0.385,
+        0.41,
+        0.485
+       ]
+      },
+      "ood.chain": {
+       "mean": 0.16666666666666666,
+       "sd": 0.018929694486000914,
+       "ci95": [
+        0.11963890338321413,
+        0.21369442995011917
+       ],
+       "n": 3,
+       "values": [
+        0.18,
+        0.175,
+        0.145
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.64,
+       "sd": 0.19287301521985908,
+       "ci95": [
+        0.1608381989348483,
+        1.1191618010651516
+       ],
+       "n": 3,
+       "values": [
+        0.86,
+        0.5,
+        0.56
+       ]
+      },
+      "adv.chain": {
+       "mean": 0.29333333333333333,
+       "sd": 0.051316014394468826,
+       "ci95": [
+        0.16584699807430342,
+        0.42081966859236325
+       ],
+       "n": 3,
+       "values": [
+        0.35,
+        0.28,
+        0.25
+       ]
+      },
+      "above_cue.trace": {
+       "mean": 0.4486666666666667,
+       "sd": 0.20108041509140892,
+       "ci95": [
+        -0.050885091490361134,
+        0.9482184248236946
+       ],
+       "n": 3,
+       "values": [
+        0.6719999999999999,
+        0.28200000000000003,
+        0.392
+       ]
+      },
+      "steps.trace": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.chain": {
+       "mean": 0.15466666666666665,
+       "sd": 0.00763762615825974,
+       "ci95": [
+        0.13569222018081506,
+        0.17364111315251823
+       ],
+       "n": 3,
+       "values": [
+        0.163,
+        0.153,
+        0.148
+       ]
+      },
+      "steps.chain": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 206256,
+      "params_active": 206256,
+      "stored_bytes": 825024,
+      "flops": {
+       "mean": 9050112.0,
+       "sd": 0.0,
+       "ci95": [
+        9050112.0,
+        9050112.0
+       ],
+       "n": 3,
+       "values": [
+        9050112.0,
+        9050112.0,
+        9050112.0
+       ]
+      },
+      "train_flops": {
+       "mean": 26064322560000.0,
+       "sd": 0.0,
+       "ci95": [
+        26064322560000.0,
+        26064322560000.0
+       ],
+       "n": 3,
+       "values": [
+        26064322560000.0,
+        26064322560000.0,
+        26064322560000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 71680,
+      "total_bytes": 71680,
+      "peak_rss_mb": {
+       "mean": 361.5,
+       "sd": 1.0440306508910446,
+       "ci95": [
+        358.9062747633311,
+        364.0937252366689
+       ],
+       "n": 3,
+       "values": [
+        361.0,
+        362.7,
+        360.8
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.16966666666666666,
+       "sd": 0.033724372986511306,
+       "ci95": [
+        0.08588391830454194,
+        0.25344941502879137
+       ],
+       "n": 3,
+       "values": [
+        0.131,
+        0.193,
+        0.185
+       ]
+      },
+      "train_seconds": {
+       "mean": 639.8000000000001,
+       "sd": 133.76012111238535,
+       "ci95": [
+        307.49462037059453,
+        972.1053796294057
+       ],
+       "n": 3,
+       "values": [
+        485.5,
+        711.0,
+        722.9
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 2559.133333333333,
+       "sd": 534.982806577308,
+       "ci95": [
+        1230.0551061574754,
+        3888.2115605091913
+       ],
+       "n": 3,
+       "values": [
+        1942.0,
+        2843.9,
+        2891.5
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.36916666666666664,
+       "sd": 0.03715135708602492,
+       "ci95": [
+        0.276870130766805,
+        0.4614632025665283
+       ],
+       "n": 3,
+       "values": [
+        0.4092,
+        0.3358,
+        0.3625
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.036075714180866886,
+       "sd": 0.003006825557773449,
+       "ci95": [
+        0.028605742561928313,
+        0.04354568579980546
+       ],
+       "n": 3,
+       "values": [
+        0.03269547592848542,
+        0.037079180590808364,
+        0.03845248602330686
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.17169114340096714,
+       "sd": 0.10239931328761925,
+       "ci95": [
+        -0.0827033831054983,
+        0.4260856699074326
+       ],
+       "n": 3,
+       "values": [
+        0.2850307639688254,
+        0.08584570683538911,
+        0.1441969593986869
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0008333333333333334,
+       "sd": 0.0014433756729740645,
+       "ci95": [
+        -0.0027525,
+        0.004419166666666667
+       ],
+       "n": 3,
+       "values": [
+        0.0025,
+        0.0,
+        0.0
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.07166666666666667,
+       "sd": 0.09464847243000456,
+       "ci95": [
+        -0.16347214975059593,
+        0.30680548308392924
+       ],
+       "n": 3,
+       "values": [
+        0.18,
+        0.005,
+        0.03
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.7941282525227534,
+       "sd": 0.08947883293615885,
+       "ci95": [
+        0.5718325690233071,
+        1.0164239360221998
+       ],
+       "n": 3,
+       "values": [
+        0.8858934491531958,
+        0.7071260352994099,
+        0.7893652731156545
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.7482749759034455,
+       "sd": 0.03688874966770177,
+       "ci95": [
+        0.6566308456467131,
+        0.8399191061601778
+       ],
+       "n": 3,
+       "values": [
+        0.7637445653849712,
+        0.7061701549334058,
+        0.7749102073919593
+       ]
+      }
+     },
+     "memory_tokens": 35
+    },
+    "transformer-sup-rl": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.3758333333333333,
+       "sd": 0.036170890690351176,
+       "ci95": [
+        0.28597260756222065,
+        0.46569405910444595
+       ],
+       "n": 3,
+       "values": [
+        0.4175,
+        0.3575,
+        0.3525
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.39666666666666667,
+       "sd": 0.03971250852481285,
+       "ci95": [
+        0.2980073643901228,
+        0.4953259689432105
+       ],
+       "n": 3,
+       "values": [
+        0.4425,
+        0.375,
+        0.3725
+       ]
+      },
+      "ood.all": {
+       "mean": 0.3116666666666667,
+       "sd": 0.025041632002194555,
+       "ci95": [
+        0.24945478348485178,
+        0.3738785498484816
+       ],
+       "n": 3,
+       "values": [
+        0.2925,
+        0.3025,
+        0.34
+       ]
+      },
+      "adv.all": {
+       "mean": 0.36833333333333335,
+       "sd": 0.03685557397915995,
+       "ci95": [
+        0.2767716227072328,
+        0.45989504395943387
+       ],
+       "n": 3,
+       "values": [
+        0.41,
+        0.34,
+        0.355
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.4716666666666667,
+       "sd": 0.06370504951205466,
+       "ci95": [
+        0.31340177810076336,
+        0.6299315552325699
+       ],
+       "n": 3,
+       "values": [
+        0.545,
+        0.44,
+        0.43
+       ]
+      },
+      "dev.chain": {
+       "mean": 0.27999999999999997,
+       "sd": 0.008660254037844362,
+       "ci95": [
+        0.258485,
+        0.3015149999999999
+       ],
+       "n": 3,
+       "values": [
+        0.29,
+        0.275,
+        0.275
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.45,
+       "sd": 0.031224989991991997,
+       "ci95": [
+        0.37242656430839227,
+        0.5275734356916078
+       ],
+       "n": 3,
+       "values": [
+        0.415,
+        0.46,
+        0.475
+       ]
+      },
+      "ood.chain": {
+       "mean": 0.17333333333333334,
+       "sd": 0.03013856886670854,
+       "ci95": [
+        0.09845893515359651,
+        0.24820773151307018
+       ],
+       "n": 3,
+       "values": [
+        0.17,
+        0.145,
+        0.205
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.47333333333333333,
+       "sd": 0.06806859285554048,
+       "ci95": [
+        0.3042279273155349,
+        0.6424387393511317
+       ],
+       "n": 3,
+       "values": [
+        0.55,
+        0.45,
+        0.42
+       ]
+      },
+      "adv.chain": {
+       "mean": 0.26333333333333336,
+       "sd": 0.03055050463303892,
+       "ci95": [
+        0.18743554738992718,
+        0.33923111927673955
+       ],
+       "n": 3,
+       "values": [
+        0.27,
+        0.23,
+        0.29
+       ]
+      },
+      "above_cue.trace": {
+       "mean": 0.3086666666666667,
+       "sd": 0.06370504951205463,
+       "ci95": [
+        0.15040177810076344,
+        0.46693155523256996
+       ],
+       "n": 3,
+       "values": [
+        0.382,
+        0.277,
+        0.267
+       ]
+      },
+      "steps.trace": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "above_cue.chain": {
+       "mean": 0.11299999999999999,
+       "sd": 0.008660254037844362,
+       "ci95": [
+        0.09148500000000005,
+        0.13451499999999994
+       ],
+       "n": 3,
+       "values": [
+        0.12299999999999997,
+        0.10800000000000001,
+        0.10800000000000001
+       ]
+      },
+      "steps.chain": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "params": 206256,
+      "params_active": 206256,
+      "stored_bytes": 825024,
+      "flops": {
+       "mean": 9050112.0,
+       "sd": 0.0,
+       "ci95": [
+        9050112.0,
+        9050112.0
+       ],
+       "n": 3,
+       "values": [
+        9050112.0,
+        9050112.0,
+        9050112.0
+       ]
+      },
+      "train_flops": {
+       "mean": 26064322560000.0,
+       "sd": 0.0,
+       "ci95": [
+        26064322560000.0,
+        26064322560000.0
+       ],
+       "n": 3,
+       "values": [
+        26064322560000.0,
+        26064322560000.0,
+        26064322560000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 71680,
+      "total_bytes": 71680,
+      "peak_rss_mb": {
+       "mean": 368.73333333333335,
+       "sd": 1.2662279942148258,
+       "ci95": [
+        365.5875947468573,
+        371.8790719198094
+       ],
+       "n": 3,
+       "values": [
+        367.3,
+        369.2,
+        369.7
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.18366666666666664,
+       "sd": 0.016041612554021287,
+       "ci95": [
+        0.1438138756755983,
+        0.22351945765773498
+       ],
+       "n": 3,
+       "values": [
+        0.199,
+        0.167,
+        0.185
+       ]
+      },
+      "train_seconds": {
+       "mean": 687.0666666666666,
+       "sd": 97.66341860355564,
+       "ci95": [
+        444.43770427441393,
+        929.6956290589193
+       ],
+       "n": 3,
+       "values": [
+        744.4,
+        574.3,
+        742.5
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 2748.4,
+       "sd": 390.68205743289496,
+       "ci95": [
+        1777.8136374132341,
+        3718.986362586766
+       ],
+       "n": 3,
+       "values": [
+        2977.7,
+        2297.3,
+        2970.2
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.3297333333333333,
+       "sd": 0.0342047267688741,
+       "ci95": [
+        0.24475722371617226,
+        0.4147094429504944
+       ],
+       "n": 3,
+       "values": [
+        0.365,
+        0.2967,
+        0.3275
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.24815358779082697,
+       "sd": 0.04885797132605671,
+       "ci95": [
+        0.1267738628443567,
+        0.3695333127372972
+       ],
+       "n": 3,
+       "values": [
+        0.29563953589648007,
+        0.2507908129692078,
+        0.198030414506793
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.31449472719182575,
+       "sd": 0.10153428714484905,
+       "ci95": [
+        0.06224921818304252,
+        0.566740236200609
+       ],
+       "n": 3,
+       "values": [
+        0.4193694696575404,
+        0.3074465370550752,
+        0.21666817486286163
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.12416666666666666,
+       "sd": 0.07559486314117735,
+       "ci95": [
+        -0.06363654018790522,
+        0.31196987352123856
+       ],
+       "n": 3,
+       "values": [
+        0.2075,
+        0.105,
+        0.06
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.15666666666666668,
+       "sd": 0.1054849910334799,
+       "ci95": [
+        -0.10539372696241228,
+        0.41872706029574563
+       ],
+       "n": 3,
+       "values": [
+        0.275,
+        0.1225,
+        0.0725
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.6919145153820191,
+       "sd": 0.014447518239420554,
+       "ci95": [
+        0.6560219938043838,
+        0.7278070369596544
+       ],
+       "n": 3,
+       "values": [
+        0.7078975097016268,
+        0.6880629098527932,
+        0.6797831265916372
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.6819559683292565,
+       "sd": 0.01989922914754563,
+       "ci95": [
+        0.632519553041835,
+        0.731392383616678
+       ],
+       "n": 3,
+       "values": [
+        0.7036634351121983,
+        0.6776267069522202,
+        0.6645777629233511
+       ]
+      }
+     },
+     "memory_tokens": 35
+    },
+    "exec-sup": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "exec",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.4141666666666666,
+       "sd": 0.054848275573014464,
+       "ci95": [
+        0.27790499999999996,
+        0.5504283333333333
+       ],
+       "n": 3,
+       "values": [
+        0.3525,
+        0.4325,
+        0.4575
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.41250000000000003,
+       "sd": 0.0343693177121688,
+       "ci95": [
+        0.327114990813668,
+        0.49788500918633205
+       ],
+       "n": 3,
+       "values": [
+        0.3825,
+        0.405,
+        0.45
+       ]
+      },
+      "ood.all": {
+       "mean": 0.27499999999999997,
+       "sd": 0.034641016151377546,
+       "ci95": [
+        0.18893999999999997,
+        0.36105999999999994
+       ],
+       "n": 3,
+       "values": [
+        0.295,
+        0.295,
+        0.235
+       ]
+      },
+      "adv.all": {
+       "mean": 0.41333333333333333,
+       "sd": 0.05204164998665334,
+       "ci95": [
+        0.2840442738473204,
+        0.5426223928193463
+       ],
+       "n": 3,
+       "values": [
+        0.355,
+        0.455,
+        0.43
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.5466666666666667,
+       "sd": 0.08892881047969399,
+       "ci95": [
+        0.3257374249712517,
+        0.7675959083620818
+       ],
+       "n": 3,
+       "values": [
+        0.445,
+        0.585,
+        0.61
+       ]
+      },
+      "dev.chain": {
+       "mean": 0.2816666666666667,
+       "sd": 0.02254624876411446,
+       "ci95": [
+        0.22565415940762282,
+        0.33767917392571056
+       ],
+       "n": 3,
+       "values": [
+        0.26,
+        0.28,
+        0.305
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.315,
+       "sd": 0.034999999999999996,
+       "ci95": [
+        0.22804816270869643,
+        0.40195183729130357
+       ],
+       "n": 3,
+       "values": [
+        0.34,
+        0.33,
+        0.275
+       ]
+      },
+      "ood.chain": {
+       "mean": 0.23500000000000001,
+       "sd": 0.034999999999999996,
+       "ci95": [
+        0.14804816270869642,
+        0.3219518372913036
+       ],
+       "n": 3,
+       "values": [
+        0.25,
+        0.26,
+        0.195
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.5766666666666667,
+       "sd": 0.08386497083606084,
+       "ci95": [
+        0.36831771527875,
+        0.7850156180545833
+       ],
+       "n": 3,
+       "values": [
+        0.48,
+        0.62,
+        0.63
+       ]
+      },
+      "adv.chain": {
+       "mean": 0.25,
+       "sd": 0.034641016151377525,
+       "ci95": [
+        0.16394000000000003,
+        0.33605999999999997
+       ],
+       "n": 3,
+       "values": [
+        0.23,
+        0.29,
+        0.23
+       ]
+      },
+      "above_cue.trace": {
+       "mean": 0.3836666666666666,
+       "sd": 0.08892881047969395,
+       "ci95": [
+        0.1627374249712517,
+        0.6045959083620815
+       ],
+       "n": 3,
+       "values": [
+        0.28200000000000003,
+        0.42199999999999993,
+        0.44699999999999995
+       ]
+      },
+      "steps.trace": {
+       "mean": 2.465,
+       "sd": 0.0,
+       "ci95": [
+        2.465,
+        2.465
+       ],
+       "n": 3,
+       "values": [
+        2.465,
+        2.465,
+        2.465
+       ]
+      },
+      "above_cue.chain": {
+       "mean": 0.11466666666666665,
+       "sd": 0.02254624876411446,
+       "ci95": [
+        0.05865415940762279,
+        0.17067917392571053
+       ],
+       "n": 3,
+       "values": [
+        0.093,
+        0.11300000000000002,
+        0.13799999999999998
+       ]
+      },
+      "steps.chain": {
+       "mean": 5.02,
+       "sd": 0.0,
+       "ci95": [
+        5.02,
+        5.02
+       ],
+       "n": 3,
+       "values": [
+        5.02,
+        5.02,
+        5.02
+       ]
+      },
+      "params": 211120,
+      "params_active": 211120,
+      "stored_bytes": 844480,
+      "flops": {
+       "mean": 72450048.0,
+       "sd": 0.0,
+       "ci95": [
+        72450048.0,
+        72450048.0
+       ],
+       "n": 3,
+       "values": [
+        72450048.0,
+        72450048.0,
+        72450048.0
+       ]
+      },
+      "train_flops": {
+       "mean": 208656138240000.0,
+       "sd": 0.0,
+       "ci95": [
+        208656138240000.0,
+        208656138240000.0
+       ],
+       "n": 3,
+       "values": [
+        208656138240000.0,
+        208656138240000.0,
+        208656138240000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 35840,
+      "total_bytes": 35840,
+      "peak_rss_mb": {
+       "mean": 512.6,
+       "sd": 10.911920087683937,
+       "ci95": [
+        485.4911,
+        539.7089000000001
+       ],
+       "n": 3,
+       "values": [
+        522.5,
+        500.9,
+        514.4
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.5956666666666667,
+       "sd": 0.09859175083815754,
+       "ci95": [
+        0.3507314130339747,
+        0.8406019202993587
+       ],
+       "n": 3,
+       "values": [
+        0.647,
+        0.482,
+        0.658
+       ]
+      },
+      "train_seconds": {
+       "mean": 2642.6333333333337,
+       "sd": 326.0551231514902,
+       "ci95": [
+        1832.6021328686384,
+        3452.664533798029
+       ],
+       "n": 3,
+       "values": [
+        2824.9,
+        2266.2,
+        2836.8
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 10570.566666666668,
+       "sd": 1304.1627671933188,
+       "ci95": [
+        7330.585274256105,
+        13810.548059077231
+       ],
+       "n": 3,
+       "values": [
+        11299.6,
+        9064.9,
+        11347.2
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.3536333333333333,
+       "sd": 0.028008272587457677,
+       "ci95": [
+        0.2840513115951876,
+        0.423215355071479
+       ],
+       "n": 3,
+       "values": [
+        0.3475,
+        0.3842,
+        0.3292
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.04071768357108036,
+       "sd": 0.017411755975956334,
+       "ci95": [
+        -0.002539007073983586,
+        0.08397437421614432
+       ],
+       "n": 3,
+       "values": [
+        0.046287853699177504,
+        0.02120241172611713,
+        0.054662785287946464
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.16719263600495957,
+       "sd": 0.058452428730007486,
+       "ci95": [
+        0.02197703394172726,
+        0.31240823806819185
+       ],
+       "n": 3,
+       "values": [
+        0.12182085912674664,
+        0.14660338352434335,
+        0.23315366536378865
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.0,
+       "sd": 0.0,
+       "ci95": [
+        0.0,
+        0.0
+       ],
+       "n": 3,
+       "values": [
+        0.0,
+        0.0,
+        0.0
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.09583333333333333,
+       "sd": 0.036429154990657325,
+       "ci95": [
+        0.005330991693124287,
+        0.18633567497354236
+       ],
+       "n": 3,
+       "values": [
+        0.055,
+        0.1075,
+        0.125
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.8243388188464419,
+       "sd": 0.045860854936240765,
+       "ci95": [
+        0.7104049446619823,
+        0.9382726930309014
+       ],
+       "n": 3,
+       "values": [
+        0.7788000766724171,
+        0.8705151383972907,
+        0.823701241469618
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.6925928282921134,
+       "sd": 0.024290225257109083,
+       "ci95": [
+        0.632247693597106,
+        0.7529379629871209
+       ],
+       "n": 3,
+       "values": [
+        0.705733862243058,
+        0.6645630484433225,
+        0.7074815741899597
+       ]
+      }
+     },
+     "memory_tokens": 35
+    },
+    "exec-sup-rl": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "exec",
+     "metrics": {
+      "dev.all": {
+       "mean": 0.305,
+       "sd": 0.04589389937671456,
+       "ci95": [
+        0.19098403224949875,
+        0.4190159677505012
+       ],
+       "n": 3,
+       "values": [
+        0.2525,
+        0.3375,
+        0.325
+       ]
+      },
+      "holdout.all": {
+       "mean": 0.33083333333333337,
+       "sd": 0.056476396249524746,
+       "ci95": [
+        0.19052686426225154,
+        0.4711398024044152
+       ],
+       "n": 3,
+       "values": [
+        0.2775,
+        0.325,
+        0.39
+       ]
+      },
+      "ood.all": {
+       "mean": 0.2658333333333333,
+       "sd": 0.02961559273986143,
+       "ci95": [
+        0.1922581847275635,
+        0.3394084819391031
+       ],
+       "n": 3,
+       "values": [
+        0.2475,
+        0.3,
+        0.25
+       ]
+      },
+      "adv.all": {
+       "mean": 0.31,
+       "sd": 0.07365459931328118,
+       "ci95": [
+        0.12701706470729754,
+        0.49298293529270243
+       ],
+       "n": 3,
+       "values": [
+        0.23,
+        0.375,
+        0.325
+       ]
+      },
+      "dev.trace": {
+       "mean": 0.39666666666666667,
+       "sd": 0.08808140174482543,
+       "ci95": [
+        0.17784267486935226,
+        0.6154906584639811
+       ],
+       "n": 3,
+       "values": [
+        0.295,
+        0.445,
+        0.45
+       ]
+      },
+      "dev.chain": {
+       "mean": 0.21333333333333335,
+       "sd": 0.015275252316519468,
+       "ci95": [
+        0.17538444036163023,
+        0.2512822263050365
+       ],
+       "n": 3,
+       "values": [
+        0.21,
+        0.23,
+        0.2
+       ]
+      },
+      "ood.trace": {
+       "mean": 0.3433333333333333,
+       "sd": 0.04072263907623539,
+       "ci95": [
+        0.24216452513249614,
+        0.4445021415341705
+       ],
+       "n": 3,
+       "values": [
+        0.325,
+        0.39,
+        0.315
+       ]
+      },
+      "ood.chain": {
+       "mean": 0.18833333333333332,
+       "sd": 0.02020725942163689,
+       "ci95": [
+        0.13813166666666668,
+        0.23853499999999997
+       ],
+       "n": 3,
+       "values": [
+        0.17,
+        0.21,
+        0.185
+       ]
+      },
+      "adv.trace": {
+       "mean": 0.39999999999999997,
+       "sd": 0.11532562594670795,
+       "ci95": [
+        0.1134921410618317,
+        0.6865078589381682
+       ],
+       "n": 3,
+       "values": [
+        0.27,
+        0.49,
+        0.44
+       ]
+      },
+      "adv.chain": {
+       "mean": 0.22,
+       "sd": 0.0360555127546399,
+       "ci95": [
+        0.1304259120429723,
+        0.3095740879570277
+       ],
+       "n": 3,
+       "values": [
+        0.19,
+        0.26,
+        0.21
+       ]
+      },
+      "above_cue.trace": {
+       "mean": 0.2336666666666667,
+       "sd": 0.08808140174482544,
+       "ci95": [
+        0.01484267486935223,
+        0.4524906584639812
+       ],
+       "n": 3,
+       "values": [
+        0.13199999999999998,
+        0.28200000000000003,
+        0.28700000000000003
+       ]
+      },
+      "steps.trace": {
+       "mean": 2.465,
+       "sd": 0.0,
+       "ci95": [
+        2.465,
+        2.465
+       ],
+       "n": 3,
+       "values": [
+        2.465,
+        2.465,
+        2.465
+       ]
+      },
+      "above_cue.chain": {
+       "mean": 0.04633333333333333,
+       "sd": 0.015275252316519468,
+       "ci95": [
+        0.008384440361630212,
+        0.08428222630503646
+       ],
+       "n": 3,
+       "values": [
+        0.04299999999999998,
+        0.063,
+        0.033
+       ]
+      },
+      "steps.chain": {
+       "mean": 5.02,
+       "sd": 0.0,
+       "ci95": [
+        5.02,
+        5.02
+       ],
+       "n": 3,
+       "values": [
+        5.02,
+        5.02,
+        5.02
+       ]
+      },
+      "params": 211120,
+      "params_active": 211120,
+      "stored_bytes": 844480,
+      "flops": {
+       "mean": 72450048.0,
+       "sd": 0.0,
+       "ci95": [
+        72450048.0,
+        72450048.0
+       ],
+       "n": 3,
+       "values": [
+        72450048.0,
+        72450048.0,
+        72450048.0
+       ]
+      },
+      "train_flops": {
+       "mean": 208656138240000.0,
+       "sd": 0.0,
+       "ci95": [
+        208656138240000.0,
+        208656138240000.0
+       ],
+       "n": 3,
+       "values": [
+        208656138240000.0,
+        208656138240000.0,
+        208656138240000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 35840,
+      "total_bytes": 35840,
+      "peak_rss_mb": {
+       "mean": 514.1,
+       "sd": 4.563989482897639,
+       "ci95": [
+        502.76150654525327,
+        525.4384934547468
+       ],
+       "n": 3,
+       "values": [
+        510.4,
+        519.2,
+        512.7
+       ]
+      },
+      "latency_ms": {
+       "mean": 0.5466666666666667,
+       "sd": 0.07635007094517549,
+       "ci95": [
+        0.35698726820939863,
+        0.7363460651239349
+       ],
+       "n": 3,
+       "values": [
+        0.604,
+        0.46,
+        0.576
+       ]
+      },
+      "train_seconds": {
+       "mean": 2428.0333333333333,
+       "sd": 469.9095905951839,
+       "ci95": [
+        1260.6189829603186,
+        3595.447683706348
+       ],
+       "n": 3,
+       "values": [
+        2724.0,
+        1886.2,
+        2673.9
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 9712.133333333333,
+       "sd": 1879.6277113655594,
+       "ci95": [
+        5042.502392565234,
+        14381.764274101432
+       ],
+       "n": 3,
+       "values": [
+        10895.8,
+        7544.8,
+        10695.8
+       ]
+      },
+      "sample_efficiency": {
+       "mean": 0.32503333333333334,
+       "sd": 0.023228933107943914,
+       "ci95": [
+        0.2673248072746901,
+        0.3827418593919766
+       ],
+       "n": 3,
+       "values": [
+        0.2992,
+        0.3317,
+        0.3442
+       ]
+      },
+      "dev.cal.ece": {
+       "mean": 0.3835595090066393,
+       "sd": 0.054090674053909604,
+       "ci95": [
+        0.24917998074056832,
+        0.5179390372727103
+       ],
+       "n": 3,
+       "values": [
+        0.36377017106860876,
+        0.34215030290186405,
+        0.44475805304944516
+       ]
+      },
+      "ood.cal.ece": {
+       "mean": 0.44412424241503085,
+       "sd": 0.06724647118023594,
+       "ci95": [
+        0.2770612646870819,
+        0.6111872201429798
+       ],
+       "n": 3,
+       "values": [
+        0.39083638820797206,
+        0.421856091953814,
+        0.5196802470833063
+       ]
+      },
+      "dev.cal.confident_error_rate": {
+       "mean": 0.23500000000000001,
+       "sd": 0.08884677821958432,
+       "ci95": [
+        0.014274554182690524,
+        0.4557254458173095
+       ],
+       "n": 3,
+       "values": [
+        0.1875,
+        0.18,
+        0.3375
+       ]
+      },
+      "ood.cal.confident_error_rate": {
+       "mean": 0.28833333333333333,
+       "sd": 0.08751190395216718,
+       "ci95": [
+        0.07092416666187537,
+        0.5057425000047913
+       ],
+       "n": 3,
+       "values": [
+        0.2,
+        0.29,
+        0.375
+       ]
+      },
+      "dev.cal.auroc_confidence": {
+       "mean": 0.7391186272452365,
+       "sd": 0.05889406292742991,
+       "ci95": [
+        0.5928058564712456,
+        0.8854313980192273
+       ],
+       "n": 3,
+       "values": [
+        0.6814132918308553,
+        0.7991334730957372,
+        0.7368091168091168
+       ]
+      },
+      "ood.cal.auroc_confidence": {
+       "mean": 0.6740096667114109,
+       "sd": 0.020864032429568087,
+       "ci95": [
+        0.6221763537669456,
+        0.7258429796558763
+       ],
+       "n": 3,
+       "values": [
+        0.6601563810866137,
+        0.6980059523809524,
+        0.6638666666666667
+       ]
+      }
+     },
+     "memory_tokens": 35
+    }
+   },
+   "cue_floors": {
+    "trace": 0.163,
+    "chain": 0.167
+   }
+  },
+  "result": "FAIL",
+  "decision": {
+   "complete": true,
+   "checks": {
+    "RL1_exec_ood": false,
+    "RL2_transformer_ood": false,
+    "RL3_no_id_loss": false,
+    "RL4_calibration": false
+   },
+   "result": "FAIL"
+  },
+  "recorded": "2026-09-30T02:43:32Z"
  }
 ]
