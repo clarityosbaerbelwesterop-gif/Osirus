@@ -246331,5 +246331,1318 @@
    "result": "FAIL"
   },
   "recorded": "2026-09-30T07:41:19Z"
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "transformer-d200-seed1",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "transformer-d200",
+  "config": {
+   "kind": "transformer",
+   "d": 200,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 3912400,
+  "active_parameters": null,
+  "flop_estimate": 7782400.0,
+  "checkpoint_sha256": "180486f6a5327e03cdb9bb6e742cded6de7046c023e7ac80f87715b29ebc779b",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007933"
+  },
+  "duration_s": 8433.6,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.8158408432158715,
+   "test_bpb": 1.8801237767801902,
+   "stream": {
+    "b0_0_256": 1.733066249039458,
+    "b1_256_1k": 1.731526660348934,
+    "b2_1k_4k": 1.7627733282709435,
+    "all": 1.7550576706052854
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "transformer-d200-seed2",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "transformer-d200",
+  "config": {
+   "kind": "transformer",
+   "d": 200,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 3912400,
+  "active_parameters": null,
+  "flop_estimate": 7782400.0,
+  "checkpoint_sha256": "beac09ef9fbf9b3b184f47ece41528a4fc95b81495995449001f2d186bc53f81",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007930"
+  },
+  "duration_s": 8483.6,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.7808572395156739,
+   "test_bpb": 1.8269048741068403,
+   "stream": {
+    "b0_0_256": 1.6836317278581032,
+    "b1_256_1k": 1.6675214250211805,
+    "b2_1k_4k": 1.7003463777301577,
+    "all": 1.6931470119823897
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "transformer-d200-seed3",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "transformer-d200",
+  "config": {
+   "kind": "transformer",
+   "d": 200,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 3912400,
+  "active_parameters": null,
+  "flop_estimate": 7782400.0,
+  "checkpoint_sha256": "2c1a9ab79db2d8ec8443476c5aa1245de5d3ce42273218b69f11663f075e45c0",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007938"
+  },
+  "duration_s": 7083.2,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.7625288441838263,
+   "test_bpb": 1.8169355665331914,
+   "stream": {
+    "b0_0_256": 1.631781882328031,
+    "b1_256_1k": 1.6041391108548517,
+    "b2_1k_4k": 1.6262275306357656,
+    "all": 1.6224330774097795
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "transformer-seed1",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "transformer",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "5aa64503d89b4d12017796ca228cd2677c6bf5007ddc9faaaa8d8ada87e9e98a",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007935"
+  },
+  "duration_s": 8092.2,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.7548967808354032,
+   "test_bpb": 1.8091044870109732,
+   "stream": {
+    "b0_0_256": 1.6512444709955716,
+    "b1_256_1k": 1.6582097683555153,
+    "b2_1k_4k": 1.678593840066379,
+    "all": 1.6730623620666785
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "transformer-seed2",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "transformer",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "2d7071b8ad4d966aecf4316351b507c1215e1aa1895d36db083e15258f394c7a",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007929"
+  },
+  "duration_s": 17923.2,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.7025886122896974,
+   "test_bpb": 1.745248838968265,
+   "stream": {
+    "b0_0_256": 1.6008839952219713,
+    "b1_256_1k": 1.5713139861632235,
+    "b2_1k_4k": 1.581261978637081,
+    "all": 1.5806230630891256
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "transformer-seed3",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "transformer",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "163a34b48def0988ca08aecc758ac83dae2ee99e1cf3a672c3e9d66263a65796",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007937"
+  },
+  "duration_s": 18227.1,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.7064994440257393,
+   "test_bpb": 1.7517388730214651,
+   "stream": {
+    "b0_0_256": 1.5650827107571623,
+    "b1_256_1k": 1.527404923588789,
+    "b2_1k_4k": 1.5572886290027106,
+    "all": 1.5521724891048438
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "transformer-ternary-seed1",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "transformer-ternary",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5,
+   "ternary": true
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "8c3b728823d2903fd47d01080e068d3940ed5003fd0a8ec0dc0f468912d96789",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007927"
+  },
+  "duration_s": 12647.3,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.7426603549624182,
+   "test_bpb": 1.7717905721361629,
+   "stream": {
+    "b0_0_256": 1.6253325329206756,
+    "b1_256_1k": 1.5690204255313172,
+    "b2_1k_4k": 1.5987103064977164,
+    "all": 1.5948075042016867
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "transformer-ternary-seed2",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "transformer-ternary",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5,
+   "ternary": true
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "abf1c5187ea7a7ae6324dc41d6bc737cac0693ecca1e877cc77065f28802602a",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007928"
+  },
+  "duration_s": 18210.4,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.7223656174897621,
+   "test_bpb": 1.756474431436346,
+   "stream": {
+    "b0_0_256": 1.5963646351225984,
+    "b1_256_1k": 1.550635480154083,
+    "b2_1k_4k": 1.5730078432915713,
+    "all": 1.5702728031949
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "transformer-ternary-seed3",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "transformer-ternary",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5,
+   "ternary": true
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "037b6ed2163a6748195bb024e9c1f8d1d81a940eb4ab2fae89521d3a01f13649",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007934"
+  },
+  "duration_s": 18132.6,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.7331556047754968,
+   "test_bpb": 1.7638657835670555,
+   "stream": {
+    "b0_0_256": 1.5862226462185678,
+    "b1_256_1k": 1.522701370070342,
+    "b2_1k_4k": 1.553821974709269,
+    "all": 1.5500118710620543
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "window-ternary-seed1",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "window-ternary",
+  "config": {
+   "kind": "rouge",
+   "d": 320,
+   "layers": 8,
+   "heads": 5,
+   "slots": 0,
+   "block": 64,
+   "ternary": true
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "5305ca21b3b3fc98c05a56366184e74ad84652c0c707cc56e86a51d039e7feb9",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007936"
+  },
+  "duration_s": 9110.5,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.856551748661608,
+   "test_bpb": 1.8854597427526067,
+   "stream": {
+    "b0_0_256": 1.725112223419704,
+    "b1_256_1k": 1.5872526503145852,
+    "b2_1k_4k": 1.6138509711490745,
+    "all": 1.615817592761691
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "window-ternary-seed2",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "window-ternary",
+  "config": {
+   "kind": "rouge",
+   "d": 320,
+   "layers": 8,
+   "heads": 5,
+   "slots": 0,
+   "block": 64,
+   "ternary": true
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "27a2a4a940cecaa383a8946d895ec5ccfcdbb867398f0aaa4b96373891ccce50",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007931"
+  },
+  "duration_s": 15470.7,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.833191001229611,
+   "test_bpb": 1.8703813573186923,
+   "stream": {
+    "b0_0_256": 1.7108158216014313,
+    "b1_256_1k": 1.5878657684649111,
+    "b2_1k_4k": 1.6257676490273585,
+    "all": 1.6239764497186224
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "window-ternary-seed3",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": "window-ternary",
+  "config": {
+   "kind": "rouge",
+   "d": 320,
+   "layers": 8,
+   "heads": 5,
+   "slots": 0,
+   "block": 64,
+   "ternary": true
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "8aef807e8199d57e98f6a8f2067645042280dc4754f11a4a05458bf1405d1fdb",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007932"
+  },
+  "duration_s": 18029.3,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "valid_bpb": 1.8498376749589123,
+   "test_bpb": 1.9049735500033573,
+   "stream": {
+    "b0_0_256": 1.6930756391822817,
+    "b1_256_1k": 1.5826844471423673,
+    "b2_1k_4k": 1.612852611860816,
+    "all": 1.6122100846771925
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.29b",
+  "run": "experiment",
+  "parent": "R1.29 (PASS on suite v3: ternary MLP 47.2 vs 38.8 byte-matched fp32), R1.14 (FAIL for Rouge's state; sliding window with a cached block best on long streams), R1.31 (ternary dominates the stored-bytes frontier on suite v3)",
+  "hypothesis": "Does R1.29's result transfer to real text: does a 10M Transformer with ternary MLP weights (15.2 MB stored) predict enwik8 better than an fp32 Transformer with the same stored bytes (d=200, 15.6 MB), and stay close to the full fp32 model (38.9 MB)? And does the combination of the two measured winners (window architecture + ternary MLP) keep the window's long-stream quality?",
+  "architecture": [
+   "transformer",
+   "transformer-ternary",
+   "transformer-d200",
+   "window-ternary"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "b07d8ad63a46f807b614f5b0fe874c197454fe56",
+  "parameter_count": {
+   "transformer": 9950000,
+   "transformer-ternary": 9950000,
+   "transformer-d200": 3910000,
+   "window-ternary": 9950000
+  },
+  "flop_estimate": 1950000000000000.0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 159843.7,
+  "cost_usd": 0.0,
+  "ci_run": "36681965922",
+  "metrics": {
+   "experiment": "R1.29b",
+   "dataset": [
+    "enwik8"
+   ],
+   "dataset_sha256": [
+    "2b49720ec4d78c3c9fabaee6e4179a5e997302b3a70029f30f2d582218c024a8"
+   ],
+   "floors": {
+    "order1_bpb": 4.895550589513838,
+    "order3_bpb": 3.152611575611511
+   },
+   "models": {
+    "transformer": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 1.7213282790502802,
+       "sd": 0.02913686471277025,
+       "ci95": [
+        1.648942452773608,
+        1.7937141053269523
+       ],
+       "n": 3,
+       "values": [
+        1.7548967808354032,
+        1.7025886122896974,
+        1.7064994440257393
+       ]
+      },
+      "test.bpb": {
+       "mean": 1.768697399666901,
+       "sd": 0.03514370023527012,
+       "ci95": [
+        1.6813885623905709,
+        1.8560062369432313
+       ],
+       "n": 3,
+       "values": [
+        1.8091044870109732,
+        1.745248838968265,
+        1.7517388730214651
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 1.6057370589915685,
+       "sd": 0.043285406349127795,
+       "ci95": [
+        1.498201470135645,
+        1.713272647847492
+       ],
+       "n": 3,
+       "values": [
+        1.6512444709955716,
+        1.6008839952219713,
+        1.5650827107571623
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.5856428927025092,
+       "sd": 0.06656924984984079,
+       "ci95": [
+        1.4202623618011523,
+        1.7510234236038662
+       ],
+       "n": 3,
+       "values": [
+        1.6582097683555153,
+        1.5713139861632235,
+        1.527404923588789
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.6057148159020567,
+       "sd": 0.06424324474628304,
+       "ci95": [
+        1.4461128683522224,
+        1.765316763451891
+       ],
+       "n": 3,
+       "values": [
+        1.678593840066379,
+        1.581261978637081,
+        1.5572886290027106
+       ]
+      },
+      "stream.all": {
+       "mean": 1.6019526380868825,
+       "sd": 0.06320445730619664,
+       "ci95": [
+        1.4449313898647809,
+        1.758973886308984
+       ],
+       "n": 3,
+       "values": [
+        1.6730623620666785,
+        1.5806230630891256,
+        1.5521724891048438
+       ]
+      },
+      "params": 9946240,
+      "stored_bytes": 39784960,
+      "flops": {
+       "mean": 19824640.0,
+       "sd": 0.0,
+       "ci95": [
+        19824640.0,
+        19824640.0
+       ],
+       "n": 3,
+       "values": [
+        19824640.0,
+        19824640.0,
+        19824640.0
+       ]
+      },
+      "train_flops": {
+       "mean": 1948841410560000.0,
+       "sd": 0.0,
+       "ci95": [
+        1948841410560000.0,
+        1948841410560000.0
+       ],
+       "n": 3,
+       "values": [
+        1948841410560000.0,
+        1948841410560000.0,
+        1948841410560000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 5242880,
+      "total_bytes": 5242880,
+      "full_context_4k_bytes": 83886080,
+      "peak_rss_mb": {
+       "mean": 1678.8333333333333,
+       "sd": 23.2646369697302,
+       "ci95": [
+        1621.0361068066695,
+        1736.630559859997
+       ],
+       "n": 3,
+       "values": [
+        1705.4,
+        1669.0,
+        1662.1
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 4166.8,
+       "sd": 2237.5085407658225,
+       "ci95": [
+        -1391.9279592734838,
+        9725.527959273484
+       ],
+       "n": 3,
+       "values": [
+        6750.1,
+        2912.1,
+        2838.2
+       ]
+      },
+      "train_seconds": {
+       "mean": 14747.5,
+       "sd": 5765.661485900815,
+       "ci95": [
+        423.64687432047504,
+        29071.353125679525
+       ],
+       "n": 3,
+       "values": [
+        8092.2,
+        17923.2,
+        18227.1
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 58990.0,
+       "sd": 23062.64594360326,
+       "ci95": [
+        1694.5874972819001,
+        116285.4125027181
+       ],
+       "n": 3,
+       "values": [
+        32368.8,
+        71692.8,
+        72908.4
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    },
+    "transformer-ternary": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 1.7327271924092258,
+       "sd": 0.010154149158727593,
+       "ci95": [
+        1.7075008516811885,
+        1.757953533137263
+       ],
+       "n": 3,
+       "values": [
+        1.7426603549624182,
+        1.7223656174897621,
+        1.7331556047754968
+       ]
+      },
+      "test.bpb": {
+       "mean": 1.7640435957131881,
+       "sd": 0.007659618420889538,
+       "ci95": [
+        1.7450145130089978,
+        1.7830726784173785
+       ],
+       "n": 3,
+       "values": [
+        1.7717905721361629,
+        1.756474431436346,
+        1.7638657835670555
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 1.6026399380872807,
+       "sd": 0.020296068090564705,
+       "ci95": [
+        1.5522176406511663,
+        1.653062235523395
+       ],
+       "n": 3,
+       "values": [
+        1.6253325329206756,
+        1.5963646351225984,
+        1.5862226462185678
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.5474524252519142,
+       "sd": 0.023323005886503757,
+       "ci95": [
+        1.4895101905951316,
+        1.6053946599086968
+       ],
+       "n": 3,
+       "values": [
+        1.5690204255313172,
+        1.550635480154083,
+        1.522701370070342
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.575180041499519,
+       "sd": 0.022522864304488292,
+       "ci95": [
+        1.5192256291470054,
+        1.6311344538520325
+       ],
+       "n": 3,
+       "values": [
+        1.5987103064977164,
+        1.5730078432915713,
+        1.553821974709269
+       ]
+      },
+      "stream.all": {
+       "mean": 1.571697392819547,
+       "sd": 0.02243176940845555,
+       "ci95": [
+        1.5159692909978308,
+        1.6274254946412632
+       ],
+       "n": 3,
+       "values": [
+        1.5948075042016867,
+        1.5702728031949,
+        1.5500118710620543
+       ]
+      },
+      "params": 9946240,
+      "stored_bytes": 15209024,
+      "flops": {
+       "mean": 19824640.0,
+       "sd": 0.0,
+       "ci95": [
+        19824640.0,
+        19824640.0
+       ],
+       "n": 3,
+       "values": [
+        19824640.0,
+        19824640.0,
+        19824640.0
+       ]
+      },
+      "train_flops": {
+       "mean": 1948841410560000.0,
+       "sd": 0.0,
+       "ci95": [
+        1948841410560000.0,
+        1948841410560000.0
+       ],
+       "n": 3,
+       "values": [
+        1948841410560000.0,
+        1948841410560000.0,
+        1948841410560000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 5242880,
+      "total_bytes": 5242880,
+      "full_context_4k_bytes": 83886080,
+      "peak_rss_mb": {
+       "mean": 1695.0333333333335,
+       "sd": 9.544806615816473,
+       "ci95": [
+        1671.3208055666069,
+        1718.7458611000602
+       ],
+       "n": 3,
+       "values": [
+        1688.6,
+        1706.0,
+        1690.5
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 3266.466666666667,
+       "sd": 920.3007352671916,
+       "ci95": [
+        980.1283868946698,
+        5552.804946438664
+       ],
+       "n": 3,
+       "values": [
+        4325.3,
+        2658.9,
+        2815.2
+       ]
+      },
+      "train_seconds": {
+       "mean": 16330.1,
+       "sd": 3189.6355732277634,
+       "ci95": [
+        8405.966474804161,
+        24254.23352519584
+       ],
+       "n": 3,
+       "values": [
+        12647.3,
+        18210.4,
+        18132.6
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 65320.333333333336,
+       "sd": 12758.571768161726,
+       "ci95": [
+        33623.72600605854,
+        97016.94066060813
+       ],
+       "n": 3,
+       "values": [
+        50589.1,
+        72841.6,
+        72530.3
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    },
+    "transformer-d200": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 1.7864089756384571,
+       "sd": 0.0270861337344583,
+       "ci95": [
+        1.7191178586861968,
+        1.8537000925907174
+       ],
+       "n": 3,
+       "values": [
+        1.8158408432158715,
+        1.7808572395156739,
+        1.7625288441838263
+       ]
+      },
+      "test.bpb": {
+       "mean": 1.8413214058067406,
+       "sd": 0.033971528788757824,
+       "ci95": [
+        1.7569246388416861,
+        1.9257181727717951
+       ],
+       "n": 3,
+       "values": [
+        1.8801237767801902,
+        1.8269048741068403,
+        1.8169355665331914
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 1.6828266197418642,
+       "sd": 0.05064698297374511,
+       "ci95": [
+        1.5570023848039067,
+        1.8086508546798217
+       ],
+       "n": 3,
+       "values": [
+        1.733066249039458,
+        1.6836317278581032,
+        1.631781882328031
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.667729065408322,
+       "sd": 0.06369402858529676,
+       "ci95": [
+        1.5094915565518545,
+        1.8259665742647897
+       ],
+       "n": 3,
+       "values": [
+        1.731526660348934,
+        1.6675214250211805,
+        1.6041391108548517
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.6964490788789555,
+       "sd": 0.06835627562051944,
+       "ci95": [
+        1.5266289715762438,
+        1.8662691861816672
+       ],
+       "n": 3,
+       "values": [
+        1.7627733282709435,
+        1.7003463777301577,
+        1.6262275306357656
+       ]
+      },
+      "stream.all": {
+       "mean": 1.6902125866658182,
+       "sd": 0.06636097361418275,
+       "ci95": [
+        1.5253494843745923,
+        1.8550756889570441
+       ],
+       "n": 3,
+       "values": [
+        1.7550576706052854,
+        1.6931470119823897,
+        1.6224330774097795
+       ]
+      },
+      "params": 3912400,
+      "stored_bytes": 15649600,
+      "flops": {
+       "mean": 7782400.0,
+       "sd": 0.0,
+       "ci95": [
+        7782400.0,
+        7782400.0
+       ],
+       "n": 3,
+       "values": [
+        7782400.0,
+        7782400.0,
+        7782400.0
+       ]
+      },
+      "train_flops": {
+       "mean": 765041049600000.0,
+       "sd": 0.0,
+       "ci95": [
+        765041049600000.0,
+        765041049600000.0
+       ],
+       "n": 3,
+       "values": [
+        765041049600000.0,
+        765041049600000.0,
+        765041049600000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 3276800,
+      "total_bytes": 3276800,
+      "full_context_4k_bytes": 52428800,
+      "peak_rss_mb": {
+       "mean": 1180.4666666666667,
+       "sd": 3.308070938376824,
+       "ci95": [
+        1172.2482996386143,
+        1188.685033694719
+       ],
+       "n": 3,
+       "values": [
+        1176.7,
+        1181.8,
+        1182.9
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 6389.266666666666,
+       "sd": 543.9595603841641,
+       "ci95": [
+        5037.887147021727,
+        7740.646186311606
+       ],
+       "n": 3,
+       "values": [
+        6050.3,
+        6100.8,
+        7016.7
+       ]
+      },
+      "train_seconds": {
+       "mean": 8000.133333333334,
+       "sd": 794.4809962065385,
+       "ci95": [
+        6026.373838670942,
+        9973.892827995725
+       ],
+       "n": 3,
+       "values": [
+        8433.6,
+        8483.6,
+        7083.2
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 32000.56666666667,
+       "sd": 3177.8662783907907,
+       "ci95": [
+        24105.672050319343,
+        39895.461283013996
+       ],
+       "n": 3,
+       "values": [
+        33734.4,
+        33934.4,
+        28332.9
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    },
+    "window-ternary": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "rouge",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 1.846526808283377,
+       "sd": 0.012027157135115738,
+       "ci95": [
+        1.816647282275105,
+        1.876406334291649
+       ],
+       "n": 3,
+       "values": [
+        1.856551748661608,
+        1.833191001229611,
+        1.8498376749589123
+       ]
+      },
+      "test.bpb": {
+       "mean": 1.8869382166915523,
+       "sd": 0.017343424188272463,
+       "ci95": [
+        1.8438512853174744,
+        1.93002514806563
+       ],
+       "n": 3,
+       "values": [
+        1.8854597427526067,
+        1.8703813573186923,
+        1.9049735500033573
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 1.7096678947344721,
+       "sd": 0.01604911164112456,
+       "ci95": [
+        1.6697964734747857,
+        1.7495393159941586
+       ],
+       "n": 3,
+       "values": [
+        1.725112223419704,
+        1.7108158216014313,
+        1.6930756391822817
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.5859342886406214,
+       "sd": 0.0028310918016543596,
+       "ci95": [
+        1.5789008991065014,
+        1.5929676781747413
+       ],
+       "n": 3,
+       "values": [
+        1.5872526503145852,
+        1.5878657684649111,
+        1.5826844471423673
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.617490410679083,
+       "sd": 0.007185658377820013,
+       "ci95": [
+        1.5996388050191088,
+        1.6353420163390573
+       ],
+       "n": 3,
+       "values": [
+        1.6138509711490745,
+        1.6257676490273585,
+        1.612852611860816
+       ]
+      },
+      "stream.all": {
+       "mean": 1.6173347090525019,
+       "sd": 0.00602810649805801,
+       "ci95": [
+        1.6023588537555364,
+        1.6323105643494673
+       ],
+       "n": 3,
+       "values": [
+        1.615817592761691,
+        1.6239764497186224,
+        1.6122100846771925
+       ]
+      },
+      "params": 9946240,
+      "stored_bytes": 15209024,
+      "flops": {
+       "mean": 19824640.0,
+       "sd": 0.0,
+       "ci95": [
+        19824640.0,
+        19824640.0
+       ],
+       "n": 3,
+       "values": [
+        19824640.0,
+        19824640.0,
+        19824640.0
+       ]
+      },
+      "train_flops": {
+       "mean": 1948841410560000.0,
+       "sd": 0.0,
+       "ci95": [
+        1948841410560000.0,
+        1948841410560000.0
+       ],
+       "n": 3,
+       "values": [
+        1948841410560000.0,
+        1948841410560000.0,
+        1948841410560000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 1310720,
+      "total_bytes": 1310720,
+      "full_context_4k_bytes": 1310720,
+      "peak_rss_mb": {
+       "mean": 1878.0333333333335,
+       "sd": 1.8556220879622651,
+       "ci95": [
+        1873.423340480001,
+        1882.6433261866662
+       ],
+       "n": 3,
+       "values": [
+        1878.2,
+        1876.1,
+        1879.8
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 7388.066666666667,
+       "sd": 2877.834361691676,
+       "ci95": [
+        238.55280469131958,
+        14537.580528642015
+       ],
+       "n": 3,
+       "values": [
+        10646.2,
+        6325.0,
+        5193.0
+       ]
+      },
+      "train_seconds": {
+       "mean": 14203.5,
+       "sd": 4592.449808108957,
+       "ci95": [
+        2794.3014719094754,
+        25612.698528090525
+       ],
+       "n": 3,
+       "values": [
+        9110.5,
+        15470.7,
+        18029.3
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 56814.0,
+       "sd": 18369.702129593723,
+       "ci95": [
+        11177.447123938677,
+        102450.55287606132
+       ],
+       "n": 3,
+       "values": [
+        36442.1,
+        61882.8,
+        72117.1
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    }
+   }
+  },
+  "result": "PASS",
+  "decision": {
+   "complete": true,
+   "checks": {
+    "T1_per_byte": true,
+    "T2_near_fp32": true,
+    "T3_combination_far": false,
+    "T4_bytes": true
+   },
+   "result": "PASS"
+  },
+  "recorded": "2026-09-30T12:14:48Z"
  }
 ]
