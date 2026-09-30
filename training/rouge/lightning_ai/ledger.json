@@ -46,6 +46,28 @@
      "status": "Completed",
      "seconds": 121,
      "runs": 9
+    },
+    {
+     "name": "probe-write",
+     "machine": "CPU",
+     "started": "2026-09-30T12:26:40Z",
+     "max_hours": 0.25,
+     "worst_case_usd": 0.025,
+     "cost_usd": 0.0,
+     "status": "Completed",
+     "seconds": 121,
+     "runs": 5
+    },
+    {
+     "name": "probe-read",
+     "machine": "CPU",
+     "started": "2026-09-30T12:28:42Z",
+     "max_hours": 0.25,
+     "worst_case_usd": 0.025,
+     "cost_usd": 0.0,
+     "status": "Completed",
+     "seconds": 121,
+     "runs": 5
     }
    ]
   }

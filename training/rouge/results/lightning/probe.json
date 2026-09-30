@@ -1,0 +1,12 @@
+{
+ "checked_at": "2026-09-30T12:26:33Z",
+ "balance": "4.893733333333334",
+ "t4_listed": true,
+ "l4_listed": true,
+ "a100_listed": true,
+ "h100_listed": true,
+ "h200_listed": true,
+ "training_machine": "H100",
+ "storage_ok": false,
+ "model_registry_ok": true
+}
