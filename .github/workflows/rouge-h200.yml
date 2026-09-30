@@ -1,0 +1,42 @@
+name: Rouge H200
+
+# Native Rouge training on RunPod H200 (training/rouge/runpod).
+# probe (free): REST schema, live H200 prices and stock, the account's
+#   volumes, pods and balance, and the ledger against the 50 EUR ceiling.
+# Paid tasks run only in the protected environment "rouge-gpu": nothing
+# starts, and no key is readable, until the owner approves the run.
+
+on:
+  push:
+    branches: ["rouge/native-model-*"]
+    paths:
+      - "training/rouge/runpod/**"
+      - ".github/workflows/rouge-h200.yml"
+  workflow_dispatch:
+    inputs:
+      task:
+        type: choice
+        options: [probe]
+        default: probe
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rouge-h200
+  cancel-in-progress: false
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Ledger against the ceiling
+        run: python3 training/rouge/runpod/cost.py status
+      - name: RunPod (read-only)
+        env:
+          RUNPOD_API_KEY: ${{ github.event_name == 'workflow_dispatch' && secrets.RUNPOD_API_KEY || '' }}
+        run: python3 training/rouge/runpod/probe.py
