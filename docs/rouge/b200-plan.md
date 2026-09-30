@@ -51,14 +51,14 @@ For 3.6e19 FLOPs the compute-optimal dense model has about 0.55B parameters trai
 ## Free resources (order of use)
 
 1. **GitHub runners (free, running now):** corpus builds, CPU tournament (Level B-cpu), all tests.
-2. **Lightning free hours** (pricing page: A100 40 GB 10 h, T4 75 h, L4 31 h; H100/H200/B200 none). This needs a key that reaches the teamspace holding them. They pay for Level C on A100 40 GB and the 100M rung (about 4.6 h).
+2. **Lightning free hours: used up for this account.** The probe of 17:24 UTC shows one wallet of 1.27 credits shared by both teamspaces, free credits off and no next grant. The pricing page's free hours come from up to 30 starting credits, which are spent.
 3. **Kaggle:** 30 GPU-hours per week on T4 ×2 or P100, 9 h sessions. This needs a Kaggle API token (`KAGGLE_USERNAME`, `KAGGLE_KEY` as repo secrets). Planned use: tournament levels and ablations (Muon, FP8-free parts).
 4. **This session's container:** CPU only, and HuggingFace downloads are blocked here. Used for code and tests only.
 
 ## Owner actions
 
-1. A Lightning key that reaches the teamspace with free credits, stored as `LIGHTNING_AI_API_KEY`.
-2. Optional: Kaggle API token as `KAGGLE_USERNAME` and `KAGGLE_KEY` secrets.
+1. No new Lightning key needed: the current key reaches Rouge, which uses the account's only wallet.
+2. Optional: Kaggle API token as `KAGGLE_USERNAME` and `KAGGLE_KEY` secrets (30 free GPU-hours per week).
 3. When ready: 125 credits in the Lightning teamspace, then approve the run in the `rouge-gpu` environment. The ledger ceiling is set to 125 credits plus the 3.66 USD already spent (`lightning_ai/cost.py`).
 
 ## Progress (2026-09-30, 17:20 UTC)

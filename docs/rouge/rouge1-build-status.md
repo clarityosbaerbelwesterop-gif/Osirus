@@ -112,8 +112,8 @@ At this account's prices the H200 is cheapest and fastest. A T4 node matches it 
 
 ## What the owner has to do (nothing else blocks Phase E)
 
-1. **Free hours: A100, not H200.** Lightning's pricing page (owner screenshot, 2026-09-30) lists free hours "with up to 30 free credits to start": T4 75 h, L4 31 h, A100 40 GB 10 h, A100 80 GB 5 h, L40S 5 h, RTX PRO 6000 2 h; **H100 and H200: none**. The 100M rung fits an A100 40 GB in about 4.6 h (MFU 0.30 assumed; 10.13 USD if paid), inside its 10 free hours; `A100_40GB` is now a training machine. Our key reaches only one organisation teamspace, with 1.36 credits and free credits off; 2 of its 4 memberships are refused by the key's scope. **Create a Lightning API key with access to the teamspace that holds the free credits (or all teamspaces) and store it as the `LIGHTNING_AI_API_KEY` secret.**
-2. **Or add credits:** the balance is 1.36. The launcher refuses any job whose worst case exceeds the balance minus 1.
+1. **Free hours: none left for this account** (probe of 17:24 UTC, `results/lightning/probe.json`). The key sees 4 memberships: two teamspaces, "Rouge" and "default-project", each listed once as organisation and once as user membership. Both show the same wallet of **1.27 credits**, free credits are **off** everywhere, and no next free-credit grant is scheduled. The key reads Rouge; default-project is refused, but it draws on the same wallet, so a new key would add nothing. The pricing page's free hours (A100 40 GB 10 h, T4 75 h …) come "with up to 30 free credits to start"; this account's starting credits are spent (4.89 at the first probe). The free Studio (4 CPU, 24/7, restart every 4 h) is CPU only; 20 parallel GitHub runners give more free CPU.
+2. **Credits:** the balance is 1.27. The launcher refuses any job whose worst case exceeds the balance minus 1.
 3. **Every paid run:** approve it in the protected GitHub environment `rouge-gpu` (workflow "Rouge train").
 
 ## Next steps (automatic, free)
