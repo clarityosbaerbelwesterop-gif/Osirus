@@ -61,6 +61,7 @@ jobs:
           echo "=== README ==="
           head -n 40 "$RUNNER_TEMP/README.md"
           echo "=== MANIFEST END ==="
+          python3 -c "import json,sys; m=json.load(open(sys.argv[1])); c=m.get('config') or {}; t=c.get('text_config') or c; keys=('architectures','model_type','hidden_size','num_hidden_layers','n_routed_experts','num_experts','num_experts_per_tok','n_shared_experts','moe_intermediate_size','quantization_config','max_position_embeddings','vocab_size'); print('SUMMARY', json.dumps({'repo': m['repo'], 'revision': m['revision'], 'license': {k: m['license'][k] for k in ('cardLicense','licenseName','licenseLink')}, 'gated': m['gated'], 'weights': m['weights'], 'safetensorsTotal': m['safetensorsTotal'], 'byDtype': m['safetensorsParameters'], 'config': {k: (c.get(k) if c.get(k) is not None else t.get(k)) for k in keys}}))" "$RUNNER_TEMP/base-manifest.json"
       - uses: actions/upload-artifact@v4
         with:
           name: rouge-base-manifest
