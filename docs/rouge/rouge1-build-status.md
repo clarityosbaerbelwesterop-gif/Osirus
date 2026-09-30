@@ -120,10 +120,19 @@ At this account's prices the H200 is cheapest and fastest. A T4 node matches it 
 
 1. Done: corpus v1 committed and rebuilt byte-identically by the streaming build; R1.29b PASS (candidate C ternary); GPU dry run on T4; storage on the model registry; `pretrain-v1` built (1.94B tokens, code 59M of 264M planned).
 2. `pretrain-v2` (mixture v3, rule v2): 2.03B tokens. Every web and synthetic source reached 100% of plan, and all 41 code archives were fetched. It still fell short on code_py (109M of 264M, 41%: one shared import or idiom with any code validation file still dropped 31% of code files) and on math_web (89.9%).
+3. **`pretrain-v3` is the production corpus** (run 36747791693, mixture v4, rule v3, commit e7b0e8f): 2.2B tokens, every source at 100% of plan. The rows are tokens, then contaminated documents dropped:
+   - web_en: 1210M; 157 dropped.
+   - web_de: 330M; 238 dropped.
+   - code_py: 264M; 1271 dropped. 164.8M tokens are unique, so the code shards repeat for 1.60 epochs.
+   - math_web: 176M; 1251 dropped.
+   - math_synth: 110M; 0 dropped.
+   - algo_synth: 110M; 24 dropped.
+
+   `data-verify` passed again (run 36747787515): corpus v1 is byte-identical after rule v3. `ready.py` condition 6 passes. The corpus is stored in the Lightning model registry.
    Running now:
-   - Level B on GitHub CPUs.
-   - `pretrain-v3` (mixture v4: decontamination rule v3, where only substantial copies of a validation document count, 25% collection margin, up to 2 code epochs recorded in the manifest).
-   - `data-verify` (corpus v1 must stay byte-identical).
-3. Level C on a GPU (needs credits), then `native/freeze.py` writes Spec v1.0.
-4. A GPU dry run on the frozen spec, then `ready.py` reports TRAINING_READY.
-5. The 100M rung trains on the cheapest machine at live prices (today an H200 on the second cloud account, about 1.8 h), with the owner's approval.
+   - Level B on GitHub CPUs (run 36734715214).
+   - Muon ablation (run 36749760768; candidate A with Muon at Level B-cpu).
+   - `pretrain-v4` parts for the B200 run (mixture v5, 9 parallel runners; only web_en is still running).
+4. Level C on a GPU (needs credits), then `native/freeze.py` writes Spec v1.0.
+5. A GPU dry run on the frozen spec, then `ready.py` reports TRAINING_READY.
+6. The 100M rung trains on the cheapest machine at live prices (today an H200 on the second cloud account, about 1.8 h), with the owner's approval.
