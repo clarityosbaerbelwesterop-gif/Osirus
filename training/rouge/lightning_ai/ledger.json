@@ -68,6 +68,17 @@
      "status": "Completed",
      "seconds": 121,
      "runs": 5
+    },
+    {
+     "name": "rouge-prepare-pretrain-v1-36715868898",
+     "machine": "DATA_PREP",
+     "started": "2026-09-30T12:37:00Z",
+     "max_hours": 4.0,
+     "worst_case_usd": 2.4,
+     "cost_usd": 0.72938335,
+     "status": "Stopped",
+     "seconds": 962,
+     "runs": 0
     }
    ]
   }
