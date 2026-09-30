@@ -96,6 +96,13 @@ MIXTURE_V2 = dict(MIXTURE_V1)
 # Production mixture v3: same shares; code_py draws on CODE + CODE_EXTRA + CODE_MORE, and the synthetic
 # generators get enough seeds for their share (200k math_synth seeds gave 69M of 110M tokens).
 MIXTURE_V3 = dict(MIXTURE_V1)
-MIXTURES = {"v1": MIXTURE_V1, "v2": MIXTURE_V2, "v3": MIXTURE_V3}
-CODE_SETS = {"v1": CODE, "v2": CODE + CODE_EXTRA, "v3": CODE + CODE_EXTRA + CODE_MORE}
-SYNTH_SEEDS = {"v1": 200_000, "v2": 200_000, "v3": 1_000_000}   # the token budget stops generation first
+# Production mixture v4: same shares and code set as v3. pretrain-v2 (v3) still gave code_py 41% and math_web
+# 89.9% of plan: collection now gathers 25% more text than the budget estimate (write_shards cuts at the exact
+# budget), and code_py may repeat its documents for up to 2 epochs (little quality cost up to about 4 epochs:
+# Muennighoff et al. 2023, "Scaling Data-Constrained Language Models").
+MIXTURE_V4 = dict(MIXTURE_V1)
+MIXTURES = {"v1": MIXTURE_V1, "v2": MIXTURE_V2, "v3": MIXTURE_V3, "v4": MIXTURE_V4}
+CODE_SETS = {"v1": CODE, "v2": CODE + CODE_EXTRA, "v3": CODE + CODE_EXTRA + CODE_MORE, "v4": CODE + CODE_EXTRA + CODE_MORE}
+SYNTH_SEEDS = {"v1": 200_000, "v2": 200_000, "v3": 1_000_000, "v4": 1_000_000}   # the token budget stops generation first
+COLLECT_MARGIN = {"v1": 1.08, "v2": 1.08, "v3": 1.08, "v4": 1.25}
+MAX_EPOCHS = {"v4": {"code_py": 2}}

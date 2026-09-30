@@ -22,13 +22,13 @@ on:
         options: [prepare, train]
         default: prepare
       corpus:
-        default: pretrain-v2
+        default: pretrain-v3
       tokens:
         description: "prepare: corpus size in tokens"
         default: "2.2e9"
       mixture:
-        description: "prepare: mixture (v3: 41 code projects, decontamination rule v2)"
-        default: v3
+        description: "prepare: mixture (v4: 41 code projects, up to 2 code epochs; decontamination rule v3)"
+        default: v4
       rung:
         type: choice
         options: [100m, 300m]

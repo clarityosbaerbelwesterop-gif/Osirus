@@ -37,6 +37,53 @@ class TestDecontaminationRules(unittest.TestCase):
         with self.assertRaises(ValueError):
             build.eval_grams(self.corpus(), "v9")
 
+    def test_v3_drops_a_copy_of_a_validation_document_but_not_a_shared_idiom(self):
+        val_doc = " ".join(f"word{i}" for i in range(200))            # 188 grams, all specific to this document
+        corpus = {"web_en": {"val": [("d", val_doc, "ODC")]}}
+        build._RULE = "v3"
+        build._ITEM_GRAMS, build._DOC_INDEX, build._DOC_NEED = build.copy_index(corpus)
+        self.assertEqual(build._DOC_NEED, [build.COPY_GRAMS])
+        idiom = " ".join(f"word{i}" for i in range(20))                # 8 shared grams: an idiom, not a copy
+        copy = "intro " * 300 + val_doc + " outro" * 300                # the whole document inside a long page
+        self.assertFalse(build._contaminated(f"unrelated text {idiom} more unrelated text"))
+        self.assertTrue(build._contaminated(copy))
+        build._RULE = "v1"
+
+    def test_v3_drops_any_eval_item_content(self):
+        build._RULE, build._DOC_INDEX, build._DOC_NEED = "v3", {}, []
+        build._ITEM_GRAMS = build.ngrams13(UNIQUE)
+        self.assertTrue(build._contaminated(f"notes: {UNIQUE}"))
+        self.assertFalse(build._contaminated(BOILER))
+        build._RULE = "v1"
+
+
+@unittest.skipIf(build is None, "numpy not installed")
+class TestEpochs(unittest.TestCase):
+    class Tok:
+        def get_vocab_size(self):
+            return 100
+
+        def token_to_id(self, token):
+            return 2
+
+        def encode_batch(self, texts):
+            return [type("E", (), {"ids": [5] * 9})() for _ in texts]   # 10 tokens per document with EOS
+
+    def test_code_repeats_up_to_its_epoch_limit(self):
+        import tempfile
+
+        corpus = {"code_py": {"train": [("a", "x", "MIT")] * 30, "val": []}}   # 300 unique tokens
+        for epochs, budget, expect in ((2, 1000, 600), (2, 450, 450), (1, 1000, 300)):
+            out = Path(tempfile.mkdtemp())
+            shards = build.write_shards(corpus, self.Tok(), out, budget, {"code_py": 1.0}, {"code_py": epochs})
+            train = shards["code_py"]["train"]
+            self.assertEqual(train["tokens"], expect)
+            if epochs > 1:
+                self.assertEqual(train["tokens_unique"], 300)
+                self.assertAlmostEqual(train["epochs"], expect / 300, places=3)
+            else:
+                self.assertNotIn("epochs", train)
+
 
 if __name__ == "__main__":
     unittest.main()

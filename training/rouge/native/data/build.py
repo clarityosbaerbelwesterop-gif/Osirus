@@ -223,7 +223,7 @@ def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revision
         else:
             domain = sources.SYNTHETIC[name]["domain"]
             docs = ((i, t, "generated") for i, t in iter_synth(name, sources.SYNTH_SEEDS[code_set]))
-        budget_chars = total_tokens * share * CHARS_PER_TOKEN[domain] * 1.08
+        budget_chars = total_tokens * share * CHARS_PER_TOKEN[domain] * sources.COLLECT_MARGIN[code_set]
         seen, fingerprints = set(), set()
         train, val, dropped, chars, n = DocFile(out / "tmp" / f"{name}.train.jsonl"), [], {}, 0, 0
         for doc_id, text, license_ in docs:
@@ -254,12 +254,49 @@ def collect(out: Path, total_tokens: float, mixture: dict, cache: Path, revision
     return result
 
 
-_EVAL_GRAMS: set[int] = set()
+_EVAL_GRAMS: set[int] = set()   # rules v1/v2: any shared gram drops a training document
+_RULE = "v1"
+_ITEM_GRAMS: set[int] = set()   # rule v3: grams of generated eval items (any hit drops)
+_DOC_INDEX: dict[int, tuple] = {}   # rule v3: gram -> validation documents containing it
+_DOC_NEED: list[int] = []   # rule v3: shared grams with one validation document that make a copy
+COPY_GRAMS = 50
 
 
 def _contaminated(text: str) -> bool:
     words = WORD.findall(text.lower())
-    return any(stable_hash(" ".join(words[i:i + 13])) in _EVAL_GRAMS for i in range(len(words) - 12))
+    if _RULE != "v3":
+        return any(stable_hash(" ".join(words[i:i + 13])) in _EVAL_GRAMS for i in range(len(words) - 12))
+    hits: dict[int, int] = {}
+    for g in {stable_hash(" ".join(words[i:i + 13])) for i in range(len(words) - 12)}:
+        if g in _ITEM_GRAMS:
+            return True
+        for d in _DOC_INDEX.get(g, ()):
+            hits[d] = hits.get(d, 0) + 1
+            if hits[d] >= _DOC_NEED[d]:
+                return True
+    return False
+
+
+def copy_index(corpus: dict) -> tuple[set[int], dict[int, tuple], list[int]]:
+    """Rule v3. Generated eval items: every non-boilerplate gram is item content, so any hit drops a document.
+    Validation documents: a training document is dropped when it shares min(COPY_GRAMS, half of the
+    document's grams) grams with one validation document, i.e. contains a substantial copy of it. In
+    pretrain-v2 one shared import line or idiom with any code validation file dropped 31% of code files."""
+    docs = [ngrams13(text) for src in corpus.values() for _, text, _ in src["val"]]
+    items = [ngrams13(f"{p} {a}") for kind in ("math_synth", "algo_synth") for p, a in synth.eval_items(kind, 500)]
+    seen: dict[int, int] = {}
+    for grams in docs + items:
+        for g in grams:
+            seen[g] = seen.get(g, 0) + 1
+    keep = {g for g, n in seen.items() if n < BOILERPLATE_DOCS}
+    index: dict[int, list] = {}
+    need = []
+    for d, grams in enumerate(docs):
+        own = grams & keep
+        need.append(min(COPY_GRAMS, max(1, (len(own) + 1) // 2)))
+        for g in own:
+            index.setdefault(g, []).append(d)
+    return set().union(*items) & keep if items else set(), {g: tuple(v) for g, v in index.items()}, need
 
 
 BOILERPLATE_DOCS = 3   # rule v2: an eval 13-gram in this many distinct eval texts is boilerplate, not eval content
@@ -277,7 +314,7 @@ def eval_grams(corpus: dict, rule: str) -> set[int]:
     texts += [f"{p} {a}" for kind in ("math_synth", "algo_synth") for p, a in synth.eval_items(kind, 500)]
     if rule == "v1":
         return set().union(*(ngrams13(t) for t in texts))
-    if rule != "v2":
+    if rule not in ("v2", "v3"):
         raise ValueError(f"unknown decontamination rule {rule}")
     seen: dict[int, int] = {}
     for t in texts:
@@ -292,8 +329,12 @@ def decontaminate(corpus: dict, rule: str = "v1") -> dict:
     The n-gram hash is stable across processes, so a decision depends only on
     document content and a rebuild reproduces it exactly.
     """
-    global _EVAL_GRAMS
-    _EVAL_GRAMS = eval_grams(corpus, rule)
+    global _EVAL_GRAMS, _RULE, _ITEM_GRAMS, _DOC_INDEX, _DOC_NEED
+    _RULE = rule
+    if rule == "v3":
+        _ITEM_GRAMS, _DOC_INDEX, _DOC_NEED = copy_index(corpus)
+    else:
+        _EVAL_GRAMS = eval_grams(corpus, rule)
     report = {}
     with multiprocessing.get_context("fork").Pool(os.cpu_count() or 1) as pool:
         for name, src in corpus.items():
@@ -311,7 +352,7 @@ def decontaminate(corpus: dict, rule: str = "v1") -> dict:
     return report
 
 
-def write_shards(corpus: dict, tok, out: Path, total_tokens: float, mixture: dict) -> dict:
+def write_shards(corpus: dict, tok, out: Path, total_tokens: float, mixture: dict, max_epochs: dict | None = None) -> dict:
     eos = tok.token_to_id(EOS)
     dtype = np.uint16 if tok.get_vocab_size() <= 65535 else np.uint32
     shards = {}
@@ -334,21 +375,29 @@ def write_shards(corpus: dict, tok, out: Path, total_tokens: float, mixture: dic
                               "sha256": hashlib.sha256(arr.tobytes()).hexdigest()})
                 ids, idx = [], idx + 1
 
-            for chunk in batched(docs, 512):
-                batch = tok.encode_batch([d[1] for d in chunk])
-                for enc in batch:
-                    piece = np.asarray(enc.ids + [eos], dtype=np.int64)
-                    if budget is not None and written + piece.size > budget:
-                        piece = piece[:budget - written]
-                    ids.append(piece)
-                    written += piece.size
+            epochs = (max_epochs or {}).get(name, 1) if split == "train" else 1
+            unique = None
+            for _ in range(epochs):   # later epochs repeat the documents in the same order
+                for chunk in batched(docs, 512):
+                    batch = tok.encode_batch([d[1] for d in chunk])
+                    for enc in batch:
+                        piece = np.asarray(enc.ids + [eos], dtype=np.int64)
+                        if budget is not None and written + piece.size > budget:
+                            piece = piece[:budget - written]
+                        ids.append(piece)
+                        written += piece.size
+                        if budget is not None and written >= budget:
+                            break
+                    flush()
                     if budget is not None and written >= budget:
                         break
-                flush()
+                unique = written if unique is None else unique
                 if budget is not None and written >= budget:
                     break
             flush(final=True)
             entry = {"tokens": written, "files": files}
+            if epochs > 1:
+                entry.update({"tokens_unique": unique, "epochs": round(written / max(1, unique), 3)})
             if split == "val":  # bits per byte need the bytes behind the validation tokens
                 entry["bytes"] = sum(len(d[1].encode("utf-8")) + 1 for d in docs)
             shards.setdefault(name, {})[split] = entry
@@ -362,7 +411,7 @@ def src_share(src: dict, corpus: dict) -> float:
 
 
 def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None, vocab: int, expect: dict | None,
-          mixture_name: str = "v1", rule: str = "v2") -> dict:
+          mixture_name: str = "v1", rule: str = "v3") -> dict:
     out.mkdir(parents=True, exist_ok=True)
     start = time.time()
     revisions = (expect or {}).get("revisions") or {n: hf_revision(sources.HF[n]["repo"]) for n in mixture if n in sources.HF}
@@ -389,7 +438,8 @@ def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None,
         print(f"[data] tokenizer sample: {len(sample)} documents, {chars / 1e6:.0f}M characters", flush=True)
         train_tokenizer(sample, vocab, tok_path)
     tok = load_tokenizer(tok_path)
-    shards = write_shards(corpus, tok, out, total_tokens, mixture)
+    max_epochs = sources.MAX_EPOCHS.get(code_set, {})
+    shards = write_shards(corpus, tok, out, total_tokens, mixture, max_epochs)
     peak_rss("tokenized")
     shutil.rmtree(out / "tmp", ignore_errors=True)   # spilled documents are not part of the corpus
     manifest = {
@@ -406,8 +456,10 @@ def build(out: Path, total_tokens: float, mixture: dict, tokenizer: Path | None,
                     for n, s in corpus.items()},
         "dedup": "exact (normalised text) + near-dup fingerprint (head/tail) in-house; upstream MinHash for FineWeb-Edu, FineWeb-2, OpenWebMath",
         "decontamination_rule": rule,
+        **({"max_epochs": max_epochs} if max_epochs else {}),
         "contamination": ("train documents sharing any word 13-gram with validation documents or generated eval items are dropped"
-                          + ("" if rule == "v1" else f"; grams found in {BOILERPLATE_DOCS}+ distinct eval texts are boilerplate and ignored")),
+                          + ("" if rule == "v1" else f"; grams found in {BOILERPLATE_DOCS}+ distinct eval texts are boilerplate and ignored")
+                          + ("" if rule != "v3" else f"; a validation document counts as copied at min({COPY_GRAMS}, half its grams) shared grams")),
         "code_sha": os.environ.get("GITHUB_SHA", "local"),
     }
     (out / "manifest.json").write_text(json.dumps(manifest, indent=1))
@@ -428,7 +480,7 @@ def main() -> None:
     parser.add_argument("--tokenizer")
     parser.add_argument("--expect")
     parser.add_argument("--mixture", default="v1")
-    parser.add_argument("--decontamination", default="v2", choices=["v1", "v2"], help="rule for new builds (--expect uses its own)")
+    parser.add_argument("--decontamination", default="v3", choices=["v1", "v2", "v3"], help="rule for new builds (--expect uses its own)")
     parser.add_argument("--only", nargs="*", help="restrict to these sources (tests)")
     args = parser.parse_args()
     mixture = dict(sources.MIXTURES[args.mixture])

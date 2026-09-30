@@ -9,7 +9,7 @@ assumed. Conditions:
  3 Architecture Spec v1.0 frozen (freeze record; config hashes match)
  4 Spec document generated from the frozen configs
  5 Tokenizer frozen (hash in the freeze record = committed tokenizer)
- 6 Production corpus manifest committed (pretrain-v2): licence, revision and contamination status for every source, and every source at least 90% of its planned tokens
+ 6 Production corpus manifest committed (pretrain-v3): licence, revision and contamination status for every source, and every source at least 90% of its planned tokens
  7 Unit tests pass at this commit (model, trainer, data, tournament, registry, post-training, cost)
  8 Exact resume proven (single process and FSDP2 tests are part of 7 and present)
  9 CPU dry run passed at this commit's tree (results/dry-run/cpu/summary.json)
@@ -34,7 +34,7 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-CORPUS = "pretrain-v2"   # production corpus the first rung trains on (mixture v3)
+CORPUS = "pretrain-v3"   # production corpus the first rung trains on (mixture v4)
 REPO = ROOT.parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "lightning_ai"))
@@ -90,9 +90,12 @@ def conditions(run_tests: bool, rung: str) -> list[dict]:
     corpus_ok = bool(corpus) and not short and corpus.get("tokenizer", {}).get("sha256") == tok_sha and all(
         s.get("license") and "contaminated_dropped" in s and (s.get("revision") or s["domain"] in ("code", "math", "algorithmic"))
         for s in corpus.get("sources", {}).values())
+    repeated = {n: f"{src['shards']['train']['tokens_unique']} unique, {src['shards']['train']['epochs']} epochs"
+                for n, src in (corpus or {}).get("sources", {}).items() if "epochs" in src["shards"]["train"]}
     add(6, "production corpus manifest (every source at least 90% of its planned tokens)", corpus_ok,
         (f"{CORPUS}: {corpus.get('total_tokens')} tokens, {len(corpus.get('sources', {}))} sources"
-         + (f"; short: {short}" if short else "")) if corpus else f"configs/native/{CORPUS}/manifest.json missing")
+         + (f"; short: {short}" if short else "") + (f"; repeated: {repeated}" if repeated else ""))
+        if corpus else f"configs/native/{CORPUS}/manifest.json missing")
 
     tests = {"ran": False}
     if run_tests:

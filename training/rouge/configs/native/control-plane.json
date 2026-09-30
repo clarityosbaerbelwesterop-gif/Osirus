@@ -1,20 +1,20 @@
 {
  "schema": "rouge.control-plane/1",
- "pinned_at": "2026-09-30T15:15:13Z",
+ "pinned_at": "2026-09-30T16:55:37Z",
  "files": {
   "training/rouge/native/evaluate.py": "8ca20be471cbbf461e09ef7813c8b1bf9c8581842ac0ef7836a6451db735967d",
   "training/rouge/native/pareto.py": "13ddd7c1a88c4ebacbf88061eb7d7dab56e25a6a740cfd25cce3a152ce0eff87",
   "training/rouge/native/cri.py": "95bfa1742873871a54649ab2ae06a1b8005dc67e9817b4a5b3c3919e89b0d534",
   "training/rouge/native/registry.py": "9cf903e3091d31df31f1ba2d80074d3693912542609ee77bd420ea620696cc4f",
   "training/rouge/native/data/synth.py": "6eb20b031f679d7b6ca7367338658df9562d0e67ac24a1909d4d76021bef90da",
-  "training/rouge/native/data/build.py": "2b83b0bbb817015ff651e646536ff4bf803c0c551df981807a8097e03fd3b203",
+  "training/rouge/native/data/build.py": "640dfd016be93b78aaafbd0e599f0b44d7e8ced2cdfc4381ca1e35fc11512b68",
   "training/rouge/native/data/verify.py": "71ad9f8fcdab81817a2f52ae84261cce277d39a242be6f5f7ed85221a68bff95",
   "training/rouge/configs/native/tournament-v1.json": "6282b3861c3047f606a1796f8a6e3b1523ecca496000ccfed32c5224baa48934",
   "training/rouge/lightning_ai/cost.py": "1095369fce0c9915fb3eae90f1b484790cb5ce5a4efc895597720f12dd49e2c2",
-  "training/rouge/lightning_ai/train_session.py": "f0b48fa91b2b70a84cfe7c4a0c27b32e5652d95059e9db9f1cd884fc5d5d1a46",
+  "training/rouge/lightning_ai/train_session.py": "e108ff413bf26b22878a065187bda29c8344abc4a3d162b82774a368fe1de3a3",
   "training/rouge/lightning_ai/job.py": "7f869f98b6af70b8b7f5551308db8d7e674acd10d1b98890e98c65f4a4e6a74c",
-  "training/rouge/ready.py": "6127a6798c4b12ee74b8d2ea3ac609f13279e4206443b80fe2eb39816cdfa7ca",
-  ".github/workflows/rouge-train.yml": "5ec1147c97a7de12dfbe76982add56d1aa3b64dc178dd43ecbb08f7df8c96b79",
+  "training/rouge/ready.py": "a7de6e95715fc1847ec2af895b2b59005372f1955d3c84d6414da4e68ad53d7c",
+  ".github/workflows/rouge-train.yml": "bbec82856bf5982d4f8ec0a66c42bbebd5fb1baf7f8a9f4a4de61d83dd35d3b2",
   ".github/workflows/rouge-native.yml": "12c36c6ab9619448123d53c04d8ebfc80322c16cdd5943a6eeeac514f9746048"
  }
 }
