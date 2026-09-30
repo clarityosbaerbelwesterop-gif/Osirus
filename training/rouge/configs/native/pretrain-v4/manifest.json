@@ -1,0 +1,1293 @@
+{
+ "schema": "rouge.data/1",
+ "mixture": {
+  "web_en": 0.53,
+  "web_de": 0.12,
+  "wiki_en": 0.08,
+  "wiki_de": 0.03,
+  "code_py": 0.05,
+  "math_web": 0.05,
+  "finemath": 0.09,
+  "math_synth": 0.03,
+  "algo_synth": 0.02
+ },
+ "total_tokens": 11500000000,
+ "mixture_name": "v5",
+ "revisions": {
+  "finemath": "e92b25a616738fe95dc186b64dfb19f9c8525594",
+  "math_web": "fde8ef8de2300f5e778f56261843dab89f230815",
+  "web_de": "af9c13333eb981300149d5ca60a8e9d659b276b9",
+  "web_en": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+  "wiki_de": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
+  "wiki_en": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa"
+ },
+ "code_set": "v5",
+ "code_projects": [
+  "cpython@v3.12.7 (PSF-2.0)",
+  "numpy@v2.1.3 (BSD-3-Clause)",
+  "django@5.1.3 (BSD-3-Clause)",
+  "flask@3.0.3 (BSD-3-Clause)",
+  "requests@v2.32.3 (Apache-2.0)",
+  "scikit-learn@1.5.2 (BSD-3-Clause)",
+  "sympy@sympy-1.13.3 (BSD-3-Clause)",
+  "pandas@v2.2.3 (BSD-3-Clause)",
+  "pytorch@v2.5.1 (BSD-3-Clause)",
+  "transformers@v4.46.3 (Apache-2.0)",
+  "scipy@v1.14.1 (BSD-3-Clause)",
+  "home-assistant@2024.11.3 (Apache-2.0)",
+  "jax@jax-v0.4.35 (Apache-2.0)",
+  "keras@v3.6.0 (Apache-2.0)",
+  "airflow@2.10.3 (Apache-2.0)",
+  "pydantic@v2.9.2 (MIT)",
+  "fastapi@0.115.5 (MIT)",
+  "pytest@8.3.3 (MIT)",
+  "sqlalchemy@rel_2_0_36 (MIT)",
+  "dask@2024.11.2 (BSD-3-Clause)",
+  "xarray@v2024.11.0 (Apache-2.0)",
+  "networkx@networkx-3.4.2 (BSD-3-Clause)",
+  "astropy@v7.0.0 (BSD-3-Clause)",
+  "pip@24.3.1 (MIT)",
+  "setuptools@v75.6.0 (MIT)",
+  "mypy@v1.13.0 (MIT)",
+  "ray@ray-2.39.0 (Apache-2.0)",
+  "mlflow@v2.18.0 (Apache-2.0)",
+  "celery@v5.4.0 (BSD-3-Clause)",
+  "scrapy@2.12.0 (BSD-3-Clause)",
+  "tornado@v6.4.2 (Apache-2.0)",
+  "aiohttp@v3.11.7 (Apache-2.0)",
+  "tensorflow@v2.18.0 (Apache-2.0)",
+  "statsmodels@v0.14.4 (BSD-3-Clause)",
+  "sphinx@v8.1.3 (BSD-2-Clause)",
+  "black@24.10.0 (MIT)",
+  "twisted@twisted-24.10.0 (MIT)",
+  "salt@v3007.1 (Apache-2.0)",
+  "zulip@9.3 (Apache-2.0)",
+  "numba@0.60.0 (BSD-2-Clause)",
+  "httpx@0.27.2 (BSD-3-Clause)"
+ ],
+ "code_missing": [],
+ "tokenizer": {
+  "sha256": "4d500bb9810a7ab2fc1b570115b73749427a1f6b8eac3820282dc96b07fcdd37",
+  "vocab": 32768,
+  "special": [
+   "<|pad|>",
+   "<|bos|>",
+   "<|eos|>",
+   "<|system|>",
+   "<|user|>",
+   "<|assistant|>",
+   "<|tool|>",
+   "<|image|>",
+   "<|think|>",
+   "<|/think|>"
+  ]
+ },
+ "sources": {
+  "web_en": {
+   "domain": "web",
+   "license": [
+    "ODC-By-1.0"
+   ],
+   "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+   "docs_seen": 7044804,
+   "docs_train": 6789110,
+   "docs_val": 400,
+   "dropped": {
+    "exact_dup": 234237,
+    "length": 218,
+    "near_dup": 18166,
+    "alpha_ratio": 226,
+    "repeated_lines": 59
+   },
+   "contaminated_dropped": 2388,
+   "shards": {
+    "train": {
+     "tokens": 6095000000,
+     "files": [
+      {
+       "path": "train/web_en_0000.bin",
+       "tokens": 67137560,
+       "sha256": "7b5569781d0fdeb158a8a6939fe506f12c8e5424032a2176d2775951105f7f13"
+      },
+      {
+       "path": "train/web_en_0001.bin",
+       "tokens": 67627889,
+       "sha256": "a662c5197b9ea095824584406eb15e6d54394330eb57d9bcaae6aeabc3b6a535"
+      },
+      {
+       "path": "train/web_en_0002.bin",
+       "tokens": 67677314,
+       "sha256": "9caf252affc096c191a8658b0b5d663894fd2e7958332cc7146de516fd668345"
+      },
+      {
+       "path": "train/web_en_0003.bin",
+       "tokens": 67145158,
+       "sha256": "80b0c973580e4132d207b8c7743b4ac0ae13f9770b98c8230871773a74592c8c"
+      },
+      {
+       "path": "train/web_en_0004.bin",
+       "tokens": 67533175,
+       "sha256": "c9e1a7f96ef7b24eb2ccee4b8163bd18a0b81a39b531f2516c5837653e90d138"
+      },
+      {
+       "path": "train/web_en_0005.bin",
+       "tokens": 67385993,
+       "sha256": "22de8d4305b68458737003f162cc8a669e15e274520db68e14288d5e10971818"
+      },
+      {
+       "path": "train/web_en_0006.bin",
+       "tokens": 67322732,
+       "sha256": "adca2559fb9c6b7a686d7e432be1d6dfebd375c46ce59799b4ec7d85880ec2a6"
+      },
+      {
+       "path": "train/web_en_0007.bin",
+       "tokens": 67217831,
+       "sha256": "87d09b7f959a50467a09ea116254fdf8f0d22ae4fac7e7029501dc3aa35fb9ab"
+      },
+      {
+       "path": "train/web_en_0008.bin",
+       "tokens": 67479670,
+       "sha256": "04891c2d927404ed0028adc07eff46bc1ec477926b82f60d7b6306155a54d35c"
+      },
+      {
+       "path": "train/web_en_0009.bin",
+       "tokens": 67545809,
+       "sha256": "5f510376a3e5ebce185bc587092e9261406bf0ebbaab1dc1b22c84661954ee90"
+      },
+      {
+       "path": "train/web_en_0010.bin",
+       "tokens": 67300540,
+       "sha256": "b49382755ca59a1db65d7b89c54e3e960e1315fa5467ca3851d6502f96fa8302"
+      },
+      {
+       "path": "train/web_en_0011.bin",
+       "tokens": 67672792,
+       "sha256": "d6bba7f91a4fa2827e573bf2f26097645555fb9a066c7ecb053c0f3a559f9554"
+      },
+      {
+       "path": "train/web_en_0012.bin",
+       "tokens": 67568496,
+       "sha256": "c4168afe2225663ff033866f402af0c0551680ce38580f54aeb4013df3aaea14"
+      },
+      {
+       "path": "train/web_en_0013.bin",
+       "tokens": 67401931,
+       "sha256": "417c40db446101778dab79c38a10cd956c4b1ce036eee163050a1112633be81d"
+      },
+      {
+       "path": "train/web_en_0014.bin",
+       "tokens": 67289979,
+       "sha256": "6c3066658c2991197b274dd9decc6d9a29631d6c62bf9b45aa03ae70e1cd66d0"
+      },
+      {
+       "path": "train/web_en_0015.bin",
+       "tokens": 67662330,
+       "sha256": "99b4b63ba73dd22a5e4bb7325e3a1d8f710f3636e418ccd143130716b1030874"
+      },
+      {
+       "path": "train/web_en_0016.bin",
+       "tokens": 67385365,
+       "sha256": "f3109160683b337d539831c5579f3e05e5d9a7042fe4639dcb7ce9d351fd957d"
+      },
+      {
+       "path": "train/web_en_0017.bin",
+       "tokens": 67401872,
+       "sha256": "f43d061e833650d90e3d289d3b729a678438ae41327bbbee4279b7722bf7178a"
+      },
+      {
+       "path": "train/web_en_0018.bin",
+       "tokens": 67262841,
+       "sha256": "eb6ba29fe6a6384ff78c83a7196e7bbaef3769ca4423dfd7c517e223dd525e3d"
+      },
+      {
+       "path": "train/web_en_0019.bin",
+       "tokens": 67643438,
+       "sha256": "08180f250fc23ab4d057d1a3daf5a0267befab38d77e6ba9383e96ee9eae4846"
+      },
+      {
+       "path": "train/web_en_0020.bin",
+       "tokens": 67516393,
+       "sha256": "4ccd0dcab7b0f9e4a11127ce154d057bdd5735ec1e6518a56e2ad9248bf39eaa"
+      },
+      {
+       "path": "train/web_en_0021.bin",
+       "tokens": 67245414,
+       "sha256": "54a993a30c97c81551ab0837dcb84fd11e51275feea1df7c02462971fb789822"
+      },
+      {
+       "path": "train/web_en_0022.bin",
+       "tokens": 67606308,
+       "sha256": "e1b1060a100c4a6dd4e537d9ce45c31f511b0255fb4ce973d835c80177ac35b1"
+      },
+      {
+       "path": "train/web_en_0023.bin",
+       "tokens": 67200272,
+       "sha256": "d0bd1f04d304b605faf7e413d59b429a34c45ef7bb42b164ef53feff43fe1ce9"
+      },
+      {
+       "path": "train/web_en_0024.bin",
+       "tokens": 67136995,
+       "sha256": "1a5ee8df450e93062dbbf61f43d7c54b421a092b7c8b8e6d47704860e77a0ce1"
+      },
+      {
+       "path": "train/web_en_0025.bin",
+       "tokens": 67446648,
+       "sha256": "006163318d1ed7b24aa6d1846a620b4bb5932be1a4ba97a7d32f9fa168de10df"
+      },
+      {
+       "path": "train/web_en_0026.bin",
+       "tokens": 67552619,
+       "sha256": "4ff1dfba0d04fb1a387d8636192ae03a1a9787335fa4b74267719b8cace50e83"
+      },
+      {
+       "path": "train/web_en_0027.bin",
+       "tokens": 67217193,
+       "sha256": "8e1d2c7c8dd6b295f2965d3ef3ae561d79493eb37a9a93b9e24d1db642fdd272"
+      },
+      {
+       "path": "train/web_en_0028.bin",
+       "tokens": 67353398,
+       "sha256": "09c92b8ee2199f56bb4f1a2032c850ea9acfa7e1e3409eb10950a26c0fc81750"
+      },
+      {
+       "path": "train/web_en_0029.bin",
+       "tokens": 67131437,
+       "sha256": "acf397269398808902b19bf9d9ec8552fd7534ca830c41eb3a6263d8d10a7792"
+      },
+      {
+       "path": "train/web_en_0030.bin",
+       "tokens": 67458796,
+       "sha256": "6978e872b83790d4f1f970f494e36f519a376b72d0e76cb670a11374a5d6332e"
+      },
+      {
+       "path": "train/web_en_0031.bin",
+       "tokens": 67320208,
+       "sha256": "c660cff6ec6120e4767f52fd64cf71ce93bad55fea61cfe7de40086c8dabdbf6"
+      },
+      {
+       "path": "train/web_en_0032.bin",
+       "tokens": 67195558,
+       "sha256": "88e38e9493fd95d1925afd0ea887279a69bf34b083fc8168434ad682be0929d3"
+      },
+      {
+       "path": "train/web_en_0033.bin",
+       "tokens": 67219597,
+       "sha256": "be7d952e0a361ca38bd94104c4796ce9f1f9946b60da172f24a91b36f26bae26"
+      },
+      {
+       "path": "train/web_en_0034.bin",
+       "tokens": 67590054,
+       "sha256": "aa0529c7489a954bf8d890daff8d4a0b8eff2408304ebb0feecf7074f68650d7"
+      },
+      {
+       "path": "train/web_en_0035.bin",
+       "tokens": 67326591,
+       "sha256": "b0f4e4bb6d95b4e21daf06f5c00fb655f6ded0f7b7255af2f5f778431f89400b"
+      },
+      {
+       "path": "train/web_en_0036.bin",
+       "tokens": 67599543,
+       "sha256": "83b3bb700ca0edf87f859a171c9dbfb3b24f663bf075e3eb5ec79370a952b8dc"
+      },
+      {
+       "path": "train/web_en_0037.bin",
+       "tokens": 67315992,
+       "sha256": "3ce00fd6732874514ddf64eeeb5b5569465a71c7c8b75da5065dfc7aaa2447a9"
+      },
+      {
+       "path": "train/web_en_0038.bin",
+       "tokens": 67491800,
+       "sha256": "f2f3a10dcca1c15dd7590a9689df41b38b2a13b442641f9573bf42428997cd1b"
+      },
+      {
+       "path": "train/web_en_0039.bin",
+       "tokens": 67335102,
+       "sha256": "7cb7e0e004637ae7d66021ee70363048e4ff990318735ba40aa24f6047c84608"
+      },
+      {
+       "path": "train/web_en_0040.bin",
+       "tokens": 67602378,
+       "sha256": "f8747557896f295293391f438b186ad0f3baa4c48d55dbc5046e175cf8147e90"
+      },
+      {
+       "path": "train/web_en_0041.bin",
+       "tokens": 67466242,
+       "sha256": "dc762fb8903e37af5f21c8ffe346a30d6f84c321b1061448f8cc251ad79cfef3"
+      },
+      {
+       "path": "train/web_en_0042.bin",
+       "tokens": 67447299,
+       "sha256": "bef8f1de51d46886d490892624dae4faa750644ed00da6a1387e7176228a49e3"
+      },
+      {
+       "path": "train/web_en_0043.bin",
+       "tokens": 67494400,
+       "sha256": "55dceb4f05fdac46734e7639604967cda0729ed72dc1f24fe236a524a74b8fc1"
+      },
+      {
+       "path": "train/web_en_0044.bin",
+       "tokens": 67612301,
+       "sha256": "8ef5b3240b603f294fac08a4b7a6fa261bd85d6ff2eca0c430c6033d3c239ac6"
+      },
+      {
+       "path": "train/web_en_0045.bin",
+       "tokens": 67512424,
+       "sha256": "372f375f57497435ade682d85c192898919b1f70f1c419bb111408ffa6a432c3"
+      },
+      {
+       "path": "train/web_en_0046.bin",
+       "tokens": 67160029,
+       "sha256": "9837fe7467625ac2d7ee12c7bbb75b20db110ec1600da0a1140f176474b7ce53"
+      },
+      {
+       "path": "train/web_en_0047.bin",
+       "tokens": 67236406,
+       "sha256": "2e49bcc441591d36180c1d0c483ac47fc67be75a6910498f29ea84f43834ac6d"
+      },
+      {
+       "path": "train/web_en_0048.bin",
+       "tokens": 67193616,
+       "sha256": "13aa264ef34f2eae52867df157e88f194cb6d7a4725c2b09f887b4a2209447bd"
+      },
+      {
+       "path": "train/web_en_0049.bin",
+       "tokens": 67201829,
+       "sha256": "46c11eee5406a0d1a3cea29dfd879fa439503a68acad1030dab8468c2697c689"
+      },
+      {
+       "path": "train/web_en_0050.bin",
+       "tokens": 67519309,
+       "sha256": "a69636d969448548e757aa180349cc58e00b88abfcac786a9734f511ac2ed753"
+      },
+      {
+       "path": "train/web_en_0051.bin",
+       "tokens": 67314014,
+       "sha256": "9ea756eff01586f4ae98e08999fcf8d01782d821ae85f1b3b2e88d0b488ae0f9"
+      },
+      {
+       "path": "train/web_en_0052.bin",
+       "tokens": 67690802,
+       "sha256": "3310d7751720863689c3dee6cf0674100c6203d706466db31bc4dbb9eb479106"
+      },
+      {
+       "path": "train/web_en_0053.bin",
+       "tokens": 67310681,
+       "sha256": "fbcfde74271a63846462c6f6a942feef699ac5875d2fa906a82e04ad43f50d44"
+      },
+      {
+       "path": "train/web_en_0054.bin",
+       "tokens": 67421564,
+       "sha256": "5bb1b6a205f2477916a224e2a0a45e4cd5e512ac800c59eb95d0209582361f14"
+      },
+      {
+       "path": "train/web_en_0055.bin",
+       "tokens": 67323752,
+       "sha256": "3394b98ba14efe10a6b12b2c859ce37950e53af67ba50146d29e42e00a7eec63"
+      },
+      {
+       "path": "train/web_en_0056.bin",
+       "tokens": 67325249,
+       "sha256": "627220fb93f7b802f1f49f23782a3fefca082ed2ae6a6fb75f260d57dc5db0fe"
+      },
+      {
+       "path": "train/web_en_0057.bin",
+       "tokens": 67441083,
+       "sha256": "887d42e9aa622153fd6af31437f457a82f8fcc8b17db6be9ad47111210269e6b"
+      },
+      {
+       "path": "train/web_en_0058.bin",
+       "tokens": 67440471,
+       "sha256": "779c755058b8474801fe53a69221f9180d4939228d20a691f7c7eb349487d99c"
+      },
+      {
+       "path": "train/web_en_0059.bin",
+       "tokens": 67233548,
+       "sha256": "3be7e9217e00b5f5c23cb39ec6e577081c394467349ec8507201842c73043226"
+      },
+      {
+       "path": "train/web_en_0060.bin",
+       "tokens": 67147006,
+       "sha256": "50d0acefd9601634b788deb0d1df835522e8a61b082a6e3ac0fdf84ad0ec63ea"
+      },
+      {
+       "path": "train/web_en_0061.bin",
+       "tokens": 67172104,
+       "sha256": "adfabf232fac1558e06d0422026c529164ca8279c0a904ff3395093ba44cb344"
+      },
+      {
+       "path": "train/web_en_0062.bin",
+       "tokens": 67587480,
+       "sha256": "cf472439ce6fdf69ad1a78608a72c2c28a975575a4d9fb28361bcf91cc9c60d9"
+      },
+      {
+       "path": "train/web_en_0063.bin",
+       "tokens": 67454975,
+       "sha256": "cac79226a24044ae7f31afee3918dbaa240a590a972e820f8086352867fe8608"
+      },
+      {
+       "path": "train/web_en_0064.bin",
+       "tokens": 67356679,
+       "sha256": "cbf09b486622bcee283cfd67d21828ea27e4d5d8e5b48878817db4fc725c8c59"
+      },
+      {
+       "path": "train/web_en_0065.bin",
+       "tokens": 67607550,
+       "sha256": "fd3e64cb0b0bbf398451601fa06261df9357a3e638fb6136466e80a3e5300d30"
+      },
+      {
+       "path": "train/web_en_0066.bin",
+       "tokens": 67233760,
+       "sha256": "29bb63c5f1c6db7023b6793d5b492d4ef6c6d7467448d2625817b2ed62960c3d"
+      },
+      {
+       "path": "train/web_en_0067.bin",
+       "tokens": 67130785,
+       "sha256": "1fe486b89727363a7384d97eb8bcdfce053399ce519dd40cf4fda6476726c1e9"
+      },
+      {
+       "path": "train/web_en_0068.bin",
+       "tokens": 67524024,
+       "sha256": "c0ba404397506c276b882fe594660c45ecaccf41cf39a41a082c3dcc8da9d976"
+      },
+      {
+       "path": "train/web_en_0069.bin",
+       "tokens": 67613225,
+       "sha256": "3ab58be97ae50934e456566e539a6efc47530277b46ecaa84110cc592a409f3f"
+      },
+      {
+       "path": "train/web_en_0070.bin",
+       "tokens": 67116131,
+       "sha256": "efaf040ba8091860dce4c891bb2e8901817f2efaa99a284d66dcbd34ae59660e"
+      },
+      {
+       "path": "train/web_en_0071.bin",
+       "tokens": 67112516,
+       "sha256": "dfcca08fc9e3e0e7345711081547a25b541982b7983d427cf5b99db1266d93ab"
+      },
+      {
+       "path": "train/web_en_0072.bin",
+       "tokens": 67567634,
+       "sha256": "f5fd398573281d5704bbbc1fd8144d9ad0cfdbf3c2a39f714ea692a7c66e2eab"
+      },
+      {
+       "path": "train/web_en_0073.bin",
+       "tokens": 67613620,
+       "sha256": "f12d82f6c73c7ecb8e609564a2746e1872a690ef08c5b752802e3c615d98ffbc"
+      },
+      {
+       "path": "train/web_en_0074.bin",
+       "tokens": 67117640,
+       "sha256": "31034db2c4e39f3b86f1b45003b165399dd3c4ca45b2ac42b1102e888200e735"
+      },
+      {
+       "path": "train/web_en_0075.bin",
+       "tokens": 67552999,
+       "sha256": "e2aeb7353bddd3331f2641319b3ffca485d4f991be2785e5e5ad7bba5c09f829"
+      },
+      {
+       "path": "train/web_en_0076.bin",
+       "tokens": 67519875,
+       "sha256": "205ac0c332f51e8e00d0d6b6e671430b693dab8e141c6664e32b33fb00d05548"
+      },
+      {
+       "path": "train/web_en_0077.bin",
+       "tokens": 67254572,
+       "sha256": "a71053ee7b9951a8234b24f0638856e90e2ab8323322f49b7fe3890568ab3f1b"
+      },
+      {
+       "path": "train/web_en_0078.bin",
+       "tokens": 67549796,
+       "sha256": "17c40377aace6f7525157d22cdc08d4ab1c8a9ed0b4bb0e4a06d4eafe19f6787"
+      },
+      {
+       "path": "train/web_en_0079.bin",
+       "tokens": 67512198,
+       "sha256": "fed7faff6a53abbe3bb3973ae55503a04d8f3e13c6d93d24a58e8f2d35548b5f"
+      },
+      {
+       "path": "train/web_en_0080.bin",
+       "tokens": 67320920,
+       "sha256": "5f44d4c92c902598b05da57c15aaee1bd95e067f60e5dadd4075ac4f659c9161"
+      },
+      {
+       "path": "train/web_en_0081.bin",
+       "tokens": 67383777,
+       "sha256": "b0df7d1bf823627a79ea757c195129802d60e870c05e526e6a972fd63516052b"
+      },
+      {
+       "path": "train/web_en_0082.bin",
+       "tokens": 67477943,
+       "sha256": "da5606a4949ad748c5c70fd5e2ee1394b6f17250c5531a0c4052e5307edec79d"
+      },
+      {
+       "path": "train/web_en_0083.bin",
+       "tokens": 67585950,
+       "sha256": "36e65700bb5aea52ac8a23cd2795416ba55e2481b3c2c6662fc7d64005a6cf39"
+      },
+      {
+       "path": "train/web_en_0084.bin",
+       "tokens": 67146571,
+       "sha256": "3f56dd97deb6d08438ef33bb6fdda1684ba769a42ab6bc714721082c1617b693"
+      },
+      {
+       "path": "train/web_en_0085.bin",
+       "tokens": 67255478,
+       "sha256": "67e1facae2e0717fb097ac5609451f12a253dab0f7b64fdaa2c668b6f2fcde7d"
+      },
+      {
+       "path": "train/web_en_0086.bin",
+       "tokens": 67423479,
+       "sha256": "7c49378369c0db63c5032f2d7f2e81937123b62c80cfbed40447c05c7237a27f"
+      },
+      {
+       "path": "train/web_en_0087.bin",
+       "tokens": 67352103,
+       "sha256": "a4c9e9c4f8055c28ab48c3adc746a63806a48ac059c5215ce92a090ca1441e83"
+      },
+      {
+       "path": "train/web_en_0088.bin",
+       "tokens": 67554896,
+       "sha256": "e961992e231854cf6f861d2ace1813240e34a05f972d862cd3eca3bbe8ce6b75"
+      },
+      {
+       "path": "train/web_en_0089.bin",
+       "tokens": 67437110,
+       "sha256": "5ae7093634f570bec507fdd1bcdac9f6bba4b2a7397565eb9eecba25754c3317"
+      },
+      {
+       "path": "train/web_en_0090.bin",
+       "tokens": 29447174,
+       "sha256": "46cafdfe7b578d01f87988babf54c244b35a646fd76bf0885a0ebf86a1a3922c"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 433175,
+     "files": [
+      {
+       "path": "val/web_en_0000.bin",
+       "tokens": 433175,
+       "sha256": "9af061f388fb2b35463fd8f9e5fce1bd247f6d866241a083363def8f364268cd"
+      }
+     ],
+     "bytes": 1912599
+    }
+   }
+  },
+  "web_de": {
+   "domain": "web",
+   "license": [
+    "ODC-By-1.0"
+   ],
+   "revision": "af9c13333eb981300149d5ca60a8e9d659b276b9",
+   "docs_seen": 2396620,
+   "docs_train": 2393575,
+   "docs_val": 400,
+   "dropped": {
+    "near_dup": 2198,
+    "length": 60,
+    "exact_dup": 11,
+    "alpha_ratio": 42,
+    "repeated_lines": 7
+   },
+   "contaminated_dropped": 327,
+   "shards": {
+    "train": {
+     "tokens": 1380000000,
+     "files": [
+      {
+       "path": "train/web_de_0000.bin",
+       "tokens": 67175647,
+       "sha256": "19d3a398436ae5a65d799311ad6e1bc03bdc69c22e5ea3aab4acfa6fa751e4a0"
+      },
+      {
+       "path": "train/web_de_0001.bin",
+       "tokens": 67323852,
+       "sha256": "4e0f2c661316c6f23f501f5bcb949af6d827c055f7c5cfd8a9f865b97837ec4a"
+      },
+      {
+       "path": "train/web_de_0002.bin",
+       "tokens": 67383536,
+       "sha256": "f312fcda2d273813ffbf965f26de65e7b4eabc30381cb08f72327d8b29559b3e"
+      },
+      {
+       "path": "train/web_de_0003.bin",
+       "tokens": 67368081,
+       "sha256": "35c31082c3075777572e619e2b66ccbd744a1d579d9faae96bce5138fddccb40"
+      },
+      {
+       "path": "train/web_de_0004.bin",
+       "tokens": 67360303,
+       "sha256": "0a3702dc7e3699195146639f4fa6aa67f1d7e3a0a90d0f201fded022459a9e9f"
+      },
+      {
+       "path": "train/web_de_0005.bin",
+       "tokens": 67424759,
+       "sha256": "9c0cbf310720217e838199c4b920dccfc4efb4d8a03df0356a36abf357599246"
+      },
+      {
+       "path": "train/web_de_0006.bin",
+       "tokens": 67253897,
+       "sha256": "c01738cf21591e91e55cb85f5ebfec42da431e5ed7bcafbc401ef8fdc1e87e4a"
+      },
+      {
+       "path": "train/web_de_0007.bin",
+       "tokens": 67146100,
+       "sha256": "8e9180f7e14ef01c4245311c010f4d7d915042f5891062f1920b462448e72451"
+      },
+      {
+       "path": "train/web_de_0008.bin",
+       "tokens": 67193393,
+       "sha256": "9338b2607f6d7d21c1f060097025d5cc480b9887063f82db8df8e1eaa08eb167"
+      },
+      {
+       "path": "train/web_de_0009.bin",
+       "tokens": 67219702,
+       "sha256": "eee2e6cb9d4e0f9e6bdc48ec50bd13297af82aa17c27319bfa86b64f517a82d6"
+      },
+      {
+       "path": "train/web_de_0010.bin",
+       "tokens": 67269394,
+       "sha256": "33e2707e6ea3cc334c44e45308b3e629f5b0a612e180110127faa2d6faf3819e"
+      },
+      {
+       "path": "train/web_de_0011.bin",
+       "tokens": 67323752,
+       "sha256": "86bef1fb4021ab4a707b42b2ac46c1a7b1586f8482bac5dfad35f2d596361cd7"
+      },
+      {
+       "path": "train/web_de_0012.bin",
+       "tokens": 67111367,
+       "sha256": "e04cc27490f1a5f814d83696250a582c738173aa259a887470ad9d0a07191a6c"
+      },
+      {
+       "path": "train/web_de_0013.bin",
+       "tokens": 67362852,
+       "sha256": "0878827a9c048219422578409148bf25c7b9d0cfe15568e256713dc07df223d8"
+      },
+      {
+       "path": "train/web_de_0014.bin",
+       "tokens": 67140348,
+       "sha256": "955a96247f21daf0f02e7dcf4c57561dcbc24c868a5eedd1029d6f896f79a362"
+      },
+      {
+       "path": "train/web_de_0015.bin",
+       "tokens": 67465617,
+       "sha256": "47c155f2f9f54b7120f7e4c4fea954961b10baf36bef656ea4c49cbb2e0f66da"
+      },
+      {
+       "path": "train/web_de_0016.bin",
+       "tokens": 67456612,
+       "sha256": "85a443b8c902a1236eacdbbcf2ac7f862b13ab4f13c83bff880437b528a5d313"
+      },
+      {
+       "path": "train/web_de_0017.bin",
+       "tokens": 67376977,
+       "sha256": "d16f194d12544e722ad100486343558f5c84ab7529d85da4a0038b071a600404"
+      },
+      {
+       "path": "train/web_de_0018.bin",
+       "tokens": 67428410,
+       "sha256": "38f8c3b2dcc2acc63fb345d6652389556b8d75cc4345ddd6055570ec83b08921"
+      },
+      {
+       "path": "train/web_de_0019.bin",
+       "tokens": 67123165,
+       "sha256": "4923c345babfbfdb2464d0abda4aa097fe9d0fd576ddeb517cc5d2e0f3c9921b"
+      },
+      {
+       "path": "train/web_de_0020.bin",
+       "tokens": 34092236,
+       "sha256": "1e8262b5faee586ecc0f8263f4c2ed2ca81feb4cd2fbf380bfb3b773e299ef87"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 281722,
+     "files": [
+      {
+       "path": "val/web_de_0000.bin",
+       "tokens": 281722,
+       "sha256": "1ca019899b251eeb8e27a8e8f2dbd2c05a0541a18f7a540a7833bf1901451dac"
+      }
+     ],
+     "bytes": 1136221
+    }
+   }
+  },
+  "wiki_en": {
+   "domain": "web",
+   "license": [
+    "CC-BY-SA-3.0"
+   ],
+   "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
+   "docs_seen": 1565004,
+   "docs_train": 1486013,
+   "docs_val": 400,
+   "dropped": {
+    "repeated_lines": 5551,
+    "length": 70058,
+    "alpha_ratio": 2373,
+    "exact_dup": 95,
+    "near_dup": 24
+   },
+   "contaminated_dropped": 490,
+   "shards": {
+    "train": {
+     "tokens": 920000000,
+     "files": [
+      {
+       "path": "train/wiki_en_0000.bin",
+       "tokens": 67142556,
+       "sha256": "33d5df3814145ea824ad863c0e1e72add75c6330c4884177aa595fe98958e0c2"
+      },
+      {
+       "path": "train/wiki_en_0001.bin",
+       "tokens": 67510166,
+       "sha256": "21bcc2d8f8f097d40a3ce2443c8c11c276094577c096b8e3efba66128b2e3237"
+      },
+      {
+       "path": "train/wiki_en_0002.bin",
+       "tokens": 67442845,
+       "sha256": "4a21dfaa0fbeccc8e409d6d4b736ae3d6dc0425210a95c3244034eeede542f79"
+      },
+      {
+       "path": "train/wiki_en_0003.bin",
+       "tokens": 67167787,
+       "sha256": "3513fe7eb4e6927d8111a095f2a55d72de8c94cc4d629d6aefbe71134207847b"
+      },
+      {
+       "path": "train/wiki_en_0004.bin",
+       "tokens": 67267098,
+       "sha256": "cee2c47880b9e4fee2f9872a5a9a338219ee3f73853071a0f6acf5dd2768f2b9"
+      },
+      {
+       "path": "train/wiki_en_0005.bin",
+       "tokens": 67324960,
+       "sha256": "6e5724feaab09d8492bc6009656246732f632372425d351e75b9607e3090d4c3"
+      },
+      {
+       "path": "train/wiki_en_0006.bin",
+       "tokens": 67345564,
+       "sha256": "23b98315ca8caa20c1ea7bab439552827180cb5eceb25049e83e1f73b3700493"
+      },
+      {
+       "path": "train/wiki_en_0007.bin",
+       "tokens": 67353991,
+       "sha256": "8dc389ec421216f6e4bfe93411255d06d14c055ee84770f1160c3ee91588c3b0"
+      },
+      {
+       "path": "train/wiki_en_0008.bin",
+       "tokens": 67243127,
+       "sha256": "35f471074570abd365a3b35e4b1a6c0ecfd1ff3cc169fa75f3edb7f739e8b97a"
+      },
+      {
+       "path": "train/wiki_en_0009.bin",
+       "tokens": 67541609,
+       "sha256": "f3d81b5b567e8e649a1882543b4be2f8cf35720adc2bff9aad74ba030e436af6"
+      },
+      {
+       "path": "train/wiki_en_0010.bin",
+       "tokens": 67430278,
+       "sha256": "71127b92f8eba949a3e11639e1786d61af5b2df9ae4ca30e73728b6c01ac2caf"
+      },
+      {
+       "path": "train/wiki_en_0011.bin",
+       "tokens": 67254210,
+       "sha256": "d9507765c3015984b91c986a994e2520453dfbd1bcd25f6d14864588c1d5e125"
+      },
+      {
+       "path": "train/wiki_en_0012.bin",
+       "tokens": 67378877,
+       "sha256": "b5c7864de3305f0e48084d846d2c089f22092a51201ea6e1e12f5dff961e0852"
+      },
+      {
+       "path": "train/wiki_en_0013.bin",
+       "tokens": 44596932,
+       "sha256": "4bbfba94183b4fa72b61b15867498e7a450dfdd36d3b73f3746cc28a149bcd11"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 512345,
+     "files": [
+      {
+       "path": "val/wiki_en_0000.bin",
+       "tokens": 512345,
+       "sha256": "0f29254f19164f14ed735ac21b5715c9c3f7fee1e94326a11ef7bfb0346bd492"
+      }
+     ],
+     "bytes": 2056662
+    }
+   }
+  },
+  "wiki_de": {
+   "domain": "web",
+   "license": [
+    "CC-BY-SA-3.0"
+   ],
+   "revision": "b04c8d1ceb2f5cd4588862100d08de323dccfbaa",
+   "docs_seen": 246334,
+   "docs_train": 241423,
+   "docs_val": 400,
+   "dropped": {
+    "alpha_ratio": 192,
+    "length": 3988,
+    "repeated_lines": 232,
+    "near_dup": 8
+   },
+   "contaminated_dropped": 91,
+   "shards": {
+    "train": {
+     "tokens": 345000000,
+     "files": [
+      {
+       "path": "train/wiki_de_0000.bin",
+       "tokens": 67275280,
+       "sha256": "169fbb789f6b0583a0855c03eb2cfbefa06d7635a24570c984d4f3b4c75f4adb"
+      },
+      {
+       "path": "train/wiki_de_0001.bin",
+       "tokens": 68310226,
+       "sha256": "b6538e905a6100c9878ecdc91eb1afe51a2796f7b70ae61cabaef5433deec46d"
+      },
+      {
+       "path": "train/wiki_de_0002.bin",
+       "tokens": 67711196,
+       "sha256": "a1e683c23a90dc5d37488ec0abce23f569cd84c5b28e34daff26332a8109917d"
+      },
+      {
+       "path": "train/wiki_de_0003.bin",
+       "tokens": 67285979,
+       "sha256": "8e75daee8b18065680ef80bd19a57efe8c63828679e905ec03db66d1402fb369"
+      },
+      {
+       "path": "train/wiki_de_0004.bin",
+       "tokens": 67113736,
+       "sha256": "984e70a5e41cf97aac63a0a2b9e36061279dba3c97da37cc6f8a6500a0dc7f57"
+      },
+      {
+       "path": "train/wiki_de_0005.bin",
+       "tokens": 7303583,
+       "sha256": "f6d03937af5bd498533e42d7f75e06a0e01e16adac1f7def68396c455704ff37"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 991199,
+     "files": [
+      {
+       "path": "val/wiki_de_0000.bin",
+       "tokens": 991199,
+       "sha256": "985da5e3d57c7b80a345c8c2e0143305c8d3cce98e1d45e566c51780cbe5b265"
+      }
+     ],
+     "bytes": 3795689
+    }
+   }
+  },
+  "code_py": {
+   "domain": "code",
+   "license": [
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "MIT",
+    "PSF-2.0"
+   ],
+   "revision": null,
+   "docs_seen": 58699,
+   "docs_train": 50078,
+   "docs_val": 313,
+   "dropped": {
+    "length": 5741,
+    "generated": 348,
+    "near_dup": 359,
+    "exact_dup": 589
+   },
+   "contaminated_dropped": 1271,
+   "shards": {
+    "train": {
+     "tokens": 575000000,
+     "files": [
+      {
+       "path": "train/code_py_0000.bin",
+       "tokens": 67415631,
+       "sha256": "8706391668cd94015035e911453083ba411a12a1e04900a0d5b04ae3c6a40090"
+      },
+      {
+       "path": "train/code_py_0001.bin",
+       "tokens": 69613324,
+       "sha256": "48ae48b0b54799287a41d659f8761b8cd7e4ac8c2cf125eca08869f142e3942b"
+      },
+      {
+       "path": "train/code_py_0002.bin",
+       "tokens": 67290177,
+       "sha256": "9fc7bc7d55bd6e9b44405ee845477e4f05c22de6b8338ffccd36f53ef9085876"
+      },
+      {
+       "path": "train/code_py_0003.bin",
+       "tokens": 68963216,
+       "sha256": "03ddc8cfa35445ed6172d2956fb7e44773e97c4dc9b61dec161827a64637d3bc"
+      },
+      {
+       "path": "train/code_py_0004.bin",
+       "tokens": 67962320,
+       "sha256": "f9ead7af006068d9e0d9b4bba3928f198a7bf94d44a16ddf5db555845effc5bd"
+      },
+      {
+       "path": "train/code_py_0005.bin",
+       "tokens": 67184989,
+       "sha256": "483aaba213e3f1e012dddd9bcc8f6005d6cc8dbccfb34298e10df41a00145474"
+      },
+      {
+       "path": "train/code_py_0006.bin",
+       "tokens": 67300046,
+       "sha256": "32e08a49eab66edc6f75dd9a22150cc87a5e44b1e104c4368f6083d2611295c3"
+      },
+      {
+       "path": "train/code_py_0007.bin",
+       "tokens": 67869283,
+       "sha256": "c6902b0ce0640b9944565c7a998f86b9f99a448f69c75d1872dcaf9710d1690c"
+      },
+      {
+       "path": "train/code_py_0008.bin",
+       "tokens": 31401014,
+       "sha256": "eac603f978a2790542300a0d03a1346f9351420729e05f9de5e456333ff28f7d"
+      }
+     ],
+     "tokens_unique": 164801450,
+     "epochs": 3.489
+    },
+    "val": {
+     "tokens": 981482,
+     "files": [
+      {
+       "path": "val/code_py_0000.bin",
+       "tokens": 981482,
+       "sha256": "d453c54d3967629b3ad6916d742f42cad18641193e185f1cae0171e2758175ba"
+      }
+     ],
+     "bytes": 3353552
+    }
+   }
+  },
+  "math_web": {
+   "domain": "math",
+   "license": [
+    "ODC-By-1.0"
+   ],
+   "revision": "fde8ef8de2300f5e778f56261843dab89f230815",
+   "docs_seen": 375721,
+   "docs_train": 327807,
+   "docs_val": 400,
+   "dropped": {
+    "repeated_lines": 20448,
+    "alpha_ratio": 18491,
+    "length": 5279,
+    "near_dup": 285
+   },
+   "contaminated_dropped": 3011,
+   "shards": {
+    "train": {
+     "tokens": 575000000,
+     "files": [
+      {
+       "path": "train/math_web_0000.bin",
+       "tokens": 67952396,
+       "sha256": "161705ec58d5e08cf4ad8920a2858fecec9f724af0219ee3f696419186ee8710"
+      },
+      {
+       "path": "train/math_web_0001.bin",
+       "tokens": 67725002,
+       "sha256": "27446d11631cbff6cfb22a74e5151c179e9c73fdd1975439352541674a876440"
+      },
+      {
+       "path": "train/math_web_0002.bin",
+       "tokens": 67255067,
+       "sha256": "d1dbadcd75d1b0847386e84f0ed8e58fb6fb6294bd10f29d47c6883e2cff36d7"
+      },
+      {
+       "path": "train/math_web_0003.bin",
+       "tokens": 67741021,
+       "sha256": "8c6305dac95896b62a430549ea518018f56c3a142648f420ead43078e1fae104"
+      },
+      {
+       "path": "train/math_web_0004.bin",
+       "tokens": 68220835,
+       "sha256": "b58c3458bc8ff94b667f31d528be3ed2aa380018e0ac3888a264191868a22105"
+      },
+      {
+       "path": "train/math_web_0005.bin",
+       "tokens": 67405529,
+       "sha256": "3b55c0a4b435a217a238563f73b0aa984c6b49c93cd0d44c2b03b53c4ef8c773"
+      },
+      {
+       "path": "train/math_web_0006.bin",
+       "tokens": 67499327,
+       "sha256": "686658c80fe0e4d323b7b90cbe7768ead723ca2da95acfd12121687c6dcb9454"
+      },
+      {
+       "path": "train/math_web_0007.bin",
+       "tokens": 68000181,
+       "sha256": "f464ac31efb0765cbfdc8ea05df841d7459d5853e9aac45afe9003e9fe22ed90"
+      },
+      {
+       "path": "train/math_web_0008.bin",
+       "tokens": 33200642,
+       "sha256": "5c61e7ad805371e261357f293994ffc7f05148b29405fe12eb94f74e2ba6275b"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 779748,
+     "files": [
+      {
+       "path": "val/math_web_0000.bin",
+       "tokens": 779748,
+       "sha256": "d0b7f6223ca14246692f872ecfba40f82b23295ff82ddee241446a8068b08ab4"
+      }
+     ],
+     "bytes": 2879029
+    }
+   }
+  },
+  "finemath": {
+   "domain": "math",
+   "license": [
+    "ODC-By-1.0"
+   ],
+   "revision": "e92b25a616738fe95dc186b64dfb19f9c8525594",
+   "docs_seen": 1085900,
+   "docs_train": 849036,
+   "docs_val": 400,
+   "dropped": {
+    "alpha_ratio": 132719,
+    "repeated_lines": 69579,
+    "length": 3675,
+    "near_dup": 3755
+   },
+   "contaminated_dropped": 26736,
+   "shards": {
+    "train": {
+     "tokens": 1035000000,
+     "files": [
+      {
+       "path": "train/finemath_0000.bin",
+       "tokens": 67588684,
+       "sha256": "693e4db3d9346b6c029b43ff36b80fa606b15b3897380dbe3ad8db9a6ef14e0b"
+      },
+      {
+       "path": "train/finemath_0001.bin",
+       "tokens": 67721910,
+       "sha256": "6c5b475cb96d4392b6e5dc05dde71403e3f40c347f49113068a39434e1601ebf"
+      },
+      {
+       "path": "train/finemath_0002.bin",
+       "tokens": 67658653,
+       "sha256": "2611b86eb12b82892b51d1467e8bf2935bff223e86cd744e623a71d267be2963"
+      },
+      {
+       "path": "train/finemath_0003.bin",
+       "tokens": 67303145,
+       "sha256": "68bcf62603705c095af0a745a7616315ac078f426df53fd0943d706433ee0b59"
+      },
+      {
+       "path": "train/finemath_0004.bin",
+       "tokens": 67520692,
+       "sha256": "070a15d9d6a42b5aee6a6724e8610b2a1b6524030b1612ec5ab3fd038fe872d4"
+      },
+      {
+       "path": "train/finemath_0005.bin",
+       "tokens": 67758585,
+       "sha256": "3a97d445160e75d7ffd0f0b5b1e6c68498f12a795f54984cc0924167c67b09c1"
+      },
+      {
+       "path": "train/finemath_0006.bin",
+       "tokens": 67211543,
+       "sha256": "76af354e2478a9f7c40a79f0b3e34f3313b74f79dcc4b012ef1a2721985dbfc1"
+      },
+      {
+       "path": "train/finemath_0007.bin",
+       "tokens": 67370068,
+       "sha256": "d5df39b5ca71aed89f6f5dbe3c7ed37273f8bf331a90ddd1c4d0fee32f9f2ebf"
+      },
+      {
+       "path": "train/finemath_0008.bin",
+       "tokens": 67293826,
+       "sha256": "dc18d46ef7707227d287f7e468521a6ba2410492b5c350c67d655757da6fc835"
+      },
+      {
+       "path": "train/finemath_0009.bin",
+       "tokens": 67215015,
+       "sha256": "698825a3256628e34c71f22c4983db61e9644dc5b59eff2e2d9603d3c813ad7b"
+      },
+      {
+       "path": "train/finemath_0010.bin",
+       "tokens": 67423318,
+       "sha256": "d80e50c0606e57c4c7bfbef78ddee6478ce267101b0ccabe9edcb4830980caa2"
+      },
+      {
+       "path": "train/finemath_0011.bin",
+       "tokens": 67384422,
+       "sha256": "dce045867168ecd6cbbd54d1b398333dbd98e4cfdd05b72881314646be602609"
+      },
+      {
+       "path": "train/finemath_0012.bin",
+       "tokens": 67461764,
+       "sha256": "cc59090c7df5d79241a28995ec115dc5146f869eac2fefc4fb4b7a9c4feb7b79"
+      },
+      {
+       "path": "train/finemath_0013.bin",
+       "tokens": 67395145,
+       "sha256": "b0b04baeb671ff3f64ab749bc9955c52342d1c783120260c19eec68f0755eb17"
+      },
+      {
+       "path": "train/finemath_0014.bin",
+       "tokens": 67290920,
+       "sha256": "ac0f7ff61a0ce56d7d7f2772f9f83cdbcb6361d3b695aefd3462878fa0a5e102"
+      },
+      {
+       "path": "train/finemath_0015.bin",
+       "tokens": 23402310,
+       "sha256": "a6363febc81e22f77dcb9fc9abf03f92de89ceb15ce04ba301e2afad9cd78590"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 600676,
+     "files": [
+      {
+       "path": "val/finemath_0000.bin",
+       "tokens": 600676,
+       "sha256": "474889d8b8112c683469061cccc2093524a3e8081c84150f1b64480c44f13344"
+      }
+     ],
+     "bytes": 2036018
+    }
+   }
+  },
+  "math_synth": {
+   "domain": "math",
+   "license": [
+    "generated"
+   ],
+   "revision": null,
+   "docs_seen": 1934559,
+   "docs_train": 1934159,
+   "docs_val": 400,
+   "dropped": {},
+   "contaminated_dropped": 0,
+   "shards": {
+    "train": {
+     "tokens": 345000000,
+     "files": [
+      {
+       "path": "train/math_synth_0000.bin",
+       "tokens": 67217962,
+       "sha256": "51787b36c53021478c2a32c29258e39b4ee0a27bcef152f73e9cc0ef05c284e4"
+      },
+      {
+       "path": "train/math_synth_0001.bin",
+       "tokens": 67223813,
+       "sha256": "e7c9926238192a7da7087c3a5b1e8a18cee8f70f6cfe94810970515c4ea5bebc"
+      },
+      {
+       "path": "train/math_synth_0002.bin",
+       "tokens": 67220477,
+       "sha256": "baef80b1c357213db8535c54864bb8d2a5bd8648457c2d20e62303160595c569"
+      },
+      {
+       "path": "train/math_synth_0003.bin",
+       "tokens": 67213575,
+       "sha256": "69e3082ff4d5b60f48c038cbc3df645c75701c0deb39ebca49c60b9fe3bcddfa"
+      },
+      {
+       "path": "train/math_synth_0004.bin",
+       "tokens": 67219130,
+       "sha256": "fc70e96ef6d832c9dca9923e602b002dee2bcde7e435f8a8a897dba82f0d281b"
+      },
+      {
+       "path": "train/math_synth_0005.bin",
+       "tokens": 8905043,
+       "sha256": "b31ad414ffa9f594c3de046d172a837cd096bdb75ad2a5e6b9c873fb7ee1c017"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 138690,
+     "files": [
+      {
+       "path": "val/math_synth_0000.bin",
+       "tokens": 138690,
+       "sha256": "94cb328ad7aca064dbec640c3f40d7c4361cf64956bfeb743daf0fbcc428fc08"
+      }
+     ],
+     "bytes": 303586
+    }
+   }
+  },
+  "algo_synth": {
+   "domain": "algorithmic",
+   "license": [
+    "generated"
+   ],
+   "revision": null,
+   "docs_seen": 357945,
+   "docs_train": 357907,
+   "docs_val": 0,
+   "dropped": {},
+   "contaminated_dropped": 38,
+   "shards": {
+    "train": {
+     "tokens": 230000000,
+     "files": [
+      {
+       "path": "train/algo_synth_0000.bin",
+       "tokens": 67417710,
+       "sha256": "2650e1369568367e2c3ae3b24fd655b1521d50668e02ae0f82951cc44e1742a8"
+      },
+      {
+       "path": "train/algo_synth_0001.bin",
+       "tokens": 67402406,
+       "sha256": "ee794380fcab1f613d14075f1df34cbc8f51aebd26425805bcc445860bc3658d"
+      },
+      {
+       "path": "train/algo_synth_0002.bin",
+       "tokens": 67471575,
+       "sha256": "e0c5b87ab3565a5c24ed1f1e703cb12cf3f9273584c6d1ce6b9fd363acd1c3a1"
+      },
+      {
+       "path": "train/algo_synth_0003.bin",
+       "tokens": 27708309,
+       "sha256": "2c0001d23bfda07e0f9fa3f88af5d8998f503a7d98cd4db8852b0aad67fbed14"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 0,
+     "files": [],
+     "bytes": 0
+    }
+   }
+  }
+ },
+ "decontamination_rule": "v3",
+ "max_epochs": {
+  "code_py": 4
+ },
+ "dedup": "exact (normalised text) + near-dup fingerprint (head/tail) in-house; upstream MinHash for FineWeb-Edu, FineWeb-2, OpenWebMath",
+ "contamination": "train documents sharing any word 13-gram with validation documents or generated eval items are dropped; grams found in 3+ distinct eval texts are boilerplate and ignored; a validation document counts as copied at min(50, half its grams) shared grams",
+ "code_sha": "2eb63faa8ae26b7be292f89d180f0a9db7ed8a32",
+ "parts": {
+  "web_en": "rouge/data/pretrain-v4/web_en",
+  "web_de": "rouge/data/pretrain-v4/web_de",
+  "wiki_en": "rouge/data/pretrain-v4/wiki_en",
+  "wiki_de": "rouge/data/pretrain-v4/wiki_de",
+  "code_py": "rouge/data/pretrain-v4/code_py",
+  "math_web": "rouge/data/pretrain-v4/math_web",
+  "finemath": "rouge/data/pretrain-v4/finemath",
+  "math_synth": "rouge/data/pretrain-v4/math_synth",
+  "algo_synth": "rouge/data/pretrain-v4/algo_synth"
+ }
+}
