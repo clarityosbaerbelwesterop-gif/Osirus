@@ -20,6 +20,17 @@
   - Closed models (Opus 5.5, GPT-6 Astra, Gemini) have no downloadable weights.
 - **No base variant:** `Qwen/Qwen3.6-27B-Base` does not exist (the pin run failed with not found). Training therefore continues from the post-trained model.
 
+## Frontier open models measured (Hub metadata, 2026-09-30)
+
+Source: `rouge-base-manifest.yml` runs 36770848733, 36770852627 and 36770856392. The byte counts come from the Hub's own LFS metadata. One B200 has 180 GB of GPU memory; B200_X_8 has 1.44 TB; H200_X_8 has 1.13 TB.
+
+| Model | Weights on the Hub | Parameters | Stored as | Licence | Fits 1 × B200 | Fits the largest Lightning machine | Full training memory (about 16 B per parameter) | Local (Mac) |
+|---|---|---|---|---|---|---|---|---|
+| DeepSeek-V4-Pro @ b5968e9 | 864.7 GB (64 shards) | 1.60 T (61 layers, 384 experts, top-6) | FP4 experts, FP8 rest | MIT | no (4.8×) | inference only (B200_X_8) | about 26 TB (about 145 B200) | no |
+| Kimi-K3 @ f831ab6 | 1,560.9 GB (96 shards) | 2.78 T (93 layers, 896 experts) | MXFP4 experts | custom "kimi-k3" licence: revenue and branding conditions, not open source | no (8.7×) | no (above 1.44 TB) | about 44 TB | no |
+| DeepSeek-V4-Flash @ 60d8d70 | 159.6 GB (46 shards) | 291 B (43 layers, 256 experts, top-6) | FP4 experts, FP8 rest | MIT | inference, tight | yes; adapters or partial training | about 4.7 TB | Mac Studio with 192 GB or more |
+| Qwen3.6-27B @ 6a9e13b (pinned) | 55.6 GB | 27.8 B dense | BF16 | Apache-2.0 | yes | full training on H200_X_8 | about 0.44 TB | Mac with 32 GB or more |
+
 ## Method: one RSI iteration per paid session
 
 Recipe: ReST-EM style self-training (Singh et al. 2023, "Beyond Human Data"), trained full-parameter.
