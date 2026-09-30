@@ -35,6 +35,17 @@
      "status": "Completed",
      "seconds": 301,
      "runs": 1
+    },
+    {
+     "name": "probe",
+     "machine": "CPU",
+     "started": "2026-09-30T12:16:48Z",
+     "max_hours": 0.25,
+     "worst_case_usd": 0.025,
+     "cost_usd": 0.0,
+     "status": "Completed",
+     "seconds": 121,
+     "runs": 9
     }
    ]
   }
