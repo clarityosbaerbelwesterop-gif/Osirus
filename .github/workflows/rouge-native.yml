@@ -51,6 +51,11 @@ on:
         description: "level C: comma-separated finalists from the level B decision"
         type: string
         default: ""
+      machine:
+        description: "dryrun-gpu: Lightning machine (free credits: T4 or L4)"
+        type: choice
+        options: [T4, L4]
+        default: T4
 
 permissions:
   contents: read
@@ -286,11 +291,12 @@ jobs:
         with:
           python-version: "3.11"
       - run: python -m pip install lightning-sdk
-      - name: Dry run on a Lightning L4 (free credits)
+      - name: Dry run on a Lightning GPU (free credits)
         env:
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+          MACHINE: ${{ inputs.machine }}
         run: |
-          python "$ROUGE/lightning_ai/job.py" run --name "rouge-dryrun-${{ github.run_id }}" --machine L4 --max-hours 0.5 \
+          python "$ROUGE/lightning_ai/job.py" run --name "rouge-dryrun-${{ github.run_id }}" --machine "$MACHINE" --max-hours 0.5 \
             --script lightning_ai/dryrun.sh --prefix ROUGE_DRYRUN --results "$RUNNER_TEMP/dryrun.jsonl"
       - name: Commit the evidence and the ledger
         if: ${{ always() && startsWith(github.ref_name, 'rouge/') }}

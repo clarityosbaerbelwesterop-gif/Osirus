@@ -13,7 +13,7 @@ assumed. Conditions:
  7 Unit tests pass at this commit (model, trainer, data, tournament, registry, post-training, cost)
  8 Exact resume proven (single process and FSDP2 tests are part of 7 and present)
  9 CPU dry run passed at this commit's tree (results/dry-run/cpu/summary.json)
-10 GPU dry run passed (results/dry-run/gpu/summary.json, bf16 on a CUDA device)
+10 GPU dry run passed (results/dry-run/gpu/summary.json, mixed precision on a CUDA device)
 11 Model registry intact (hash chain)
 12 Control plane pinned and unchanged
 13 A CRI cycle ran with the control plane intact (results/cri/log.json)
@@ -103,7 +103,8 @@ def conditions(run_tests: bool, rung: str) -> list[dict]:
 
     for n, dev in ((9, "cpu"), (10, "gpu")):
         s = jload(ROOT / f"results/dry-run/{dev}/summary.json")
-        ok = bool(s) and s.get("ok") and (dev == "cpu" or (s.get("device") == "cuda" and s.get("precision") == "bf16"))
+        # the GPU dry run proves the CUDA path with mixed precision (bf16 on L4/H200, fp16 + loss scaling on T4)
+        ok = bool(s) and s.get("ok") and (dev == "cpu" or (s.get("device") == "cuda" and s.get("precision") in ("bf16", "fp16")))
         add(n, f"{dev.upper()} dry run passed", ok, {k: s.get(k) for k in ("device", "gpu", "precision", "code_sha", "finished")} if s else "missing")
 
     from native import registry
