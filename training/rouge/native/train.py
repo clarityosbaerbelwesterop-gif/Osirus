@@ -236,6 +236,14 @@ def main() -> None:
     meta = {"architecture_sha": cfg.architecture_sha, "config": json.loads(cfg.to_json()), "data_sha": data_sha,
             "state": state, "args": vars(args), "world": world}
     final = checkpoint.save(out, step, model, opt, meta, sharded=args.fsdp and world > 1)
+    if args.fsdp and world > 1:
+        # a sharded model cannot run on one rank: every rank joins the gather, rank 0 evaluates an unsharded copy
+        from torch.distributed.checkpoint.state_dict import StateDictOptions, get_model_state_dict
+
+        full = get_model_state_dict(model, options=StateDictOptions(full_state_dict=True, cpu_offload=True))
+        if rank == 0:
+            raw = RougeModel(cfg).to(device)
+            raw.load_state_dict(full)
     if rank == 0:
         raw.eval()
         result = {"architecture_sha": cfg.architecture_sha, "config": json.loads(cfg.to_json()), "data_sha": data_sha,

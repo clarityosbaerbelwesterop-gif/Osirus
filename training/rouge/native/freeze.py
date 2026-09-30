@@ -1,0 +1,127 @@
+"""Freeze Rouge Architecture Spec v1.0 from the tournament winner.
+
+    python -m native.freeze --decision results/tournament-v1/level-C/decision.json \
+        [--tournament configs/native/tournament-v1.json] [--ladder configs/native/ladder-v1.json]
+
+Writes configs/native/rouge-v1-<rung>.json (one RougeConfig per ladder rung,
+winner's architecture on the ladder's shapes), configs/native/frozen-v1.json
+(the freeze record: decision hash, tokenizer hash, architecture_sha per
+rung) and docs/rouge/architecture-v1.md (the spec, every number computed by
+native/spec.py). Refuses without a complete Level C decision: no H200 before
+the spec exists, and the spec exists only from measured evidence.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import time
+from pathlib import Path
+
+from .config import RougeConfig
+from . import spec
+
+ROOT = Path(__file__).resolve().parents[1]
+DOC = ROOT.parents[1] / "docs" / "rouge" / "architecture-v1.md"
+
+
+def configs(decision: dict, tournament: dict, ladder: dict, r1_29b: str) -> dict[str, RougeConfig]:
+    if not decision.get("complete") or decision.get("level") != "C":
+        raise SystemExit("freeze needs a complete Level C decision")
+    winner = decision["winner"]
+    cand = tournament["candidates"][winner]
+    arch = cand["if_r1_29b_fails"] if (r1_29b == "fail" and "if_r1_29b_fails" in cand) else cand["config"]
+    return {rung: RougeConfig(name=f"rouge-v1-{rung}", **{**ladder["common"], **r["shape"], **arch})
+            for rung, r in ladder["rungs"].items()}
+
+
+def describe(cfg: RougeConfig) -> list[tuple[str, str]]:
+    attn = ("full causal attention in every layer" if cfg.attention == "full" else
+            f"hybrid: sliding window of {cfg.window} tokens, a global (full causal) layer every {cfg.global_every} layers")
+    lowbit = {"none": "none (bf16 weights)",
+              "ternary": f"ternary weights (BitNet b1.58, absmean scale, straight-through) in the {cfg.lowbit_scope} projections; 2-bit packed storage",
+              "int8": f"int8 weights (per-row absmax, straight-through) in the {cfg.lowbit_scope} projections"}[cfg.lowbit]
+    ffn = (f"SwiGLU, hidden {cfg.hidden}" if not cfg.moe_experts else
+           f"sparse SwiGLU: {cfg.moe_experts} experts of hidden {cfg.expert_hidden}, top-{cfg.moe_topk} of sigmoid affinities, "
+           f"{cfg.moe_shared} shared expert(s); active FFN FLOPs equal a dense FFN of hidden {cfg.hidden}")
+    routing = ("none (dense)" if not cfg.moe_experts else
+               f"auxiliary-loss-free balancing: per-expert selection bias updated by {cfg.moe_bias_rate} x sign(load deficit) each step (DeepSeek-V3)")
+    structured = "none" if cfg.structured == "none" else f"Monarch products with {cfg.structured_blocks} blocks in every linear projection"
+    return [
+        ("Tokenizer", "byte-level BPE, 32,768 tokens incl. 10 special tokens (chat roles, tool, image, think), trained on the v1 mixture; frozen by sha256 (frozen-v1.json)"),
+        ("Embeddings", f"{cfg.vocab_size} x {cfg.d_model}, tied with the output head" if cfg.tie_embeddings else "untied"),
+        ("Sequence mechanism", "causal Transformer blocks, pre-norm residual"),
+        ("Attention", f"{attn}; {cfg.n_heads} query heads, {cfg.n_kv_heads} key/value heads (GQA), head dim {cfg.head_dim}; SDPA kernels"),
+        ("Positions", f"RoPE, theta {cfg.rope_theta:g}; long-context extension by RoPE scaling in a later stage"),
+        ("Normalisation", f"RMSNorm (eps {cfg.norm_eps:g}) before attention and FFN, and before the head"),
+        ("FFN", ffn),
+        ("Routing", routing),
+        ("Low-bit", lowbit + "; activations bf16 (8-bit activations off); optimizer states fp32; master weights fp32"),
+        ("Structured operators", structured),
+        ("State / memory", "none beyond the KV cache: R1.14, R1.14b and R1.16 found no state mechanism that beat the window baseline on real text; memory is exact (KV) locally and global layers give exact long-range access"),
+        ("Multimodal hooks", "reserved <|image|> token and a vision_patch config field; no image encoder is trained in v1"),
+        ("Objective", "next-token cross-entropy over the mixture (chunked); post-training (SFT, DPO, RLVR) is a separate stage"),
+        ("Inference precision", "bf16 activations; weights in their stored precision (packed ternary / int8 dequantised on load until real low-bit kernels are measured)"),
+        ("Checkpoint format", "native/checkpoint.py: model.pt + optim.pt (or torch.distributed.checkpoint shards) with a sha256 manifest; resumable bit-exactly on the same hardware"),
+    ]
+
+
+def write_doc(cfgs: dict[str, RougeConfig], record: dict, decision: dict, ladder: dict) -> str:
+    lines = ["# Rouge Architecture Spec v1.0", "",
+             f"Frozen {record['frozen_at']} from the Architecture v1 tournament (winner: **{decision['winner']}**; "
+             f"decision sha256 `{record['decision_sha256'][:16]}`). Generated by `training/rouge/native/freeze.py`; "
+             "every number below is computed by `native/spec.py`, which unit tests check against measured parameter and FLOP counts.",
+             "", "## Components (all rungs)", "", "| component | v1.0 |", "|---|---|"]
+    first = next(iter(cfgs.values()))
+    lines += [f"| {k} | {v} |" for k, v in describe(first)]
+    lines += ["", "## Rungs", "",
+              "| rung | d / layers / heads (kv) | params physical | params active (matmul) | stored | train FLOPs/token | "
+              "train FLOPs (tokens) | activation / token (ckpt) | KV 4k | KV 128k | decode bytes/token @4k | architecture_sha |",
+              "|---|---|---|---|---|---|---|---|---|---|---|---|"]
+    for rung, cfg in cfgs.items():
+        tokens = ladder["rungs"][rung]["tokens"]
+        s = spec.summary(cfg, tokens=tokens)
+        lines.append(
+            f"| {rung} | {cfg.d_model} / {cfg.n_layers} / {cfg.n_heads} ({cfg.n_kv_heads}) | {s['params_physical'] / 1e6:.1f}M | "
+            f"{s['params_active_matmul'] / 1e6:.1f}M | {s['stored_bytes'] / 1e6:.0f} MB | {s['flops_per_token_train'] / 1e9:.2f} G | "
+            f"{s['train_flops']:.2e} ({tokens / 1e9:.0f}B) | {s['activation_bytes_per_token']['full'] / 1e3:.0f} KB "
+            f"({s['activation_bytes_per_token']['checkpointed'] / 1e3:.0f} KB) | {s['kv_bytes']['4k'] / 1e6:.0f} MB | "
+            f"{s['kv_bytes']['128k'] / 1e9:.2f} GB | {s['decode_bytes_per_token_4k'] / 1e6:.0f} MB | `{cfg.architecture_sha[:12]}` |")
+    lines += ["", "## Evidence", "", f"Tournament decision: `training/rouge/results/tournament-v1/level-C/decision.json`.",
+              "Candidates, rule and compute: `docs/rouge/architecture-v1-candidates.md`.", "",
+              "## Change control", "",
+              "The spec changes only through a new registered experiment whose result beats v1.0 under a pre-registered gate; "
+              "the new version gets a new architecture_sha and a new freeze record. Controlled recursive improvement may tune "
+              "data, curriculum, optimizer and schedule, never these components (training/rouge/native/cri.py allowlist)."]
+    text = "\n".join(lines) + "\n"
+    DOC.write_text(text)
+    return text
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--decision", required=True)
+    parser.add_argument("--tournament", default=str(ROOT / "configs/native/tournament-v1.json"))
+    parser.add_argument("--ladder", default=str(ROOT / "configs/native/ladder-v1.json"))
+    parser.add_argument("--data-manifest", default=str(ROOT / "configs/native/data-v1/manifest.json"))
+    parser.add_argument("--r1-29b", choices=["pass", "fail"], required=True)
+    args = parser.parse_args()
+    raw = Path(args.decision).read_bytes()
+    decision = json.loads(raw)
+    tournament = json.loads(Path(args.tournament).read_text())
+    ladder = json.loads(Path(args.ladder).read_text())
+    cfgs = configs(decision, tournament, ladder, args.r1_29b)
+    for rung, cfg in cfgs.items():
+        (ROOT / f"configs/native/rouge-v1-{rung}.json").write_text(cfg.to_json() + "\n")
+    manifest = json.loads(Path(args.data_manifest).read_text())
+    record = {"schema": "rouge.freeze/1", "version": "1.0", "frozen_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+              "winner": decision["winner"], "r1_29b": args.r1_29b, "decision_sha256": hashlib.sha256(raw).hexdigest(),
+              "tokenizer_sha256": manifest["tokenizer"]["sha256"],
+              "architecture_sha": {rung: cfg.architecture_sha for rung, cfg in cfgs.items()}}
+    (ROOT / "configs/native/frozen-v1.json").write_text(json.dumps(record, indent=1) + "\n")
+    print(write_doc(cfgs, record, decision, ladder))
+
+
+if __name__ == "__main__":
+    main()

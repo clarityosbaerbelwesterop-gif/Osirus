@@ -55,6 +55,28 @@ class TestNativeTraining(unittest.TestCase):
         b = torch.load(self.tmp / "resumed/checkpoints/step_0000024/model.pt")
         self.assertEqual(max((a[k].float() - b[k].float()).abs().max().item() for k in a), 0.0)
 
+    def test_fsdp_two_processes_resume_exactly(self):
+        """FSDP2 on 2 CPU processes (gloo): sharded checkpoints, resume equals an uninterrupted run."""
+        def launch(out, *extra):
+            return subprocess.run([sys.executable, "-m", "torch.distributed.run", "--nproc-per-node", "2", "-m", "native.train",
+                                   "--config", str(self.tmp / "cfg.json"), "--data", str(self.tmp / "data"), "--out", str(out),
+                                   "--steps", "12", "--batch", "2", "--seq", "64", "--warmup", "2", "--eval-every", "0",
+                                   "--ckpt-every", "6", "--final-eval", "loss", "--fsdp", *extra],
+                                  cwd=ROOT, capture_output=True, text=True)
+
+        def last_loss(out):
+            rows = [json.loads(l) for l in (out / "telemetry.jsonl").read_text().splitlines()]
+            return [r["loss"] for r in rows if r.get("step") == 12 and "loss" in r][-1]
+
+        self.assertEqual(launch(self.tmp / "fsdp_a").returncode, 0)
+        launch(self.tmp / "fsdp_b", "--stop-after", "6")                      # torchrun reports the worker's exit 75 as 1
+        self.assertEqual(launch(self.tmp / "fsdp_b").returncode, 0)
+        self.assertEqual(last_loss(self.tmp / "fsdp_a"), last_loss(self.tmp / "fsdp_b"))
+        self.assertTrue((self.tmp / "fsdp_b/checkpoints/step_0000012/dcp").is_dir())
+        result = json.loads((self.tmp / "fsdp_a/result.json").read_text())
+        self.assertEqual(result["world"], 2)
+        self.assertEqual(result["measured"]["params"], result["spec"]["params_physical"])   # evaluated unsharded on rank 0
+
     def test_corrupt_checkpoint_is_not_resumed(self):
         from native import checkpoint
 

@@ -42,8 +42,10 @@ def save(run_dir: Path, step: int, model, optimizer, meta: dict, keep: int = 2, 
         torch.distributed.barrier()
     if sharded:
         import torch.distributed.checkpoint as dcp
+        from torch.distributed.checkpoint.state_dict import get_state_dict
 
-        dcp.save({"model": model.state_dict(), "optim": optimizer.state_dict()}, checkpoint_id=str(tmp / "dcp"))
+        model_sd, optim_sd = get_state_dict(model, optimizer)
+        dcp.save({"model": model_sd, "optim": optim_sd}, checkpoint_id=str(tmp / "dcp"))
     elif rank == 0:
         raw = model.module if hasattr(model, "module") else model
         torch.save(raw.state_dict(), tmp / "model.pt")
@@ -83,12 +85,14 @@ def latest(run_dir: Path) -> tuple[Path, dict] | None:
 def load(path: Path, model, optimizer, meta: dict) -> None:
     raw = model.module if hasattr(model, "module") else model
     if meta.get("sharded"):
+        # get_state_dict initialises the optimizer state, so the saved moments have somewhere to load into
         import torch.distributed.checkpoint as dcp
+        from torch.distributed.checkpoint.state_dict import get_state_dict, set_state_dict
 
-        state = {"model": model.state_dict(), "optim": optimizer.state_dict()}
+        model_sd, optim_sd = get_state_dict(model, optimizer)
+        state = {"model": model_sd, "optim": optim_sd}
         dcp.load(state, checkpoint_id=str(Path(path) / "dcp"))
-        model.load_state_dict(state["model"])
-        optimizer.load_state_dict(state["optim"])
+        set_state_dict(model, optimizer, model_state_dict=state["model"], optim_state_dict=state["optim"])
     else:
         raw.load_state_dict(torch.load(Path(path) / "model.pt", map_location="cpu", weights_only=True))
         optimizer.load_state_dict(torch.load(Path(path) / "optim.pt", map_location="cpu", weights_only=True))
