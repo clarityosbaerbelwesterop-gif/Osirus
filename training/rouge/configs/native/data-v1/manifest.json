@@ -1,0 +1,278 @@
+{
+ "schema": "rouge.data/1",
+ "created_s": 420.3,
+ "mixture": {
+  "web_en": 0.55,
+  "web_de": 0.15,
+  "code_py": 0.12,
+  "math_web": 0.08,
+  "math_synth": 0.05,
+  "algo_synth": 0.05
+ },
+ "total_tokens": 400000000,
+ "revisions": {
+  "web_en": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+  "web_de": "af9c13333eb981300149d5ca60a8e9d659b276b9",
+  "math_web": "fde8ef8de2300f5e778f56261843dab89f230815"
+ },
+ "tokenizer": {
+  "sha256": "4d500bb9810a7ab2fc1b570115b73749427a1f6b8eac3820282dc96b07fcdd37",
+  "vocab": 32768,
+  "special": [
+   "<|pad|>",
+   "<|bos|>",
+   "<|eos|>",
+   "<|system|>",
+   "<|user|>",
+   "<|assistant|>",
+   "<|tool|>",
+   "<|image|>",
+   "<|think|>",
+   "<|/think|>"
+  ]
+ },
+ "sources": {
+  "web_en": {
+   "domain": "web",
+   "license": [
+    "ODC-By-1.0"
+   ],
+   "revision": "87f09149ef4734204d70ed1d046ddc9ca3f2b8f9",
+   "docs_seen": 211519,
+   "docs_train": 209883,
+   "docs_val": 400,
+   "dropped": {
+    "exact_dup": 68,
+    "length": 5,
+    "near_dup": 23,
+    "alpha_ratio": 6
+   },
+   "contaminated_dropped": 1134,
+   "shards": {
+    "train": {
+     "tokens": 220000000,
+     "files": [
+      {
+       "path": "train/web_en_0000.bin",
+       "tokens": 67494628,
+       "sha256": "ec941ad6e3273149c3a1b9ef9d6e62792a97faa4818cdd84ec424a66cd6a9a83"
+      },
+      {
+       "path": "train/web_en_0001.bin",
+       "tokens": 67357193,
+       "sha256": "e05c8ac23eda46c0fceced81fdb38911ff771c841666db17e2ee29b2a8c9e8d1"
+      },
+      {
+       "path": "train/web_en_0002.bin",
+       "tokens": 67602072,
+       "sha256": "7058e28049796b9d225bc946f5511315b82c14a963b9055bf3a9c5f9eb22d567"
+      },
+      {
+       "path": "train/web_en_0003.bin",
+       "tokens": 17546107,
+       "sha256": "3b324b6787302f117da4e4dd588c776368483cdd6edf62967b39522720afe5de"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 433175,
+     "files": [
+      {
+       "path": "val/web_en_0000.bin",
+       "tokens": 433175,
+       "sha256": "9af061f388fb2b35463fd8f9e5fce1bd247f6d866241a083363def8f364268cd"
+      }
+     ],
+     "bytes": 1912599
+    }
+   }
+  },
+  "web_de": {
+   "domain": "web",
+   "license": [
+    "ODC-By-1.0"
+   ],
+   "revision": "af9c13333eb981300149d5ca60a8e9d659b276b9",
+   "docs_seen": 85428,
+   "docs_train": 83133,
+   "docs_val": 400,
+   "dropped": {
+    "near_dup": 152,
+    "length": 4
+   },
+   "contaminated_dropped": 1739,
+   "shards": {
+    "train": {
+     "tokens": 60000000,
+     "files": [
+      {
+       "path": "train/web_de_0000.bin",
+       "tokens": 60000000,
+       "sha256": "a6f802b8a3e27cad562d8b32cc16905eacb04f52a8d1db80cf340676dbb14e69"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 281722,
+     "files": [
+      {
+       "path": "val/web_de_0000.bin",
+       "tokens": 281722,
+       "sha256": "1ca019899b251eeb8e27a8e8f2dbd2c05a0541a18f7a540a7833bf1901451dac"
+      }
+     ],
+     "bytes": 1136221
+    }
+   }
+  },
+  "code_py": {
+   "domain": "code",
+   "license": [
+    "Apache-2.0",
+    "BSD-3-Clause",
+    "PSF-2.0"
+   ],
+   "revision": null,
+   "docs_seen": 9365,
+   "docs_train": 7462,
+   "docs_val": 44,
+   "dropped": {
+    "length": 1349,
+    "generated": 18,
+    "near_dup": 9,
+    "exact_dup": 18
+   },
+   "contaminated_dropped": 465,
+   "shards": {
+    "train": {
+     "tokens": 30236901,
+     "files": [
+      {
+       "path": "train/code_py_0000.bin",
+       "tokens": 30236901,
+       "sha256": "e6da15ccc677494ecc8f14fb7ed6d9e98d6a572f423b302487e0282b083cb12d"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 147217,
+     "files": [
+      {
+       "path": "val/code_py_0000.bin",
+       "tokens": 147217,
+       "sha256": "ba8b1a3f791b392348d91f905372b9ef4ef973df047433837a9725d3d932dfc1"
+      }
+     ],
+     "bytes": 507583
+    }
+   }
+  },
+  "math_web": {
+   "domain": "math",
+   "license": [
+    "ODC-By-1.0"
+   ],
+   "revision": "fde8ef8de2300f5e778f56261843dab89f230815",
+   "docs_seen": 18240,
+   "docs_train": 15679,
+   "docs_val": 84,
+   "dropped": {
+    "repeated_lines": 993,
+    "alpha_ratio": 877,
+    "length": 248,
+    "near_dup": 6
+   },
+   "contaminated_dropped": 353,
+   "shards": {
+    "train": {
+     "tokens": 30701561,
+     "files": [
+      {
+       "path": "train/math_web_0000.bin",
+       "tokens": 30701561,
+       "sha256": "d1ba4be294961bc22fa8d435f390a0659c627d1479265c5124c473fdbf82ac7a"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 170263,
+     "files": [
+      {
+       "path": "val/math_web_0000.bin",
+       "tokens": 170263,
+       "sha256": "14c95607934ac6db7d9639f8f94b3ce2e67e5d978c6c81b8ccdfd98fa1ced7d5"
+      }
+     ],
+     "bytes": 637868
+    }
+   }
+  },
+  "math_synth": {
+   "domain": "math",
+   "license": [
+    "generated"
+   ],
+   "revision": null,
+   "docs_seen": 97286,
+   "docs_train": 96839,
+   "docs_val": 400,
+   "dropped": {},
+   "contaminated_dropped": 47,
+   "shards": {
+    "train": {
+     "tokens": 20000000,
+     "files": [
+      {
+       "path": "train/math_synth_0000.bin",
+       "tokens": 20000000,
+       "sha256": "63423c4e1196979e72cd4cd47b163eec094113a672f14382b6c6ef38d1ffa4d1"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 138690,
+     "files": [
+      {
+       "path": "val/math_synth_0000.bin",
+       "tokens": 138690,
+       "sha256": "94cb328ad7aca064dbec640c3f40d7c4361cf64956bfeb743daf0fbcc428fc08"
+      }
+     ],
+     "bytes": 303586
+    }
+   }
+  },
+  "algo_synth": {
+   "domain": "algorithmic",
+   "license": [
+    "generated"
+   ],
+   "revision": null,
+   "docs_seen": 26932,
+   "docs_train": 26928,
+   "docs_val": 0,
+   "dropped": {},
+   "contaminated_dropped": 4,
+   "shards": {
+    "train": {
+     "tokens": 20000000,
+     "files": [
+      {
+       "path": "train/algo_synth_0000.bin",
+       "tokens": 20000000,
+       "sha256": "e46ad04fd729fbb0f86b37e4d9468b2555fd554ece3a902f7825248b0541cb84"
+      }
+     ]
+    },
+    "val": {
+     "tokens": 0,
+     "files": [],
+     "bytes": 0
+    }
+   }
+  }
+ },
+ "dedup": "exact (normalised text) + near-dup fingerprint (head/tail) in-house; upstream MinHash for FineWeb-Edu, FineWeb-2, OpenWebMath",
+ "contamination": "train documents sharing any word 13-gram with validation documents or generated eval items are dropped",
+ "code_sha": "f8460e7550f930b88f8c33bca78fe7d315d31ce3"
+}
