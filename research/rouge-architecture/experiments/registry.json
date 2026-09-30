@@ -242704,5 +242704,1261 @@
    "result": "FAIL"
   },
   "recorded": "2026-09-30T02:43:32Z"
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "lstm-seed1",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "lstm",
+  "config": {
+   "kind": "lstm",
+   "d": 784,
+   "layers": 2
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10049312,
+  "active_parameters": null,
+  "flop_estimate": 20070400,
+  "checkpoint_sha256": "e2896cc060a1c78e3ace418850ad3950c534b21e0608c39967ce7f658ae6ae87",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007889"
+  },
+  "duration_s": 11357.1,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.8376568962223971,
+   "test_bpb": 1.915591296664253,
+   "stream": {
+    "b0_0_256": 1.7410501996404621,
+    "b1_256_1k": 1.7640898554632982,
+    "b2_1k_4k": 1.755905545074039,
+    "all": 1.7565116119356796
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "lstm-seed2",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "lstm",
+  "config": {
+   "kind": "lstm",
+   "d": 784,
+   "layers": 2
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10049312,
+  "active_parameters": null,
+  "flop_estimate": 20070400,
+  "checkpoint_sha256": "8a93799e113e25a01d807850014b4071eccd1ad83dfffd9ff813e0f316867038",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007892"
+  },
+  "duration_s": 11384.6,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.8335653967116239,
+   "test_bpb": 1.9119748239840786,
+   "stream": {
+    "b0_0_256": 1.7326393881000166,
+    "b1_256_1k": 1.7451122578711908,
+    "b2_1k_4k": 1.7598876313721163,
+    "all": 1.7554141906405238
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "lstm-seed3",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "lstm",
+  "config": {
+   "kind": "lstm",
+   "d": 784,
+   "layers": 2
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10049312,
+  "active_parameters": null,
+  "flop_estimate": 20070400,
+  "checkpoint_sha256": "c707fdf6607384ceb65ca4f28dcfa59e23dc413de75a8d3ad7904ccecaeaf3eb",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007891"
+  },
+  "duration_s": 11358.0,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.830134299831248,
+   "test_bpb": 1.9184186914444374,
+   "stream": {
+    "b0_0_256": 1.684483041979874,
+    "b1_256_1k": 1.7169580099943456,
+    "b2_1k_4k": 1.7324988782742616,
+    "all": 1.726584050945788
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "rouge-lm-seed1",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "rouge-lm",
+  "config": {
+   "kind": "rouge",
+   "d": 272,
+   "layers": 8,
+   "heads": 4,
+   "slots": 16,
+   "block": 64
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10208160,
+  "active_parameters": null,
+  "flop_estimate": 15823872.0,
+  "checkpoint_sha256": "764a9a702c9125d052b00df7f7e5e9d085073c3eb11c2d7d8f963de9e812049a",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007885"
+  },
+  "duration_s": 16201.1,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.9357873483420607,
+   "test_bpb": 1.95897848863356,
+   "stream": {
+    "b0_0_256": 1.8149695468598535,
+    "b1_256_1k": 1.5595679150745954,
+    "b2_1k_4k": 1.5826292407114404,
+    "all": 1.5928266080290487
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "rouge-lm-seed2",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "rouge-lm",
+  "config": {
+   "kind": "rouge",
+   "d": 272,
+   "layers": 8,
+   "heads": 4,
+   "slots": 16,
+   "block": 64
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10208160,
+  "active_parameters": null,
+  "flop_estimate": 15823872.0,
+  "checkpoint_sha256": "8730dcc0387a0b62004c0673067c6777bc4f68b6a51b9c57e8f2a0ae94ae5b58",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007888"
+  },
+  "duration_s": 16429.5,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.9668522413510239,
+   "test_bpb": 2.0391771589120973,
+   "stream": {
+    "b0_0_256": 1.863786306359309,
+    "b1_256_1k": 1.6516190492091507,
+    "b2_1k_4k": 1.6697203951951123,
+    "all": 1.6784555660150853
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "rouge-lm-seed3",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "rouge-lm",
+  "config": {
+   "kind": "rouge",
+   "d": 272,
+   "layers": 8,
+   "heads": 4,
+   "slots": 16,
+   "block": 64
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 10208160,
+  "active_parameters": null,
+  "flop_estimate": 15823872.0,
+  "checkpoint_sha256": "c64389548da9d47a94aa1bd389724134dc26755a6060366095472f5dc6dcbb16",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007887"
+  },
+  "duration_s": 16554.4,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.983976908611651,
+   "test_bpb": 2.0583306625092903,
+   "stream": {
+    "b0_0_256": 1.9191028061828228,
+    "b1_256_1k": 1.6747515756634528,
+    "b2_1k_4k": 1.6785539400913787,
+    "all": 1.6928751074113757
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "transformer-seed1",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "transformer",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "5aa64503d89b4d12017796ca228cd2677c6bf5007ddc9faaaa8d8ada87e9e98a",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007896"
+  },
+  "duration_s": 8142.3,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.7548967808354032,
+   "test_bpb": 1.8091044870109732,
+   "stream": {
+    "b0_0_256": 1.6512444709955716,
+    "b1_256_1k": 1.6582097683555153,
+    "b2_1k_4k": 1.678593840066379,
+    "all": 1.6730623620666785
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "transformer-seed2",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "transformer",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "2d7071b8ad4d966aecf4316351b507c1215e1aa1895d36db083e15258f394c7a",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007895"
+  },
+  "duration_s": 17973.9,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.7025886122896974,
+   "test_bpb": 1.745248838968265,
+   "stream": {
+    "b0_0_256": 1.6008839952219713,
+    "b1_256_1k": 1.5713139861632235,
+    "b2_1k_4k": 1.581261978637081,
+    "all": 1.5806230630891256
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "window-seed1",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "window",
+  "config": {
+   "kind": "rouge",
+   "d": 320,
+   "layers": 8,
+   "heads": 5,
+   "slots": 0,
+   "block": 64
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "b52d9852806f06e15603c4443f6a26c218754c2032dc4fe55ebd70e939f9f5e4",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007890"
+  },
+  "duration_s": 17778.6,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.799858710449504,
+   "test_bpb": 1.837633194863325,
+   "stream": {
+    "b0_0_256": 1.6897295447270948,
+    "b1_256_1k": 1.5641672471066195,
+    "b2_1k_4k": 1.5913136766494087,
+    "all": 1.5923748096052321
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "window-seed2",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "window",
+  "config": {
+   "kind": "rouge",
+   "d": 320,
+   "layers": 8,
+   "heads": 5,
+   "slots": 0,
+   "block": 64
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "6f08305ac0deec31e9628110f4dc77788507387a024ba7159305761362d02d8b",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007893"
+  },
+  "duration_s": 17963.1,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.7970998830024354,
+   "test_bpb": 1.834514353983422,
+   "stream": {
+    "b0_0_256": 1.6904559994443393,
+    "b1_256_1k": 1.5648778794199847,
+    "b2_1k_4k": 1.5911293112476836,
+    "all": 1.592415225528185
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "window-seed3",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": "window",
+  "config": {
+   "kind": "rouge",
+   "d": 320,
+   "layers": 8,
+   "heads": 5,
+   "slots": 0,
+   "block": 64
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "98c37752cf791a849ab2d5f902cf65ecca4285503699ab8a00f20db8055fe434",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007894"
+  },
+  "duration_s": 15209.2,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "valid_bpb": 1.8072170204134164,
+   "test_bpb": 1.8595265325735821,
+   "stream": {
+    "b0_0_256": 1.6833684224196321,
+    "b1_256_1k": 1.5591563605910808,
+    "b2_1k_4k": 1.5908083916211737,
+    "all": 1.5906585947322722
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14",
+  "run": "experiment",
+  "parent": "R1.03 (small state + memory), R1.09 (cheap reads), R1.11 (local window + state: PASS), R1.12 (streaming: PASS, seed-unstable; LSTM retains perfectly), R1.13 (hand-made forgetting: FAIL)",
+  "hypothesis": "At 10M parameters and the same training bytes of real text (enwik8), does Rouge-LM (local window + a few gated state slots per layer, constant inference memory) (a) match a standard Transformer at equal visible context, and (b) use context beyond the Transformer's window through its state, at a fraction of the inference memory?",
+  "architecture": [
+   "transformer",
+   "rouge-lm",
+   "window",
+   "lstm"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "3a7fabceb55a4f20e19f163788a1bab35ec796d9",
+  "parameter_count": {
+   "transformer": 9950000,
+   "rouge-lm": 10210000,
+   "window": 9950000,
+   "lstm": 10050000
+  },
+  "flop_estimate": 1950000000000000.0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 160351.80000000002,
+  "cost_usd": 0.0,
+  "ci_run": "36649205043",
+  "metrics": {
+   "experiment": "R1.14",
+   "dataset": [
+    "enwik8"
+   ],
+   "dataset_sha256": [
+    "2b49720ec4d78c3c9fabaee6e4179a5e997302b3a70029f30f2d582218c024a8"
+   ],
+   "floors": {
+    "order1_bpb": 4.895550589513838,
+    "order3_bpb": 3.152611575611511
+   },
+   "models": {
+    "transformer": {
+     "seeds": [
+      1,
+      2
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 1.7287426965625503,
+       "sd": 0.036987460690117484,
+       "ci95": [
+        1.396428901791681,
+        2.0610564913334195
+       ],
+       "n": 2,
+       "values": [
+        1.7548967808354032,
+        1.7025886122896974
+       ]
+      },
+      "test.bpb": {
+       "mean": 1.777176662989619,
+       "sd": 0.04515276174806043,
+       "ci95": [
+        1.371501730974294,
+        2.182851595004944
+       ],
+       "n": 2,
+       "values": [
+        1.8091044870109732,
+        1.745248838968265
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 1.6260642331087714,
+       "sd": 0.035610233923293586,
+       "ci95": [
+        1.306124130519089,
+        1.9460043356984538
+       ],
+       "n": 2,
+       "values": [
+        1.6512444709955716,
+        1.6008839952219713
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.6147618772593693,
+       "sd": 0.06144459684467875,
+       "ci95": [
+        1.0627129729917397,
+        2.1668107815269986
+       ],
+       "n": 2,
+       "values": [
+        1.6582097683555153,
+        1.5713139861632235
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.6299279093517298,
+       "sd": 0.06882401924216595,
+       "ci95": [
+        1.0115785936914001,
+        2.2482772250120595
+       ],
+       "n": 2,
+       "values": [
+        1.678593840066379,
+        1.581261978637081
+       ]
+      },
+      "stream.all": {
+       "mean": 1.626842712577902,
+       "sd": 0.06536445515515833,
+       "ci95": [
+        1.0395758461735085,
+        2.2141095789822955
+       ],
+       "n": 2,
+       "values": [
+        1.6730623620666785,
+        1.5806230630891256
+       ]
+      },
+      "params": 9946240,
+      "stored_bytes": 39784960,
+      "flops": {
+       "mean": 19824640.0,
+       "sd": 0.0,
+       "ci95": [
+        19824640.0,
+        19824640.0
+       ],
+       "n": 2,
+       "values": [
+        19824640.0,
+        19824640.0
+       ]
+      },
+      "train_flops": {
+       "mean": 1948841410560000.0,
+       "sd": 0.0,
+       "ci95": [
+        1948841410560000.0,
+        1948841410560000.0
+       ],
+       "n": 2,
+       "values": [
+        1948841410560000.0,
+        1948841410560000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 5242880,
+      "total_bytes": 5242880,
+      "full_context_4k_bytes": 83886080,
+      "peak_rss_mb": {
+       "mean": 1698.25,
+       "sd": 30.900566337852,
+       "ci95": [
+        1420.6239000000012,
+        1975.8760999999988
+       ],
+       "n": 2,
+       "values": [
+        1720.1,
+        1676.4
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 4843.9,
+       "sd": 2750.928221528145,
+       "ci95": [
+        -19871.811200000004,
+        29559.6112
+       ],
+       "n": 2,
+       "values": [
+        6789.1,
+        2898.7
+       ]
+      },
+      "train_seconds": {
+       "mean": 13058.1,
+       "sd": 6951.991029913662,
+       "ci95": [
+        -49402.05480000001,
+        75518.25480000001
+       ],
+       "n": 2,
+       "values": [
+        8142.3,
+        17973.9
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 52232.3,
+       "sd": 27808.105541010882,
+       "ci95": [
+        -197609.58979999996,
+        302074.1898
+       ],
+       "n": 2,
+       "values": [
+        32569.0,
+        71895.6
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    },
+    "rouge-lm": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "rouge",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 1.9622054994349118,
+       "sd": 0.024428519962747103,
+       "ci95": [
+        1.901516793918679,
+        2.0228942049511445
+       ],
+       "n": 3,
+       "values": [
+        1.9357873483420607,
+        1.9668522413510239,
+        1.983976908611651
+       ]
+      },
+      "test.bpb": {
+       "mean": 2.018828770018316,
+       "sd": 0.05270916724240448,
+       "ci95": [
+        1.8878813719091254,
+        2.1497761681275063
+       ],
+       "n": 3,
+       "values": [
+        1.95897848863356,
+        2.0391771589120973,
+        2.0583306625092903
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 1.8659528864673287,
+       "sd": 0.052100426834427616,
+       "ci95": [
+        1.7365178054126253,
+        1.995387967522032
+       ],
+       "n": 3,
+       "values": [
+        1.8149695468598535,
+        1.863786306359309,
+        1.9191028061828228
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.6286461799823995,
+       "sd": 0.06093138318669889,
+       "ci95": [
+        1.4772720166457163,
+        1.7800203433190827
+       ],
+       "n": 3,
+       "values": [
+        1.5595679150745954,
+        1.6516190492091507,
+        1.6747515756634528
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.6436345253326439,
+       "sd": 0.05301642615873042,
+       "ci95": [
+        1.511923792157777,
+        1.7753452585075107
+       ],
+       "n": 3,
+       "values": [
+        1.5826292407114404,
+        1.6697203951951123,
+        1.6785539400913787
+       ]
+      },
+      "stream.all": {
+       "mean": 1.6547190938185032,
+       "sd": 0.05408318261177132,
+       "ci95": [
+        1.5203581768283718,
+        1.7890800108086347
+       ],
+       "n": 3,
+       "values": [
+        1.5928266080290487,
+        1.6784555660150853,
+        1.6928751074113757
+       ]
+      },
+      "params": 10208160,
+      "stored_bytes": 40832640,
+      "flops": {
+       "mean": 15823872.0,
+       "sd": 0.0,
+       "ci95": [
+        15823872.0,
+        15823872.0
+       ],
+       "n": 3,
+       "values": [
+        15823872.0,
+        15823872.0,
+        15823872.0
+       ]
+      },
+      "train_flops": {
+       "mean": 1555549913088000.0,
+       "sd": 0.0,
+       "ci95": [
+        1555549913088000.0,
+        1555549913088000.0
+       ],
+       "n": 3,
+       "values": [
+        1555549913088000.0,
+        1555549913088000.0,
+        1555549913088000.0
+       ]
+      },
+      "state_bytes": 139264,
+      "kv_bytes": 1114112,
+      "total_bytes": 1253376,
+      "full_context_4k_bytes": 1253376,
+      "peak_rss_mb": {
+       "mean": 1903.8,
+       "sd": 7.597367965288955,
+       "ci95": [
+        1884.9255684811437,
+        1922.6744315188562
+       ],
+       "n": 3,
+       "values": [
+        1895.2,
+        1906.6,
+        1909.6
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 5877.599999999999,
+       "sd": 114.64410146187205,
+       "ci95": [
+        5592.785278379417,
+        6162.414721620582
+       ],
+       "n": 3,
+       "values": [
+        5965.4,
+        5747.9,
+        5919.5
+       ]
+      },
+      "train_seconds": {
+       "mean": 16395.0,
+       "sd": 179.15889595551812,
+       "ci95": [
+        15949.908709416748,
+        16840.091290583252
+       ],
+       "n": 3,
+       "values": [
+        16201.1,
+        16429.5,
+        16554.4
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 65580.0,
+       "sd": 716.5369843908966,
+       "ci95": [
+        63799.879792001186,
+        67360.12020799881
+       ],
+       "n": 3,
+       "values": [
+        64804.5,
+        65718.0,
+        66217.5
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    },
+    "window": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "rouge",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 1.8013918712884518,
+       "sd": 0.005229919116652779,
+       "ci95": [
+        1.7883989834005127,
+        1.8143847591763909
+       ],
+       "n": 3,
+       "values": [
+        1.799858710449504,
+        1.7970998830024354,
+        1.8072170204134164
+       ]
+      },
+      "test.bpb": {
+       "mean": 1.8438913604734433,
+       "sd": 0.013629957705703372,
+       "ci95": [
+        1.8100299357673384,
+        1.8777527851795481
+       ],
+       "n": 3,
+       "values": [
+        1.837633194863325,
+        1.834514353983422,
+        1.8595265325735821
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 1.6878513221970222,
+       "sd": 0.003899259791889208,
+       "ci95": [
+        1.6781642421118543,
+        1.69753840228219
+       ],
+       "n": 3,
+       "values": [
+        1.6897295447270948,
+        1.6904559994443393,
+        1.6833684224196321
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.562733829039228,
+       "sd": 0.003118486803614553,
+       "ci95": [
+        1.5549864531208575,
+        1.5704812049575987
+       ],
+       "n": 3,
+       "values": [
+        1.5641672471066195,
+        1.5648778794199847,
+        1.5591563605910808
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.5910837931727553,
+       "sd": 0.00025569935725083896,
+       "ci95": [
+        1.5904485494896934,
+        1.5917190368558172
+       ],
+       "n": 3,
+       "values": [
+        1.5913136766494087,
+        1.5911293112476836,
+        1.5908083916211737
+       ]
+      },
+      "stream.all": {
+       "mean": 1.5918162099552298,
+       "sd": 0.001002727836964902,
+       "ci95": [
+        1.5893250948773088,
+        1.5943073250331508
+       ],
+       "n": 3,
+       "values": [
+        1.5923748096052321,
+        1.592415225528185,
+        1.5906585947322722
+       ]
+      },
+      "params": 9946240,
+      "stored_bytes": 39784960,
+      "flops": {
+       "mean": 19824640.0,
+       "sd": 0.0,
+       "ci95": [
+        19824640.0,
+        19824640.0
+       ],
+       "n": 3,
+       "values": [
+        19824640.0,
+        19824640.0,
+        19824640.0
+       ]
+      },
+      "train_flops": {
+       "mean": 1948841410560000.0,
+       "sd": 0.0,
+       "ci95": [
+        1948841410560000.0,
+        1948841410560000.0
+       ],
+       "n": 3,
+       "values": [
+        1948841410560000.0,
+        1948841410560000.0,
+        1948841410560000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 1310720,
+      "total_bytes": 1310720,
+      "full_context_4k_bytes": 1310720,
+      "peak_rss_mb": {
+       "mean": 1825.2,
+       "sd": 5.294336596779608,
+       "ci95": [
+        1812.0470773048978,
+        1838.3529226951023
+       ],
+       "n": 3,
+       "values": [
+        1822.5,
+        1821.8,
+        1831.3
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 5781.2,
+       "sd": 589.6484630693107,
+       "ci95": [
+        4316.313793718002,
+        7246.086206281998
+       ],
+       "n": 3,
+       "values": [
+        5575.7,
+        5321.8,
+        6446.1
+       ]
+      },
+      "train_seconds": {
+       "mean": 16983.63333333333,
+       "sd": 1539.4707867749,
+       "ci95": [
+        13159.06723715144,
+        20808.199429515225
+       ],
+       "n": 3,
+       "values": [
+        17778.6,
+        17963.1,
+        15209.2
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 67934.66666666667,
+       "sd": 6157.908966794925,
+       "ci95": [
+        52636.33813708348,
+        83232.99519624986
+       ],
+       "n": 3,
+       "values": [
+        71114.6,
+        71852.5,
+        60836.9
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    },
+    "lstm": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "lstm",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 1.8337855309217563,
+       "sd": 0.0037661264475433607,
+       "ci95": [
+        1.8244291990907489,
+        1.8431418627527638
+       ],
+       "n": 3,
+       "values": [
+        1.8376568962223971,
+        1.8335653967116239,
+        1.830134299831248
+       ]
+      },
+      "test.bpb": {
+       "mean": 1.9153282706975896,
+       "sd": 0.0032299758444951717,
+       "ci95": [
+        1.9073039182951501,
+        1.923352623100029
+       ],
+       "n": 3,
+       "values": [
+        1.915591296664253,
+        1.9119748239840786,
+        1.9184186914444374
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 1.719390876573451,
+       "sd": 0.03052217431150045,
+       "ci95": [
+        1.6435634727302968,
+        1.795218280416605
+       ],
+       "n": 3,
+       "values": [
+        1.7410501996404621,
+        1.7326393881000166,
+        1.684483041979874
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.7420533744429447,
+       "sd": 0.023714347770875055,
+       "ci95": [
+        1.6831389141903015,
+        1.800967834695588
+       ],
+       "n": 3,
+       "values": [
+        1.7640898554632982,
+        1.7451122578711908,
+        1.7169580099943456
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.7494306849068055,
+       "sd": 0.014797932615832884,
+       "ci95": [
+        1.7126676155051033,
+        1.7861937543085078
+       ],
+       "n": 3,
+       "values": [
+        1.755905545074039,
+        1.7598876313721163,
+        1.7324988782742616
+       ]
+      },
+      "stream.all": {
+       "mean": 1.7461699511739972,
+       "sd": 0.016970760124012985,
+       "ci95": [
+        1.704008843373628,
+        1.7883310589743664
+       ],
+       "n": 3,
+       "values": [
+        1.7565116119356796,
+        1.7554141906405238,
+        1.726584050945788
+       ]
+      },
+      "params": 10049312,
+      "stored_bytes": 40197248,
+      "flops": {
+       "mean": 20070400.0,
+       "sd": 0.0,
+       "ci95": [
+        20070400.0,
+        20070400.0
+       ],
+       "n": 3,
+       "values": [
+        20070400,
+        20070400,
+        20070400
+       ]
+      },
+      "train_flops": {
+       "mean": 1973000601600000.0,
+       "sd": 0.0,
+       "ci95": [
+        1973000601600000.0,
+        1973000601600000.0
+       ],
+       "n": 3,
+       "values": [
+        1973000601600000,
+        1973000601600000,
+        1973000601600000
+       ]
+      },
+      "state_bytes": 12544,
+      "kv_bytes": 0,
+      "total_bytes": 12544,
+      "full_context_4k_bytes": 12544,
+      "peak_rss_mb": {
+       "mean": 971.4666666666667,
+       "sd": 4.25949918808925,
+       "ci95": [
+        960.884630085376,
+        982.0487032479574
+       ],
+       "n": 3,
+       "values": [
+        972.8,
+        966.7,
+        974.9
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 8863.666666666666,
+       "sd": 2.635020556529812,
+       "ci95": [
+        8857.120384418362,
+        8870.21294891497
+       ],
+       "n": 3,
+       "values": [
+        8862.9,
+        8866.6,
+        8861.5
+       ]
+      },
+      "train_seconds": {
+       "mean": 11366.566666666666,
+       "sd": 15.623806621093863,
+       "ci95": [
+        11327.751846918432,
+        11405.381486414899
+       ],
+       "n": 3,
+       "values": [
+        11357.1,
+        11384.6,
+        11358.0
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 45466.333333333336,
+       "sd": 62.52554144774221,
+       "ci95": [
+        45310.99874171863,
+        45621.667924948044
+       ],
+       "n": 3,
+       "values": [
+        45428.4,
+        45538.5,
+        45432.1
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    }
+   }
+  },
+  "result": "FAIL",
+  "decision": {
+   "complete": true,
+   "checks": {
+    "L1_parity": false,
+    "L2_state_helps": false,
+    "L3_long_context": false,
+    "L4_memory": true,
+    "L5_vs_lstm": false
+   },
+   "result": "FAIL"
+  },
+  "recorded": "2026-09-30T05:34:45Z"
  }
 ]
