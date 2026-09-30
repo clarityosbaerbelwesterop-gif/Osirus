@@ -74,7 +74,8 @@ Owner directive: **Lightning AI replaces RunPod** for GPU training, storage and 
 - The key reads 2 organisation teamspaces (role ProjectAdministrator), each about **4.9 credits**; free monthly credits are off.
 - CPU and T4 jobs run (probes, the GPU dry run on T4 for $0.05). **L4 job creation answers HTTP 403.**
 - **H100, H200 and A100 are listed** (capacity); a paid H100/H200 job has not been created yet (needs TRAINING_READY and credits).
-- Storage: teamspace-drive upload on the default cloud account answered 404; jobs mount `/teamspace` but carry no SDK credentials. The next probe tests every cloud account, the model registry, and persistence of the mounted paths.
+- **Storage and model repository: the teamspace model registry** (probe of 2026-09-30, `results/lightning/probe.json`). The registry round trip (upload, download, sha256 equal) passed. The teamspace drive answered 404 on every cloud account. Job mounts under `/teamspace` are writable but do not persist to the next job. Jobs carry no SDK credentials, so prepare and training jobs get the key as job environment; it is used only by `lightning_ai/storage.py`, never printed, and masked by Actions in relayed logs.
+- Layout: corpus `rouge/data/<corpus>` = registry model `rouge-data-<corpus>`; run checkpoints `rouge/runs/<lineage>` = `rouge-runs-<lineage>` (new version per sync); published weights `rouge-r1-<rung>:<lineage>`. Every transfer is verified against its sha256 manifest.
 
 **Ceiling** (`lightning_ai/cost.py`):
 - **50 EUR = $52.50**, at 1 EUR = 1.05 USD; it counts every Rouge job on Lightning.
@@ -97,9 +98,8 @@ H100 is chosen for the 100M and 300M rungs (same compute, half the price); H200 
 
 ## Next steps (automatic, free)
 
-1. Done: corpus v1 committed; R1.29b PASS (candidate C ternary); GPU dry run on T4 passed.
-2. Level B finishes on T4 and names the finalists.
-3. Storage path confirmed (drive, model registry or mounted path).
-4. Level C runs on a GPU, then `native/freeze.py` writes Spec v1.0.
-5. A GPU dry run, then `ready.py` reports TRAINING_READY.
-6. The production corpus is built on Lightning. The 100M rung trains on an H100 within the ceiling, with the owner's approval.
+1. Done: corpus v1 committed; R1.29b PASS (candidate C ternary); GPU dry run on T4 passed; storage path confirmed (model registry).
+2. Running: tournament Level B on T4 (names the finalists); production corpus `pretrain-v1` (mixture v2, 2.2B tokens) built by a Lightning DATA_PREP job and stored in the registry, manifest committed.
+3. Level C runs on a GPU, then `native/freeze.py` writes Spec v1.0.
+4. A GPU dry run on the frozen spec, then `ready.py` reports TRAINING_READY.
+5. The 100M rung trains on an H100 within the ceiling, with the owner's approval. The 300M rung (about 11.7 h) runs as resumed segments of at most 5.75 h, each approved.
