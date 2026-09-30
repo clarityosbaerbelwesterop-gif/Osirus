@@ -71,11 +71,10 @@ def check_budget(ledger: dict, machine: str, max_hours: float) -> float:
     return worst
 
 
-def teamspace():
-    """The first teamspace this key may use (names are resolved, never printed).
+def teamspaces() -> list:
+    """Teamspaces this key may read, richest first, as (Teamspace, balance) (names are resolved, never printed).
 
-    A key can be scoped to one teamspace: memberships the key is not
-    authorized for answer 403 and are skipped.
+    A key can be scoped: memberships it is not authorized for answer 403 and are skipped.
     """
     from lightning_sdk import Teamspace
     from lightning_sdk.api.teamspace_api import TeamspaceApi
@@ -90,29 +89,31 @@ def teamspace():
             usable.append((api._get_teamspace_by_id(m.project_id), m))
         except Exception:
             refused += 1
-    print(f"[lightning] {len(memberships)} teamspace membership(s): {len(usable)} usable with this key, {refused} refused",
+    print(f"[lightning] {len(memberships)} teamspace membership(s): {len(usable)} readable with this key, {refused} refused",
           flush=True)
     if not usable:
         raise SystemExit("the key authenticates but may use no teamspace")
-    for i, (_, m) in enumerate(usable):
-        print(f"[lightning] usable teamspace {i}: balance {getattr(m, 'balance', None)}, free credits enabled "
-              f"{getattr(m, 'free_credits_enabled', None)}, next free-credit grant {getattr(m, 'next_free_credits_grant', None)}",
-              flush=True)
-    # the teamspace with the most credits (the owner's free monthly credits land in one of them)
-    project, membership = max(usable, key=lambda pm: float(getattr(pm[1], "balance", 0) or 0))
-    balance = getattr(membership, "balance", None)
-    print(f"[lightning] using the teamspace with balance {balance if balance is not None else 'not reported'}", flush=True)
-    os.environ["ROUGE_LIGHTNING_BALANCE"] = "" if balance is None else str(balance)
-    owner = project.owner_type if hasattr(project, "owner_type") else None
-    os.environ["LIGHTNING_TEAMSPACE"] = project.name
-    os.environ["LIGHTNING_CLOUD_PROJECT_ID"] = project.id
-    if owner and "organization" in str(owner).lower():
-        from lightning_sdk.api.org_api import OrgApi
+    usable.sort(key=lambda pm: -float(getattr(pm[1], "balance", 0) or 0))
+    out = []
+    for i, (project, m) in enumerate(usable):
+        roles = [getattr(r, "name", None) or getattr(r, "display_name", None) for r in (getattr(m, "roles", None) or [])]
+        owner_kind = "organization" if "organization" in str(getattr(project, "owner_type", "")).lower() else "user"
+        print(f"[lightning] teamspace {i}: owner {owner_kind}, roles {roles or 'not reported'}, balance "
+              f"{getattr(m, 'balance', None)}, free credits enabled {getattr(m, 'free_credits_enabled', None)}", flush=True)
+        if owner_kind == "organization":
+            from lightning_sdk.api.org_api import OrgApi
 
-        org = OrgApi()._get_org_by_id(project.owner_id)
-        return Teamspace(name=f"{org.name}/{project.name}"), len(usable)
-    os.environ["LIGHTNING_USERNAME"] = user.username
-    return Teamspace(name=f"{user.username}/{project.name}"), len(usable)
+            name = f"{OrgApi()._get_org_by_id(project.owner_id).name}/{project.name}"
+        else:
+            name = f"{user.username}/{project.name}"
+        out.append((Teamspace(name=name), getattr(m, "balance", None), project))
+    return out
+
+
+def teamspace():
+    ts, balance, project = teamspaces()[0]
+    os.environ["ROUGE_LIGHTNING_BALANCE"] = "" if balance is None else str(balance)
+    return ts, 1
 
 
 def bootstrap_command(sha: str, script: str) -> str:
@@ -213,13 +214,24 @@ def run(args) -> None:
     ledger_path = Path(args.ledger)
     ledger = load_ledger(ledger_path)
     worst = check_budget(ledger, args.machine, args.max_hours)
-    ts, _ = teamspace()
-    balance = os.environ.get("ROUGE_LIGHTNING_BALANCE")
-    if balance and worst > float(balance) - SAFETY_MARGIN:
-        raise SystemExit(f"refused: worst case {worst:.2f} exceeds the credit balance {float(balance):.2f} minus the margin")
-    job = Job.run(name=args.name, machine=getattr(Machine, args.machine), command=bootstrap_command(sha, args.script),
-                  image="python:3.11-slim", teamspace=ts, interruptible=False,
-                  env={"PYTHONUNBUFFERED": "1", **dict(kv.split("=", 1) for kv in args.env)})
+    job = None
+    for i, (ts, balance, project) in enumerate(teamspaces()):
+        if balance is not None and worst > float(balance) - SAFETY_MARGIN:
+            print(f"[lightning] teamspace {i}: worst case {worst:.2f} exceeds its balance {float(balance):.2f} minus the margin",
+                  flush=True)
+            continue
+        os.environ["LIGHTNING_CLOUD_PROJECT_ID"] = project.id
+        try:
+            job = Job.run(name=args.name, machine=getattr(Machine, args.machine), command=bootstrap_command(sha, args.script),
+                          image="python:3.11-slim", teamspace=ts, interruptible=False,
+                          env={"PYTHONUNBUFFERED": "1", **dict(kv.split("=", 1) for kv in args.env)})
+            print(f"[lightning] teamspace {i} accepted the job", flush=True)
+            break
+        except Exception as e:  # 403: this key may read the teamspace but not create jobs in it
+            print(f"[lightning] teamspace {i}: job creation refused ({str(e)[-60:]})", flush=True)
+    if job is None:
+        raise SystemExit("no teamspace accepted the job: the key needs permission to create jobs "
+                         "(a Lightning API key with job/studio write access in a teamspace with credits)")
     print(f"[lightning] job {args.name} submitted on {args.machine} at {sha[:12]}", flush=True)
     sys.exit(record_and_wait(job, ledger, ledger_path, args.machine, args.max_hours, worst, args.results, args.name,
                              prefix=args.prefix.rstrip() + " "))
