@@ -1,0 +1,39 @@
+name: Rouge isolated Lightning access check
+
+# Read-only Lightning API calls. No storage upload, job creation, or job stop.
+on:
+  push:
+    branches: ["rouge/free-gpu-training-20260930"]
+    paths: [".github/workflows/rouge-free-gpu-probe.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  access:
+    if: github.ref == 'refs/heads/rouge/free-gpu-training-20260930'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install existing Lightning launcher dependency
+        run: python -m pip install lightning-sdk
+      - name: Read accessible projects, credit balance and machine catalog
+        env:
+          LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+        run: python training/rouge/lightning_ai/job.py probe --out "$RUNNER_TEMP/probe.json"
+      - name: Store account check without credentials
+        uses: actions/upload-artifact@v4
+        with:
+          name: rouge-isolated-lightning-access
+          path: |
+            ${{ runner.temp }}/probe.json
+            ${{ runner.temp }}/machines.json
+          if-no-files-found: error
+          retention-days: 1
