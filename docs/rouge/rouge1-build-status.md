@@ -100,19 +100,26 @@ Owner directive: **Lightning AI replaces RunPod** for GPU training, storage and 
 At this account's prices the H200 is cheapest and fastest. A T4 node matches it only when interruptible and only if T4 reaches the same MFU; Level B on T4 measures that. With free credits, small GPUs cost nothing and would be the first choice.
 
 **Ceiling** (`lightning_ai/cost.py`):
-- **50 EUR = $52.50**, at 1 EUR = 1.05 USD; it counts every Rouge job on Lightning (spent so far: about 1.9 USD, including 0.73 for a stopped corpus build).
+- **50 EUR = $52.50**, at 1 EUR = 1.05 USD; it counts every Rouge job on Lightning (spent so far: 3.66 USD, including 2.78 for the stopped Level B and 0.83 for a stopped corpus build).
 - Price ceilings are about 1.25x the cheapest live on-demand price per GPU. A launch needs its live price under the ceiling, and hours x live price (+5%) plus everything in the ledger within 50 EUR and within the balance.
+
+## Level B on a T4 (2026-09-30): stopped, no result
+
+- Candidate A trained fully (3051 steps, 200M tokens, loss 3.48) in 79 min. Then it crashed in the passkey evaluation: `evaluate.py` read one shard of `web_en` as its list of shards. The dry run missed the bug because its corpus has no `web_en`. The fix and a test are in dc6a114.
+- The same crash would have ended every candidate. 5 candidates at 79 min each also exceed the job's 4.5 h, so the job was stopped: 2.78 USD spent, no ranking (`results/tournament-v1/level-B/decision.json`: incomplete).
+- **Measured: the T4 reaches MFU 0.095** (42.3k tokens/s, fp16) instead of the assumed 0.30 (`results/lightning/mfu.json`). A GPU tournament is far cheaper on an H200 (about 5–25 min per candidate) than on a T4 (79 min).
+- **Now:** Level B runs free on GitHub CPUs (the registered fallback B-cpu, size xs). It names the finalists; promotion still needs Level C on a GPU.
 
 ## What the owner has to do (nothing else blocks Phase E)
 
-1. **Free hours:** the key is scoped to one organisation teamspace without free credits; 2 of its 4 memberships are refused. To use Lightning's free monthly credits, create a Lightning API key with access to the teamspace that has them (or all teamspaces) and store it as the `LIGHTNING_AI_API_KEY` secret. The launcher then takes the teamspace with the most credits first.
-2. **Credits:** the balance is 3.74. The 100M rung needs about 7–8 plus the 1-credit margin (H200); add credits within the 50 EUR ceiling. The launcher refuses otherwise.
+1. **Free credits, H200 included.** Lightning's free plan gives 15 credits a month; "80 GPU hours" means cheap interruptible GPUs. The same 15 credits buy about 3.9 H200 hours at this account's interruptible price (3.82 USD/h), enough for the 100M rung (about 7 credits interruptible). Our key reaches only one organisation teamspace, whose free credits are off; 2 of its 4 memberships are refused by the key's scope. **Create a Lightning API key with access to the teamspace that has the free credits (or all teamspaces) and store it as the `LIGHTNING_AI_API_KEY` secret.** The launcher then uses the teamspace with the most credits first.
+2. **Or add credits:** the balance is 1.36. The launcher refuses any job whose worst case exceeds the balance minus 1.
 3. **Every paid run:** approve it in the protected GitHub environment `rouge-gpu` (workflow "Rouge train").
 
 ## Next steps (automatic, free)
 
-1. Done: corpus v1 committed; R1.29b PASS (candidate C ternary); GPU dry run on T4 passed; storage path confirmed (model registry).
-2. Running: tournament Level B on T4 (names the finalists); production corpus `pretrain-v1` (mixture v2, 2.2B tokens) built on a free GitHub runner and stored in the Lightning registry, manifest committed. (The first build on a Lightning DATA_PREP machine was stopped at 0.73 USD: at 1.48 USD/h it and the tournament would have drained the balance; commit d04394c holds only its ledger entry.)
-3. Level C runs on a GPU, then `native/freeze.py` writes Spec v1.0.
+1. Done: corpus v1 committed and rebuilt byte-identically by the streaming build; R1.29b PASS (candidate C ternary); GPU dry run on T4; storage on the model registry; `pretrain-v1` built (1.94B tokens, code 59M of 264M planned).
+2. Running: Level B on GitHub CPUs; production corpus `pretrain-v2` (mixture v3: 41 code projects, decontamination rule v2, more synthetic seeds), built free on a runner and stored in the registry. `ready.py` requires every source at 90% or more of its plan.
+3. Level C on a GPU (needs credits), then `native/freeze.py` writes Spec v1.0.
 4. A GPU dry run on the frozen spec, then `ready.py` reports TRAINING_READY.
-5. The 100M rung trains on the cheapest machine at live prices (today: H200 on the second cloud account, about 1.8 h), with the owner's approval. The 300M rung runs as resumed segments of at most 5.75 h, each approved.
+5. The 100M rung trains on the cheapest machine at live prices (today an H200 on the second cloud account, about 1.8 h), with the owner's approval.
