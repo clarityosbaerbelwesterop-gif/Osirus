@@ -48,37 +48,15 @@
      "runs": 9
     },
     {
-     "name": "probe-write",
-     "machine": "CPU",
-     "started": "2026-09-30T12:26:40Z",
-     "max_hours": 0.25,
-     "worst_case_usd": 0.025,
-     "cost_usd": 0.0,
-     "status": "Completed",
-     "seconds": 121,
-     "runs": 5
-    },
-    {
-     "name": "probe-read",
-     "machine": "CPU",
-     "started": "2026-09-30T12:28:42Z",
-     "max_hours": 0.25,
-     "worst_case_usd": 0.025,
-     "cost_usd": 0.0,
-     "status": "Completed",
-     "seconds": 121,
-     "runs": 5
-    },
-    {
-     "name": "rouge-prepare-pretrain-v1-36715868898",
-     "machine": "DATA_PREP",
-     "started": "2026-09-30T12:37:00Z",
-     "max_hours": 4.0,
-     "worst_case_usd": 2.4,
-     "cost_usd": 0.72938335,
+     "name": "rouge-tournament-B-36714574672",
+     "machine": "T4",
+     "started": "2026-09-30T12:27:06Z",
+     "max_hours": 4.5,
+     "worst_case_usd": 1.35,
+     "cost_usd": 2.7768,
      "status": "Stopped",
-     "seconds": 962,
-     "runs": 0
+     "seconds": 9737,
+     "runs": 1
     }
    ]
   }

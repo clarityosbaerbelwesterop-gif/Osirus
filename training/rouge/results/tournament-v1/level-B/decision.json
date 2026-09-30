@@ -1,0 +1,9 @@
+{
+ "level": "B",
+ "complete": false,
+ "reason": "baseline A missing or disqualified",
+ "table": {},
+ "disqualified": {
+  "A": "a run diverged or has no evaluation"
+ }
+}
