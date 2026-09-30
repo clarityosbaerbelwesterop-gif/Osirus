@@ -244015,5 +244015,1023 @@
    "result": "FAIL"
   },
   "recorded": "2026-09-30T06:02:08Z"
+ },
+ {
+  "experiment_id": "R1.14b",
+  "run": "rouge-lm-seed1",
+  "parent": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+  "hypothesis": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+  "architecture": "rouge-lm",
+  "config": {
+   "kind": "rouge",
+   "d": 272,
+   "layers": 8,
+   "heads": 4,
+   "slots": 16,
+   "block": 64
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "e4b79b252a0bc681f64bcace29ea99108afe6ddd",
+  "parameter_count": 10208160,
+  "active_parameters": null,
+  "flop_estimate": 15823872.0,
+  "checkpoint_sha256": "764a9a702c9125d052b00df7f7e5e9d085073c3eb11c2d7d8f963de9e812049a",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007909"
+  },
+  "duration_s": 15407.1,
+  "cost_usd": 0.0,
+  "ci_run": "36650325883",
+  "metrics": {
+   "valid_bpb": 1.9357873483420607,
+   "test_bpb": 1.95897848863356,
+   "stream": {
+    "b0_0_256": 1.8149695468598535,
+    "b1_256_1k": 1.5595679150745954,
+    "b2_1k_4k": 1.5826292407114404,
+    "all": 1.5928266080290487
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14b",
+  "run": "rouge-lm-seed2",
+  "parent": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+  "hypothesis": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+  "architecture": "rouge-lm",
+  "config": {
+   "kind": "rouge",
+   "d": 272,
+   "layers": 8,
+   "heads": 4,
+   "slots": 16,
+   "block": 64
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "e4b79b252a0bc681f64bcace29ea99108afe6ddd",
+  "parameter_count": 10208160,
+  "active_parameters": null,
+  "flop_estimate": 15823872.0,
+  "checkpoint_sha256": "949c1bd1c9ae91fb2cf5dec9b8d836c19fa75961f00a2a12cb9ad49264d8b4d4",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007903"
+  },
+  "duration_s": 7839.0,
+  "cost_usd": 0.0,
+  "ci_run": "36650325883",
+  "metrics": {
+   "valid_bpb": 1.9592359896575644,
+   "test_bpb": 2.0338231670080873,
+   "stream": {
+    "b0_0_256": 1.8419118329960684,
+    "b1_256_1k": 1.648054708770019,
+    "b2_1k_4k": 1.6712818256822957,
+    "all": 1.677591009229198
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14b",
+  "run": "rouge-lm-seed3",
+  "parent": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+  "hypothesis": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+  "architecture": "rouge-lm",
+  "config": {
+   "kind": "rouge",
+   "d": 272,
+   "layers": 8,
+   "heads": 4,
+   "slots": 16,
+   "block": 64
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "e4b79b252a0bc681f64bcace29ea99108afe6ddd",
+  "parameter_count": 10208160,
+  "active_parameters": null,
+  "flop_estimate": 15823872.0,
+  "checkpoint_sha256": "c64389548da9d47a94aa1bd389724134dc26755a6060366095472f5dc6dcbb16",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007901"
+  },
+  "duration_s": 15378.4,
+  "cost_usd": 0.0,
+  "ci_run": "36650325883",
+  "metrics": {
+   "valid_bpb": 1.983976908611651,
+   "test_bpb": 2.0583306625092903,
+   "stream": {
+    "b0_0_256": 1.9191028061828228,
+    "b1_256_1k": 1.6747515756634528,
+    "b2_1k_4k": 1.6785539400913787,
+    "all": 1.6928751074113757
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14b",
+  "run": "rouge-mem-lm-seed1",
+  "parent": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+  "hypothesis": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+  "architecture": "rouge-mem-lm",
+  "config": {
+   "kind": "rouge",
+   "d": 272,
+   "layers": 8,
+   "heads": 4,
+   "slots": 16,
+   "block": 64,
+   "memory_layers": [
+    4
+   ],
+   "memory_slots": 512,
+   "memory_writes": 8,
+   "memory_topk": 8
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "e4b79b252a0bc681f64bcace29ea99108afe6ddd",
+  "parameter_count": 10208433,
+  "active_parameters": null,
+  "flop_estimate": 16520736.0,
+  "checkpoint_sha256": "d01a0e5ec69fff6b3252b567cfaf6df50d497d9a6f88ee8d0094086407f82015",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007904"
+  },
+  "duration_s": 13789.3,
+  "cost_usd": 0.0,
+  "ci_run": "36650325883",
+  "metrics": {
+   "valid_bpb": 2.1623769953511642,
+   "test_bpb": 2.1895970764641857,
+   "stream": {
+    "b0_0_256": 2.0514928150425518,
+    "b1_256_1k": 1.6242105181064468,
+    "b2_1k_4k": 1.6248533892553718,
+    "all": 1.6513977075374904
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14b",
+  "run": "rouge-mem-lm-seed2",
+  "parent": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+  "hypothesis": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+  "architecture": "rouge-mem-lm",
+  "config": {
+   "kind": "rouge",
+   "d": 272,
+   "layers": 8,
+   "heads": 4,
+   "slots": 16,
+   "block": 64,
+   "memory_layers": [
+    4
+   ],
+   "memory_slots": 512,
+   "memory_writes": 8,
+   "memory_topk": 8
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "e4b79b252a0bc681f64bcace29ea99108afe6ddd",
+  "parameter_count": 10208433,
+  "active_parameters": null,
+  "flop_estimate": 16520736.0,
+  "checkpoint_sha256": "41b8f89a3f9093e80c7fc89f2c9f3147be5e67e2d73ad5c3229173d00ecd6556",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007906"
+  },
+  "duration_s": 16792.1,
+  "cost_usd": 0.0,
+  "ci_run": "36650325883",
+  "metrics": {
+   "valid_bpb": 2.158225936098614,
+   "test_bpb": 2.2177590313135727,
+   "stream": {
+    "b0_0_256": 2.0746832996501943,
+    "b1_256_1k": 1.6961082092649455,
+    "b2_1k_4k": 1.694098076041661,
+    "all": 1.7182616384878857
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14b",
+  "run": "rouge-mem-lm-seed3",
+  "parent": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+  "hypothesis": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+  "architecture": "rouge-mem-lm",
+  "config": {
+   "kind": "rouge",
+   "d": 272,
+   "layers": 8,
+   "heads": 4,
+   "slots": 16,
+   "block": 64,
+   "memory_layers": [
+    4
+   ],
+   "memory_slots": 512,
+   "memory_writes": 8,
+   "memory_topk": 8
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "e4b79b252a0bc681f64bcace29ea99108afe6ddd",
+  "parameter_count": 10208433,
+  "active_parameters": null,
+  "flop_estimate": 16520736.0,
+  "checkpoint_sha256": "8b1e9f6b0396b1ce79e1925f3d9325afb06da74985e30ee8c0e912a073134e95",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007902"
+  },
+  "duration_s": 8574.7,
+  "cost_usd": 0.0,
+  "ci_run": "36650325883",
+  "metrics": {
+   "valid_bpb": 2.004552461506419,
+   "test_bpb": 2.0464915058108826,
+   "stream": {
+    "b0_0_256": 1.8786072552627133,
+    "b1_256_1k": 1.6489154819375875,
+    "b2_1k_4k": 1.6475036763566546,
+    "all": 1.6622123205890456
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14b",
+  "run": "transformer-seed1",
+  "parent": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+  "hypothesis": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+  "architecture": "transformer",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 1,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "e4b79b252a0bc681f64bcace29ea99108afe6ddd",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "cc27b49eee282735577d66784f383bc2a0749b95cb17c793cc6368dc7fbbecbe",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007905"
+  },
+  "duration_s": 15247.4,
+  "cost_usd": 0.0,
+  "ci_run": "36650325883",
+  "metrics": {
+   "valid_bpb": 1.757944281161945,
+   "test_bpb": 1.8181276965243942,
+   "stream": {
+    "b0_0_256": 1.6519853722554887,
+    "b1_256_1k": 1.659857362150781,
+    "b2_1k_4k": 1.684054633196575,
+    "all": 1.6775134450536586
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14b",
+  "run": "transformer-seed2",
+  "parent": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+  "hypothesis": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+  "architecture": "transformer",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 2,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "e4b79b252a0bc681f64bcace29ea99108afe6ddd",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "f943910d36b98064f6e906587cd83b3027cbab08929549515894ca18a45f86e2",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007908"
+  },
+  "duration_s": 10941.5,
+  "cost_usd": 0.0,
+  "ci_run": "36650325883",
+  "metrics": {
+   "valid_bpb": 1.7015687981657437,
+   "test_bpb": 1.7445837175638845,
+   "stream": {
+    "b0_0_256": 1.594738023210738,
+    "b1_256_1k": 1.5701422683628952,
+    "b2_1k_4k": 1.5839177347317044,
+    "all": 1.5820109630815884
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14b",
+  "run": "transformer-seed3",
+  "parent": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+  "hypothesis": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+  "architecture": "transformer",
+  "config": {
+   "kind": "transformer",
+   "d": 320,
+   "layers": 8,
+   "heads": 5
+  },
+  "seed": 3,
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "e4b79b252a0bc681f64bcace29ea99108afe6ddd",
+  "parameter_count": 9946240,
+  "active_parameters": null,
+  "flop_estimate": 19824640.0,
+  "checkpoint_sha256": "163a34b48def0988ca08aecc758ac83dae2ee99e1cf3a672c3e9d66263a65796",
+  "hardware": {
+   "machine": "x86_64",
+   "processor": "x86_64",
+   "cpus": 4,
+   "torch": "2.14.0+cpu",
+   "runner": "GitHub Actions 1000007907"
+  },
+  "duration_s": 18021.9,
+  "cost_usd": 0.0,
+  "ci_run": "36650325883",
+  "metrics": {
+   "valid_bpb": 1.7064994440257393,
+   "test_bpb": 1.7517388730214651,
+   "stream": {
+    "b0_0_256": 1.5650827107571623,
+    "b1_256_1k": 1.527404923588789,
+    "b2_1k_4k": 1.5572886290027106,
+    "all": 1.5521724891048438
+   }
+  },
+  "result": null,
+  "decision": null
+ },
+ {
+  "experiment_id": "R1.14b",
+  "run": "experiment",
+  "parent": "R1.03 (two-level memory triples recall), R1.14 (running; no result seen), R1.16 (pre-registered prediction: 16 gated slots alone will not copy beyond the window)",
+  "hypothesis": "Does adding a small exact memory to Rouge-LM (one layer; after each 64-byte block it writes the keys/values of its 8 highest-scoring bytes into a ring of 512 entries; every byte reads its top 8 entries per head in the same softmax as its local attention) improve prediction of bytes far into long streams, at equal parameters and training bytes, while inference memory stays constant and below half of the Transformer's?",
+  "architecture": [
+   "transformer",
+   "rouge-lm",
+   "rouge-mem-lm"
+  ],
+  "seed": [
+   1,
+   2,
+   3
+  ],
+  "dataset_hash": "d0838dca63ed9dbc78ac6bec3670ad1d55c09ac6f68083fe4e9a089c467940b4",
+  "code_sha": "e4b79b252a0bc681f64bcace29ea99108afe6ddd",
+  "parameter_count": {
+   "transformer": 9950000,
+   "rouge-lm": 10210000,
+   "rouge-mem-lm": 10210000
+  },
+  "flop_estimate": 2000000000000000.0,
+  "hardware": "tier 0: ubuntu-latest",
+  "duration_s": 121991.4,
+  "cost_usd": 0.0,
+  "ci_run": "36650325883",
+  "metrics": {
+   "experiment": "R1.14b",
+   "dataset": [
+    "enwik8"
+   ],
+   "dataset_sha256": [
+    "2b49720ec4d78c3c9fabaee6e4179a5e997302b3a70029f30f2d582218c024a8"
+   ],
+   "floors": {
+    "order1_bpb": 4.895550589513838,
+    "order3_bpb": 3.152611575611511
+   },
+   "models": {
+    "transformer": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "transformer",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 1.7220041744511427,
+       "sd": 0.0312225282438349,
+       "ci95": [
+        1.644436854574541,
+        1.7995714943277445
+       ],
+       "n": 3,
+       "values": [
+        1.757944281161945,
+        1.7015687981657437,
+        1.7064994440257393
+       ]
+      },
+      "test.bpb": {
+       "mean": 1.7714834290365813,
+       "sd": 0.040553234513556594,
+       "ci95": [
+        1.6707354790634712,
+        1.8722313790096914
+       ],
+       "n": 3,
+       "values": [
+        1.8181276965243942,
+        1.7445837175638845,
+        1.7517388730214651
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 1.6039353687411297,
+       "sd": 0.04417534965879994,
+       "ci95": [
+        1.4941888597177464,
+        1.713681877764513
+       ],
+       "n": 3,
+       "values": [
+        1.6519853722554887,
+        1.594738023210738,
+        1.5650827107571623
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.5858015180341551,
+       "sd": 0.06760045262758757,
+       "ci95": [
+        1.4178591306715131,
+        1.7537439053967971
+       ],
+       "n": 3,
+       "values": [
+        1.659857362150781,
+        1.5701422683628952,
+        1.527404923588789
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.6084203323103299,
+       "sd": 0.06684076541224492,
+       "ci95": [
+        1.442365264923138,
+        1.7744753996975218
+       ],
+       "n": 3,
+       "values": [
+        1.684054633196575,
+        1.5839177347317044,
+        1.5572886290027106
+       ]
+      },
+      "stream.all": {
+       "mean": 1.603898965746697,
+       "sd": 0.06547444008956115,
+       "ci95": [
+        1.4412383125636479,
+        1.7665596189297463
+       ],
+       "n": 3,
+       "values": [
+        1.6775134450536586,
+        1.5820109630815884,
+        1.5521724891048438
+       ]
+      },
+      "params": 9946240,
+      "stored_bytes": 39784960,
+      "flops": {
+       "mean": 19824640.0,
+       "sd": 0.0,
+       "ci95": [
+        19824640.0,
+        19824640.0
+       ],
+       "n": 3,
+       "values": [
+        19824640.0,
+        19824640.0,
+        19824640.0
+       ]
+      },
+      "train_flops": {
+       "mean": 1948841410560000.0,
+       "sd": 0.0,
+       "ci95": [
+        1948841410560000.0,
+        1948841410560000.0
+       ],
+       "n": 3,
+       "values": [
+        1948841410560000.0,
+        1948841410560000.0,
+        1948841410560000.0
+       ]
+      },
+      "state_bytes": 0,
+      "kv_bytes": 5242880,
+      "total_bytes": 5242880,
+      "full_context_4k_bytes": 83886080,
+      "peak_rss_mb": {
+       "mean": 1687.8666666666666,
+       "sd": 21.982796303776542,
+       "ci95": [
+        1633.2539658834137,
+        1742.4793674499194
+       ],
+       "n": 3,
+       "values": [
+        1684.6,
+        1711.3,
+        1667.7
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 3662.2666666666664,
+       "sd": 988.7173374293249,
+       "ci95": [
+        1205.9584080596505,
+        6118.574925273682
+       ],
+       "n": 3,
+       "values": [
+        3409.6,
+        4752.8,
+        2824.4
+       ]
+      },
+      "train_seconds": {
+       "mean": 14736.933333333334,
+       "sd": 3567.695082729652,
+       "ci95": [
+        5873.5721236621175,
+        23600.29454300455
+       ],
+       "n": 3,
+       "values": [
+        15247.4,
+        10941.5,
+        18021.9
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 58947.73333333334,
+       "sd": 14270.91844428148,
+       "ci95": [
+        23493.945374344003,
+        94401.52129232266
+       ],
+       "n": 3,
+       "values": [
+        60989.5,
+        43765.9,
+        72087.8
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    },
+    "rouge-lm": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "rouge",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 1.9596667488704254,
+       "sd": 0.024097667830491765,
+       "ci95": [
+        1.8997999919476596,
+        2.019533505793191
+       ],
+       "n": 3,
+       "values": [
+        1.9357873483420607,
+        1.9592359896575644,
+        1.983976908611651
+       ]
+      },
+      "test.bpb": {
+       "mean": 2.0170441060503124,
+       "sd": 0.051757765392517495,
+       "ci95": [
+        1.8884603119082652,
+        2.1456279001923595
+       ],
+       "n": 3,
+       "values": [
+        1.95897848863356,
+        2.0338231670080873,
+        2.0583306625092903
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 1.8586613953462485,
+       "sd": 0.05404946626469235,
+       "ci95": [
+        1.7243842411654104,
+        1.9929385495270866
+       ],
+       "n": 3,
+       "values": [
+        1.8149695468598535,
+        1.8419118329960684,
+        1.9191028061828228
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.6274580665026892,
+       "sd": 0.06029083820265355,
+       "ci95": [
+        1.4776752335440193,
+        1.777240899461359
+       ],
+       "n": 3,
+       "values": [
+        1.5595679150745954,
+        1.648054708770019,
+        1.6747515756634528
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.644155002161705,
+       "sd": 0.05340679173589105,
+       "ci95": [
+        1.511474468868284,
+        1.7768355354551262
+       ],
+       "n": 3,
+       "values": [
+        1.5826292407114404,
+        1.6712818256822957,
+        1.6785539400913787
+       ]
+      },
+      "stream.all": {
+       "mean": 1.6544309082232074,
+       "sd": 0.05389543826818398,
+       "ci95": [
+        1.5205364116792466,
+        1.7883254047671682
+       ],
+       "n": 3,
+       "values": [
+        1.5928266080290487,
+        1.677591009229198,
+        1.6928751074113757
+       ]
+      },
+      "params": 10208160,
+      "stored_bytes": 40832640,
+      "flops": {
+       "mean": 15823872.0,
+       "sd": 0.0,
+       "ci95": [
+        15823872.0,
+        15823872.0
+       ],
+       "n": 3,
+       "values": [
+        15823872.0,
+        15823872.0,
+        15823872.0
+       ]
+      },
+      "train_flops": {
+       "mean": 1555549913088000.0,
+       "sd": 0.0,
+       "ci95": [
+        1555549913088000.0,
+        1555549913088000.0
+       ],
+       "n": 3,
+       "values": [
+        1555549913088000.0,
+        1555549913088000.0,
+        1555549913088000.0
+       ]
+      },
+      "state_bytes": 139264,
+      "kv_bytes": 1114112,
+      "total_bytes": 1253376,
+      "full_context_4k_bytes": 1253376,
+      "peak_rss_mb": {
+       "mean": 1898.7,
+       "sd": 6.854925236645568,
+       "ci95": [
+        1881.6700473194041,
+        1915.729952680596
+       ],
+       "n": 3,
+       "values": [
+        1899.0,
+        1905.4,
+        1891.7
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 8550.300000000001,
+       "sd": 3893.7198525317663,
+       "ci95": [
+        -1123.0170021503054,
+        18223.617002150306
+       ],
+       "n": 3,
+       "values": [
+        6251.8,
+        13046.0,
+        6353.1
+       ]
+      },
+      "train_seconds": {
+       "mean": 12874.833333333334,
+       "sd": 4361.183204513808,
+       "ci95": [
+        2040.1792648633163,
+        23709.48740180335
+       ],
+       "n": 3,
+       "values": [
+        15407.1,
+        7839.0,
+        15378.4
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 51499.36666666666,
+       "sd": 17444.761520964777,
+       "ci95": [
+        8160.679085051714,
+        94838.05424828161
+       ],
+       "n": 3,
+       "values": [
+        61628.4,
+        31356.0,
+        61513.7
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    },
+    "rouge-mem-lm": {
+     "seeds": [
+      1,
+      2,
+      3
+     ],
+     "kind": "rouge",
+     "metrics": {
+      "valid.bpb": {
+       "mean": 2.108385130985399,
+       "sd": 0.08994567950478703,
+       "ci95": [
+        1.8849296427180853,
+        2.331840619252713
+       ],
+       "n": 3,
+       "values": [
+        2.1623769953511642,
+        2.158225936098614,
+        2.004552461506419
+       ]
+      },
+      "test.bpb": {
+       "mean": 2.15128253786288,
+       "sd": 0.09183759700758094,
+       "ci95": [
+        1.9231268866563804,
+        2.3794381890693796
+       ],
+       "n": 3,
+       "values": [
+        2.1895970764641857,
+        2.2177590313135727,
+        2.0464915058108826
+       ]
+      },
+      "stream.b0_0_256": {
+       "mean": 2.00159445665182,
+       "sd": 0.10713934115546818,
+       "ci95": [
+        1.7354240978047417,
+        2.267764815498898
+       ],
+       "n": 3,
+       "values": [
+        2.0514928150425518,
+        2.0746832996501943,
+        1.8786072552627133
+       ]
+      },
+      "stream.b1_256_1k": {
+       "mean": 1.6564114031029933,
+       "sd": 0.03653027681347626,
+       "ci95": [
+        1.56565784065466,
+        1.7471649655513266
+       ],
+       "n": 3,
+       "values": [
+        1.6242105181064468,
+        1.6961082092649455,
+        1.6489154819375875
+       ]
+      },
+      "stream.b2_1k_4k": {
+       "mean": 1.655485047217896,
+       "sd": 0.03530557141091655,
+       "ci95": [
+        1.5677740671950813,
+        1.7431960272407105
+       ],
+       "n": 3,
+       "values": [
+        1.6248533892553718,
+        1.694098076041661,
+        1.6475036763566546
+       ]
+      },
+      "stream.all": {
+       "mean": 1.6772905555381403,
+       "sd": 0.035891659092606616,
+       "ci95": [
+        1.5881235354942755,
+        1.7664575755820051
+       ],
+       "n": 3,
+       "values": [
+        1.6513977075374904,
+        1.7182616384878857,
+        1.6622123205890456
+       ]
+      },
+      "params": 10208433,
+      "stored_bytes": 40833732,
+      "flops": {
+       "mean": 16520736.0,
+       "sd": 0.0,
+       "ci95": [
+        16520736.0,
+        16520736.0
+       ],
+       "n": 3,
+       "values": [
+        16520736.0,
+        16520736.0,
+        16520736.0
+       ]
+      },
+      "train_flops": {
+       "mean": 1624054431744000.0,
+       "sd": 0.0,
+       "ci95": [
+        1624054431744000.0,
+        1624054431744000.0
+       ],
+       "n": 3,
+       "values": [
+        1624054431744000.0,
+        1624054431744000.0,
+        1624054431744000.0
+       ]
+      },
+      "state_bytes": 1253888,
+      "kv_bytes": 1114112,
+      "total_bytes": 2368000,
+      "full_context_4k_bytes": 2368000,
+      "peak_rss_mb": {
+       "mean": 2177.8666666666663,
+       "sd": 27.650376730405064,
+       "ci95": [
+        2109.173779280797,
+        2246.5595540525355
+       ],
+       "n": 3,
+       "values": [
+        2205.6,
+        2150.3,
+        2177.7
+       ]
+      },
+      "throughput_bytes_s": {
+       "mean": 7992.3,
+       "sd": 3083.396161702223,
+       "ci95": [
+        332.10110408680885,
+        15652.498895913192
+       ],
+       "n": 3,
+       "values": [
+        6891.6,
+        5610.3,
+        11475.0
+       ]
+      },
+      "train_seconds": {
+       "mean": 13052.033333333333,
+       "sd": 4158.014826011726,
+       "ci95": [
+        2722.1182302990583,
+        23381.94843636761
+       ],
+       "n": 3,
+       "values": [
+        13789.3,
+        16792.1,
+        8574.7
+       ]
+      },
+      "cpu_core_seconds": {
+       "mean": 52208.1,
+       "sd": 16632.01432990003,
+       "ci95": [
+        10888.55131885437,
+        93527.64868114563
+       ],
+       "n": 3,
+       "values": [
+        55157.2,
+        67168.3,
+        34298.8
+       ]
+      },
+      "training_bytes": 32768000
+     }
+    }
+   }
+  },
+  "result": "FAIL",
+  "decision": {
+   "complete": true,
+   "checks": {
+    "M1_far_context": false,
+    "M2_no_loss": false,
+    "M3_far_vs_transformer": false,
+    "M4_memory": true
+   },
+   "result": "FAIL"
+  },
+  "recorded": "2026-09-30T07:01:55Z"
  }
 ]
