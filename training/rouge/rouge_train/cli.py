@@ -56,6 +56,8 @@ def main() -> None:
     p.add_argument("--k", type=int, default=4)
     p.add_argument("--max-new-tokens", type=int, default=8192)
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--tensor-parallel", type=int, default=1, help="GPUs of one engine (a large teacher uses all)")
+    p.add_argument("--max-model-len", type=int, default=16384)
     p = sub.add_parser("rft-select", help="verified-correct answers become training records")
     p.add_argument("--prompts", required=True)
     p.add_argument("--samples", nargs="+", required=True)
@@ -63,6 +65,9 @@ def main() -> None:
     p.add_argument("--report", required=True)
     p.add_argument("--max-per-prompt", type=int, default=2)
     p.add_argument("--easy-fraction", type=float, default=0.25)
+    p.add_argument("--source-prefix", default="rft", help="record source, e.g. teacher-deepseek-v4-pro")
+    p.add_argument("--hard-out", help="write the prompts solved at most --hard-max-rate of the time (the teacher's work list)")
+    p.add_argument("--hard-max-rate", type=float, default=0.0)
     p = sub.add_parser("compare")
     p.add_argument("--items", required=True)
     p.add_argument("--base", required=True)
@@ -141,7 +146,8 @@ def main() -> None:
         from . import rft
 
         prompts = rft.read_jsonl(args.prompts)
-        settings = {"k": args.k, "max_new_tokens": args.max_new_tokens, "seed": args.seed, "enable_thinking": True}
+        settings = {"k": args.k, "max_new_tokens": args.max_new_tokens, "seed": args.seed, "enable_thinking": True,
+                    "tensor_parallel_size": args.tensor_parallel, "max_model_len": args.max_model_len}
         responses = rft.sample(args.model, prompts, settings)
         rft.write_jsonl(args.out, [{"id": p["id"], "responses": r} for p, r in zip(prompts, responses)])
         return
@@ -150,9 +156,14 @@ def main() -> None:
         from . import rft
 
         samples = {row["id"]: row["responses"] for path in args.samples for row in rft.read_jsonl(path)}
-        records, stats = rft.select(rft.read_jsonl(args.prompts), samples, max_per_prompt=args.max_per_prompt,
-                                    easy_fraction=args.easy_fraction)
+        prompts = rft.read_jsonl(args.prompts)
+        records, stats = rft.select(prompts, samples, max_per_prompt=args.max_per_prompt,
+                                    easy_fraction=args.easy_fraction, source_prefix=args.source_prefix)
         rft.write_jsonl(args.out, records)
+        if args.hard_out:
+            hard = rft.hard_prompts(prompts, samples, args.hard_max_rate)
+            rft.write_jsonl(args.hard_out, hard)
+            stats["hard_prompts"] = len(hard)
         Path(args.report).write_text(json.dumps(stats, indent=1))
         print(json.dumps(stats, indent=1))
         return

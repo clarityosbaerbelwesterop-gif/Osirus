@@ -38,6 +38,7 @@ import job as lj  # noqa: E402
 from train_session import TERMINAL, launch  # noqa: E402
 
 JOB_SCRIPT = "lightning_ai/rouge1_job.sh"
+TEACHER_SCRIPT = "lightning_ai/teacher_job.sh"
 LLAMA_CPP_COMMIT = "f1ea206218210afb913ae2f5d2c51faed35915da"   # as rouge-edge.yml (the edge pipeline's tested commit)
 
 
@@ -68,32 +69,63 @@ def preflight(args) -> dict:
     return prereg
 
 
-def run(args) -> int:
-    from lightning_sdk import Job, Machine
+def teacher_preflight(args) -> dict:
+    """A teacher job answers the hard prompts of an earlier Rouge run with pinned, permissively licensed weights."""
+    manifest = json.loads((ROOT.parents[1] / args.teacher).read_text())
+    if manifest.get("schema") != "rouge.teacher-manifest/1" or manifest["license"]["spdx"] not in ("MIT", "Apache-2.0"):
+        raise SystemExit(f"{args.teacher}: not a pinned MIT/Apache-2.0 teacher manifest")
+    family, n = cost.gpus(args.machine)
+    if family != "B200" or n < 8:
+        raise SystemExit("the teacher's FP4 experts need Blackwell: use B200_X_8")
+    if manifest["weights"]["bytes"] > 0.75 * n * cost.GPU[family][1] * 1e9:
+        raise SystemExit(f"{manifest['source']['repo']} ({manifest['weights']['bytes'] / 1e9:.0f} GB) leaves too little memory on {args.machine}")
+    print(f"[teacher] {manifest['source']['repo']}@{manifest['source']['revision'][:12]} answers the hard prompts of {args.run} "
+          f"on {args.machine} for at most {args.max_hours} h", flush=True)
+    return manifest
 
+
+def run(args) -> int:
     if not os.environ.get("LIGHTNING_API_KEY"):
         raise SystemExit("LIGHTNING_API_KEY is not set")
     sha = os.environ.get("GITHUB_SHA") or args.sha
     if not sha:
         raise SystemExit("commit SHA required")
+    if args.teacher:
+        return run_teacher(args, sha)
     prereg = preflight(args)
     family, n = cost.gpus(args.machine)
-    ledger_path = HERE / "ledger.json"
-    ledger = lj.load_ledger(ledger_path)
     env = {"PYTHONUNBUFFERED": "1", "ROUGE_RUN": args.run, "ROUGE_PREREG": args.prereg, "ROUGE_CONFIG": prereg["config"].removeprefix("training/rouge/"),
            "ROUGE_DATASET": args.dataset, "ROUGE_NPROC": str(n), "ROUGE_EXPECT_GPU": family.split("_")[0],
            "ROUGE_PEAK_TFLOPS": str(cost.GPU[family][0]), "ROUGE_RFT_PROMPTS": str(args.prompts), "ROUGE_RFT_K": str(args.k),
-           "ROUGE_TRAIN_HOURS": str(args.train_hours), "ROUGE_PARENT": args.parent or "",
+           "ROUGE_TRAIN_HOURS": str(args.train_hours), "ROUGE_PARENT": args.parent or "", "ROUGE_EXTRA_DATA": args.extra_data,
            "LLAMA_CPP_COMMIT": LLAMA_CPP_COMMIT,
            # the registry is the only store that persists; the key stays inside Lightning and is never printed
            "LIGHTNING_API_KEY": os.environ["LIGHTNING_API_KEY"]}
-    out = ROOT / "results" / "runs" / args.run
+    return launch_and_record(args, sha, env, JOB_SCRIPT)
+
+
+def run_teacher(args, sha: str) -> int:
+    teacher_preflight(args)
+    family, n = cost.gpus(args.machine)
+    env = {"PYTHONUNBUFFERED": "1", "ROUGE_RUN": args.run, "ROUGE_TEACHER": "../../" + args.teacher, "ROUGE_NPROC": str(n),
+           "ROUGE_EXPECT_GPU": family, "ROUGE_TEACHER_K": str(args.k if args.k != 4 else 2),
+           "ROUGE_TEACHER_PROMPTS": str(args.prompts if args.prompts != 3200 else 1500),
+           "LIGHTNING_API_KEY": os.environ["LIGHTNING_API_KEY"]}
+    return launch_and_record(args, sha, env, TEACHER_SCRIPT, name=f"{args.run}-teacher")
+
+
+def launch_and_record(args, sha: str, env: dict, script: str, name: str | None = None) -> int:
+    from lightning_sdk import Job, Machine
+
+    ledger_path = HERE / "ledger.json"
+    ledger = lj.load_ledger(ledger_path)
+    out = ROOT / "results" / "runs" / (name or args.run)
     out.mkdir(parents=True, exist_ok=True)
     args.interruptible = False                                   # one uninterrupted session: sampling and training are not resumable across machines
-    job, worst = launch(Job, Machine, args, sha, env, args.max_hours, ledger, script=JOB_SCRIPT)
+    job, worst = launch(Job, Machine, args, sha, env, args.max_hours, ledger, script=script)
     if job is None:
         raise SystemExit("no teamspace accepted the job (credits, GPU access, price or permissions)")
-    code = lj.record_and_wait(job, ledger, ledger_path, args.machine, args.max_hours, worst, results=None, name=args.run,
+    code = lj.record_and_wait(job, ledger, ledger_path, args.machine, args.max_hours, worst, results=None, name=name or args.run,
                               prefix="ROUGE_TRAIN")
     lines = (job.logs or "").splitlines()
     phases = [l for l in lines if l.startswith("ROUGE_PHASE")]
@@ -111,7 +143,7 @@ def run(args) -> int:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run", required=True, help="checkpoint name, e.g. rouge-1-rl-001")
-    parser.add_argument("--prereg", required=True, help="experiments/<run>.json (relative to training/rouge)")
+    parser.add_argument("--prereg", default="", help="experiments/<run>.json (relative to training/rouge); required unless --teacher")
     parser.add_argument("--dataset", default="rouge/data/rouge-rft-v1", help="registry path of the built dataset")
     parser.add_argument("--machine", choices=cost.TRAINING_MACHINES, default="H200_X_8")
     parser.add_argument("--max-hours", type=float, required=True)
@@ -120,11 +152,15 @@ def main() -> None:
     parser.add_argument("--k", type=int, default=4)
     parser.add_argument("--parent", default="", help="registry path of the Rouge checkpoint to start from (next iteration)")
     parser.add_argument("--parent-ref", default="", help="its lineage name, as the pre-registration names it")
+    parser.add_argument("--extra-data", default="", help="registry paths of verified teacher data to train on (space separated)")
+    parser.add_argument("--teacher", default="", help="teacher mode: pinned teacher manifest (repo-relative), e.g. models/teachers/deepseek-v4-pro.json")
     parser.add_argument("--sha")
     args = parser.parse_args()
     if not 0 < args.max_hours <= 5.75:
         raise SystemExit("--max-hours must be in (0, 5.75]: a GitHub job lasts at most 6 hours")
-    if args.train_hours >= args.max_hours:
+    if not args.teacher and not args.prereg:
+        raise SystemExit("--prereg is required for a Rouge run")
+    if args.train_hours >= args.max_hours and not args.teacher:
         raise SystemExit("--train-hours must leave time for download, evaluation and sampling")
     sys.exit(run(args))
 

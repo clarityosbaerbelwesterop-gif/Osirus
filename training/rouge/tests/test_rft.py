@@ -76,3 +76,42 @@ class InstallFitTest(unittest.TestCase):
         self.assertFalse(install.fits(q4, 24 * 2**30, "Darwin"))
         self.assertFalse(install.fits(q4, 16 * 2**30, "Darwin"))
         self.assertTrue(install.fits(q4, None, "Darwin"))
+
+
+class TeacherTest(unittest.TestCase):
+    def test_hard_prompts_are_those_the_model_never_solved(self):
+        prompts = [prompt("a", 1), prompt("b", 2)]
+        samples = {"a": ["Answer: 1", "Answer: 0"], "b": ["Answer: 0", "Answer: 3"]}
+        self.assertEqual([p["id"] for p in rft.hard_prompts(prompts, samples)], ["b"])
+        self.assertEqual([p["id"] for p in rft.hard_prompts(prompts, samples, 0.5)], ["a", "b"])
+        records, _ = rft.select(prompts, samples, easy_fraction=1.0, source_prefix="teacher-deepseek-v4-pro")
+        self.assertEqual([r["source"] for r in records], ["teacher-deepseek-v4-pro-openr1-math"])
+
+    def test_teacher_pin_accepts_mit_text_and_refuses_other_licences(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
+        import pin_base
+
+        raw = {"repo": "deepseek-ai/DeepSeek-V4-Pro", "revision": "b" * 40, "gated": False, "private": False,
+               "license": {"cardLicense": "mit", "licenseFileSha256": "c" * 64,
+                           "licenseHead": "MIT License\n\nPermission is hereby granted, free of charge"},
+               "weights": {"shards": 1, "bytes": 10, "allHashed": True}, "files": [], "config": {}}
+        pinned = pin_base.pin_teacher(raw, run_id="1", decision="d", today="2026-09-30")
+        self.assertEqual(pinned["license"]["spdx"], "MIT")
+        for bad in ({"cardLicense": "other", "licenseHead": ""}, {"cardLicense": "mit", "licenseHead": "DeepSeek License Agreement"}):
+            with self.assertRaises(SystemExit):
+                pin_base.pin_teacher(dict(raw, license=bad), run_id="1", decision="d", today="t")
+
+    def test_teacher_job_needs_eight_b200(self):
+        import argparse
+
+        sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "lightning_ai"))
+        import rouge1_session
+
+        teacher = Path(__file__).resolve().parents[3] / "models" / "teachers" / "deepseek-v4-pro.json"
+        if not teacher.exists():
+            self.skipTest("teacher not pinned yet")
+        args = argparse.Namespace(teacher="models/teachers/deepseek-v4-pro.json", machine="H200_X_8", run="rouge-1-rl-001", max_hours=1.5)
+        with self.assertRaises(SystemExit):
+            rouge1_session.teacher_preflight(args)
+        args.machine = "B200_X_8"
+        self.assertEqual(rouge1_session.teacher_preflight(args)["license"]["spdx"], "MIT")

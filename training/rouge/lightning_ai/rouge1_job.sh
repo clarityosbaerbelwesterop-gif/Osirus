@@ -16,7 +16,9 @@
 # Environment: ROUGE_RUN (checkpoint name), ROUGE_PREREG (experiments/<name>.json), ROUGE_DATASET
 # (registry path of the built dataset), ROUGE_NPROC, ROUGE_EXPECT_GPU, ROUGE_PEAK_TFLOPS, ROUGE_RFT_PROMPTS,
 # ROUGE_RFT_K, ROUGE_TRAIN_HOURS, ROUGE_PARENT (optional registry path of a Rouge checkpoint to start from:
-# the next RSI iteration samples from and trains the latest promoted Rouge instead of the base).
+# the next RSI iteration samples from and trains the latest promoted Rouge instead of the base),
+# ROUGE_EXTRA_DATA (optional registry paths of verified teacher data, teacher_job.sh). The prompts the model
+# never solved are written to the reports (hard.jsonl): the teacher's work list for the next iteration.
 set -uo pipefail
 W=/tmp/rouge1
 BASE="$W/base"; DATA="$W/data"; RUN="$W/run"; EVAL="$W/eval"; SAMPLES="$W/samples"
@@ -99,8 +101,14 @@ done
 wait
 phase SELECT
 python -m rouge_train.cli rft-select --prompts "$W/prompts.jsonl" --samples "$SAMPLES"/out.*.jsonl \
-  --out "$W/rft.jsonl" --report "$W/rft-report.json" || fail "selection" 31
+  --out "$W/rft.jsonl" --report "$W/rft-report.json" --hard-out "$W/hard.jsonl" || fail "selection" 31
 cat "$DATA/train.jsonl" "$W/rft.jsonl" > "$W/train.jsonl"
+# teacher data (verified DeepSeek-V4-Pro answers from an earlier teacher job), registry paths separated by spaces
+for extra in ${ROUGE_EXTRA_DATA:-}; do
+  python lightning_ai/storage.py download "$extra" "$W/extra/$(basename "$extra")" || fail "extra data $extra" 29
+  find "$W/extra/$(basename "$extra")" -name 'teacher.jsonl' -exec cat {} + >> "$W/train.jsonl"
+  phase EXTRA_DATA "$extra"
+done
 phase SELECTED "$(python -c "import json; r=json.load(open('$W/rft-report.json')); print(r['records'], 'records; sample accuracy', round(r['sample_accuracy'], 3), r['buckets'])")"
 
 phase TRAIN
@@ -132,7 +140,7 @@ print('changed tensors', d['changed'], 'of', d['compared'])"
 phase SAVE
 python -m rouge_train.cli manifest --config "$W/config.json" --merged "$RUN/model" --report "$W/report.json" \
   --storage "lightning-registry://rouge-1/$ROUGE_RUN" --out "$W/checkpoints" > "$W/manifest-path.txt" || fail "checkpoint manifest" 36
-mkdir -p "$W/reports" && cp "$W"/{verify-base.json,verify-data.json,rft-report.json,report.json,weight-delta.json,config.json,train.log} \
+mkdir -p "$W/reports" && cp "$W"/{verify-base.json,verify-data.json,rft-report.json,hard.jsonl,report.json,weight-delta.json,config.json,train.log} \
   "$RUN"/{train-report.json,metrics.jsonl} "$EVAL"/{base.jsonl,rouge.jsonl} "$W/reports/" && cp -r "$W/checkpoints" "$W/reports/"
 python lightning_ai/storage.py upload "$W/reports" "rouge/runs/$ROUGE_RUN-reports" || fail "report upload" 37
 python lightning_ai/storage.py upload "$RUN/model" "rouge/models/$ROUGE_RUN" || fail "model upload" 38

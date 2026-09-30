@@ -1,6 +1,6 @@
 {
   "schema": "rouge.data-registry/1",
-  "version": "2026-09-28.4",
+  "version": "2026-09-30.1",
   "note": "Candidates are not trainable until approved: licence verified against the source at a pinned revision, and any teacher-model outputs covered by terms that permit training. training/rouge/scripts/dataset_licenses.py reads the Hub metadata on a CI runner.",
   "datasets": [
     {
@@ -74,7 +74,10 @@
       "license": "CC-BY-4.0",
       "status": "approved",
       "role": "train",
-      "domains": ["math", "reasoning"],
+      "domains": [
+        "math",
+        "reasoning"
+      ],
       "stage": "reasoning",
       "teacherOutputs": {
         "model": "DeepSeek-R1 (MIT), QwQ-32B (Apache-2.0); per-row generation_model, others excluded",
@@ -94,7 +97,10 @@
       "license": "CC-BY-4.0",
       "status": "approved",
       "role": "train",
-      "domains": ["code", "reasoning"],
+      "domains": [
+        "code",
+        "reasoning"
+      ],
       "stage": "reasoning",
       "teacherOutputs": {
         "model": "DeepSeek-R1 (MIT)",
@@ -114,7 +120,10 @@
       "license": "Apache-2.0",
       "status": "approved",
       "role": "train",
-      "domains": ["math", "reasoning"],
+      "domains": [
+        "math",
+        "reasoning"
+      ],
       "stage": "reasoning",
       "teacherOutputs": {
         "model": "DeepSeek-R1 (MIT)",
@@ -134,7 +143,9 @@
       "license": "MIT",
       "status": "rejected",
       "role": "train",
-      "domains": ["preference"],
+      "domains": [
+        "preference"
+      ],
       "stage": "preference",
       "teacherOutputs": {
         "model": "includes GPT-4 completions and GPT-4 ratings",
@@ -173,7 +184,11 @@
       "license": "generated-in-house",
       "status": "candidate",
       "role": "eval-only",
-      "domains": ["reasoning", "format", "german"],
+      "domains": [
+        "reasoning",
+        "format",
+        "german"
+      ],
       "stage": "evaluation"
     },
     {
@@ -183,7 +198,11 @@
       "license": "CC-BY-SA-4.0",
       "status": "candidate",
       "role": "eval-only",
-      "domains": ["math", "german", "english"],
+      "domains": [
+        "math",
+        "german",
+        "english"
+      ],
       "stage": "evaluation",
       "licenseVerified": {
         "at": "2026-09-28",
@@ -198,7 +217,9 @@
       "license": "CC-BY-4.0",
       "status": "candidate",
       "role": "eval-only",
-      "domains": ["code"],
+      "domains": [
+        "code"
+      ],
       "stage": "evaluation",
       "licenseVerified": {
         "at": "2026-09-28",
@@ -213,7 +234,9 @@
       "license": "Apache-2.0",
       "status": "candidate",
       "role": "eval-only",
-      "domains": ["instruction-following"],
+      "domains": [
+        "instruction-following"
+      ],
       "stage": "evaluation",
       "licenseVerified": {
         "at": "2026-09-28",
@@ -228,7 +251,11 @@
       "license": "CC-BY-4.0",
       "status": "candidate",
       "role": "train",
-      "domains": ["multilingual", "german", "reasoning"],
+      "domains": [
+        "multilingual",
+        "german",
+        "reasoning"
+      ],
       "stage": "sft",
       "review": "gated on the Hub: needs an owner Hugging Face token and accepted terms before it can be read"
     },
@@ -238,7 +265,11 @@
       "license": "Apache-2.0",
       "status": "approved",
       "role": "train",
-      "domains": ["multilingual", "german", "writing"],
+      "domains": [
+        "multilingual",
+        "german",
+        "writing"
+      ],
       "stage": "sft",
       "revision": "f9ea04583f02a8f86404ff6c58bf75fe637df8a2",
       "licenseVerified": {
@@ -254,7 +285,11 @@
       "license": "Apache-2.0",
       "status": "approved",
       "role": "train",
-      "domains": ["conversation", "german", "writing"],
+      "domains": [
+        "conversation",
+        "german",
+        "writing"
+      ],
       "stage": "sft",
       "revision": "179dd21fc55192153d94adb0e0ce8f69e222bf75",
       "licenseVerified": {
@@ -263,6 +298,28 @@
         "hubLicense": "apache-2.0"
       },
       "filters": "split train; German assistant replies with rank 0, review passed, not deleted, not synthetic; the conversation path to the root as context"
+    },
+    {
+      "id": "deepseek-v4-pro-teacher",
+      "source": "teacher:hf:deepseek-ai/DeepSeek-V4-Pro (self-hosted weights on Lightning; answers to prompts Rouge never solved, code-verified)",
+      "license": "MIT",
+      "status": "approved",
+      "role": "train",
+      "domains": [
+        "math",
+        "reasoning"
+      ],
+      "stage": "reasoning",
+      "revision": "b5968e9190ef611bbf34a7229255be88a0e937c1",
+      "teacherOutputs": {
+        "model": "DeepSeek-V4-Pro (MIT-licensed weights, self-hosted; the DeepSeek API and its terms are not used)",
+        "termsPermitTraining": true
+      },
+      "licenseVerified": {
+        "at": "2026-09-30",
+        "evidence": "rouge-base-manifest.yml run 36770848733: Hub card licence mit, ungated, 64 shards all hashed; the teacher pin checks the LICENSE text is MIT"
+      },
+      "filters": "only answers that pass the prompt's code check (evaluate.check); prompts come from the rft-v1 pool, never from an evaluation set"
     }
   ]
 }

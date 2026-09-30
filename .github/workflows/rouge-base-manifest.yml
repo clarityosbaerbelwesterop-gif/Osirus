@@ -23,6 +23,11 @@ on:
         description: write the result to models/rouge-1/base.json and commit it (rouge/* branches only)
         type: boolean
         default: false
+      pin_as:
+        description: "base: models/rouge-1/base.json (Apache-2.0 only); teacher: models/teachers/<name>.json (MIT or Apache-2.0)"
+        type: choice
+        options: [base, teacher]
+        default: base
       decision:
         description: owner decision recorded in the pinned manifest (with pin)
         type: string
@@ -73,13 +78,20 @@ jobs:
         if: inputs.pin == true && startsWith(github.ref_name, 'rouge/')
         env:
           DECISION: ${{ inputs.decision }}
+          PIN_AS: ${{ inputs.pin_as }}
+          REPO: ${{ inputs.repo }}
         run: |
           test -n "$DECISION" || { echo "decision is required with pin"; exit 1; }
-          python3 training/rouge/scripts/pin_base.py "$RUNNER_TEMP/base-manifest.json" models/rouge-1/base.json \
-            --run-id "$GITHUB_RUN_ID" --decision "$DECISION"
+          if [ "$PIN_AS" = teacher ]; then
+            out="models/teachers/$(basename "$REPO" | tr '[:upper:]' '[:lower:]').json"
+          else
+            out=models/rouge-1/base.json
+          fi
+          python3 training/rouge/scripts/pin_base.py "$RUNNER_TEMP/base-manifest.json" "$out" \
+            --run-id "$GITHUB_RUN_ID" --decision "$DECISION" --role "$PIN_AS"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add models/rouge-1/base.json
-          git commit -m "rouge(base): pin $(python3 -c "import json; s=json.load(open('models/rouge-1/base.json'))['source']; print(s['repo']+'@'+s['revision'][:12])") as Rouge 1 base (run $GITHUB_RUN_ID)"
+          git add "$out"
+          git commit -m "rouge($PIN_AS): pin $(python3 -c "import json,sys; s=json.load(open(sys.argv[1]))['source']; print(s['repo']+'@'+s['revision'][:12])" "$out") (run $GITHUB_RUN_ID)"
           for i in 1 2 3; do git pull --rebase -q origin "$GITHUB_REF_NAME" && git push -q origin "HEAD:$GITHUB_REF_NAME" && exit 0; sleep $((i*5)); done
           exit 1

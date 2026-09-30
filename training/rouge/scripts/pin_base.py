@@ -20,6 +20,9 @@ from pathlib import Path
 
 TOKENIZER_FILES = ("chat_template.jinja", "merges.txt", "tokenizer.json", "tokenizer_config.json", "vocab.json")
 SPDX = {"apache-2.0": "Apache-2.0"}
+# A teacher is never trained or shipped; its self-hosted outputs may train Rouge when its weights'
+# licence permits any use (MIT, Apache-2.0). API terms never apply to self-hosted weights.
+TEACHER_SPDX = {"apache-2.0": "Apache-2.0", "mit": "MIT"}
 
 
 def pin(raw: dict, previous: dict | None, *, run_id: str, decision: str, today: str) -> dict:
@@ -90,16 +93,47 @@ def pin(raw: dict, previous: dict | None, *, run_id: str, decision: str, today: 
     return pinned
 
 
+def pin_teacher(raw: dict, *, run_id: str, decision: str, today: str) -> dict:
+    card = (raw["license"].get("cardLicense") or "").lower()
+    head = raw["license"].get("licenseHead") or ""
+    if card not in TEACHER_SPDX:
+        raise SystemExit(f"refusing teacher {raw['repo']}: licence {card!r} is not MIT or Apache-2.0")
+    if card == "mit" and "Permission is hereby granted" not in head:
+        raise SystemExit(f"refusing teacher {raw['repo']}: the LICENSE file is not the MIT text")
+    if raw.get("gated") or raw.get("private") or not raw["weights"]["allHashed"]:
+        raise SystemExit(f"refusing teacher {raw['repo']}: gated, private or not fully hashed")
+    return {
+        "schema": "rouge.teacher-manifest/1",
+        "role": f"Teacher for Rouge 1 ({decision}). Self-hosted weights answer prompts; only code-verified answers "
+                "train Rouge. The teacher itself is never trained, shipped or named as Rouge's base.",
+        "source": {"hub": "https://huggingface.co", "repo": raw["repo"], "revision": raw["revision"], "pinnedAt": today,
+                   "verifiedBy": f"GitHub Actions run {run_id} (rouge-base-manifest.yml): Hub API + LFS sha256"},
+        "license": {"spdx": TEACHER_SPDX[card], "cardLicense": card, "fileSha256": raw["license"].get("licenseFileSha256"),
+                    "head": head[:300]},
+        "weights": raw["weights"],
+        "parameters": {"safetensorsTotal": raw.get("safetensorsTotal"), "byDtype": raw.get("safetensorsParameters")},
+        "config": raw.get("config"),
+        "files": raw["files"],
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("raw")
     parser.add_argument("out")
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--decision", required=True)
+    parser.add_argument("--role", choices=["base", "teacher"], default="base")
     args = parser.parse_args()
     out = Path(args.out)
-    previous = json.loads(out.read_text()) if out.exists() else None
     today = dt.datetime.now(dt.timezone.utc).date().isoformat()
+    if args.role == "teacher":
+        pinned = pin_teacher(json.loads(Path(args.raw).read_text()), run_id=args.run_id, decision=args.decision, today=today)
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(pinned, indent=1) + "\n")
+        print(f"pinned teacher {pinned['source']['repo']}@{pinned['source']['revision']} ({pinned['weights']['bytes']} bytes)")
+        return
+    previous = json.loads(out.read_text()) if out.exists() else None
     pinned = pin(json.loads(Path(args.raw).read_text()), previous, run_id=args.run_id, decision=args.decision, today=today)
     out.write_text(json.dumps(pinned, indent=1) + "\n")
     print(f"pinned {pinned['source']['repo']}@{pinned['source']['revision']} "

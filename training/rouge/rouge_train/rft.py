@@ -22,11 +22,13 @@ from .evaluate import check
 
 
 def sample(model_path: str, prompts: list[dict], settings: dict) -> list[list[str]]:
-    """k responses per prompt from one vLLM engine (one GPU; the job runs one per GPU)."""
+    """k responses per prompt from one vLLM engine: one GPU per engine for the student (the job runs one
+    engine per GPU), all GPUs of the machine in one tensor-parallel engine for a large teacher."""
     from vllm import LLM, SamplingParams
 
     llm = LLM(model=model_path, seed=settings.get("seed", 0), max_model_len=settings.get("max_model_len", 16384),
-              gpu_memory_utilization=settings.get("gpu_memory_utilization", 0.9))
+              gpu_memory_utilization=settings.get("gpu_memory_utilization", 0.9),
+              tensor_parallel_size=settings.get("tensor_parallel_size", 1))
     params = SamplingParams(n=settings["k"], temperature=settings.get("temperature", 1.0), top_p=settings.get("top_p", 0.95),
                             top_k=settings.get("top_k", 20), max_tokens=settings["max_new_tokens"], seed=settings.get("seed", 0))
     tokenizer = llm.get_tokenizer()
@@ -40,8 +42,18 @@ def keep_easy(prompt_id: str, fraction: float) -> bool:
     return digest / 0xFFFFFFFF < fraction
 
 
+def hard_prompts(prompts: list[dict], samples: dict[str, list[str]], max_rate: float = 0.0) -> list[dict]:
+    """Prompts the model solved at most `max_rate` of the time: the teacher's work list."""
+    hard = []
+    for prompt in prompts:
+        responses = samples.get(prompt["id"])
+        if responses and sum(check(prompt["check"], r) for r in responses) / len(responses) <= max_rate:
+            hard.append(prompt)
+    return hard
+
+
 def select(prompts: list[dict], samples: dict[str, list[str]], *, max_per_prompt: int = 2,
-           easy_fraction: float = 0.25, opens_thinking: bool = True) -> tuple[list[dict], dict]:
+           easy_fraction: float = 0.25, opens_thinking: bool = True, source_prefix: str = "rft") -> tuple[list[dict], dict]:
     records, buckets, by_source = [], Counter(), Counter()
     correct_total = answered = 0
     for prompt in prompts:
@@ -60,7 +72,7 @@ def select(prompts: list[dict], samples: dict[str, list[str]], *, max_per_prompt
         kept = [r for r, ok in zip(responses, verdicts) if ok][:limit]
         for n, response in enumerate(kept):
             content = ("<think>\n" + response.lstrip("\n")) if (opens_thinking and "</think>" in response and "<think>" not in response) else response
-            records.append({"id": f"rft-{prompt['id']}-{n}", "source": f"rft-{prompt.get('source', 'self')}",
+            records.append({"id": f"{source_prefix}-{prompt['id']}-{n}", "source": f"{source_prefix}-{prompt.get('source', 'self')}",
                             "messages": [*prompt["messages"], {"role": "assistant", "content": content}],
                             "meta": {"pass_rate": rate, "k": len(responses)}})
             by_source[prompt.get("source", "self")] += 1

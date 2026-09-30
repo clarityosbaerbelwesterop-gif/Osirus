@@ -22,7 +22,7 @@ on:
     inputs:
       task:
         type: choice
-        options: [prepare, prepare-parts, train, rouge1]
+        options: [prepare, prepare-parts, train, rouge1, teacher]
         default: prepare
       corpus:
         default: pretrain-v3
@@ -63,6 +63,12 @@ on:
       prereg:
         description: "rouge1: pre-registration (relative to training/rouge)"
         default: experiments/rouge-1-rl-001.json
+      extra_data:
+        description: "rouge1: verified teacher data to train on (registry paths, space separated), e.g. rouge/data/teacher-rouge-1-rl-001"
+        default: ""
+      teacher:
+        description: "teacher: pinned teacher manifest; answers the hard prompts of the Rouge run named in 'run' (B200_X_8)"
+        default: models/teachers/deepseek-v4-pro.json
 
 permissions:
   contents: read
@@ -71,7 +77,7 @@ concurrency:
   # paid training shares the tournament lock (one credit check at a time); a push only registers the
   # workflow, and prepare (worst case 2.4 credits) fits the balance next to a T4 tournament level
   # (worst case 1.35), so neither waits behind a level
-  group: rouge-native-${{ github.event_name == 'workflow_dispatch' && (inputs.task == 'train' || inputs.task == 'rouge1') && 'lightning' || format('train-{0}', github.run_id) }}
+  group: rouge-native-${{ github.event_name == 'workflow_dispatch' && (inputs.task == 'train' || inputs.task == 'rouge1' || inputs.task == 'teacher') && 'lightning' || format('train-{0}', github.run_id) }}
   cancel-in-progress: false
 
 env:
@@ -293,7 +299,7 @@ jobs:
 
   rouge1:
     # Paid: the owner approves every run of this job (protected environment).
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.task == 'rouge1' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.task == 'rouge1' || inputs.task == 'teacher') }}
     runs-on: ubuntu-latest
     environment: rouge-gpu
     timeout-minutes: 355
@@ -307,21 +313,30 @@ jobs:
       - run: python -m pip install lightning-sdk
       - name: Ceiling before launch
         run: python3 "$ROUGE/lightning_ai/cost.py" status
-      - name: One RSI iteration of Rouge 1 on Lightning (stopped at the deadline by the launcher)
+      - name: One RSI iteration of Rouge 1, or a teacher job, on Lightning (stopped at the deadline by the launcher)
         env:
           LIGHTNING_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+          TASK: ${{ inputs.task }}
           RUN: ${{ inputs.run }}
           PREREG: ${{ inputs.prereg }}
+          EXTRA_DATA: ${{ inputs.extra_data }}
+          TEACHER: ${{ inputs.teacher }}
           MACHINE: ${{ inputs.machine }}
           MAX_HOURS: ${{ inputs.max_hours }}
         run: |
           test -n "$RUN" || { echo "run name required (rouge-1-rl-<nnn>)"; exit 1; }
-          cd "$ROUGE" && python lightning_ai/rouge1_session.py --run "$RUN" --prereg "$PREREG" --machine "$MACHINE" --max-hours "$MAX_HOURS"
+          cd "$ROUGE"
+          if [ "$TASK" = teacher ]; then
+            python lightning_ai/rouge1_session.py --run "$RUN" --teacher "$TEACHER" --machine "$MACHINE" --max-hours "$MAX_HOURS"
+          else
+            python lightning_ai/rouge1_session.py --run "$RUN" --prereg "$PREREG" --machine "$MACHINE" --max-hours "$MAX_HOURS" \
+              --extra-data "$EXTRA_DATA"
+          fi
       - name: Commit the ledger and run records (hashes and numbers; no weights)
         if: ${{ always() && startsWith(github.ref_name, 'rouge/') }}
         env:
           BRANCH: ${{ github.ref_name }}
-          RUN: ${{ inputs.run }}
+          RUN: ${{ inputs.task == 'teacher' && format('{0}-teacher', inputs.run) || inputs.run }}
         run: |
           stash="$RUNNER_TEMP/stash"; mkdir -p "$stash"
           cp "$ROUGE/lightning_ai/ledger.json" "$stash/ledger.json"
