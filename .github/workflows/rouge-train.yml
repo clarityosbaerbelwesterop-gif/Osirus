@@ -44,7 +44,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: rouge-native-lightning
+  # paid training shares the tournament lock (one credit check at a time); a push only registers the
+  # workflow, and prepare (worst case 2.4 credits) fits the balance next to a T4 tournament level
+  # (worst case 1.35), so neither waits behind a level
+  group: rouge-native-${{ github.event_name == 'workflow_dispatch' && inputs.task == 'train' && 'lightning' || format('train-{0}', github.run_id) }}
   cancel-in-progress: false
 
 env:
