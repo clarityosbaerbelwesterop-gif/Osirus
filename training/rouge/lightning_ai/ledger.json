@@ -24,6 +24,17 @@
      "status": "Completed",
      "seconds": 121,
      "runs": 0
+    },
+    {
+     "name": "rouge-dryrun-36696118348",
+     "machine": "T4",
+     "started": "2026-09-30T09:26:49Z",
+     "max_hours": 0.5,
+     "worst_case_usd": 0.15,
+     "cost_usd": 0.0494,
+     "status": "Completed",
+     "seconds": 301,
+     "runs": 1
     }
    ]
   }

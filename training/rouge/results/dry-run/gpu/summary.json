@@ -1,0 +1,87 @@
+{
+ "schema": "rouge.dryrun/1",
+ "started": "2026-09-30T09:29:30Z",
+ "device": "cuda",
+ "gpu": "Tesla T4",
+ "precision": "bf16",
+ "code_sha": "local",
+ "stages": {
+  "data": {
+   "ok": true,
+   "manifest_sha256": "30b428e03268877817ce27f70083eb53252bdcc8e22f2c31ffebb42493eda90f"
+  },
+  "train": {
+   "killed_exit": 75,
+   "resumed_exit": 0,
+   "resumed_from": "[train] resumed at step 30 from step_0000030",
+   "final_loss": 4.65827262878418,
+   "steps": 60,
+   "ok": true
+  },
+  "eval": {
+   "ok": true,
+   "val": {
+    "math_synth": {
+     "nats_per_token": 3.6048,
+     "bpb": 2.5554
+    }
+   },
+   "tasks": {
+    "math_synth": 0.0,
+    "algo_synth": 0.0
+   },
+   "decode_tokens_per_s": 160.6
+  },
+  "registry": {
+   "ok": true,
+   "name": "rouge-r1-1m-001",
+   "entry_hash": "dc4b6f9f4ee43b0b7f28ef3ec4fc127f366de608d828369f438406a74ad7e6db"
+  },
+  "cri": {
+   "ok": true,
+   "output": "{\"decision\": {\"level\": \"A\", \"champion_bpb\": 3.3288, \"challenger_bpb\": 2.9411, \"gain_bpb\": 0.3877, \"worst_domain_regression_bpb\": -0.3877, \"task_drop\": 0.0, \"decision\": \"continue\"}, \"control_plane_intact\": true}",
+   "error": null
+  },
+  "posttrain_sft": {
+   "ok": true,
+   "error": null
+  }
+ },
+ "bench": {
+  "device": "cuda",
+  "gpu": "Tesla T4",
+  "dtype": "torch.bfloat16",
+  "tokens": 8192,
+  "d": 1024,
+  "hidden": 4096,
+  "ms": {
+   "dense": {
+    "train": 70.808,
+    "infer": 24.193
+   },
+   "ternary_fakequant": {
+    "train": 70.143,
+    "infer": 24.938
+   },
+   "int8_fakequant": {
+    "train": 71.792,
+    "infer": 25.303
+   },
+   "monarch4": {
+    "train": 48.063,
+    "infer": 14.366
+   },
+   "ternary_packed_unfused": {
+    "infer": 24.448
+   },
+   "ffn_dense": {
+    "train": 112.243
+   },
+   "ffn_moe8_top2": {
+    "train": 111.953
+   }
+  }
+ },
+ "ok": true,
+ "finished": "2026-09-30T09:30:34Z"
+}
