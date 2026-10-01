@@ -3,9 +3,10 @@ name: Rouge exo
 # Rouge on exo (github.com/exo-explore/exo, Apache-2.0): a checkpoint of Rouge's architecture class
 # (Qwen3_5ForConditionalGeneration) converted to MLX, served by exo from a read-only local directory
 # (no hub download), placed through exo's API and scored by rouge_train.evaluate over the
-# OpenAI-compatible endpoint. Then the same exo serves a real small model of the same family
-# (Qwen3.5-2B) to measure throughput. Free runner, Linux CPU backend (exo's MlxCpu); the owner's Macs
-# use the Metal backend with the same steps. No secrets, no weights leave the runner.
+# OpenAI-compatible endpoint. Free runner, Linux CPU backend (exo's MlxCpu): this proves the path,
+# not speed. A real Qwen3.5-2B (8-bit) on this backend loaded and generated, but at about 0.07 tokens/s
+# (run 36844724875), so throughput is measured on the owner's Macs (Metal backend, same steps).
+# No secrets, no weights leave the runner.
 
 on:
   push:
@@ -14,10 +15,6 @@ on:
       - ".github/workflows/rouge-exo.yml"
       - "training/rouge/serve/exo_runtime.py"
   workflow_dispatch:
-    inputs:
-      real_model:
-        description: "exo model card of a real small model of Rouge's family, served after the smoke test"
-        default: mlx-community/Qwen3.5-2B-MLX-8bit
 
 permissions:
   contents: read
@@ -73,14 +70,6 @@ jobs:
           python training/rouge/serve/exo_runtime.py card --models-dir "$RUNNER_TEMP/exo-models" --model-id "$MODEL_ID" \
             --cards-dir "$HOME/exo-home/custom_model_cards" --quantization 4bit --base-model "Rouge CI smoke (tiny, random)"
           ls -la "$RUNNER_TEMP/exo-models"/*; cat "$HOME/exo-home/custom_model_cards/"*.toml
-      - name: Real small model of Rouge's family, staged locally like a Rouge checkpoint (dispatch only)
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        env:
-          REAL: ${{ inputs.real_model }}
-        run: |
-          start=$(date +%s)
-          python -c "import os, sys; from huggingface_hub import snapshot_download; r = os.environ['REAL']; snapshot_download(r, local_dir=sys.argv[1] + '/' + r.replace('/', '--'))" "$RUNNER_TEMP/exo-models"
-          echo "staged $REAL in $(( $(date +%s) - start )) s: $(du -sh "$RUNNER_TEMP/exo-models/${REAL//\//--}" | cut -f1)"
       - name: Start exo (offline, local weights only), place the checkpoint, chat, and score it with the Rouge harness
         env:
           EXO_HOME: exo-home
@@ -96,34 +85,6 @@ jobs:
             --items <(python -c "import json; from rouge_train import generators; [print(json.dumps(i)) for i in generators.eval_items('exo-ci', 3)]") \
             --out "$RUNNER_TEMP/exo-smoke.jsonl" --max-new-tokens 32
           python -c "import json,sys; rows=[json.loads(l) for l in open(sys.argv[1])]; assert len(rows) == 3, rows; print('scored', len(rows), 'items through exo')" "$RUNNER_TEMP/exo-smoke.jsonl"
-      - name: Real small model of Rouge's family on the same exo (load time and throughput on this CPU)
-        if: ${{ github.event_name == 'workflow_dispatch' }}
-        env:
-          REAL: ${{ inputs.real_model }}
-        working-directory: training/rouge
-        run: |
-          start=$(date +%s)
-          python serve/exo_runtime.py place --model-id "$REAL" > /dev/null
-          echo "placed and loaded in $(( $(date +%s) - start )) s"
-          python - <<'EOF'
-          import json, os, time, urllib.request
-          model = os.environ["REAL"]
-          def ask(prompt, max_tokens):
-              body = {"model": model, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens,
-                      "temperature": 0.0, "stream": False}
-              req = urllib.request.Request("http://127.0.0.1:52415/v1/chat/completions", json.dumps(body).encode(),
-                                           {"Content-Type": "application/json"})
-              start = time.time()
-              reply = json.loads(urllib.request.urlopen(req, timeout=1200).read())
-              return reply, time.time() - start
-          ask("Hi", 1)   # warm-up
-          reply, seconds = ask("What is 17 * 23? Answer with the number.", 128)
-          usage = reply.get("usage") or {}
-          out = usage.get("completion_tokens") or 0
-          print("EXO_REAL", json.dumps({"model": model, "seconds": round(seconds, 1), "usage": usage,
-                                         "tokens_per_s": round(out / seconds, 2) if seconds else None,
-                                         "reply": (reply["choices"][0]["message"].get("content") or "")[-300:]}))
-          EOF
       - name: exo log (tail)
         if: always()
         run: tail -n 80 "$RUNNER_TEMP/exo.log" || true

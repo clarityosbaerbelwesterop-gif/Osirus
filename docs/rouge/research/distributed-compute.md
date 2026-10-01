@@ -29,7 +29,20 @@ Each project below was checked from its source repository.
   4. Chat answers over exo's OpenAI-compatible API (random weights, so the text is noise).
   5. `rouge_train.cli generate --backend openai` scores 3 eval items through exo.
 - **Linux note:** exo's lock file installs a CUDA build of an MLX fork next to PyPI's `mlx-cpu` 0.31.2, and their native libraries do not link (`undefined symbol`). The official PyPI pair `mlx==0.32.0` + `mlx-cpu==0.32.0` works. On Apple silicon (Metal) exo's own lock is used unchanged.
-- **Known harmless warning:** for a custom model id exo first asks the Hugging Face hub for a file list; the request fails (the id is not on the hub) and exo uses the local file list.
+- **Offline:** exo runs with `EXO_OFFLINE=true` (CI and `install.py`). It then serves only weights already on the device and never asks a hub, as Rouge is meant to run. Without it, exo asks the Hugging Face hub for a file list even for local weights.
+- **Readiness:** `/instance/await` answers as soon as the instance exists, before its weights are loaded. `exo_runtime.place` therefore waits for every runner of the instance to report ready in `/state`, and stops on a failed runner or download.
+- **Real model on the Linux CPU backend** (run 36844724875, `mlx-community/Qwen3.5-2B-MLX-8bit`, 2.66 GB, staged locally in 13 s):
+
+  | phase | time |
+  |---|---|
+  | load the weights | 0.35 s |
+  | warm-up prefill | 230 s |
+  | warm-up decode, 50 tokens | 765 s (about 0.07 tokens/s) |
+  | prefill of an 11-token prompt | 127 s |
+
+  - The path works with real weights of Rouge's family.
+  - exo's MlxCpu backend on x86 is not a usable runtime; it is not exo's target. Throughput is measured on Apple silicon (Metal).
+  - On machines without Apple silicon, Rouge runs on llama.cpp (GGUF), the default of `install.py`.
 - **Open:** measure an exo cluster of the owner's devices against llama.cpp on one device, with the same eval items, once the first gated Rouge 1 checkpoint exists.
 
 ## Decentralised RL and training: patterns for later iterations
