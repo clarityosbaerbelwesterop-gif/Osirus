@@ -433,6 +433,8 @@ export class RuntimeRepository {
     secondaryCapabilities: string[];
     complexity: "low" | "medium" | "high";
     requestId: string;
+    /** User-selected working mode; persisted on the run for audit. */
+    mode?: string;
   }): Promise<{ run: RunRow; created: boolean }> {
     const id = randomUUID();
     const rows = await queryAs<RunRow & { created: boolean }>(
@@ -465,7 +467,10 @@ export class RuntimeRepository {
         input.primaryCapability,
         input.secondaryCapabilities,
         input.complexity,
-        JSON.stringify({ requestId: input.requestId }),
+        JSON.stringify({
+          requestId: input.requestId,
+          ...(input.mode ? { mode: input.mode } : {}),
+        }),
         input.requestId,
       ],
     );
