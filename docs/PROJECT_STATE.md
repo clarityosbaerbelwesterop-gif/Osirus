@@ -2,6 +2,8 @@
 
 Audit date: 2026-10-01 · Audited ref: `main` @ `716f1f7` · Method: full tree enumeration + direct file reads + Neon DB catalog inspection (GitHub code search is **not indexing this repo**, so all "absent" claims were verified by enumeration).
 
+**Phase F update (2026-10-01):** security fix batch merged to `main` via PR #38 (squash `cc2cf091`). AUTH-1/2/3/4, CONN-1, DB-2 and DB-4 are CLOSED with regression tests; DB-1 stays a documented residual (no in-database secret primitive exists); CI hardening ships as `docs/security/ci-workflow-hardening.patch` for the operator to apply (token lacks `workflow` scope). Migration `020_function_execute_grants.sql` applied to production Neon and verified: all 18 `osirus`/`osirus_intel` functions revoked from PUBLIC and granted to `osirus_app`, default privileges locked for future migrations. Quality gate on the merged tree: `tsc` clean, **973/973 vitest passed**, prettier + eslint clean. Section 8 items 1–5 are done or patch-ready; branch `security/phase-f-20261001` is merged and safe to delete.
+
 ## 0. Verdict
 
 OSIRUS is a **genuinely implemented, unusually disciplined codebase** — not vaporware and not an LLM wrapper. Nearly every subsystem maps to substantial real code with tests (77 unit test files running against real Postgres via PGlite, plus e2e and production journey suites).
@@ -21,7 +23,7 @@ OSIRUS is a **genuinely implemented, unusually disciplined codebase** — not va
 | Layer      | Reality                                                                                                                                                                                               | Evidence                                                |
 | ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | Framework  | Next.js 16, React 19, TS strict, App Router, typedRoutes                                                                                                                                              | `package.json`, `next.config.ts`                        |
-| DB         | Neon Postgres 18 (eu-central-1), **no ORM** — raw SQL via `@neondatabase/serverless`; 20 migrations `db/migrations/000–019`; RLS enforced via non-BYPASSRLS role `osirus_app` assumed per transaction | `src/lib/db/client.ts`, `scripts/apply-migrations.mjs`  |
+| DB         | Neon Postgres 18 (eu-central-1), **no ORM** — raw SQL via `@neondatabase/serverless`; 21 migrations `db/migrations/000–020`; RLS enforced via non-BYPASSRLS role `osirus_app` assumed per transaction | `src/lib/db/client.ts`, `scripts/apply-migrations.mjs`  |
 | Auth       | Neon Auth `@neondatabase/auth@0.5.0-beta` (Better Auth-based); email/password + GitHub OAuth                                                                                                          | `src/lib/auth/server.ts`, `src/proxy.ts`                |
 | Models     | "UnoRouter" = one OpenAI-compatible endpoint, ≤3 keys, free-model-first with live pool discovery from `GET /v1/models`                                                                                | `src/lib/models/unorouter.ts`, `free-registry.ts`       |
 | Sandbox    | `@vercel/sandbox` over OIDC, deny-all network by default; degrades honestly (inconclusive→unverified) outside Vercel                                                                                  | `src/lib/sandbox/vercel.ts`                             |
@@ -54,8 +56,8 @@ OSIRUS is a **genuinely implemented, unusually disciplined codebase** — not va
 - Default branch `production`; DB `neondb`; schemas: `osirus` (53 tables), `osirus_intel` (28), `neon_auth` (9, managed), `public` (empty).
 - **RLS: ENABLED + FORCED on all 81 app tables; 180 policies** via SECURITY DEFINER helpers with pinned `search_path`. Append-only audit pattern on `security_events`/`connector_health` (no UPDATE/DELETE for app role).
 - No plaintext credential columns; `credential_reference` holds envelope-sealed (`v1.…`) references.
-- 20 migrations applied in clean monotonic order with sha256 checksums.
-- **Two HIGH findings at the trust boundary** (tenant identity via forgeable GUCs; enforcement depends on app always `SET ROLE osirus_app` since `neondb_owner` has BYPASSRLS) — see SECURITY_AUDIT.md DB-1/DB-2.
+- 21 migrations applied in clean monotonic order with sha256 checksums (020 applied 2026-10-01, ledger checksum `c4156fa3`).
+- **Two HIGH findings at the trust boundary** (tenant identity via forgeable GUCs; enforcement depends on app always `SET ROLE osirus_app` since `neondb_owner` has BYPASSRLS) — see SECURITY_AUDIT.md DB-1/DB-2. **DB-2 CLOSED by migration 020** (production-verified 2026-10-01: 0 PUBLIC EXECUTE remaining on all 18 functions); DB-1 remains a documented residual.
 - Data volume is tiny (2 users, 6 sessions, 8 runs) — pre-launch state.
 
 ## 4. Branch census (38 branches)
