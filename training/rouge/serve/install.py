@@ -72,6 +72,34 @@ def serve(model: Path, port: int, ctx: int) -> None:
     os.execv(binary, [binary, "-m", str(model), "--host", "127.0.0.1", "--port", str(port), "-c", str(ctx), "-ngl", "99", "--jinja"])
 
 
+def install_exo(run: str, home: Path, exo_dir: Path, bits: int) -> None:
+    """Rouge on an exo cluster of the owner's devices: the checkpoint (safetensors) from the private
+    registry, converted to MLX in exo's environment, with an exo model card. Every device that
+    should hold a part of the model runs exo; one of them needs these files."""
+    import storage
+    import exo_runtime
+
+    if not os.environ.get("LIGHTNING_API_KEY"):
+        raise SystemExit("LIGHTNING_API_KEY is required: the Rouge weights live in the owner's private teamspace")
+    exo_python = exo_dir / ".venv" / "bin" / "python"
+    if not exo_python.exists():
+        raise SystemExit(f"{exo_python} not found: set up exo first (git clone https://github.com/exo-explore/exo; "
+                         "cd exo; uv sync --extra mlx)")
+    source = home / "checkpoints" / run
+    storage.download(f"rouge/models/{run}", str(source))
+    model_id = f"osirus/{run}-{bits}bit"
+    models_dir = home / "exo-models"
+    exo_runtime.convert(next(p.parent for p in source.rglob("config.json")), models_dir, model_id, bits, str(exo_python))
+    shutil.rmtree(source)                                        # the bf16 checkpoint is not needed once converted
+    data_home = Path.home() / ".exo" if platform.system() != "Linux" else Path.home() / ".local/share/exo"
+    card = exo_runtime.write_card(data_home / "custom_model_cards", models_dir / exo_runtime.normalize(model_id), model_id,
+                                  quantization=f"{bits}bit", base_model=f"Rouge 1 ({run})")
+    print(f"[rouge] {model_id} converted to {models_dir}; exo card {card}")
+    print(f"[rouge] start exo on each device:  EXO_MODELS_READ_ONLY_DIRS={models_dir} uv run exo   (in {exo_dir})")
+    print(f"[rouge] then place it:              python {HERE / 'exo_runtime.py'} place --model-id {model_id} --min-nodes <devices>")
+    print("[rouge] API: http://127.0.0.1:52415/v1 (OpenAI-compatible; Osirus and rouge_train.evaluate --backend openai use it)")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--run", required=True, help="a promoted checkpoint, e.g. rouge-1-rl-001")
@@ -79,8 +107,16 @@ def main() -> None:
     parser.add_argument("--serve", action="store_true")
     parser.add_argument("--port", type=int, default=8080)
     parser.add_argument("--ctx", type=int, default=32768)
+    parser.add_argument("--runtime", choices=["llama.cpp", "exo"], default="llama.cpp",
+                        help="exo: one model across several of the owner's devices (serve/exo_runtime.py)")
+    parser.add_argument("--exo-dir", default=str(Path.home() / "exo"), help="exo checkout with its uv environment")
+    parser.add_argument("--bits", type=int, default=4, help="exo: MLX quantisation")
     args = parser.parse_args()
     home = Path(args.home)
+    if args.runtime == "exo":
+        sys.path.insert(0, str(HERE))
+        install_exo(args.run, home, Path(args.exo_dir), args.bits)
+        return
     existing = sorted((home / "models" / args.run).rglob("*.gguf"))
     model = existing[0] if existing else install(args.run, home)
     if args.serve:
