@@ -95,7 +95,7 @@ def install_exo(run: str, home: Path, exo_dir: Path, bits: int) -> None:
     card = exo_runtime.write_card(data_home / "custom_model_cards", models_dir / exo_runtime.normalize(model_id), model_id,
                                   quantization=f"{bits}bit", base_model=f"Rouge 1 ({run})")
     print(f"[rouge] {model_id} converted to {models_dir}; exo card {card}")
-    print(f"[rouge] start exo on each device:  EXO_MODELS_READ_ONLY_DIRS={models_dir} uv run exo   (in {exo_dir})")
+    print(f"[rouge] start exo on each device:  EXO_OFFLINE=true EXO_MODELS_READ_ONLY_DIRS={models_dir} uv run exo   (in {exo_dir}; offline: local weights only, no hub)")
     print(f"[rouge] then place it:              python {HERE / 'exo_runtime.py'} place --model-id {model_id} --min-nodes <devices>")
     print("[rouge] API: http://127.0.0.1:52415/v1 (OpenAI-compatible; Osirus and rouge_train.evaluate --backend openai use it)")
 

@@ -11,7 +11,9 @@ exo model in three steps, all local:
                  own config.json; the weights stay in a read-only directory exo is pointed at
                  (EXO_MODELS_READ_ONLY_DIRS), so nothing is downloaded from any hub
     3. place     ask the running cluster to place the model (POST /place_instance) and wait
-                 until it is served (GET /instance/await)
+                 until every runner of its instance is ready (runner status in GET /state)
+
+Start exo with EXO_OFFLINE=true: it then serves only weights already on the device and never asks a hub.
 
 Then rouge_train.evaluate scores it like any other runtime:
     python -m rouge_train.cli generate --backend openai --base-url http://127.0.0.1:52415/v1 \\
@@ -126,18 +128,72 @@ def wait_for_api(api: str = DEFAULT_API, timeout: float = 600) -> None:
     raise SystemExit(f"exo API at {api} did not come up within {timeout:.0f} s")
 
 
+def _untag(value: dict) -> tuple[str, dict]:
+    """exo serialises tagged unions as {"ClassName": {...fields}}."""
+    (tag, inner), = value.items()
+    return tag, inner
+
+
+def _field(obj: dict, name: str):
+    """A field by its snake_case name or the camelCase alias exo's /state uses (model_dump(by_alias=True))."""
+    if name in obj:
+        return obj[name]
+    head, *rest = name.split("_")
+    return obj.get(head + "".join(w.title() for w in rest))
+
+
+def runner_ids(instance: dict) -> list[str]:
+    _, inner = _untag(instance)
+    return list(inner["shard_assignments"]["runner_to_shard"])
+
+
+def readiness(runners: dict, downloads: dict, ids: list[str], model_id: str) -> str | None:
+    """None while loading, "ready" once every runner of the instance serves; raises on a failure."""
+    for entries in downloads.values():
+        for entry in entries:
+            tag, inner = _untag(entry)
+            if tag != "DownloadFailed":
+                continue
+            _, shard = _untag(_field(inner, "shard_metadata"))
+            if _field(_field(shard, "model_card"), "model_id") == model_id:
+                raise SystemExit(f"exo could not get the weights of {model_id}: {_field(inner, 'error_message')}")
+    states = []
+    for rid in ids:
+        if rid not in runners:
+            return None
+        tag, inner = _untag(runners[rid])
+        if tag == "RunnerFailed":
+            raise SystemExit(f"exo runner for {model_id} failed: {_field(inner, 'error_message')}")
+        states.append(tag)
+    return "ready" if all(s in ("RunnerReady", "RunnerRunning") for s in states) else None
+
+
 def place(model_id: str, api: str = DEFAULT_API, min_nodes: int = 1, timeout: float = 1800) -> dict:
-    """Place the model on the cluster and wait until an instance serves it."""
+    """Place the model on the cluster and wait until every runner of its instance is ready.
+
+    /instance/await answers as soon as the instance exists; the weights may still be loading (or
+    downloading), so readiness is read from the runners' own status in /state.
+    """
     _request(f"{api}/place_instance", {"model_id": model_id, "min_nodes": min_nodes})
     deadline = time.time() + timeout
-    while time.time() < deadline:
+    instance = None
+    while instance is None and time.time() < deadline:
         stream = _request(f"{api}/instance/await?model_id={urllib.request.quote(model_id)}&timeout_seconds=300", timeout=330)
         for line in stream.decode().splitlines():
             if line.startswith("data:"):
                 message = json.loads(line[5:])
                 if message.get("type") == "ready":
-                    return message.get("instance") or {}
-    raise SystemExit(f"{model_id} was not placed within {timeout:.0f} s")
+                    instance = message.get("instance") or {}
+    if instance is None:
+        raise SystemExit(f"{model_id} was not placed within {timeout:.0f} s")
+    ids = runner_ids(instance)
+    while time.time() < deadline:
+        runners = json.loads(_request(f"{api}/state/runners", timeout=30))
+        downloads = json.loads(_request(f"{api}/state/downloads", timeout=30))
+        if readiness(runners, downloads, ids, model_id):
+            return instance
+        time.sleep(2)
+    raise SystemExit(f"{model_id} was placed but its runners were not ready within {timeout:.0f} s")
 
 
 def chat(model_id: str, prompt: str, api: str = DEFAULT_API, max_tokens: int = 64) -> str:

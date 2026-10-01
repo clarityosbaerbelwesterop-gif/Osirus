@@ -43,5 +43,39 @@ class ExoCardTest(unittest.TestCase):
                 exo_runtime.card(Path(tmp), "x/y", quantization="4bit", base_model="t")
 
 
+class ExoReadinessTest(unittest.TestCase):
+    """Shapes as exo's /state serialises them (tagged unions: {"ClassName": {...}})."""
+
+    INSTANCE = {"MlxRingInstance": {"shard_assignments": {"model_id": "m/x", "runner_to_shard": {"r1": {}, "r2": {}}}}}
+
+    @staticmethod
+    def failed_download(model_id):
+        shard = {"PipelineShardMetadata": {"model_card": {"model_id": model_id}}}
+        return {"DownloadFailed": {"node_id": "n", "shard_metadata": shard, "error_message": "401"}}
+
+    def test_ready_only_when_every_runner_of_the_instance_serves(self):
+        ids = exo_runtime.runner_ids(self.INSTANCE)
+        self.assertEqual(ids, ["r1", "r2"])
+        self.assertIsNone(exo_runtime.readiness({}, {}, ids, "m/x"))
+        loading = {"r1": {"RunnerReady": {}}, "r2": {"RunnerLoading": {"layers_loaded": 3, "total_layers": 24}}}
+        self.assertIsNone(exo_runtime.readiness(loading, {}, ids, "m/x"))
+        ready = {"r1": {"RunnerReady": {}}, "r2": {"RunnerRunning": {}}}
+        self.assertEqual(exo_runtime.readiness(ready, {}, ids, "m/x"), "ready")
+
+    def test_a_failed_runner_or_a_failed_download_of_this_model_stops_the_wait(self):
+        ids = ["r1"]
+        with self.assertRaises(SystemExit):
+            exo_runtime.readiness({"r1": {"RunnerFailed": {"error_message": "oom", "diagnostics": []}}}, {}, ids, "m/x")
+        with self.assertRaises(SystemExit):
+            exo_runtime.readiness({}, {"n": [self.failed_download("m/x")]}, ids, "m/x")
+        # /state serialises with camelCase aliases
+        shard = {"PipelineShardMetadata": {"modelCard": {"modelId": "m/x"}}}
+        camel = {"DownloadFailed": {"nodeId": "n", "shardMetadata": shard, "errorMessage": "401"}}
+        with self.assertRaises(SystemExit):
+            exo_runtime.readiness({}, {"n": [camel]}, ids, "m/x")
+        # a failed status check for another card (exo checks every known card) does not
+        self.assertIsNone(exo_runtime.readiness({}, {"n": [self.failed_download("other/model")]}, ids, "m/x"))
+
+
 if __name__ == "__main__":
     unittest.main()

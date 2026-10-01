@@ -73,13 +73,21 @@ jobs:
           python training/rouge/serve/exo_runtime.py card --models-dir "$RUNNER_TEMP/exo-models" --model-id "$MODEL_ID" \
             --cards-dir "$HOME/exo-home/custom_model_cards" --quantization 4bit --base-model "Rouge CI smoke (tiny, random)"
           ls -la "$RUNNER_TEMP/exo-models"/*; cat "$HOME/exo-home/custom_model_cards/"*.toml
-      - name: Start exo, place the checkpoint, chat, and score it with the Rouge harness
+      - name: Real small model of Rouge's family, staged locally like a Rouge checkpoint (dispatch only)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          REAL: ${{ inputs.real_model }}
+        run: |
+          start=$(date +%s)
+          python -c "import os, sys; from huggingface_hub import snapshot_download; r = os.environ['REAL']; snapshot_download(r, local_dir=sys.argv[1] + '/' + r.replace('/', '--'))" "$RUNNER_TEMP/exo-models"
+          echo "staged $REAL in $(( $(date +%s) - start )) s: $(du -sh "$RUNNER_TEMP/exo-models/${REAL//\//--}" | cut -f1)"
+      - name: Start exo (offline, local weights only), place the checkpoint, chat, and score it with the Rouge harness
         env:
           EXO_HOME: exo-home
           EXO_DASHBOARD_DIR: exo-dash
         run: |
           cd "$RUNNER_TEMP/exo"
-          EXO_MODELS_READ_ONLY_DIRS="$RUNNER_TEMP/exo-models" nohup .venv/bin/exo > "$RUNNER_TEMP/exo.log" 2>&1 &
+          EXO_OFFLINE=true EXO_MODELS_READ_ONLY_DIRS="$RUNNER_TEMP/exo-models" nohup .venv/bin/exo > "$RUNNER_TEMP/exo.log" 2>&1 &
           cd "$GITHUB_WORKSPACE/training/rouge"
           python serve/exo_runtime.py place --model-id "$MODEL_ID"
           reply="$(python serve/exo_runtime.py chat --model-id "$MODEL_ID" --prompt 'Who are you?')"
@@ -88,25 +96,33 @@ jobs:
             --items <(python -c "import json; from rouge_train import generators; [print(json.dumps(i)) for i in generators.eval_items('exo-ci', 3)]") \
             --out "$RUNNER_TEMP/exo-smoke.jsonl" --max-new-tokens 32
           python -c "import json,sys; rows=[json.loads(l) for l in open(sys.argv[1])]; assert len(rows) == 3, rows; print('scored', len(rows), 'items through exo')" "$RUNNER_TEMP/exo-smoke.jsonl"
-      - name: Real small model of Rouge's family on the same exo (throughput on this CPU)
+      - name: Real small model of Rouge's family on the same exo (load time and throughput on this CPU)
         if: ${{ github.event_name == 'workflow_dispatch' }}
         env:
           REAL: ${{ inputs.real_model }}
         working-directory: training/rouge
         run: |
-          python serve/exo_runtime.py place --model-id "$REAL"
+          start=$(date +%s)
+          python serve/exo_runtime.py place --model-id "$REAL" > /dev/null
+          echo "placed and loaded in $(( $(date +%s) - start )) s"
           python - <<'EOF'
           import json, os, time, urllib.request
           model = os.environ["REAL"]
-          body = {"model": model, "messages": [{"role": "user", "content": "What is 17 * 23? Answer with the number."}],
-                  "max_tokens": 64, "temperature": 0.0, "stream": False}
-          start = time.time()
-          req = urllib.request.Request("http://127.0.0.1:52415/v1/chat/completions", json.dumps(body).encode(), {"Content-Type": "application/json"})
-          reply = json.loads(urllib.request.urlopen(req, timeout=900).read())
-          seconds = time.time() - start
+          def ask(prompt, max_tokens):
+              body = {"model": model, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens,
+                      "temperature": 0.0, "stream": False}
+              req = urllib.request.Request("http://127.0.0.1:52415/v1/chat/completions", json.dumps(body).encode(),
+                                           {"Content-Type": "application/json"})
+              start = time.time()
+              reply = json.loads(urllib.request.urlopen(req, timeout=1200).read())
+              return reply, time.time() - start
+          ask("Hi", 1)   # warm-up
+          reply, seconds = ask("What is 17 * 23? Answer with the number.", 128)
           usage = reply.get("usage") or {}
+          out = usage.get("completion_tokens") or 0
           print("EXO_REAL", json.dumps({"model": model, "seconds": round(seconds, 1), "usage": usage,
-                                         "reply": (reply["choices"][0]["message"].get("content") or "")[:300]}))
+                                         "tokens_per_s": round(out / seconds, 2) if seconds else None,
+                                         "reply": (reply["choices"][0]["message"].get("content") or "")[-300:]}))
           EOF
       - name: exo log (tail)
         if: always()
