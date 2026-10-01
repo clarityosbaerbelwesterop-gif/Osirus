@@ -59,9 +59,10 @@ jobs:
           git fetch -q --depth 1 "$EXO_REPO" "$EXO_COMMIT" && git checkout -q FETCH_HEAD
           rustup override set nightly
           ~/.local/bin/uv sync --extra mlx-cpu
-          # exo's mlx-cpu extra pins mlx-cpu 0.31.2 next to mlx 0.32.0 at this commit, and the two native
-          # libraries do not link ("undefined symbol ...linalg3det..."); use the matching CPU build
-          ~/.local/bin/uv pip install --python .venv/bin/python "mlx-cpu==$(.venv/bin/python -c 'import importlib.metadata as m; print(m.version("mlx"))')"
+          # On Linux, exo's lock installs a CUDA build of an MLX fork (mlx 0.32.0 from rltakashige/mlx-jaccl-fix-small-recv)
+          # next to PyPI's mlx-cpu 0.31.2; their native libraries do not link ("undefined symbol"). The official
+          # pair from PyPI does (checked 2026-10-01: conversion and generation of Rouge's architecture class).
+          ~/.local/bin/uv pip install --python .venv/bin/python --reinstall "mlx==0.32.0" "mlx-cpu==0.32.0"
           .venv/bin/python -c "import mlx.core as mx; print('mlx', mx.__version__, mx.default_device())"
           mkdir -p "$HOME/exo-dash" && echo '<html>rouge ci</html>' > "$HOME/exo-dash/index.html"
       - name: Convert the checkpoint to MLX (4-bit) and write its exo model card
