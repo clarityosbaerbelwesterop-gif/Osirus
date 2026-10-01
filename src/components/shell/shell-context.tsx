@@ -38,6 +38,8 @@ export type ShellData = {
 type ShellValue = ShellData & {
   upsertSession: (session: SessionSummary) => void;
   setPinned: (id: string, pinned: boolean) => void;
+  renameSession: (id: string, title: string) => void;
+  removeSession: (id: string) => void;
   chat: ChatBinding | null;
   bindChat: (binding: ChatBinding | null) => void;
   navOpen: boolean;
@@ -76,6 +78,16 @@ export function ShellProvider({
     );
   }, []);
 
+  const renameSession = useCallback((id: string, title: string) => {
+    setSessions((current) =>
+      current.map((item) => (item.id === id ? { ...item, title } : item)),
+    );
+  }, []);
+
+  const removeSession = useCallback((id: string) => {
+    setSessions((current) => current.filter((item) => item.id !== id));
+  }, []);
+
   const value = useMemo<ShellValue>(
     () => ({
       ...data,
@@ -83,13 +95,25 @@ export function ShellProvider({
       sidebar,
       upsertSession,
       setPinned,
+      renameSession,
+      removeSession,
       chat,
       bindChat: setChat,
       navOpen,
       setNavOpen,
       setSidebar,
     }),
-    [data, sessions, sidebar, upsertSession, setPinned, chat, navOpen],
+    [
+      data,
+      sessions,
+      sidebar,
+      upsertSession,
+      setPinned,
+      renameSession,
+      removeSession,
+      chat,
+      navOpen,
+    ],
   );
   return (
     <ShellContext.Provider value={value}>{children}</ShellContext.Provider>
