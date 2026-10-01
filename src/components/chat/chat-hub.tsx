@@ -1,9 +1,23 @@
 "use client";
 
 import { PanelRight } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import type { RunSnapshot, RuntimePacket } from "@/lib/runtime/types";
 import { repositoryInObjective } from "@/lib/coding/repository-ref";
+import {
+  MODE_COOKIE,
+  parseMode,
+  readPreference,
+  writePreference,
+  type ModePreference,
+} from "@/lib/ui/preferences";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
 import type { Starter } from "@/lib/ui/starters";
 import {
@@ -46,6 +60,27 @@ type SessionState = {
 
 const terminalStatuses = TERMINAL;
 
+// The working mode persists per browser in a preference cookie. Exposed as
+// an external store so the cookie is read only after hydration -- the server
+// snapshot keeps SSR and the first client render on "auto" -- and so picking
+// a mode notifies the composer immediately.
+const modeListeners = new Set<() => void>();
+
+function subscribeMode(listener: () => void) {
+  modeListeners.add(listener);
+  return () => {
+    modeListeners.delete(listener);
+  };
+}
+
+function currentMode(): ModePreference {
+  return parseMode(readPreference(MODE_COOKIE));
+}
+
+function serverMode(): ModePreference {
+  return "auto";
+}
+
 export function ChatHub(props: {
   firstName: string | null;
   workspaceName: string;
@@ -68,6 +103,7 @@ export function ChatHub(props: {
     props.initialSnapshot ?? null,
   );
   const [objective, setObjective] = useState("");
+  const mode = useSyncExternalStore(subscribeMode, currentMode, serverMode);
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [activeRunId, setActiveRunId] = useState(props.initialRunId);
@@ -104,6 +140,11 @@ export function ChatHub(props: {
   const nearBottom = useRef(true);
   const composer = useRef<ComposerHandle | null>(null);
   const wide = useWideLayout();
+
+  const selectMode = useCallback((next: ModePreference) => {
+    writePreference(MODE_COOKIE, next);
+    for (const listener of modeListeners) listener();
+  }, []);
 
   const applySnapshot = useCallback((next: RunSnapshot) => {
     setSnapshot(next);
@@ -340,6 +381,7 @@ export function ChatHub(props: {
             requestId,
             sessionId,
             regenerate,
+            ...(mode !== "auto" ? { mode } : {}),
             ...(attachmentIds.length ? { attachmentIds } : {}),
           }),
           signal: controller.signal,
@@ -416,6 +458,7 @@ export function ChatHub(props: {
     [
       applyPacket,
       attachments,
+      mode,
       refreshRun,
       running,
       sessionId,
@@ -668,6 +711,8 @@ export function ChatHub(props: {
           cancelling={cancelling}
           error={error}
           workspaceName={props.workspaceName}
+          mode={mode}
+          onModeChange={selectMode}
           github={github}
           approvalAnchor={
             pendingApproval ? `approval-${pendingApproval.id}` : null
