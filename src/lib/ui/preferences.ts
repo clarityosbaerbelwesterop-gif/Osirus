@@ -3,8 +3,11 @@
 
 export const THEME_COOKIE = "osirus-theme";
 export const SIDEBAR_COOKIE = "osirus-sidebar";
+export const MODE_COOKIE = "osirus-mode";
 
 export type ThemePreference = "system" | "light" | "dark";
+export type ModePreference =
+  "auto" | "research" | "coding" | "reasoning" | "agent";
 
 export function parseTheme(value: string | undefined | null): ThemePreference {
   return value === "light" || value === "dark" ? value : "system";
@@ -12,6 +15,15 @@ export function parseTheme(value: string | undefined | null): ThemePreference {
 
 export function parseSidebar(value: string | undefined | null) {
   return value === "collapsed" ? "collapsed" : "expanded";
+}
+
+export function parseMode(value: string | undefined | null): ModePreference {
+  return value === "research" ||
+    value === "coding" ||
+    value === "reasoning" ||
+    value === "agent"
+    ? value
+    : "auto";
 }
 
 const YEAR = 60 * 60 * 24 * 365;
@@ -25,6 +37,15 @@ export function writePreference(name: string, value: string) {
       ? "; Secure"
       : "";
   document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${YEAR}; SameSite=Lax${secure}`;
+}
+
+/** Browser-only: read a preference cookie written by writePreference. */
+export function readPreference(name: string): string | null {
+  if (typeof document === "undefined") return null;
+  const entry = document.cookie
+    .split("; ")
+    .find((part) => part.startsWith(`${name}=`));
+  return entry ? decodeURIComponent(entry.slice(name.length + 1)) : null;
 }
 
 export function applyTheme(theme: ThemePreference) {

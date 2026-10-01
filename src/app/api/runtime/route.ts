@@ -23,6 +23,7 @@ const inputSchema = z.object({
   sessionId: z.string().uuid().nullable().optional(),
   regenerate: z.boolean().optional().default(false),
   attachmentIds: z.array(z.string().uuid()).max(8).optional(),
+  mode: z.enum(["auto", "research", "coding", "reasoning", "agent"]).optional(),
 });
 
 export async function POST(request: Request) {
@@ -91,6 +92,7 @@ export async function POST(request: Request) {
       capabilities,
       sessionId: parsed.data.sessionId,
       regenerate: parsed.data.regenerate,
+      mode: parsed.data.mode,
     });
   } catch (error) {
     return Response.json(
@@ -157,6 +159,7 @@ export async function POST(request: Request) {
         emit,
         correlationId,
         attachments,
+        mode: parsed.data.mode,
       })
         .catch((error: unknown) => {
           emit({
