@@ -24,6 +24,20 @@ The ordered migration chain in `db/migrations` is the source of truth for a clea
   stage claim.
 - `009` separates the retry ceiling from the slice ceiling and records
   verification verdicts with their evidence.
+- `010` adds agent intelligence: research evidence, coding workspaces, plan
+  revisions.
+- `011` productizes: connections, policies, security events, automations,
+  notifications and pinned conversations.
+- `012` creates the Intelligence Foundry's own schema (`osirus_intel`).
+- `013` adds the product frontier: attachments, signed webhooks, entitlements.
+- `014` and `015` close the crash window between a slice's budget charge and
+  its checkpoint by counting and charging in one transaction.
+- `016` adds the durable capability pulse; `017` the mission state of a run.
+- `018` adds meta-learning and capability synthesis; `019` the hourly
+  recursive-intelligence cycle.
+- `020` revokes the implicit PUBLIC `EXECUTE` grant on every `osirus` /
+  `osirus_intel` function, grants `osirus_app` explicitly, and pins default
+  privileges so later migrations cannot reopen the grant.
 
 Neon Auth must be enabled before applying the chain because `osirus.users` is linked to the Neon Auth user table.
 
