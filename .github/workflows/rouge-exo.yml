@@ -1,0 +1,108 @@
+name: Rouge exo
+
+# Rouge on exo (github.com/exo-explore/exo, Apache-2.0): a checkpoint of Rouge's architecture class
+# (Qwen3_5ForConditionalGeneration) converted to MLX, served by exo from a read-only local directory
+# (no hub download), placed through exo's API and scored by rouge_train.evaluate over the
+# OpenAI-compatible endpoint. Then the same exo serves a real small model of the same family
+# (Qwen3.5-2B) to measure throughput. Free runner, Linux CPU backend (exo's MlxCpu); the owner's Macs
+# use the Metal backend with the same steps. No secrets, no weights leave the runner.
+
+on:
+  push:
+    branches: ["rouge/native-model-*"]
+    paths:
+      - ".github/workflows/rouge-exo.yml"
+      - "training/rouge/serve/exo_runtime.py"
+  workflow_dispatch:
+    inputs:
+      real_model:
+        description: "exo model card of a real small model of Rouge's family, served after the smoke test"
+        default: mlx-community/Qwen3.5-2B-MLX-8bit
+
+permissions:
+  contents: read
+
+env:
+  EXO_REPO: https://github.com/exo-explore/exo
+  EXO_COMMIT: 21a54c5ea0230a3bec1e1a786d200126c7e34ec6
+  MODEL_ID: osirus/rouge-tiny-smoke
+
+jobs:
+  exo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Tiny checkpoint of Rouge's architecture class (random weights; not Rouge)
+        working-directory: training/rouge
+        run: |
+          python -m pip install -q --index-url https://download.pytorch.org/whl/cpu torch==2.14.0
+          python -m pip install -q -r requirements-smoke.txt
+          python - <<'EOF'
+          from pathlib import Path
+          from rouge_train import smoke
+          out = Path("/tmp/rouge-tiny")
+          tok = smoke.tiny_tokenizer(out)
+          smoke.tiny_model(tok, out, seed=1, vocab_size=448)   # embedding rows divisible by the MLX quantisation group
+          print(sorted(p.name for p in out.iterdir()))
+          EOF
+      - name: exo at the pinned commit (uv, Python 3.13, Rust nightly, MLX CPU backend)
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          rustup toolchain install nightly --profile minimal
+          git init -q "$RUNNER_TEMP/exo" && cd "$RUNNER_TEMP/exo"
+          git fetch -q --depth 1 "$EXO_REPO" "$EXO_COMMIT" && git checkout -q FETCH_HEAD
+          rustup override set nightly
+          ~/.local/bin/uv sync --extra mlx-cpu
+          mkdir -p "$HOME/exo-dash" && echo '<html>rouge ci</html>' > "$HOME/exo-dash/index.html"
+      - name: Convert the checkpoint to MLX (4-bit) and write its exo model card
+        run: |
+          EXO_PY="$RUNNER_TEMP/exo/.venv/bin/python"
+          "$EXO_PY" training/rouge/serve/exo_runtime.py convert --hf /tmp/rouge-tiny --models-dir "$RUNNER_TEMP/exo-models" \
+            --model-id "$MODEL_ID" --bits 4 --python "$EXO_PY"
+          python training/rouge/serve/exo_runtime.py card --models-dir "$RUNNER_TEMP/exo-models" --model-id "$MODEL_ID" \
+            --cards-dir "$HOME/exo-home/custom_model_cards" --quantization 4bit --base-model "Rouge CI smoke (tiny, random)"
+          ls -la "$RUNNER_TEMP/exo-models"/*; cat "$HOME/exo-home/custom_model_cards/"*.toml
+      - name: Start exo, place the checkpoint, chat, and score it with the Rouge harness
+        env:
+          EXO_HOME: exo-home
+          EXO_DASHBOARD_DIR: exo-dash
+        run: |
+          cd "$RUNNER_TEMP/exo"
+          EXO_MODELS_READ_ONLY_DIRS="$RUNNER_TEMP/exo-models" nohup ~/.local/bin/uv run exo > "$RUNNER_TEMP/exo.log" 2>&1 &
+          cd "$GITHUB_WORKSPACE/training/rouge"
+          python serve/exo_runtime.py place --model-id "$MODEL_ID"
+          reply="$(python serve/exo_runtime.py chat --model-id "$MODEL_ID" --prompt 'Who are you?')"
+          echo "reply: ${reply:0:200}"
+          python -m rouge_train.cli generate --backend openai --base-url http://127.0.0.1:52415/v1 --model "$MODEL_ID" \
+            --items <(python -c "import json; from rouge_train import generators; [print(json.dumps(i)) for i in generators.eval_items('exo-ci', 3)]") \
+            --out "$RUNNER_TEMP/exo-smoke.jsonl" --max-new-tokens 32
+          python -c "import json,sys; rows=[json.loads(l) for l in open(sys.argv[1])]; assert len(rows) == 3, rows; print('scored', len(rows), 'items through exo')" "$RUNNER_TEMP/exo-smoke.jsonl"
+      - name: Real small model of Rouge's family on the same exo (throughput on this CPU)
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        env:
+          REAL: ${{ inputs.real_model }}
+        working-directory: training/rouge
+        run: |
+          python serve/exo_runtime.py place --model-id "$REAL"
+          python - <<'EOF'
+          import json, os, time, urllib.request
+          model = os.environ["REAL"]
+          body = {"model": model, "messages": [{"role": "user", "content": "What is 17 * 23? Answer with the number."}],
+                  "max_tokens": 64, "temperature": 0.0, "stream": False}
+          start = time.time()
+          req = urllib.request.Request("http://127.0.0.1:52415/v1/chat/completions", json.dumps(body).encode(), {"Content-Type": "application/json"})
+          reply = json.loads(urllib.request.urlopen(req, timeout=900).read())
+          seconds = time.time() - start
+          usage = reply.get("usage") or {}
+          print("EXO_REAL", json.dumps({"model": model, "seconds": round(seconds, 1), "usage": usage,
+                                         "reply": (reply["choices"][0]["message"].get("content") or "")[:300]}))
+          EOF
+      - name: exo log (tail)
+        if: always()
+        run: tail -n 80 "$RUNNER_TEMP/exo.log" || true
