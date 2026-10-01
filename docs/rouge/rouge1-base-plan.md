@@ -1,4 +1,6 @@
-# Rouge 1 on the best trainable open model (owner decision 2026-09-30)
+# Rouge 1 on the best trainable open model (owner decisions 2026-09-30 and 2026-10-01)
+
+> **2026-10-01: the base is now Qwen/Qwen3.8-27B** (released 2026-08-14, Apache-2.0). It is pinned at `1d4bf0f2ff60`: 18 shards, 55.6 GB, every sha256 recorded (run 36830868813). It has the same architecture class (`Qwen3_5ForConditionalGeneration`, 64 layers, hidden size 5120, vocabulary 248,320) as Qwen3.6-27B, which is recorded under `supersedes`. Everything below applies unchanged. The `rft-v1` dataset is rebuilt so that its identity records name the new base, and `rouge-1-rl-001` is pre-registered again from that build.
 
 ## Decision
 

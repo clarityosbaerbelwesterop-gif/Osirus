@@ -25,7 +25,7 @@ from pathlib import Path
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE.parent / "lightning_ai"))
 
-# weights + KV cache and runtime must fit the memory the OS gives the GPU. Qwen3.6-27B keeps a KV cache in
+# weights + KV cache and runtime must fit the memory the OS gives the GPU. The 27B base keeps a KV cache in
 # 16 of 64 layers (4 KV heads x 256): about 64 KB per token, 2 GB at 32k tokens; +1.5 GB runtime.
 OVERHEAD = 3.5 * 2**30
 GPU_SHARE = {"Darwin": 0.70, "Linux": 0.90}   # macOS lets Metal use about 2/3-3/4 of unified memory

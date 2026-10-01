@@ -1,10 +1,10 @@
 {
   "schema": "rouge.experiment/1",
   "name": "rouge-1-rl-001",
-  "status": "pre-registered",
+  "status": "draft",
   "registered": "2026-09-30",
   "question": "Does one RSI iteration (the base answers verifiable problems, only code-verified answers are trained into every language-model weight) improve held-out verifiable math without breaking general skills?",
-  "parent": "base:Qwen/Qwen3.6-27B@6a9e13bd6fc8f0983b9b99948120bc37f49c13e9",
+  "parent": "base:Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
   "method": {
     "kind": "ReST-EM style self-training (Singh et al. 2023, 'Beyond Human Data'); full-parameter, FSDP2",
     "sample": "3,200 verifiable prompts (numeric answers; OpenR1-Math-220k and OpenMathReasoning problems, teacher solutions unused) x 4 answers, thinking on, T=1.0, top_p 0.95, top_k 20, at most 6,144 new tokens",
@@ -58,5 +58,6 @@
     "machine": "H200_X_8 (8 x H200 141 GB, NVLink), live price 36.00 USD/h on 2026-09-30",
     "enforced": "worst case = max hours x live price x 1.05 within the ceiling (cost.CEILING_USD) and the teamspace balance; the trainer stops at its own budget check",
     "approval": "the owner approves the run in the protected GitHub environment rouge-gpu"
-  }
+  },
+  "re_registration": "2026-10-01: base changed to Qwen3.8-27B (owner decision) before any training; the dataset is rebuilt so its identity records name the new base, and the eval hash is set again from that build"
 }
