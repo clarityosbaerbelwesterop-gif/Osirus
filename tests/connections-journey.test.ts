@@ -391,8 +391,8 @@ describe("GitHub repository connector (fine-grained PAT, separate from GitHub lo
     }>(
       `select status, credential_reference from osirus.connector_installations
         where workspace_id = $1 and connector_id = 'github'`,
-        [alice.workspaceId],
-      );
+      [alice.workspaceId],
+    );
     expect(after).toEqual({ status: "revoked", credential_reference: null });
     const live = await db.raw(
       `select 1 from osirus.connector_grants g
