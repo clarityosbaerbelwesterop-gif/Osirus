@@ -71,12 +71,13 @@ describe("legal pages", () => {
     expect(html).toContain("[[OPERATOR:");
   });
 
-  it("legal layout links all three pages so they stay reachable within two clicks", () => {
+  it("legal layout links all four pages so they stay reachable within two clicks", () => {
     const html = renderToStaticMarkup(
       createElement(LegalLayout, null, createElement("div")),
     );
     expect(html).toContain('href="/legal/impressum"');
     expect(html).toContain('href="/legal/privacy"');
     expect(html).toContain('href="/legal/terms"');
+    expect(html).toContain('href="/legal/cookies"');
   });
 });

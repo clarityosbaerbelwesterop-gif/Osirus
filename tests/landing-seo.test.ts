@@ -43,6 +43,7 @@ describe("landing page", () => {
     expect(html).toContain('href="/legal/impressum"');
     expect(html).toContain('href="/legal/privacy"');
     expect(html).toContain('href="/legal/terms"');
+    expect(html).toContain('href="/legal/cookies"');
     // The animated run card is decorative and labelled as such.
     expect(html).toContain('role="img"');
     expect(html).toContain("verified");
@@ -76,13 +77,14 @@ describe("seo surface", () => {
     expect(robots().sitemap).toBe("https://osirus.vercel.app/sitemap.xml");
   });
 
-  it("sitemap lists the landing page and the three legal pages", () => {
+  it("sitemap lists the landing page and the four legal pages", () => {
     const urls = sitemap().map((entry) => entry.url);
     expect(urls).toEqual([
       "https://osirus.vercel.app/",
       "https://osirus.vercel.app/legal/impressum",
       "https://osirus.vercel.app/legal/privacy",
       "https://osirus.vercel.app/legal/terms",
+      "https://osirus.vercel.app/legal/cookies",
     ]);
   });
 
