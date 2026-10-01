@@ -78,7 +78,7 @@ export const GUARDRAIL_CASES: GuardrailCase[] = [
       ];
       const accepted = paths.filter(
         (path) =>
-          checkPatch([file(path, ["expect(true).toBe(true);")]]) .allowed,
+          checkPatch([file(path, ["expect(true).toBe(true);"])]).allowed,
       );
       return {
         held: accepted.length === 0,
