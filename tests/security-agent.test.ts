@@ -6,6 +6,7 @@ import {
   decryptSecret,
   encryptSecret,
 } from "../src/lib/connectors/crypto";
+import { env } from "../src/lib/env";
 import { WorkspaceSession } from "../src/lib/coding/session";
 import { MemoryWorkspaceStore } from "../src/lib/coding/store";
 import { workspaceTools } from "../src/lib/coding/tools";
@@ -30,14 +31,14 @@ const context: ToolContext = {
 };
 
 describe("connector credentials at rest", () => {
-  const original = process.env.OSIRUS_CONNECTOR_KEY;
+  const original = env.OSIRUS_CONNECTOR_KEY;
   afterEach(() => {
-    if (original === undefined) delete process.env.OSIRUS_CONNECTOR_KEY;
-    else process.env.OSIRUS_CONNECTOR_KEY = original;
+    if (original === undefined) delete env.OSIRUS_CONNECTOR_KEY;
+    else env.OSIRUS_CONNECTOR_KEY = original;
   });
 
   it("encrypts, decrypts, and detects tampering", () => {
-    process.env.OSIRUS_CONNECTOR_KEY = "k".repeat(48);
+    env.OSIRUS_CONNECTOR_KEY = "k".repeat(48);
     const token = "github_pat_" + "x".repeat(40);
     const sealed = encryptSecret(token);
     expect(sealed).not.toContain(token);
@@ -51,11 +52,11 @@ describe("connector credentials at rest", () => {
   });
 
   it("refuses to work without a key, and with a different key", () => {
-    process.env.OSIRUS_CONNECTOR_KEY = "a".repeat(48);
+    env.OSIRUS_CONNECTOR_KEY = "a".repeat(48);
     const sealed = encryptSecret("ghp_" + "y".repeat(36));
-    process.env.OSIRUS_CONNECTOR_KEY = "b".repeat(48);
+    env.OSIRUS_CONNECTOR_KEY = "b".repeat(48);
     expect(() => decryptSecret(sealed)).toThrow();
-    delete process.env.OSIRUS_CONNECTOR_KEY;
+    delete env.OSIRUS_CONNECTOR_KEY;
     expect(connectorKeyConfigured()).toBe(false);
     expect(() => encryptSecret("x")).toThrow("connector_key_not_configured");
   });
