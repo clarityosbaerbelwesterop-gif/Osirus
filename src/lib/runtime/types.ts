@@ -66,6 +66,18 @@ export type RuntimePacket =
 export type VerdictStatus =
   "verified" | "rejected" | "conflicted" | "unverified";
 
+/**
+ * The model that actually served one run: its latest completed model call.
+ * Absent entirely when no model call completed -- the chat shows nothing
+ * rather than a guess.
+ */
+export type ModelCallSummary = {
+  model: string;
+  latencyMs: number | null;
+  inputTokens: number | null;
+  outputTokens: number | null;
+};
+
 export type RunSnapshot = {
   run: {
     id: string;
@@ -95,5 +107,9 @@ export type RunSnapshot = {
     role: "user" | "assistant" | "system";
     content: string;
     createdAt: string;
+    /** The run that wrote this message, when one did. */
+    runId?: string | null;
   }>;
+  /** Latest completed model call per run in this session, keyed by run id. */
+  modelCalls?: Record<string, ModelCallSummary>;
 };
