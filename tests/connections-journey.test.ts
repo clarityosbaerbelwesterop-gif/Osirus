@@ -41,6 +41,11 @@ vi.mock("../src/lib/product/session", () => ({
 
 process.env.OSIRUS_CONNECTOR_KEY = randomBytes(32).toString("hex");
 
+// crypto.ts reads the boot-parsed env object; mirror the key there in case
+// env was already imported by another module in this file.
+const { env } = await import("../src/lib/env");
+env.OSIRUS_CONNECTOR_KEY = process.env.OSIRUS_CONNECTOR_KEY;
+
 const {
   connectGithub,
   disconnectGithub,
@@ -386,8 +391,8 @@ describe("GitHub repository connector (fine-grained PAT, separate from GitHub lo
     }>(
       `select status, credential_reference from osirus.connector_installations
         where workspace_id = $1 and connector_id = 'github'`,
-      [alice.workspaceId],
-    );
+        [alice.workspaceId],
+      );
     expect(after).toEqual({ status: "revoked", credential_reference: null });
     const live = await db.raw(
       `select 1 from osirus.connector_grants g
