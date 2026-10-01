@@ -59,6 +59,10 @@ jobs:
           git fetch -q --depth 1 "$EXO_REPO" "$EXO_COMMIT" && git checkout -q FETCH_HEAD
           rustup override set nightly
           ~/.local/bin/uv sync --extra mlx-cpu
+          # exo's mlx-cpu extra pins mlx-cpu 0.31.2 next to mlx 0.32.0 at this commit, and the two native
+          # libraries do not link ("undefined symbol ...linalg3det..."); use the matching CPU build
+          ~/.local/bin/uv pip install --python .venv/bin/python "mlx-cpu==$(.venv/bin/python -c 'import importlib.metadata as m; print(m.version("mlx"))')"
+          .venv/bin/python -c "import mlx.core as mx; print('mlx', mx.__version__, mx.default_device())"
           mkdir -p "$HOME/exo-dash" && echo '<html>rouge ci</html>' > "$HOME/exo-dash/index.html"
       - name: Convert the checkpoint to MLX (4-bit) and write its exo model card
         run: |
@@ -74,7 +78,7 @@ jobs:
           EXO_DASHBOARD_DIR: exo-dash
         run: |
           cd "$RUNNER_TEMP/exo"
-          EXO_MODELS_READ_ONLY_DIRS="$RUNNER_TEMP/exo-models" nohup ~/.local/bin/uv run exo > "$RUNNER_TEMP/exo.log" 2>&1 &
+          EXO_MODELS_READ_ONLY_DIRS="$RUNNER_TEMP/exo-models" nohup .venv/bin/exo > "$RUNNER_TEMP/exo.log" 2>&1 &
           cd "$GITHUB_WORKSPACE/training/rouge"
           python serve/exo_runtime.py place --model-id "$MODEL_ID"
           reply="$(python serve/exo_runtime.py chat --model-id "$MODEL_ID" --prompt 'Who are you?')"
