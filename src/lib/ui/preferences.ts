@@ -18,7 +18,13 @@ const YEAR = 60 * 60 * 24 * 365;
 
 /** Browser-only: persist a preference cookie for a year. */
 export function writePreference(name: string, value: string) {
-  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${YEAR}; SameSite=Lax`;
+  // Secure is added only over https: on a plain-http localhost origin the
+  // attribute would make the browser silently reject the cookie.
+  const secure =
+    typeof location !== "undefined" && location.protocol === "https:"
+      ? "; Secure"
+      : "";
+  document.cookie = `${name}=${encodeURIComponent(value)}; Path=/; Max-Age=${YEAR}; SameSite=Lax${secure}`;
 }
 
 export function applyTheme(theme: ThemePreference) {
