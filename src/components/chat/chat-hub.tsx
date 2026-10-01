@@ -9,7 +9,11 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type { RunSnapshot, RuntimePacket } from "@/lib/runtime/types";
+import type {
+  ModelCallSummary,
+  RunSnapshot,
+  RuntimePacket,
+} from "@/lib/runtime/types";
 import { repositoryInObjective } from "@/lib/coding/repository-ref";
 import {
   MODE_COOKIE,
@@ -54,6 +58,7 @@ type Activity = { id: string; label: string; at?: string };
 type SessionState = {
   sessionId: string;
   messages: ChatMessage[];
+  modelCalls?: Record<string, ModelCallSummary>;
   activeRunId: string | null;
   recentRunId: string | null;
 };
@@ -90,6 +95,8 @@ export function ChatHub(props: {
   initialSnapshotRunId: string | null;
   /** Server-provided snapshot, so the first paint already shows the run. */
   initialSnapshot?: RunSnapshot | null;
+  /** Completed model calls of the loaded session, keyed by run id. */
+  initialModelCalls?: Record<string, ModelCallSummary>;
   onboarding?: OnboardingStep[];
 }) {
   const shell = useShell();
@@ -102,6 +109,9 @@ export function ChatHub(props: {
   const [snapshot, setSnapshot] = useState<RunSnapshot | null>(
     props.initialSnapshot ?? null,
   );
+  const [modelCalls, setModelCalls] = useState<
+    Record<string, ModelCallSummary>
+  >(props.initialModelCalls ?? props.initialSnapshot?.modelCalls ?? {});
   const [objective, setObjective] = useState("");
   const mode = useSyncExternalStore(subscribeMode, currentMode, serverMode);
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
@@ -153,6 +163,11 @@ export function ChatHub(props: {
     setRunning(!terminalStatuses.has(next.run.status));
     if (terminalStatuses.has(next.run.status)) setCancelling(false);
     setMessages(next.messages);
+    // A snapshot only knows its own session's calls; keep what earlier
+    // snapshots already told us about other runs in this conversation.
+    if (next.modelCalls) {
+      setModelCalls((current) => ({ ...current, ...next.modelCalls }));
+    }
     setActivities(
       next.events
         .filter((event) => event.visibility === "user")
@@ -273,6 +288,7 @@ export function ChatHub(props: {
                 id: `stream:${packet.runId}`,
                 role: "assistant",
                 content: packet.text,
+                runId: packet.runId,
               },
             ];
           });
@@ -303,12 +319,12 @@ export function ChatHub(props: {
       setUploading(true);
       setError(null);
       try {
-        const form = new FormData();
-        form.append("file", file);
-        if (sessionId) form.append("sessionId", sessionId);
+        const formData = new FormData();
+        formData.append("file", file);
+        if (sessionId) formData.append("sessionId", sessionId);
         const response = await fetch("/api/attachments", {
           method: "POST",
-          body: form,
+          body: formData,
         });
         const body = (await response.json().catch(() => ({}))) as {
           attachment?: ComposerAttachment;
@@ -488,6 +504,7 @@ export function ChatHub(props: {
     setFailedObjective(null);
     setSessionId(null);
     setMessages([]);
+    setModelCalls({});
     setActiveRunId(null);
     setActivities([]);
     setSnapshot(null);
@@ -512,6 +529,7 @@ export function ChatHub(props: {
       const state = (await response.json()) as SessionState;
       setSessionId(state.sessionId);
       setMessages(state.messages);
+      setModelCalls(state.modelCalls ?? {});
       setActiveRunId(state.activeRunId);
       setRunning(Boolean(state.activeRunId));
       setActivities([]);
@@ -656,6 +674,7 @@ export function ChatHub(props: {
                 messages={messages}
                 runObjective={liveView?.objective ?? null}
                 streamingId={streamingId}
+                modelCalls={modelCalls}
                 runSlot={
                   liveView ? (
                     <RunCard

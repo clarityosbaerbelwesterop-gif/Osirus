@@ -3,6 +3,7 @@ import { queryAs } from "../db/client";
 import { assertRunTransition, assertStageTransition } from "./state-machine";
 import type {
   Checkpoint,
+  ModelCallSummary,
   RunSnapshot,
   RunStatus,
   RuntimeEvent,
@@ -150,20 +151,22 @@ export class RuntimeRepository {
       return {
         sessionId: null,
         messages: [],
+        modelCalls: {},
         activeRunId: null,
         recentRunId: null,
       };
     }
 
-    const [messages, activeRuns, recentRuns] = await Promise.all([
+    const [messages, activeRuns, recentRuns, modelCalls] = await Promise.all([
       queryAs<{
         id: string;
         role: "user" | "assistant" | "system";
         content: string;
         created_at: string | Date;
+        run_id: string | null;
       }>(
         this.actorId,
-        `select id, role, content, created_at
+        `select id, role, content, created_at, run_id
            from osirus.messages
           where session_id = $1::uuid
           order by created_at
@@ -187,6 +190,7 @@ export class RuntimeRepository {
           limit 1`,
         [sessionId],
       ),
+      this.modelCallsForSession(sessionId),
     ]);
 
     return {
@@ -196,7 +200,9 @@ export class RuntimeRepository {
         role: message.role,
         content: message.content,
         createdAt: new Date(message.created_at).toISOString(),
+        runId: message.run_id,
       })),
+      modelCalls,
       activeRunId: activeRuns[0]?.id ?? null,
       recentRunId: recentRuns[0]?.id ?? null,
     };
@@ -310,15 +316,16 @@ export class RuntimeRepository {
   async getSessionState(sessionId: string, workspaceId: string) {
     const resolved = await this.resolveSession(sessionId, workspaceId);
     if (!resolved) throw new Error("session_not_found");
-    const [messages, activeRuns, recentRuns] = await Promise.all([
+    const [messages, activeRuns, recentRuns, modelCalls] = await Promise.all([
       queryAs<{
         id: string;
         role: "user" | "assistant" | "system";
         content: string;
         created_at: string | Date;
+        run_id: string | null;
       }>(
         this.actorId,
-        `select id, role, content, created_at
+        `select id, role, content, created_at, run_id
            from osirus.messages
           where session_id = $1::uuid
           order by created_at
@@ -342,6 +349,7 @@ export class RuntimeRepository {
           limit 1`,
         [resolved],
       ),
+      this.modelCallsForSession(resolved),
     ]);
     return {
       sessionId: resolved,
@@ -350,10 +358,58 @@ export class RuntimeRepository {
         role: message.role,
         content: message.content,
         createdAt: new Date(message.created_at).toISOString(),
+        runId: message.run_id,
       })),
+      modelCalls,
       activeRunId: activeRuns[0]?.id ?? null,
       recentRunId: recentRuns[0]?.id ?? null,
     };
+  }
+
+  /**
+   * The model that actually served each run in a session: the latest
+   * completed model call per run, keyed by run id. A run whose calls all
+   * failed or never finished is absent -- the chat shows nothing rather
+   * than a guess. Scoped to runs that wrote messages in this session and
+   * read under the caller's row-level security.
+   */
+  async modelCallsForSession(
+    sessionId: string,
+  ): Promise<Record<string, ModelCallSummary>> {
+    const rows = await queryAs<{
+      run_id: string;
+      model: string;
+      latency_ms: number | null;
+      input_tokens: number | null;
+      output_tokens: number | null;
+    }>(
+      this.actorId,
+      `select distinct on (mc.run_id)
+              mc.run_id, mc.model, mc.latency_ms,
+              mc.input_tokens, mc.output_tokens
+         from osirus.model_calls mc
+        where mc.status = 'completed'
+          and mc.run_id in (
+            select run_id
+              from osirus.messages
+             where session_id = $1::uuid
+               and run_id is not null
+          )
+        order by mc.run_id, mc.completed_at desc`,
+      [sessionId],
+    );
+    const map: Record<string, ModelCallSummary> = {};
+    for (const row of rows) {
+      map[row.run_id] = {
+        model: row.model,
+        latencyMs: row.latency_ms === null ? null : Number(row.latency_ms),
+        inputTokens:
+          row.input_tokens === null ? null : Number(row.input_tokens),
+        outputTokens:
+          row.output_tokens === null ? null : Number(row.output_tokens),
+      };
+    }
+    return map;
   }
 
   async getSessionMessages(sessionId: string, limit = 12) {
@@ -865,6 +921,7 @@ export class RuntimeRepository {
       dependencies,
       artifacts,
       approvals,
+      modelCalls,
     ] = await Promise.all([
       queryAs<Record<string, unknown>>(
         this.actorId,
@@ -891,9 +948,10 @@ export class RuntimeRepository {
         role: "user" | "assistant" | "system";
         content: string;
         created_at: string | Date;
+        run_id: string | null;
       }>(
         this.actorId,
-        `select id, role, content, created_at
+        `select id, role, content, created_at, run_id
            from osirus.messages
           where session_id = $1::uuid
           order by created_at`,
@@ -939,6 +997,7 @@ export class RuntimeRepository {
           order by created_at`,
         [runId],
       ),
+      this.modelCallsForSession(run.session_id),
     ]);
 
     return {
@@ -966,7 +1025,9 @@ export class RuntimeRepository {
         role: message.role,
         content: message.content,
         createdAt: new Date(message.created_at).toISOString(),
+        runId: message.run_id,
       })),
+      modelCalls,
     };
   }
 
