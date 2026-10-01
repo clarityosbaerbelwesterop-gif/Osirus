@@ -188,6 +188,7 @@ export default async function HomePage() {
         <Link href="/legal/impressum">Impressum</Link>
         <Link href="/legal/privacy">Privacy</Link>
         <Link href="/legal/terms">Terms</Link>
+        <Link href="/legal/cookies">Cookies</Link>
       </footer>
     </main>
   );
