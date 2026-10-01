@@ -1,11 +1,15 @@
 "use client";
 
 import {
+  Archive,
+  ArchiveRestore,
+  ChevronRight,
   Gauge,
   House,
   Inbox,
   PanelLeftClose,
   PanelLeftOpen,
+  Pencil,
   Pin,
   PinOff,
   Plug,
@@ -19,7 +23,7 @@ import {
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { SIDEBAR_COOKIE, writePreference } from "@/lib/ui/preferences";
 import { OsirusMark } from "../shell/osirus-mark";
 import { useShell, type SessionSummary } from "../shell/shell-context";
@@ -100,6 +104,14 @@ function NavLink({
   );
 }
 
+async function patchSession(id: string, body: Record<string, unknown>) {
+  return fetch(`/api/sessions/${id}`, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(body),
+  }).catch(() => null);
+}
+
 function SessionLink({
   session,
   onNavigate,
@@ -112,18 +124,77 @@ function SessionLink({
   const active = chat?.activeSessionId === session.id;
   const locked = Boolean(chat?.running) && !active;
   const [pinBusy, setPinBusy] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(session.title);
+  const renameCancelled = useRef(false);
   const pinned = Boolean(session.pinnedAt);
 
   const togglePin = async () => {
     setPinBusy(true);
-    const response = await fetch(`/api/sessions/${session.id}`, {
-      method: "PATCH",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ pinned: !pinned }),
-    }).catch(() => null);
+    const response = await patchSession(session.id, { pinned: !pinned });
     setPinBusy(false);
     if (response?.ok) shell.setPinned(session.id, !pinned);
   };
+
+  const startRename = () => {
+    setDraft(session.title);
+    renameCancelled.current = false;
+    setEditing(true);
+  };
+
+  const commitRename = async () => {
+    setEditing(false);
+    const title = draft.trim();
+    if (!title || title === session.title) return;
+    const previous = session.title;
+    shell.renameSession(session.id, title);
+    const response = await patchSession(session.id, { title });
+    if (!response?.ok) shell.renameSession(session.id, previous);
+  };
+
+  const cancelRename = () => {
+    renameCancelled.current = true;
+    setEditing(false);
+  };
+
+  const archive = async () => {
+    shell.removeSession(session.id);
+    const response = await patchSession(session.id, { archived: true });
+    if (!response?.ok) shell.upsertSession(session);
+  };
+
+  if (editing) {
+    return (
+      <li className={cx("session-row", active && "session-row-active")}>
+        <input
+          ref={(input) => {
+            input?.focus();
+            input?.select();
+          }}
+          className="session-rename"
+          value={draft}
+          aria-label={`Rename ${session.title}`}
+          maxLength={240}
+          onChange={(event) => setDraft(event.target.value)}
+          onBlur={() => {
+            if (renameCancelled.current) return;
+            void commitRename();
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              event.currentTarget.blur();
+            }
+            if (event.key === "Escape") {
+              event.preventDefault();
+              event.stopPropagation();
+              cancelRename();
+            }
+          }}
+        />
+      </li>
+    );
+  }
 
   return (
     <li className={cx("session-row", active && "session-row-active")}>
@@ -149,16 +220,109 @@ function SessionLink({
       >
         <span className="truncate">{session.title}</span>
       </Link>
-      <IconButton
-        className="session-pin"
-        size="sm"
-        label={pinned ? `Unpin ${session.title}` : `Pin ${session.title}`}
-        icon={pinned ? PinOff : Pin}
-        tooltip={false}
-        disabled={pinBusy}
-        onClick={() => void togglePin()}
-      />
+      <span className="session-actions">
+        <IconButton
+          size="sm"
+          label={`Rename ${session.title}`}
+          icon={Pencil}
+          tooltip={false}
+          onClick={startRename}
+        />
+        <IconButton
+          size="sm"
+          label={pinned ? `Unpin ${session.title}` : `Pin ${session.title}`}
+          icon={pinned ? PinOff : Pin}
+          tooltip={false}
+          disabled={pinBusy}
+          onClick={() => void togglePin()}
+        />
+        <IconButton
+          size="sm"
+          label={`Archive ${session.title}`}
+          icon={Archive}
+          tooltip={false}
+          onClick={() => void archive()}
+        />
+      </span>
     </li>
+  );
+}
+
+function ArchivedSessions() {
+  const shell = useShell();
+  const [open, setOpen] = useState(false);
+  const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
+
+  const toggle = async () => {
+    const next = !open;
+    setOpen(next);
+    if (!next) return;
+    setSessions(null);
+    const response = await fetch("/api/sessions?archived=1").catch(() => null);
+    if (response?.ok) setSessions((await response.json()) as SessionSummary[]);
+  };
+
+  const unarchive = async (session: SessionSummary) => {
+    const previous = sessions;
+    setSessions(
+      (current) => current?.filter((item) => item.id !== session.id) ?? null,
+    );
+    const response = await patchSession(session.id, { archived: false });
+    if (response?.ok) shell.upsertSession(session);
+    else setSessions(previous);
+  };
+
+  return (
+    <section aria-labelledby="archived-heading">
+      <button
+        type="button"
+        className="sidebar-heading overline sidebar-disclosure"
+        id="archived-heading"
+        aria-expanded={open}
+        onClick={() => void toggle()}
+      >
+        <ChevronRight
+          size={14}
+          aria-hidden="true"
+          className={cx(
+            "sidebar-disclosure-icon",
+            open && "sidebar-disclosure-icon-open",
+          )}
+        />
+        <span className="nav-label">Archived</span>
+        {sessions?.length ? (
+          <span className="count" aria-label={`${sessions.length} archived`}>
+            {sessions.length > 99 ? "99+" : sessions.length}
+          </span>
+        ) : null}
+      </button>
+      {open ? (
+        sessions?.length ? (
+          <ul className="session-list">
+            {sessions.map((session) => (
+              <li key={session.id} className="session-row">
+                <span className="session-link session-archived">
+                  <span className="truncate">{session.title}</span>
+                </span>
+                <span className="session-actions">
+                  <IconButton
+                    size="sm"
+                    label={`Restore ${session.title}`}
+                    icon={ArchiveRestore}
+                    tooltip={false}
+                    onClick={() => void unarchive(session)}
+                  />
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="sidebar-empty">
+            {sessions ? "No archived conversations." : "Loading…"}
+          </p>
+        )
+      ) : null}
+    </section>
   );
 }
 
@@ -334,6 +498,7 @@ export function SidebarContent({
               </p>
             )}
           </section>
+          <ArchivedSessions />
         </div>
       )}
 

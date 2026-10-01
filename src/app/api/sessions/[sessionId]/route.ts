@@ -42,7 +42,19 @@ export async function GET(
   }
 }
 
-const pinSchema = z.object({ pinned: z.boolean() });
+const updateSchema = z
+  .object({
+    pinned: z.boolean().optional(),
+    title: z.string().trim().min(1).max(240).optional(),
+    archived: z.boolean().optional(),
+  })
+  .refine(
+    (body) =>
+      body.pinned !== undefined ||
+      body.title !== undefined ||
+      body.archived !== undefined,
+    { message: "empty_update" },
+  );
 
 export async function PATCH(
   request: Request,
@@ -51,18 +63,40 @@ export async function PATCH(
   const parsed = paramsSchema.safeParse(await context.params);
   if (!parsed.success) return json({ error: "invalid_session_id" }, 400);
   const guard = await guardWrite(request, {
-    schema: pinSchema,
-    route: "sessions.pin",
+    schema: updateSchema,
+    route: "sessions.update",
     limit: 60,
     maxBytes: 1024,
   });
   if (!guard.ok) return guard.response;
   const repository = new RuntimeRepository(guard.identity.userId);
-  const updated = await repository.setSessionPinned({
-    sessionId: parsed.data.sessionId,
-    workspaceId: guard.identity.workspaceId,
-    pinned: guard.body.pinned,
-  });
+  const sessionId = parsed.data.sessionId;
+  const workspaceId = guard.identity.workspaceId;
+  let updated = true;
+  if (guard.body.title !== undefined) {
+    updated =
+      (await repository.renameSession({
+        sessionId,
+        workspaceId,
+        title: guard.body.title,
+      })) && updated;
+  }
+  if (guard.body.pinned !== undefined) {
+    updated =
+      (await repository.setSessionPinned({
+        sessionId,
+        workspaceId,
+        pinned: guard.body.pinned,
+      })) && updated;
+  }
+  if (guard.body.archived !== undefined) {
+    updated =
+      (await repository.setSessionArchived({
+        sessionId,
+        workspaceId,
+        archived: guard.body.archived,
+      })) && updated;
+  }
   if (!updated) return json({ error: "not_found" }, 404);
-  return json({ id: parsed.data.sessionId, pinned: guard.body.pinned });
+  return json({ id: sessionId, ...guard.body });
 }

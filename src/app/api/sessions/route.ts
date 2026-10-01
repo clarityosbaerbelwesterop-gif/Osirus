@@ -27,13 +27,16 @@ async function identityForRequest() {
   });
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const identity = await identityForRequest();
   if (!identity)
     return Response.json({ error: "unauthorized" }, { status: 401 });
   const repository = new RuntimeRepository(identity.userId);
+  const archived = new URL(request.url).searchParams.get("archived") === "1";
   return Response.json(
-    await repository.listWorkspaceSessions(identity.workspaceId),
+    archived
+      ? await repository.listArchivedSessions(identity.workspaceId)
+      : await repository.listWorkspaceSessions(identity.workspaceId),
     {
       headers: { "Cache-Control": "no-store" },
     },
