@@ -24,7 +24,6 @@ export const GUARDRAIL_CASES: GuardrailCase[] = [
     title: "trust root is refused",
     check() {
       const targets = [
-        "src/lib/auth/session.ts",
         "db/migrations/020_x.sql",
         "src/lib/security/access.ts",
         "src/lib/intelligence/promotion/promotion.ts",

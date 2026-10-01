@@ -1,0 +1,132 @@
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index b1d5b07..75a10ad 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -8,6 +8,9 @@ on:
+   # requests opened with the workflow token do not trigger it on their own.
+   workflow_dispatch:
+ 
++permissions:
++  contents: read
++
+ jobs:
+   quality:
+     runs-on: ubuntu-latest
+diff --git a/.github/workflows/foundry.yml b/.github/workflows/foundry.yml
+index 4e415dd..d6447c0 100644
+--- a/.github/workflows/foundry.yml
++++ b/.github/workflows/foundry.yml
+@@ -2,8 +2,7 @@ name: Intelligence Foundry cycles
+ 
+ # Real autonomous research cycles on the real agent, in CI. The model is the
+ # free one by operator decision; it allows about one request a minute, so a
+-# cycle takes hours. Runs only when dispatched, or on a push whose commit
+-# message asks for it with [run-foundry]. Math runs first (cheapest per
++# cycle takes hours. Runs only when dispatched. Math runs first (cheapest per
+ # trial, so a whole cycle can fit one day's free quota), then coding:
+ # sequential, because both share one account's quota. When the provider
+ # refuses, the runner pauses the cycle instead of charging the refusal to a
+@@ -17,8 +16,6 @@ on:
+         required: false
+         type: string
+         default: deepseek-v4-pro-0813:free
+-  push:
+-    branches: [build/m21-m25-intelligence-foundry]
+ 
+ permissions:
+   contents: read
+@@ -62,8 +59,8 @@ jobs:
+         env:
+           OSIRUS_SANDBOX_CREDENTIALS: ci
+           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+-          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+-          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
++          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
++          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+           OSIRUS_ALLOW_LOCAL_EXEC: "1"
+         run: npx vitest run --config vitest.foundry.config.ts
+       - uses: actions/upload-artifact@v4
+@@ -101,8 +98,8 @@ jobs:
+           # from this runner. Label checks run only fixture code, locally.
+           OSIRUS_SANDBOX_CREDENTIALS: ci
+           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+-          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+-          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
++          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
++          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+           OSIRUS_ALLOW_LOCAL_EXEC: "1"
+         run: npx vitest run --config vitest.foundry.config.ts
+       - uses: actions/upload-artifact@v4
+@@ -128,6 +125,6 @@ jobs:
+         env:
+           OSIRUS_SANDBOX_CREDENTIALS: ci
+           VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+-          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+-          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
++          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
++          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+         run: npx vitest run --config vitest.computer.config.ts
+diff --git a/.github/workflows/live-evals.yml b/.github/workflows/live-evals.yml
+index 31bd135..68cdfd1 100644
+--- a/.github/workflows/live-evals.yml
++++ b/.github/workflows/live-evals.yml
+@@ -2,8 +2,7 @@ name: Live evals
+ 
+ # The Agent Arena against the real model, real retrieval, real Vercel Sandbox
+ # and a real browser. It spends model budget, so it never runs on ordinary
+-# pushes or pull requests: only when dispatched, or on a push whose commit
+-# message explicitly asks for it with [run-live-evals].
++# pushes or pull requests: only when dispatched.
+ 
+ on:
+   workflow_dispatch:
+@@ -41,8 +40,6 @@ on:
+         required: false
+         type: boolean
+         default: false
+-  push:
+-    branches: [build/m11-m15-agent-intelligence]
+ 
+ permissions:
+   contents: read
+@@ -112,8 +109,8 @@ jobs:
+           # never reads these; it authenticates through OIDC.
+           OSIRUS_SANDBOX_CREDENTIALS: ${{ env.SANDBOX == 'vercel' && 'ci' || '' }}
+           VERCEL_TOKEN: ${{ env.SANDBOX == 'vercel' && secrets.VERCEL_TOKEN || '' }}
+-          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+-          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
++          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
++          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+           OSIRUS_ALLOW_LOCAL_EXEC: "1"
+         run: |
+           MODEL="${MODEL_OVERRIDE:-$MODEL}"
+diff --git a/.github/workflows/sync-runtime-configuration.yml b/.github/workflows/sync-runtime-configuration.yml
+index e4896c4..2d0bb80 100644
+--- a/.github/workflows/sync-runtime-configuration.yml
++++ b/.github/workflows/sync-runtime-configuration.yml
+@@ -2,7 +2,7 @@ name: Sync runtime configuration
+ 
+ on:
+   push:
+-    branches: [main, build/m1-m5-production-gate]
++    branches: [main]
+     paths:
+       - .github/workflows/sync-runtime-configuration.yml
+       - scripts/sync-vercel-runtime-env.mjs
+@@ -41,13 +41,13 @@ concurrency:
+ jobs:
+   sync:
+     # Never expose deployment credentials to arbitrary pull-request code.
+-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/build/m1-m5-production-gate'
++    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
+     runs-on: ubuntu-latest
+     timeout-minutes: 10
+     env:
+       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+-      VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
+-      VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
++      VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
++      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+       DATABASE_URL: ${{ secrets.DATABASE_URL }}
+       NEON_AUTH_URL: ${{ secrets.NEON_AUTH_URL }}
+       NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}

@@ -5,6 +5,8 @@ import {
   randomBytes,
 } from "node:crypto";
 
+import { env } from "@/lib/env";
+
 // Connector credentials at rest.
 //
 // AES-256-GCM with a key that lives only in the app runtime's environment
@@ -15,7 +17,7 @@ import {
 const VERSION = "v1";
 
 function key() {
-  const raw = process.env.OSIRUS_CONNECTOR_KEY;
+  const raw = env.OSIRUS_CONNECTOR_KEY;
   if (!raw || raw.length < 32) return null;
   // Hashing accepts any sufficiently long secret string and always yields the
   // 32 bytes AES-256 needs.

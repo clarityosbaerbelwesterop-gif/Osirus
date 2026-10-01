@@ -81,6 +81,11 @@ vi.mock("../src/lib/security/outbound", async (importOriginal) => {
 
 process.env.OSIRUS_CONNECTOR_KEY = randomBytes(32).toString("hex");
 
+// crypto.ts reads the boot-parsed env object; mirror the key there in case
+// env was already imported by another module in this file.
+const { env } = await import("../src/lib/env");
+env.OSIRUS_CONNECTOR_KEY = process.env.OSIRUS_CONNECTOR_KEY;
+
 const store = await import("../src/lib/connectors/mcp-store");
 const { RuntimeRepository } = await import("../src/lib/runtime/repository");
 const { registryFor } = await import("../src/lib/tools/runtime");

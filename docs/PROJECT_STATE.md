@@ -7,6 +7,7 @@ Audit date: 2026-10-01 · Audited ref: `main` @ `716f1f7` · Method: full tree e
 OSIRUS is a **genuinely implemented, unusually disciplined codebase** — not vaporware and not an LLM wrapper. Nearly every subsystem maps to substantial real code with tests (77 unit test files running against real Postgres via PGlite, plus e2e and production journey suites).
 
 **Headline gaps (honest list):**
+
 1. **No billing/payment provider** — entitlements + usage ledger exist; zero Stripe (`src/lib/entitlements/index.ts` comment: "There is no billing behind this").
 2. **No email sending** — in-app notifications only.
 3. **No vector search** — memory is JSONB lexical (README admits this).
@@ -17,36 +18,36 @@ OSIRUS is a **genuinely implemented, unusually disciplined codebase** — not va
 
 ## 1. Stack
 
-| Layer | Reality | Evidence |
-|---|---|---|
-| Framework | Next.js 16, React 19, TS strict, App Router, typedRoutes | `package.json`, `next.config.ts` |
-| DB | Neon Postgres 18 (eu-central-1), **no ORM** — raw SQL via `@neondatabase/serverless`; 20 migrations `db/migrations/000–019`; RLS enforced via non-BYPASSRLS role `osirus_app` assumed per transaction | `src/lib/db/client.ts`, `scripts/apply-migrations.mjs` |
-| Auth | Neon Auth `@neondatabase/auth@0.5.0-beta` (Better Auth-based); email/password + GitHub OAuth | `src/lib/auth/server.ts`, `src/proxy.ts` |
-| Models | "UnoRouter" = one OpenAI-compatible endpoint, ≤3 keys, free-model-first with live pool discovery from `GET /v1/models` | `src/lib/models/unorouter.ts`, `free-registry.ts` |
-| Sandbox | `@vercel/sandbox` over OIDC, deny-all network by default; degrades honestly (inconclusive→unverified) outside Vercel | `src/lib/sandbox/vercel.ts` |
-| Deployment | Vercel, production at **https://osirus.vercel.app**; daily Vercel cron + hourly GitHub-Actions OIDC tick | `vercel.json`, `.github/workflows/capability-pulse.yml` |
+| Layer      | Reality                                                                                                                                                                                               | Evidence                                                |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| Framework  | Next.js 16, React 19, TS strict, App Router, typedRoutes                                                                                                                                              | `package.json`, `next.config.ts`                        |
+| DB         | Neon Postgres 18 (eu-central-1), **no ORM** — raw SQL via `@neondatabase/serverless`; 20 migrations `db/migrations/000–019`; RLS enforced via non-BYPASSRLS role `osirus_app` assumed per transaction | `src/lib/db/client.ts`, `scripts/apply-migrations.mjs`  |
+| Auth       | Neon Auth `@neondatabase/auth@0.5.0-beta` (Better Auth-based); email/password + GitHub OAuth                                                                                                          | `src/lib/auth/server.ts`, `src/proxy.ts`                |
+| Models     | "UnoRouter" = one OpenAI-compatible endpoint, ≤3 keys, free-model-first with live pool discovery from `GET /v1/models`                                                                                | `src/lib/models/unorouter.ts`, `free-registry.ts`       |
+| Sandbox    | `@vercel/sandbox` over OIDC, deny-all network by default; degrades honestly (inconclusive→unverified) outside Vercel                                                                                  | `src/lib/sandbox/vercel.ts`                             |
+| Deployment | Vercel, production at **https://osirus.vercel.app**; daily Vercel cron + hourly GitHub-Actions OIDC tick                                                                                              | `vercel.json`, `.github/workflows/capability-pulse.yml` |
 
 ## 2. Subsystem reality map
 
-| Subsystem | Status | Notes |
-|---|---|---|
-| Durable runtime (DAG, leases, slices) | **REAL** | `claim_next_stage` SKIP LOCKED, lease-token fencing, checkpoint+budget in one transaction |
-| Agent loop (observe–decide–act–verify) | **REAL** | Bounded, checkpointed, replan triggers, finish gates; 21KB test file |
-| Agent arms (6: thinking/coding/research/math-science/building/general) | **REAL** | `src/lib/arms/base.ts` 62KB shared runtime |
-| UnoRouter provider abstraction | **REAL** | Single provider only; anti-evasion key failover; capacity admission P0–P4 |
-| Tool registry + approval gates | **REAL** | Fail-closed; approvals bound to tool+exact input+MCP fingerprint, 1h expiry |
-| MCP client + store + UI | **REAL** | Streamable-HTTP, definition fingerprint re-verified before every call |
-| Connectors (GitHub, Vercel, Neon, Supabase) | **REAL** | PATs verified then AES-256-GCM sealed; platforms read-only by design; GitHub writes need grant+approval |
-| Memory (MemoryOS: episodic/semantic/procedural/strategic) | **REAL, lexical** | No vector search |
-| Verification engine | **REAL** | MODEL-only claims cap at "unverified" |
-| Scheduler / automations / webhooks | **REAL** | HMAC-verified webhooks; chained ticks via `after()` |
-| Attachments | **REAL** | Magic-byte sniffing, 10MB cap, PDF/CSV/JSON parsing; images stored but not model-read (PARTIAL) |
-| Screenshots / computer use | **REAL** | M50 fix landed, tested |
-| Intelligence plane (Foundry/RSI/pulse, `src/lib/intelligence/` 26 dirs) | **REAL code**, runs via tick/workflows only | `osirus_intel` schema, 28 tables |
-| Billing | **PARTIAL** | Limits + usage ledger enforced; no payment integration |
-| Email | **ABSENT** | In-app notifications only |
-| Telemetry | **PARTIAL** | 853-byte JSON console logger; no APM/OTel |
-| ChatHub UI + Connections UI | **REAL** | SSE client; connection states incl. DEGRADED/EXPIRED, health, last-used |
+| Subsystem                                                               | Status                                      | Notes                                                                                                   |
+| ----------------------------------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Durable runtime (DAG, leases, slices)                                   | **REAL**                                    | `claim_next_stage` SKIP LOCKED, lease-token fencing, checkpoint+budget in one transaction               |
+| Agent loop (observe–decide–act–verify)                                  | **REAL**                                    | Bounded, checkpointed, replan triggers, finish gates; 21KB test file                                    |
+| Agent arms (6: thinking/coding/research/math-science/building/general)  | **REAL**                                    | `src/lib/arms/base.ts` 62KB shared runtime                                                              |
+| UnoRouter provider abstraction                                          | **REAL**                                    | Single provider only; anti-evasion key failover; capacity admission P0–P4                               |
+| Tool registry + approval gates                                          | **REAL**                                    | Fail-closed; approvals bound to tool+exact input+MCP fingerprint, 1h expiry                             |
+| MCP client + store + UI                                                 | **REAL**                                    | Streamable-HTTP, definition fingerprint re-verified before every call                                   |
+| Connectors (GitHub, Vercel, Neon, Supabase)                             | **REAL**                                    | PATs verified then AES-256-GCM sealed; platforms read-only by design; GitHub writes need grant+approval |
+| Memory (MemoryOS: episodic/semantic/procedural/strategic)               | **REAL, lexical**                           | No vector search                                                                                        |
+| Verification engine                                                     | **REAL**                                    | MODEL-only claims cap at "unverified"                                                                   |
+| Scheduler / automations / webhooks                                      | **REAL**                                    | HMAC-verified webhooks; chained ticks via `after()`                                                     |
+| Attachments                                                             | **REAL**                                    | Magic-byte sniffing, 10MB cap, PDF/CSV/JSON parsing; images stored but not model-read (PARTIAL)         |
+| Screenshots / computer use                                              | **REAL**                                    | M50 fix landed, tested                                                                                  |
+| Intelligence plane (Foundry/RSI/pulse, `src/lib/intelligence/` 26 dirs) | **REAL code**, runs via tick/workflows only | `osirus_intel` schema, 28 tables                                                                        |
+| Billing                                                                 | **PARTIAL**                                 | Limits + usage ledger enforced; no payment integration                                                  |
+| Email                                                                   | **ABSENT**                                  | In-app notifications only                                                                               |
+| Telemetry                                                               | **PARTIAL**                                 | 853-byte JSON console logger; no APM/OTel                                                               |
+| ChatHub UI + Connections UI                                             | **REAL**                                    | SSE client; connection states incl. DEGRADED/EXPIRED, health, last-used                                 |
 
 ## 3. Database state (Neon project `super-voice-69875601`)
 
@@ -61,13 +62,13 @@ OSIRUS is a **genuinely implemented, unusually disciplined codebase** — not va
 
 **34 of 38 branches are fully merged into main** (14 as true ancestors, 20 via squash). Only 3 carry unmerged work:
 
-| Branch | Status | Action |
-|---|---|---|
-| `main` | PRODUCTION (tip `716f1f7`, 2026-09-28) | **Protect it** (currently zero protected branches) |
-| `rouge/m57-gate` | MERGE CANDIDATE (+1 commit: eval interleaving) | Merge via PR after CI |
-| `rouge/free-gpu-training-20260930` | EXPERIMENTAL (GPU training preflight) | Keep isolated |
-| `rouge/native-model-m58` | EXPERIMENTAL (exo/MLX native model, newest work, 2026-10-01) | Keep isolated |
-| all `build/*`, all `fix/*`, `integration`, `claude/*`, `rouge/m56-*`, `rouge/m57-kernel` | MERGED → DEAD | **Delete after removing stale workflow triggers** |
+| Branch                                                                                   | Status                                                       | Action                                             |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------ | -------------------------------------------------- |
+| `main`                                                                                   | PRODUCTION (tip `716f1f7`, 2026-09-28)                       | **Protect it** (currently zero protected branches) |
+| `rouge/m57-gate`                                                                         | MERGE CANDIDATE (+1 commit: eval interleaving)               | Merge via PR after CI                              |
+| `rouge/free-gpu-training-20260930`                                                       | EXPERIMENTAL (GPU training preflight)                        | Keep isolated                                      |
+| `rouge/native-model-m58`                                                                 | EXPERIMENTAL (exo/MLX native model, newest work, 2026-10-01) | Keep isolated                                      |
+| all `build/*`, all `fix/*`, `integration`, `claude/*`, `rouge/m56-*`, `rouge/m57-kernel` | MERGED → DEAD                                                | **Delete after removing stale workflow triggers**  |
 
 **⚠ Stale secret-bearing triggers:** `sync-runtime-configuration.yml`, `foundry.yml`, `live-evals.yml` still fire on pushes to dead build branches. Remove those refs **before** branch deletion.
 
@@ -95,15 +96,15 @@ OSIRUS is a **genuinely implemented, unusually disciplined codebase** — not va
 
 ## 8. Prioritized next actions (input to Phases F–N)
 
-| # | Action | Severity/effort |
-|---|---|---|
-| 1 | Fail-closed startup when `NEON_AUTH_COOKIE_SECRET` missing; remove public fallback secret (AUTH-1) | MEDIUM / S |
-| 2 | Verify app always `SET ROLE osirus_app`; consider dedicated non-BYPASSRLS login role (DB-1/DB-2) | HIGH / M |
-| 3 | Delete root `proxy.ts` (AUTH-2) | LOW / XS |
-| 4 | Fix `.env.example` drift incl. `OSIRUS_CONNECTOR_KEY` (AUTH-4) | LOW / XS |
-| 5 | Remove dead-branch workflow triggers; add `permissions: contents: read` to ci.yml | MEDIUM / XS |
-| 6 | Protect `main` (PR + CI required); enable auto-delete of merged head branches | MEDIUM / XS |
-| 7 | Delete 34 merged branches | LOW / S |
-| 8 | Merge `rouge/m57-gate` via PR | LOW / XS |
-| 9 | Neon: IP allowlist + protected branch; raise PITR retention (paid plan) | MEDIUM / XS |
-| 10 | Full red-team (Phase F) building on SECURITY_AUDIT.md | — |
+| #   | Action                                                                                             | Severity/effort |
+| --- | -------------------------------------------------------------------------------------------------- | --------------- |
+| 1   | Fail-closed startup when `NEON_AUTH_COOKIE_SECRET` missing; remove public fallback secret (AUTH-1) | MEDIUM / S      |
+| 2   | Verify app always `SET ROLE osirus_app`; consider dedicated non-BYPASSRLS login role (DB-1/DB-2)   | HIGH / M        |
+| 3   | Delete root `proxy.ts` (AUTH-2)                                                                    | LOW / XS        |
+| 4   | Fix `.env.example` drift incl. `OSIRUS_CONNECTOR_KEY` (AUTH-4)                                     | LOW / XS        |
+| 5   | Remove dead-branch workflow triggers; add `permissions: contents: read` to ci.yml                  | MEDIUM / XS     |
+| 6   | Protect `main` (PR + CI required); enable auto-delete of merged head branches                      | MEDIUM / XS     |
+| 7   | Delete 34 merged branches                                                                          | LOW / S         |
+| 8   | Merge `rouge/m57-gate` via PR                                                                      | LOW / XS        |
+| 9   | Neon: IP allowlist + protected branch; raise PITR retention (paid plan)                            | MEDIUM / XS     |
+| 10  | Full red-team (Phase F) building on SECURITY_AUDIT.md                                              | —               |

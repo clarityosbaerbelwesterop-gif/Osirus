@@ -19,6 +19,10 @@ const schema = z.object({
   OSIRUS_MODEL_RESEARCH: z.string().min(1).optional(),
   OSIRUS_MODEL_MATH: z.string().min(1).optional(),
   OSIRUS_MODEL_VERIFY: z.string().min(1).optional(),
+  // AES-256-GCM key sealing connector/MCP/webhook credentials at rest. Unset
+  // (or shorter than 32 characters) fails closed: every connection reports
+  // NOT_CONFIGURED and sealing throws connector_key_not_configured.
+  OSIRUS_CONNECTOR_KEY: z.string().min(32).optional(),
   // M49: free-model-first by default. "configured-first" tries a configured
   // (possibly paid) role model before the verified free pool.
   OSIRUS_MODEL_POLICY: z
