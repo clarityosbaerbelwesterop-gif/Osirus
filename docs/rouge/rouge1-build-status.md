@@ -118,7 +118,7 @@ At this account's prices the H200 is cheapest and fastest. A T4 node matches it 
   - Full-parameter FSDP2 training (`rouge_train/full.py`). Tested with two CPU ranks: the resumed run is bit-identical, the MTP tensors are carried over and the vision tower stays frozen.
   - RSI data selection (`rouge_train/rft.py`).
   - The Lightning job on 8 × H200: download and verification on the GPU machine, baseline, self-generated verified data, training, pre-registered verdict, private upload, GGUF (`lightning_ai/rouge1_job.sh`, `rouge1_session.py`, `rouge-train.yml task=rouge1`).
-  - The local install (`serve/install.py`).
+  - The local install (`serve/install.py`): GGUF with llama.cpp on one device, or `--runtime exo` for several of the owner's devices as one cluster. The exo path (MLX conversion, model card, placement, scoring over its API) passed CI with a tiny checkpoint of Rouge's architecture class (rouge-exo.yml run 36840971178; `docs/rouge/research/distributed-compute.md`).
 - **Dataset `rft-v1`** (rebuilt for the new base in rouge-data.yml run 36831253532; the identity records name Qwen3.8-27B; train `247bfb3ed518`; prompts and eval unchanged; stored in the registry):
   - 5,000 verifiable prompts (openr1-math 2,500, openmath 2,500);
   - 5,716 training records (in-house generated and human-written German);

@@ -21,9 +21,16 @@ Each project below was checked from its source repository.
 - **Status:** Apache-2.0 and actively maintained (last commit 2026-08-25).
 - **What it does:** MLX backend (Apple silicon), automatic device discovery, and tensor parallelism across devices (1.8× on 2 devices, 3.2× on 4, from its README). It offers an OpenAI-compatible API.
 - **Fit with Rouge:** it ships model cards for the `qwen3_5` architecture, including `mlx-community/Qwen3.6-27B-bf16`. That is Rouge 1's architecture class (Qwen3.8-27B), so a Rouge 1 checkpoint converted to MLX should run on two or more Macs together, with no server.
-- **Next step, after the first gated checkpoint:**
-  1. Add `serve/install.py --runtime exo`: download the checkpoint, convert it with `mlx_lm.convert` to 4-bit, and register it with exo.
-  2. Measure the exo cluster against llama.cpp on one Mac, with the same eval items.
+- **Built:** `serve/exo_runtime.py` (convert, card, place, chat) and `serve/install.py --runtime exo` (download the gated checkpoint, convert to 4-bit MLX, write the exo model card, print the start commands).
+- **Verified in CI** (`rouge-exo.yml`, run 36840971178, exo at commit `21a54c5`, free Linux runner, exo's MlxCpu backend):
+  1. A tiny checkpoint of Rouge's architecture class (`Qwen3_5ForConditionalGeneration`, random weights) converts to 4-bit MLX with exo's own mlx-lm.
+  2. exo loads it from a read-only local directory (`EXO_MODELS_READ_ONLY_DIRS`); nothing is downloaded.
+  3. `POST /place_instance` places it; the runner is ready in 4.8 s.
+  4. Chat answers over exo's OpenAI-compatible API (random weights, so the text is noise).
+  5. `rouge_train.cli generate --backend openai` scores 3 eval items through exo.
+- **Linux note:** exo's lock file installs a CUDA build of an MLX fork next to PyPI's `mlx-cpu` 0.31.2, and their native libraries do not link (`undefined symbol`). The official PyPI pair `mlx==0.32.0` + `mlx-cpu==0.32.0` works. On Apple silicon (Metal) exo's own lock is used unchanged.
+- **Known harmless warning:** for a custom model id exo first asks the Hugging Face hub for a file list; the request fails (the id is not on the hub) and exo uses the local file list.
+- **Open:** measure an exo cluster of the owner's devices against llama.cpp on one device, with the same eval items, once the first gated Rouge 1 checkpoint exists.
 
 ## Decentralised RL and training: patterns for later iterations
 
