@@ -19,7 +19,7 @@ import { abortLocalRun, registerRunController } from "./cancellation";
 import { persistGraph, setBudget } from "./dispatch";
 import { publicRuntimeErrorMessage, runtimeErrorCode } from "./errors";
 import { RuntimeRepository } from "./repository";
-import { capabilitiesFor, routeObjective } from "./router-v2";
+import { capabilitiesFor, routeObjective, type RoutingMode } from "./router-v2";
 import { isTerminalRunStatus } from "./state-machine";
 import type { Capability, RuntimePacket } from "./types";
 import { driveSlices, finalizeRun } from "./worker";
@@ -66,6 +66,8 @@ export async function prepareRuntimeRun(input: {
   capabilities: Capability[];
   sessionId?: string | null;
   regenerate?: boolean;
+  /** User-selected working mode; persisted on the run, biases routing. */
+  mode?: RoutingMode;
 }): Promise<PreparedRun> {
   const repository = new RuntimeRepository(input.identity.userId);
   const existing = await repository.findRunByRequestId(
@@ -105,6 +107,9 @@ export async function prepareRuntimeRun(input: {
     secondaryCapabilities,
     complexity: complexityFor(input.objective),
     requestId: input.requestId,
+    // "auto" is the default rather than a choice; only a deliberate
+    // selection is written down.
+    mode: input.mode && input.mode !== "auto" ? input.mode : undefined,
   });
 
   if (created.created && !input.regenerate) {
@@ -190,6 +195,8 @@ export async function planRuntimeRun(input: {
   stageInput?: Record<string, unknown>;
   /** Files sent with the objective; their excerpts are retrieved per stage. */
   attachments?: Array<{ id: string; kind: string }>;
+  /** User-selected working mode; biases the routing decision. */
+  mode?: RoutingMode;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
   const provider = input.policy?.model
@@ -239,6 +246,7 @@ export async function planRuntimeRun(input: {
         reason: "Composition fixed by the evaluation task.",
       }
     : await routeObjective(input.objective, {
+        mode: input.mode,
         classify: (objective) =>
           analyseTask({
             provider: recordingProvider(provider, repository, {
@@ -426,6 +434,7 @@ export async function executeRuntimeRun(input: {
   emit: RuntimeEmit;
   correlationId?: string;
   attachments?: Array<{ id: string; kind: string }>;
+  mode?: RoutingMode;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
   const controller = new AbortController();
@@ -466,6 +475,7 @@ export async function executeRuntimeRun(input: {
       emit: input.emit,
       correlationId: input.correlationId,
       attachments: input.attachments,
+      mode: input.mode,
       signal: controller.signal,
     });
 

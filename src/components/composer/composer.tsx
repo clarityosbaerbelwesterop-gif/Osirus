@@ -9,6 +9,7 @@ import {
   RotateCcw,
   RefreshCw,
   ShieldAlert,
+  SlidersHorizontal,
   Square,
   X,
 } from "lucide-react";
@@ -20,15 +21,27 @@ import {
   useLayoutEffect,
   useRef,
   type FormEvent,
+  type KeyboardEvent,
 } from "react";
 import {
   repositoryInObjective,
   repositoryShortName,
 } from "@/lib/coding/repository-ref";
+import type { ModePreference } from "@/lib/ui/preferences";
 import { IconButton } from "../ui/icon-button";
 
 export type ComposerHandle = {
   focus: () => void;
+};
+
+const MODES = ["auto", "research", "coding", "reasoning", "agent"] as const;
+
+const MODE_LABELS: Record<ModePreference, string> = {
+  auto: "Auto",
+  research: "Research",
+  coding: "Coding",
+  reasoning: "Reasoning",
+  agent: "Agent",
 };
 
 export type ComposerAttachment = {
@@ -65,6 +78,9 @@ export const Composer = forwardRef<
     workspaceName: string;
     github: GithubState;
     approvalAnchor: string | null;
+    /** User-selected working mode; "auto" lets the router decide alone. */
+    mode: ModePreference;
+    onModeChange: (mode: ModePreference) => void;
     attachments?: ComposerAttachment[];
     uploading?: boolean;
     onAttach?: (file: File) => void;
@@ -73,6 +89,7 @@ export const Composer = forwardRef<
 >(function Composer(props, ref) {
   const textarea = useRef<HTMLTextAreaElement | null>(null);
   const picker = useRef<HTMLInputElement | null>(null);
+  const modeButtons = useRef<Array<HTMLButtonElement | null>>([]);
 
   useImperativeHandle(ref, () => ({
     focus: () => {
@@ -94,6 +111,30 @@ export const Composer = forwardRef<
   const submit = (event: FormEvent) => {
     event.preventDefault();
     props.onSubmit();
+  };
+
+  // Radiogroup pattern: the selected mode keeps tabIndex 0, arrow keys move
+  // both selection and focus, Home/End jump to the ends.
+  const selectMode = (index: number) => {
+    const wrapped = (index + MODES.length) % MODES.length;
+    props.onModeChange(MODES[wrapped]);
+    modeButtons.current[wrapped]?.focus();
+  };
+  const onModeKeyDown = (event: KeyboardEvent<HTMLButtonElement>) => {
+    const current = MODES.indexOf(props.mode);
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      event.preventDefault();
+      selectMode(current + 1);
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      event.preventDefault();
+      selectMode(current - 1);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      selectMode(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      selectMode(MODES.length - 1);
+    }
   };
 
   return (
@@ -121,6 +162,26 @@ export const Composer = forwardRef<
         </div>
       ) : null}
       <form className="composer" onSubmit={submit}>
+        <div className="composer-modes" role="radiogroup" aria-label="Mode">
+          {MODES.map((mode, index) => (
+            <button
+              key={mode}
+              ref={(node) => {
+                modeButtons.current[index] = node;
+              }}
+              type="button"
+              role="radio"
+              aria-checked={props.mode === mode}
+              tabIndex={props.mode === mode ? 0 : -1}
+              className={`composer-mode${props.mode === mode ? " is-active" : ""}`}
+              disabled={props.running}
+              onClick={() => props.onModeChange(mode)}
+              onKeyDown={onModeKeyDown}
+            >
+              {MODE_LABELS[mode]}
+            </button>
+          ))}
+        </div>
         <label htmlFor="composer-input" className="sr-only">
           Message Osirus
         </label>
@@ -206,6 +267,14 @@ export const Composer = forwardRef<
               <Folder size={13} aria-hidden="true" />
               <span className="truncate">{props.workspaceName}</span>
             </span>
+            {props.mode !== "auto" ? (
+              <span className="chip" title="Working mode">
+                <SlidersHorizontal size={13} aria-hidden="true" />
+                <span className="truncate">
+                  Mode: {MODE_LABELS[props.mode]}
+                </span>
+              </span>
+            ) : null}
             {repository ? (
               <span className="chip" title={repository}>
                 <GitBranch size={13} aria-hidden="true" />
