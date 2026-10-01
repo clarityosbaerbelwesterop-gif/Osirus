@@ -612,3 +612,35 @@ describe("migration 019", () => {
     expect(sql).not.toMatch(/\bDROP TABLE\b|\bDROP COLUMN\b/);
   });
 });
+
+describe("migration 020", () => {
+  const sql = migration("020_function_execute_grants.sql");
+
+  it("revokes PUBLIC EXECUTE on every function and grants osirus_app", () => {
+    // The DO block walks pg_proc so no function name has to be listed, and
+    // default privileges keep later migrations from reopening the grant.
+    expect(sql).toContain("FROM pg_proc p");
+    expect(sql).toContain("n.nspname IN ('osirus', 'osirus_intel')");
+    expect(sql).toMatch(/REVOKE ALL ON %s %I\.%I\(%s\) FROM PUBLIC/);
+    expect(sql).toMatch(/GRANT EXECUTE ON %s %I\.%I\(%s\) TO osirus_app/);
+    expect(sql).toContain(
+      "ALTER DEFAULT PRIVILEGES IN SCHEMA osirus\n  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;",
+    );
+    expect(sql).toContain(
+      "ALTER DEFAULT PRIVILEGES IN SCHEMA osirus\n  GRANT EXECUTE ON FUNCTIONS TO osirus_app;",
+    );
+    expect(sql).toContain(
+      "ALTER DEFAULT PRIVILEGES IN SCHEMA osirus_intel\n  REVOKE EXECUTE ON FUNCTIONS FROM PUBLIC;",
+    );
+    expect(sql).toContain(
+      "ALTER DEFAULT PRIVILEGES IN SCHEMA osirus_intel\n  GRANT EXECUTE ON FUNCTIONS TO osirus_app;",
+    );
+    // The owner's implicit rights must stay: nothing may revoke from it.
+    expect(sql).not.toMatch(/REVOKE .* FROM neondb_owner/i);
+  });
+
+  it("documents the forgeable-GUC residual risk instead of faking a fix", () => {
+    expect(sql).toContain("DB-1");
+    expect(sql).toMatch(/no secret primitive/i);
+  });
+});
