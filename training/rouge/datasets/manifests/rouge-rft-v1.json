@@ -3,8 +3,8 @@
  "name": "rouge-rft-v1",
  "recipe": "rft-v1",
  "strip_thinking": false,
- "registry_version": "2026-09-28.4",
- "code_commit": "2e3ee50f06bab6982d8ca0603eac3afb7e293e6b",
+ "registry_version": "2026-09-30.1",
+ "code_commit": "293ff105907f75879f2568ce2aadc068607f5555",
  "max_tokens": 7500,
  "seed": 20260928,
  "sources": {
@@ -79,11 +79,17 @@
    "revision": "179dd21fc55192153d94adb0e0ce8f69e222bf75",
    "license": "Apache-2.0",
    "role": "train"
+  },
+  "deepseek-v4-pro-teacher": {
+   "source": "teacher:hf:deepseek-ai/DeepSeek-V4-Pro (self-hosted weights on Lightning; answers to prompts Rouge never solved, code-verified)",
+   "revision": "b5968e9190ef611bbf34a7229255be88a0e937c1",
+   "license": "MIT",
+   "role": "train"
   }
  },
  "train": {
   "file": "train.jsonl",
-  "sha256": "acae2448f1eed2a2485523f832e01085d508bbe7b56674d7a5a4b5373e5f5ee4",
+  "sha256": "247bfb3ed518db5a20b258b33db75f43079557675c41301778d90d79151a0897",
   "records": 5716,
   "by_source": {
    "tulu-oasst1": 1499,
