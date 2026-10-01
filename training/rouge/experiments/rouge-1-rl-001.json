@@ -1,8 +1,8 @@
 {
   "schema": "rouge.experiment/1",
   "name": "rouge-1-rl-001",
-  "status": "draft",
-  "registered": "2026-09-30",
+  "status": "pre-registered",
+  "registered": "2026-10-01",
   "question": "Does one RSI iteration (the base answers verifiable problems, only code-verified answers are trained into every language-model weight) improve held-out verifiable math without breaking general skills?",
   "parent": "base:Qwen/Qwen3.8-27B@1d4bf0f2ff6012fd82039f2fa52739d0dd7c60c0",
   "method": {
@@ -18,11 +18,11 @@
   },
   "data": {
     "manifest": "training/rouge/datasets/manifests/rouge-rft-v1.json",
-    "train_sha256": "acae2448f1eed2a2485523f832e01085d508bbe7b56674d7a5a4b5373e5f5ee4",
+    "train_sha256": "247bfb3ed518db5a20b258b33db75f43079557675c41301778d90d79151a0897",
     "prompts_sha256": "89d20544258a857062803a6b458cba2725e15791c727ff9dfec69c7b4c56e668",
     "records": 5716,
     "prompts": 5000,
-    "build": "rouge-data.yml run 36768014451 (code 2e3ee50)"
+    "build": "rouge-data.yml run 36831253532 (code 293ff10)"
   },
   "config": "training/rouge/configs/full-001.json",
   "eval": {

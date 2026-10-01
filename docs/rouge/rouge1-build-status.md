@@ -110,20 +110,20 @@ At this account's prices the H200 is cheapest and fastest. A T4 node matches it 
 - **Measured: the T4 reaches MFU 0.095** (42.3k tokens/s, fp16) instead of the assumed 0.30 (`results/lightning/mfu.json`). A GPU tournament is far cheaper on an H200 (about 5–25 min per candidate) than on a T4 (79 min).
 - **Now:** Level B runs free on GitHub CPUs (the registered fallback B-cpu, size xs). It names the finalists; promotion still needs Level C on a GPU.
 
-## Rouge 1 on Qwen3.6-27B (owner decision 2026-09-30)
+## Rouge 1 on Qwen3.8-27B (owner decisions 2026-09-30 and 2026-10-01)
 
 - **The plan:** `docs/rouge/rouge1-base-plan.md`.
-- **Base:** pinned `Qwen/Qwen3.6-27B@6a9e13bd6fc8`, Apache-2.0, 15 shards, 55.6 GB, every sha256 recorded (run 36765841051).
+- **Base:** pinned `Qwen/Qwen3.8-27B@1d4bf0f2ff60`, Apache-2.0, 18 shards, 55.6 GB, every sha256 recorded (run 36830868813). It has the same architecture class as the earlier Qwen3.6-27B pin, which is recorded under `supersedes`.
 - **Built and tested for free:**
   - Full-parameter FSDP2 training (`rouge_train/full.py`). Tested with two CPU ranks: the resumed run is bit-identical, the MTP tensors are carried over and the vision tower stays frozen.
   - RSI data selection (`rouge_train/rft.py`).
   - The Lightning job on 8 × H200: download and verification on the GPU machine, baseline, self-generated verified data, training, pre-registered verdict, private upload, GGUF (`lightning_ai/rouge1_job.sh`, `rouge1_session.py`, `rouge-train.yml task=rouge1`).
   - The local install (`serve/install.py`).
-- **Dataset `rft-v1`** (rouge-data.yml run 36768014451, stored in the registry):
+- **Dataset `rft-v1`** (rebuilt for the new base in rouge-data.yml run 36831253532; the identity records name Qwen3.8-27B; train `247bfb3ed518`; prompts and eval unchanged; stored in the registry):
   - 5,000 verifiable prompts (openr1-math 2,500, openmath 2,500);
   - 5,716 training records (in-house generated and human-written German);
   - 864 evaluation items: 300 primary (held out), 500 guard, 64 report.
-- **Pre-registration:** `experiments/rouge-1-rl-001.json` is registered (eval `73bd239a16e1`). The launcher's preflight passes against the committed pin, pre-registration, dataset and config.
+- **Pre-registration:** `experiments/rouge-1-rl-001.json` is registered again on 2026-10-01 with parent Qwen3.8-27B (eval `73bd239a16e1`). The launcher's preflight passes against the committed pin, pre-registration, dataset and config.
 - **Teacher:** DeepSeek-V4-Pro is pinned as teacher (`models/teachers/deepseek-v4-pro.json`, 864.7 GB, MIT text checked, run 36774077018). It runs self-hosted on 8 × B200 after iteration 1 (`docs/rouge/rouge1-base-plan.md`).
 - **Waiting for:** the owner's credits, then one approval in `rouge-gpu`. One iteration costs about 2.3 h × 36 USD/h ≈ 84 USD.
 
