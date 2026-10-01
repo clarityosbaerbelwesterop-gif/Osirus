@@ -24,6 +24,57 @@ export type RoutingCandidate = {
   score: number;
 };
 
+/**
+ * The working mode a user can pick in the composer. "auto" is the default
+ * and means the heuristics decide alone; every other value nudges routing
+ * toward one arm.
+ */
+export type RoutingMode =
+  "auto" | "research" | "coding" | "reasoning" | "agent";
+
+/** The arm a selected mode nudges routing toward. */
+const ARM_BY_MODE: Record<Exclude<RoutingMode, "auto">, ArmId> = {
+  research: "research",
+  coding: "coding",
+  reasoning: "thinking",
+  agent: "building",
+};
+
+/**
+ * How far a selected mode may move its arm. Bounded so a mode overrides weak
+ * heuristic signals -- an objective no arm recognises -- but never hides a
+ * strong contradictory match: a candidate near the score cap still outranks
+ * a boosted zero.
+ */
+export const MODE_BOOST = 0.5;
+
+export type ModeBoost = {
+  mode: Exclude<RoutingMode, "auto">;
+  armId: ArmId;
+};
+
+function modeBoostOf(mode: RoutingMode | undefined): ModeBoost | null {
+  if (!mode || mode === "auto") return null;
+  return { mode, armId: ARM_BY_MODE[mode] };
+}
+
+function boosted(
+  candidates: RoutingCandidate[],
+  boost: ModeBoost | null,
+): RoutingCandidate[] {
+  if (!boost) return candidates;
+  return candidates
+    .map((candidate) =>
+      candidate.armId === boost.armId
+        ? {
+            ...candidate,
+            score: Number(Math.min(1, candidate.score + MODE_BOOST).toFixed(4)),
+          }
+        : candidate,
+    )
+    .sort((a, b) => b.score - a.score || a.armId.localeCompare(b.armId));
+}
+
 export type RoutingDecision = {
   primary: ArmId;
   /** Ordered arms for a compound objective; one entry for a simple one. */
@@ -94,12 +145,15 @@ export function ambiguityOf(
   return null;
 }
 
-export function compositionFromSegments(objective: string): {
+export function compositionFromSegments(
+  objective: string,
+  boost: ModeBoost | null = null,
+): {
   composition: ArmId[];
   perSegment: Array<{ segment: string; armId: ArmId; score: number }>;
 } {
   const perSegment = segmentObjective(objective).map((segment) => {
-    const [best] = scoreCandidates(segment);
+    const [best] = boosted(scoreCandidates(segment), boost);
     return {
       segment,
       armId: best?.armId ?? "general",
@@ -131,10 +185,14 @@ export type Classifier = (objective: string) => Promise<TaskAnalysis>;
  * `classify` is injected rather than imported so the composition logic can be
  * tested exhaustively without a network call, and so a caller that has no
  * provider configured degrades to the heuristic path instead of failing.
+ *
+ * `mode` is the user's composer selection: anything but "auto" adds the
+ * bounded MODE_BOOST to one arm's candidates before composition, and the
+ * decision's reason says so, so the preference stays measurable.
  */
 export async function routeObjective(
   objective: string,
-  options: { classify?: Classifier } = {},
+  options: { classify?: Classifier; mode?: RoutingMode } = {},
 ): Promise<RoutingDecision> {
   if (isSmallTalk(objective)) {
     return {
@@ -147,8 +205,12 @@ export async function routeObjective(
     };
   }
 
-  const candidates = scoreCandidates(objective);
-  const { composition, perSegment } = compositionFromSegments(objective);
+  const boost = modeBoostOf(options.mode);
+  const note = boost
+    ? ` User mode=${boost.mode} boosted the ${boost.armId} arm.`
+    : "";
+  const candidates = boosted(scoreCandidates(objective), boost);
+  const { composition, perSegment } = compositionFromSegments(objective, boost);
   const heuristicPrimary = candidates[0]?.armId ?? "general";
   const ambiguity = ambiguityOf(objective, candidates);
   const compound = composition.length > 1;
@@ -167,8 +229,8 @@ export async function routeObjective(
       confidence: candidates[0]?.score ?? 0,
       escalated: false,
       reason: compound
-        ? `Compound objective split into ${ordered.length} stages by segment routing.`
-        : `Heuristic match on ${heuristicPrimary}.`,
+        ? `Compound objective split into ${ordered.length} stages by segment routing.${note}`
+        : `Heuristic match on ${heuristicPrimary}.${note}`,
     };
   }
 
@@ -180,7 +242,7 @@ export async function routeObjective(
       capabilities: capabilitiesFor(ordered),
       confidence: candidates[0]?.score ?? 0,
       escalated: false,
-      reason: `Ambiguous (${ambiguity}) but no classifier is available; using the heuristic match.`,
+      reason: `Ambiguous (${ambiguity}) but no classifier is available; using the heuristic match.${note}`,
     };
   }
 
@@ -207,7 +269,7 @@ export async function routeObjective(
       capabilities: capabilitiesFor(resolved),
       confidence: analysis.complexity === "low" ? 0.8 : 0.65,
       escalated: true,
-      reason: `Structured classification resolved ${ambiguity}.`,
+      reason: `Structured classification resolved ${ambiguity}.${note}`,
       analysis,
     };
   } catch {
@@ -220,7 +282,7 @@ export async function routeObjective(
       capabilities: capabilitiesFor(ordered),
       confidence: candidates[0]?.score ?? 0,
       escalated: false,
-      reason: `Classification failed; using the heuristic match for ${ambiguity}.`,
+      reason: `Classification failed; using the heuristic match for ${ambiguity}.${note}`,
     };
   }
 }
