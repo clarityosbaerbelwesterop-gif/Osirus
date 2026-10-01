@@ -5,10 +5,25 @@ import "./globals.css";
 import { parseTheme, THEME_COOKIE } from "@/lib/ui/preferences";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://osirus.vercel.app"),
   title: { default: "Osirus", template: "%s · Osirus" },
   description:
     "An agent workspace that plans, acts with approval, and verifies its work.",
-  robots: { index: false, follow: false },
+  robots: { index: true, follow: true },
+  openGraph: {
+    type: "website",
+    siteName: "Osirus",
+    title: "Osirus — an agent that finishes the work, and shows it",
+    description:
+      "An agent workspace that plans, acts with approval, and verifies its work.",
+    url: "/",
+  },
+  twitter: {
+    card: "summary",
+    title: "Osirus — an agent that finishes the work, and shows it",
+    description:
+      "An agent workspace that plans, acts with approval, and verifies its work.",
+  },
 };
 
 export const viewport: Viewport = {
