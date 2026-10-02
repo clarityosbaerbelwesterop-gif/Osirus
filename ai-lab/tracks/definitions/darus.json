@@ -1,0 +1,118 @@
+{
+  "trackId": "darus",
+  "displayName": "Darus",
+  "identity": "broad expert and planned distillation target",
+  "nativeModelId": "osirus/darus-1",
+  "architecture": {
+    "id": "darus-dense-decoder-planned-v1",
+    "family": "llama-like-decoder-transformer",
+    "layers": 32,
+    "hiddenSize": 2560,
+    "attentionHeads": 20,
+    "kvHeads": 5,
+    "activation": "swiglu",
+    "norm": "rmsnorm",
+    "positional": "rope",
+    "status": "planned"
+  },
+  "tokenizer": {
+    "id": "darus-bpe-wide",
+    "trackId": "darus",
+    "family": "byte-level-bpe",
+    "version": "0.0.0-untrained",
+    "vocabSize": 64000,
+    "pin": "2a2c747ebd2cfffb91694bbb1ca24f116a1b35c7f1c7286884401615e362cc9e"
+  },
+  "datasetMixture": {
+    "id": "darus-mix-planned-v1",
+    "parts": [
+      {
+        "source": "science-reference-planned",
+        "fraction": 0.4,
+        "license": "permissive-only"
+      },
+      {
+        "source": "permissive-code-planned",
+        "fraction": 0.25,
+        "license": "permissive-only"
+      },
+      {
+        "source": "multilingual-reference-planned",
+        "fraction": 0.2,
+        "license": "permissive-only"
+      },
+      {
+        "source": "math-text-planned",
+        "fraction": 0.15,
+        "license": "permissive-only"
+      }
+    ]
+  },
+  "curriculum": [
+    {
+      "id": "darus-breadth",
+      "order": 0,
+      "objective": "wide next-token coverage across science, code, and math",
+      "mixtureId": "darus-mix-planned-v1",
+      "executable": "none"
+    },
+    {
+      "id": "darus-rotation",
+      "order": 1,
+      "objective": "domain rotation so no single field dominates the draft mixture",
+      "mixtureId": "darus-mix-planned-v1",
+      "executable": "none"
+    },
+    {
+      "id": "darus-distill-prep",
+      "order": 2,
+      "objective": "record distillation-target interface only; no teacher calls",
+      "mixtureId": "darus-mix-planned-v1",
+      "executable": "none"
+    },
+    {
+      "id": "darus-fixture",
+      "order": 3,
+      "objective": "CPU infrastructure fixture only",
+      "mixtureId": "darus-mix-planned-v1",
+      "executable": "tiny-linear-v1"
+    }
+  ],
+  "behaviorSpec": "Darus is the broad expert and a planned distillation target. Dense versus MoE is not decided. It must not claim breadth it has not measured.",
+  "specialistObjectives": [
+    "cross-domain answers",
+    "keep a stable interface for later distillation",
+    "refuse unmeasured expertise claims"
+  ],
+  "evalSuite": {
+    "id": "darus-breadth-unmeasured",
+    "measured": false,
+    "tasks": ["science-short", "math-short", "cross-domain"]
+  },
+  "trainingConfig": {
+    "executableFixture": "tiny-linear-v1",
+    "plannedParameterClass": "dense baseline above the 1B draft; MoE not selected",
+    "seed": 8301
+  },
+  "inferenceConfig": {
+    "nativeRuntime": "not_shipped",
+    "apiFallback": {
+      "label": "UnoRouter API fallback — not Darus",
+      "defaultModelId": "gemini-3.6-flash:free",
+      "envVar": "LAB_FALLBACK_MODEL_DARUS",
+      "catalogRole": "research",
+      "verifiedFrom": "https://api.unorouter.com/api/pricing/catalog",
+      "verifiedOn": "2026-10-02"
+    }
+  },
+  "capabilityTargets": [
+    {
+      "id": "darus-breadth",
+      "status": "unmeasured"
+    },
+    {
+      "id": "darus-distillation-target",
+      "status": "unmeasured"
+    }
+  ]
+}
