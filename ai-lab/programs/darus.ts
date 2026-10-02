@@ -151,6 +151,14 @@ export const darusProgram: ModelProgram = {
           input: "facts:math;rules:math+plan>synthesis;query:synthesis",
           target: "no",
         },
+        {
+          input: "facts:math;rules:math>plan,plan>synthesis;query:synthesis",
+          target: "yes",
+        },
+        {
+          input: "facts:math;rules:plan>synthesis;query:synthesis",
+          target: "no",
+        },
       ],
     ),
     arm(
@@ -163,6 +171,7 @@ export const darusProgram: ModelProgram = {
         { input: "2+3^2", target: "11" },
         { input: "(10%4)+1", target: "3" },
         { input: "2^-1", target: "refused" },
+        { input: "(-2)^2", target: "4" },
       ],
     ),
     arm(
@@ -201,6 +210,7 @@ export const darusProgram: ModelProgram = {
       "Memory here is an in-process map, not the product memory store.",
       "memory",
       { input: "set:topic=breadth;get:topic", target: "breadth" },
+      [{ input: "set:topic=breadth;get:other", target: "missing" }],
     ),
     arm(
       "DARUS_TOOL_REASONING",
@@ -214,7 +224,14 @@ export const darusProgram: ModelProgram = {
       "One deterministic step on a 2x2 grid. Edge moves are blocked. This is not a trained dynamics model.",
       "world",
       { input: "pos=0,0;action=right", target: "1,0" },
-      [{ input: "pos=0,0;action=left", target: "blocked" }],
+      [
+        { input: "pos=0,0;action=left", target: "blocked" },
+        { input: "pos=0,0;action=right;action=up", target: "1,1" },
+        {
+          input: "pos=0,0;action=right;action=right",
+          target: "blocked-at:2",
+        },
+      ],
     ),
     arm(
       "DARUS_MULTIMODAL",
@@ -250,6 +267,7 @@ export const darusProgram: ModelProgram = {
         { input: 'secret="fixture-secret"', target: "1" },
         { input: "os.system(cmd)", target: "1" },
         { input: "const label = name", target: "0" },
+        { input: "document.write(name)", target: "1" },
       ],
     ),
     arm(
@@ -264,7 +282,11 @@ export const darusProgram: ModelProgram = {
       "Long-horizon work records steps and does not execute them.",
       "horizon",
       { input: "map. synthesize. hold.", target: "3" },
-      [{ input: "ok:map;ok:synthesize;fail:ship", target: "failed-at:3" }],
+      [
+        { input: "ok:map;ok:synthesize;fail:ship", target: "failed-at:3" },
+        { input: "ok:map;need:synthesize", target: "failed-at:2" },
+        { input: "ok:synthesize;need:synthesize", target: "2" },
+      ],
     ),
     arm(
       "DARUS_RSI",

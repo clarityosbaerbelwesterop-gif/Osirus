@@ -1,5 +1,10 @@
 import { gradeArm, staticSecurityScan } from "./behavior";
-import { classifyThinking, logicPhrase, readHorizon } from "./domains";
+import {
+  classifyThinking,
+  entailQuery,
+  logicPhrase,
+  readHorizon,
+} from "./domains";
 import { gradeRsiSample } from "./rsi";
 import { LOCKED_LOOP_SURFACES, type CapabilityArm } from "./types";
 
@@ -158,9 +163,17 @@ export function executeArmPolicy(
     const findings = staticSecurityScan(text);
     steps.push("coding: no repository write");
     if (findings.length) steps.push(`scan: ${findings.join(",")}`);
-  } else if (kind === "thinking" || kind === "reasoning") {
+  } else if (kind === "reasoning") {
+    if (/facts:/.test(text) && /query:/.test(text)) {
+      const verdict = entailQuery(text);
+      steps.push(`reasoning: entailment ${verdict}`);
+    } else {
+      const label = classifyThinking(text);
+      steps.push(`reasoning: classified as ${label}`);
+    }
+  } else if (kind === "thinking") {
     const label = classifyThinking(text);
-    steps.push(`${kind}: classified as ${label}`);
+    steps.push(`thinking: classified as ${label}`);
   } else if (kind === "science") {
     steps.push("science: formula fixture only, no paper result");
   } else if (kind === "research") {
