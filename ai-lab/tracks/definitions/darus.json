@@ -97,7 +97,7 @@
   "inferenceConfig": {
     "nativeRuntime": "not_shipped",
     "apiFallback": {
-      "label": "UnoRouter API fallback — not Darus",
+      "label": "DARUS · API fallback — not Darus",
       "defaultModelId": "gemini-3.6-flash:free",
       "envVar": "LAB_FALLBACK_MODEL_DARUS",
       "catalogRole": "research",
