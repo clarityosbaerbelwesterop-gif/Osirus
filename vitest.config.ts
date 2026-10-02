@@ -15,5 +15,10 @@ export default defineConfig({
   // UI view models and the Markdown renderer are tested in node with
   // react-dom/server; JSX compiles with the automatic runtime.
   esbuild: { jsx: "automatic" },
-  test: { environment: "node", include: ["tests/**/*.test.ts"] },
+  test: {
+    environment: "node",
+    // ai-lab/tests is included so the Phase G contract tests run inside the
+    // root gate; ai-lab itself stays dependency-free and never merges to main.
+    include: ["tests/**/*.test.ts", "ai-lab/tests/**/*.test.ts"],
+  },
 });
