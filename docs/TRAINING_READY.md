@@ -57,7 +57,7 @@ Ordered path from FALSE to TRUE:
 What happens after the flip, in order. Nothing in this section has been performed; it is the approved-shape plan assembled from `docs/ROUGE_RESEARCH_HANDOFF.md` (stages) and `ai-lab/infra/BUDGET.md` (budget flow).
 
 1. **Stage A — Corpus contracts.** Provenance + licensing rules enforced, decontamination tooling run against every eval set, eval-set isolation verified. No training. First real use of checkboxes #8/#10.
-2. **Stage B — Local smoke.** The SCP `model/` seed stack trains a tiny model end-to-end on a free-tier/CPU-adjacent budget; checkpoint + resume proven; eval spine wired. First real use of #9/#11. **Quesnir goes first** as the smallest model (1B-class initial scale target per `ai-lab/models/quesnir/model.config.ts`), before any Rouge/Darus scale discussion.
+2. **Stage B — Local smoke.** The SCP `model/` seed stack trains a tiny model end-to-end on a free-tier/CPU-adjacent budget; checkpoint + resume proven; eval spine wired. First real use of #9/#11. **Quasnir goes first** as the smallest model (1B-class initial scale target per `ai-lab/models/quasnir/model.config.ts`), before any Rouge/Darus scale discussion.
 3. **Stage C — Eval first.** Rouge task suites (M59–M75, defined on experiment branches) graded by the Osirus verification engine by interface; baselines recorded honestly, including failures; pass@1 with full model/seed/config record per run.
 4. **Stage D — Scale decision point.** Written proposal (data, budget, expected metrics, rollback) → owner signs → only then GPU provisioning.
 5. **Budget flow for every GPU run (BUDGET.md §§ 2–5), without exception:**

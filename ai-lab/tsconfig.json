@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noEmit": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": [
+    "contracts/**/*.ts",
+    "lib/**/*.ts",
+    "models/**/*.ts",
+    "registries/**/*.ts",
+    "datasets/**/*.ts",
+    "evals/**/*.ts",
+    "infra/**/*.ts",
+    "training/**/*.ts",
+    "checkpoints/**/*.ts",
+    "experiments/**/*.ts",
+    "curriculum/**/*.ts",
+    "safety/**/*.ts",
+    "artifacts/**/*.ts",
+    "repro/**/*.ts",
+    "observability/**/*.ts",
+    "inference/**/*.ts",
+    "tracks/**/*.ts",
+    "programs/**/*.ts",
+    "tests/**/*.ts"
+  ]
+}

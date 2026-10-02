@@ -642,6 +642,61 @@
   border-color: var(--color-focus);
 }
 
+.lab-selectors {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3) 0;
+  font-size: var(--text-xs);
+}
+
+.lab-selectors select,
+.lab-selectors button {
+  font: inherit;
+}
+
+.lab-activity {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.lab-activity[data-live="true"]::before {
+  content: "";
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.35rem;
+  border-radius: 999px;
+  background: currentColor;
+  animation: lab-wait-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes lab-wait-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.lab-activity-phases {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lab-activity-phases li[data-state="done"] {
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-full);
+  background: var(--color-surface-hover);
+}
+
 .composer-modes {
   display: flex;
   gap: var(--space-1);
@@ -688,6 +743,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .lab-activity[data-live="true"]::before {
+    animation: none;
+  }
   .composer-mode {
     transition: none;
   }

@@ -6,6 +6,14 @@ import { mockApis, openSurface, VIEWPORTS, type Surface } from "./support";
 // CI run; the diff images are uploaded as artifacts when a comparison fails.
 // Clock-dependent text is hidden by e2e/screenshot.css, not masked, so the
 // images keep their real layout.
+//
+// Baselines refreshed because main already fails the 2026-09-24 shots.
+// Quality run 37005332369 on rouge, before this refresh:
+//   chat-active-run 33035 px, chat-research-run 29104 px,
+//   coding-workbench 27883 px, tablet-coding 26778 px,
+//   mobile-active-run 20625 px.
+// Main 8a92a08 failed the same four names except tablet-coding, which
+// this branch shifts with the model selector row. Thresholds stay 0.01.
 
 type Shot = {
   name: string;
@@ -123,6 +131,7 @@ for (const shot of SHOTS) {
     await mockApis(page);
     await openSurface(page, shot.surface);
     await shot.prepare?.(page);
+    await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(300);
     await expect(page).toHaveScreenshot(`${shot.name}.png`);
   });
