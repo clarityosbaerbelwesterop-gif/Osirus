@@ -24,6 +24,25 @@ export function staticSecurityScan(source: string): string[] {
   return findings;
 }
 
+/**
+ * Strings the completion withhold gate already catches via staticSecurityScan.
+ * Cybersecurity fixtures use these exact inputs so the path and the gate agree.
+ */
+export const GATE_CAUGHT_STRINGS = [
+  "eval(1)",
+  "child_process.exec(cmd)",
+  "os.system(cmd)",
+  "subprocess.call(cmd)",
+  "pickle.loads(blob)",
+  "element.innerHTML = name",
+  "document.write(name)",
+  "dangerouslySetInnerHTML",
+  'new Function("return 1")',
+  'password="hunter2"',
+  'api_key="sk-fixture"',
+  'secret="fixture-secret"',
+] as const;
+
 export function applyLiteralPatch(
   source: string,
   from: string,

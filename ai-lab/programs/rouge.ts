@@ -1,3 +1,4 @@
+import { GATE_CAUGHT_STRINGS } from "./behavior";
 import type { CapabilityArm, ModelProgram } from "./types";
 
 function arm(
@@ -267,15 +268,8 @@ export const rougeProgram: ModelProgram = {
       "ROUGE_CYBERSECURITY",
       "Cybersecurity is a static scan of the request text. It does not exploit anything.",
       "static-scan",
-      { input: "eval(1)", target: "1" },
-      [
-        { input: "pickle.loads(blob)", target: "1" },
-        { input: 'new Function("return 1")', target: "1" },
-        { input: 'password="hunter2"', target: "1" },
-        { input: "child_process.exec(cmd)", target: "1" },
-        { input: "const label = name", target: "0" },
-        { input: "document.write(name)", target: "1" },
-      ],
+      { input: "const label = name", target: "0" },
+      GATE_CAUGHT_STRINGS.map((input) => ({ input, target: "1" })),
     ),
     arm(
       "ROUGE_TERMINAL",
@@ -285,6 +279,9 @@ export const rougeProgram: ModelProgram = {
       [
         { input: "echo hi", target: "hi" },
         { input: "rm notes", target: "refused" },
+        { input: "cat notes", target: "refused" },
+        { input: "whoami", target: "refused" },
+        { input: "echo hi there", target: "refused" },
       ],
     ),
     arm(

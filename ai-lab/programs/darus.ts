@@ -1,3 +1,4 @@
+import { GATE_CAUGHT_STRINGS } from "./behavior";
 import type { CapabilityArm, ModelProgram } from "./types";
 
 function arm(
@@ -309,21 +310,19 @@ export const darusProgram: ModelProgram = {
       "DARUS_CYBERSECURITY",
       "Cybersecurity is a static scan. It does not exploit anything.",
       "static-scan",
-      { input: "eval(1)", target: "1" },
-      [
-        { input: "element.innerHTML = name", target: "1" },
-        { input: 'secret="fixture-secret"', target: "1" },
-        { input: "os.system(cmd)", target: "1" },
-        { input: "const label = name", target: "0" },
-        { input: "document.write(name)", target: "1" },
-      ],
+      { input: "const label = name", target: "0" },
+      GATE_CAUGHT_STRINGS.map((input) => ({ input, target: "1" })),
     ),
     arm(
       "DARUS_TERMINAL",
       "Terminal coding stays on an allowlist. No shell is spawned.",
       "terminal",
       { input: "echo menu", target: "menu" },
-      [{ input: "bash -c id", target: "refused" }],
+      [
+        { input: "bash -c id", target: "refused" },
+        { input: "node -e 1", target: "refused" },
+        { input: "sh -c id", target: "refused" },
+      ],
     ),
     arm(
       "DARUS_LONG_HORIZON",
