@@ -211,6 +211,30 @@ export const darusProgram: ModelProgram = {
       "exact",
       { input: "strategy", target: "strategy" },
     ),
+    arm(
+      "DARUS_THINKING",
+      "Thinking records a classification. It is not a trained chain of thought.",
+      "exact",
+      { input: "think", target: "think" },
+    ),
+    arm(
+      "DARUS_CYBERSECURITY",
+      "Cybersecurity is a static scan. It does not exploit anything.",
+      "static-scan",
+      { input: "eval(1)", target: "1" },
+    ),
+    arm(
+      "DARUS_TERMINAL",
+      "Terminal coding stays on an allowlist. No shell is spawned.",
+      "exact",
+      { input: "echo", target: "echo" },
+    ),
+    arm(
+      "DARUS_LONG_HORIZON",
+      "Long-horizon work records steps and does not execute them.",
+      "exact",
+      { input: "hold", target: "hold" },
+    ),
   ],
   evalSuite: {
     id: "darus-program-eval",
