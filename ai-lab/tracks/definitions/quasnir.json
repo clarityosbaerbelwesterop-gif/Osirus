@@ -82,10 +82,7 @@
   "evalSuite": {
     "id": "quasnir-code-unmeasured",
     "measured": false,
-    "tasks": [
-      "fill-middle",
-      "vulnerability-localization"
-    ]
+    "tasks": ["fill-middle", "vulnerability-localization"]
   },
   "trainingConfig": {
     "executableFixture": "tiny-linear-v1",
