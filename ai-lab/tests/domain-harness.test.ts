@@ -41,6 +41,17 @@ describe("per-model domain harness", () => {
       expect(failed, JSON.stringify(failed)).toEqual([]);
       expect(JSON.stringify(report)).not.toMatch(/\d+(?:\.\d+)?%/);
       expect(JSON.stringify(report)).not.toMatch(/\bAGI\b|\bASI\b/);
+      const family =
+        program.id === "rouge"
+          ? "dense-rope"
+          : program.id === "quasnir"
+            ? "fim-causal"
+            : "routed-dense";
+      expect(
+        report.rows.some((item) =>
+          item.detail.includes(`${family} head step reviewed`),
+        ),
+      ).toBe(true);
     }
   });
 
