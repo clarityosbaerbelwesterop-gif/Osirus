@@ -113,7 +113,7 @@ export class JsonlStore<T extends { readonly id: string }> {
    */
   list(filter?: (record: T) => boolean): T[] {
     const all = [...this.index.values()];
-    return filter ? all.filter((r) => filter(r)) : all;
+    return filter ? all.filter(filter) : all;
   }
 
   /**
