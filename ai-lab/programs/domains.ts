@@ -466,23 +466,23 @@ export function evalWordProblem(
   return { ok: true, value };
 }
 
-/** Allowlisted terminal phrases on a virtual fixture tree. Never spawns a process. */
+/**
+ * Allowlisted terminal phrases on a virtual fixture tree.
+ * pwd, ls, and `echo` plus one word are the whole list.
+ * Anything else is refused. This never spawns a process.
+ */
 export function runTerminalFixture(command: string): {
   readonly spawned: false;
   readonly output: string;
 } {
   const trimmed = command.trim();
-  if (
-    /[;&|`$<>]/.test(trimmed) ||
-    /\b(rm|curl|wget|sudo|bash|sh|python|node|nc)\b/.test(trimmed)
-  ) {
-    return { spawned: false, output: "refused" };
-  }
   if (trimmed === "pwd") return { spawned: false, output: "/fixture" };
   if (trimmed === "ls") return { spawned: false, output: "README notes.txt" };
   const echo = trimmed.match(/^echo\s+(\S+)$/);
-  if (echo) return { spawned: false, output: echo[1] ?? "" };
-  return { spawned: false, output: "not-allowlisted" };
+  if (echo && !/[;&|`$<>\n]/.test(echo[1] ?? "")) {
+    return { spawned: false, output: echo[1] ?? "" };
+  }
+  return { spawned: false, output: "refused" };
 }
 
 export function runMemoryFixture(script: string): string {

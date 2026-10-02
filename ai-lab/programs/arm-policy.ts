@@ -18,6 +18,7 @@ import {
   readPlan,
   readStrategy,
   runMemoryFixture,
+  runTerminalFixture,
   stepWorld,
 } from "./domains";
 import { gradeRsiSample } from "./rsi";
@@ -115,16 +116,27 @@ function integerMath(text: string): string | null {
   return `math: ${left} ${op} ${right} = ${value}`;
 }
 
-/** Allowlisted terminal phrases only. This function never spawns a process. */
-function terminalStep(text: string): string {
+/**
+ * Allowlisted terminal phrases only. Anything outside that list is refused.
+ * This function never spawns a process.
+ */
+function terminalCommand(text: string): string {
   const quoted = text.match(/`([^`]+)`/);
-  const command = quoted?.[1]?.trim() ?? "";
-  if (/^echo\s+\S/.test(command)) {
-    return `terminal allowlist: ${command}`;
+  if (quoted?.[1]) return quoted[1].trim();
+  const trimmed = text.trim();
+  if (/^(?:echo\s+\S+|pwd|ls)$/.test(trimmed)) return trimmed;
+  const named = trimmed.match(/\bterminal\b\s+(.+)$/i);
+  if (named?.[1]) return named[1].trim();
+  return trimmed;
+}
+
+function terminalStep(text: string): string {
+  const command = terminalCommand(text);
+  const result = runTerminalFixture(command);
+  if (result.output === "refused") {
+    return "terminal: refused, no shell spawned";
   }
-  if (/\bpwd\b/.test(text)) return "terminal allowlist: pwd -> /fixture";
-  if (/\bls\b/.test(text)) return "terminal allowlist: ls -> README notes.txt";
-  return "terminal: no shell spawned";
+  return `terminal allowlist: ${command} -> ${result.output}`;
 }
 
 export function executeArmPolicy(
