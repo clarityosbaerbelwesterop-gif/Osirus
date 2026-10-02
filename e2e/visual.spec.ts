@@ -131,6 +131,7 @@ for (const shot of SHOTS) {
     await mockApis(page);
     await openSurface(page, shot.surface);
     await shot.prepare?.(page);
+    await page.evaluate(() => document.fonts.ready);
     await page.waitForTimeout(300);
     await expect(page).toHaveScreenshot(`${shot.name}.png`);
   });

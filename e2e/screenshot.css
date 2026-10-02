@@ -4,3 +4,7 @@ time,
 .stage-duration {
   visibility: hidden !important;
 }
+
+.approval-expiry {
+  visibility: hidden !important;
+}
