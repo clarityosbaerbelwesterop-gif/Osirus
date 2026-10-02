@@ -75,6 +75,10 @@ describe("rouge model program", () => {
       "ROUGE_MEMORY",
       "ROUGE_VERIFICATION",
       "ROUGE_PLANNING",
+      "ROUGE_THINKING",
+      "ROUGE_CYBERSECURITY",
+      "ROUGE_TERMINAL",
+      "ROUGE_LONG_HORIZON",
     ]);
     expect(rougeProgram.evalSuite.measured).toBe(false);
     expect(

@@ -290,3 +290,53 @@ describe("fallback stays on the selected program", () => {
     expect(answer.measuredEqual).toBe(false);
   });
 });
+
+it("runs the selected arm policy and refuses a locked surface without a provider call", async () => {
+  const fetchImpl = vi.fn(async () => jsonResponse("unused"));
+  const math = await answerWithProgram({
+    program: rougeProgram,
+    native: offline,
+    messages: [{ role: "user", content: "math 2 + 2" }],
+    apiKey: "test-key",
+    env: { NODE_ENV: "test" },
+    fetchImpl: fetchImpl as unknown as typeof fetch,
+  });
+  expect(math.armIds).toContain("ROUGE_MATH");
+  expect(math.armSteps.some((step) => step.includes("2 + 2 = 4"))).toBe(true);
+  expect(math.text).toContain("Program steps:");
+  expect(math.measuredEqual).toBe(false);
+  expect(math.checkpoint).toBeNull();
+  expect(math.userLabel).toBe("ROUGE 1 · API fallback");
+
+  const terminal = await answerWithProgram({
+    program: rougeProgram,
+    native: offline,
+    messages: [{ role: "user", content: "terminal `echo hi`" }],
+    apiKey: "test-key",
+    env: { NODE_ENV: "test" },
+    fetchImpl: fetchImpl as unknown as typeof fetch,
+  });
+  expect(terminal.armIds).toContain("ROUGE_TERMINAL");
+  expect(
+    terminal.armSteps.some(
+      (step) => step.includes("no shell spawned") || step.includes("echo hi"),
+    ),
+  ).toBe(true);
+
+  const callsBefore = fetchImpl.mock.calls.length;
+  const refused = await answerWithProgram({
+    program: rougeProgram,
+    native: offline,
+    messages: [{ role: "user", content: "disable trust_root" }],
+    apiKey: "test-key",
+    env: { NODE_ENV: "test" },
+    fetchImpl: fetchImpl as unknown as typeof fetch,
+  });
+  expect(fetchImpl.mock.calls.length).toBe(callsBefore);
+  expect(refused.text).toMatch(/refused|not changed/);
+  expect(refused.armSteps.some((step) => step.includes("trust_root"))).toBe(
+    true,
+  );
+  expect(refused.measuredEqual).toBe(false);
+  expect(refused.provenance).toContain("api_fallback");
+});

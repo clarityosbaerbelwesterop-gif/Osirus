@@ -30,6 +30,7 @@ export interface ProgramAnswer {
   readonly budgetNote: string;
   readonly phases: readonly Activity[];
   readonly armIds: readonly string[];
+  readonly armSteps: readonly string[];
   readonly fixtureChecks: readonly FixtureCheck[];
   /**
    * Always false. Fallback follows the selected program's path. This process
@@ -60,6 +61,11 @@ export function provenanceLine(input: {
     return `${name} / native / checkpoint ${input.checkpoint ?? "missing"}`;
   }
   return `${name} / api_fallback / UnoRouter / ${input.modelId}`;
+}
+
+function stepBlock(steps: readonly string[]): string {
+  if (!steps.length) return "";
+  return `Program steps:\n${steps.map((step) => `- ${step}`).join("\n")}`;
 }
 
 export function activityFor(program: ModelProgram, phase: Activity): Activity {
@@ -156,6 +162,7 @@ export async function answerWithProgram(input: {
         budgetNote: constraint.budgetNote,
         phases: trace.phases,
         armIds: constraint.armIds,
+        armSteps: constraint.executions.flatMap((item) => item.steps),
         fixtureChecks: constraint.checks,
         measuredEqual: false,
         outsideProgram: trace.outsideProgram,
@@ -169,6 +176,39 @@ export async function answerWithProgram(input: {
     }
   }
   const modelId = fallbackModelId(input.program, env);
+  const armSteps = constraint.executions.flatMap((item) => item.steps);
+  if (constraint.executions.some((item) => item.blocked)) {
+    const refusal =
+      "The selected program refused this step. Locked surfaces were not changed. No checkpoint was used, and no benchmark was scored.";
+    return {
+      text: [stepBlock(armSteps), refusal].filter(Boolean).join("\n\n"),
+      userLabel: userLabel(input.program, "unorouter"),
+      provenance: provenanceLine({
+        program: input.program,
+        provider: "unorouter",
+        modelId,
+        checkpoint: null,
+      }),
+      provider: "unorouter",
+      modelId,
+      checkpoint: null,
+      routingReason: decision.reason,
+      activity: "api_fallback",
+      version: input.program.architecture.version,
+      latencyMs: 0,
+      costUsd: 0,
+      costPolicy: "provider_fallback",
+      costQuote: constraint.quote,
+      budgetNote: constraint.budgetNote,
+      phases: trace.phases,
+      armIds: constraint.armIds,
+      armSteps,
+      fixtureChecks: constraint.checks,
+      measuredEqual: false,
+      outsideProgram: trace.outsideProgram,
+      trained: false,
+    };
+  }
   const apiKeys =
     input.apiKeys ??
     (input.apiKey && input.apiKey.trim()
@@ -191,7 +231,8 @@ export async function answerWithProgram(input: {
   });
   const gated = applyBehaviorGate(input.program, result.text);
   const body = gated.text;
-  const text = trace.outsideProgram ? `${trace.note}\n\n${body}` : body;
+  const scoped = trace.outsideProgram ? `${trace.note}\n\n${body}` : body;
+  const text = [stepBlock(armSteps), scoped].filter(Boolean).join("\n\n");
   return {
     text,
     userLabel: userLabel(input.program, "unorouter"),
@@ -214,6 +255,7 @@ export async function answerWithProgram(input: {
     budgetNote: constraint.budgetNote,
     phases: trace.phases,
     armIds: constraint.armIds,
+    armSteps,
     fixtureChecks: constraint.checks,
     measuredEqual: false,
     outsideProgram: trace.outsideProgram,

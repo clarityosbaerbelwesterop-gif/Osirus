@@ -1,3 +1,4 @@
+import { executeArmPolicy, type ArmExecution } from "./arm-policy";
 import { gradeArm, forbidsTrainedClaim, staticSecurityScan } from "./behavior";
 import { quoteNative, type NativeQuote } from "./pricing";
 import type { ReasoningTrace } from "./reasoning";
@@ -27,6 +28,7 @@ export interface ProgramConstraint {
   readonly checks: readonly FixtureCheck[];
   readonly measuredEqual: false;
   readonly budgetNote: string;
+  readonly executions: readonly ArmExecution[];
 }
 
 const HINTS: readonly {
@@ -53,6 +55,17 @@ const HINTS: readonly {
   { pattern: /\bmemory\b/i, tokens: ["MEMORY"] },
   { pattern: /\btools?\b/i, tokens: ["TOOL"] },
   { pattern: /\b(science|physics)\b/i, tokens: ["SCIENCE"] },
+  { pattern: /\bthink(?:ing)?\b/i, tokens: ["THINKING"] },
+  {
+    pattern: /\b(cyber|security|vuln|scan)\b/i,
+    tokens: ["CYBER", "SECURITY", "VULN"],
+  },
+  { pattern: /\b(terminal|shell|echo)\b/i, tokens: ["TERMINAL"] },
+  { pattern: /\blong[- ]horizon\b/i, tokens: ["LONG_HORIZON"] },
+  {
+    pattern: /\b(math|arithmetic|\d+\s*[+*/-]\s*\d+)\b/i,
+    tokens: ["MATH", "LOGIC"],
+  },
 ];
 
 function armTokens(arm: CapabilityArm): string {
@@ -83,6 +96,7 @@ export function programSystem(input: {
   program: ModelProgram;
   arms: readonly CapabilityArm[];
   trace: ReasoningTrace;
+  executions?: readonly ArmExecution[];
 }): string {
   const objectives = input.program.objectives
     .map((item) => item.statement)
@@ -97,6 +111,7 @@ export function programSystem(input: {
     `Behavior: ${objectives}`,
     `Active capability arms: ${arms}`,
     `Program phases already recorded: ${input.trace.phases.join(", ") || "none"}.`,
+    `Arm steps already run: ${(input.executions ?? []).flatMap((item) => item.steps).join(" | ") || "none"}.`,
     `Do not change locked surfaces: ${LOCKED_LOOP_SURFACES.join(", ")}.`,
     input.trace.outsideProgram ? input.trace.note : "",
   ]
@@ -172,6 +187,7 @@ export function constrainProgram(input: {
   outputTokens: number;
 }): ProgramConstraint {
   const arms = selectArms(input.program, input.text);
+  const executions = arms.map((arm) => executeArmPolicy(arm, input.text));
   const hook = runFixtureEvalHook(arms);
   const quote = quoteNative(
     input.program.id,
@@ -184,10 +200,16 @@ export function constrainProgram(input: {
       : "Program card recorded. The USD figure is not charged on API fallback. Same card, not a measured cost match.";
   return {
     armIds: arms.map((arm) => arm.id),
-    system: programSystem({ program: input.program, arms, trace: input.trace }),
+    system: programSystem({
+      program: input.program,
+      arms,
+      trace: input.trace,
+      executions,
+    }),
     quote,
     checks: hook.checks,
     measuredEqual: false,
     budgetNote,
+    executions,
   };
 }

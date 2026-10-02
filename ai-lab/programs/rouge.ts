@@ -187,6 +187,30 @@ export const rougeProgram: ModelProgram = {
       "exact",
       { input: "plan", target: "plan" },
     ),
+    arm(
+      "ROUGE_THINKING",
+      "Thinking records a classification. It is not a hidden chain of thought from a trained model.",
+      "exact",
+      { input: "think", target: "think" },
+    ),
+    arm(
+      "ROUGE_CYBERSECURITY",
+      "Cybersecurity is a static scan of the request text. It does not exploit anything.",
+      "static-scan",
+      { input: "eval(1)", target: "1" },
+    ),
+    arm(
+      "ROUGE_TERMINAL",
+      "Terminal coding stays on an allowlist. No shell is spawned.",
+      "exact",
+      { input: "echo", target: "echo" },
+    ),
+    arm(
+      "ROUGE_LONG_HORIZON",
+      "Long-horizon coding records steps and does not execute them.",
+      "exact",
+      { input: "hold", target: "hold" },
+    ),
   ],
   evalSuite: {
     id: "rouge-program-eval",

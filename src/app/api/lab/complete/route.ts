@@ -124,6 +124,7 @@ export async function POST(request: Request) {
       costQuote: answer.costQuote,
       budgetNote: answer.budgetNote,
       armIds: answer.armIds,
+      armSteps: answer.armSteps,
       fixtureChecks: answer.fixtureChecks,
       measuredEqual: answer.measuredEqual,
       outsideProgram: answer.outsideProgram,

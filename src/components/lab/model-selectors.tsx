@@ -93,9 +93,28 @@ export function ModelSelectors(props: {
       <p
         className="lab-activity"
         data-activity={known ? props.activity : "idle"}
+        data-provenance={
+          props.activity === "api_fallback"
+            ? "api_fallback"
+            : props.activity === "native_inference"
+              ? "native"
+              : "none"
+        }
         data-live={props.activity === "waiting" ? "true" : "false"}
       >
-        {known && props.activity ? activityLabel(props.activity) : "Idle"}
+        {known && props.activity
+          ? `${activityLabel(
+              props.activity === "api_fallback" && phases.length
+                ? (phases
+                    .filter(
+                      (phase) =>
+                        phase !== "api_fallback" &&
+                        phase !== "native_inference",
+                    )
+                    .at(-1) ?? props.activity)
+                : props.activity,
+            )}${props.activity === "api_fallback" ? " · API fallback" : ""}`
+          : "Idle"}
       </p>
       {phases.length ? (
         <ol className="lab-activity-phases" aria-label="Completed policy steps">
