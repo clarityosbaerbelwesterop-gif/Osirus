@@ -51,7 +51,7 @@ export type RunView = {
   evidence: Array<{ id: string; label: string; at: string }>;
   pendingApprovals: ApprovalView[];
   approvals: ApprovalView[];
-  failure: { stage: string | null; message: string } | null;
+  failure: { stage: string | null; message: string | null } | null;
   memoryCount: number | null;
 };
 
@@ -189,5 +189,27 @@ export function resumeSummary(view: RunView): ResumeSummary {
       .map((stage) => stage.name),
     inProgress: view.live ? (view.current?.name ?? null) : null,
     attention,
+  };
+}
+
+/**
+ * Which run may drive the visible conversation.
+ *
+ * Snapshots arrive asynchronously -- a poll answers seconds after it was
+ * asked, and by then the page may show another session or a new task. The
+ * gate remembers the run the page last committed to and rejects every other
+ * run's snapshot, so a late answer can never paint a foreign run's steps,
+ * activity or messages over this conversation. `expect(null)` closes the
+ * gate (new task); the next `expect(runId)` opens it for that run only.
+ */
+export function createSnapshotGate(initial: string | null = null) {
+  let current = initial;
+  return {
+    expect(runId: string | null) {
+      current = runId;
+    },
+    accepts(runId: string) {
+      return current !== null && current === runId;
+    },
   };
 }

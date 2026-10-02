@@ -1,61 +1,31 @@
 "use client";
 
 import {
-  LAB_BUILD,
-  LAB_MODELS,
+  MODEL_OPTIONS,
   type InteractionPreference,
   type LabModelId,
 } from "@/lib/lab/choices";
 
-const ACTIVITIES = [
-  "thinking",
-  "reasoning",
-  "research",
-  "verification",
-  "code_analysis",
-  "security_scan",
-  "test_execution",
-  "patch_verification",
-  "deep_reasoning",
-  "cross_domain_synthesis",
-  "planning",
-  "waiting",
-  "api_fallback",
-  "native_inference",
-] as const;
-
-function activityLabel(activity: string): string {
-  if (activity === "waiting") return "Waiting";
-  if (activity === "api_fallback") return "API fallback";
-  if (activity === "native_inference") return "Native inference";
-  return activity.replaceAll("_", " ");
-}
-
-export interface PhaseGrade {
-  readonly armId: string;
-  readonly phase: string | null;
-  readonly passed: boolean;
-}
-
+/**
+ * Model and interaction selection for the composer.
+ *
+ * Both controls are real: the model choice is honest about what exists
+ * (only "Auto" routes anywhere; the self-models are disabled until a
+ * trained, measured checkpoint ships), and the interaction choice switches
+ * between two genuinely different backends -- AI mode streams a direct
+ * answer from the Rouge runtime, Agent mode starts an Osirus run with
+ * steps, tools and approvals. `activity` shows the AI answer's live status
+ * while it streams; nothing here simulates progress.
+ */
 export function ModelSelectors(props: {
   model: LabModelId;
   interaction: InteractionPreference;
+  /** Live status label of the AI-mode answer stream; null when idle. */
   activity: string | null;
-  phases?: readonly string[];
-  grades?: readonly PhaseGrade[];
   disabled?: boolean;
   onModelChange: (model: LabModelId) => void;
   onInteractionChange: (interaction: InteractionPreference) => void;
 }) {
-  const known = (ACTIVITIES as readonly string[]).includes(
-    props.activity ?? "",
-  );
-  const phases = (props.phases ?? []).filter((phase) =>
-    (ACTIVITIES as readonly string[]).includes(phase),
-  );
-  const grades = (props.grades ?? []).filter(
-    (grade) => grade.phase !== null && phases.includes(grade.phase),
-  );
   return (
     <div className="lab-selectors">
       <label>
@@ -68,12 +38,11 @@ export function ModelSelectors(props: {
             props.onModelChange(event.target.value as LabModelId)
           }
         >
-          {LAB_MODELS.map((model) => (
-            <option key={model.id} value={model.id}>
-              {model.label}
-              {model.id !== "external" && !LAB_BUILD[model.id]
-                ? " (not in this build)"
-                : ""}
+          {MODEL_OPTIONS.map((model) => (
+            <option key={model.id} value={model.id} disabled={!model.available}>
+              {model.available
+                ? model.label
+                : `${model.label} — in training, not available`}
             </option>
           ))}
         </select>
@@ -100,51 +69,10 @@ export function ModelSelectors(props: {
           AGENT MODE
         </button>
       </div>
-      <p
-        className="lab-activity"
-        data-activity={known ? props.activity : "idle"}
-        data-provenance={
-          props.activity === "api_fallback"
-            ? "api_fallback"
-            : props.activity === "native_inference"
-              ? "native"
-              : "none"
-        }
-        data-live={props.activity === "waiting" ? "true" : "false"}
-      >
-        {known && props.activity
-          ? `${activityLabel(
-              props.activity === "api_fallback" && phases.length
-                ? (phases
-                    .filter(
-                      (phase) =>
-                        phase !== "api_fallback" &&
-                        phase !== "native_inference",
-                    )
-                    .at(-1) ?? props.activity)
-                : props.activity,
-            )}${props.activity === "api_fallback" ? " · API fallback" : ""}`
-          : "Idle"}
-      </p>
-      {phases.length ? (
-        <ol className="lab-activity-phases" aria-label="Completed policy steps">
-          {phases.map((phase) => {
-            const beside = grades.filter((grade) => grade.phase === phase);
-            return (
-              <li key={phase} data-state="done">
-                {activityLabel(phase)}
-                {beside.map((grade) => (
-                  <span
-                    key={grade.armId}
-                    data-grader={grade.passed ? "pass" : "fail"}
-                  >
-                    {` · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`}
-                  </span>
-                ))}
-              </li>
-            );
-          })}
-        </ol>
+      {props.activity ? (
+        <p className="lab-activity" data-live="true">
+          {props.activity}
+        </p>
       ) : null}
     </div>
   );
