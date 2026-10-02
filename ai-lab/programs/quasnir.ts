@@ -201,6 +201,24 @@ export const quasnirProgram: ModelProgram = {
       "regression",
       { input: "median-v1", target: "median-v2" },
     ),
+    arm(
+      "QUASNIR_LOGIC",
+      "Logic stays on an exact fixture. It is not a general-reasoning score.",
+      "exact",
+      { input: "1+1", target: "1+1" },
+    ),
+    arm(
+      "QUASNIR_TERMINAL",
+      "Terminal coding is allowlisted. No shell is spawned.",
+      "exact",
+      { input: "echo", target: "echo" },
+    ),
+    arm(
+      "QUASNIR_LONG_HORIZON",
+      "Long-horizon coding records steps and does not execute them.",
+      "exact",
+      { input: "hold", target: "hold" },
+    ),
   ],
   evalSuite: {
     id: "quasnir-program-eval",
