@@ -31,11 +31,18 @@ function activityLabel(activity: string): string {
   return activity.replaceAll("_", " ");
 }
 
+export interface PhaseGrade {
+  readonly armId: string;
+  readonly phase: string | null;
+  readonly passed: boolean;
+}
+
 export function ModelSelectors(props: {
   model: LabModelId;
   interaction: InteractionPreference;
   activity: string | null;
   phases?: readonly string[];
+  grades?: readonly PhaseGrade[];
   disabled?: boolean;
   onModelChange: (model: LabModelId) => void;
   onInteractionChange: (interaction: InteractionPreference) => void;
@@ -45,6 +52,9 @@ export function ModelSelectors(props: {
   );
   const phases = (props.phases ?? []).filter((phase) =>
     (ACTIVITIES as readonly string[]).includes(phase),
+  );
+  const grades = (props.grades ?? []).filter(
+    (grade) => grade.phase !== null && phases.includes(grade.phase),
   );
   return (
     <div className="lab-selectors">
@@ -118,11 +128,22 @@ export function ModelSelectors(props: {
       </p>
       {phases.length ? (
         <ol className="lab-activity-phases" aria-label="Completed policy steps">
-          {phases.map((phase) => (
-            <li key={phase} data-state="done">
-              {activityLabel(phase)}
-            </li>
-          ))}
+          {phases.map((phase) => {
+            const beside = grades.filter((grade) => grade.phase === phase);
+            return (
+              <li key={phase} data-state="done">
+                {activityLabel(phase)}
+                {beside.map((grade) => (
+                  <span
+                    key={grade.armId}
+                    data-grader={grade.passed ? "pass" : "fail"}
+                  >
+                    {` · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`}
+                  </span>
+                ))}
+              </li>
+            );
+          })}
         </ol>
       ) : null}
     </div>

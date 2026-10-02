@@ -29,7 +29,7 @@ import {
 } from "@/lib/coding/repository-ref";
 import type { InteractionPreference, LabModelId } from "@/lib/lab/choices";
 import type { ModePreference } from "@/lib/ui/preferences";
-import { ModelSelectors } from "../lab/model-selectors";
+import { ModelSelectors, type PhaseGrade } from "../lab/model-selectors";
 import { IconButton } from "../ui/icon-button";
 
 export type ComposerHandle = {
@@ -87,6 +87,7 @@ export const Composer = forwardRef<
     interaction: InteractionPreference;
     labActivity: string | null;
     labPhases?: readonly string[];
+    labGrades?: readonly PhaseGrade[];
     onLabModelChange: (model: LabModelId) => void;
     onInteractionChange: (interaction: InteractionPreference) => void;
     attachments?: ComposerAttachment[];
@@ -175,6 +176,7 @@ export const Composer = forwardRef<
           interaction={props.interaction}
           activity={props.labActivity}
           phases={props.labPhases}
+          grades={props.labGrades}
           disabled={props.running}
           onModelChange={props.onLabModelChange}
           onInteractionChange={props.onInteractionChange}

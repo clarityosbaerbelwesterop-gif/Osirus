@@ -1,8 +1,9 @@
 import { executeArmPolicy, type ArmExecution } from "./arm-policy";
-import { gradeArm, forbidsTrainedClaim, staticSecurityScan } from "./behavior";
+import { forbidsTrainedClaim, staticSecurityScan } from "./behavior";
 import { asksForHtmlPage } from "./completion";
 import { quoteNative, type NativeQuote } from "./pricing";
 import type { ReasoningTrace } from "./reasoning";
+import { gradeRequestFixtures, type FixtureCheck } from "./request-grade";
 import {
   LOCKED_LOOP_SURFACES,
   type CapabilityArm,
@@ -17,10 +18,7 @@ import {
  * API text to a native benchmark.
  */
 
-export interface FixtureCheck {
-  readonly armId: string;
-  readonly passed: boolean;
-}
+export type { FixtureCheck } from "./request-grade";
 
 export interface ProgramConstraint {
   readonly armIds: readonly string[];
@@ -129,23 +127,20 @@ export function programSystem(input: {
 }
 
 /**
- * Eval hook for the selected arms' own fixtures. The API text is not graded
- * as a native score. `measuredEqual` is false on purpose.
+ * Grades a fixture that appears in the request. A canned sample the request
+ * did not include is not treated as done. `measuredEqual` is false on purpose.
  */
-export function runFixtureEvalHook(arms: readonly CapabilityArm[]): {
+export function runFixtureEvalHook(
+  arms: readonly CapabilityArm[],
+  text: string,
+  phases: ReasoningTrace["phases"],
+): {
   readonly measuredEqual: false;
   readonly checks: readonly FixtureCheck[];
 } {
   return {
     measuredEqual: false,
-    checks: arms.map((arm) => {
-      const sample = arm.dataset.samples[0];
-      if (!sample) return { armId: arm.id, passed: false };
-      return {
-        armId: arm.id,
-        passed: gradeArm(arm.task.grader, sample).passed,
-      };
-    }),
+    checks: gradeRequestFixtures(arms, text, phases),
   };
 }
 
@@ -195,7 +190,7 @@ export function constrainProgram(input: {
 }): ProgramConstraint {
   const arms = selectArms(input.program, input.text);
   const executions = arms.map((arm) => executeArmPolicy(arm, input.text));
-  const hook = runFixtureEvalHook(arms);
+  const hook = runFixtureEvalHook(arms, input.text, input.trace.phases);
   const quote = quoteNative(
     input.program.id,
     input.inputTokens,

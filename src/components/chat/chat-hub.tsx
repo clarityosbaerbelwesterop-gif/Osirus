@@ -159,6 +159,9 @@ export function ChatHub(props: {
   );
   const [labActivity, setLabActivity] = useState<string | null>(null);
   const [labPhases, setLabPhases] = useState<readonly string[]>([]);
+  const [labGrades, setLabGrades] = useState<
+    readonly { armId: string; phase: string | null; passed: boolean }[]
+  >([]);
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [activeRunId, setActiveRunId] = useState(props.initialRunId);
@@ -414,6 +417,7 @@ export function ChatHub(props: {
         setFailedObjective(null);
         setLabActivity("waiting");
         setLabPhases([]);
+        setLabGrades([]);
         setMessages((current) => [
           ...current,
           { id: `pending:${requestId}`, role: "user", content: trimmed },
@@ -435,10 +439,12 @@ export function ChatHub(props: {
             provenance?: string;
             activity?: string;
             phases?: unknown;
+            fixtureChecks?: unknown;
           };
           if (!response.ok || typeof body.text !== "string") {
             setLabActivity(null);
             setLabPhases([]);
+            setLabGrades([]);
             setError(body.message ?? "The model program did not answer.");
             return;
           }
@@ -448,6 +454,31 @@ export function ChatHub(props: {
           setLabPhases(
             Array.isArray(body.phases)
               ? body.phases.filter((phase) => typeof phase === "string")
+              : [],
+          );
+          const shown = Array.isArray(body.phases)
+            ? body.phases.filter((phase) => typeof phase === "string")
+            : [];
+          setLabGrades(
+            Array.isArray(body.fixtureChecks)
+              ? body.fixtureChecks.flatMap((item) => {
+                  if (!item || typeof item !== "object") return [];
+                  const row = item as {
+                    armId?: unknown;
+                    phase?: unknown;
+                    passed?: unknown;
+                  };
+                  if (
+                    typeof row.armId !== "string" ||
+                    typeof row.passed !== "boolean"
+                  ) {
+                    return [];
+                  }
+                  const phase =
+                    typeof row.phase === "string" ? row.phase : null;
+                  if (phase && !shown.includes(phase)) return [];
+                  return [{ armId: row.armId, phase, passed: row.passed }];
+                })
               : [],
           );
           setMessages((current) => [
@@ -461,6 +492,7 @@ export function ChatHub(props: {
         } catch {
           setLabActivity(null);
           setLabPhases([]);
+          setLabGrades([]);
           setError("The model program did not answer.");
         }
         return;
@@ -841,6 +873,7 @@ export function ChatHub(props: {
           interaction={interaction}
           labActivity={labActivity}
           labPhases={labPhases}
+          labGrades={labGrades}
           onLabModelChange={(next) => {
             writePreference(LAB_MODEL_COOKIE, next);
             for (const listener of labListeners) listener();
@@ -849,6 +882,7 @@ export function ChatHub(props: {
             writePreference(INTERACTION_COOKIE, next);
             setLabActivity(null);
             setLabPhases([]);
+            setLabGrades([]);
             for (const listener of labListeners) listener();
           }}
           github={github}

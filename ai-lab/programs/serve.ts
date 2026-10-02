@@ -4,15 +4,18 @@ import { APIModelProvider } from "../inference/providers";
 import { routingDecision, type NativeAvailability } from "../inference/types";
 import { presentCompletion, type CompletionKind } from "./completion";
 import { applyBehaviorGate, constrainProgram } from "./contract";
+import {
+  fallbackLabeledArmOnly,
+  graderLines,
+  markSkippedFixtures,
+  type FixtureCheck,
+} from "./request-grade";
 import type { NativeQuote } from "./pricing";
 import { PriceError, quoteNative, reserveNativeQuote } from "./pricing";
 import { runReasoningPolicy } from "./reasoning";
 import type { Activity, ModelProgram } from "./types";
 
-export interface FixtureCheck {
-  readonly armId: string;
-  readonly passed: boolean;
-}
+export type { FixtureCheck } from "./request-grade";
 
 export interface ProgramAnswer {
   readonly text: string;
@@ -240,12 +243,43 @@ export async function answerWithProgram(input: {
     ],
   });
   const gated = applyBehaviorGate(input.program, result.text);
-  const presented = presentCompletion({
+  const presentedBase = presentCompletion({
     request: userText,
     modelText: gated.text,
     withheld: gated.withheld,
     withheldText: gated.text,
   });
+  const skipped =
+    !gated.withheld &&
+    constraint.checks.length > 0 &&
+    fallbackLabeledArmOnly(result.text, constraint.armIds);
+  const checks: readonly FixtureCheck[] = skipped
+    ? markSkippedFixtures(constraint.checks)
+    : constraint.checks;
+  const record = graderLines(checks);
+  let presented = presentedBase;
+  if (skipped && presentedBase.kind === "text") {
+    presented = {
+      kind: "incomplete",
+      text: [
+        "Completion: incomplete. The fallback labeled the arm and did not run the fixture. It is not shown as done.",
+        record,
+      ]
+        .filter((line) => line.length > 0)
+        .join("\n"),
+    };
+  } else if (
+    !gated.withheld &&
+    presentedBase.kind === "text" &&
+    record.length > 0
+  ) {
+    presented = {
+      kind: "text",
+      text: [record, presentedBase.text]
+        .filter((line) => line.length > 0)
+        .join("\n\n"),
+    };
+  }
   const scoped = trace.outsideProgram
     ? `${trace.note}\n\n${presented.text}`
     : presented.text;
@@ -273,7 +307,7 @@ export async function answerWithProgram(input: {
     phases: trace.phases,
     armIds: constraint.armIds,
     armSteps,
-    fixtureChecks: constraint.checks,
+    fixtureChecks: checks,
     measuredEqual: false,
     outsideProgram: trace.outsideProgram,
     trained: false,
