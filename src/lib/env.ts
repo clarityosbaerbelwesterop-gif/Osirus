@@ -12,6 +12,13 @@ const schema = z.object({
   UNOROUTER_API_KEY_1: z.string().min(1).optional(),
   UNOROUTER_API_KEY_2: z.string().min(1).optional(),
   UNOROUTER_API_KEY_3: z.string().min(1).optional(),
+  // Lab fallback only. Distinct from UNOROUTER_API_KEY_1/2/3. Empty fails closed.
+  UNOROUTER_API_KEY: z.string().min(1).optional(),
+  LAB_FALLBACK_MODEL_ROUGE: z.string().min(1).optional(),
+  LAB_FALLBACK_MODEL_QUESNIR: z.string().min(1).optional(),
+  LAB_FALLBACK_MODEL_DARUS: z.string().min(1).optional(),
+  LAB_NATIVE_RUNTIME_ONLINE: z.enum(["true", "false"]).optional(),
+  LAB_COST_BUDGET_USD: z.string().min(1).optional(),
   OSIRUS_MODEL_FAST: z.string().min(1).optional(),
   OSIRUS_MODEL_STRONG: z.string().min(1).optional(),
   OSIRUS_MODEL_THINKING: z.string().min(1).optional(),

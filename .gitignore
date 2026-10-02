@@ -11,3 +11,8 @@ test-results-prod
 .vercel
 /provider-diagnostics.json
 /provider-diagnostics.md
+
+# Lab fixture checkpoints and pickle artifacts. Never commit weights.
+ai-lab/var/
+*.pkl
+*.pickle
