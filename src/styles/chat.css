@@ -656,13 +656,12 @@
   font: inherit;
 }
 
-/* The closed select used to size itself from "QUASNIR (not in this build)".
-   Once every model is in the build that string goes away and the phone
-   composer wraps differently, which moves the whole screenshot. Keep the
-   control wide enough that the mode buttons stay on the next line. */
-.lab-selectors select {
-  flex: 1 1 16rem;
-  min-width: min(100%, 16rem);
+/* Phone only. The closed select otherwise shrinks when "(not in this build)"
+   leaves the option list, and the mode buttons jump onto its line. */
+@media (max-width: 480px) {
+  .lab-selectors select {
+    width: calc(100% - 4.5rem);
+  }
 }
 
 .lab-activity {
