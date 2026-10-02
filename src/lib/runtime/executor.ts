@@ -45,7 +45,7 @@ export type RuntimeEmit = (packet: RuntimePacket) => void | Promise<void>;
 const SLICE_BUDGET_MS = 240_000;
 
 /** Ceilings written at run creation, enforced by osirus.consume_budget. */
-const DEFAULT_RUN_BUDGET = {
+export const DEFAULT_RUN_BUDGET = {
   maxModelCalls: 40,
   maxToolCalls: 100,
   maxAttempts: 60,
