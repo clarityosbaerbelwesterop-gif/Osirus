@@ -10,7 +10,7 @@ export type LabModelId = (typeof LAB_MODELS)[number]["id"];
 /** Which model programs are compiled into this branch. */
 export const LAB_BUILD: Record<Exclude<LabModelId, "external">, boolean> = {
   rouge: true,
-  quasnir: false,
+  quasnir: true,
   darus: false,
 };
 

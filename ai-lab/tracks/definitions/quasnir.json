@@ -1,10 +1,10 @@
 {
-  "trackId": "quesnir",
-  "displayName": "Quesnir",
+  "trackId": "quasnir",
+  "displayName": "QUASNIR",
   "identity": "coding and security specialist",
-  "nativeModelId": "osirus/quesnir-1",
+  "nativeModelId": "osirus/quasnir-1",
   "architecture": {
-    "id": "quesnir-decoder-fim-planned-v1",
+    "id": "quasnir-decoder-fim-planned-v1",
     "family": "llama-like-decoder-transformer",
     "layers": 16,
     "hiddenSize": 1536,
@@ -16,15 +16,15 @@
     "status": "planned"
   },
   "tokenizer": {
-    "id": "quesnir-bpe-fim",
-    "trackId": "quesnir",
+    "id": "quasnir-bpe-fim",
+    "trackId": "quasnir",
     "family": "byte-level-bpe-fim",
     "version": "0.0.0-untrained",
     "vocabSize": 49152,
-    "pin": "2004288f8fed4bda6bf1b510ab2602c7484b7bb98855cebd88c5667fe0a076bc"
+    "pin": "4eade69df49298c5aba306ff1e2ce6a34db4cc258b97f17e894f6db99cb52b8a"
   },
   "datasetMixture": {
-    "id": "quesnir-mix-planned-v1",
+    "id": "quasnir-mix-planned-v1",
     "parts": [
       {
         "source": "permissive-source-code-planned",
@@ -45,44 +45,47 @@
   },
   "curriculum": [
     {
-      "id": "quesnir-fim",
+      "id": "quasnir-fim",
       "order": 0,
       "objective": "fill-in-the-middle on permissive code (PSM/SPM planned, not run)",
-      "mixtureId": "quesnir-mix-planned-v1",
+      "mixtureId": "quasnir-mix-planned-v1",
       "executable": "none"
     },
     {
-      "id": "quesnir-repo-pack",
+      "id": "quasnir-repo-pack",
       "order": 1,
       "objective": "dependency-ordered repository packing",
-      "mixtureId": "quesnir-mix-planned-v1",
+      "mixtureId": "quasnir-mix-planned-v1",
       "executable": "none"
     },
     {
-      "id": "quesnir-security",
+      "id": "quasnir-security",
       "order": 2,
       "objective": "locate and explain vulnerabilities without exploit how-tos",
-      "mixtureId": "quesnir-mix-planned-v1",
+      "mixtureId": "quasnir-mix-planned-v1",
       "executable": "none"
     },
     {
-      "id": "quesnir-fixture",
+      "id": "quasnir-fixture",
       "order": 3,
       "objective": "CPU infrastructure fixture only",
-      "mixtureId": "quesnir-mix-planned-v1",
+      "mixtureId": "quasnir-mix-planned-v1",
       "executable": "tiny-linear-v1"
     }
   ],
-  "behaviorSpec": "Quesnir is the coding and security specialist. Foreign coder weights stay baselines. It must not present an API model as Quesnir.",
+  "behaviorSpec": "Quasnir is the coding and security specialist. Foreign coder weights stay baselines. It must not present an API model as Quasnir.",
   "specialistObjectives": [
     "repository-level code edits",
     "fill-in-the-middle completion",
     "security review that stops at explanation"
   ],
   "evalSuite": {
-    "id": "quesnir-code-unmeasured",
+    "id": "quasnir-code-unmeasured",
     "measured": false,
-    "tasks": ["fill-middle", "vulnerability-localization"]
+    "tasks": [
+      "fill-middle",
+      "vulnerability-localization"
+    ]
   },
   "trainingConfig": {
     "executableFixture": "tiny-linear-v1",
@@ -92,9 +95,9 @@
   "inferenceConfig": {
     "nativeRuntime": "not_shipped",
     "apiFallback": {
-      "label": "UnoRouter API fallback — not Quesnir",
+      "label": "QUASNIR \u00b7 API fallback \u2014 not Quasnir",
       "defaultModelId": "qwen2.5-coder-32b:free",
-      "envVar": "LAB_FALLBACK_MODEL_QUESNIR",
+      "envVar": "LAB_FALLBACK_MODEL_QUASNIR",
       "catalogRole": "code",
       "verifiedFrom": "https://api.unorouter.com/api/pricing/catalog",
       "verifiedOn": "2026-10-02"
@@ -102,11 +105,11 @@
   },
   "capabilityTargets": [
     {
-      "id": "quesnir-fim",
+      "id": "quasnir-fim",
       "status": "unmeasured"
     },
     {
-      "id": "quesnir-security-review",
+      "id": "quasnir-security-review",
       "status": "unmeasured"
     }
   ]

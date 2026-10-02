@@ -152,10 +152,10 @@ describe("rouge model program", () => {
     expect(activityFor(rougeProgram, "reasoning")).toBe("reasoning");
     expect(programAvailability()).toEqual({
       rouge: true,
-      quasnir: false,
+      quasnir: true,
       darus: false,
     });
-    expect(LAB_BUILD).toEqual({ rouge: true, quasnir: false, darus: false });
+    expect(LAB_BUILD).toEqual({ rouge: true, quasnir: true, darus: false });
     expect(checkpointLineage(rougeProgram)).toMatchObject({
       trained: false,
       production: false,
