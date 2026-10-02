@@ -9,7 +9,11 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
-import type { ModelCallSummary, RunSnapshot, RuntimePacket } from "@/lib/runtime/types";
+import type {
+  ModelCallSummary,
+  RunSnapshot,
+  RuntimePacket,
+} from "@/lib/runtime/types";
 import { repositoryInObjective } from "@/lib/coding/repository-ref";
 import { rougeErrorMessage } from "@/lib/rouge/errors";
 import type { RougeResponse, RougeStreamEvent } from "@/lib/rouge/types";
@@ -29,13 +33,13 @@ import {
   type LabModelId,
 } from "@/lib/lab/choices";
 import { aiConversation } from "@/lib/ui/ai-turn";
-import { createSnapshotGate, deriveRunView, TERMINAL } from "@/lib/ui/run-view";
-import { useShell } from "../shell/shell-context";
 import {
-  Composer,
-  type ComposerAttachment,
-  type ComposerHandle,
-} from "../composer/composer";
+  createSnapshotGate,
+  deriveRunView,
+  TERMINAL,
+} from "@/lib/ui/run-view";
+import { useShell } from "../shell/shell-context";
+import { Composer, type ComposerAttachment, type ComposerHandle } from "../composer/composer";
 import { MessageList, type ChatMessage } from "./message-list";
 import { RunCard } from "../run-status/run-card";
 
@@ -54,10 +58,35 @@ export type SessionState = {
   modelCalls: Record<string, ModelCallSummary>;
 };
 
-type GithubStatus =
+type GithubState =
   | { status: "loading" }
   | { status: "CONNECTED"; login: string }
   | { status: "NOT_CONNECTED" | "NOT_CONFIGURED" | "unknown" };
+
+const labListeners = new Set<() => void>();
+
+function subscribeLab(listener: () => void) {
+  labListeners.add(listener);
+  return () => {
+    labListeners.delete(listener);
+  };
+}
+
+function serverLabModel(): LabModelId {
+  return "auto";
+}
+
+function currentLabModel(): LabModelId {
+  return parseLabModel(readPreference(LAB_MODEL_COOKIE));
+}
+
+function serverInteraction(): InteractionPreference {
+  return "agent";
+}
+
+function currentInteraction(): InteractionPreference {
+  return parseInteraction(readPreference(INTERACTION_COOKIE));
+}
 
 /**
  * The chat itself: message flow, the live run, and the composer. Runs are
@@ -106,7 +135,7 @@ export function ChatHub(props: {
   const [aiStatus, setAiStatus] = useState<string | null>(null);
   /** Message id of the AI-mode answer while it streams; null otherwise. */
   const [aiStreamId, setAiStreamId] = useState<string | null>(null);
-  const [github, setGithub] = useState<GithubStatus>(() =>
+  const [github, setGithub] = useState<GithubState>(() =>
     props.githubStatus === "CONNECTED" && props.githubLogin
       ? { status: "CONNECTED", login: props.githubLogin }
       : props.githubStatus === "NOT_CONNECTED" ||
@@ -569,20 +598,6 @@ export function ChatHub(props: {
     },
     [refreshRun, running, sessionId, snapshotGate],
   );
-
-  useEffect(() => {
-    if (props.initialRunId ?? props.initialSnapshotRunId) {
-      void refreshRun(props.initialRunId ?? props.initialSnapshotRunId!);
-    }
-    // The initial state arrives with the page; one refresh catches up.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  useEffect(() => {
-    if (!activeRunId || running || streaming) return;
-    const interval = window.setInterval(() => void refreshRun(activeRunId), 2000);
-    return () => window.clearInterval(interval);
-  }, [activeRunId, running, streaming, refreshRun]);
 
   return <></>;
 }
