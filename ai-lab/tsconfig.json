@@ -29,6 +29,7 @@
     "observability/**/*.ts",
     "inference/**/*.ts",
     "tracks/**/*.ts",
+    "programs/**/*.ts",
     "tests/**/*.ts"
   ]
 }

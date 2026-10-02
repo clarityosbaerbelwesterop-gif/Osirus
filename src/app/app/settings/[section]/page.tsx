@@ -164,7 +164,7 @@ export default async function SettingsSection({
         <Group
           id="models"
           title="Models"
-          lede="Status from the model calls this workspace made in the last 24 hours. Osirus never switches to a different model when one fails. Native Rouge, Quesnir, and Darus checkpoints are separate from that pool."
+          lede="Status from the model calls this workspace made in the last 24 hours. Osirus never switches to a different model when one fails. Native ROUGE 1, QUASNIR, and DARUS checkpoints are separate from that pool."
         >
           <ModelStatusTable roles={roles} />
           <LabRoutingPanel initial={labRoutingSnapshot()} />

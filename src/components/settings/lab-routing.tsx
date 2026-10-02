@@ -56,7 +56,7 @@ export function LabRoutingPanel({ initial }: { initial: LabRoutingSnapshot }) {
     >
       <h3>Native tracks</h3>
       <p className="subtle">
-        Live routing for Rouge, Quesnir, and Darus. The dot moves only while
+        Live routing for ROUGE 1, QUASNIR, and DARUS. The dot moves only while
         this process would actually send inference to the shown provider.
         Nothing here is a training animation. Training has not been started.
         Observed {snapshot.observedAt}.

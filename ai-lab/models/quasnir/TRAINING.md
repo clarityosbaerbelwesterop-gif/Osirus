@@ -1,4 +1,4 @@
-# Quesnir — Training Plan (data recipe)
+# Quasnir — Training Plan (data recipe)
 
 Date: 2026-10-02 · Status: **plan only — TRAINING_READY=FALSE. Nothing trains
 before the Phase L 18-checkbox gate and explicit owner authorization.**

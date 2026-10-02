@@ -1,8 +1,8 @@
-# Quesnir — Evaluation Plan
+# Quasnir — Evaluation Plan
 
 Date: 2026-10-02 · Status: **plan only — no eval has been run; no results exist.**
 
-This document defines the evaluation suite for Quesnir (coding + security).
+This document defines the evaluation suite for Quasnir (coding + security).
 It wires the DeepSeek-Coder eval methodology (reuse doc § 3, eval-harness row)
 into the Osirus eval spine (`ai-lab/ARCHITECTURE.md` § 3).
 
@@ -30,7 +30,7 @@ into the Osirus eval spine (`ai-lab/ARCHITECTURE.md` § 3).
 
 ## 3. Security-coding suites (candidates — pending license + decontamination review)
 
-Quesnir's security specialization needs security-coding evaluation beyond the
+Quasnir's security specialization needs security-coding evaluation beyond the
 general suites. Candidates, **not yet adopted**:
 
 | Candidate                                  | What it measures                                        | Open questions before adoption                                              |

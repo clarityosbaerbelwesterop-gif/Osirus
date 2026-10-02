@@ -1,7 +1,7 @@
 /**
- * AI Lab — Quesnir model configuration (Phase I scaffold, branch quesnir/scaffold).
+ * AI Lab — Quasnir model configuration (Phase I scaffold, branch quasnir/scaffold).
  *
- * Quesnir is the coding + security specialist model of the Osirus research
+ * Quasnir is the coding + security specialist model of the Osirus research
  * program. Status: **scaffold, untrained** — TRAINING_READY=FALSE, no weights
  * exist, no training run has happened or is authorized.
  *
@@ -13,7 +13,7 @@
  * Honesty invariants (docs/AI_LAB_DEEPSEEK_REUSE.md §§ 5–6):
  * - Foreign weights (Qwen, DeepSeek, …) appear as baselines only, with their
  *   honest upstream `modelId`, their upstream `license`, and
- *   `selfTrained: false`. They are never relabeled as self-trained Quesnir
+ *   `selfTrained: false`. They are never relabeled as self-trained Quasnir
  *   models.
  * - All architecture numbers below are PLANNED values (starting hypothesis),
  *   not measured properties of an existing artifact.
@@ -46,7 +46,7 @@ export interface FimConfig {
 }
 
 /**
- * PLANNED architecture values for the Quesnir native model. Every field here
+ * PLANNED architecture values for the Quasnir native model. Every field here
  * is a design target, not a property of an existing checkpoint. The seed
  * scaffold is the SCP `model/` stack (Llama-family transformer, BPE
  * tokenizer, bf16 trainer with checkpoint + resume — verified real in
@@ -98,7 +98,7 @@ export interface BaselineSpec {
 }
 
 /**
- * Reserved slot for the future Quesnir native checkpoint. No artifact exists,
+ * Reserved slot for the future Quasnir native checkpoint. No artifact exists,
  * so `selfTrained` stays `false` and `status` stays "reserved"; the slot is
  * replaced by a real `NativeCheckpointConfig` (contracts/model-backend.ts)
  * only after a measured training run produces a registered checkpoint.
@@ -113,8 +113,8 @@ export interface NativeCheckpointSlot {
   readonly note: string;
 }
 
-/** Root configuration object for the Quesnir model line. */
-export interface QuesnirModelConfig {
+/** Root configuration object for the Quasnir model line. */
+export interface QuasnirModelConfig {
   readonly modelId: string;
   readonly role: "coding+security";
   readonly status: "scaffold-untrained";
@@ -127,15 +127,15 @@ export interface QuesnirModelConfig {
 }
 
 /**
- * The Quesnir Phase I scaffold configuration.
+ * The Quasnir Phase I scaffold configuration.
  *
  * Baselines are the § 5 landscape of docs/AI_LAB_DEEPSEEK_REUSE.md
  * (Qwen2.5-Coder-7B/32B, DeepSeek-Coder-V2-Lite, DeepSeek-Coder-V2) spread
  * across the three baseline backend kinds so every fallback path
  * (local / remote / API) is represented in config before Phase I wiring.
  */
-export const QUESNIR_CONFIG: QuesnirModelConfig = {
-  modelId: "osirus/quesnir",
+export const QUASNIR_CONFIG: QuasnirModelConfig = {
+  modelId: "osirus/quasnir-1",
   role: "coding+security",
   status: "scaffold-untrained",
   trainingReady: false,
@@ -146,7 +146,7 @@ export const QUESNIR_CONFIG: QuesnirModelConfig = {
     contextWindowTokens: 16384,
     initialScaleTarget: "1B",
     statusNote:
-      "PLANNED values only — no Quesnir weights exist; numbers are design " +
+      "PLANNED values only — no Quasnir weights exist; numbers are design " +
       "targets for the Stage B smoke path, not measured properties.",
   },
   fim: {
@@ -191,7 +191,7 @@ export const QUESNIR_CONFIG: QuesnirModelConfig = {
   ],
   nativeCheckpoint: {
     kind: "native_checkpoint",
-    plannedModelId: "osirus/quesnir-1b",
+    plannedModelId: "osirus/quasnir-1b",
     status: "reserved",
     selfTrained: false,
     note:
@@ -212,13 +212,13 @@ const BASELINE_LICENSES: readonly BaselineLicense[] = [
 ];
 
 /**
- * Pure validator for Quesnir configs, following the contracts/ convention:
+ * Pure validator for Quasnir configs, following the contracts/ convention:
  * returns a `string[]` of human-readable errors; an empty array means valid.
  */
-export function validateQuesnirConfig(config: unknown): string[] {
+export function validateQuasnirConfig(config: unknown): string[] {
   const errors: string[] = [];
   if (!isRecord(config)) {
-    return ["quesnir config must be an object"];
+    return ["quasnir config must be an object"];
   }
 
   if (!isNonEmptyString(config.modelId)) {

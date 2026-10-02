@@ -27,7 +27,9 @@ import {
   repositoryInObjective,
   repositoryShortName,
 } from "@/lib/coding/repository-ref";
+import type { InteractionPreference, LabModelId } from "@/lib/lab/choices";
 import type { ModePreference } from "@/lib/ui/preferences";
+import { ModelSelectors } from "../lab/model-selectors";
 import { IconButton } from "../ui/icon-button";
 
 export type ComposerHandle = {
@@ -81,6 +83,11 @@ export const Composer = forwardRef<
     /** User-selected working mode; "auto" lets the router decide alone. */
     mode: ModePreference;
     onModeChange: (mode: ModePreference) => void;
+    labModel: LabModelId;
+    interaction: InteractionPreference;
+    labActivity: string | null;
+    onLabModelChange: (model: LabModelId) => void;
+    onInteractionChange: (interaction: InteractionPreference) => void;
     attachments?: ComposerAttachment[];
     uploading?: boolean;
     onAttach?: (file: File) => void;
@@ -162,7 +169,19 @@ export const Composer = forwardRef<
         </div>
       ) : null}
       <form className="composer" onSubmit={submit}>
-        <div className="composer-modes" role="radiogroup" aria-label="Mode">
+        <ModelSelectors
+          model={props.labModel}
+          interaction={props.interaction}
+          activity={props.labActivity}
+          disabled={props.running}
+          onModelChange={props.onLabModelChange}
+          onInteractionChange={props.onInteractionChange}
+        />
+        <div
+          className="composer-modes"
+          role="radiogroup"
+          aria-label="Working mode"
+        >
           {MODES.map((mode, index) => (
             <button
               key={mode}

@@ -85,7 +85,7 @@
   "inferenceConfig": {
     "nativeRuntime": "not_shipped",
     "apiFallback": {
-      "label": "UnoRouter API fallback — not Rouge",
+      "label": "ROUGE 1 · API fallback — not Rouge",
       "defaultModelId": "qwen3:free",
       "envVar": "LAB_FALLBACK_MODEL_ROUGE",
       "catalogRole": "general",

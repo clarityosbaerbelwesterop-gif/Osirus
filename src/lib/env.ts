@@ -15,7 +15,7 @@ const schema = z.object({
   // Lab fallback only. Distinct from UNOROUTER_API_KEY_1/2/3. Empty fails closed.
   UNOROUTER_API_KEY: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_ROUGE: z.string().min(1).optional(),
-  LAB_FALLBACK_MODEL_QUESNIR: z.string().min(1).optional(),
+  LAB_FALLBACK_MODEL_QUASNIR: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_DARUS: z.string().min(1).optional(),
   LAB_NATIVE_RUNTIME_ONLINE: z.enum(["true", "false"]).optional(),
   LAB_COST_BUDGET_USD: z.string().min(1).optional(),

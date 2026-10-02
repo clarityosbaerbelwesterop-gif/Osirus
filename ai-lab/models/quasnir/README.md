@@ -1,11 +1,11 @@
-# Quesnir — Model Card (draft)
+# Quasnir — Model Card (draft)
 
-Date: 2026-10-02 · Branch: `quesnir/scaffold` (from `ai-lab/foundation`) ·
+Date: 2026-10-02 · Branch: `quasnir/scaffold` (from `ai-lab/foundation`) ·
 Status: **scaffold, untrained — no weights exist, TRAINING_READY=FALSE.**
 
 ## Identity
 
-- **Name:** Quesnir (`osirus/quesnir`)
+- **Name:** Quasnir (`osirus/quasnir-1`)
 - **Role:** coding + security specialist model of the Osirus research program
   (alongside Rouge 1 / Darus; see `ai-lab/ARCHITECTURE.md`).
 - **Intended use (planned):** code completion and generation, fill-in-the-middle
@@ -32,7 +32,7 @@ re-measured on the Osirus eval spine before appearing in any Osirus artifact.
 
 ## Baselines (foreign weights — never self-trained)
 
-Quesnir will be compared against open code models from the reuse-doc § 5
+Quasnir will be compared against open code models from the reuse-doc § 5
 landscape, all with `selfTrained: false` (see `model.config.ts`):
 
 | Baseline                        | License         | Backend kinds used |
@@ -42,7 +42,7 @@ landscape, all with `selfTrained: false` (see `model.config.ts`):
 | DeepSeek-Coder-V2-Lite-Instruct | DeepSeek custom | remote_inference   |
 | DeepSeek-Coder-V2               | DeepSeek custom | api_provider       |
 
-Foreign weights are never relabeled as self-trained Quesnir models.
+Foreign weights are never relabeled as self-trained Quasnir models.
 
 ## Gates
 

@@ -51,12 +51,12 @@ Catalog check on 2026-10-02 against `https://api.unorouter.com/api/pricing/catal
 | Track   | Native id (not trained) | Fallback env                 | Default catalog id       | Role           |
 | ------- | ----------------------- | ---------------------------- | ------------------------ | -------------- |
 | Rouge   | `osirus/rouge-1`        | `LAB_FALLBACK_MODEL_ROUGE`   | `qwen3:free`             | general        |
-| Quesnir | `osirus/quesnir-1`      | `LAB_FALLBACK_MODEL_QUESNIR` | `qwen2.5-coder-32b:free` | code           |
+| Quasnir | `osirus/quasnir-1`      | `LAB_FALLBACK_MODEL_QUASNIR` | `qwen2.5-coder-32b:free` | code           |
 | Darus   | `osirus/darus-1`        | `LAB_FALLBACK_MODEL_DARUS`   | `gemini-3.6-flash:free`  | broad research |
 
-The spelling in the repo is Quesnir. The branch requested for this milestone is `quasnir/infrastructure`.
+Canonical product spelling is QUASNIR (`osirus/quasnir-1`). The older scaffold spelling Quesnir is not a second model. Branch `quesnir/scaffold` is the pre-consolidation branch and is not a parallel identity.
 
-Track JSON files are added on the three branches (`ai-lab/tracks/definitions/{rouge,quesnir,darus}.json`). They differ in architecture, tokenizer, mixture, curriculum, behavior, objectives, eval suite, training seed, inference fallback, and capability targets. Eval suites set `measured: false`.
+Track JSON files are added on the three branches (`ai-lab/tracks/definitions/{rouge,quasnir,darus}.json`). They differ in architecture, tokenizer, mixture, curriculum, behavior, objectives, eval suite, training seed, inference fallback, and capability targets. Eval suites set `measured: false`.
 
 ## Status vocabulary
 

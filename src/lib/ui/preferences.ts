@@ -4,6 +4,8 @@
 export const THEME_COOKIE = "osirus-theme";
 export const SIDEBAR_COOKIE = "osirus-sidebar";
 export const MODE_COOKIE = "osirus-mode";
+export const LAB_MODEL_COOKIE = "osirus-lab-model";
+export const INTERACTION_COOKIE = "osirus-interaction";
 
 export type ThemePreference = "system" | "light" | "dark";
 export type ModePreference =

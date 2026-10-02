@@ -16,12 +16,20 @@ import type {
 } from "@/lib/runtime/types";
 import { repositoryInObjective } from "@/lib/coding/repository-ref";
 import {
+  INTERACTION_COOKIE,
+  LAB_MODEL_COOKIE,
   MODE_COOKIE,
   parseMode,
   readPreference,
   writePreference,
   type ModePreference,
 } from "@/lib/ui/preferences";
+import {
+  parseInteraction,
+  parseLabModel,
+  type InteractionPreference,
+  type LabModelId,
+} from "@/lib/lab/choices";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
 import type { Starter } from "@/lib/ui/starters";
 import {
@@ -86,6 +94,31 @@ function serverMode(): ModePreference {
   return "auto";
 }
 
+const labListeners = new Set<() => void>();
+
+function subscribeLab(listener: () => void) {
+  labListeners.add(listener);
+  return () => {
+    labListeners.delete(listener);
+  };
+}
+
+function currentLabModel(): LabModelId {
+  return parseLabModel(readPreference(LAB_MODEL_COOKIE));
+}
+
+function serverLabModel(): LabModelId {
+  return "rouge";
+}
+
+function currentInteraction(): InteractionPreference {
+  return parseInteraction(readPreference(INTERACTION_COOKIE));
+}
+
+function serverInteraction(): InteractionPreference {
+  return "agent";
+}
+
 export function ChatHub(props: {
   firstName: string | null;
   workspaceName: string;
@@ -114,6 +147,17 @@ export function ChatHub(props: {
   >(props.initialModelCalls ?? props.initialSnapshot?.modelCalls ?? {});
   const [objective, setObjective] = useState("");
   const mode = useSyncExternalStore(subscribeMode, currentMode, serverMode);
+  const labModel = useSyncExternalStore(
+    subscribeLab,
+    currentLabModel,
+    serverLabModel,
+  );
+  const interaction = useSyncExternalStore(
+    subscribeLab,
+    currentInteraction,
+    serverInteraction,
+  );
+  const [labActivity, setLabActivity] = useState<string | null>(null);
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [activeRunId, setActiveRunId] = useState(props.initialRunId);
@@ -362,6 +406,55 @@ export function ChatHub(props: {
     async (value: string, regenerate = false) => {
       const trimmed = value.trim();
       if (!trimmed || running) return;
+      if (interaction === "ai" && !regenerate) {
+        const requestId = crypto.randomUUID();
+        setObjective("");
+        setError(null);
+        setFailedObjective(null);
+        setLabActivity("waiting");
+        setMessages((current) => [
+          ...current,
+          { id: `pending:${requestId}`, role: "user", content: trimmed },
+        ]);
+        try {
+          const response = await fetch("/api/lab/complete", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              modelId: labModel,
+              interaction: "ai",
+              messages: [{ role: "user", content: trimmed }],
+            }),
+          });
+          const body = (await response.json().catch(() => ({}))) as {
+            message?: string;
+            text?: string;
+            userLabel?: string;
+            provenance?: string;
+            activity?: string;
+          };
+          if (!response.ok || typeof body.text !== "string") {
+            setLabActivity(null);
+            setError(body.message ?? "The model program did not answer.");
+            return;
+          }
+          setLabActivity(
+            typeof body.activity === "string" ? body.activity : null,
+          );
+          setMessages((current) => [
+            ...current,
+            {
+              id: `lab:${requestId}`,
+              role: "assistant",
+              content: `${body.userLabel ?? "Model"}\n${body.provenance ?? ""}\n\n${body.text}`,
+            },
+          ]);
+        } catch {
+          setLabActivity(null);
+          setError("The model program did not answer.");
+        }
+        return;
+      }
       const requestId = crypto.randomUUID();
       setObjective("");
       setError(null);
@@ -474,6 +567,8 @@ export function ChatHub(props: {
     [
       applyPacket,
       attachments,
+      interaction,
+      labModel,
       mode,
       refreshRun,
       running,
@@ -732,6 +827,18 @@ export function ChatHub(props: {
           workspaceName={props.workspaceName}
           mode={mode}
           onModeChange={selectMode}
+          labModel={labModel}
+          interaction={interaction}
+          labActivity={labActivity}
+          onLabModelChange={(next) => {
+            writePreference(LAB_MODEL_COOKIE, next);
+            for (const listener of labListeners) listener();
+          }}
+          onInteractionChange={(next) => {
+            writePreference(INTERACTION_COOKIE, next);
+            setLabActivity(null);
+            for (const listener of labListeners) listener();
+          }}
           github={github}
           approvalAnchor={
             pendingApproval ? `approval-${pendingApproval.id}` : null
