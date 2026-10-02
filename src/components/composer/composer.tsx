@@ -29,7 +29,7 @@ import {
 } from "@/lib/coding/repository-ref";
 import type { InteractionPreference, LabModelId } from "@/lib/lab/choices";
 import type { ModePreference } from "@/lib/ui/preferences";
-import { ModelSelectors, type PhaseGrade } from "../lab/model-selectors";
+import { ModelSelectors } from "../lab/model-selectors";
 import { IconButton } from "../ui/icon-button";
 
 export type ComposerHandle = {
@@ -85,9 +85,8 @@ export const Composer = forwardRef<
     onModeChange: (mode: ModePreference) => void;
     labModel: LabModelId;
     interaction: InteractionPreference;
-    labActivity: string | null;
-    labPhases?: readonly string[];
-    labGrades?: readonly PhaseGrade[];
+    /** Live status of the AI-mode answer stream; null when idle. */
+    activity: string | null;
     onLabModelChange: (model: LabModelId) => void;
     onInteractionChange: (interaction: InteractionPreference) => void;
     attachments?: ComposerAttachment[];
@@ -174,9 +173,7 @@ export const Composer = forwardRef<
         <ModelSelectors
           model={props.labModel}
           interaction={props.interaction}
-          activity={props.labActivity}
-          phases={props.labPhases}
-          grades={props.labGrades}
+          activity={props.activity}
           disabled={props.running}
           onModelChange={props.onLabModelChange}
           onInteractionChange={props.onInteractionChange}
@@ -251,7 +248,7 @@ export const Composer = forwardRef<
                     type="button"
                     className="chip-remove"
                     aria-label={`Remove ${file.filename}`}
-                    onClick={() => props.onRemoveAttachment?.(file.id)}
+                    onClick={() => props.onRemoveAttachment?.(id)}
                   >
                     <X size={12} aria-hidden="true" />
                   </button>
