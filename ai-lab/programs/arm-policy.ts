@@ -1,4 +1,5 @@
-import { gradeArm, runAssertionFixture, staticSecurityScan } from "./behavior";
+import { runAssertionFixture, staticSecurityScan } from "./behavior";
+import { sampleInRequest } from "./request-grade";
 import {
   checkCitation,
   classifyRepoPath,
@@ -143,12 +144,9 @@ export function executeArmPolicy(
       steps.push(`gate: refused ${surface}`);
     }
   }
-  const sample = arm.dataset.samples[0];
-  if (sample) {
-    const graded = gradeArm(arm.task.grader, sample);
-    steps.push(
-      `fixture ${arm.id}: ${graded.passed ? "held" : "failed"} (${graded.detail})`,
-    );
+  const matched = sampleInRequest(arm, text);
+  if (matched) {
+    steps.push(`fixture ${arm.id}: ran on the request`);
   }
   if (kind === "math") {
     if (/(?:^|;)ask:/.test(text)) {
