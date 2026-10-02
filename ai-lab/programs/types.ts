@@ -52,7 +52,9 @@ export type ArmGrader =
   | "tool"
   | "world"
   | "multimodal"
-  | "repository";
+  | "repository"
+  | "graph"
+  | "strategy";
 
 export interface CapabilityArm {
   readonly id: string;

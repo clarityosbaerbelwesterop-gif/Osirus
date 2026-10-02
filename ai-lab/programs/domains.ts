@@ -457,14 +457,282 @@ export function stepWorld(input: string): string {
 
 const NAMED_TOOLS = new Set(["notes", "search", "calendar"]);
 
-export function nameTool(input: string): "named" | "refused" | "malformed" {
+export function nameTool(input: string): {
+  readonly status: "named" | "refused" | "malformed";
+  readonly called: false;
+} {
+  if (/^call:/.test(input)) return { status: "refused", called: false };
   const match = input.match(/^tool:([a-z]+)$/);
-  if (!match) return "malformed";
-  return NAMED_TOOLS.has(match[1] ?? "") ? "named" : "refused";
+  if (!match) return { status: "malformed", called: false };
+  return {
+    status: NAMED_TOOLS.has(match[1] ?? "") ? "named" : "refused",
+    called: false,
+  };
 }
 
-export function fixtureQuery(input: string): "1" | "no-connection" {
-  return input.trim().toLowerCase() === "select 1" ? "1" : "no-connection";
+/**
+ * Parse one statement. No driver is loaded and `connected` stays false.
+ * Only the literal fixture `select 1` yields a row.
+ */
+export function parseStatement(input: string): {
+  readonly kind: "select" | "refused";
+  readonly connected: false;
+  readonly detail: "1" | "parsed" | "refused";
+} {
+  const text = input.trim();
+  const refused = {
+    kind: "refused" as const,
+    connected: false as const,
+    detail: "refused" as const,
+  };
+  if (!text || /[;]|--|\/\*|\*\//.test(text)) return refused;
+  if (/^(insert|update|delete|drop|alter|create|grant|copy)\b/i.test(text)) {
+    return refused;
+  }
+  const match = text.match(
+    /^select\s+(.+?)(?:\s+from\s+([a-z_][a-z0-9_]*))?(?:\s+where\s+([a-z_][a-z0-9_]*)\s*=\s*(\d+))?$/i,
+  );
+  if (!match) return refused;
+  const columns = (match[1] ?? "")
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (
+    columns.length === 0 ||
+    columns.some((column) => !/^(\*|\d+|[a-z_][a-z0-9_]*)$/i.test(column))
+  ) {
+    return refused;
+  }
+  if (
+    columns.length === 1 &&
+    columns[0] === "1" &&
+    match[2] === undefined &&
+    match[3] === undefined
+  ) {
+    return { kind: "select", connected: false, detail: "1" };
+  }
+  return { kind: "select", connected: false, detail: "parsed" };
+}
+
+/** Dry-run stays local. Live, apply, provision, and deploy are refused. */
+export function dryRunPlan(input: string): "dry-run" | "refused" | "unknown" {
+  const text = input.trim();
+  if (/\b(apply|provision|deploy|live)\b/i.test(text)) return "refused";
+  if (
+    text === "dry-run" ||
+    /^dry-run\b/i.test(text) ||
+    /^mode=dry-run\b/i.test(text)
+  ) {
+    return "dry-run";
+  }
+  return "unknown";
+}
+
+/** Directed edges on fixture ids. A back edge, including a self-loop, is a cycle. */
+export function dependencyCycle(
+  input: string,
+): "acyclic" | "cycle" | "malformed" {
+  const body = input.match(/^edges:(.+)$/)?.[1];
+  if (!body) return "malformed";
+  const edges = body
+    .split(",")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (edges.length === 0) return "malformed";
+  const next = new Map<string, string[]>();
+  const nodes = new Set<string>();
+  for (const edge of edges) {
+    const match = edge.match(/^([a-z][a-z0-9]*)>([a-z][a-z0-9]*)$/);
+    if (!match) return "malformed";
+    const from = match[1] ?? "";
+    const to = match[2] ?? "";
+    nodes.add(from);
+    nodes.add(to);
+    const list = next.get(from) ?? [];
+    list.push(to);
+    next.set(from, list);
+  }
+  const color = new Map<string, 0 | 1 | 2>();
+  const visit = (node: string): boolean => {
+    color.set(node, 1);
+    for (const dest of next.get(node) ?? []) {
+      const state = color.get(dest) ?? 0;
+      if (state === 1) return true;
+      if (state === 0 && visit(dest)) return true;
+    }
+    color.set(node, 2);
+    return false;
+  };
+  for (const node of nodes) {
+    if ((color.get(node) ?? 0) === 0 && visit(node)) return "cycle";
+  }
+  return "acyclic";
+}
+
+export function classifyRepoPath(
+  input: string,
+): "missing" | "refused" | "outside" | string {
+  const match = input.match(/^repo:(.+)$/);
+  if (!match) return "missing";
+  const path = match[1] ?? "";
+  let decoded = path;
+  try {
+    decoded = decodeURIComponent(path);
+  } catch {
+    return "refused";
+  }
+  const unsafe = (value: string) =>
+    value.includes("..") ||
+    value.startsWith("/") ||
+    value.includes("\\") ||
+    value.includes("\0") ||
+    /%2e/i.test(value);
+  if (unsafe(path) || unsafe(decoded)) return "refused";
+  if (!decoded.startsWith("fixture/") || decoded.includes("//"))
+    return "outside";
+  return decoded;
+}
+
+export function checkCitation(input: string): {
+  readonly detail: string;
+  readonly id: string | null;
+} {
+  if (/https?:/i.test(input)) {
+    return { detail: "no fetch in this fixture", id: null };
+  }
+  const claim = /(?:^|;)claim=/.test(input);
+  const id = input.match(/(?:^|;)id=([^;]*)/)?.[1]?.trim() ?? "";
+  const title = input.match(/(?:^|;)title=([^;]*)/)?.[1]?.trim() ?? "";
+  if (claim && !id) return { detail: "missing-id", id: null };
+  if (!id || !title) {
+    return { detail: "citation missing id or title", id: id || null };
+  }
+  return { detail: id, id };
+}
+
+export function reactionBalance(
+  input: string,
+): "balanced" | "unbalanced" | "not-reaction" {
+  const sides = input.split("->");
+  if (sides.length !== 2) return "not-reaction";
+  const tally = (side: string): Map<string, number> | null => {
+    const terms = side
+      .split("+")
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+    if (terms.length === 0) return null;
+    const totals = new Map<string, number>();
+    for (const term of terms) {
+      const match = term.match(/^(\d+)?([A-Z].*)$/);
+      if (!match) return null;
+      const coeff = match[1] ? Number(match[1]) : 1;
+      const counts = formulaCounts(match[2] ?? "");
+      if (!counts || !Number.isInteger(coeff) || coeff <= 0) return null;
+      for (const part of counts.split(",")) {
+        const [symbol, amount] = part.split(":");
+        if (!symbol || !amount) return null;
+        totals.set(symbol, (totals.get(symbol) ?? 0) + coeff * Number(amount));
+      }
+    }
+    return totals;
+  };
+  const left = tally(sides[0] ?? "");
+  const right = tally(sides[1] ?? "");
+  if (!left || !right) return "not-reaction";
+  const symbols = new Set([...left.keys(), ...right.keys()]);
+  for (const symbol of symbols) {
+    if ((left.get(symbol) ?? 0) !== (right.get(symbol) ?? 0)) {
+      return "unbalanced";
+    }
+  }
+  return "balanced";
+}
+
+export function independentExpected(
+  input: string,
+): "match" | "mismatch" | "refused" | null {
+  const structured = /(?:^|;)(?:expr|claimed)=/.test(input);
+  if (!structured) return null;
+  const expr = input.match(/(?:^|;)expr=([^;]*)/)?.[1];
+  const expect = input.match(/(?:^|;)expect=([^;]*)/)?.[1];
+  const claimed = input.match(/(?:^|;)claimed=([^;]*)/)?.[1];
+  if (!expr) return "refused";
+  const result = evalIntegerExpr(expr);
+  if (!result.ok) return "refused";
+  const value = String(result.value);
+  if (expect !== undefined && expect.trim() !== value) return "mismatch";
+  if (claimed !== undefined && claimed.trim() !== value) return "mismatch";
+  if (expect === undefined && claimed === undefined) return "refused";
+  return "match";
+}
+
+export function readPlan(input: string): {
+  readonly count: number;
+  readonly executed: 0;
+  readonly skipped: string | null;
+  readonly complete: boolean;
+  readonly mode: "count" | "required";
+} {
+  if (input.startsWith("need:")) {
+    const match = input.match(/^need:([^;]*);steps:(.*)$/);
+    if (!match) {
+      return {
+        count: 0,
+        executed: 0,
+        skipped: null,
+        complete: false,
+        mode: "required",
+      };
+    }
+    const required = (match[1] ?? "")
+      .split(",")
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+    const steps = (match[2] ?? "")
+      .split(".")
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0);
+    const skipped = required.find((step) => !steps.includes(step)) ?? null;
+    return {
+      count: steps.length,
+      executed: 0,
+      skipped,
+      complete: skipped === null && required.length > 0,
+      mode: "required",
+    };
+  }
+  const recorded = countRecordedSteps(input);
+  return {
+    count: recorded.count,
+    executed: 0,
+    skipped: null,
+    complete: false,
+    mode: "count",
+  };
+}
+
+export function readStrategy(input: string):
+  | {
+      readonly ok: true;
+      readonly choice: string;
+      readonly rejected: string;
+      readonly executed: 0;
+    }
+  | {
+      readonly ok: false;
+      readonly detail: "missing-alternative" | "not-alternative" | "malformed";
+    } {
+  const choice = input.match(/(?:^|;)choose:([^;]*)/)?.[1]?.trim() ?? "";
+  const rejected = input.match(/(?:^|;)reject:([^;]*)/)?.[1]?.trim() ?? "";
+  if (!choice || !/^[a-z][a-z0-9-]*$/.test(choice)) {
+    return { ok: false, detail: "malformed" };
+  }
+  if (!rejected) return { ok: false, detail: "missing-alternative" };
+  if (!/^[a-z][a-z0-9-]*$/.test(rejected)) {
+    return { ok: false, detail: "malformed" };
+  }
+  if (choice === rejected) return { ok: false, detail: "not-alternative" };
+  return { ok: true, choice, rejected, executed: 0 };
 }
 
 const FIXTURE_CONTEXT = 8;
@@ -513,11 +781,18 @@ export function gradeDomain(
     };
   }
   if (grader === "formula") {
+    if (sample.input.includes("->")) {
+      const verdict = reactionBalance(sample.input);
+      return { passed: verdict === sample.target, detail: verdict };
+    }
     const counts = formulaCounts(sample.input);
-    return {
-      passed: counts === sample.target,
-      detail: counts ?? "formula not parsed",
-    };
+    if (!counts) {
+      return {
+        passed: sample.target === "unparsed",
+        detail: "formula not parsed",
+      };
+    }
+    return { passed: counts === sample.target, detail: counts };
   }
   if (grader === "sum") {
     const total = sumList(sample.input);
@@ -527,19 +802,23 @@ export function gradeDomain(
     };
   }
   if (grader === "citation") {
-    if (/https?:/i.test(sample.input)) {
-      return { passed: false, detail: "no fetch in this fixture" };
+    const check = checkCitation(sample.input);
+    if (check.detail === "no fetch in this fixture") {
+      return { passed: false, detail: check.detail };
     }
-    const id = sample.input.match(/id=([^;]+)/)?.[1];
-    const title = sample.input.match(/title=([^;]+)/)?.[1];
-    if (!id || !title)
-      return { passed: false, detail: "citation missing id or title" };
-    return { passed: id === sample.target, detail: id };
+    if (check.detail === "missing-id") {
+      return { passed: sample.target === "missing-id", detail: "missing-id" };
+    }
+    if (!check.id) return { passed: false, detail: check.detail };
+    return { passed: check.id === sample.target, detail: check.id };
   }
   if (grader === "context-bound") {
     const count = Number(sample.input);
     if (!Number.isInteger(count) || count < 1) {
-      return { passed: false, detail: "context length is not an integer" };
+      return {
+        passed: sample.target === "refused",
+        detail: "context length is not an integer",
+      };
     }
     const params = initParams(contextArch(), 2);
     const tokens = Array.from({ length: count }, (_, token) => token % 8);
@@ -563,6 +842,10 @@ export function gradeDomain(
     return { passed: value === sample.target, detail: value || "empty" };
   }
   if (grader === "independent") {
+    const computed = independentExpected(sample.input);
+    if (computed) {
+      return { passed: computed === sample.target, detail: computed };
+    }
     const left = sample.input.match(/left=([^;]*)/)?.[1];
     const right = sample.input.match(/right=([^;]*)/)?.[1];
     if (left === undefined || right === undefined) {
@@ -572,7 +855,25 @@ export function gradeDomain(
     return { passed: verdict === sample.target, detail: verdict };
   }
   if (grader === "plan") {
-    const recorded = countRecordedSteps(sample.input);
+    const recorded = readPlan(sample.input);
+    if (recorded.mode === "required") {
+      if (sample.target.startsWith("skipped:")) {
+        const name = sample.target.slice("skipped:".length);
+        return {
+          passed: recorded.executed === 0 && recorded.skipped === name,
+          detail: `skipped ${recorded.skipped ?? "none"}, 0 executed`,
+        };
+      }
+      return {
+        passed:
+          recorded.executed === 0 &&
+          recorded.complete &&
+          sample.target === "complete",
+        detail: recorded.complete
+          ? "required steps recorded, 0 executed"
+          : `skipped ${recorded.skipped ?? "unknown"}, 0 executed`,
+      };
+    }
     const passed =
       recorded.executed === 0 && String(recorded.count) === sample.target;
     return {
@@ -621,49 +922,80 @@ export function gradeDomain(
   }
   if (grader === "rsi") return gradeRsiSample(sample);
   if (grader === "database") {
-    const value = fixtureQuery(sample.input);
-    return { passed: value === sample.target, detail: value };
+    const parsed = parseStatement(sample.input);
+    return {
+      passed: parsed.connected === false && parsed.detail === sample.target,
+      detail: `${parsed.detail}, connected=false`,
+    };
   }
   if (grader === "dry-run") {
-    if (/\b(apply|provision|deploy)\b/i.test(sample.input)) {
-      return {
-        passed: sample.target === "refused",
-        detail: "refused live change",
-      };
+    const verdict = dryRunPlan(sample.input);
+    if (verdict === "unknown") {
+      return { passed: false, detail: "unknown dry-run fixture" };
     }
-    if (sample.input.trim() === "dry-run") {
-      return { passed: sample.target === "dry-run", detail: "dry-run only" };
-    }
-    return { passed: false, detail: "unknown dry-run fixture" };
+    return {
+      passed: verdict === sample.target,
+      detail: verdict === "refused" ? "refused live change" : "dry-run only",
+    };
   }
   if (grader === "tool") {
     const named = nameTool(sample.input);
-    return { passed: named === sample.target, detail: named };
+    return {
+      passed: named.called === false && named.status === sample.target,
+      detail: `${named.status}, called=false`,
+    };
   }
   if (grader === "world") {
     const next = stepWorld(sample.input);
     return { passed: next === sample.target, detail: next };
   }
   if (grader === "multimodal") {
-    if (sample.input !== "no-encoder") {
-      return { passed: false, detail: "the fixture has no encoder to claim" };
+    if (sample.input === "no-encoder") {
+      return {
+        passed: sample.target === "unavailable",
+        detail: "no encoder in the CPU fixture",
+      };
     }
-    return {
-      passed: sample.target === "unavailable",
-      detail: "no encoder in the CPU fixture",
-    };
+    if (sample.input.startsWith("encoder:")) {
+      return {
+        passed: sample.target === "refused",
+        detail: "no encoder in the CPU fixture",
+      };
+    }
+    return { passed: false, detail: "the fixture has no encoder to claim" };
   }
   if (grader === "repository") {
-    const match = sample.input.match(/^repo:(.+)$/);
-    if (!match) return { passed: false, detail: "missing repo id" };
-    const path = match[1] ?? "";
-    if (path.includes("..") || path.startsWith("/") || path.includes("\\")) {
+    const verdict = classifyRepoPath(sample.input);
+    if (verdict === "missing") {
+      return { passed: false, detail: "missing repo id" };
+    }
+    if (verdict === "refused") {
       return { passed: sample.target === "refused", detail: "path refused" };
     }
-    if (!path.startsWith("fixture/")) {
-      return { passed: false, detail: "outside fixture" };
+    if (verdict === "outside") {
+      return {
+        passed: sample.target === "outside",
+        detail: "outside fixture",
+      };
     }
-    return { passed: path === sample.target, detail: path };
+    return { passed: verdict === sample.target, detail: verdict };
+  }
+  if (grader === "graph") {
+    const verdict = dependencyCycle(sample.input);
+    return { passed: verdict === sample.target, detail: verdict };
+  }
+  if (grader === "strategy") {
+    const choice = readStrategy(sample.input);
+    if (!choice.ok) {
+      return {
+        passed: choice.detail === sample.target,
+        detail: `${choice.detail}, 0 executed`,
+      };
+    }
+    return {
+      passed: choice.executed === 0 && choice.choice === sample.target,
+      detail: `chose ${choice.choice}, rejected ${choice.rejected}, 0 executed`,
+    };
   }
   return { passed: false, detail: "domain grader was not handled" };
 }
