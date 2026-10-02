@@ -222,6 +222,29 @@ export function forwardTokens(
   return { logits, route: routes };
 }
 
+/** Past positions stay identical when only the last token changes. */
+export function causalPrefixStable(
+  params: FixtureParams,
+  tokens: readonly number[],
+): boolean {
+  if (tokens.length < 2) return false;
+  const base = forwardTokens(params, tokens);
+  const flipped = tokens.slice();
+  const last = flipped[flipped.length - 1] ?? 0;
+  flipped[flipped.length - 1] = (last + 1) % params.arch.vocab;
+  if (flipped[flipped.length - 1] === last) return false;
+  const alt = forwardTokens(params, flipped);
+  for (let time = 0; time < tokens.length - 1; time += 1) {
+    const left = base.logits[time] ?? [];
+    const right = alt.logits[time] ?? [];
+    if (left.length !== right.length) return false;
+    for (let index = 0; index < left.length; index += 1) {
+      if (left[index] !== right[index]) return false;
+    }
+  }
+  return true;
+}
+
 export function meanNll(
   logits: readonly number[][],
   targets: readonly number[],

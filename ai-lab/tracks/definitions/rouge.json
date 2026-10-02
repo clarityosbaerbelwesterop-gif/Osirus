@@ -95,6 +95,34 @@
   },
   "capabilityTargets": [
     {
+      "id": "rouge-thinking",
+      "status": "unmeasured"
+    },
+    {
+      "id": "rouge-rsi",
+      "status": "unmeasured"
+    },
+    {
+      "id": "rouge-math",
+      "status": "unmeasured"
+    },
+    {
+      "id": "rouge-cybersecurity",
+      "status": "unmeasured"
+    },
+    {
+      "id": "rouge-coding",
+      "status": "unmeasured"
+    },
+    {
+      "id": "rouge-terminal",
+      "status": "unmeasured"
+    },
+    {
+      "id": "rouge-long-horizon",
+      "status": "unmeasured"
+    },
+    {
       "id": "rouge-reasoning",
       "status": "unmeasured"
     },

@@ -62,6 +62,7 @@ const HINTS: readonly {
   },
   { pattern: /\b(terminal|shell|echo)\b/i, tokens: ["TERMINAL"] },
   { pattern: /\blong[- ]horizon\b/i, tokens: ["LONG_HORIZON"] },
+  { pattern: /\b(rsi|gradient)\b/i, tokens: ["RSI"] },
   {
     pattern: /\b(math|arithmetic|\d+\s*[+*/-]\s*\d+)\b/i,
     tokens: ["MATH", "LOGIC"],

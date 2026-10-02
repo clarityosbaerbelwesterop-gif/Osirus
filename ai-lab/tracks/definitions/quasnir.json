@@ -102,6 +102,34 @@
   },
   "capabilityTargets": [
     {
+      "id": "quasnir-reasoning",
+      "status": "unmeasured"
+    },
+    {
+      "id": "quasnir-thinking",
+      "status": "unmeasured"
+    },
+    {
+      "id": "quasnir-rsi",
+      "status": "unmeasured"
+    },
+    {
+      "id": "quasnir-math",
+      "status": "unmeasured"
+    },
+    {
+      "id": "quasnir-cybersecurity",
+      "status": "unmeasured"
+    },
+    {
+      "id": "quasnir-terminal",
+      "status": "unmeasured"
+    },
+    {
+      "id": "quasnir-long-horizon",
+      "status": "unmeasured"
+    },
+    {
       "id": "quasnir-fim",
       "status": "unmeasured"
     },

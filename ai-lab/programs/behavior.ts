@@ -1,3 +1,6 @@
+import { gradeDomain, type DomainGrader } from "./domains";
+import type { ArmGrader } from "./types";
+
 /** Behavior is enforced in graders and inference policy, not only a prompt. */
 
 export function forbidsTrainedClaim(text: string, name: string): string | null {
@@ -12,6 +15,12 @@ export function staticSecurityScan(source: string): string[] {
   if (/child_process|os\.system|subprocess/.test(source))
     findings.push("process-spawn");
   if (/pickle\.loads/.test(source)) findings.push("pickle-load");
+  if (/innerHTML|document\.write|dangerouslySetInnerHTML/.test(source))
+    findings.push("html-sink");
+  if (/\bnew\s+Function\s*\(/.test(source)) findings.push("dynamic-code");
+  if (/(?:api[_-]?key|password|secret)\s*[:=]\s*['"][^'"]+['"]/i.test(source)) {
+    findings.push("hardcoded-credential");
+  }
   return findings;
 }
 
@@ -59,17 +68,36 @@ export function behavioralRegression(
   return { changed: before !== after, stillMedian: still };
 }
 
+const DOMAIN_GRADERS = new Set<DomainGrader>([
+  "entail",
+  "math-expr",
+  "logic",
+  "formula",
+  "sum",
+  "citation",
+  "context-bound",
+  "memory",
+  "independent",
+  "plan",
+  "horizon",
+  "thinking",
+  "terminal",
+  "rsi",
+  "database",
+  "dry-run",
+  "tool",
+  "world",
+  "multimodal",
+  "repository",
+]);
+
 export function gradeArm(
-  grader:
-    | "exact"
-    | "static-scan"
-    | "patch"
-    | "unit"
-    | "execute"
-    | "regression"
-    | "nll",
+  grader: ArmGrader,
   sample: { input: string; target: string },
 ): { passed: boolean; detail: string } {
+  if (DOMAIN_GRADERS.has(grader as DomainGrader)) {
+    return gradeDomain(grader as DomainGrader, sample);
+  }
   if (grader === "exact") {
     const passed = sample.input.trim() === sample.target.trim();
     return { passed, detail: passed ? "exact match" : "not an exact match" };

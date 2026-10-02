@@ -24,6 +24,7 @@ describe("darus model program", () => {
       "DARUS_CYBERSECURITY",
       "DARUS_TERMINAL",
       "DARUS_LONG_HORIZON",
+      "DARUS_RSI",
     ]);
     const params = initParams(
       darusProgram.architecture.fixture,
