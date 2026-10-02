@@ -163,7 +163,7 @@ export const darusProgram: ModelProgram = {
     ),
     arm(
       "DARUS_MATH",
-      "Integer expressions are parsed. No benchmark score is claimed.",
+      "Integer expressions and small word problems are parsed. No benchmark score is claimed.",
       "math-expr",
       { input: "2+2*3", target: "8" },
       [
@@ -172,6 +172,10 @@ export const darusProgram: ModelProgram = {
         { input: "(10%4)+1", target: "3" },
         { input: "2^-1", target: "refused" },
         { input: "(-2)^2", target: "4" },
+        { input: "boxes:6;each:7;ask:total", target: "42" },
+        { input: "had:20;got:1;gave:4;ask:left", target: "17" },
+        { input: "boxes:2;each:3;had:1;ask:total", target: "refused" },
+        { input: "had:9;gave:9;ask:left", target: "0" },
       ],
     ),
     arm(
@@ -323,13 +327,24 @@ export const darusProgram: ModelProgram = {
     ),
     arm(
       "DARUS_LONG_HORIZON",
-      "Long-horizon work records steps and does not execute them.",
+      "Long-horizon work records up to eight steps. A later failure is recorded and nothing is scored.",
       "horizon",
       { input: "map. synthesize. hold.", target: "3" },
       [
         { input: "ok:map;ok:synthesize;fail:ship", target: "failed-at:3" },
         { input: "ok:map;need:synthesize", target: "failed-at:2" },
         { input: "ok:synthesize;need:synthesize", target: "2" },
+        { input: "map. synthesize. hold. review. compare. stop.", target: "6" },
+        {
+          input: "ok:map;ok:synthesize;ok:hold;ok:review;need:map;need:hold",
+          target: "6",
+        },
+        {
+          input:
+            "ok:map;ok:synthesize;ok:hold;ok:review;ok:compare;ok:stop;need:ship",
+          target: "failed-at:7",
+        },
+        { input: "ok:map;bogus", target: "malformed" },
       ],
     ),
     arm(

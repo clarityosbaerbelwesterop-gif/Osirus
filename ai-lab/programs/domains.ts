@@ -378,7 +378,7 @@ export function readHorizon(input: string): HorizonRecord {
     .split(/[.\n]/)
     .map((part) => part.trim())
     .filter((part) => part.length > 0)
-    .slice(0, 5);
+    .slice(0, 8);
   return {
     count: parts.length,
     executed: 0,
@@ -386,6 +386,84 @@ export function readHorizon(input: string): HorizonRecord {
     failedAt: null,
     malformed: false,
   };
+}
+
+/**
+ * Small authored word problems. The value is recorded only after the fields parse.
+ * This is not a benchmark score.
+ */
+export function evalWordProblem(
+  source: string,
+): { ok: true; value: number } | { ok: false; detail: string } {
+  const refused = (detail: string) => ({ ok: false as const, detail });
+  const parts = source
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (parts.length === 0) return refused("empty word problem");
+  const fields = new Map<string, string>();
+  for (const part of parts) {
+    const match = part.match(
+      /^(boxes|each|had|gave|got|groups|extra|ask):([A-Za-z0-9-]+)$/,
+    );
+    if (!match || fields.has(match[1] ?? "")) {
+      return refused("word problem not parsed");
+    }
+    fields.set(match[1] ?? "", match[2] ?? "");
+  }
+  const ask = fields.get("ask");
+  if (ask !== "total" && ask !== "left")
+    return refused("word problem not parsed");
+  const read = (key: string): number | null => {
+    if (!fields.has(key)) return null;
+    const raw = fields.get(key) ?? "";
+    if (!/^-?\d+$/.test(raw)) return null;
+    const value = Number(raw);
+    if (!Number.isSafeInteger(value) || Math.abs(value) > 1000) return null;
+    return value;
+  };
+  const optional = (key: string): number | null =>
+    fields.has(key) ? read(key) : 0;
+  const boxes = fields.has("boxes");
+  const groups = fields.has("groups");
+  const had = fields.has("had");
+  if ([boxes, groups, had].filter(Boolean).length !== 1) {
+    return refused("word problem not parsed");
+  }
+  let value = 0;
+  if (ask === "total" && boxes) {
+    if (fields.has("gave") || fields.has("got") || fields.has("extra")) {
+      return refused("word problem not parsed");
+    }
+    const count = read("boxes");
+    const each = read("each");
+    if (count === null || each === null)
+      return refused("word problem not parsed");
+    value = count * each;
+  } else if (ask === "total" && groups) {
+    if (fields.has("gave") || fields.has("got")) {
+      return refused("word problem not parsed");
+    }
+    const count = read("groups");
+    const each = read("each");
+    const extra = optional("extra");
+    if (count === null || each === null || extra === null) {
+      return refused("word problem not parsed");
+    }
+    value = count * each + extra;
+  } else if (ask === "left" && had) {
+    const start = read("had");
+    const got = optional("got");
+    const gave = optional("gave");
+    if (start === null || got === null || gave === null) {
+      return refused("word problem not parsed");
+    }
+    value = start + got - gave;
+  } else {
+    return refused("word problem not parsed");
+  }
+  if (!Number.isSafeInteger(value)) return refused("word problem not parsed");
+  return { ok: true, value };
 }
 
 /** Allowlisted terminal phrases on a virtual fixture tree. Never spawns a process. */
@@ -763,6 +841,16 @@ export function gradeDomain(
     };
   }
   if (grader === "math-expr") {
+    if (/(?:^|;)ask:/.test(sample.input)) {
+      const word = evalWordProblem(sample.input);
+      if (!word.ok) {
+        return { passed: sample.target === "refused", detail: word.detail };
+      }
+      return {
+        passed: String(word.value) === sample.target,
+        detail: String(word.value),
+      };
+    }
     const result = evalIntegerExpr(sample.input);
     if (!result.ok) {
       return { passed: sample.target === "refused", detail: result.detail };
@@ -885,7 +973,7 @@ export function gradeDomain(
     const recorded = readHorizon(sample.input);
     if (recorded.malformed) {
       return {
-        passed: false,
+        passed: sample.target === "malformed",
         detail: "horizon record malformed, 0 executed, not scored",
       };
     }
