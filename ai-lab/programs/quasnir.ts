@@ -229,7 +229,11 @@ export const quasnirProgram: ModelProgram = {
       "Long-horizon coding records steps and does not execute them.",
       "horizon",
       { input: "read. patch. test.", target: "3" },
-      [{ input: "ok:read;ok:patch;fail:ship", target: "failed-at:3" }],
+      [
+        { input: "ok:read;ok:patch;fail:ship", target: "failed-at:3" },
+        { input: "ok:read;need:patch", target: "failed-at:2" },
+        { input: "ok:patch;need:patch", target: "2" },
+      ],
     ),
     arm(
       "QUASNIR_REASONING",
@@ -242,6 +246,15 @@ export const quasnirProgram: ModelProgram = {
       [
         {
           input: "facts:missing-guard;rules:missing-guard>review;query:exploit",
+          target: "no",
+        },
+        {
+          input:
+            "facts:missing-guard;rules:missing-guard>review,review>hold;query:hold",
+          target: "yes",
+        },
+        {
+          input: "facts:missing-guard;rules:review>hold;query:hold",
           target: "no",
         },
       ],
@@ -262,6 +275,7 @@ export const quasnirProgram: ModelProgram = {
         { input: "2^3*2", target: "16" },
         { input: "8%3", target: "2" },
         { input: "0^0", target: "refused" },
+        { input: "-(2+3)*2", target: "-10" },
       ],
     ),
     arm(
@@ -274,6 +288,8 @@ export const quasnirProgram: ModelProgram = {
         { input: 'new Function("return 1")', target: "1" },
         { input: 'api_key="sk-fixture"', target: "1" },
         { input: "pickle.loads(blob)", target: "1" },
+        { input: "document.write(name)", target: "1" },
+        { input: "subprocess.call(cmd)", target: "1" },
       ],
     ),
     arm(

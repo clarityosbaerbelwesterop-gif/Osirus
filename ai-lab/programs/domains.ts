@@ -156,12 +156,17 @@ export function evalIntegerExpr(
       return value;
     }
     const start = index;
-    if (text[index] === "-" || text[index] === "+") index += 1;
     if (!/\d/.test(text[index] ?? "")) throw new Error("expected number");
     while (/\d/.test(text[index] ?? "")) index += 1;
     return Number(text.slice(start, index));
   };
   const parseFactor = (): number => {
+    if (text[index] === "+" || text[index] === "-") {
+      const sign = text[index];
+      index += 1;
+      const value = parseFactor();
+      return sign === "-" ? -value : value;
+    }
     const base = parsePrimary();
     if (text[index] !== "^") return base;
     index += 1;
@@ -332,9 +337,9 @@ export function readHorizon(input: string): HorizonRecord {
     .split(";")
     .map((part) => part.trim())
     .filter((part) => part.length > 0);
-  const taggedIntent = tagged.some((part) => /^(ok|fail):/.test(part));
+  const taggedIntent = tagged.some((part) => /^(ok|fail|need):/.test(part));
   if (input.includes(";") && taggedIntent) {
-    const structured = tagged.every((part) => /^(ok|fail):.+$/.test(part));
+    const structured = tagged.every((part) => /^(ok|fail|need):.+$/.test(part));
     if (!structured) {
       return {
         count: 0,
@@ -344,12 +349,28 @@ export function readHorizon(input: string): HorizonRecord {
         malformed: true,
       };
     }
-    const failIndex = tagged.findIndex((part) => part.startsWith("fail:"));
+    const held = new Set<string>();
+    let failedAt: number | null = null;
+    for (let step = 0; step < tagged.length; step += 1) {
+      const part = tagged[step] ?? "";
+      if (part.startsWith("ok:")) {
+        held.add(part.slice(3));
+        continue;
+      }
+      if (part.startsWith("fail:")) {
+        failedAt = step + 1;
+        break;
+      }
+      if (!held.has(part.slice(5))) {
+        failedAt = step + 1;
+        break;
+      }
+    }
     return {
       count: tagged.length,
       executed: 0,
       scored: false,
-      failedAt: failIndex === -1 ? null : failIndex + 1,
+      failedAt,
       malformed: false,
     };
   }
@@ -397,29 +418,41 @@ export function runMemoryFixture(script: string): string {
       continue;
     }
     const get = part.match(/^get:(.+)$/);
-    if (get) last = store.get(get[1] ?? "") ?? "";
+    if (get) {
+      const key = get[1] ?? "";
+      last = store.has(key) ? (store.get(key) ?? "") : "missing";
+    }
   }
   return last;
 }
 
 export function stepWorld(input: string): string {
   const pos = input.match(/pos=(-?\d+),(-?\d+)/);
-  const action = input.match(/action=(right|left|up|down)/);
-  if (!pos || !action) return "malformed";
-  const x = Number(pos[1]);
-  const y = Number(pos[2]);
-  const delta =
-    action[1] === "right"
-      ? [1, 0]
-      : action[1] === "left"
-        ? [-1, 0]
-        : action[1] === "up"
-          ? [0, 1]
-          : [0, -1];
-  const nextX = x + (delta[0] ?? 0);
-  const nextY = y + (delta[1] ?? 0);
-  if (nextX < 0 || nextY < 0 || nextX > 1 || nextY > 1) return "blocked";
-  return `${nextX},${nextY}`;
+  const actions = [...input.matchAll(/action=(right|left|up|down)/g)].map(
+    (match) => match[1] ?? "",
+  );
+  if (!pos || actions.length === 0) return "malformed";
+  let x = Number(pos[1]);
+  let y = Number(pos[2]);
+  for (let index = 0; index < actions.length; index += 1) {
+    const action = actions[index];
+    const delta =
+      action === "right"
+        ? [1, 0]
+        : action === "left"
+          ? [-1, 0]
+          : action === "up"
+            ? [0, 1]
+            : [0, -1];
+    const nextX = x + (delta[0] ?? 0);
+    const nextY = y + (delta[1] ?? 0);
+    if (nextX < 0 || nextY < 0 || nextX > 1 || nextY > 1) {
+      return actions.length === 1 ? "blocked" : `blocked-at:${index + 1}`;
+    }
+    x = nextX;
+    y = nextY;
+  }
+  return `${x},${y}`;
 }
 
 const NAMED_TOOLS = new Set(["notes", "search", "calendar"]);

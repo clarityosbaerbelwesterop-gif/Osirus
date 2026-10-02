@@ -146,7 +146,14 @@ export const rougeProgram: ModelProgram = {
         input: "facts:rain;rules:rain>wet;query:wet",
         target: "yes",
       },
-      [{ input: "facts:rain;rules:rain>wet;query:dry", target: "no" }],
+      [
+        { input: "facts:rain;rules:rain>wet;query:dry", target: "no" },
+        {
+          input: "facts:rain;rules:rain>wet,wet>cold;query:cold",
+          target: "yes",
+        },
+        { input: "facts:rain;rules:wet>cold;query:cold", target: "no" },
+      ],
     ),
     arm(
       "ROUGE_MATH",
@@ -158,6 +165,8 @@ export const rougeProgram: ModelProgram = {
         { input: "(2+3)^2", target: "25" },
         { input: "7%3", target: "1" },
         { input: "2^9", target: "refused" },
+        { input: "-(2+3)", target: "-5" },
+        { input: "-2^2", target: "-4" },
       ],
     ),
     arm(
@@ -190,6 +199,7 @@ export const rougeProgram: ModelProgram = {
       "Memory here is an in-process map for the fixture, not the product memory store.",
       "memory",
       { input: "set:k=v;get:k", target: "v" },
+      [{ input: "set:a=1;get:b", target: "missing" }],
     ),
     arm(
       "ROUGE_VERIFICATION",
@@ -221,6 +231,7 @@ export const rougeProgram: ModelProgram = {
         { input: 'password="hunter2"', target: "1" },
         { input: "child_process.exec(cmd)", target: "1" },
         { input: "const label = name", target: "0" },
+        { input: "document.write(name)", target: "1" },
       ],
     ),
     arm(
@@ -238,7 +249,11 @@ export const rougeProgram: ModelProgram = {
       "Long-horizon coding records steps and does not execute them.",
       "horizon",
       { input: "hold. review. stop.", target: "3" },
-      [{ input: "ok:hold;ok:review;fail:ship", target: "failed-at:3" }],
+      [
+        { input: "ok:hold;ok:review;fail:ship", target: "failed-at:3" },
+        { input: "ok:hold;need:review", target: "failed-at:2" },
+        { input: "ok:review;need:review", target: "2" },
+      ],
     ),
     arm(
       "ROUGE_RSI",

@@ -40,6 +40,9 @@ export function pageWellFormed(
   if (/<style\b/i.test(inner) && !/<\/style>/i.test(inner)) {
     return { ok: false, reason: "style element is not closed" };
   }
+  if (/<script\b/i.test(inner) && !/<\/script>/i.test(inner)) {
+    return { ok: false, reason: "script element is not closed" };
+  }
   if (/<body\b/i.test(inner) && !/<\/body>/i.test(inner)) {
     return { ok: false, reason: "body is not closed" };
   }
