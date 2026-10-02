@@ -21,6 +21,11 @@ describe("quasnir model program", () => {
       "QUASNIR_LOGIC",
       "QUASNIR_TERMINAL",
       "QUASNIR_LONG_HORIZON",
+      "QUASNIR_REASONING",
+      "QUASNIR_THINKING",
+      "QUASNIR_MATH",
+      "QUASNIR_CYBERSECURITY",
+      "QUASNIR_RSI",
     ]);
     const graded = quasnirProgram.arms.map((arm) => {
       const sample = arm.dataset.samples[0];

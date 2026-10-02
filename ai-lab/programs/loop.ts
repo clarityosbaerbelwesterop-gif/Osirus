@@ -9,24 +9,10 @@ import {
   rmsNorm,
 } from "./architecture";
 import { gradeArm } from "./behavior";
-import {
-  LOCKED_LOOP_SURFACES,
-  type LockedSurface,
-  type ModelProgram,
-} from "./types";
+import { assertLoopMayNotTouch, reviewFixtureStep } from "./rsi";
+import type { LockedSurface, ModelProgram } from "./types";
 
-export class LoopBoundaryError extends Error {
-  constructor(surface: string) {
-    super(`research loop cannot change ${surface}`);
-    this.name = "LoopBoundaryError";
-  }
-}
-
-export function assertLoopMayNotTouch(surface: string): void {
-  if ((LOCKED_LOOP_SURFACES as readonly string[]).includes(surface)) {
-    throw new LoopBoundaryError(surface);
-  }
-}
+export { LoopBoundaryError, reviewFixtureStep } from "./rsi";
 
 export interface LoopReport {
   readonly loopId: string;
@@ -46,18 +32,6 @@ export interface LoopReport {
  * One controlled loop on the CPU fixture.
  * It may record a hold or a reject. It cannot promote to production.
  */
-
-/** A fixture step may change only a finite output-head gradient, and only after this check. */
-export function reviewFixtureStep(grad: readonly number[]): {
-  readonly allowed: boolean;
-  readonly reason: string;
-} {
-  if (grad.length === 0) return { allowed: false, reason: "empty step" };
-  if (grad.some((value) => !Number.isFinite(value))) {
-    return { allowed: false, reason: "non-finite gradient" };
-  }
-  return { allowed: true, reason: "head-only fixture step" };
-}
 
 export function runResearchLoop(
   program: ModelProgram,

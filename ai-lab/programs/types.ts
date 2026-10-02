@@ -25,6 +25,35 @@ export interface ArmSample {
   readonly target: string;
 }
 
+export type ArmGrader =
+  | "exact"
+  | "static-scan"
+  | "patch"
+  | "unit"
+  | "execute"
+  | "regression"
+  | "nll"
+  | "entail"
+  | "math-expr"
+  | "logic"
+  | "formula"
+  | "sum"
+  | "citation"
+  | "context-bound"
+  | "memory"
+  | "independent"
+  | "plan"
+  | "horizon"
+  | "thinking"
+  | "terminal"
+  | "rsi"
+  | "database"
+  | "dry-run"
+  | "tool"
+  | "world"
+  | "multimodal"
+  | "repository";
+
 export interface CapabilityArm {
   readonly id: string;
   readonly dataset: {
@@ -35,14 +64,7 @@ export interface CapabilityArm {
   readonly task: {
     readonly id: string;
     readonly instruction: string;
-    readonly grader:
-      | "exact"
-      | "static-scan"
-      | "patch"
-      | "unit"
-      | "execute"
-      | "regression"
-      | "nll";
+    readonly grader: ArmGrader;
   };
   readonly training: { readonly executable: false; readonly note: string };
   readonly metadata: {

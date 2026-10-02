@@ -1,4 +1,6 @@
 import { gradeArm, staticSecurityScan } from "./behavior";
+import { logicPhrase } from "./domains";
+import { gradeRsiSample } from "./rsi";
 import { LOCKED_LOOP_SURFACES, type CapabilityArm } from "./types";
 
 /**
@@ -19,6 +21,7 @@ export type ArmKind =
   | "planning"
   | "memory"
   | "science"
+  | "rsi"
   | "other";
 
 export interface ArmExecution {
@@ -31,6 +34,7 @@ export interface ArmExecution {
 
 export function armKind(id: string): ArmKind {
   const name = id.toUpperCase();
+  if (name.includes("RSI")) return "rsi";
   if (name.includes("TERMINAL")) return "terminal";
   if (name.includes("LONG_HORIZON")) return "long_horizon";
   if (
@@ -90,6 +94,8 @@ function terminalStep(text: string): string {
   if (/^echo\s+\S/.test(command)) {
     return `terminal allowlist: ${command}`;
   }
+  if (/\bpwd\b/.test(text)) return "terminal allowlist: pwd -> /fixture";
+  if (/\bls\b/.test(text)) return "terminal allowlist: ls -> README notes.txt";
   return "terminal: no shell spawned";
 }
 
@@ -119,7 +125,14 @@ export function executeArmPolicy(
   }
   if (kind === "math") {
     steps.push(
-      integerMath(text) ?? "math: no integer expression in the request",
+      integerMath(text) ??
+        logicPhrase(text) ??
+        "math: no integer expression in the request",
+    );
+  } else if (kind === "rsi") {
+    const reviewed = gradeRsiSample({ input: "finite", target: "applied" });
+    steps.push(
+      `rsi: ${reviewed.detail}; empty and non-finite gradients are not applied`,
     );
   } else if (kind === "cybersecurity") {
     const findings = staticSecurityScan(text);
@@ -141,6 +154,21 @@ export function executeArmPolicy(
     if (findings.length) steps.push(`scan: ${findings.join(",")}`);
   } else if (kind === "thinking" || kind === "reasoning") {
     steps.push(`${kind}: policy classified the request`);
+  } else if (kind === "science") {
+    steps.push("science: formula fixture only, no paper result");
+  } else if (kind === "research") {
+    steps.push("research: citation id checked, no fetch");
+  } else if (kind === "memory") {
+    steps.push("memory: in-process fixture map, not the product store");
+  } else if (kind === "verification") {
+    steps.push("verification: independent string compare, not a self-score");
+  } else if (kind === "planning") {
+    const recorded = text
+      .split(/[.\n]/)
+      .map((part) => part.trim())
+      .filter((part) => part.length > 0)
+      .slice(0, 5);
+    steps.push(`planning: ${recorded.length} step(s) recorded, none executed`);
   } else {
     steps.push(`${kind}: program arm selected`);
   }

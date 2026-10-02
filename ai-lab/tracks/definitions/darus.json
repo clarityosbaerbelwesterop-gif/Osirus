@@ -107,6 +107,38 @@
   },
   "capabilityTargets": [
     {
+      "id": "darus-reasoning",
+      "status": "unmeasured"
+    },
+    {
+      "id": "darus-thinking",
+      "status": "unmeasured"
+    },
+    {
+      "id": "darus-rsi",
+      "status": "unmeasured"
+    },
+    {
+      "id": "darus-math",
+      "status": "unmeasured"
+    },
+    {
+      "id": "darus-cybersecurity",
+      "status": "unmeasured"
+    },
+    {
+      "id": "darus-coding",
+      "status": "unmeasured"
+    },
+    {
+      "id": "darus-terminal",
+      "status": "unmeasured"
+    },
+    {
+      "id": "darus-long-horizon",
+      "status": "unmeasured"
+    },
+    {
       "id": "darus-breadth",
       "status": "unmeasured"
     },

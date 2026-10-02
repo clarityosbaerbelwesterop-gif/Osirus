@@ -62,6 +62,7 @@ const HINTS: readonly {
   },
   { pattern: /\b(terminal|shell|echo)\b/i, tokens: ["TERMINAL"] },
   { pattern: /\blong[- ]horizon\b/i, tokens: ["LONG_HORIZON"] },
+  { pattern: /\b(rsi|gradient)\b/i, tokens: ["RSI"] },
   {
     pattern: /\b(math|arithmetic|\d+\s*[+*/-]\s*\d+)\b/i,
     tokens: ["MATH", "LOGIC"],
@@ -160,10 +161,8 @@ export function applyBehaviorGate(
     reasons.push("unmeasured benchmark or identity claim");
   }
   if (LOCKED_CLAIM.test(text)) reasons.push("locked surface claim");
-  if (program.id === "quasnir") {
-    const findings = staticSecurityScan(text);
-    if (findings.length) reasons.push(`security scan: ${findings.join(",")}`);
-  }
+  const findings = staticSecurityScan(text);
+  if (findings.length) reasons.push(`security scan: ${findings.join(",")}`);
   if (!reasons.length) return { text, withheld: false, reasons };
   if (reasons.length === 1 && claim) {
     return {
