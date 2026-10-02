@@ -139,4 +139,40 @@ describe("per-model domain harness", () => {
       false,
     );
   });
+
+  it("withholds a fallback that fails the program security scan", async () => {
+    const fetchImpl = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            model: "catalog",
+            choices: [
+              {
+                message: {
+                  content: "li.innerHTML = name",
+                },
+              },
+            ],
+            usage: { prompt_tokens: 1, completion_tokens: 1 },
+          }),
+          { status: 200 },
+        ),
+    );
+    for (const program of programs) {
+      const answer = await answerWithProgram({
+        program,
+        native: offline,
+        messages: [{ role: "user", content: "code the page" }],
+        apiKey: "test-key",
+        env: { NODE_ENV: "test" },
+        fetchImpl: fetchImpl as unknown as typeof fetch,
+      });
+      expect(answer.userLabel).toBe(program.ui.fallbackLabel);
+      expect(answer.text).toMatch(/withheld/);
+      expect(answer.text).not.toContain("innerHTML");
+      expect(answer.checkpoint).toBeNull();
+      expect(answer.measuredEqual).toBe(false);
+      expect(answer.trained).toBe(false);
+    }
+  });
 });
