@@ -24,16 +24,27 @@ const ACTIVITIES = [
   "native_inference",
 ] as const;
 
+function activityLabel(activity: string): string {
+  if (activity === "waiting") return "Waiting";
+  if (activity === "api_fallback") return "API fallback";
+  if (activity === "native_inference") return "Native inference";
+  return activity.replaceAll("_", " ");
+}
+
 export function ModelSelectors(props: {
   model: LabModelId;
   interaction: InteractionPreference;
   activity: string | null;
+  phases?: readonly string[];
   disabled?: boolean;
   onModelChange: (model: LabModelId) => void;
   onInteractionChange: (interaction: InteractionPreference) => void;
 }) {
   const known = (ACTIVITIES as readonly string[]).includes(
     props.activity ?? "",
+  );
+  const phases = (props.phases ?? []).filter((phase) =>
+    (ACTIVITIES as readonly string[]).includes(phase),
   );
   return (
     <div className="lab-selectors">
@@ -82,17 +93,19 @@ export function ModelSelectors(props: {
       <p
         className="lab-activity"
         data-activity={known ? props.activity : "idle"}
+        data-live={props.activity === "waiting" ? "true" : "false"}
       >
-        {props.activity === "waiting"
-          ? "Waiting"
-          : props.activity === "api_fallback"
-            ? "API fallback"
-            : props.activity === "native_inference"
-              ? "Native inference"
-              : known && props.activity
-                ? props.activity.replaceAll("_", " ")
-                : "Idle"}
+        {known && props.activity ? activityLabel(props.activity) : "Idle"}
       </p>
+      {phases.length ? (
+        <ol className="lab-activity-phases" aria-label="Completed policy steps">
+          {phases.map((phase) => (
+            <li key={phase} data-state="done">
+              {activityLabel(phase)}
+            </li>
+          ))}
+        </ol>
+      ) : null}
     </div>
   );
 }

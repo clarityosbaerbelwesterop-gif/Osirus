@@ -86,6 +86,7 @@ export const Composer = forwardRef<
     labModel: LabModelId;
     interaction: InteractionPreference;
     labActivity: string | null;
+    labPhases?: readonly string[];
     onLabModelChange: (model: LabModelId) => void;
     onInteractionChange: (interaction: InteractionPreference) => void;
     attachments?: ComposerAttachment[];
@@ -173,6 +174,7 @@ export const Composer = forwardRef<
           model={props.labModel}
           interaction={props.interaction}
           activity={props.labActivity}
+          phases={props.labPhases}
           disabled={props.running}
           onModelChange={props.onLabModelChange}
           onInteractionChange={props.onInteractionChange}

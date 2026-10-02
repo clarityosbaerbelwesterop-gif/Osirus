@@ -39,12 +39,26 @@ export interface LoopReport {
   readonly artifactState: ArtifactState;
   readonly trainedModel: false;
   readonly production: false;
+  readonly applied: boolean;
 }
 
 /**
  * One controlled loop on the CPU fixture.
  * It may record a hold or a reject. It cannot promote to production.
  */
+
+/** A fixture step may change only a finite output-head gradient, and only after this check. */
+export function reviewFixtureStep(grad: readonly number[]): {
+  readonly allowed: boolean;
+  readonly reason: string;
+} {
+  if (grad.length === 0) return { allowed: false, reason: "empty step" };
+  if (grad.some((value) => !Number.isFinite(value))) {
+    return { allowed: false, reason: "non-finite gradient" };
+  }
+  return { allowed: true, reason: "head-only fixture step" };
+}
+
 export function runResearchLoop(
   program: ModelProgram,
   requestedChange?: LockedSurface,
@@ -73,7 +87,8 @@ export function runResearchLoop(
     ),
   );
   const grad = outputHeadGrad(params, hidden, targets[0] ?? 0);
-  const stepped = applyHeadGrad(params, grad, 0.05);
+  const review = reviewFixtureStep(grad);
+  const stepped = review.allowed ? applyHeadGrad(params, grad, 0.05) : params;
   const after = meanNll(forwardTokens(stepped, tokens).logits, targets);
   const steppedForward = forwardTokens(stepped, tokens);
   const rows = targets.map((target, index) => {
@@ -101,5 +116,6 @@ export function runResearchLoop(
     artifactState: state,
     trainedModel: false,
     production: false,
+    applied: review.allowed,
   };
 }

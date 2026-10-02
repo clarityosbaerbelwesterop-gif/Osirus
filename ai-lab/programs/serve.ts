@@ -1,8 +1,10 @@
-import { LabCostBudget } from "../inference/budget";
+import { budgetFromEnv, LabCostBudget } from "../inference/budget";
 import { APIModelProvider } from "../inference/providers";
 import { routingDecision, type NativeAvailability } from "../inference/types";
 import { labApiKey } from "../inference/unorouter";
 import { forbidsTrainedClaim } from "./behavior";
+import { quoteNative, reserveNativeQuote } from "./pricing";
+import { runReasoningPolicy } from "./reasoning";
 import type { Activity, ModelProgram } from "./types";
 
 export interface ProgramAnswer {
@@ -17,6 +19,9 @@ export interface ProgramAnswer {
   readonly version: string;
   readonly latencyMs: number;
   readonly costUsd: number;
+  readonly costPolicy: "provider_fallback" | "native_card";
+  readonly phases: readonly Activity[];
+  readonly outsideProgram: boolean;
   readonly trained: false;
 }
 
@@ -56,6 +61,22 @@ export function fallbackModelId(
   return program.fallback.defaultModelId;
 }
 
+/**
+ * Untrained or unmeasured programs never take the native route.
+ * Offline / missing checkpoints use the same decision as the lab router.
+ */
+export function serveRoute(input: {
+  trained: boolean;
+  measured: boolean;
+  native: NativeAvailability;
+}): { provider: "native" | "unorouter"; reason: string } {
+  if (!input.trained)
+    return { provider: "unorouter", reason: "native_not_trained" };
+  if (!input.measured)
+    return { provider: "unorouter", reason: "native_not_good_enough" };
+  return routingDecision(input.native);
+}
+
 export async function answerWithProgram(input: {
   program: ModelProgram;
   native: NativeAvailability;
@@ -67,11 +88,28 @@ export async function answerWithProgram(input: {
   fetchImpl?: typeof fetch;
   apiKey?: string;
   checkpointId?: string | null;
+  budget?: LabCostBudget;
 }): Promise<ProgramAnswer> {
-  const decision = routingDecision(input.native);
+  const decision = serveRoute({
+    trained: input.program.training.trainingReady,
+    measured: input.program.evalSuite.measured,
+    native: input.native,
+  });
+  const trace = runReasoningPolicy(
+    input.program,
+    input.messages.map((message) => message.content).join("\n"),
+  );
+  const env = input.env ?? process.env;
+  const budget = input.budget ?? budgetFromEnv(env);
   if (decision.provider === "native") {
     const checkpoint = input.checkpointId ?? null;
     if (!checkpoint) throw new Error("native route requires a checkpoint id");
+    const inputTokens = input.messages.reduce(
+      (sum, message) => sum + message.content.length,
+      0,
+    );
+    const quote = quoteNative(input.program.id, inputTokens, 0);
+    reserveNativeQuote(budget, quote);
     return {
       text: "Native fixture runtime is selected. This is not a trained model response.",
       userLabel: userLabel(input.program, "native"),
@@ -89,17 +127,19 @@ export async function answerWithProgram(input: {
       version: input.program.architecture.version,
       latencyMs: 0,
       costUsd: 0,
+      costPolicy: "native_card",
+      phases: trace.phases,
+      outsideProgram: trace.outsideProgram,
       trained: false,
     };
   }
-  const env = input.env ?? process.env;
   const modelId = fallbackModelId(input.program, env);
   const api = new APIModelProvider({
     modelId,
     apiKey: input.apiKey ?? labApiKey(env),
     env,
     fetchImpl: input.fetchImpl,
-    budget: new LabCostBudget(0),
+    budget,
   });
   const result = await api.complete({
     trackId: input.program.id,
@@ -107,10 +147,12 @@ export async function answerWithProgram(input: {
     messages: input.messages,
   });
   const claim = forbidsTrainedClaim(result.text, input.program.displayName);
+  const body = claim
+    ? "The fallback text was withheld because it described itself as the native model. No checkpoint was used."
+    : result.text;
+  const text = trace.outsideProgram ? `${trace.note}\n\n${body}` : body;
   return {
-    text: claim
-      ? "The fallback text was withheld because it described itself as the native model. No checkpoint was used."
-      : result.text,
+    text,
     userLabel: userLabel(input.program, "unorouter"),
     provenance: provenanceLine({
       program: input.program,
@@ -126,6 +168,9 @@ export async function answerWithProgram(input: {
     version: result.provenance.version,
     latencyMs: result.provenance.latencyMs,
     costUsd: result.provenance.costUsd,
+    costPolicy: "provider_fallback",
+    phases: trace.phases,
+    outsideProgram: trace.outsideProgram,
     trained: false,
   };
 }

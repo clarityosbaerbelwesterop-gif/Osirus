@@ -1,8 +1,33 @@
 import { join } from "node:path";
 import { loadProductSession } from "@/lib/product/session";
+import { redactSecrets } from "../../../../../ai-lab/observability/log";
 import { programInBuild } from "../../../../../ai-lab/programs/catalog";
 import { answerWithProgram } from "../../../../../ai-lab/programs/serve";
 import { nativeAvailabilityForTrack } from "../../../../../ai-lab/tracks/status";
+
+function clientError(error: unknown): {
+  status: number;
+  error: string;
+  message: string;
+} {
+  const raw = error instanceof Error ? error.message : "fallback failed";
+  const key = process.env.UNOROUTER_API_KEY;
+  const redacted = String(redactSecrets(raw, key ? [key] : []));
+  if (redacted.includes("UNOROUTER_API_KEY")) {
+    return { status: 503, error: "fallback_unavailable", message: redacted };
+  }
+  if (
+    redacted.startsWith("cost budget stop") ||
+    redacted.startsWith("no price")
+  ) {
+    return { status: 503, error: "budget_stop", message: redacted };
+  }
+  return {
+    status: 502,
+    error: "fallback_failed",
+    message: "The fallback provider did not return a completion.",
+  };
+}
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -94,22 +119,16 @@ export async function POST(request: Request) {
       latencyMs: answer.latencyMs,
       costUsd: answer.costUsd,
       activity: answer.activity,
+      phases: answer.phases,
+      costPolicy: answer.costPolicy,
+      outsideProgram: answer.outsideProgram,
       trained: false,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "fallback failed";
-    if (message.includes("UNOROUTER_API_KEY")) {
-      return Response.json(
-        { error: "fallback_unavailable", message },
-        { status: 503 },
-      );
-    }
+    const body = clientError(error);
     return Response.json(
-      {
-        error: "fallback_failed",
-        message: "The fallback provider did not return a completion.",
-      },
-      { status: 502 },
+      { error: body.error, message: body.message },
+      { status: body.status },
     );
   }
 }

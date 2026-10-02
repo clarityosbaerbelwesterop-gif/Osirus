@@ -128,6 +128,10 @@ describe("rouge model program", () => {
       "ROUGE-1 / api_fallback / UnoRouter / qwen3:free",
     );
     expect(answer.activity).toBe("api_fallback");
+    expect(answer.costPolicy).toBe("provider_fallback");
+    expect(answer.phases).toEqual(["thinking", "reasoning"]);
+    expect(answer.outsideProgram).toBe(false);
+    expect(answer.checkpoint).toBeNull();
     expect(answer.trained).toBe(false);
     expect(answer.text).not.toMatch(/trained Rouge checkpoint/);
     await expect(

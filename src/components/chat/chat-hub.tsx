@@ -158,6 +158,7 @@ export function ChatHub(props: {
     serverInteraction,
   );
   const [labActivity, setLabActivity] = useState<string | null>(null);
+  const [labPhases, setLabPhases] = useState<readonly string[]>([]);
   const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [activeRunId, setActiveRunId] = useState(props.initialRunId);
@@ -412,6 +413,7 @@ export function ChatHub(props: {
         setError(null);
         setFailedObjective(null);
         setLabActivity("waiting");
+        setLabPhases([]);
         setMessages((current) => [
           ...current,
           { id: `pending:${requestId}`, role: "user", content: trimmed },
@@ -432,14 +434,21 @@ export function ChatHub(props: {
             userLabel?: string;
             provenance?: string;
             activity?: string;
+            phases?: unknown;
           };
           if (!response.ok || typeof body.text !== "string") {
             setLabActivity(null);
+            setLabPhases([]);
             setError(body.message ?? "The model program did not answer.");
             return;
           }
           setLabActivity(
             typeof body.activity === "string" ? body.activity : null,
+          );
+          setLabPhases(
+            Array.isArray(body.phases)
+              ? body.phases.filter((phase) => typeof phase === "string")
+              : [],
           );
           setMessages((current) => [
             ...current,
@@ -451,6 +460,7 @@ export function ChatHub(props: {
           ]);
         } catch {
           setLabActivity(null);
+          setLabPhases([]);
           setError("The model program did not answer.");
         }
         return;
@@ -830,6 +840,7 @@ export function ChatHub(props: {
           labModel={labModel}
           interaction={interaction}
           labActivity={labActivity}
+          labPhases={labPhases}
           onLabModelChange={(next) => {
             writePreference(LAB_MODEL_COOKIE, next);
             for (const listener of labListeners) listener();
@@ -837,6 +848,7 @@ export function ChatHub(props: {
           onInteractionChange={(next) => {
             writePreference(INTERACTION_COOKIE, next);
             setLabActivity(null);
+            setLabPhases([]);
             for (const listener of labListeners) listener();
           }}
           github={github}
