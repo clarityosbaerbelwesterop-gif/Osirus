@@ -11,5 +11,14 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["contracts/**/*.ts", "lib/**/*.ts", "infra/**/*.ts"]
+  "include": [
+    "contracts/**/*.ts",
+    "lib/**/*.ts",
+    "models/**/*.ts",
+    "registries/**/*.ts",
+    "datasets/**/*.ts",
+    "evals/**/*.ts",
+    "infra/**/*.ts",
+    "tests/**/*.ts"
+  ]
 }
