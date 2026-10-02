@@ -6,6 +6,7 @@ import {
   dependencyCycle,
   dryRunPlan,
   entailQuery,
+  evalWordProblem,
   formulaCounts,
   independentExpected,
   logicPhrase,
@@ -150,11 +151,20 @@ export function executeArmPolicy(
     );
   }
   if (kind === "math") {
-    steps.push(
-      integerMath(text) ??
-        logicPhrase(text) ??
-        "math: no integer expression in the request",
-    );
+    if (/(?:^|;)ask:/.test(text)) {
+      const word = evalWordProblem(text);
+      steps.push(
+        word.ok
+          ? `math: word ${word.value} after run`
+          : `math: word ${word.detail} after run`,
+      );
+    } else {
+      steps.push(
+        integerMath(text) ??
+          logicPhrase(text) ??
+          "math: no integer expression in the request",
+      );
+    }
   } else if (kind === "rsi") {
     const reviewed = gradeRsiSample({ input: "finite", target: "applied" });
     steps.push(

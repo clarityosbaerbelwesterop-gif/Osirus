@@ -253,13 +253,23 @@ export const quasnirProgram: ModelProgram = {
     ),
     arm(
       "QUASNIR_LONG_HORIZON",
-      "Long-horizon coding records steps and does not execute them.",
+      "Long-horizon coding records up to eight steps and does not execute or score them.",
       "horizon",
       { input: "read. patch. test.", target: "3" },
       [
         { input: "ok:read;ok:patch;fail:ship", target: "failed-at:3" },
         { input: "ok:read;need:patch", target: "failed-at:2" },
         { input: "ok:patch;need:patch", target: "2" },
+        { input: "read. patch. test. review. hold. stop.", target: "6" },
+        {
+          input: "ok:read;ok:patch;ok:test;ok:review;need:read;need:test",
+          target: "6",
+        },
+        {
+          input: "ok:a;ok:b;ok:c;ok:d;ok:e;ok:f;fail:ship",
+          target: "failed-at:7",
+        },
+        { input: "ok:read;later:ship", target: "malformed" },
       ],
     ),
     arm(
@@ -294,7 +304,7 @@ export const quasnirProgram: ModelProgram = {
     ),
     arm(
       "QUASNIR_MATH",
-      "Integer arithmetic used by code fixtures. Division by zero is refused.",
+      "Integer arithmetic and small word problems used by code fixtures. Division by zero is refused.",
       "math-expr",
       { input: "8/2", target: "4" },
       [
@@ -303,6 +313,10 @@ export const quasnirProgram: ModelProgram = {
         { input: "8%3", target: "2" },
         { input: "0^0", target: "refused" },
         { input: "-(2+3)*2", target: "-10" },
+        { input: "groups:2;each:5;extra:1;ask:total", target: "11" },
+        { input: "had:8;got:2;gave:3;ask:left", target: "7" },
+        { input: "boxes:4;each:0;ask:total", target: "0" },
+        { input: "groups:2;ask:total", target: "refused" },
       ],
     ),
     arm(

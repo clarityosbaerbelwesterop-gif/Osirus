@@ -157,7 +157,7 @@ export const rougeProgram: ModelProgram = {
     ),
     arm(
       "ROUGE_MATH",
-      "Integer expressions are parsed. Division by zero is refused. This is not a math benchmark.",
+      "Integer expressions and small word problems are parsed. Division by zero is refused. This is not a math benchmark.",
       "math-expr",
       { input: "(2+3)*4", target: "20" },
       [
@@ -167,6 +167,10 @@ export const rougeProgram: ModelProgram = {
         { input: "2^9", target: "refused" },
         { input: "-(2+3)", target: "-5" },
         { input: "-2^2", target: "-4" },
+        { input: "boxes:3;each:4;ask:total", target: "12" },
+        { input: "had:10;gave:3;ask:left", target: "7" },
+        { input: "boxes:3;ask:total", target: "refused" },
+        { input: "had:2;gave:5;ask:left", target: "-3" },
       ],
     ),
     arm(
@@ -285,13 +289,23 @@ export const rougeProgram: ModelProgram = {
     ),
     arm(
       "ROUGE_LONG_HORIZON",
-      "Long-horizon coding records steps and does not execute them.",
+      "Long-horizon records up to eight steps. A later failure is recorded and nothing is scored or executed.",
       "horizon",
       { input: "hold. review. stop.", target: "3" },
       [
         { input: "ok:hold;ok:review;fail:ship", target: "failed-at:3" },
         { input: "ok:hold;need:review", target: "failed-at:2" },
         { input: "ok:review;need:review", target: "2" },
+        { input: "one. two. three. four. five. six.", target: "6" },
+        {
+          input: "ok:a;ok:b;ok:c;ok:d;need:a;need:b;need:c;need:d",
+          target: "8",
+        },
+        {
+          input: "ok:a;ok:b;ok:c;ok:d;ok:e;fail:ship",
+          target: "failed-at:6",
+        },
+        { input: "ok:read;later:ship", target: "malformed" },
       ],
     ),
     arm(
