@@ -218,11 +218,7 @@ export interface Quote {
 }
 
 export type InstanceStatus =
-  | "planned"
-  | "provisioning"
-  | "running"
-  | "terminated"
-  | "failed";
+  "planned" | "provisioning" | "running" | "terminated" | "failed";
 
 export interface Instance {
   readonly id: string;
