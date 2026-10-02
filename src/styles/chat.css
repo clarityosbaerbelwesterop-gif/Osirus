@@ -656,6 +656,15 @@
   font: inherit;
 }
 
+/* The closed select used to size itself from "QUASNIR (not in this build)".
+   Once every model is in the build that string goes away and the phone
+   composer wraps differently, which moves the whole screenshot. Keep the
+   control wide enough that the mode buttons stay on the next line. */
+.lab-selectors select {
+  flex: 1 1 16rem;
+  min-width: min(100%, 16rem);
+}
+
 .lab-activity {
   margin: 0;
   color: var(--color-text-muted);
