@@ -12,7 +12,7 @@ const schema = z.object({
   UNOROUTER_API_KEY_1: z.string().min(1).optional(),
   UNOROUTER_API_KEY_2: z.string().min(1).optional(),
   UNOROUTER_API_KEY_3: z.string().min(1).optional(),
-  // Lab fallback only. Distinct from UNOROUTER_API_KEY_1/2/3. Empty fails closed.
+  // Lab fallback pool. UNOROUTER_API_KEY alone is enough. _1/_2/_3 are failover.
   UNOROUTER_API_KEY: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_ROUGE: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_QUASNIR: z.string().min(1).optional(),

@@ -1,5 +1,6 @@
 import { join } from "node:path";
 import { loadProductSession } from "@/lib/product/session";
+import { labKeyPool } from "../../../../../ai-lab/inference/key-pool";
 import { redactSecrets } from "../../../../../ai-lab/observability/log";
 import { programInBuild } from "../../../../../ai-lab/programs/catalog";
 import { answerWithProgram } from "../../../../../ai-lab/programs/serve";
@@ -11,8 +12,7 @@ function clientError(error: unknown): {
   message: string;
 } {
   const raw = error instanceof Error ? error.message : "fallback failed";
-  const key = process.env.UNOROUTER_API_KEY;
-  const redacted = String(redactSecrets(raw, key ? [key] : []));
+  const redacted = String(redactSecrets(raw, labKeyPool(process.env)));
   if (redacted.includes("UNOROUTER_API_KEY")) {
     return { status: 503, error: "fallback_unavailable", message: redacted };
   }
@@ -121,6 +121,11 @@ export async function POST(request: Request) {
       activity: answer.activity,
       phases: answer.phases,
       costPolicy: answer.costPolicy,
+      costQuote: answer.costQuote,
+      budgetNote: answer.budgetNote,
+      armIds: answer.armIds,
+      fixtureChecks: answer.fixtureChecks,
+      measuredEqual: answer.measuredEqual,
       outsideProgram: answer.outsideProgram,
       trained: false,
     });

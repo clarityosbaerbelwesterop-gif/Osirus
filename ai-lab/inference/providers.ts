@@ -9,7 +9,8 @@ import {
   type LabModelProvider,
   type NativeAvailability,
 } from "./types";
-import { labApiKey, unorouterChat, type ChatMessage } from "./unorouter";
+import { labKeyPool } from "./key-pool";
+import { unorouterChat, type ChatMessage } from "./unorouter";
 
 export class NativeModelProvider implements LabModelProvider {
   readonly name = "native" as const;
@@ -57,6 +58,7 @@ export class APIModelProvider implements LabModelProvider {
     private readonly options: {
       modelId: string;
       apiKey?: string;
+      apiKeys?: readonly string[];
       baseUrl?: string;
       fetchImpl?: typeof fetch;
       budget: LabCostBudget;
@@ -66,8 +68,11 @@ export class APIModelProvider implements LabModelProvider {
   ) {}
 
   async complete(request: LabCompleteRequest): Promise<LabCompleteResult> {
-    const apiKey =
-      this.options.apiKey ?? labApiKey(this.options.env ?? process.env);
+    const apiKeys =
+      this.options.apiKeys ??
+      (this.options.apiKey && this.options.apiKey.trim()
+        ? [this.options.apiKey.trim()]
+        : labKeyPool(this.options.env ?? process.env));
     const estimate = estimateCallUsd(
       this.options.modelId,
       this.options.priceUsd,
@@ -75,7 +80,7 @@ export class APIModelProvider implements LabModelProvider {
     this.options.budget.reserve(estimate);
     const started = Date.now();
     const result = await unorouterChat({
-      apiKey,
+      apiKeys,
       baseUrl: this.options.baseUrl,
       model: this.options.modelId,
       messages: request.messages as ChatMessage[],

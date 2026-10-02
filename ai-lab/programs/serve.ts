@@ -1,11 +1,17 @@
 import { budgetFromEnv, LabCostBudget } from "../inference/budget";
+import { labKeyPool } from "../inference/key-pool";
 import { APIModelProvider } from "../inference/providers";
 import { routingDecision, type NativeAvailability } from "../inference/types";
-import { labApiKey } from "../inference/unorouter";
-import { forbidsTrainedClaim } from "./behavior";
-import { quoteNative, reserveNativeQuote } from "./pricing";
+import { applyBehaviorGate, constrainProgram } from "./contract";
+import type { NativeQuote } from "./pricing";
+import { PriceError, quoteNative, reserveNativeQuote } from "./pricing";
 import { runReasoningPolicy } from "./reasoning";
 import type { Activity, ModelProgram } from "./types";
+
+export interface FixtureCheck {
+  readonly armId: string;
+  readonly passed: boolean;
+}
 
 export interface ProgramAnswer {
   readonly text: string;
@@ -20,7 +26,16 @@ export interface ProgramAnswer {
   readonly latencyMs: number;
   readonly costUsd: number;
   readonly costPolicy: "provider_fallback" | "native_card";
+  readonly costQuote: NativeQuote;
+  readonly budgetNote: string;
   readonly phases: readonly Activity[];
+  readonly armIds: readonly string[];
+  readonly fixtureChecks: readonly FixtureCheck[];
+  /**
+   * Always false. Fallback follows the selected program's path. This process
+   * does not measure equality with a native benchmark.
+   */
+  readonly measuredEqual: false;
   readonly outsideProgram: boolean;
   readonly trained: false;
 }
@@ -64,6 +79,8 @@ export function fallbackModelId(
 /**
  * Untrained or unmeasured programs never take the native route.
  * Offline / missing checkpoints use the same decision as the lab router.
+ * An error from the native fixture also falls through to the same program's
+ * API path. That is not a measured equal score.
  */
 export function serveRoute(input: {
   trained: boolean;
@@ -87,56 +104,79 @@ export async function answerWithProgram(input: {
   env?: NodeJS.ProcessEnv;
   fetchImpl?: typeof fetch;
   apiKey?: string;
+  apiKeys?: readonly string[];
   checkpointId?: string | null;
   budget?: LabCostBudget;
 }): Promise<ProgramAnswer> {
-  const decision = serveRoute({
+  let decision = serveRoute({
     trained: input.program.training.trainingReady,
     measured: input.program.evalSuite.measured,
     native: input.native,
   });
-  const trace = runReasoningPolicy(
-    input.program,
-    input.messages.map((message) => message.content).join("\n"),
-  );
+  const userText = input.messages.map((message) => message.content).join("\n");
+  const trace = runReasoningPolicy(input.program, userText);
   const env = input.env ?? process.env;
   const budget = input.budget ?? budgetFromEnv(env);
+  const inputTokens = input.messages.reduce(
+    (sum, message) => sum + message.content.length,
+    0,
+  );
+  const constraint = constrainProgram({
+    program: input.program,
+    trace,
+    text: userText,
+    inputTokens,
+    outputTokens: 0,
+  });
   if (decision.provider === "native") {
-    const checkpoint = input.checkpointId ?? null;
-    if (!checkpoint) throw new Error("native route requires a checkpoint id");
-    const inputTokens = input.messages.reduce(
-      (sum, message) => sum + message.content.length,
-      0,
-    );
-    const quote = quoteNative(input.program.id, inputTokens, 0);
-    reserveNativeQuote(budget, quote);
-    return {
-      text: "Native fixture runtime is selected. This is not a trained model response.",
-      userLabel: userLabel(input.program, "native"),
-      provenance: provenanceLine({
-        program: input.program,
+    try {
+      const checkpoint = input.checkpointId ?? null;
+      if (!checkpoint) throw new Error("native route requires a checkpoint id");
+      const quote = quoteNative(input.program.id, inputTokens, 0);
+      reserveNativeQuote(budget, quote);
+      return {
+        text: "Native fixture runtime is selected. This is not a trained model response.",
+        userLabel: userLabel(input.program, "native"),
+        provenance: provenanceLine({
+          program: input.program,
+          provider: "native",
+          modelId: input.program.nativeModelId,
+          checkpoint,
+        }),
         provider: "native",
         modelId: input.program.nativeModelId,
         checkpoint,
-      }),
-      provider: "native",
-      modelId: input.program.nativeModelId,
-      checkpoint,
-      routingReason: decision.reason,
-      activity: "native_inference",
-      version: input.program.architecture.version,
-      latencyMs: 0,
-      costUsd: 0,
-      costPolicy: "native_card",
-      phases: trace.phases,
-      outsideProgram: trace.outsideProgram,
-      trained: false,
-    };
+        routingReason: decision.reason,
+        activity: "native_inference",
+        version: input.program.architecture.version,
+        latencyMs: 0,
+        costUsd: 0,
+        costPolicy: "native_card",
+        costQuote: quote,
+        budgetNote: constraint.budgetNote,
+        phases: trace.phases,
+        armIds: constraint.armIds,
+        fixtureChecks: constraint.checks,
+        measuredEqual: false,
+        outsideProgram: trace.outsideProgram,
+        trained: false,
+      };
+    } catch (error) {
+      if (error instanceof PriceError) throw error;
+      const message = error instanceof Error ? error.message : "";
+      if (message.startsWith("cost budget stop")) throw error;
+      decision = { provider: "unorouter", reason: "native_error" };
+    }
   }
   const modelId = fallbackModelId(input.program, env);
+  const apiKeys =
+    input.apiKeys ??
+    (input.apiKey && input.apiKey.trim()
+      ? [input.apiKey.trim()]
+      : labKeyPool(env));
   const api = new APIModelProvider({
     modelId,
-    apiKey: input.apiKey ?? labApiKey(env),
+    apiKeys,
     env,
     fetchImpl: input.fetchImpl,
     budget,
@@ -144,12 +184,13 @@ export async function answerWithProgram(input: {
   const result = await api.complete({
     trackId: input.program.id,
     nativeModelId: input.program.nativeModelId,
-    messages: input.messages,
+    messages: [
+      { role: "system", content: constraint.system },
+      ...input.messages,
+    ],
   });
-  const claim = forbidsTrainedClaim(result.text, input.program.displayName);
-  const body = claim
-    ? "The fallback text was withheld because it described itself as the native model. No checkpoint was used."
-    : result.text;
+  const gated = applyBehaviorGate(input.program, result.text);
+  const body = gated.text;
   const text = trace.outsideProgram ? `${trace.note}\n\n${body}` : body;
   return {
     text,
@@ -169,7 +210,12 @@ export async function answerWithProgram(input: {
     latencyMs: result.provenance.latencyMs,
     costUsd: result.provenance.costUsd,
     costPolicy: "provider_fallback",
+    costQuote: constraint.quote,
+    budgetNote: constraint.budgetNote,
     phases: trace.phases,
+    armIds: constraint.armIds,
+    fixtureChecks: constraint.checks,
+    measuredEqual: false,
     outsideProgram: trace.outsideProgram,
     trained: false,
   };
