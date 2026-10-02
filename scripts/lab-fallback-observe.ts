@@ -3,6 +3,7 @@
  * Confirms UNOROUTER_API_KEY only by a non-empty check. Never prints it.
  */
 import { writeFileSync } from "node:fs";
+import { pageWellFormed } from "../ai-lab/programs/completion";
 import { observeSketch } from "../ai-lab/programs/harness";
 import { darusProgram } from "../ai-lab/programs/darus";
 import { quasnirProgram } from "../ai-lab/programs/quasnir";
@@ -49,8 +50,16 @@ function redact(text: string): string {
   return out;
 }
 
-function htmlUsable(text: string): boolean {
-  return /<h1[\s>]/i.test(text) && !/withheld/i.test(text);
+function htmlUsable(
+  request: string,
+  text: string,
+  completion: string,
+): boolean {
+  return (
+    completion === "page" &&
+    pageWellFormed(request, text).ok &&
+    !/withheld/i.test(text)
+  );
 }
 
 async function once(program: ModelProgram, prompt: string, tag: string) {
@@ -83,7 +92,8 @@ async function once(program: ModelProgram, prompt: string, tag: string) {
       trained: answer.trained,
       phases: answer.phases,
       arms: answer.armIds,
-      htmlUsable: htmlUsable(text),
+      htmlUsable: htmlUsable(prompt, text, answer.completion),
+      completion: answer.completion,
       characters: text.length,
       outsideProgram: answer.outsideProgram,
       sketch: tag === "crm" ? observeSketch(program, text) : undefined,
@@ -107,6 +117,7 @@ async function once(program: ModelProgram, prompt: string, tag: string) {
       phases: [],
       arms: [],
       htmlUsable: false,
+      completion: null,
       characters: 0,
       outsideProgram: null,
       sketch: undefined,

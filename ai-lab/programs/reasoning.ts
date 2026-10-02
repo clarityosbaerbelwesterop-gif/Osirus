@@ -1,3 +1,5 @@
+import { asksForHtmlPage } from "./completion";
+import { classifyThinking } from "./domains";
 import type { Activity, ModelId, ModelProgram } from "./types";
 
 export type ProgramScope = "general" | "code" | "broad";
@@ -40,8 +42,11 @@ export function runReasoningPolicy(
     if (allowed) phases.push(allowed);
   };
   if (program.id === "quasnir") {
-    const outside = text.trim().length > 0 && !CODE.test(text);
+    const htmlPage = asksForHtmlPage(text);
+    const outside = text.trim().length > 0 && !CODE.test(text) && !htmlPage;
     push("code_analysis");
+    const thought = classifyThinking(text);
+    if (thought === "thinking") push("thinking");
     if (VERIFY.test(text) || /\btest\b/i.test(text)) push("test_execution");
     if (/\b(security|vuln|scan)\b/i.test(text)) push("security_scan");
     if (/\bpatch\b/i.test(text)) push("patch_verification");
@@ -52,11 +57,15 @@ export function runReasoningPolicy(
       phases,
       note: outside
         ? "QUASNIR covers code, logic, and security only. This request is outside that program."
-        : "QUASNIR policy ran on the request text. It is not a trained coder.",
+        : htmlPage
+          ? "QUASNIR treats this HTML page as in-program coding. It is not a trained coder."
+          : "QUASNIR policy ran on the request text. It is not a trained coder.",
     };
   }
   if (program.id === "darus") {
+    const thought = classifyThinking(text);
     push("deep_reasoning");
+    if (thought === "thinking") push("thinking");
     if (CROSS.test(text)) push("cross_domain_synthesis");
     if (RESEARCH.test(text)) push("research");
     if (PLAN.test(text)) push("planning");
@@ -65,9 +74,13 @@ export function runReasoningPolicy(
       scope: "broad",
       outsideProgram: false,
       phases,
-      note: "Darus policy is a broad-track hypothesis, not a measured result.",
+      note:
+        thought === "thinking"
+          ? "Darus thinking ran after classification. It is not a measured result."
+          : "Darus policy is a broad-track hypothesis, not a measured result.",
     };
   }
+  const thought = classifyThinking(text);
   push("thinking");
   if (VERIFY.test(text)) push("verification");
   else if (RESEARCH.test(text)) push("research");
@@ -77,6 +90,6 @@ export function runReasoningPolicy(
     scope: "general",
     outsideProgram: false,
     phases,
-    note: "Rouge policy classified the request. It is not a trained frontier model.",
+    note: `Rouge policy classified the request as ${thought} after thinking ran. It is not a trained frontier model.`,
   };
 }

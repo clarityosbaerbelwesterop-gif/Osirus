@@ -153,7 +153,12 @@ export const rougeProgram: ModelProgram = {
       "Integer expressions are parsed. Division by zero is refused. This is not a math benchmark.",
       "math-expr",
       { input: "(2+3)*4", target: "20" },
-      [{ input: "1/0", target: "refused" }],
+      [
+        { input: "1/0", target: "refused" },
+        { input: "(2+3)^2", target: "25" },
+        { input: "7%3", target: "1" },
+        { input: "2^9", target: "refused" },
+      ],
     ),
     arm(
       "ROUGE_SCIENCE",
@@ -210,6 +215,13 @@ export const rougeProgram: ModelProgram = {
       "Cybersecurity is a static scan of the request text. It does not exploit anything.",
       "static-scan",
       { input: "eval(1)", target: "1" },
+      [
+        { input: "pickle.loads(blob)", target: "1" },
+        { input: 'new Function("return 1")', target: "1" },
+        { input: 'password="hunter2"', target: "1" },
+        { input: "child_process.exec(cmd)", target: "1" },
+        { input: "const label = name", target: "0" },
+      ],
     ),
     arm(
       "ROUGE_TERMINAL",
@@ -226,6 +238,7 @@ export const rougeProgram: ModelProgram = {
       "Long-horizon coding records steps and does not execute them.",
       "horizon",
       { input: "hold. review. stop.", target: "3" },
+      [{ input: "ok:hold;ok:review;fail:ship", target: "failed-at:3" }],
     ),
     arm(
       "ROUGE_RSI",

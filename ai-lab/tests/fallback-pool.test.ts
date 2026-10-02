@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from "vitest";
 import { labKeyPool } from "../inference/key-pool";
 import {
   FALLBACK_ADMISSION,
+  SAME_KEY_429_RETRIES,
   UnoRouterError,
   unorouterChat,
 } from "../inference/unorouter";
@@ -147,6 +148,56 @@ describe("UnoRouter key pool", () => {
     expect(authOf(fetchImpl.mock.calls[0] as unknown[])).not.toContain(
       "UNOROUTER_API_KEY=",
     );
+  });
+
+  it("backs off and retries a single key a bounded number of times on 429", async () => {
+    const sleep = vi.fn(async () => undefined);
+    let calls = 0;
+    const fetchImpl = vi.fn(async () => {
+      calls += 1;
+      if (calls <= SAME_KEY_429_RETRIES) {
+        return new Response("no", { status: 429 });
+      }
+      return jsonResponse("later");
+    });
+    const result = await unorouterChat({
+      apiKeys: ["only-key"],
+      model: "qwen3:free",
+      messages: [{ role: "user", content: "hi" }],
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+      sleep,
+    });
+    expect(result.text).toBe("later");
+    expect(result.keyAttempts).toBe(1);
+    expect(fetchImpl).toHaveBeenCalledTimes(1 + SAME_KEY_429_RETRIES);
+    expect(sleep).toHaveBeenNthCalledWith(1, 25);
+    expect(sleep).toHaveBeenNthCalledWith(2, 50);
+    expect(sleep).toHaveBeenNthCalledWith(3, 100);
+    expect(sleep).toHaveBeenCalledTimes(SAME_KEY_429_RETRIES);
+
+    const exhausted = vi.fn(async () => new Response("no", { status: 429 }));
+    await expect(
+      unorouterChat({
+        apiKeys: ["only-key"],
+        model: "qwen3:free",
+        messages: [{ role: "user", content: "hi" }],
+        fetchImpl: exhausted as unknown as typeof fetch,
+        sleep: async () => undefined,
+      }),
+    ).rejects.toThrow(/HTTP 429/);
+    expect(exhausted).toHaveBeenCalledTimes(1 + SAME_KEY_429_RETRIES);
+
+    const serverError = vi.fn(async () => new Response("no", { status: 503 }));
+    await expect(
+      unorouterChat({
+        apiKeys: ["only-key"],
+        model: "qwen3:free",
+        messages: [{ role: "user", content: "hi" }],
+        fetchImpl: serverError as unknown as typeof fetch,
+        sleep: async () => undefined,
+      }),
+    ).rejects.toThrow(/HTTP 503/);
+    expect(serverError).toHaveBeenCalledTimes(1);
   });
 });
 

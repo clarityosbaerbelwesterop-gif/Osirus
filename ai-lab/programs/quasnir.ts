@@ -142,7 +142,7 @@ export const quasnirProgram: ModelProgram = {
   arms: [
     arm(
       "QUASNIR_CODING",
-      "Code fixtures can be checked by executing a known function.",
+      "An HTML page is in-program coding and must be a closed document with the asked heading. The median fixture does not write the repository.",
       "execute",
       { input: "1, 2, 3, 4", target: "2.5" },
     ),
@@ -229,6 +229,7 @@ export const quasnirProgram: ModelProgram = {
       "Long-horizon coding records steps and does not execute them.",
       "horizon",
       { input: "read. patch. test.", target: "3" },
+      [{ input: "ok:read;ok:patch;fail:ship", target: "failed-at:3" }],
     ),
     arm(
       "QUASNIR_REASONING",
@@ -256,14 +257,24 @@ export const quasnirProgram: ModelProgram = {
       "Integer arithmetic used by code fixtures. Division by zero is refused.",
       "math-expr",
       { input: "8/2", target: "4" },
-      [{ input: "4/0", target: "refused" }],
+      [
+        { input: "4/0", target: "refused" },
+        { input: "2^3*2", target: "16" },
+        { input: "8%3", target: "2" },
+        { input: "0^0", target: "refused" },
+      ],
     ),
     arm(
       "QUASNIR_CYBERSECURITY",
       "Cybersecurity counts defensive findings in fixture text. It does not exploit anything.",
       "static-scan",
       { input: "element.innerHTML = name", target: "1" },
-      [{ input: "const label = name", target: "0" }],
+      [
+        { input: "const label = name", target: "0" },
+        { input: 'new Function("return 1")', target: "1" },
+        { input: 'api_key="sk-fixture"', target: "1" },
+        { input: "pickle.loads(blob)", target: "1" },
+      ],
     ),
     arm(
       "QUASNIR_RSI",
@@ -307,6 +318,7 @@ export const quasnirProgram: ModelProgram = {
     fallbackLabel: "QUASNIR · API fallback",
     activities: [
       "code_analysis",
+      "thinking",
       "security_scan",
       "test_execution",
       "patch_verification",

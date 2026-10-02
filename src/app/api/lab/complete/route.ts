@@ -128,6 +128,7 @@ export async function POST(request: Request) {
       fixtureChecks: answer.fixtureChecks,
       measuredEqual: answer.measuredEqual,
       outsideProgram: answer.outsideProgram,
+      completion: answer.completion,
       trained: false,
     });
   } catch (error) {

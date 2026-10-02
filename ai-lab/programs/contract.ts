@@ -1,5 +1,6 @@
 import { executeArmPolicy, type ArmExecution } from "./arm-policy";
 import { gradeArm, forbidsTrainedClaim, staticSecurityScan } from "./behavior";
+import { asksForHtmlPage } from "./completion";
 import { quoteNative, type NativeQuote } from "./pricing";
 import type { ReasoningTrace } from "./reasoning";
 import {
@@ -86,6 +87,13 @@ export function selectArms(
         hint.tokens.some((token) => id.includes(token)),
     );
   });
+  if (asksForHtmlPage(text)) {
+    const coding = program.arms.find((arm) => arm.id === "QUASNIR_CODING");
+    if (coding) {
+      const rest = matched.filter((arm) => arm.id !== coding.id);
+      return [coding, ...rest].slice(0, 3);
+    }
+  }
   const chosen = (matched.length ? matched : program.arms.slice(0, 1)).slice(
     0,
     3,

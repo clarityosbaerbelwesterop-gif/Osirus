@@ -158,7 +158,12 @@ export const darusProgram: ModelProgram = {
       "Integer expressions are parsed. No benchmark score is claimed.",
       "math-expr",
       { input: "2+2*3", target: "8" },
-      [{ input: "0/0", target: "refused" }],
+      [
+        { input: "0/0", target: "refused" },
+        { input: "2+3^2", target: "11" },
+        { input: "(10%4)+1", target: "3" },
+        { input: "2^-1", target: "refused" },
+      ],
     ),
     arm(
       "DARUS_SCIENCE",
@@ -240,6 +245,12 @@ export const darusProgram: ModelProgram = {
       "Cybersecurity is a static scan. It does not exploit anything.",
       "static-scan",
       { input: "eval(1)", target: "1" },
+      [
+        { input: "element.innerHTML = name", target: "1" },
+        { input: 'secret="fixture-secret"', target: "1" },
+        { input: "os.system(cmd)", target: "1" },
+        { input: "const label = name", target: "0" },
+      ],
     ),
     arm(
       "DARUS_TERMINAL",
@@ -253,6 +264,7 @@ export const darusProgram: ModelProgram = {
       "Long-horizon work records steps and does not execute them.",
       "horizon",
       { input: "map. synthesize. hold.", target: "3" },
+      [{ input: "ok:map;ok:synthesize;fail:ship", target: "failed-at:3" }],
     ),
     arm(
       "DARUS_RSI",
@@ -299,6 +311,7 @@ export const darusProgram: ModelProgram = {
     fallbackLabel: "DARUS · API fallback",
     activities: [
       "deep_reasoning",
+      "thinking",
       "cross_domain_synthesis",
       "research",
       "planning",

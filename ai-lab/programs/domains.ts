@@ -134,17 +134,20 @@ export function evalIntegerExpr(
   };
   const parseTerm = (): number => {
     let value = parseFactor();
-    while (text[index] === "*" || text[index] === "/") {
+    while (text[index] === "*" || text[index] === "/" || text[index] === "%") {
       const op = text[index];
       index += 1;
       const right = parseFactor();
-      if (op === "/" && right === 0) throw new Error("division by zero");
-      value = op === "*" ? value * right : value / right;
+      if ((op === "/" || op === "%") && right === 0) {
+        throw new Error("division by zero");
+      }
+      value =
+        op === "*" ? value * right : op === "/" ? value / right : value % right;
       if (!Number.isFinite(value)) throw new Error("non-finite");
     }
     return value;
   };
-  const parseFactor = (): number => {
+  const parsePrimary = (): number => {
     if (text[index] === "(") {
       index += 1;
       const value = parseExpr();
@@ -157,6 +160,19 @@ export function evalIntegerExpr(
     if (!/\d/.test(text[index] ?? "")) throw new Error("expected number");
     while (/\d/.test(text[index] ?? "")) index += 1;
     return Number(text.slice(start, index));
+  };
+  const parseFactor = (): number => {
+    const base = parsePrimary();
+    if (text[index] !== "^") return base;
+    index += 1;
+    const exp = parseFactor();
+    if (!Number.isInteger(exp) || exp < 0 || exp > 8) {
+      throw new Error("exponent refused");
+    }
+    if (base === 0 && exp === 0) throw new Error("zero power refused");
+    const value = base ** exp;
+    if (!Number.isSafeInteger(value)) throw new Error("exponent refused");
+    return value;
   };
   try {
     const value = parseExpr();
@@ -297,6 +313,58 @@ export function countRecordedSteps(text: string): {
     .filter((part) => part.length > 0)
     .slice(0, 5);
   return { count: parts.length, executed: 0 };
+}
+
+/**
+ * Multi-step horizon record. A later `fail:` step fails the record.
+ * Nothing is executed and no score is invented.
+ */
+export interface HorizonRecord {
+  readonly count: number;
+  readonly executed: 0;
+  readonly scored: false;
+  readonly failedAt: number | null;
+  readonly malformed: boolean;
+}
+
+export function readHorizon(input: string): HorizonRecord {
+  const tagged = input
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  const taggedIntent = tagged.some((part) => /^(ok|fail):/.test(part));
+  if (input.includes(";") && taggedIntent) {
+    const structured = tagged.every((part) => /^(ok|fail):.+$/.test(part));
+    if (!structured) {
+      return {
+        count: 0,
+        executed: 0,
+        scored: false,
+        failedAt: null,
+        malformed: true,
+      };
+    }
+    const failIndex = tagged.findIndex((part) => part.startsWith("fail:"));
+    return {
+      count: tagged.length,
+      executed: 0,
+      scored: false,
+      failedAt: failIndex === -1 ? null : failIndex + 1,
+      malformed: false,
+    };
+  }
+  const parts = input
+    .split(/[.\n]/)
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0)
+    .slice(0, 5);
+  return {
+    count: parts.length,
+    executed: 0,
+    scored: false,
+    failedAt: null,
+    malformed: false,
+  };
 }
 
 /** Allowlisted terminal phrases on a virtual fixture tree. Never spawns a process. */
@@ -470,13 +538,41 @@ export function gradeDomain(
     const verdict = left === right ? "same" : "different";
     return { passed: verdict === sample.target, detail: verdict };
   }
-  if (grader === "plan" || grader === "horizon") {
+  if (grader === "plan") {
     const recorded = countRecordedSteps(sample.input);
     const passed =
       recorded.executed === 0 && String(recorded.count) === sample.target;
     return {
       passed,
       detail: `${recorded.count} recorded, ${recorded.executed} executed`,
+    };
+  }
+  if (grader === "horizon") {
+    const recorded = readHorizon(sample.input);
+    if (recorded.malformed) {
+      return {
+        passed: false,
+        detail: "horizon record malformed, 0 executed, not scored",
+      };
+    }
+    if (sample.target.startsWith("failed-at:")) {
+      const at = Number(sample.target.slice("failed-at:".length));
+      const passed =
+        recorded.scored === false &&
+        recorded.executed === 0 &&
+        recorded.failedAt === at;
+      return {
+        passed,
+        detail: `${recorded.count} recorded, failed at ${recorded.failedAt ?? "none"}, 0 executed, not scored`,
+      };
+    }
+    const passed =
+      recorded.failedAt === null &&
+      recorded.executed === 0 &&
+      String(recorded.count) === sample.target;
+    return {
+      passed,
+      detail: `${recorded.count} recorded, ${recorded.executed} executed, not scored`,
     };
   }
   if (grader === "thinking") {

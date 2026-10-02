@@ -2,6 +2,7 @@ import { budgetFromEnv, LabCostBudget } from "../inference/budget";
 import { labKeyPool } from "../inference/key-pool";
 import { APIModelProvider } from "../inference/providers";
 import { routingDecision, type NativeAvailability } from "../inference/types";
+import { presentCompletion, type CompletionKind } from "./completion";
 import { applyBehaviorGate, constrainProgram } from "./contract";
 import type { NativeQuote } from "./pricing";
 import { PriceError, quoteNative, reserveNativeQuote } from "./pricing";
@@ -39,6 +40,13 @@ export interface ProgramAnswer {
   readonly measuredEqual: false;
   readonly outsideProgram: boolean;
   readonly trained: false;
+  /**
+   * page: closed HTML with the asked heading.
+   * withheld: behavior gate replaced the model text.
+   * incomplete: an HTML page was requested and was not well-formed.
+   * text: not an HTML page task.
+   */
+  readonly completion: CompletionKind;
 }
 
 export function userLabel(
@@ -167,6 +175,7 @@ export async function answerWithProgram(input: {
         measuredEqual: false,
         outsideProgram: trace.outsideProgram,
         trained: false,
+        completion: "text",
       };
     } catch (error) {
       if (error instanceof PriceError) throw error;
@@ -207,6 +216,7 @@ export async function answerWithProgram(input: {
       measuredEqual: false,
       outsideProgram: trace.outsideProgram,
       trained: false,
+      completion: "text",
     };
   }
   const apiKeys =
@@ -230,8 +240,15 @@ export async function answerWithProgram(input: {
     ],
   });
   const gated = applyBehaviorGate(input.program, result.text);
-  const body = gated.text;
-  const scoped = trace.outsideProgram ? `${trace.note}\n\n${body}` : body;
+  const presented = presentCompletion({
+    request: userText,
+    modelText: gated.text,
+    withheld: gated.withheld,
+    withheldText: gated.text,
+  });
+  const scoped = trace.outsideProgram
+    ? `${trace.note}\n\n${presented.text}`
+    : presented.text;
   const text = [stepBlock(armSteps), scoped].filter(Boolean).join("\n\n");
   return {
     text,
@@ -260,5 +277,6 @@ export async function answerWithProgram(input: {
     measuredEqual: false,
     outsideProgram: trace.outsideProgram,
     trained: false,
+    completion: presented.kind,
   };
 }
