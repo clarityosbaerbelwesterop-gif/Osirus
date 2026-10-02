@@ -656,6 +656,20 @@
   font: inherit;
 }
 
+/* Phone only. The closed select otherwise shrinks when "(not in this build)"
+   leaves the option list, and the mode buttons jump onto its line.
+   A percentage width does not resolve: the select's containing block is the
+   label, which shrink-wraps the select. 170px is the baseline closed control
+   (mobile-active-run, border box x=60..230 on the 375px shot), the width
+   Chromium gave the longest option "QUASNIR (not in this build)". */
+@media (max-width: 480px) {
+  .lab-selectors select {
+    box-sizing: border-box;
+    width: 170px;
+    min-width: 170px;
+  }
+}
+
 .lab-activity {
   margin: 0;
   color: var(--color-text-muted);

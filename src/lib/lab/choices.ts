@@ -11,7 +11,7 @@ export type LabModelId = (typeof LAB_MODELS)[number]["id"];
 export const LAB_BUILD: Record<Exclude<LabModelId, "external">, boolean> = {
   rouge: true,
   quasnir: true,
-  darus: false,
+  darus: true,
 };
 
 export type InteractionPreference = "ai" | "agent";
