@@ -1,5 +1,5 @@
 import { gradeArm, staticSecurityScan } from "./behavior";
-import { logicPhrase } from "./domains";
+import { classifyThinking, logicPhrase, readHorizon } from "./domains";
 import { gradeRsiSample } from "./rsi";
 import { LOCKED_LOOP_SURFACES, type CapabilityArm } from "./types";
 
@@ -142,18 +142,25 @@ export function executeArmPolicy(
   } else if (kind === "terminal") {
     steps.push(terminalStep(text));
   } else if (kind === "long_horizon") {
-    const parts = text
-      .split(/[.\n]/)
-      .map((part) => part.trim())
-      .filter((part) => part.length > 0)
-      .slice(0, 5);
-    steps.push(`horizon: ${parts.length} step(s) recorded, none executed`);
+    const recorded = readHorizon(text);
+    if (recorded.malformed) {
+      steps.push("horizon: malformed record, 0 executed, not scored");
+    } else if (recorded.failedAt !== null) {
+      steps.push(
+        `horizon: ${recorded.count} step(s) recorded, failed at ${recorded.failedAt}, 0 executed, not scored`,
+      );
+    } else {
+      steps.push(
+        `horizon: ${recorded.count} step(s) recorded, none executed, not scored`,
+      );
+    }
   } else if (kind === "coding") {
     const findings = staticSecurityScan(text);
     steps.push("coding: no repository write");
     if (findings.length) steps.push(`scan: ${findings.join(",")}`);
   } else if (kind === "thinking" || kind === "reasoning") {
-    steps.push(`${kind}: policy classified the request`);
+    const label = classifyThinking(text);
+    steps.push(`${kind}: classified as ${label}`);
   } else if (kind === "science") {
     steps.push("science: formula fixture only, no paper result");
   } else if (kind === "research") {
