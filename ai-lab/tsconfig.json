@@ -14,8 +14,11 @@
   "include": [
     "contracts/**/*.ts",
     "lib/**/*.ts",
+    "models/**/*.ts",
+    "registries/**/*.ts",
     "datasets/**/*.ts",
     "evals/**/*.ts",
+    "infra/**/*.ts",
     "tests/**/*.ts"
   ]
 }
