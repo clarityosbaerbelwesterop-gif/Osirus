@@ -1,0 +1,106 @@
+{
+  "trackId": "rouge",
+  "displayName": "Rouge",
+  "identity": "general/reasoning core for ordinary Osirus work",
+  "nativeModelId": "osirus/rouge-1",
+  "architecture": {
+    "id": "rouge-decoder-planned-v1",
+    "family": "llama-like-decoder-transformer",
+    "layers": 24,
+    "hiddenSize": 2048,
+    "attentionHeads": 16,
+    "kvHeads": 4,
+    "activation": "swiglu",
+    "norm": "rmsnorm",
+    "positional": "rope",
+    "status": "planned"
+  },
+  "tokenizer": {
+    "id": "rouge-bpe",
+    "trackId": "rouge",
+    "family": "byte-level-bpe",
+    "version": "0.0.0-untrained",
+    "vocabSize": 32000,
+    "pin": "162894670c4edbaf08db4d5afc3ea14ccc7c54df6ff5eadcff7e3be0a77a60dc"
+  },
+  "datasetMixture": {
+    "id": "rouge-mix-planned-v1",
+    "parts": [
+      {
+        "source": "permissive-code-planned",
+        "fraction": 0.55,
+        "license": "permissive-only"
+      },
+      {
+        "source": "natural-language-reasoning-planned",
+        "fraction": 0.3,
+        "license": "permissive-only"
+      },
+      {
+        "source": "tool-use-traces-planned",
+        "fraction": 0.15,
+        "license": "owned-or-permissive"
+      }
+    ]
+  },
+  "curriculum": [
+    {
+      "id": "rouge-language",
+      "order": 0,
+      "objective": "next-token general text and code",
+      "mixtureId": "rouge-mix-planned-v1",
+      "executable": "none"
+    },
+    {
+      "id": "rouge-instruction",
+      "order": 1,
+      "objective": "instruction following without stored chain-of-thought",
+      "mixtureId": "rouge-mix-planned-v1",
+      "executable": "none"
+    },
+    {
+      "id": "rouge-fixture",
+      "order": 2,
+      "objective": "CPU infrastructure fixture only",
+      "mixtureId": "rouge-mix-planned-v1",
+      "executable": "tiny-linear-v1"
+    }
+  ],
+  "behaviorSpec": "Rouge is the general assistant. It must not claim a native checkpoint exists until one was actually trained and validated.",
+  "specialistObjectives": [
+    "multi-step reasoning",
+    "tool selection",
+    "calibration on ordinary tasks"
+  ],
+  "evalSuite": {
+    "id": "rouge-core-unmeasured",
+    "measured": false,
+    "tasks": ["reasoning-short", "tool-choice"]
+  },
+  "trainingConfig": {
+    "executableFixture": "tiny-linear-v1",
+    "plannedParameterClass": "1B-class planned, not built",
+    "seed": 5601
+  },
+  "inferenceConfig": {
+    "nativeRuntime": "not_shipped",
+    "apiFallback": {
+      "label": "UnoRouter API fallback — not Rouge",
+      "defaultModelId": "qwen3:free",
+      "envVar": "LAB_FALLBACK_MODEL_ROUGE",
+      "catalogRole": "general",
+      "verifiedFrom": "https://api.unorouter.com/api/pricing/catalog",
+      "verifiedOn": "2026-10-02"
+    }
+  },
+  "capabilityTargets": [
+    {
+      "id": "rouge-reasoning",
+      "status": "unmeasured"
+    },
+    {
+      "id": "rouge-tools",
+      "status": "unmeasured"
+    }
+  ]
+}
