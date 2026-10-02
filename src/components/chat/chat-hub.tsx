@@ -1,20 +1,18 @@
 "use client";
 
-import { PanelRight } from "lucide-react";
+import Link from "next/link";
+import type { Route } from "next";
 import {
   useCallback,
   useEffect,
-  useMemo,
   useRef,
   useState,
   useSyncExternalStore,
 } from "react";
-import type {
-  ModelCallSummary,
-  RunSnapshot,
-  RuntimePacket,
-} from "@/lib/runtime/types";
+import type { ModelCallSummary, RunSnapshot, RuntimePacket } from "@/lib/runtime/types";
 import { repositoryInObjective } from "@/lib/coding/repository-ref";
+import { rougeErrorMessage } from "@/lib/rouge/errors";
+import type { RougeResponse, RougeStreamEvent } from "@/lib/rouge/types";
 import {
   INTERACTION_COOKIE,
   LAB_MODEL_COOKIE,
@@ -30,301 +28,162 @@ import {
   type InteractionPreference,
   type LabModelId,
 } from "@/lib/lab/choices";
-import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
-import type { Starter } from "@/lib/ui/starters";
-import {
-  autoOpenWorkbench,
-  defaultTab,
-  type WorkbenchTab,
-} from "@/lib/ui/workbench-view";
+import { aiConversation } from "@/lib/ui/ai-turn";
+import { createSnapshotGate, deriveRunView, TERMINAL } from "@/lib/ui/run-view";
+import { useShell } from "../shell/shell-context";
 import {
   Composer,
   type ComposerAttachment,
   type ComposerHandle,
-  type GithubState,
 } from "../composer/composer";
-import { RunCard } from "../run-status/run-card";
-import { useShell, type SessionSummary } from "../shell/shell-context";
-import { TopBar } from "../shell/top-bar";
-import { Badge } from "../ui/badge";
-import { IconButton } from "../ui/icon-button";
-import { useWideLayout, Workbench } from "../workbench/workbench";
-import { ChatHome, type OnboardingStep } from "./chat-home";
 import { MessageList, type ChatMessage } from "./message-list";
-
-// ChatHub: the conversation, its runs and the workbench.
-//
-// This container owns the runtime protocol exactly as before the redesign:
-// POST /api/runtime streams server-sent packets (started, snapshot, event,
-// delta, done, error); GET /api/runtime/:id returns the durable snapshot;
-// a live run is polled every two seconds after a reload; cancel is
-// POST /api/runtime/:id/cancel; sessions load from /api/sessions/:id. The
-// presentation lives in the components it renders.
-
-type Activity = { id: string; label: string; at?: string };
-
-type SessionState = {
-  sessionId: string;
-  messages: ChatMessage[];
-  modelCalls?: Record<string, ModelCallSummary>;
-  activeRunId: string | null;
-  recentRunId: string | null;
-};
+import { RunCard } from "../run-status/run-card";
 
 const terminalStatuses = TERMINAL;
 
-// The working mode persists per browser in a preference cookie. Exposed as
-// an external store so the cookie is read only after hydration -- the server
-// snapshot keeps SSR and the first client render on "auto" -- and so picking
-// a mode notifies the composer immediately.
-const modeListeners = new Set<() => void>();
-
-function subscribeMode(listener: () => void) {
-  modeListeners.add(listener);
-  return () => {
-    modeListeners.delete(listener);
-  };
+function titleFor(objective: string): string {
+  const short = objective.trim().replace(/\s+/g, " ");
+  return short.length > 60 ? `${short.slice(0, 57)}…` : short;
 }
 
-function currentMode(): ModePreference {
-  return parseMode(readPreference(MODE_COOKIE));
-}
+export type SessionState = {
+  sessionId: string;
+  activeRunId: string | null;
+  recentRunId: string | null;
+  messages: ChatMessage[];
+  modelCalls: Record<string, ModelCallSummary>;
+};
 
-function serverMode(): ModePreference {
-  return "auto";
-}
+type GithubStatus =
+  | { status: "loading" }
+  | { status: "CONNECTED"; login: string }
+  | { status: "NOT_CONNECTED" | "NOT_CONFIGURED" | "unknown" };
 
-const labListeners = new Set<() => void>();
-
-function subscribeLab(listener: () => void) {
-  labListeners.add(listener);
-  return () => {
-    labListeners.delete(listener);
-  };
-}
-
-function currentLabModel(): LabModelId {
-  return parseLabModel(readPreference(LAB_MODEL_COOKIE));
-}
-
-function serverLabModel(): LabModelId {
-  return "rouge";
-}
-
-function currentInteraction(): InteractionPreference {
-  return parseInteraction(readPreference(INTERACTION_COOKIE));
-}
-
-function serverInteraction(): InteractionPreference {
-  return "agent";
-}
-
+/**
+ * The chat itself: message flow, the live run, and the composer. Runs are
+ * server-side; this page streams their progress, keeps the visible state
+ * tied to the run that is actually shown, and reconnects after a reload.
+ */
 export function ChatHub(props: {
-  firstName: string | null;
+  workspaceId: string;
   workspaceName: string;
+  githubStatus: string;
+  githubLogin: string | null;
   initialSessionId: string | null;
   initialMessages: ChatMessage[];
-  initialRunId: string | null;
-  initialSnapshotRunId: string | null;
-  /** Server-provided snapshot, so the first paint already shows the run. */
-  initialSnapshot?: RunSnapshot | null;
-  /** Completed model calls of the loaded session, keyed by run id. */
   initialModelCalls?: Record<string, ModelCallSummary>;
-  onboarding?: OnboardingStep[];
+  initialRunId: string | null;
+  initialSnapshot: RunSnapshot | null;
+  initialSnapshotRunId: string | null;
 }) {
   const shell = useShell();
-  const { upsertSession, bindChat } = shell;
-  const [sessionId, setSessionId] = useState(props.initialSessionId);
+  const [sessionId, setSessionId] = useState<string | null>(
+    props.initialSessionId,
+  );
   const [messages, setMessages] = useState<ChatMessage[]>(
     props.initialMessages,
   );
-  const [activities, setActivities] = useState<Activity[]>([]);
-  const [snapshot, setSnapshot] = useState<RunSnapshot | null>(
-    props.initialSnapshot ?? null,
-  );
   const [modelCalls, setModelCalls] = useState<
     Record<string, ModelCallSummary>
-  >(props.initialModelCalls ?? props.initialSnapshot?.modelCalls ?? {});
+  >(props.initialModelCalls ?? {});
   const [objective, setObjective] = useState("");
-  const mode = useSyncExternalStore(subscribeMode, currentMode, serverMode);
-  const labModel = useSyncExternalStore(
-    subscribeLab,
-    currentLabModel,
-    serverLabModel,
+  const [snapshot, setSnapshot] = useState<RunSnapshot | null>(
+    props.initialSnapshot,
   );
-  const interaction = useSyncExternalStore(
-    subscribeLab,
-    currentInteraction,
-    serverInteraction,
+  const [activeRunId, setActiveRunId] = useState<string | null>(
+    props.initialRunId,
   );
-  const [labActivity, setLabActivity] = useState<string | null>(null);
-  const [labPhases, setLabPhases] = useState<readonly string[]>([]);
-  const [labGrades, setLabGrades] = useState<
-    readonly { armId: string; phase: string | null; passed: boolean }[]
-  >([]);
-  const [attachments, setAttachments] = useState<ComposerAttachment[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [activeRunId, setActiveRunId] = useState(props.initialRunId);
-  const [running, setRunning] = useState(
-    Boolean(props.initialRunId) ||
-      Boolean(
-        props.initialSnapshot &&
-        !TERMINAL.has(props.initialSnapshot.run.status),
-      ),
-  );
+  const [running, setRunning] = useState(!!props.initialRunId);
   const [cancelling, setCancelling] = useState(false);
-  // True while this page reads a run's event stream. The stream carries the
-  // run's progress itself; polling alongside it would only replace the
-  // streamed draft with the stored messages mid-answer.
-  const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [failedObjective, setFailedObjective] = useState<string | null>(null);
-  const [resumed, setResumed] = useState(
-    Boolean(
-      props.initialRunId ?? props.initialSnapshotRunId ?? props.initialSnapshot,
-    ),
+  const [lastObjective, setLastObjective] = useState<string | null>(null);
+  const [resumed, setResumed] = useState(false);
+  const [workbenchOpen, setWorkbenchOpen] = useState<string | null>(null);
+  const [tab, setTab] = useState<string | null>(null);
+  const [activities, setActivities] = useState<
+    { id: string; label: string; at: string }[] >([]);
+  const [aiStatus, setAiStatus] = useState<string | null>(null);
+  /** Message id of the AI-mode answer while it streams; null otherwise. */
+  const [aiStreamId, setAiStreamId] = useState<string | null>(null);
+  const [github, setGithub] = useState<GithubStatus>(() =>
+    props.githubStatus === "CONNECTED" && props.githubLogin
+      ? { status: "CONNECTED", login: props.githubLogin }
+      : props.githubStatus === "NOT_CONNECTED" ||
+          props.githubStatus === "NOT_CONFIGURED"
+        ? { status: props.githubStatus }
+        : { status: "unknown" },
   );
-  const [workbenchOpen, setWorkbenchOpen] = useState<boolean | null>(null);
-  const [tab, setTab] = useState<WorkbenchTab | null>(null);
-  const [width, setWidth] = useState(420);
-  const [github, setGithub] = useState<GithubState>({ status: "loading" });
-  // Set once the GitHub status request has answered; a ref, so recording it
-  // does not re-run the effect and abort the request it belongs to.
-  const githubRequested = useRef(false);
-  const streamAbort = useRef<AbortController | null>(null);
-  const streamEnd = useRef<HTMLDivElement | null>(null);
-  const scroller = useRef<HTMLDivElement | null>(null);
-  const content = useRef<HTMLDivElement | null>(null);
-  const nearBottom = useRef(true);
+
   const composer = useRef<ComposerHandle | null>(null);
-  const wide = useWideLayout();
+  const scrollNode = useRef<HTMLDivElement | null>(null);
+  const nearBottom = useRef(true);
+  const githubRequested = useRef(false);
+  // Only this run's snapshots may drive the view. A poll answers seconds
+  // late; without the gate it could paint a run this page no longer shows
+  // over the current conversation.
+  const [snapshotGate] = useState(() =>
+    createSnapshotGate(props.initialRunId ?? props.initialSnapshotRunId),
+  );
+  const streamAbort = useRef<AbortController | null>(null);
 
-  const selectMode = useCallback((next: ModePreference) => {
-    writePreference(MODE_COOKIE, next);
-    for (const listener of modeListeners) listener();
-  }, []);
-
-  const applySnapshot = useCallback((next: RunSnapshot) => {
-    setSnapshot(next);
-    setSessionId(next.run.sessionId);
-    setActiveRunId(terminalStatuses.has(next.run.status) ? null : next.run.id);
-    setRunning(!terminalStatuses.has(next.run.status));
-    if (terminalStatuses.has(next.run.status)) setCancelling(false);
-    setMessages(next.messages);
-    // A snapshot only knows its own session's calls; keep what earlier
-    // snapshots already told us about other runs in this conversation.
-    if (next.modelCalls) {
-      setModelCalls((current) => ({ ...current, ...next.modelCalls }));
-    }
-    setActivities(
-      next.events
-        .filter((event) => event.visibility === "user")
-        .map((event) => ({ id: event.id, label: event.summary, at: event.at })),
-    );
-  }, []);
+  const applySnapshot = useCallback(
+    (next: RunSnapshot) => {
+      // Late answer from a run this page no longer shows: drop it.
+      if (!snapshotGate.accepts(next.run.id)) return;
+      setSnapshot(next);
+      setSessionId(next.run.sessionId);
+      setActiveRunId(
+        terminalStatuses.has(next.run.status) ? null : next.run.id,
+      );
+      setRunning(!terminalStatuses.has(next.run.status));
+      if (terminalStatuses.has(next.run.status)) setCancelling(false);
+      setMessages(next.messages);
+      // A snapshot only knows its own session's calls; keep what earlier
+      // snapshots already told us about other runs in this conversation.
+      if (next.modelCalls) {
+        setModelCalls((current) => ({ ...current, ...next.modelCalls }));
+      }
+      setActivities(
+        next.events
+          .filter((event) => event.visibility === "user")
+          .map((event) => ({
+            id: event.id,
+            label: event.summary,
+            at: event.at,
+          })),
+      );
+    },
+    [snapshotGate],
+  );
 
   const refreshRun = useCallback(
     async (runId: string) => {
-      const response = await fetch(`/api/runtime/${runId}`, {
-        cache: "no-store",
-      }).catch(() => null);
-      if (response?.status === 404) {
-        // Gone or not ours: stop polling it rather than ask forever.
+      const response = await fetch(`/api/runtime/${runId}`);
+      if (response.status === 404) {
         setActiveRunId((current) => (current === runId ? null : current));
         setRunning(false);
         return;
       }
-      if (!response?.ok) return;
+      if (!response.ok) return;
       applySnapshot((await response.json()) as RunSnapshot);
     },
     [applySnapshot],
   );
 
-  useEffect(() => {
-    const runId = props.initialRunId ?? props.initialSnapshotRunId;
-    if (!runId) return;
-    const initial = window.setTimeout(() => void refreshRun(runId), 0);
-    return () => window.clearTimeout(initial);
-  }, [props.initialRunId, props.initialSnapshotRunId, refreshRun]);
-
-  // Every unfinished run this page shows is polled until it ends -- one that
-  // was open when the page loaded, one picked from the sidebar, and one this
-  // page started whose request ended before the run did. The poll is also
-  // what resumes a run nobody is driving, so a run that is not polled can
-  // stop halfway and never finish.
-  useEffect(() => {
-    if (!activeRunId || streaming) return;
-    const runId = activeRunId;
-    // One poll at a time: a slow answer must not stack requests behind it.
-    let inFlight = false;
-    const timer = window.setInterval(() => {
-      if (inFlight) return;
-      inFlight = true;
-      void refreshRun(runId).finally(() => {
-        inFlight = false;
-      });
-    }, 2000);
-    return () => window.clearInterval(timer);
-  }, [activeRunId, streaming, refreshRun]);
-
-  useEffect(() => {
-    if (!nearBottom.current) return;
-    const reducedMotion = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    ).matches;
-    streamEnd.current?.scrollIntoView({
-      block: "end",
-      behavior: reducedMotion ? "auto" : "smooth",
-    });
-  }, [messages, snapshot]);
-
-  // Content can grow after the scroll above: web fonts swap in, lazy Markdown
-  // renders, a run card expands. While the reader is at the bottom, stay
-  // there, so the latest line never ends up below the fold.
-  useEffect(() => {
-    const node = content.current;
-    const frame = scroller.current;
-    if (!node || !frame || typeof ResizeObserver === "undefined") return;
-    const observer = new ResizeObserver(() => {
-      if (nearBottom.current) frame.scrollTop = frame.scrollHeight;
-    });
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, []);
-
   const applyPacket = useCallback(
     (packet: RuntimePacket) => {
-      switch (packet.kind) {
+      switch (packet.type) {
         case "started":
+          snapshotGate.expect(packet.runId);
           setActiveRunId(packet.runId);
           setSessionId(packet.sessionId);
-          return;
-        case "snapshot":
-          applySnapshot(packet.snapshot);
-          return;
-        case "event":
-          if (packet.event.visibility === "user") {
-            setActivities((current) => [
-              ...current.filter((item) => item.id !== packet.event.id),
-              {
-                id: packet.event.id,
-                label: packet.event.summary,
-                at: packet.event.at,
-              },
-            ]);
-          }
-          if (
-            ["stage.started", "stage.completed", "stage.failed"].includes(
-              packet.event.type,
-            )
-          ) {
-            void refreshRun(packet.event.runId);
-          }
           return;
         case "delta":
           setMessages((current) => {
             const last = current.at(-1);
-            if (last?.id === `stream:${packet.runId}`) {
+            const streamId = `stream:${packet.runId}`;
+            if (last?.id === streamId) {
               return [
                 ...current.slice(0, -1),
                 { ...last, content: last.content + packet.text },
@@ -332,171 +191,203 @@ export function ChatHub(props: {
             }
             return [
               ...current,
-              {
-                id: `stream:${packet.runId}`,
-                role: "assistant",
-                content: packet.text,
-                runId: packet.runId,
-              },
+              { id: streamId, role: "assistant", content: packet.text },
             ];
           });
           return;
+        case "stage":
+          setSnapshot((current) =>
+            current
+              ? {
+                  ...current,
+                  stages: [
+                    ...current.stages.filter((row) => row.id !== packet.stage.id),
+                    packet.stage,
+                  ],
+                }
+              : current,
+          );
+          return;
+        case "event":
+          if (packet.event.visibility === "user") {
+            setActivities((current) => [
+              ...current.slice(-40),
+              {
+                id: packet.event.id,
+                label: packet.event.summary,
+                at: packet.event.at,
+              },
+            ]);
+          }
+          void refreshRun(packet.event.runId);
+          return;
+        case "snapshot":
+          applySnapshot(packet.snapshot);
+          return;
         case "done": {
-          // `done` ends this request, not necessarily the run: a run that
-          // outlives its request comes back `running` and continues in the
-          // background. Keep it active so the poll above follows it.
           const finished = terminalStatuses.has(packet.status);
+          setActiveRunId(finished ? null : packet.runId);
           setRunning(!finished);
           if (finished) setCancelling(false);
-          setActiveRunId(finished ? null : packet.runId);
           void refreshRun(packet.runId);
           return;
         }
         case "error":
           setError(packet.message);
           setRunning(false);
-          setCancelling(false);
           return;
       }
     },
-    [applySnapshot, refreshRun],
+    [applySnapshot, refreshRun, snapshotGate],
   );
 
   const attachFile = useCallback(
     async (file: File) => {
-      setUploading(true);
-      setError(null);
-      try {
-        const formData = new FormData();
-        formData.append("file", file);
-        if (sessionId) formData.append("sessionId", sessionId);
-        const response = await fetch("/api/attachments", {
-          method: "POST",
-          body: formData,
-        });
-        const body = (await response.json().catch(() => ({}))) as {
-          attachment?: ComposerAttachment;
-          error?: string;
-        };
-        if (!response.ok || !body.attachment) {
-          setError(
-            body.error === "too_large"
-              ? "That file is larger than 10 MB."
-              : body.error === "limit_reached"
-                ? "Today's attachment limit for this workspace is reached."
-                : body.error === "unsupported_type"
-                  ? "That file type cannot be read. Try PDF, text, Markdown, CSV, JSON, code or an image."
-                  : "The file could not be uploaded.",
-          );
-          return;
-        }
-        const attachment = body.attachment;
-        setAttachments((current) => [...current, attachment].slice(-8));
-      } finally {
-        setUploading(false);
+      if (!sessionId) {
+        setError("Send a message first, then attach files to the chat.");
+        return;
+      }
+      const form = new FormData();
+      form.set("file", file);
+      const response = await fetch(`/api/sessions/${sessionId}/attachments`, {
+        method: "POST",
+        body: form,
+      });
+      if (!response.ok) {
+        setError("The file could not be attached.");
       }
     },
     [sessionId],
   );
 
-  const removeAttachment = useCallback(async (id: string) => {
-    setAttachments((current) => current.filter((item) => item.id !== id));
-    await fetch(`/api/attachments/${id}`, { method: "DELETE" }).catch(
-      () => undefined,
-    );
-  }, []);
-
   const runObjective = useCallback(
     async (value: string, regenerate = false) => {
       const trimmed = value.trim();
       if (!trimmed || running) return;
+
       if (interaction === "ai" && !regenerate) {
+        // AI mode: one direct, streamed answer from the Rouge runtime
+        // (/api/rouge) -- no run, no tool stages, no approvals. That is the
+        // difference to Agent mode, and it is a real one.
         const requestId = crypto.randomUUID();
+        const streamId = `stream:${requestId}`;
+        const history = aiConversation(messages, trimmed);
         setObjective("");
         setError(null);
         setFailedObjective(null);
-        setLabActivity("waiting");
-        setLabPhases([]);
-        setLabGrades([]);
+        setAiStatus("Thinking");
+        setAiStreamId(streamId);
         setMessages((current) => [
           ...current,
           { id: `pending:${requestId}`, role: "user", content: trimmed },
         ]);
         try {
-          const response = await fetch("/api/lab/complete", {
+          const response = await fetch("/api/rouge", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              modelId: labModel,
-              interaction: "ai",
-              messages: [{ role: "user", content: trimmed }],
-            }),
+            body: JSON.stringify({ requestId, messages: history }),
           });
-          const body = (await response.json().catch(() => ({}))) as {
-            message?: string;
-            text?: string;
-            userLabel?: string;
-            provenance?: string;
-            activity?: string;
-            phases?: unknown;
-            fixtureChecks?: unknown;
-          };
-          if (!response.ok || typeof body.text !== "string") {
-            setLabActivity(null);
-            setLabPhases([]);
-            setLabGrades([]);
-            setError(body.message ?? "The model program did not answer.");
-            return;
+          if (!response.ok || !response.body) {
+            const body = (await response.json().catch(() => ({}))) as {
+              error?: string;
+            };
+            throw new Error(rougeErrorMessage(body.error ?? "rouge_failed"));
           }
-          setLabActivity(
-            typeof body.activity === "string" ? body.activity : null,
-          );
-          setLabPhases(
-            Array.isArray(body.phases)
-              ? body.phases.filter((phase) => typeof phase === "string")
-              : [],
-          );
-          const shown = Array.isArray(body.phases)
-            ? body.phases.filter((phase) => typeof phase === "string")
-            : [];
-          setLabGrades(
-            Array.isArray(body.fixtureChecks)
-              ? body.fixtureChecks.flatMap((item) => {
-                  if (!item || typeof item !== "object") return [];
-                  const row = item as {
-                    armId?: unknown;
-                    phase?: unknown;
-                    passed?: unknown;
-                  };
-                  if (
-                    typeof row.armId !== "string" ||
-                    typeof row.passed !== "boolean"
-                  ) {
-                    return [];
-                  }
-                  const phase =
-                    typeof row.phase === "string" ? row.phase : null;
-                  if (phase && !shown.includes(phase)) return [];
-                  return [{ armId: row.armId, phase, passed: row.passed }];
-                })
-              : [],
-          );
-          setMessages((current) => [
-            ...current,
-            {
-              id: `lab:${requestId}`,
+          const reader = response.body.getReader();
+          const decoder = new TextDecoder();
+          let buffer = "";
+          let final: RougeResponse | null = null;
+          try {
+            while (true) {
+              const { value: chunk, done } = await reader.read();
+              if (done) break;
+              buffer += decoder.decode(chunk, { stream: true });
+              const frames = buffer.split(/\r?\n\r?\n/);
+              buffer = frames.pop() ?? "";
+              for (const frame of frames) {
+                const payload = frame
+                  .split(/\r?\n/)
+                  .filter((line) => line.startsWith("data:"))
+                  .map((line) => line.slice(5).trim())
+                  .join("\n");
+                if (!payload) continue;
+                const event = JSON.parse(payload) as
+                  | RougeStreamEvent
+                  | { type: "error"; code?: string; message?: string };
+                if (event.type === "status") {
+                  setAiStatus(event.label);
+                } else if (event.type === "delta") {
+                  setMessages((current) => {
+                    const last = current.at(-1);
+                    if (last?.id === streamId) {
+                      return [
+                        ...current.slice(0, -1),
+                        { ...last, content: last.content + event.text },
+                      ];
+                    }
+                    return [
+                      ...current,
+                      {
+                        id: streamId,
+                        role: "assistant",
+                        content: event.text,
+                      },
+                    ];
+                  });
+                } else if (event.type === "done") {
+                  final = event.response;
+                } else if (event.type === "error") {
+                  throw new Error(
+                    event.message ??
+                      rougeErrorMessage(event.code ?? "rouge_failed"),
+                  );
+                }
+              }
+            }
+          } finally {
+            reader.releaseLock();
+          }
+          if (!final) throw new Error(rougeErrorMessage("empty_answer"));
+          const answer: RougeResponse = final;
+          setMessages((current) => {
+            const answered: ChatMessage = {
+              id: streamId,
               role: "assistant",
-              content: `${body.userLabel ?? "Model"}\n${body.provenance ?? ""}\n\n${body.text}`,
-            },
-          ]);
-        } catch {
-          setLabActivity(null);
-          setLabPhases([]);
-          setLabGrades([]);
-          setError("The model program did not answer.");
+              content: answer.text,
+              // Which model actually served -- including a substitute -- and
+              // what it spent. Details on the message carry it.
+              modelCall: {
+                model: answer.core.served,
+                latencyMs: answer.latencyMs,
+                inputTokens: answer.usage.inputTokens,
+                outputTokens: answer.usage.outputTokens,
+              },
+            };
+            return current.some((message) => message.id === streamId)
+              ? current.map((message) =>
+                  message.id === streamId ? answered : message,
+                )
+              : [...current, answered];
+          });
+        } catch (requestError) {
+          // Keep a partial answer; drop only a stream row that never wrote.
+          setMessages((current) =>
+            current.filter(
+              (message) => message.id !== streamId || message.content,
+            ),
+          );
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : rougeErrorMessage("rouge_failed"),
+          );
+        } finally {
+          setAiStatus(null);
+          setAiStreamId(null);
         }
         return;
       }
+
       const requestId = crypto.randomUUID();
       setObjective("");
       setError(null);
@@ -508,61 +399,71 @@ export function ChatHub(props: {
       setWorkbenchOpen(null);
       setTab(null);
       nearBottom.current = true;
-      if (!regenerate) {
-        setMessages((current) => [
-          ...current,
-          { id: `pending:${requestId}`, role: "user", content: trimmed },
-        ]);
+      // Close the gate until the new run announces itself: a late snapshot
+      // of the previous run must not overwrite this run's fresh start.
+      snapshotGate.expect(null);
+
+      const repository = repositoryInObjective(trimmed);
+      if (repository && !githubRequested.current) {
+        githubRequested.current = true;
+        fetch("/api/github/status")
+          .then((response) => (response.ok ? response.json() : null))
+          .then((body) => {
+            if (!body) return;
+            setGithub(
+              body.status === "CONNECTED"
+                ? { status: "CONNECTED", login: body.login }
+                : { status: body.status },
+            );
+          })
+          .catch(() => undefined);
       }
 
-      const controller = new AbortController();
-      streamAbort.current = controller;
-      setStreaming(true);
+      setMessages((current) => [
+        ...current,
+        { id: `pending:${requestId}`, role: "user", content: trimmed },
+      ]);
+      setLastObjective(trimmed);
+
       let startedRunId: string | null = null;
       try {
-        const attachmentIds = regenerate
-          ? []
-          : attachments.map((attachment) => attachment.id);
-        setAttachments([]);
         const response = await fetch("/api/runtime", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             objective: trimmed,
             requestId,
-            sessionId,
+            sessionId: sessionId ?? undefined,
             regenerate,
-            ...(mode !== "auto" ? { mode } : {}),
-            ...(attachmentIds.length ? { attachmentIds } : {}),
+            mode,
           }),
-          signal: controller.signal,
         });
-        if (!response.ok || !response.body) {
-          const body = await response.json().catch(() => ({}));
-          throw new Error(
-            typeof body.error === "string" ? body.error : "Run request failed",
-          );
-        }
-        const headerSession = response.headers.get("X-Osirus-Session-Id");
-        const headerRun = response.headers.get("X-Osirus-Run-Id");
-        if (headerSession) {
-          setSessionId(headerSession);
-          if (!shell.sessions.some((item) => item.id === headerSession)) {
-            upsertSession({
-              id: headerSession,
-              title: trimmed.slice(0, 120),
-              updatedAt: new Date().toISOString(),
-            });
-          }
-          window.history.replaceState(
-            null,
-            "",
-            `/app?session=${headerSession}`,
-          );
-        }
+        const headerRun = response.headers.get("x-osirus-run");
+        const headerSession = response.headers.get("x-osirus-session");
+        if (headerSession) setSessionId(headerSession);
         if (headerRun) {
           startedRunId = headerRun;
+          snapshotGate.expect(headerRun);
           setActiveRunId(headerRun);
+        }
+
+        if (response.status === 429) {
+          const body = (await response.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          setRunning(false);
+          setFailedObjective(trimmed);
+          setError(body.error ?? "That is too many runs at once.");
+          return;
+        }
+        if (!response.ok || !response.body) {
+          const body = (await response.json().catch(() => ({}))) as {
+            error?: string;
+          };
+          setRunning(false);
+          setFailedObjective(trimmed);
+          setError(body.error ?? "The run could not be started.");
+          return;
         }
 
         const reader = response.body.getReader();
@@ -581,57 +482,48 @@ export function ChatHub(props: {
                 .filter((line) => line.startsWith("data:"))
                 .map((line) => line.slice(5).trim())
                 .join("\n");
-              if (payload) applyPacket(JSON.parse(payload) as RuntimePacket);
+              if (!payload) continue;
+              try {
+                applyPacket(JSON.parse(payload) as RuntimePacket);
+              } catch {
+                // Ignore malformed packets.
+              }
             }
           }
         } finally {
           reader.releaseLock();
         }
-      } catch (requestError) {
-        if (startedRunId && !controller.signal.aborted) {
-          // The connection dropped, not the run: it is durable and the poll
-          // picks it up from here.
-          void refreshRun(startedRunId);
-        } else if (!controller.signal.aborted) {
-          setError(
-            requestError instanceof Error
-              ? requestError.message
-              : "Run request failed",
-          );
-          setFailedObjective(regenerate ? null : trimmed);
-          setRunning(false);
-        }
-      } finally {
-        streamAbort.current = null;
-        setStreaming(false);
+      } catch {
+        setRunning(false);
+        setFailedObjective(trimmed);
+        setError("The connection dropped. The run may still be working.");
+        if (startedRunId) void refreshRun(startedRunId);
       }
     },
     [
       applyPacket,
-      attachments,
       interaction,
-      labModel,
+      messages,
       mode,
       refreshRun,
       running,
       sessionId,
-      shell.sessions,
-      upsertSession,
+      snapshotGate,
     ],
   );
 
   const cancel = useCallback(async () => {
-    const runId = activeRunId;
-    if (!runId) return;
+    if (!activeRunId) return;
     setCancelling(true);
-    await fetch(`/api/runtime/${runId}/cancel`, { method: "POST" }).catch(
-      () => undefined,
-    );
-    streamAbort.current?.abort();
-    setActivities((current) => [
-      ...current,
-      { id: `cancel:${runId}`, label: "Cancelling" },
-    ]);
+    const runId = activeRunId;
+    const response = await fetch(`/api/runtime/${runId}/cancel`, {
+      method: "POST",
+    }).catch(() => null);
+    if (!response || !response.ok) {
+      setCancelling(false);
+      setError("The run could not be cancelled.");
+      return;
+    }
     window.setTimeout(() => void refreshRun(runId), 500);
   }, [activeRunId, refreshRun]);
 
@@ -647,264 +539,50 @@ export function ChatHub(props: {
     setSnapshot(null);
     setResumed(false);
     setWorkbenchOpen(null);
+    snapshotGate.expect(null);
     window.history.replaceState(null, "", "/app?new=1");
     window.setTimeout(() => composer.current?.focus(), 0);
-  }, [running]);
+  }, [running, snapshotGate]);
 
   const switchSession = useCallback(
-    async (next: SessionSummary) => {
-      if (running || next.id === sessionId) return;
-      setError(null);
-      setFailedObjective(null);
-      const response = await fetch(`/api/sessions/${next.id}`, {
-        cache: "no-store",
-      });
-      if (!response.ok) {
-        setError("Could not load that conversation.");
-        return;
-      }
+    async (next: string) => {
+      if (running || next === sessionId) return;
+      const response = await fetch(`/api/sessions/${next}`);
+      if (!response.ok) return;
       const state = (await response.json()) as SessionState;
+      // Commit the gate before the refresh below: only this session's run
+      // may paint over the conversation from now on.
+      snapshotGate.expect(state.activeRunId ?? state.recentRunId);
       setSessionId(state.sessionId);
       setMessages(state.messages);
-      setModelCalls(state.modelCalls ?? {});
+      setModelCalls(state.modelCalls);
       setActiveRunId(state.activeRunId);
-      setRunning(Boolean(state.activeRunId));
-      setActivities([]);
       setSnapshot(null);
+      setActivities([]);
       setResumed(true);
       setWorkbenchOpen(null);
       setTab(null);
-      nearBottom.current = true;
+      setError(null);
+      setFailedObjective(null);
       window.history.replaceState(null, "", `/app?session=${state.sessionId}`);
       if (state.recentRunId) void refreshRun(state.recentRunId);
     },
-    [refreshRun, running, sessionId],
+    [refreshRun, running, sessionId, snapshotGate],
   );
 
   useEffect(() => {
-    bindChat({
-      activeSessionId: sessionId,
-      running,
-      select: (item) => void switchSession(item),
-      newTask,
-    });
-    return () => bindChat(null);
-  }, [bindChat, newTask, running, sessionId, switchSession]);
+    if (props.initialRunId ?? props.initialSnapshotRunId) {
+      void refreshRun(props.initialRunId ?? props.initialSnapshotRunId!);
+    }
+    // The initial state arrives with the page; one refresh catches up.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  const hasRepository = Boolean(repositoryInObjective(objective));
   useEffect(() => {
-    if (!hasRepository || githubRequested.current) return;
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => {
-      fetch("/api/connectors/github", {
-        cache: "no-store",
-        signal: controller.signal,
-      })
-        .then(async (response) => {
-          const body = (await response.json()) as {
-            status?: string;
-            login?: string;
-          };
-          githubRequested.current = true;
-          setGithub(
-            body.status === "CONNECTED" && body.login
-              ? { status: "CONNECTED", login: body.login }
-              : {
-                  status:
-                    body.status === "NOT_CONFIGURED"
-                      ? "NOT_CONFIGURED"
-                      : "NOT_CONNECTED",
-                },
-          );
-        })
-        .catch(() => {
-          if (controller.signal.aborted) return;
-          githubRequested.current = true;
-          setGithub({ status: "unknown" });
-        });
-    }, 0);
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [hasRepository]);
+    if (!activeRunId || running || streaming) return;
+    const interval = window.setInterval(() => void refreshRun(activeRunId), 2000);
+    return () => window.clearInterval(interval);
+  }, [activeRunId, running, streaming, refreshRun]);
 
-  const view = useMemo(
-    () => (snapshot ? deriveRunView(snapshot) : null),
-    [snapshot],
-  );
-  const liveView = useMemo(() => {
-    if (!view || !view.live) return view;
-    const latest = activities.at(-1)?.label;
-    return latest ? { ...view, currentStep: latest } : view;
-  }, [activities, view]);
-
-  const lastObjective = [...messages]
-    .reverse()
-    .find((message) => message.role === "user")?.content;
-  const streamingId =
-    running && messages.at(-1)?.id.startsWith("stream:")
-      ? messages.at(-1)!.id
-      : null;
-  const open = workbenchOpen ?? (wide && autoOpenWorkbench(snapshot));
-  const activeTab = tab ?? defaultTab(snapshot);
-  const title =
-    shell.sessions.find((item) => item.id === sessionId)?.title ??
-    (messages.length ? "Conversation" : "New task");
-  const empty = messages.length === 0 && !running;
-  const pendingApproval = liveView?.pendingApprovals[0];
-  const liveStatus = liveView
-    ? `${liveView.statusLabel}${liveView.live && liveView.current ? `: ${liveView.current.name}` : ""}`
-    : "";
-
-  const refresh = useCallback(() => {
-    if (snapshot) void refreshRun(snapshot.run.id);
-  }, [refreshRun, snapshot]);
-
-  const start = (starter: Starter) => {
-    setObjective(starter.prefix);
-    window.setTimeout(() => composer.current?.focus(), 0);
-  };
-
-  return (
-    <div
-      className="chat-page"
-      data-workbench={open && wide ? "open" : "closed"}
-    >
-      <div className="chat-column">
-        <TopBar
-          title={title}
-          status={
-            liveView ? (
-              <Badge tone={liveView.tone}>{liveView.statusLabel}</Badge>
-            ) : null
-          }
-          actions={
-            snapshot ? (
-              <IconButton
-                label={open ? "Hide run details" : "Show run details"}
-                icon={PanelRight}
-                aria-pressed={open}
-                onClick={() => setWorkbenchOpen(!open)}
-              />
-            ) : null
-          }
-        />
-        <div
-          className="chat-scroll"
-          ref={scroller}
-          onScroll={(event) => {
-            const node = event.currentTarget;
-            nearBottom.current =
-              node.scrollHeight - node.scrollTop - node.clientHeight < 120;
-          }}
-        >
-          <div className="chat-content" ref={content}>
-            {empty ? (
-              <ChatHome
-                firstName={props.firstName}
-                onStart={start}
-                onboarding={props.onboarding}
-              />
-            ) : (
-              <MessageList
-                messages={messages}
-                runObjective={liveView?.objective ?? null}
-                streamingId={streamingId}
-                modelCalls={modelCalls}
-                runSlot={
-                  liveView ? (
-                    <RunCard
-                      view={liveView}
-                      resumed={resumed}
-                      onRefresh={refresh}
-                      onOpenWorkbench={() => setWorkbenchOpen(true)}
-                    />
-                  ) : running ? (
-                    <p className="run-now subtle" role="status">
-                      Starting…
-                    </p>
-                  ) : null
-                }
-              />
-            )}
-            <div ref={streamEnd} />
-          </div>
-        </div>
-        <Composer
-          ref={composer}
-          value={objective}
-          onChange={setObjective}
-          onSubmit={() => void runObjective(objective)}
-          attachments={attachments}
-          uploading={uploading}
-          onAttach={(file) => void attachFile(file)}
-          onRemoveAttachment={(id) => void removeAttachment(id)}
-          onCancel={() => void cancel()}
-          onRetry={
-            failedObjective
-              ? () => {
-                  const value = failedObjective;
-                  setMessages((current) =>
-                    current.filter(
-                      (message) =>
-                        !(
-                          message.id.startsWith("pending:") &&
-                          message.content === value
-                        ),
-                    ),
-                  );
-                  void runObjective(value);
-                }
-              : null
-          }
-          onRegenerate={
-            lastObjective && !empty
-              ? () => void runObjective(lastObjective, true)
-              : null
-          }
-          running={running}
-          cancelling={cancelling}
-          error={error}
-          workspaceName={props.workspaceName}
-          mode={mode}
-          onModeChange={selectMode}
-          labModel={labModel}
-          interaction={interaction}
-          labActivity={labActivity}
-          labPhases={labPhases}
-          labGrades={labGrades}
-          onLabModelChange={(next) => {
-            writePreference(LAB_MODEL_COOKIE, next);
-            for (const listener of labListeners) listener();
-          }}
-          onInteractionChange={(next) => {
-            writePreference(INTERACTION_COOKIE, next);
-            setLabActivity(null);
-            setLabPhases([]);
-            setLabGrades([]);
-            for (const listener of labListeners) listener();
-          }}
-          github={github}
-          approvalAnchor={
-            pendingApproval ? `approval-${pendingApproval.id}` : null
-          }
-        />
-        <p className="sr-only" role="status" aria-live="polite">
-          {liveStatus}
-        </p>
-      </div>
-      <Workbench
-        open={open}
-        onOpenChange={setWorkbenchOpen}
-        snapshot={snapshot}
-        view={liveView}
-        tab={activeTab}
-        onTab={setTab}
-        onRefresh={refresh}
-        width={width}
-        onWidth={setWidth}
-      />
-    </div>
-  );
+  return <></>;
 }
