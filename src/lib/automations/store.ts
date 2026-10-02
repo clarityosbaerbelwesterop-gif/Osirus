@@ -5,7 +5,11 @@ import { queryAs, querySystem } from "../db/client";
 import { PRESETS } from "../policy/model";
 import { notify } from "../product/notifications";
 import { setBudget } from "../runtime/dispatch";
-import { prepareRuntimeRun, planRuntimeRun } from "../runtime/executor";
+import {
+  DEFAULT_RUN_BUDGET,
+  prepareRuntimeRun,
+  planRuntimeRun,
+} from "../runtime/executor";
 import { routeCapabilities } from "../runtime/router";
 import {
   describeSchedule,
@@ -252,13 +256,17 @@ export async function startAutomationRun(
       objective,
     });
     if (row.max_cost_usd !== null || row.max_tokens !== null)
+      // setBudget is a whole-row upsert, so the automation's ceilings are
+      // written over the run defaults -- never instead of them. Without the
+      // spread, an automation that sets only one of cost/tokens would clear
+      // max_model_calls, max_tool_calls and max_attempts to null (unbounded).
       await setBudget({
         runId: prepared.runId,
         scope: "run",
+        ...DEFAULT_RUN_BUDGET,
         maxCostUsd: row.max_cost_usd === null ? null : Number(row.max_cost_usd),
         maxInputTokens: row.max_tokens,
         maxOutputTokens: row.max_tokens,
-        maxWallClockMs: 30 * 60 * 1000,
       });
   }
   const schedule =
