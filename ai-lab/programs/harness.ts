@@ -7,7 +7,7 @@ import {
 } from "./architecture";
 import { forbidsTrainedClaim, gradeArm, staticSecurityScan } from "./behavior";
 import { domainOf, uncoveredDomains } from "./domains";
-import { gradeRsiSample } from "./rsi";
+import { gradeRsiSample, reviewProgramFixture } from "./rsi";
 import type { ModelId, ModelProgram } from "./types";
 
 /**
@@ -109,6 +109,14 @@ export function runCpuFixture(program: ModelProgram): readonly HarnessRow[] {
       ),
     );
   }
+  const scoped = reviewProgramFixture({
+    arch: program.architecture.fixture,
+    seed: program.training.seed,
+  });
+  const rsiArm = program.arms.find((arm) => arm.id.endsWith("_RSI"));
+  rows.push(
+    row(program, "rsi", scoped.passed, scoped.detail, rsiArm?.id ?? null),
+  );
   const production = gradeRsiSample({ input: "production", target: "threw" });
   rows.push(row(program, "rsi", production.passed, production.detail, null));
   let promotionThrew = false;
