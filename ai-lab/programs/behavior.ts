@@ -1,4 +1,4 @@
-import { gradeDomain, type DomainGrader } from "./domains";
+import { evalIntegerExpr, gradeDomain, type DomainGrader } from "./domains";
 import type { ArmGrader } from "./types";
 
 /** Behavior is enforced in graders and inference policy, not only a prompt. */
@@ -31,6 +31,31 @@ export function applyLiteralPatch(
 ): string {
   if (!source.includes(from)) throw new Error("patch context was not found");
   return source.replace(from, to);
+}
+
+/** Runs each assert:expr=value clause. Unmet and malformed are recorded only after the run. */
+export function runAssertionFixture(script: string): {
+  readonly ran: true;
+  readonly detail: "met" | "unmet" | "malformed";
+} {
+  const parts = script
+    .split(";")
+    .map((part) => part.trim())
+    .filter((part) => part.length > 0);
+  if (parts.length === 0 || parts.some((part) => !part.startsWith("assert:"))) {
+    return { ran: true, detail: "malformed" };
+  }
+  for (const part of parts) {
+    const body = part.slice("assert:".length);
+    const eq = body.lastIndexOf("=");
+    if (eq <= 0) return { ran: true, detail: "malformed" };
+    const result = evalIntegerExpr(body.slice(0, eq));
+    const expected = body.slice(eq + 1).trim();
+    if (!result.ok || String(result.value) !== expected) {
+      return { ran: true, detail: "unmet" };
+    }
+  }
+  return { ran: true, detail: "met" };
 }
 
 export function runArithmeticFixture(): { passed: number; failed: number } {
@@ -89,6 +114,8 @@ const DOMAIN_GRADERS = new Set<DomainGrader>([
   "world",
   "multimodal",
   "repository",
+  "graph",
+  "strategy",
 ]);
 
 export function gradeArm(
@@ -128,6 +155,19 @@ export function gradeArm(
     }
   }
   if (grader === "unit") {
+    if (sample.input.includes("assert:")) {
+      const result = runAssertionFixture(sample.input);
+      const verdict =
+        result.detail === "met"
+          ? "pass"
+          : result.detail === "unmet"
+            ? "fail"
+            : "malformed";
+      return {
+        passed: result.ran === true && verdict === sample.target,
+        detail: `${verdict} after run`,
+      };
+    }
     const result = runArithmeticFixture();
     const passed =
       result.failed === 0 && String(result.passed) === sample.target;

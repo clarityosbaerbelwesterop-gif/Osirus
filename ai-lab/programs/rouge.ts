@@ -171,9 +171,16 @@ export const rougeProgram: ModelProgram = {
     ),
     arm(
       "ROUGE_SCIENCE",
-      "A formula fixture counts atoms. It is not a paper result.",
+      "A formula fixture counts atoms or checks a reaction. It is not a paper result.",
       "formula",
       { input: "H2O", target: "H:2,O:1" },
+      [
+        { input: "NaCl", target: "Na:1,Cl:1" },
+        { input: "Fe2O3", target: "Fe:2,O:3" },
+        { input: "2H2+O2->2H2O", target: "balanced" },
+        { input: "H2+O2->H2O", target: "unbalanced" },
+        { input: "H2O!", target: "unparsed" },
+      ],
     ),
     arm(
       "ROUGE_CODING",
@@ -183,36 +190,68 @@ export const rougeProgram: ModelProgram = {
     ),
     arm(
       "ROUGE_RESEARCH",
-      "Research checks a citation id and title. It does not fetch a page.",
+      "A research claim without a citation id fails. The fixture does not fetch a page.",
       "citation",
       { input: "id=fixture;title=notes", target: "fixture" },
+      [
+        { input: "claim=water is wet", target: "missing-id" },
+        {
+          input: "claim=notes hold;id=fixture;title=notes",
+          target: "fixture",
+        },
+      ],
     ),
     arm(
       "ROUGE_LONG_CONTEXT",
       "The CPU fixture refuses a sequence past its context. The planned window is not measured.",
       "context-bound",
       { input: "9", target: "exceeds" },
-      [{ input: "4", target: "fits" }],
+      [
+        { input: "4", target: "fits" },
+        { input: "8", target: "fits" },
+        { input: "0", target: "refused" },
+        { input: "8.5", target: "refused" },
+      ],
     ),
     arm(
       "ROUGE_MEMORY",
       "Memory here is an in-process map for the fixture, not the product memory store.",
       "memory",
       { input: "set:k=v;get:k", target: "v" },
-      [{ input: "set:a=1;get:b", target: "missing" }],
+      [
+        { input: "set:a=1;get:b", target: "missing" },
+        { input: "set:k=v;set:k=w;get:k", target: "w" },
+      ],
     ),
     arm(
       "ROUGE_VERIFICATION",
       "Verification compares two sides. It does not award a self-score.",
       "independent",
       { input: "left=judge;right=judge", target: "same" },
-      [{ input: "left=judge;right=other", target: "different" }],
+      [
+        { input: "left=judge;right=other", target: "different" },
+        { input: "expr=(2+3)*4;expect=20", target: "match" },
+        {
+          input: "claimed=21;expr=(2+3)*4;expect=20",
+          target: "mismatch",
+        },
+      ],
     ),
     arm(
       "ROUGE_PLANNING",
-      "Planning records steps and executes none of them.",
+      "Planning records steps and executes none. A plan that skips a required step fails.",
       "plan",
       { input: "one. two.", target: "2" },
+      [
+        {
+          input: "need:gather,compare;steps:gather. compare.",
+          target: "complete",
+        },
+        {
+          input: "need:gather,compare;steps:gather.",
+          target: "skipped:compare",
+        },
+      ],
     ),
     arm(
       "ROUGE_THINKING",

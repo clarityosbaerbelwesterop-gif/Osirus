@@ -176,9 +176,13 @@ export const darusProgram: ModelProgram = {
     ),
     arm(
       "DARUS_SCIENCE",
-      "Science counts atoms in an authored formula. It is not a paper result.",
+      "Science counts atoms or checks a reaction. It is not a paper result.",
       "formula",
       { input: "C6H12O6", target: "C:6,H:12,O:6" },
+      [
+        { input: "2H2+O2->2H2O", target: "balanced" },
+        { input: "H2+O2->H2O", target: "unbalanced" },
+      ],
     ),
     arm(
       "DARUS_CODING",
@@ -188,36 +192,66 @@ export const darusProgram: ModelProgram = {
     ),
     arm(
       "DARUS_RESEARCH",
-      "Research checks a citation id. It does not browse.",
+      "A research claim without a citation id fails. The fixture does not browse.",
       "citation",
       { input: "id=darus-fixture;title=breadth", target: "darus-fixture" },
+      [
+        { input: "claim=breadth without a source", target: "missing-id" },
+        {
+          input: "claim=breadth note;id=darus-fixture;title=breadth",
+          target: "darus-fixture",
+        },
+      ],
     ),
     arm(
       "DARUS_PLANNING",
-      "Planning records steps and executes none of them.",
+      "Planning records steps and executes none. A skipped required step fails.",
       "plan",
       { input: "gather. compare. hold.", target: "3" },
+      [
+        {
+          input: "need:gather,compare;steps:gather. compare.",
+          target: "complete",
+        },
+        {
+          input: "need:gather,compare;steps:gather.",
+          target: "skipped:compare",
+        },
+      ],
     ),
     arm(
       "DARUS_LONG_CONTEXT",
       "The CPU fixture refuses a sequence past its context. The planned window is not measured.",
       "context-bound",
       { input: "9", target: "exceeds" },
-      [{ input: "8", target: "fits" }],
+      [
+        { input: "8", target: "fits" },
+        { input: "0", target: "refused" },
+      ],
     ),
     arm(
       "DARUS_MEMORY",
       "Memory here is an in-process map, not the product memory store.",
       "memory",
       { input: "set:topic=breadth;get:topic", target: "breadth" },
-      [{ input: "set:topic=breadth;get:other", target: "missing" }],
+      [
+        { input: "set:topic=breadth;get:other", target: "missing" },
+        {
+          input: "set:topic=old;set:topic=breadth;get:topic",
+          target: "breadth",
+        },
+      ],
     ),
     arm(
       "DARUS_TOOL_REASONING",
       "Tool reasoning names an allowlisted tool id. It does not call the tool.",
       "tool",
       { input: "tool:notes", target: "named" },
-      [{ input: "tool:shell", target: "refused" }],
+      [
+        { input: "tool:shell", target: "refused" },
+        { input: "call:notes", target: "refused" },
+        { input: "tool:calendar", target: "named" },
+      ],
     ),
     arm(
       "DARUS_WORLD_MODEL",
@@ -231,6 +265,7 @@ export const darusProgram: ModelProgram = {
           input: "pos=0,0;action=right;action=right",
           target: "blocked-at:2",
         },
+        { input: "pos=1,1;action=up", target: "blocked" },
       ],
     ),
     arm(
@@ -238,18 +273,27 @@ export const darusProgram: ModelProgram = {
       "The CPU fixture has no encoder. Claiming one fails the fixture.",
       "multimodal",
       { input: "no-encoder", target: "unavailable" },
+      [{ input: "encoder:image", target: "refused" }],
     ),
     arm(
       "DARUS_VERIFICATION",
       "Verification compares two sides. It does not award a self-score.",
       "independent",
       { input: "left=same;right=same", target: "same" },
+      [
+        { input: "expr=2+2*3;expect=8", target: "match" },
+        { input: "claimed=7;expr=2+2*3;expect=8", target: "mismatch" },
+      ],
     ),
     arm(
       "DARUS_STRATEGY",
-      "Strategy records steps and executes none. It is not a measured result.",
-      "plan",
-      { input: "hold. review.", target: "2" },
+      "Strategy records a choice and a rejected alternative. It executes neither.",
+      "strategy",
+      { input: "choose:hold;reject:ship", target: "hold" },
+      [
+        { input: "choose:hold", target: "missing-alternative" },
+        { input: "choose:hold;reject:hold", target: "not-alternative" },
+      ],
     ),
     arm(
       "DARUS_THINKING",
