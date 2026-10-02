@@ -20,6 +20,12 @@ export type ChatMessage = {
   createdAt?: string;
   /** The run that wrote this message, when one did. */
   runId?: string | null;
+  /**
+   * The model call behind an answer that has no run (AI mode): which model
+   * actually served it and what it spent. Shown on request, never as a
+   * caption.
+   */
+  modelCall?: ModelCallSummary;
 };
 
 /** "1234" -> "1.2k"; small counts stay exact. */
@@ -111,41 +117,52 @@ export function MessageList({
 
   return (
     <ol className="messages" aria-label="Conversation">
-      {visible.map((message, index) => (
-        <li key={message.id} className="message-item">
-          {message.role === "user" ? (
-            <div className="message message-user">
-              <h3 className="sr-only">You</h3>
-              <p className="message-user-text">{message.content}</p>
-            </div>
-          ) : (
-            <div className="message message-assistant">
-              <div className="message-author">
-                <OsirusMark size={22} />
-                <h3>Osirus</h3>
-                {message.id === streamingId ? (
-                  <span className="subtle message-streaming">Writing…</span>
+      {visible.map((message, index) => {
+        const call = message.runId
+          ? modelCalls?.[message.runId]
+          : message.modelCall;
+        return (
+          <li key={message.id} className="message-item">
+            {message.role === "user" ? (
+              <div className="message message-user">
+                <h3 className="sr-only">You</h3>
+                <p className="message-user-text">{message.content}</p>
+              </div>
+            ) : (
+              <div className="message message-assistant">
+                <div className="message-author">
+                  <OsirusMark size={22} />
+                  <h3>Osirus</h3>
+                  {message.id === streamingId ? (
+                    <span className="subtle message-streaming">Writing…</span>
+                  ) : null}
+                </div>
+                <Markdown content={message.content} />
+                {message.id !== streamingId && message.content ? (
+                  <div className="message-actions">
+                    <CopyButton text={message.content} />
+                    {call ? (
+                      // The model and its token spend stay one disclosure
+                      // away -- recorded truth, not a caption line under
+                      // every answer.
+                      <details className="message-details">
+                        <summary
+                          className="message-action"
+                          aria-label={`Answered by ${modelCaption(call)}`}
+                        >
+                          Details
+                        </summary>
+                        <p className="message-model">{modelCaption(call)}</p>
+                      </details>
+                    ) : null}
+                  </div>
                 ) : null}
               </div>
-              <Markdown content={message.content} />
-              {message.id !== streamingId && message.content ? (
-                <div className="message-actions">
-                  <CopyButton text={message.content} />
-                </div>
-              ) : null}
-              {message.runId && modelCalls?.[message.runId] ? (
-                <p
-                  className="message-model"
-                  aria-label={`Answered by ${modelCaption(modelCalls[message.runId]!)}`}
-                >
-                  {modelCaption(modelCalls[message.runId]!)}
-                </p>
-              ) : null}
-            </div>
-          )}
-          {index === anchor ? runSlot : null}
-        </li>
-      ))}
+            )}
+            {index === anchor ? runSlot : null}
+          </li>
+        );
+      })}
       {runSlot && anchor === -1 ? (
         <li className="message-item">{runSlot}</li>
       ) : null}

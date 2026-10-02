@@ -50,6 +50,10 @@ export function GitHubSignInButton() {
         <GithubMark />
         {pending ? "Redirecting to GitHub…" : "Continue with GitHub"}
       </button>
+      <p className="social-auth-note">
+        This uses the GitHub account currently signed in at github.com. To use a
+        different account, sign out of GitHub first.
+      </p>
       {error ? (
         <p aria-live="polite" className="form-error">
           {error}
