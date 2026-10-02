@@ -1,6 +1,8 @@
 import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
+import { Agent, fetch as undiciFetch } from "undici";
+import { guardedLookup, OutboundBlockedError } from "../security/outbound";
 
 // Fetching the open web, safely.
 //
@@ -10,13 +12,27 @@ import { isIP } from "node:net";
 // hop is resolved and checked before it is requested, redirects are followed
 // by hand so each target is checked too, and the response is size-capped.
 //
-// Residual risk, stated rather than hidden: DNS can change between the check
-// and the connection. The deployment has no private network to reach, which
-// bounds the damage, but the check is a guard, not a proof.
+// The DNS check runs twice by design: once when the URL is read
+// (assertPublicUrl) and again when the connection is made, through the same
+// guardedLookup dispatcher src/lib/security/outbound.ts uses, so a DNS answer
+// that flips between check and connect (rebinding) is still refused.
+//
+// Stated rather than hidden: http:// stays allowed (research sources include
+// plain-http pages); the guard is about *where* the connection goes, not the
+// transport's confidentiality.
 
 const MAX_BYTES = 2_000_000;
 const TIMEOUT_MS = 12_000;
 const MAX_REDIRECTS = 3;
+
+// The connect-time DNS guard. The lookup hook re-resolves the hostname when
+// the socket is opened and refuses to hand a private address to it, closing
+// the check-then-connect window a rebinding attack would use.
+const agent = new Agent({
+  connect: { lookup: guardedLookup as never, timeout: 10_000 },
+  headersTimeout: TIMEOUT_MS,
+  bodyTimeout: TIMEOUT_MS,
+});
 
 export class FetchRefused extends Error {
   constructor(reason: string) {
@@ -114,15 +130,24 @@ export async function safeFetch(
   );
   try {
     for (let hop = 0; hop <= MAX_REDIRECTS; hop += 1) {
-      const response = await fetch(url, {
+      const response = await undiciFetch(url, {
         redirect: "manual",
         signal: controller.signal,
+        dispatcher: agent,
         headers: {
           "user-agent": "OsirusResearch/1.0 (+https://osirus.vercel.app)",
           accept:
             options.accept ??
             "text/html,application/json,text/plain;q=0.9,*/*;q=0.5",
         },
+      }).catch((error: unknown) => {
+        // A connect-time refusal (the DNS answer was private, e.g. after a
+        // rebinding) arrives wrapped as "fetch failed". Surface it as the
+        // refusal it is, in this layer's own error type.
+        const cause = (error as { cause?: unknown })?.cause;
+        if (cause instanceof OutboundBlockedError)
+          throw new FetchRefused(cause.reason);
+        throw error;
       });
       if (response.status >= 300 && response.status < 400) {
         const location = response.headers.get("location");
