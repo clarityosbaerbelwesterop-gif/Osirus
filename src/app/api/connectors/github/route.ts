@@ -103,6 +103,8 @@ export async function DELETE(request: Request) {
   if (!who) return Response.json({ error: "unauthorized" }, { status: 401 });
   if (!hasSameOrigin(request))
     return Response.json({ error: "invalid_origin" }, { status: 403 });
+  const blocked = await limited(who.userId);
+  if (blocked) return blocked;
   await disconnectGithub(who);
   const { triggerAutomations } = await import("@/lib/automations/store");
   await triggerAutomations(who, {
