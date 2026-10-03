@@ -30,6 +30,8 @@ import {
   type InteractionPreference,
   type LabModelId,
 } from "@/lib/lab/choices";
+import { labAnswers } from "@/lib/lab/honesty";
+import { isSessionId, shouldApplyRunSnapshot } from "@/lib/ui/snapshot-gate";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
 import type { Starter } from "@/lib/ui/starters";
 import {
@@ -198,6 +200,17 @@ export function ChatHub(props: {
   const nearBottom = useRef(true);
   const composer = useRef<ComposerHandle | null>(null);
   const wide = useWideLayout();
+  // Bumped when the person leaves this conversation. A poll that started
+  // earlier must not paint its snapshot over the one now on screen.
+  const viewGeneration = useRef(0);
+  const sessionRef = useRef(sessionId);
+  useEffect(() => {
+    sessionRef.current = sessionId;
+  }, [sessionId]);
+
+  const advanceView = useCallback(() => {
+    viewGeneration.current += 1;
+  }, []);
 
   const selectMode = useCallback((next: ModePreference) => {
     writePreference(MODE_COOKIE, next);
@@ -205,6 +218,8 @@ export function ChatHub(props: {
   }, []);
 
   const applySnapshot = useCallback((next: RunSnapshot) => {
+    if (isSessionId(next.run.sessionId))
+      sessionRef.current = next.run.sessionId;
     setSnapshot(next);
     setSessionId(next.run.sessionId);
     setActiveRunId(terminalStatuses.has(next.run.status) ? null : next.run.id);
@@ -225,9 +240,11 @@ export function ChatHub(props: {
 
   const refreshRun = useCallback(
     async (runId: string) => {
+      const captured = viewGeneration.current;
       const response = await fetch(`/api/runtime/${runId}`, {
         cache: "no-store",
       }).catch(() => null);
+      if (captured !== viewGeneration.current) return;
       if (response?.status === 404) {
         // Gone or not ours: stop polling it rather than ask forever.
         setActiveRunId((current) => (current === runId ? null : current));
@@ -235,7 +252,20 @@ export function ChatHub(props: {
         return;
       }
       if (!response?.ok) return;
-      applySnapshot((await response.json()) as RunSnapshot);
+      const next = (await response.json()) as RunSnapshot;
+      if (
+        !shouldApplyRunSnapshot({
+          capturedGeneration: captured,
+          generation: viewGeneration.current,
+          requestedRunId: runId,
+          snapshotRunId: next.run.id,
+          snapshotSessionId: next.run.sessionId,
+          viewSessionId: sessionRef.current,
+        })
+      ) {
+        return;
+      }
+      applySnapshot(next);
     },
     [applySnapshot],
   );
@@ -410,7 +440,14 @@ export function ChatHub(props: {
     async (value: string, regenerate = false) => {
       const trimmed = value.trim();
       if (!trimmed || running) return;
-      if (interaction === "ai" && !regenerate) {
+      advanceView();
+      if (interaction === "ai" && labModel === "external" && !regenerate) {
+        setError(
+          "External API is the Osirus provider pool, not ROUGE 1, QUASNIR, or DARUS.",
+        );
+        return;
+      }
+      if (labAnswers({ interaction, model: labModel }) && !regenerate) {
         const requestId = crypto.randomUUID();
         setObjective("");
         setError(null);
@@ -545,7 +582,8 @@ export function ChatHub(props: {
         }
         const headerSession = response.headers.get("X-Osirus-Session-Id");
         const headerRun = response.headers.get("X-Osirus-Run-Id");
-        if (headerSession) {
+        if (isSessionId(headerSession)) {
+          sessionRef.current = headerSession;
           setSessionId(headerSession);
           if (!shell.sessions.some((item) => item.id === headerSession)) {
             upsertSession({
@@ -610,6 +648,7 @@ export function ChatHub(props: {
       applyPacket,
       attachments,
       interaction,
+      advanceView,
       labModel,
       mode,
       refreshRun,
@@ -637,6 +676,8 @@ export function ChatHub(props: {
 
   const newTask = useCallback(() => {
     if (running) return;
+    advanceView();
+    sessionRef.current = null;
     setError(null);
     setFailedObjective(null);
     setSessionId(null);
@@ -649,11 +690,12 @@ export function ChatHub(props: {
     setWorkbenchOpen(null);
     window.history.replaceState(null, "", "/app?new=1");
     window.setTimeout(() => composer.current?.focus(), 0);
-  }, [running]);
+  }, [advanceView, running]);
 
   const switchSession = useCallback(
     async (next: SessionSummary) => {
       if (running || next.id === sessionId) return;
+      advanceView();
       setError(null);
       setFailedObjective(null);
       const response = await fetch(`/api/sessions/${next.id}`, {
@@ -664,6 +706,11 @@ export function ChatHub(props: {
         return;
       }
       const state = (await response.json()) as SessionState;
+      if (!isSessionId(state.sessionId)) {
+        setError("Could not load that conversation.");
+        return;
+      }
+      sessionRef.current = state.sessionId;
       setSessionId(state.sessionId);
       setMessages(state.messages);
       setModelCalls(state.modelCalls ?? {});
@@ -678,7 +725,7 @@ export function ChatHub(props: {
       window.history.replaceState(null, "", `/app?session=${state.sessionId}`);
       if (state.recentRunId) void refreshRun(state.recentRunId);
     },
-    [refreshRun, running, sessionId],
+    [advanceView, refreshRun, running, sessionId],
   );
 
   useEffect(() => {
