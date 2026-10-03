@@ -50,11 +50,11 @@ export function LabRoutingPanel({ initial }: { initial: LabRoutingSnapshot }) {
   return (
     <section
       className="lab-routing"
-      aria-label="Native model routing"
+      aria-label="Model routing"
       data-training={String(snapshot.trainingStarted)}
       data-production={String(snapshot.production)}
     >
-      <h3>Native tracks</h3>
+      <h3>Model routes</h3>
       <p className="subtle">
         Live routing for ROUGE 1, QUASNIR, and DARUS. The dot moves only while
         this process would actually send inference to the shown provider.
@@ -83,8 +83,10 @@ export function LabRoutingPanel({ initial }: { initial: LabRoutingSnapshot }) {
                 </div>
                 <div className="mono">{track.routeModelId}</div>
                 <div className="subtle">
-                  {track.routeReason} · {track.evaluationState} · native id{" "}
-                  {track.nativeModelId}
+                  {track.routeReason} · {track.evaluationState}
+                  {track.routeProvider === "native"
+                    ? ` · native id ${track.nativeModelId}`
+                    : " · API fallback, not a native checkpoint"}
                 </div>
               </div>
             </li>

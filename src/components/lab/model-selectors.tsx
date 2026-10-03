@@ -6,6 +6,7 @@ import {
   type InteractionPreference,
   type LabModelId,
 } from "@/lib/lab/choices";
+import { activityCaption, modelRouteDescription } from "@/lib/lab/honesty";
 
 const ACTIVITIES = [
   "thinking",
@@ -47,12 +48,16 @@ export function ModelSelectors(props: {
   onModelChange: (model: LabModelId) => void;
   onInteractionChange: (interaction: InteractionPreference) => void;
 }) {
-  const known = (ACTIVITIES as readonly string[]).includes(
-    props.activity ?? "",
-  );
-  const phases = (props.phases ?? []).filter((phase) =>
-    (ACTIVITIES as readonly string[]).includes(phase),
-  );
+  const phases = (props.phases ?? []).filter((phase) => {
+    if (!(ACTIVITIES as readonly string[]).includes(phase)) return false;
+    if (phase === "api_fallback") return false;
+    if (phase === "native_inference") {
+      return (
+        props.interaction === "ai" && props.activity === "native_inference"
+      );
+    }
+    return true;
+  });
   const grades = (props.grades ?? []).filter(
     (grade) => grade.phase !== null && phases.includes(grade.phase),
   );
@@ -60,8 +65,13 @@ export function ModelSelectors(props: {
     <div className="lab-selectors">
       <label>
         Model
+        <span id="lab-model-route" className="sr-only">
+          {modelRouteDescription(props.model, props.interaction)}
+        </span>
         <select
           aria-label="Model"
+          aria-describedby="lab-model-route"
+          title={modelRouteDescription(props.model, props.interaction)}
           value={props.model}
           disabled={props.disabled}
           onChange={(event) =>
@@ -102,29 +112,30 @@ export function ModelSelectors(props: {
       </div>
       <p
         className="lab-activity"
-        data-activity={known ? props.activity : "idle"}
+        data-activity={
+          props.activity === "waiting" || props.activity === "typing"
+            ? props.activity
+            : props.interaction === "ai" &&
+                (props.activity === "api_fallback" ||
+                  props.activity === "native_inference")
+              ? props.activity
+              : "idle"
+        }
         data-provenance={
-          props.activity === "api_fallback"
+          props.interaction === "ai" && props.activity === "api_fallback"
             ? "api_fallback"
-            : props.activity === "native_inference"
+            : props.interaction === "ai" &&
+                props.activity === "native_inference"
               ? "native"
               : "none"
         }
         data-live={props.activity === "waiting" ? "true" : "false"}
       >
-        {known && props.activity
-          ? `${activityLabel(
-              props.activity === "api_fallback" && phases.length
-                ? (phases
-                    .filter(
-                      (phase) =>
-                        phase !== "api_fallback" &&
-                        phase !== "native_inference",
-                    )
-                    .at(-1) ?? props.activity)
-                : props.activity,
-            )}${props.activity === "api_fallback" ? " · API fallback" : ""}`
-          : "Idle"}
+        {activityCaption({
+          activity: props.activity,
+          model: props.model,
+          interaction: props.interaction,
+        })}
       </p>
       {phases.length ? (
         <ol className="lab-activity-phases" aria-label="Completed policy steps">
