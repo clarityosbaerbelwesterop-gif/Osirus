@@ -322,7 +322,7 @@ export function countRecordedSteps(text: string): {
 
 /**
  * Multi-step horizon record. A later `fail:` step fails the record.
- * Nothing is executed and no score is invented.
+ * At most eight steps are kept. Nothing is executed and no score is invented.
  */
 export interface HorizonRecord {
   readonly count: number;
@@ -333,12 +333,14 @@ export interface HorizonRecord {
 }
 
 export function readHorizon(input: string): HorizonRecord {
-  const tagged = input
+  const taggedAll = input
     .split(";")
     .map((part) => part.trim())
     .filter((part) => part.length > 0);
-  const taggedIntent = tagged.some((part) => /^(ok|fail|need):/.test(part));
+  const taggedIntent = taggedAll.some((part) => /^(ok|fail|need):/.test(part));
   if (input.includes(";") && taggedIntent) {
+    // The record keeps at most eight steps. A ninth is not executed or scored.
+    const tagged = taggedAll.slice(0, 8);
     const structured = tagged.every((part) => /^(ok|fail|need):.+$/.test(part));
     if (!structured) {
       return {
@@ -884,9 +886,15 @@ export function gradeDomain(
   }
   if (grader === "sum") {
     const total = sumList(sample.input);
+    if (total === null) {
+      return {
+        passed: sample.target === "refused",
+        detail: "non-integer list",
+      };
+    }
     return {
-      passed: total !== null && String(total) === sample.target,
-      detail: total === null ? "non-integer list" : String(total),
+      passed: String(total) === sample.target,
+      detail: String(total),
     };
   }
   if (grader === "citation") {

@@ -192,6 +192,10 @@ export const rougeProgram: ModelProgram = {
       "Coding sums an integer list in process. It does not write the repository.",
       "sum",
       { input: "1,2,3", target: "6" },
+      [
+        { input: "-2,5", target: "3" },
+        { input: "1,2,x", target: "refused" },
+      ],
     ),
     arm(
       "ROUGE_RESEARCH",
@@ -296,6 +300,14 @@ export const rougeProgram: ModelProgram = {
         { input: "one. two. three. four. five. six.", target: "6" },
         {
           input: "ok:a;ok:b;ok:c;ok:d;need:a;need:b;need:c;need:d",
+          target: "8",
+        },
+        {
+          input: "one. two. three. four. five. six. seven. eight. nine.",
+          target: "8",
+        },
+        {
+          input: "ok:a;ok:b;ok:c;ok:d;ok:e;ok:f;ok:g;ok:h;ok:i",
           target: "8",
         },
         {

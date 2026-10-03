@@ -197,8 +197,12 @@ export function gradeArm(
   }
   if (grader === "execute") {
     const values = sample.input.split(",").map((part) => Number(part.trim()));
-    if (values.some((value) => Number.isNaN(value)))
-      return { passed: false, detail: "non-numeric fixture" };
+    if (values.some((value) => Number.isNaN(value))) {
+      return {
+        passed: sample.target === "refused",
+        detail: "non-numeric fixture",
+      };
+    }
     const got = executeMedian(values);
     const passed = String(got) === sample.target;
     return { passed, detail: `median=${got}` };
