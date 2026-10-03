@@ -16,7 +16,10 @@ const paramsSchema = z.object({
   runId: z.string().uuid(),
   approvalId: z.string().uuid(),
 });
-const bodySchema = z.object({ decision: z.enum(["approved", "rejected"]) });
+const bodySchema = z.object({
+  decision: z.enum(["approved", "rejected"]),
+  adjustment: z.string().trim().min(1).max(400).optional(),
+});
 
 /**
  * Decide a pending approval. The decision and the stage release happen in one
@@ -38,6 +41,8 @@ export async function POST(
   const body = bodySchema.safeParse(await request.json().catch(() => null));
   if (!params.success || !body.success)
     return Response.json({ error: "invalid_request" }, { status: 400 });
+  if (body.data.adjustment && body.data.decision !== "rejected")
+    return Response.json({ error: "invalid_request" }, { status: 400 });
 
   try {
     await enforceRateLimit({
@@ -57,6 +62,7 @@ export async function POST(
     approvalId: params.data.approvalId,
     runId: params.data.runId,
     decision: body.data.decision,
+    adjustment: body.data.adjustment ?? null,
   });
   if (!decided) {
     // Not decidable: foreign, already decided (replay), or expired. The

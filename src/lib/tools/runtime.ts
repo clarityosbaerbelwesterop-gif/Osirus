@@ -2,6 +2,12 @@ import "server-only";
 import type { ArmId } from "../arms/types";
 import { queryAs } from "../db/client";
 import type { RuntimeRepository } from "../runtime/repository";
+import {
+  applyCodingIntent,
+  codingIntentDecision,
+  codingPermissionFromInput,
+  type CodingPermission,
+} from "../coding/intent";
 import { decide, type ActionClass, type Decision } from "../policy/model";
 import { combine, loadWorkspacePolicy, runRestrictions } from "../policy/store";
 import { notify } from "../product/notifications";
@@ -154,6 +160,7 @@ export function databasePolicy(actorId: string): ToolPolicy {
     Promise<{
       decisions: Record<ActionClass, Decision>;
       allowedTools: string[] | null;
+      permission: CodingPermission | null;
     }>
   >();
   const load = (context: ToolContext) => {
@@ -166,9 +173,15 @@ export function databasePolicy(actorId: string): ToolPolicy {
           workspaceId: context.workspaceId,
         }),
         runRestrictions(actorId, context.runId),
-      ]).then(([workspace, run]) => ({
+        queryAs<{ input: unknown }>(
+          actorId,
+          "select input from osirus.runs where id = $1::uuid",
+          [context.runId],
+        ).catch(() => []),
+      ]).then(([workspace, run, rows]) => ({
         decisions: combine(workspace.decisions, run),
         allowedTools: run.allowedTools,
+        permission: codingPermissionFromInput(rows[0]?.input ?? null),
       }));
       cache.set(key, entry);
     }
@@ -182,7 +195,13 @@ export function databasePolicy(actorId: string): ToolPolicy {
       tool.effect !== "read"
     )
       return "deny";
-    return decide(policy.decisions, tool, builtinRequiresApproval);
+    return applyCodingIntent(
+      decide(policy.decisions, tool, builtinRequiresApproval),
+      codingIntentDecision({
+        permission: policy.permission,
+        toolId: tool.id,
+      }),
+    );
   };
 }
 
@@ -193,6 +212,23 @@ export function databasePolicy(actorId: string): ToolPolicy {
  * harmless call being reused for a different one: change any argument and the
  * lookup misses, so a fresh approval is requested.
  */
+
+function adjustmentOf(request: unknown) {
+  let row = request;
+  if (typeof row === "string") {
+    try {
+      row = JSON.parse(row) as unknown;
+    } catch {
+      return null;
+    }
+  }
+  if (!row || typeof row !== "object") return null;
+  const value = (row as { adjustment?: unknown }).adjustment;
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, 400) : null;
+}
+
 export function databaseApprovalGate(input: {
   repository: RuntimeRepository;
   actorId: string;
@@ -207,9 +243,9 @@ export function databaseApprovalGate(input: {
       ...(request.definition ? { definition: request.definition } : {}),
     });
 
-    const existing = await queryAs<{ status: string }>(
+    const existing = await queryAs<{ status: string; request: unknown }>(
       input.actorId,
-      `select status
+      `select status, request
          from osirus.approvals
         where run_id = $1::uuid
           and action = $2
@@ -222,7 +258,10 @@ export function databaseApprovalGate(input: {
 
     const status = existing[0]?.status;
     if (status === "approved") return "approved";
-    if (status === "rejected") return "rejected";
+    if (status === "rejected") {
+      const adjustment = adjustmentOf(existing[0]?.request);
+      return adjustment ? { status: "rejected", adjustment } : "rejected";
+    }
     // 'requested' is the undecided state approvals_status_check allows. Without
     // this, every re-check of an undecided call filed a duplicate request.
     if (status === "requested" || status === "pending") return "pending";
