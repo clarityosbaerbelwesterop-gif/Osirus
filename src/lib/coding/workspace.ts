@@ -1,4 +1,9 @@
 import {
+  canonicalGithubCloneUrl,
+  cloneBranch,
+  cloneDepth,
+} from "./clone-target";
+import {
   isSafeRelativePath,
   type CommandResult,
   type SandboxHandle,
@@ -277,10 +282,8 @@ export async function cloneRepository(
   workspace: CodingWorkspace,
   input: { url: string; branch?: string; token?: string; depth?: number },
 ) {
-  const url = new URL(input.url);
-  if (url.protocol !== "https:" || url.hostname !== "github.com")
-    throw new Error("only_https_github_clones_are_supported");
-  if (url.username || url.password) throw new Error("credentials_in_clone_url");
+  const url = canonicalGithubCloneUrl(input.url);
+  const branch = cloneBranch(input.branch);
   const args = [
     "-c",
     "credential.helper=",
@@ -292,10 +295,10 @@ export async function cloneRepository(
       : []),
     "clone",
     "--depth",
-    String(input.depth ?? 50),
-    ...(input.branch ? ["--branch", input.branch] : []),
+    cloneDepth(input.depth),
+    ...(branch ? ["--branch", branch] : []),
     "--",
-    url.toString(),
+    url,
     REPO_DIR,
   ];
   return workspace.exec("git", args, {
