@@ -194,6 +194,10 @@ export const darusProgram: ModelProgram = {
       "Coding on Darus sums an integer list. It is not Quasnir's specialist path and it does not write the repo.",
       "sum",
       { input: "4,5,6", target: "15" },
+      [
+        { input: "-1,4", target: "3" },
+        { input: "4,5,no", target: "refused" },
+      ],
     ),
     arm(
       "DARUS_RESEARCH",
@@ -334,6 +338,11 @@ export const darusProgram: ModelProgram = {
         { input: "ok:map;need:synthesize", target: "failed-at:2" },
         { input: "ok:synthesize;need:synthesize", target: "2" },
         { input: "map. synthesize. hold. review. compare. stop.", target: "6" },
+        {
+          input:
+            "map. synthesize. hold. review. compare. stop. note. file. extra.",
+          target: "8",
+        },
         {
           input: "ok:map;ok:synthesize;ok:hold;ok:review;need:map;need:hold",
           target: "6",

@@ -146,6 +146,10 @@ export const quasnirProgram: ModelProgram = {
       "An HTML page is in-program coding and must be a closed document with the asked heading. The median fixture does not write the repository.",
       "execute",
       { input: "1, 2, 3, 4", target: "2.5" },
+      [
+        { input: "9, 1, 5", target: "5" },
+        { input: "1, no, 3", target: "refused" },
+      ],
     ),
     arm(
       "QUASNIR_DEBUGGING",
@@ -266,6 +270,10 @@ export const quasnirProgram: ModelProgram = {
         { input: "ok:read;need:patch", target: "failed-at:2" },
         { input: "ok:patch;need:patch", target: "2" },
         { input: "read. patch. test. review. hold. stop.", target: "6" },
+        {
+          input: "read. patch. test. review. hold. stop. note. file. extra.",
+          target: "8",
+        },
         {
           input: "ok:read;ok:patch;ok:test;ok:review;need:read;need:test",
           target: "6",

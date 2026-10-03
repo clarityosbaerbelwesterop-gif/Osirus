@@ -198,6 +198,95 @@ describe("graders on the completion path", () => {
     expect(cut.measuredEqual).toBe(false);
   });
 
+  it("grades coding and long-horizon fixtures that are in the request", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse("recorded"));
+    const coding = await answerWithProgram({
+      program: rougeProgram,
+      native: offline,
+      messages: [{ role: "user", content: "code list -2,5" }],
+      apiKey: "test-key",
+      env: { NODE_ENV: "test" },
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(coding.fixtureChecks).toContainEqual({
+      armId: "ROUGE_CODING",
+      phase: "reasoning",
+      passed: true,
+      detail: "3",
+    });
+    expect(coding.trained).toBe(false);
+    expect(coding.measuredEqual).toBe(false);
+
+    const refused = await answerWithProgram({
+      program: rougeProgram,
+      native: offline,
+      messages: [{ role: "user", content: "code list 1,2,x" }],
+      apiKey: "test-key",
+      env: { NODE_ENV: "test" },
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(refused.fixtureChecks).toContainEqual(
+      expect.objectContaining({
+        armId: "ROUGE_CODING",
+        passed: true,
+        detail: "non-integer list",
+      }),
+    );
+    const absent = await answerWithProgram({
+      program: rougeProgram,
+      native: offline,
+      messages: [{ role: "user", content: "code list please" }],
+      apiKey: "test-key",
+      env: { NODE_ENV: "test" },
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(absent.fixtureChecks.map((check) => check.armId)).not.toContain(
+      "ROUGE_CODING",
+    );
+
+    const median = await answerWithProgram({
+      program: quasnirProgram,
+      native: offline,
+      messages: [{ role: "user", content: "code median 9, 1, 5" }],
+      apiKey: "test-key",
+      env: { NODE_ENV: "test" },
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(median.fixtureChecks).toContainEqual({
+      armId: "QUASNIR_CODING",
+      phase: "code_analysis",
+      passed: true,
+      detail: "median=5",
+    });
+    expect(median.trained).toBe(false);
+    expect(median.measuredEqual).toBe(false);
+
+    const horizon = await answerWithProgram({
+      program: darusProgram,
+      native: offline,
+      messages: [
+        {
+          role: "user",
+          content:
+            "long-horizon map. synthesize. hold. review. compare. stop. note. file. extra.",
+        },
+      ],
+      apiKey: "test-key",
+      env: { NODE_ENV: "test" },
+      fetchImpl: fetchImpl as unknown as typeof fetch,
+    });
+    expect(horizon.fixtureChecks).toContainEqual({
+      armId: "DARUS_LONG_HORIZON",
+      phase: "deep_reasoning",
+      passed: true,
+      detail: "8 recorded, 0 executed, not scored",
+    });
+    expect(horizon.text).toContain("DARUS_LONG_HORIZON: pass");
+    expect(horizon.trained).toBe(false);
+    expect(horizon.measuredEqual).toBe(false);
+    expect(fetchImpl).toHaveBeenCalled();
+  });
+
   it("shows a grader only beside a phase that already ran", () => {
     const html = renderToStaticMarkup(
       createElement(ModelSelectors, {
