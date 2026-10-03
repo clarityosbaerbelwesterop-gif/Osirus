@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ChatHub } from "@/components/chat/chat-hub";
+import { CodingSurface } from "@/components/coding/coding-surface";
 import { AppShell } from "@/components/shell/app-shell";
 import { ApprovalList } from "@/components/approvals/approval-list";
 import { AutomationList } from "@/components/automations/automation-list";
@@ -8,6 +9,7 @@ import { ConnectionsView } from "@/components/connections/connections-view";
 import { InboxView } from "@/components/inbox/inbox-view";
 import { IntelligenceLab } from "@/components/intelligence/lab";
 import { AgentBehaviorSettings } from "@/components/settings/agent-behavior";
+import { AppearanceSettings } from "@/components/settings/appearance";
 import { ModelStatusTable } from "@/components/settings/model-status";
 import { SettingsNav } from "@/components/settings/settings-nav";
 import { PageFrame } from "@/components/shell/page-frame";
@@ -43,7 +45,6 @@ export default async function FixturePage({
   const chat = (snapshot: ReturnType<typeof codingRunFixture> | null) => (
     <AppShell data={shell}>
       <ChatHub
-        firstName="Bärbel"
         workspaceName={shell.workspaceName}
         initialSessionId={snapshot?.run.sessionId ?? null}
         initialMessages={snapshot?.messages ?? []}
@@ -62,6 +63,18 @@ export default async function FixturePage({
       return chat(codingRunFixture("active"));
     case "chat-coding":
       return chat(codingRunFixture("done"));
+    case "coding":
+      return (
+        <AppShell data={shell}>
+          <CodingSurface
+            initialSessionId={null}
+            initialMessages={[]}
+            initialRunId={null}
+            initialEffort={null}
+            initialModel={null}
+          />
+        </AppShell>
+      );
     case "chat-research":
       return chat(researchRunFixture());
     case "connections": {
@@ -115,6 +128,15 @@ export default async function FixturePage({
                     </p>
                   </div>
                   <ModelStatusTable roles={modelStatusFixture()} />
+                </section>
+                <section
+                  className="card settings-group"
+                  aria-labelledby="appearance-heading"
+                >
+                  <div>
+                    <h2 id="appearance-heading">Appearance</h2>
+                  </div>
+                  <AppearanceSettings />
                 </section>
               </div>
             </div>

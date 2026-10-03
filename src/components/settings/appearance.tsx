@@ -6,9 +6,9 @@ import { applyTheme, type ThemePreference } from "@/lib/ui/preferences";
 import { useShell } from "../shell/shell-context";
 
 const OPTIONS = [
+  { id: "light", label: "Hell", icon: Sun },
+  { id: "dark", label: "Dunkel", icon: Moon },
   { id: "system", label: "System", icon: Monitor },
-  { id: "light", label: "Light", icon: Sun },
-  { id: "dark", label: "Dark", icon: Moon },
 ] as const;
 
 export function AppearanceSettings() {
@@ -16,8 +16,8 @@ export function AppearanceSettings() {
   const [theme, setTheme] = useState<ThemePreference>(shell.theme);
   return (
     <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
-      <legend className="field-label">Theme</legend>
-      <div className="segmented" role="radiogroup" aria-label="Theme">
+      <legend className="field-label">Appearance</legend>
+      <div className="segmented" role="radiogroup" aria-label="Appearance">
         {OPTIONS.map((option) => (
           <label key={option.id}>
             <input

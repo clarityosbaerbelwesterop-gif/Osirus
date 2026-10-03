@@ -5,8 +5,11 @@ import {
   ArchiveRestore,
   ChevronRight,
   Gauge,
-  House,
+  Bot,
+  Code2,
   Inbox,
+  MessageSquare,
+  Sparkles,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
@@ -26,6 +29,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { SIDEBAR_COOKIE, writePreference } from "@/lib/ui/preferences";
 import { OsirusMark } from "../shell/osirus-mark";
+import { surfacePath } from "@/lib/product/surfaces";
 import { useShell, type SessionSummary } from "../shell/shell-context";
 import { SystemStatus } from "./system-status";
 import { cx } from "../ui/cx";
@@ -39,8 +43,14 @@ type NavItem = {
   admin?: boolean;
 };
 
+const SURFACES: NavItem[] = [
+  { href: "/app" as Route, label: "Chat", icon: MessageSquare },
+  { href: "/app/agent" as Route, label: "Agent", icon: Sparkles },
+  { href: "/app/bots" as Route, label: "Bot", icon: Bot },
+  { href: "/app/coding" as Route, label: "Coding", icon: Code2 },
+];
+
 const PRIMARY: NavItem[] = [
-  { href: "/app" as Route, label: "Home", icon: House },
   { href: "/app/inbox" as Route, label: "Inbox", icon: Inbox, count: "inbox" },
   {
     href: "/app/approvals" as Route,
@@ -199,7 +209,10 @@ function SessionLink({
   return (
     <li className={cx("session-row", active && "session-row-active")}>
       <Link
-        href={{ pathname: "/app", query: { session: session.id } }}
+        href={{
+          pathname: surfacePath(session.surface ?? "ai") as Route,
+          query: { session: session.id },
+        }}
         className="session-link"
         aria-current={active ? "page" : undefined}
         aria-disabled={locked || undefined}
@@ -337,23 +350,47 @@ export function SidebarContent({
   const router = useRouter();
   const [search, setSearch] = useState("");
 
+  const pathname = usePathname() ?? "";
+  const listSurface =
+    pathname === "/app"
+      ? "ai"
+      : pathname.startsWith("/app/agent")
+        ? "agent"
+        : pathname.startsWith("/app/bots")
+          ? "bot"
+          : pathname.startsWith("/app/coding")
+            ? "coding"
+            : null;
   const { pinned, recent } = useMemo(() => {
     const needle = search.trim().toLowerCase();
+    const scoped = shell.sessions.filter((item) =>
+      listSurface
+        ? item.surface === listSurface
+        : !item.surface || item.surface === "ai",
+    );
     const matches = needle
-      ? shell.sessions.filter((item) =>
-          item.title.toLowerCase().includes(needle),
-        )
-      : shell.sessions;
+      ? scoped.filter((item) => item.title.toLowerCase().includes(needle))
+      : scoped;
     return {
       pinned: matches.filter((item) => item.pinnedAt),
       recent: matches.filter((item) => !item.pinnedAt).slice(0, 40),
     };
-  }, [search, shell.sessions]);
+  }, [listSurface, search, shell.sessions]);
 
   const newTask = () => {
     onNavigate?.();
     if (shell.chat) shell.chat.newTask();
-    else router.push("/app?new=1" as Route);
+    else {
+      const path =
+        listSurface === "agent"
+          ? "/app/agent?new=1"
+          : listSurface === "bot"
+            ? "/app/bots?new=1"
+            : listSurface === "coding"
+              ? "/app/coding?new=1"
+              : "/app?new=1";
+      router.push(path as Route);
+    }
   };
 
   const toggleCollapsed = () => {
@@ -428,6 +465,18 @@ export function SidebarContent({
       )}
 
       <nav className="sidebar-nav" aria-label="Main">
+        <ul>
+          {SURFACES.map((item) => (
+            <li key={item.href}>
+              <NavLink
+                item={item}
+                collapsed={collapsed}
+                count={0}
+                onNavigate={onNavigate}
+              />
+            </li>
+          ))}
+        </ul>
         <ul>
           {PRIMARY.map((item) => (
             <li key={item.href}>

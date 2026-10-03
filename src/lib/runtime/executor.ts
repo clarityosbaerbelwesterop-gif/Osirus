@@ -68,6 +68,14 @@ export async function prepareRuntimeRun(input: {
   regenerate?: boolean;
   /** User-selected working mode; persisted on the run, biases routing. */
   mode?: RoutingMode;
+  /** Product surface. Only coding may carry a repository selection. */
+  surface?: "ai" | "agent" | "bot" | "coding";
+  coding?: {
+    repository: string;
+    branch: string;
+    effort: string;
+    model: string;
+  };
 }): Promise<PreparedRun> {
   const repository = new RuntimeRepository(input.identity.userId);
   const existing = await repository.findRunByRequestId(
@@ -89,11 +97,20 @@ export async function prepareRuntimeRun(input: {
       input.identity.workspaceId,
     );
     if (!sessionId) throw new Error("session_not_accessible");
+    const existing = await repository.getSessionState(
+      sessionId,
+      input.identity.workspaceId,
+    );
+    const want = input.surface ?? "agent";
+    if (existing.surface && existing.surface !== want) {
+      throw new Error("session_surface_mismatch");
+    }
   } else {
     sessionId = await repository.createSession({
       organizationId: input.identity.organizationId,
       workspaceId: input.identity.workspaceId,
       title: input.objective.slice(0, 120),
+      surface: input.surface ?? "agent",
     });
   }
 
@@ -110,6 +127,8 @@ export async function prepareRuntimeRun(input: {
     // "auto" is the default rather than a choice; only a deliberate
     // selection is written down.
     mode: input.mode && input.mode !== "auto" ? input.mode : undefined,
+    surface: input.surface,
+    coding: input.surface === "coding" ? input.coding : undefined,
   });
 
   if (created.created && !input.regenerate) {

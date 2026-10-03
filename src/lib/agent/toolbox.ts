@@ -161,27 +161,42 @@ export async function buildToolbox(
   // MCP tools the workspace reviewed and enabled. Always external and high
   // risk, so every call goes through the approval gate. Skipped for injected
   // stores (the arena), which run without a database.
+  // Connectors (MCP and platform tokens) are offered only to a coding run.
+  // Chat, agent, and bot do not receive them, and a missing grant is not
+  // described as if the tools had been used.
   if (!runtime.stores) {
+    let codingRun = false;
     try {
-      const { mcpToolsForWorkspace } = await import("../connectors/mcp-store");
-      for (const tool of await mcpToolsForWorkspace(identity)) {
-        if (!registry.has(tool.id)) registry.register(tool);
-      }
+      const { codingGrantFromRunInput } = await import("../product/surfaces");
+      const input = await context.runtime.repository.getRunInput?.(
+        context.work.runId,
+      );
+      codingRun = Boolean(codingGrantFromRunInput(input));
     } catch {
-      // No MCP tools this run: the table is missing or unreachable.
+      codingRun = false;
     }
-    // Read-only tools of the platforms this workspace connected by token.
-    try {
-      const { platformToolsForWorkspace } =
-        await import("../connectors/platform");
-      for (const tool of await platformToolsForWorkspace({
-        ...identity,
-        workspaceName: "",
-      })) {
-        if (!registry.has(tool.id)) registry.register(tool);
+    if (codingRun) {
+      try {
+        const { mcpToolsForWorkspace } =
+          await import("../connectors/mcp-store");
+        for (const tool of await mcpToolsForWorkspace(identity)) {
+          if (!registry.has(tool.id)) registry.register(tool);
+        }
+      } catch {
+        // No MCP tools this run: the table is missing or unreachable.
       }
-    } catch {
-      // No platform tools this run.
+      try {
+        const { platformToolsForWorkspace } =
+          await import("../connectors/platform");
+        for (const tool of await platformToolsForWorkspace({
+          ...identity,
+          workspaceName: "",
+        })) {
+          if (!registry.has(tool.id)) registry.register(tool);
+        }
+      } catch {
+        // No platform tools this run.
+      }
     }
   }
 

@@ -317,9 +317,18 @@ export class CodingArm extends BaseArm {
 
     const { WorkspaceSession, repositoryInObjective } =
       await import("../coding/session");
-    const repository = repositoryInObjective(context.work.objective);
+    const { codingGrantFromRunInput } = await import("../product/surfaces");
+    const runInput = await context.runtime.repository
+      .getRunInput(context.work.runId)
+      .catch(() => null);
+    const grant = codingGrantFromRunInput(runInput);
+    // The GitHub grant is read only for a coding-surface run. Agent, chat,
+    // and bot runs never reach githubCredential, even if the text names a URL.
+    const repository = grant
+      ? grant.repository
+      : repositoryInObjective(context.work.objective);
     let readToken: string | null = null;
-    if (repository) {
+    if (grant) {
       const { githubCredential } = await import("../connectors/github");
       readToken = await githubCredential(
         {
@@ -336,6 +345,7 @@ export class CodingArm extends BaseArm {
         store: await this.workspaceStore(context),
         runId: context.work.runId,
         repository,
+        branch: grant?.branch,
         readToken,
         fixture: repository
           ? undefined
@@ -446,8 +456,15 @@ export class CodingArm extends BaseArm {
                 ? github.parseGithubRepository(record.repository)
                 : null,
             baseBranch: () => record.branch ?? "main",
-            writeCredential: () =>
-              github.githubCredential(identity, "repo:write"),
+            writeCredential: async () => {
+              const { codingGrantFromRunInput } =
+                await import("../product/surfaces");
+              const input = await context.runtime.repository
+                .getRunInput(context.work.runId)
+                .catch(() => null);
+              if (!codingGrantFromRunInput(input)) return null;
+              return github.githubCredential(identity, "repo:write");
+            },
             openPullRequest: github.openPullRequest,
           }),
           ...computerTools(() => session.workspace.handle, {

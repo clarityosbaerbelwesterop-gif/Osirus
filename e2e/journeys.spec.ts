@@ -96,9 +96,7 @@ test("1. sign in, new chat, normal question, streamed answer", async ({
   });
 
   await openSurface(page, "chat-empty");
-  await expect(
-    page.getByRole("heading", { name: /What are we working on/ }),
-  ).toBeVisible();
+  await expect(page.getByText(/Wieder am Start/)).toBeVisible();
   const composer = page.getByRole("textbox", { name: "Message Osirus" });
   await composer.fill(QUESTION);
   await composer.press("Enter");
@@ -163,10 +161,17 @@ test("3. coding: GitHub connection, workspace, files, diff, terminal, preview", 
   await openSurface(page, "chat-coding");
 
   const composer = page.getByRole("textbox", { name: "Message Osirus" });
+  const grantReads: string[] = [];
+  page.on("request", (request) => {
+    const path = new URL(request.url()).pathname;
+    if (path === "/api/connectors/github") grantReads.push(path);
+  });
   await composer.fill(
     "Add a mode() function to https://github.com/osirus-demo/stats-lib",
   );
-  await expect(page.getByText("GitHub: baerbel")).toBeVisible();
+  await page.waitForTimeout(400);
+  expect(grantReads).toEqual([]);
+  await expect(page.getByText("GitHub: baerbel")).toHaveCount(0);
 
   const toggle = page.getByRole("button", { name: "Show run details" });
   if (await toggle.isVisible()) await toggle.click();
@@ -465,4 +470,18 @@ test("8. a run that outlives its request is followed until it finishes", async (
   const settled = polls;
   await page.waitForTimeout(2_500);
   expect(polls).toBe(settled);
+});
+
+test("coding surface lists repos from the connected grant and does not start without a branch", async ({
+  page,
+}) => {
+  await mockApis(page);
+  await openSurface(page, "coding");
+  await expect(
+    page.getByRole("option", { name: "osirus-demo/stats-lib" }),
+  ).toBeAttached();
+  await page.getByLabel("Repository").selectOption("osirus-demo/stats-lib");
+  await page.getByLabel("Branch").selectOption("main");
+  await expect(page.getByRole("button", { name: "Start" })).toBeEnabled();
+  await expect(page.locator(".effort-motion")).toHaveCount(0);
 });

@@ -15,6 +15,7 @@ export const SURFACES = [
   "chat-empty",
   "chat-active",
   "chat-coding",
+  "coding",
   "chat-research",
   "connections",
   "settings",
@@ -74,6 +75,24 @@ export async function mockApis(
   };
 
   await page.route("**/api/health", (route) => json(route, HEALTHY));
+  await page.route("**/api/connectors/github/repos", (route) => {
+    record(route);
+    return json(route, {
+      ok: true,
+      repositories: [
+        {
+          owner: "osirus-demo",
+          name: "stats-lib",
+          private: false,
+          defaultBranch: "main",
+        },
+      ],
+    });
+  });
+  await page.route("**/api/connectors/github/branches**", (route) => {
+    record(route);
+    return json(route, { ok: true, branches: ["main", "dev"] });
+  });
   await page.route("**/api/connectors/github", (route) => {
     record(route);
     return json(route, {

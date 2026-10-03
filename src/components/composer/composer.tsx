@@ -28,6 +28,7 @@ import {
   repositoryShortName,
 } from "@/lib/coding/repository-ref";
 import type { InteractionPreference, LabModelId } from "@/lib/lab/choices";
+import { CUSTOMER_MODELS } from "@/lib/product/surfaces";
 import type { ModePreference } from "@/lib/ui/preferences";
 import { ModelSelectors, type PhaseGrade } from "../lab/model-selectors";
 import type { LivePill } from "@/lib/ui/live-activity";
@@ -79,7 +80,9 @@ export const Composer = forwardRef<
     cancelling: boolean;
     error: string | null;
     workspaceName: string;
-    github: GithubState;
+    /** full keeps the fixture composer. chat and agent are the product surfaces. */
+    chrome?: "full" | "chat" | "agent";
+    github?: GithubState | null;
     approvalAnchor: string | null;
     /** User-selected working mode; "auto" lets the router decide alone. */
     mode: ModePreference;
@@ -119,6 +122,7 @@ export const Composer = forwardRef<
   }, [props.value]);
 
   const repository = repositoryInObjective(props.value);
+  const chrome = props.chrome ?? "full";
   const submit = (event: FormEvent) => {
     event.preventDefault();
     props.onSubmit();
@@ -173,41 +177,69 @@ export const Composer = forwardRef<
         </div>
       ) : null}
       <form className="composer" onSubmit={submit}>
-        <ModelSelectors
-          model={props.labModel}
-          interaction={props.interaction}
-          activity={props.labActivity}
-          phases={props.labPhases}
-          grades={props.labGrades}
-          pills={props.livePills}
-          disabled={props.running}
-          onModelChange={props.onLabModelChange}
-          onInteractionChange={props.onInteractionChange}
-        />
-        <div
-          className="composer-modes"
-          role="radiogroup"
-          aria-label="Working mode"
-        >
-          {MODES.map((mode, index) => (
-            <button
-              key={mode}
-              ref={(node) => {
-                modeButtons.current[index] = node;
-              }}
-              type="button"
-              role="radio"
-              aria-checked={props.mode === mode}
-              tabIndex={props.mode === mode ? 0 : -1}
-              className={`composer-mode${props.mode === mode ? " is-active" : ""}`}
-              disabled={props.running}
-              onClick={() => props.onModeChange(mode)}
-              onKeyDown={onModeKeyDown}
-            >
-              {MODE_LABELS[mode]}
-            </button>
-          ))}
-        </div>
+        {chrome === "chat" ? (
+          <div className="lab-selectors">
+            <label>
+              Model
+              <span id="lab-model-route" className="sr-only">
+                Not a native checkpoint.
+              </span>
+              <select
+                aria-label="Model"
+                aria-describedby="lab-model-route"
+                value={props.labModel === "external" ? "rouge" : props.labModel}
+                disabled={props.running}
+                onChange={(event) =>
+                  props.onLabModelChange(event.target.value as LabModelId)
+                }
+              >
+                {CUSTOMER_MODELS.map((model) => (
+                  <option key={model.id} value={model.id}>
+                    {model.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+        ) : chrome === "full" ? (
+          <ModelSelectors
+            model={props.labModel}
+            interaction={props.interaction}
+            activity={props.labActivity}
+            phases={props.labPhases}
+            grades={props.labGrades}
+            pills={props.livePills}
+            disabled={props.running}
+            onModelChange={props.onLabModelChange}
+            onInteractionChange={props.onInteractionChange}
+          />
+        ) : null}
+        {chrome === "full" ? (
+          <div
+            className="composer-modes"
+            role="radiogroup"
+            aria-label="Working mode"
+          >
+            {MODES.map((mode, index) => (
+              <button
+                key={mode}
+                ref={(node) => {
+                  modeButtons.current[index] = node;
+                }}
+                type="button"
+                role="radio"
+                aria-checked={props.mode === mode}
+                tabIndex={props.mode === mode ? 0 : -1}
+                className={`composer-mode${props.mode === mode ? " is-active" : ""}`}
+                disabled={props.running}
+                onClick={() => props.onModeChange(mode)}
+                onKeyDown={onModeKeyDown}
+              >
+                {MODE_LABELS[mode]}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <label htmlFor="composer-input" className="sr-only">
           Message Osirus
         </label>
@@ -230,7 +262,11 @@ export const Composer = forwardRef<
           placeholder={
             props.running
               ? "Osirus is working…"
-              : "Describe what you want done…"
+              : chrome === "chat"
+                ? "Message"
+                : chrome === "agent"
+                  ? "Message Osirus"
+                  : "Describe what you want done…"
           }
           disabled={props.running}
           rows={1}
@@ -265,7 +301,7 @@ export const Composer = forwardRef<
         ) : null}
         <div className="composer-bar">
           <div className="composer-chips">
-            {props.onAttach ? (
+            {chrome === "full" && props.onAttach ? (
               <>
                 <input
                   ref={picker}
@@ -289,11 +325,13 @@ export const Composer = forwardRef<
                 />
               </>
             ) : null}
-            <span className="chip" title="Workspace">
-              <Folder size={13} aria-hidden="true" />
-              <span className="truncate">{props.workspaceName}</span>
-            </span>
-            {props.mode !== "auto" ? (
+            {chrome === "full" ? (
+              <span className="chip" title="Workspace">
+                <Folder size={13} aria-hidden="true" />
+                <span className="truncate">{props.workspaceName}</span>
+              </span>
+            ) : null}
+            {chrome === "full" && props.mode !== "auto" ? (
               <span className="chip" title="Working mode">
                 <SlidersHorizontal size={13} aria-hidden="true" />
                 <span className="truncate">
@@ -309,7 +347,10 @@ export const Composer = forwardRef<
                 </span>
               </span>
             ) : null}
-            {repository && props.github.status !== "loading" ? (
+            {chrome === "full" &&
+            repository &&
+            props.github &&
+            props.github.status !== "loading" ? (
               props.github.status === "CONNECTED" ? (
                 <span className="chip chip-ok">
                   GitHub: {props.github.login}

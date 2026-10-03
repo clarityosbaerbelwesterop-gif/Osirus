@@ -60,6 +60,7 @@ export type WorkspaceSession = {
   title: string;
   updatedAt: string;
   pinnedAt: string | null;
+  surface?: "ai" | "agent" | "bot" | "coding";
 };
 
 function mapEvent(row: EventRow): RuntimeEvent {
@@ -108,13 +109,16 @@ export class RuntimeRepository {
     organizationId: string;
     workspaceId: string;
     title: string;
+    /** Which product surface owns this thread. Runtime sessions default to agent. */
+    surface?: "ai" | "agent" | "bot" | "coding";
   }) {
     const id = randomUUID();
+    const surface = input.surface ?? "agent";
     const rows = await queryAs<{ id: string }>(
       this.actorId,
       `insert into osirus.sessions
-         (id, organization_id, workspace_id, title, created_by)
-       values ($1::uuid, $2::uuid, $3::uuid, $4, $5::uuid)
+         (id, organization_id, workspace_id, title, created_by, surface)
+       values ($1::uuid, $2::uuid, $3::uuid, $4, $5::uuid, $6)
        returning id`,
       [
         id,
@@ -122,6 +126,7 @@ export class RuntimeRepository {
         input.workspaceId,
         input.title.slice(0, 240) || "New session",
         this.actorId,
+        surface,
       ],
     );
     return rows[0]?.id ?? id;
@@ -137,19 +142,28 @@ export class RuntimeRepository {
     return rows[0]?.id ?? null;
   }
 
-  async getRecentWorkspaceState(workspaceId: string) {
-    const sessions = await queryAs<{ id: string }>(
+  async getRecentWorkspaceState(
+    workspaceId: string,
+    surface?: "ai" | "agent" | "bot" | "coding",
+  ) {
+    const sessions = await queryAs<{
+      id: string;
+      surface: "ai" | "agent" | "bot" | "coding";
+    }>(
       this.actorId,
-      `select id from osirus.sessions
+      `select id, surface from osirus.sessions
         where workspace_id = $1::uuid and archived_at is null
+          and ($2::text is null or surface = $2)
         order by updated_at desc
         limit 1`,
-      [workspaceId],
+      [workspaceId, surface ?? null],
     );
     const sessionId = sessions[0]?.id ?? null;
+    const sessionSurface = sessions[0]?.surface ?? null;
     if (!sessionId) {
       return {
         sessionId: null,
+        surface: surface ?? null,
         messages: [],
         modelCalls: {},
         activeRunId: null,
@@ -195,6 +209,7 @@ export class RuntimeRepository {
 
     return {
       sessionId,
+      surface: sessionSurface,
       messages: messages.map((message) => ({
         id: message.id,
         role: message.role,
@@ -210,20 +225,23 @@ export class RuntimeRepository {
 
   async listWorkspaceSessions(
     workspaceId: string,
+    surface?: "ai" | "agent" | "bot" | "coding",
   ): Promise<WorkspaceSession[]> {
     const sessions = await queryAs<{
       id: string;
       title: string;
       updated_at: string | Date;
       pinned_at: string | Date | null;
+      surface: "ai" | "agent" | "bot" | "coding";
     }>(
       this.actorId,
-      `select id, title, updated_at, pinned_at
+      `select id, title, updated_at, pinned_at, surface
          from osirus.sessions
         where workspace_id = $1::uuid and archived_at is null
+          and ($2::text is null or surface = $2)
         order by pinned_at desc nulls last, updated_at desc
         limit 100`,
-      [workspaceId],
+      [workspaceId, surface ?? null],
     );
     return sessions.map((session) => ({
       id: session.id,
@@ -232,6 +250,7 @@ export class RuntimeRepository {
       pinnedAt: session.pinned_at
         ? new Date(session.pinned_at).toISOString()
         : null,
+      surface: session.surface,
     }));
   }
 
@@ -241,9 +260,10 @@ export class RuntimeRepository {
       title: string;
       updated_at: string | Date;
       pinned_at: string | Date | null;
+      surface: "ai" | "agent" | "bot" | "coding";
     }>(
       this.actorId,
-      `select id, title, updated_at, pinned_at
+      `select id, title, updated_at, pinned_at, surface
          from osirus.sessions
         where workspace_id = $1::uuid and archived_at is not null
         order by archived_at desc
@@ -257,6 +277,7 @@ export class RuntimeRepository {
       pinnedAt: session.pinned_at
         ? new Date(session.pinned_at).toISOString()
         : null,
+      surface: session.surface,
     }));
   }
 
@@ -351,8 +372,16 @@ export class RuntimeRepository {
       ),
       this.modelCallsForSession(resolved),
     ]);
+    const surfaceRows = await queryAs<{
+      surface: "ai" | "agent" | "bot" | "coding";
+    }>(
+      this.actorId,
+      `select surface from osirus.sessions where id = $1::uuid`,
+      [resolved],
+    );
     return {
       sessionId: resolved,
+      surface: surfaceRows[0]?.surface ?? "agent",
       messages: messages.map((message) => ({
         id: message.id,
         role: message.role,
@@ -491,6 +520,13 @@ export class RuntimeRepository {
     requestId: string;
     /** User-selected working mode; persisted on the run for audit. */
     mode?: string;
+    surface?: "ai" | "agent" | "bot" | "coding";
+    coding?: {
+      repository: string;
+      branch: string;
+      effort: string;
+      model: string;
+    };
   }): Promise<{ run: RunRow; created: boolean }> {
     const id = randomUUID();
     const rows = await queryAs<RunRow & { created: boolean }>(
@@ -526,6 +562,10 @@ export class RuntimeRepository {
         JSON.stringify({
           requestId: input.requestId,
           ...(input.mode ? { mode: input.mode } : {}),
+          ...(input.surface ? { surface: input.surface } : {}),
+          ...(input.surface === "coding" && input.coding
+            ? { coding: input.coding }
+            : {}),
         }),
         input.requestId,
       ],
@@ -542,6 +582,30 @@ export class RuntimeRepository {
       [runId],
     );
     return rows[0] ?? null;
+  }
+
+  /** The run's stored input, or null. Never includes a connector secret. */
+  async getRunInput(runId: string): Promise<Record<string, unknown> | null> {
+    const rows = await queryAs<{ input: unknown }>(
+      this.actorId,
+      "select input from osirus.runs where id = $1::uuid",
+      [runId],
+    );
+    const input = rows[0]?.input;
+    if (!input) return null;
+    if (typeof input === "string") {
+      try {
+        const parsed = JSON.parse(input) as unknown;
+        return parsed && typeof parsed === "object"
+          ? (parsed as Record<string, unknown>)
+          : null;
+      } catch {
+        return null;
+      }
+    }
+    return typeof input === "object"
+      ? (input as Record<string, unknown>)
+      : null;
   }
 
   async transitionRun(

@@ -1,10 +1,10 @@
-import { ChatHub } from "@/components/chat/chat-hub";
+import { BotSurface } from "@/components/bot/bot-surface";
 import { loadSurfaceThread } from "@/lib/product/surface-thread";
 import { requireProductSession } from "@/lib/product/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function AppPage({
+export default async function BotsPage({
   searchParams,
 }: {
   searchParams: Promise<{ session?: string; new?: string }>;
@@ -14,20 +14,15 @@ export default async function AppPage({
   const state = await loadSurfaceThread({
     userId: identity.userId,
     workspaceId: identity.workspaceId,
-    surface: "ai",
+    surface: "bot",
     session: params.session,
     fresh: params.new,
   });
-
   return (
-    <ChatHub
-      kind="ai"
+    <BotSurface
       key={state.sessionId ?? "new"}
-      workspaceName={identity.workspaceName}
       initialSessionId={state.sessionId}
       initialMessages={state.messages}
-      initialRunId={state.activeRunId}
-      initialSnapshotRunId={state.recentRunId}
     />
   );
 }

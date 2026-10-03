@@ -12,9 +12,9 @@ import { useShell } from "./shell-context";
 
 const OPTIONS: Array<{ id: ThemePreference; label: string; icon: typeof Sun }> =
   [
+    { id: "light", label: "Hell", icon: Sun },
+    { id: "dark", label: "Dunkel", icon: Moon },
     { id: "system", label: "System", icon: Monitor },
-    { id: "light", label: "Light", icon: Sun },
-    { id: "dark", label: "Dark", icon: Moon },
   ];
 
 export function ThemeMenu() {
