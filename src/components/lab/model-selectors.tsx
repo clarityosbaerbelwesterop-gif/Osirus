@@ -28,6 +28,13 @@ export function ModelSelectors(props: {
   onInteractionChange: (interaction: InteractionPreference) => void;
 }) {
   const pills = props.pills ?? [];
+  const ran = new Set(props.phases ?? []);
+  const shownGrades = (props.grades ?? []).filter(
+    (grade) =>
+      grade.phase !== null &&
+      ran.has(grade.phase) &&
+      grade.phase !== "native_inference",
+  );
   return (
     <div className="lab-selectors">
       <label>
@@ -104,6 +111,15 @@ export function ModelSelectors(props: {
           interaction: props.interaction,
         })}
       </p>
+      {shownGrades.length ? (
+        <ul className="lab-activity-phases" aria-label="Fixture results">
+          {shownGrades.map((grade) => (
+            <li key={grade.armId} data-grader={grade.passed ? "pass" : "fail"}>
+              {`${grade.phase} · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`}
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {pills.length ? (
         <ul className="lab-activity-phases" aria-label="Current activity">
           {pills.map((pill) => (
