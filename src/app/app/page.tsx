@@ -44,7 +44,6 @@ export default async function AppPage({
       workspaceName={identity.workspaceName}
       initialSessionId={state.sessionId}
       initialMessages={state.messages}
-      initialModelCalls={state.modelCalls}
       initialRunId={state.activeRunId}
       initialSnapshotRunId={state.recentRunId}
     />

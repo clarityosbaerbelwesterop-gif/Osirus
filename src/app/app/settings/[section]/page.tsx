@@ -265,16 +265,6 @@ export default async function SettingsSection({
               </span>
             </div>
             <div className="metric">
-              <span className="metric-label">Tokens</span>
-              <span className="metric-value">
-                {formatCount(usage.inputTokens + usage.outputTokens)}
-              </span>
-              <span className="metric-note">
-                {formatCount(usage.inputTokens)} in ·{" "}
-                {formatCount(usage.outputTokens)} out
-              </span>
-            </div>
-            <div className="metric">
               <span className="metric-label">Estimated cost</span>
               <span className="metric-value">{formatUsd(usage.costUsd)}</span>
               <span className="metric-note">As reported by the provider</span>
@@ -297,9 +287,6 @@ export default async function SettingsSection({
                       Calls
                     </th>
                     <th scope="col" className="num">
-                      Tokens
-                    </th>
-                    <th scope="col" className="num">
                       Cost
                     </th>
                   </tr>
@@ -309,7 +296,6 @@ export default async function SettingsSection({
                     <tr key={row.role}>
                       <td>{humanize(row.role.toLowerCase())}</td>
                       <td className="num">{formatCount(row.calls)}</td>
-                      <td className="num">{formatCount(row.tokens)}</td>
                       <td className="num">{formatUsd(row.costUsd)}</td>
                     </tr>
                   ))}

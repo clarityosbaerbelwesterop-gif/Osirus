@@ -12,9 +12,14 @@ export default function ImpressumPage() {
   return (
     <article className="legal-body">
       <p className="legal-draft" role="note">
-        {DRAFT}
+        {DRAFT}. This is not a lawyer-reviewed notice.
       </p>
       <h1>Impressum</h1>
+      <p>
+        Draft imprint for a service offered from North Rhine-Westphalia
+        (Nordrhein-Westfalen), Germany. It also notes the EU and, briefly, use
+        from outside the EU. Do not treat missing fields as filled in.
+      </p>
       <p>
         Angaben gemäß § 5 DDG (Digitale-Dienste-Gesetz). The operator must
         review and complete every field marked {TODO} …]] before this page is

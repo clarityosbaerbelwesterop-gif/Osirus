@@ -71,20 +71,11 @@ export function ModelStatusTable({ roles }: { roles: RoleStatus[] }) {
                   <td>
                     {role.admin ? (
                       <div className="subtle">
-                        <div>
-                          {role.admin.provider} ·{" "}
-                          <span className="mono">
-                            {role.admin.modelId ?? "not set"}
-                          </span>
-                          {role.admin.sharesStrong
-                            ? " (uses the strong model)"
-                            : ""}
-                        </div>
                         {role.admin.failureCategory ? (
                           <div>
                             Last failure:{" "}
                             {CATEGORY[role.admin.failureCategory] ??
-                              role.admin.failureCategory}
+                              "The provider declined the request."}
                             {role.admin.lastFailureAt ? (
                               <>
                                 ,{" "}
@@ -92,16 +83,11 @@ export function ModelStatusTable({ roles }: { roles: RoleStatus[] }) {
                                   value={role.admin.lastFailureAt}
                                 />
                               </>
-                            ) : (
-                              ""
-                            )}
+                            ) : null}
                           </div>
-                        ) : null}
-                        {role.admin.lastFailureSummary ? (
-                          <div className="mono">
-                            {role.admin.lastFailureSummary}
-                          </div>
-                        ) : null}
+                        ) : (
+                          <div>No failure in the last 24 hours.</div>
+                        )}
                       </div>
                     ) : null}
                   </td>

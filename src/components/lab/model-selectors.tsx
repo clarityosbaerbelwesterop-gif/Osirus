@@ -112,23 +112,25 @@ export function ModelSelectors(props: {
         })}
       </p>
       {shownGrades.length ? (
-        <ul className="lab-activity-phases" aria-label="Fixture results">
-          {shownGrades.map((grade) => (
-            <li key={grade.armId} data-grader={grade.passed ? "pass" : "fail"}>
-              {`${grade.phase} · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`}
-            </li>
-          ))}
-        </ul>
+        <p className="lab-activity" data-activity="idle">
+          {shownGrades
+            .map(
+              (grade) =>
+                `${grade.phase} · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`,
+            )
+            .join(" ")}
+        </p>
       ) : null}
       {pills.length ? (
-        <ul className="lab-activity-phases" aria-label="Current activity">
-          {pills.map((pill) => (
-            <li key={pill.id} data-kind={pill.kind} data-state="live">
-              {pill.kind === "tool" ? "Tool" : "Subagent"}
-              {` · ${pill.label}`}
-            </li>
-          ))}
-        </ul>
+        <p className="lab-live" role="status">
+          {pills
+            .map((pill) =>
+              pill.kind === "tool"
+                ? `Tool · ${pill.label}`
+                : `Subagent · ${pill.label}`,
+            )
+            .join(" ")}
+        </p>
       ) : null}
     </div>
   );

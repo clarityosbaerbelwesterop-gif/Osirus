@@ -47,8 +47,7 @@ vi.mock("next/dynamic", () => ({
 }));
 
 const { RuntimeRepository } = await import("../src/lib/runtime/repository");
-const { MessageList, modelCaption } =
-  await import("../src/components/chat/message-list");
+const { MessageList } = await import("../src/components/chat/message-list");
 
 let db: TestDatabase;
 let tenant: TestIdentity;
@@ -255,93 +254,37 @@ describe("MessageList model caption", () => {
     runId: "run-1",
   };
 
-  it("renders the model and token count when a completed call exists", () => {
+  it("does not show a catalog model id or a token count", () => {
     const html = renderToStaticMarkup(
       createElement(MessageList, {
         messages: [baseMessage],
         runObjective: null,
         runSlot: null,
         streamingId: null,
-        modelCalls: {
-          "run-1": {
-            model: "grok-4-fast",
-            latencyMs: 820,
-            inputTokens: 800,
-            outputTokens: 400,
-          },
-        },
       }),
     );
-    expect(html).toContain("grok-4-fast");
-    expect(html).toContain("1.2k tokens");
-    expect(html).toContain('class="message-model"');
-    expect(html).toContain('aria-label="Answered by grok-4-fast');
-  });
-
-  it("renders the model alone when no tokens were recorded", () => {
-    const html = renderToStaticMarkup(
-      createElement(MessageList, {
-        messages: [baseMessage],
-        runObjective: null,
-        runSlot: null,
-        streamingId: null,
-        modelCalls: {
-          "run-1": {
-            model: "grok-4-fast",
-            latencyMs: null,
-            inputTokens: null,
-            outputTokens: null,
-          },
-        },
-      }),
-    );
-    expect(html).toContain("grok-4-fast");
+    expect(html).not.toContain("grok");
     expect(html).not.toContain("tokens");
+    expect(html).not.toContain("UnoRouter");
+    expect(html).not.toContain("message-model");
   });
 
-  it("renders nothing when the run has no completed model call", () => {
+  it("shows only the selected program name, not a native checkpoint", () => {
     const html = renderToStaticMarkup(
       createElement(MessageList, {
         messages: [
-          baseMessage,
-          { id: "m2", role: "assistant" as const, content: "No run" },
+          {
+            ...baseMessage,
+            caption: "ROUGE 1. Not a native checkpoint.",
+          },
         ],
         runObjective: null,
         runSlot: null,
         streamingId: null,
-        modelCalls: {},
       }),
     );
-    expect(html).not.toContain("message-model");
-    expect(html).not.toContain("Answered by");
-  });
-});
-
-describe("modelCaption", () => {
-  it("formats large token counts as k", () => {
-    expect(
-      modelCaption({
-        model: "m",
-        latencyMs: null,
-        inputTokens: 1000,
-        outputTokens: 200,
-      }),
-    ).toBe("m · 1.2k tokens");
-    expect(
-      modelCaption({
-        model: "m",
-        latencyMs: null,
-        inputTokens: 500,
-        outputTokens: 500,
-      }),
-    ).toBe("m · 1k tokens");
-    expect(
-      modelCaption({
-        model: "m",
-        latencyMs: null,
-        inputTokens: 12,
-        outputTokens: 30,
-      }),
-    ).toBe("m · 42 tokens");
+    expect(html).toContain("ROUGE 1. Not a native checkpoint.");
+    expect(html).not.toContain("qwen");
+    expect(html).not.toContain("UnoRouter");
   });
 });

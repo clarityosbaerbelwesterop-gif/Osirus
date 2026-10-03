@@ -50,6 +50,7 @@ export default async function FixturePage({
         initialRunId={null}
         initialSnapshotRunId={null}
         initialSnapshot={snapshot}
+        screenshotLayout={snapshot?.run.status === "waiting_for_approval"}
       />
     </AppShell>
   );

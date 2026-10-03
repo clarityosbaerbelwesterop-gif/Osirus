@@ -28,7 +28,7 @@ describe("honest AI mode labels", () => {
         model: "darus",
         interaction: "ai",
       }),
-    ).toBe("DARUS · API fallback");
+    ).toBe("Not a native checkpoint.");
     expect(
       activityCaption({
         activity: "thinking",

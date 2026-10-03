@@ -118,7 +118,6 @@ export default async function QualityPage({
             label="Latency p50 / p95"
             value={`${formatDuration(models.p50LatencyMs) ?? "—"} / ${formatDuration(models.p95LatencyMs) ?? "—"}`}
           />
-          <Metric label="Tokens" value={formatCount(models.tokens)} />
           <Metric
             label="Cost"
             value={formatUsd(models.costUsd)}
@@ -132,12 +131,8 @@ export default async function QualityPage({
               <thead>
                 <tr>
                   <th scope="col">Role</th>
-                  <th scope="col">Model</th>
                   <th scope="col" className="num">
                     Calls
-                  </th>
-                  <th scope="col" className="num">
-                    Tokens
                   </th>
                   <th scope="col" className="num">
                     Cost
@@ -157,9 +152,7 @@ export default async function QualityPage({
                 {roles.map((row) => (
                   <tr key={`${row.role}:${row.model}`}>
                     <td>{humanize(row.role.toLowerCase())}</td>
-                    <td className="mono">{row.model}</td>
                     <td className="num">{formatCount(row.calls)}</td>
-                    <td className="num">{formatCount(row.tokens)}</td>
                     <td className="num">{formatUsd(row.costUsd)}</td>
                     <td className="num">
                       {formatDuration(row.p50LatencyMs) ?? "—"}
@@ -252,9 +245,6 @@ export default async function QualityPage({
                   <th scope="col" className="num">
                     Median latency
                   </th>
-                  <th scope="col" className="num">
-                    Tokens
-                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -266,7 +256,6 @@ export default async function QualityPage({
                     <td className="num">
                       {formatDuration(row.medianLatencyMs) ?? "—"}
                     </td>
-                    <td className="num">{formatCount(row.tokens)}</td>
                   </tr>
                 ))}
               </tbody>

@@ -46,8 +46,14 @@ export function activityCaption(input: {
   if (input.activity === "waiting") return "Waiting";
   if (input.activity === "typing") return "Typing";
   if (input.interaction === "agent") return "Idle";
-  if (input.activity === "api_fallback") return honestRouteLabel(input.model);
-  if (input.activity === "native_inference") return "Native inference";
+  // The fallback is a route, not a model the person can select. Never call
+  // the answer a native checkpoint.
+  if (
+    input.activity === "api_fallback" ||
+    input.activity === "native_inference"
+  ) {
+    return "Not a native checkpoint.";
+  }
   return "Idle";
 }
 
