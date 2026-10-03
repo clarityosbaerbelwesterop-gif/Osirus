@@ -1,6 +1,7 @@
 "use client";
 
 import { ChevronRight, PanelRightOpen } from "lucide-react";
+import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
 import { formatDuration, relativeTime } from "@/lib/ui/labels";
 import type { RunView } from "@/lib/ui/run-view";
 import { resumeSummary } from "@/lib/ui/run-view";
@@ -9,9 +10,9 @@ import { Badge } from "../ui/badge";
 import { StatusIcon } from "../ui/status-icon";
 
 /**
- * The run, inline in the conversation: which steps are done, which one is
- * running, what is waiting for the person, and -- on request -- the recorded
- * activity behind it. No model reasoning is shown; only runtime state.
+ * The run, inline in the conversation. While it is in progress the chat
+ * shows one status line and a badge. Steps stay closed under Details.
+ * No progress fraction and no internal stage name in that line.
  */
 export function RunCard({
   view,
@@ -25,14 +26,15 @@ export function RunCard({
   onOpenWorkbench: (() => void) | null;
 }) {
   const summary = resumeSummary(view);
-  const progress = Math.round(view.progress * 100);
+  const chat = chatRunPresentation(view.status);
+  const statusLine = chatStatusLine(view.status, view.failure?.message);
   return (
-    <section className="run" aria-label={`Run: ${view.statusLabel}`}>
+    <section className="run" aria-label={`Run: ${chat.label}`}>
       <header className="run-head">
         <div className="run-title">
-          <span className="run-arm">{view.armLabel}</span>
-          <Badge tone={view.tone}>{view.statusLabel}</Badge>
-          {view.totalCount ? (
+          {view.live ? null : <span className="run-arm">{view.armLabel}</span>}
+          <Badge tone={chat.tone}>{chat.label}</Badge>
+          {!view.live && view.totalCount ? (
             <span className="subtle tabular">
               {view.doneCount} of {view.totalCount} steps
             </span>
@@ -50,23 +52,13 @@ export function RunCard({
         ) : null}
       </header>
 
-      {view.live && view.totalCount ? (
-        <div
-          className="run-progress"
-          role="progressbar"
-          aria-label="Steps completed"
-          aria-valuemin={0}
-          aria-valuemax={view.totalCount}
-          aria-valuenow={view.doneCount}
-        >
-          <span
-            style={{ transform: `scaleX(${Math.max(progress, 2) / 100})` }}
-          />
-        </div>
+      {view.live ? (
+        <p className="run-now" role="status">
+          {statusLine}
+        </p>
       ) : null}
 
-      {resumed &&
-      (summary.attention.length || (view.live && summary.completed.length)) ? (
+      {!view.live && resumed && summary.attention.length ? (
         <div className="run-resume">
           <p className="overline">Since you were last here</p>
           {summary.completed.length ? (
@@ -75,26 +67,18 @@ export function RunCard({
               {summary.completed.join(" · ")}
             </p>
           ) : null}
-          {summary.inProgress ? (
-            <p>
-              <span className="subtle">Now: </span>
-              {summary.inProgress}
-            </p>
-          ) : null}
-          {summary.attention.length ? (
-            <p>
-              <span className="subtle">Needs you: </span>
-              {summary.attention.join(" · ")}
-            </p>
-          ) : null}
+          <p>
+            <span className="subtle">Needs you: </span>
+            {summary.attention.join(" · ")}
+          </p>
         </div>
       ) : null}
 
       {view.stages.length ? (
-        <details className="disclosure run-steps-wrap" open={view.live}>
+        <details className="disclosure run-steps-wrap">
           <summary>
             <ChevronRight size={14} aria-hidden="true" className="chevron" />
-            {view.live ? "Steps" : `Steps (${view.totalCount})`}
+            {view.live ? "Details" : `Steps (${view.totalCount})`}
           </summary>
           <ol className="run-steps">
             {view.stages.map((stage) => {
@@ -109,9 +93,6 @@ export function RunCard({
                   <StatusIcon state={stage.state} />
                   <div className="run-step-body">
                     <span className="run-step-name">{stage.name}</span>
-                    {current && view.currentStep ? (
-                      <span className="run-step-now">{view.currentStep}</span>
-                    ) : null}
                   </div>
                   <span className="run-step-meta">
                     {stage.verdictLabel ? (
@@ -135,18 +116,11 @@ export function RunCard({
             })}
           </ol>
         </details>
-      ) : view.live ? (
-        <p className="run-now subtle">{view.currentStep ?? "Starting…"}</p>
       ) : null}
 
-      {view.failure ? (
+      {view.failure && !view.live ? (
         <div className="notice notice-danger" role="status">
-          <span>
-            {view.failure.stage ? (
-              <strong>{view.failure.stage}: </strong>
-            ) : null}
-            {view.failure.message}
-          </span>
+          <span>{view.failure.message}</span>
         </div>
       ) : null}
 
@@ -159,7 +133,7 @@ export function RunCard({
         />
       ))}
 
-      {view.evidence.length ? (
+      {!view.live && view.evidence.length ? (
         <details className="disclosure">
           <summary>
             <ChevronRight size={14} aria-hidden="true" className="chevron" />

@@ -10,7 +10,7 @@ export default function PrivacyPage() {
   return (
     <article className="legal-body">
       <p className="legal-draft" role="note">
-        {DRAFT}
+        {DRAFT}. This is not a lawyer-reviewed notice.
       </p>
       <h1>Privacy Notice (Datenschutzerklärung)</h1>
       <p>
@@ -173,6 +173,16 @@ export default function PrivacyPage() {
         (verified, unverified, conflicted, rejected) rather than presented as
         fact. Generated answers may be processed by the model provider listed
         above.
+      </p>
+
+      <h2>10. People outside Germany and the EU</h2>
+      <p>
+        This draft is written for a product offered from North Rhine-Westphalia,
+        Germany, and for the GDPR as it applies in the EU and EEA. If you use
+        Osirus from elsewhere, the same processing described above still
+        happens. This page does not claim that every other country&apos;s
+        privacy law has been reviewed, and it does not waive rights you have
+        where you live.
       </p>
     </article>
   );

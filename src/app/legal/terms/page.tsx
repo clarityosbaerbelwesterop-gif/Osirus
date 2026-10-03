@@ -10,7 +10,7 @@ export default function TermsPage() {
   return (
     <article className="legal-body">
       <p className="legal-draft" role="note">
-        {DRAFT}
+        {DRAFT}. This is not a lawyer-reviewed notice.
       </p>
       <h1>Terms of Service (AGB)</h1>
       <p>
@@ -120,6 +120,16 @@ export default function TermsPage() {
         The operator may update these terms with reasonable advance notice;
         continued use after the effective date constitutes acceptance. {TODO}
         operator confirms the notice channel (in-app notice or email).]]
+      </p>
+
+      <h2>12. Outside Germany</h2>
+      <p>
+        These draft terms are for a service offered from North Rhine-Westphalia,
+        Germany. German law is the draft governing law, as section 10 says, and
+        EU consumer rules still apply where they must. A short note for the rest
+        of the world: using Osirus from outside the EU does not choose another
+        country&apos;s law in this draft, and it does not remove mandatory
+        protections where you live. This section is not lawyer-reviewed.
       </p>
     </article>
   );

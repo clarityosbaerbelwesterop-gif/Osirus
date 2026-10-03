@@ -71,22 +71,17 @@ export function LabRoutingPanel({ initial }: { initial: LabRoutingSnapshot }) {
                 className="lab-route-dot"
                 data-live={track.live ? "true" : "false"}
                 data-blocked={track.blocked ? "true" : "false"}
-                data-provider={track.routeProvider}
+                data-provider={
+                  track.routeProvider === "native" ? "native" : "api"
+                }
                 aria-hidden="true"
               />
               <div>
                 <strong>{track.displayName}</strong>
                 <div>{track.nativeSummary}</div>
                 <div>
-                  Route: {track.routeLabel}
-                  {track.blocked ? " — blocked, API key missing" : ""}
-                </div>
-                <div className="mono">{track.routeModelId}</div>
-                <div className="subtle">
-                  {track.routeReason} · {track.evaluationState}
-                  {track.routeProvider === "native"
-                    ? ` · native id ${track.nativeModelId}`
-                    : " · API fallback, not a native checkpoint"}
+                  {track.blocked ? "Not connected — API key missing. " : ""}
+                  Not a native checkpoint.
                 </div>
               </div>
             </li>

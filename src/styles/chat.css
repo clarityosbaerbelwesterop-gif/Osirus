@@ -685,6 +685,32 @@
   color: var(--color-text-muted);
 }
 
+.lab-activity[data-activity="typing"]::after,
+.stream-caret {
+  display: inline-block;
+  width: 1px;
+  height: 0.9em;
+  margin-left: 0.2rem;
+  background: currentColor;
+  vertical-align: text-bottom;
+  animation: stream-caret 1s steps(1) infinite;
+}
+
+.stream-caret {
+  width: 0.45em;
+}
+
+.lab-live {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+@keyframes stream-caret {
+  50% {
+    opacity: 0;
+  }
+}
+
 .lab-activity[data-live="true"]::before {
   content: "";
   display: inline-block;
@@ -767,7 +793,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .lab-activity[data-live="true"]::before {
+  .lab-activity[data-live="true"]::before,
+  .lab-activity[data-activity="typing"]::after,
+  .stream-caret {
     animation: none;
   }
   .composer-mode {

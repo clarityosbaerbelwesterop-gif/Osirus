@@ -32,6 +32,11 @@ import {
 } from "@/lib/lab/choices";
 import { labAnswers } from "@/lib/lab/honesty";
 import { isSessionId, shouldApplyRunSnapshot } from "@/lib/ui/snapshot-gate";
+import {
+  chatRunPresentation,
+  chatStatusLine,
+  customerProgramCaption,
+} from "@/lib/ui/chat-status";
 import { liveAgentPills } from "@/lib/ui/live-activity";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
 import type { Starter } from "@/lib/ui/starters";
@@ -131,8 +136,6 @@ export function ChatHub(props: {
   initialSnapshotRunId: string | null;
   /** Server-provided snapshot, so the first paint already shows the run. */
   initialSnapshot?: RunSnapshot | null;
-  /** Completed model calls of the loaded session, keyed by run id. */
-  initialModelCalls?: Record<string, ModelCallSummary>;
   onboarding?: OnboardingStep[];
 }) {
   const shell = useShell();
@@ -145,9 +148,6 @@ export function ChatHub(props: {
   const [snapshot, setSnapshot] = useState<RunSnapshot | null>(
     props.initialSnapshot ?? null,
   );
-  const [modelCalls, setModelCalls] = useState<
-    Record<string, ModelCallSummary>
-  >(props.initialModelCalls ?? props.initialSnapshot?.modelCalls ?? {});
   const [objective, setObjective] = useState("");
   const mode = useSyncExternalStore(subscribeMode, currentMode, serverMode);
   const labModel = useSyncExternalStore(
@@ -227,11 +227,6 @@ export function ChatHub(props: {
     setRunning(!terminalStatuses.has(next.run.status));
     if (terminalStatuses.has(next.run.status)) setCancelling(false);
     setMessages(next.messages);
-    // A snapshot only knows its own session's calls; keep what earlier
-    // snapshots already told us about other runs in this conversation.
-    if (next.modelCalls) {
-      setModelCalls((current) => ({ ...current, ...next.modelCalls }));
-    }
     setActivities(
       next.events
         .filter((event) => event.visibility === "user")
@@ -519,12 +514,14 @@ export function ChatHub(props: {
                 })
               : [],
           );
+          const answer = body.text;
           setMessages((current) => [
             ...current,
             {
               id: `lab:${requestId}`,
               role: "assistant",
-              content: `${body.userLabel ?? "Model"}\n${body.provenance ?? ""}\n\n${body.text}`,
+              content: answer,
+              caption: customerProgramCaption(body.userLabel),
             },
           ]);
         } catch {
@@ -683,7 +680,6 @@ export function ChatHub(props: {
     setFailedObjective(null);
     setSessionId(null);
     setMessages([]);
-    setModelCalls({});
     setActiveRunId(null);
     setActivities([]);
     setSnapshot(null);
@@ -714,7 +710,6 @@ export function ChatHub(props: {
       sessionRef.current = state.sessionId;
       setSessionId(state.sessionId);
       setMessages(state.messages);
-      setModelCalls(state.modelCalls ?? {});
       setActiveRunId(state.activeRunId);
       setRunning(Boolean(state.activeRunId));
       setActivities([]);
@@ -805,8 +800,9 @@ export function ChatHub(props: {
     (messages.length ? "Conversation" : "New task");
   const empty = messages.length === 0 && !running;
   const pendingApproval = liveView?.pendingApprovals[0];
-  const liveStatus = liveView
-    ? `${liveView.statusLabel}${liveView.live && liveView.current ? `: ${liveView.current.name}` : ""}`
+  const chatStatus = liveView ? chatRunPresentation(liveView.status) : null;
+  const liveStatus = chatStatus
+    ? `${chatStatus.label}. ${chatStatusLine(liveView?.status, liveView?.failure?.message)}`
     : "";
 
   const refresh = useCallback(() => {
@@ -827,8 +823,8 @@ export function ChatHub(props: {
         <TopBar
           title={title}
           status={
-            liveView ? (
-              <Badge tone={liveView.tone}>{liveView.statusLabel}</Badge>
+            chatStatus ? (
+              <Badge tone={chatStatus.tone}>{chatStatus.label}</Badge>
             ) : null
           }
           actions={
@@ -863,7 +859,6 @@ export function ChatHub(props: {
                 messages={messages}
                 runObjective={liveView?.objective ?? null}
                 streamingId={streamingId}
-                modelCalls={modelCalls}
                 runSlot={
                   liveView ? (
                     <RunCard
@@ -874,7 +869,7 @@ export function ChatHub(props: {
                     />
                   ) : running ? (
                     <p className="run-now subtle" role="status">
-                      Starting…
+                      Starting
                     </p>
                   ) : null
                 }

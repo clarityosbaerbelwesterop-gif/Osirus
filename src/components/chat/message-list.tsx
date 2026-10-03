@@ -3,7 +3,6 @@
 import { Check, Copy } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useState, type ReactNode } from "react";
-import type { ModelCallSummary } from "@/lib/runtime/types";
 import { OsirusMark } from "../shell/osirus-mark";
 
 // The Markdown pipeline (micromark, GFM, hast) is the largest client module;
@@ -20,27 +19,12 @@ export type ChatMessage = {
   createdAt?: string;
   /** The run that wrote this message, when one did. */
   runId?: string | null;
+  /**
+   * Selected program name only. Never a catalog id, token count, or a
+   * native-checkpoint claim.
+   */
+  caption?: string | null;
 };
-
-/** "1234" -> "1.2k"; small counts stay exact. */
-function formatTokenCount(tokens: number): string {
-  if (tokens >= 1000) {
-    const rounded = (tokens / 1000).toFixed(1).replace(/\.0$/, "");
-    return `${rounded}k`;
-  }
-  return String(tokens);
-}
-
-/** The model a run actually answered with, plus its token spend when known. */
-export function modelCaption(call: ModelCallSummary): string {
-  const total =
-    (call.inputTokens ?? 0) + (call.outputTokens ?? 0) > 0
-      ? (call.inputTokens ?? 0) + (call.outputTokens ?? 0)
-      : null;
-  return total === null
-    ? call.model
-    : `${call.model} · ${formatTokenCount(total)} tokens`;
-}
 
 function CopyButton({ text }: { text: string }) {
   const [copied, setCopied] = useState(false);
@@ -77,14 +61,11 @@ export function MessageList({
   runObjective,
   runSlot,
   streamingId,
-  modelCalls,
 }: {
   messages: ChatMessage[];
   runObjective: string | null;
   runSlot: ReactNode;
   streamingId: string | null;
-  /** Latest completed model call per run, keyed by run id. */
-  modelCalls?: Record<string, ModelCallSummary>;
 }) {
   const visible = messages.filter((message) => message.role !== "system");
   let anchor = -1;
@@ -128,18 +109,16 @@ export function MessageList({
                 ) : null}
               </div>
               <Markdown content={message.content} />
+              {message.id === streamingId ? (
+                <span className="stream-caret" aria-hidden="true" />
+              ) : null}
               {message.id !== streamingId && message.content ? (
                 <div className="message-actions">
                   <CopyButton text={message.content} />
                 </div>
               ) : null}
-              {message.runId && modelCalls?.[message.runId] ? (
-                <p
-                  className="message-model"
-                  aria-label={`Answered by ${modelCaption(modelCalls[message.runId]!)}`}
-                >
-                  {modelCaption(modelCalls[message.runId]!)}
-                </p>
+              {message.caption ? (
+                <p className="message-model">{message.caption}</p>
               ) : null}
             </div>
           )}

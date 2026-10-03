@@ -7,6 +7,7 @@ import { useSyncExternalStore, type ReactNode } from "react";
 import type { RunSnapshot } from "@/lib/runtime/types";
 import type { RunView } from "@/lib/ui/run-view";
 import { visibleGroups, type WorkbenchTab } from "@/lib/ui/workbench-view";
+import { chatRunPresentation } from "@/lib/ui/chat-status";
 import { Badge } from "../ui/badge";
 import { IconButton } from "../ui/icon-button";
 import { Sheet } from "../ui/sheet";
@@ -188,9 +189,10 @@ export function Workbench({
 }) {
   const wide = useWideLayout();
   if (!snapshot || !view) return null;
+  const chat = chatRunPresentation(view.status);
   const title: ReactNode = (
     <span className="wb-title">
-      Run details <Badge tone={view.tone}>{view.statusLabel}</Badge>
+      Run details <Badge tone={chat.tone}>{chat.label}</Badge>
     </span>
   );
   const body = (
