@@ -88,6 +88,8 @@ export type RunSnapshot = {
     errorCode?: string | null;
     errorMessage?: string | null;
     cancelRequested: boolean;
+    /** Set while this run is paused. Absent or null means it is not paused. */
+    pausedAt?: string | null;
     /** Which agent arm drove the run, once routing has decided. */
     armId?: string | null;
     /** What the run promised to deliver, written before execution. */

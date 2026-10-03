@@ -167,6 +167,15 @@ export async function nextRetryInMs(runId: string): Promise<number | null> {
   return ms === null || ms === undefined ? null : Math.max(0, Number(ms));
 }
 
+/** True when this run was paused. The scheduler must not claim it. */
+export async function runIsPaused(runId: string) {
+  const rows = await querySystem<{ paused: boolean }>(
+    "select paused_at is not null as paused from osirus.runs where id = $1::uuid",
+    [runId],
+  );
+  return rows[0]?.paused === true;
+}
+
 /**
  * Extend the lease. False means the lease is gone -- the stage was reclaimed
  * by someone else -- and the caller must stop rather than keep writing.

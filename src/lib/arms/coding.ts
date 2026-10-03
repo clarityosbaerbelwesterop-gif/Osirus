@@ -434,6 +434,11 @@ export class CodingArm extends BaseArm {
         artifact,
       );
     };
+    const { codingGrantFromRunInput } = await import("../product/surfaces");
+    const runInput = await context.runtime.repository
+      .getRunInput(context.work.runId)
+      .catch(() => null);
+    const grant = codingGrantFromRunInput(runInput);
     const toolbox = await buildToolbox(context, {
       armId: this.id,
       extensions: [
@@ -447,6 +452,9 @@ export class CodingArm extends BaseArm {
             {
               worldModel: () => session.record.softwareWorldModel,
               onReproduction: persistReproduction,
+              task: grant
+                ? { repository: grant.repository, branch: grant.branch }
+                : null,
             },
           ),
           deliveryTool({

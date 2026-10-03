@@ -59,6 +59,8 @@ export type CodingGrantTarget = {
   repository: string;
   branch: string;
   effort: EffortId;
+  /** True only when the person chose the level. A suggestion is not a choice. */
+  effortChosen: boolean;
   model: CustomerModelId;
 };
 
@@ -83,7 +85,13 @@ export function codingGrantFromRunInput(
   if (!/^https:\/\/github\.com\/[^/]+\/[^/]+$/.test(repository)) return null;
   if (!branch || branch.startsWith("-") || branch.includes("..")) return null;
   if (!effort || !model) return null;
-  return { repository, branch, effort, model };
+  return {
+    repository,
+    branch,
+    effort,
+    model,
+    effortChosen: coding.effortChosen === true,
+  };
 }
 
 export function surfacePath(surface: SessionSurface) {

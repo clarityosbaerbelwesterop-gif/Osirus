@@ -63,6 +63,7 @@ export function pollNudge(snapshot: RunSnapshot, now = Date.now()): PollNudge {
   if (status === "cancelling") {
     return { ...NOTHING, settleCancel: !live };
   }
+  if (snapshot.run.pausedAt) return NOTHING;
   if (!ACTIVE.has(status) || snapshot.run.cancelRequested) return NOTHING;
   if (live || snapshot.stages.length === 0) return NOTHING;
 

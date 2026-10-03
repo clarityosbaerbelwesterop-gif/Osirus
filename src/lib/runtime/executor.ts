@@ -16,6 +16,7 @@ import {
   type RuntimePolicy,
 } from "../strategy/runtime";
 import { abortLocalRun, registerRunController } from "./cancellation";
+import { abortReason, isPauseAbort } from "./pause";
 import { persistGraph, setBudget } from "./dispatch";
 import { publicRuntimeErrorMessage, runtimeErrorCode } from "./errors";
 import { RuntimeRepository } from "./repository";
@@ -75,6 +76,7 @@ export async function prepareRuntimeRun(input: {
     branch: string;
     effort: string;
     model: string;
+    effortChosen?: boolean;
   };
 }): Promise<PreparedRun> {
   const repository = new RuntimeRepository(input.identity.userId);
@@ -161,6 +163,10 @@ async function cancellationWatcher(
     try {
       if (await repository.isCancellationRequested(runId)) {
         controller.abort(new Error("cancel_requested"));
+        return;
+      }
+      if (await repository.isPaused(runId)) {
+        controller.abort(new Error("pause_requested"));
         return;
       }
     } catch {
@@ -510,7 +516,9 @@ export async function executeRuntimeRun(input: {
       correlationId: input.correlationId,
     });
 
-    if (controller.signal.aborted) throw controller.signal.reason;
+    if (controller.signal.aborted && !isPauseAbort(controller.signal)) {
+      throw controller.signal.reason;
+    }
 
     const completion = await finalizeRun({
       identity: input.identity,
@@ -549,13 +557,25 @@ export async function executeRuntimeRun(input: {
     });
   } catch (error) {
     const current = await repository.getRun(input.runId);
+    const paused =
+      isPauseAbort(controller.signal) ||
+      abortReason(controller.signal) === "pause_requested";
     const cancelled =
-      controller.signal.aborted ||
-      current?.cancel_requested ||
-      current?.status === "cancelling";
+      !paused &&
+      (controller.signal.aborted ||
+        current?.cancel_requested ||
+        current?.status === "cancelling");
 
     const latest = await repository.getRun(input.runId).catch(() => null);
-    if (latest && !isTerminalRunStatus(latest.status)) {
+    if (paused && latest && !isTerminalRunStatus(latest.status)) {
+      const snapshot = await repository.getSnapshot(input.runId);
+      await input.emit({ kind: "snapshot", snapshot });
+      await input.emit({
+        kind: "done",
+        runId: input.runId,
+        status: snapshot.run.status,
+      });
+    } else if (latest && !isTerminalRunStatus(latest.status)) {
       if (cancelled) {
         if (latest.status !== "cancelling") {
           await repository

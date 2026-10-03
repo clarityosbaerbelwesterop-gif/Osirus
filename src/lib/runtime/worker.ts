@@ -16,6 +16,7 @@ import {
   checkpointStageBudget,
   claimNextStage,
   finishAttempt,
+  runIsPaused,
   heartbeatAttempt,
   nextRetryInMs,
   type BudgetOutcome,
@@ -463,6 +464,10 @@ export async function driveSlices(input: DriveInput): Promise<SliceResult> {
   };
 
   while (result.claimed < maxStages) {
+    if (input.runId && (await runIsPaused(input.runId).catch(() => false))) {
+      result.yielded = true;
+      break;
+    }
     if (input.signal.aborted) {
       result.yielded = true;
       break;

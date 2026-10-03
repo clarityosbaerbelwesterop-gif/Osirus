@@ -323,3 +323,29 @@ describe("assistant answers", () => {
     expect(rows.filter((row) => row.role === "user")).toHaveLength(2);
   });
 });
+
+describe("a paused coding run", () => {
+  it("is not claimed, and resume claims the same run", async () => {
+    const { runId, stageId } = await db.seedRun(tenant);
+    await db.raw(
+      `update osirus.runs set status = 'running', paused_at = now(),
+         input = '{"surface":"coding"}'::jsonb
+       where id = $1`,
+      [runId],
+    );
+    await db.raw(
+      `update osirus.run_stages set status = 'pending' where id = $1`,
+      [stageId],
+    );
+    const repository = new RuntimeRepository(tenant.userId);
+    const paused = await repository.getSnapshot(runId);
+    expect(pollNudge(paused)).toMatchObject({ drive: false, finalize: false });
+    expect(await claimNextStage({ workerId: "poll:pause", runId })).toBeNull();
+
+    const resumed = await repository.setCodingPaused(runId, false);
+    expect(resumed?.id).toBe(runId);
+    expect(resumed?.paused_at).toBeNull();
+    const claimed = await claimNextStage({ workerId: "poll:resume", runId });
+    expect(claimed?.runId).toBe(runId);
+  });
+});

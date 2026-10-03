@@ -48,3 +48,17 @@ export async function codingSelectionForRun(
   const input = await repository.getRunInput(runId).catch(() => null);
   return codingGrantFromRunInput(input);
 }
+
+/** Selection plus whether that coding run is paused. No connector secret. */
+export async function codingRunControl(userId: string, runId: string | null) {
+  if (!runId) return { selection: null, paused: false };
+  const repository = new RuntimeRepository(userId);
+  const [input, run] = await Promise.all([
+    repository.getRunInput(runId).catch(() => null),
+    repository.getRun(runId).catch(() => null),
+  ]);
+  return {
+    selection: codingGrantFromRunInput(input),
+    paused: Boolean(run?.paused_at),
+  };
+}

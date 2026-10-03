@@ -2,6 +2,7 @@ import { z } from "zod";
 import type { ArmId } from "../arms/types";
 import type { ToolDefinition } from "../tools/registry";
 import type { DiscoveredCommand } from "./commands";
+import { actionLeavesCodingTask, CodingTaskLeft } from "./task-bound";
 import { analyzeFailure } from "./failure";
 import { NAV_OPERATIONS, runNavigation } from "./navigation";
 import {
@@ -127,6 +128,8 @@ export function workspaceTools(
     onReproduction?: (
       artifact: ReturnType<typeof createReproductionArtifact>,
     ) => void;
+    /** The granted task. Absent means this is not that coding run. */
+    task?: { repository: string; branch: string } | null;
   },
 ): ToolDefinition[] {
   const read = (
@@ -307,6 +310,15 @@ export function workspaceTools(
             message: "Give either commandId or cmd, not both.",
           }),
         run: async (input, context) => {
+          if (options?.task) {
+            const left = actionLeavesCodingTask({
+              repository: options.task.repository,
+              branch: options.task.branch,
+              toolId: "workspace.run",
+              toolInput: input,
+            });
+            if (left) throw new CodingTaskLeft(left);
+          }
           const request = input as {
             commandId?: string;
             cmd?: string;
