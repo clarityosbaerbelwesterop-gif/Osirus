@@ -7,30 +7,7 @@ import {
   type LabModelId,
 } from "@/lib/lab/choices";
 import { activityCaption, modelRouteDescription } from "@/lib/lab/honesty";
-
-const ACTIVITIES = [
-  "thinking",
-  "reasoning",
-  "research",
-  "verification",
-  "code_analysis",
-  "security_scan",
-  "test_execution",
-  "patch_verification",
-  "deep_reasoning",
-  "cross_domain_synthesis",
-  "planning",
-  "waiting",
-  "api_fallback",
-  "native_inference",
-] as const;
-
-function activityLabel(activity: string): string {
-  if (activity === "waiting") return "Waiting";
-  if (activity === "api_fallback") return "API fallback";
-  if (activity === "native_inference") return "Native inference";
-  return activity.replaceAll("_", " ");
-}
+import type { LivePill } from "@/lib/ui/live-activity";
 
 export interface PhaseGrade {
   readonly armId: string;
@@ -42,24 +19,21 @@ export function ModelSelectors(props: {
   model: LabModelId;
   interaction: InteractionPreference;
   activity: string | null;
+  /** Kept so callers can pass grader rows without rendering them as thinking. */
   phases?: readonly string[];
   grades?: readonly PhaseGrade[];
+  pills?: readonly LivePill[];
   disabled?: boolean;
   onModelChange: (model: LabModelId) => void;
   onInteractionChange: (interaction: InteractionPreference) => void;
 }) {
-  const phases = (props.phases ?? []).filter((phase) => {
-    if (!(ACTIVITIES as readonly string[]).includes(phase)) return false;
-    if (phase === "api_fallback") return false;
-    if (phase === "native_inference") {
-      return (
-        props.interaction === "ai" && props.activity === "native_inference"
-      );
-    }
-    return true;
-  });
-  const grades = (props.grades ?? []).filter(
-    (grade) => grade.phase !== null && phases.includes(grade.phase),
+  const pills = props.pills ?? [];
+  const ran = new Set(props.phases ?? []);
+  const shownGrades = (props.grades ?? []).filter(
+    (grade) =>
+      grade.phase !== null &&
+      ran.has(grade.phase) &&
+      grade.phase !== "native_inference",
   );
   return (
     <div className="lab-selectors">
@@ -137,25 +111,24 @@ export function ModelSelectors(props: {
           interaction: props.interaction,
         })}
       </p>
-      {phases.length ? (
-        <ol className="lab-activity-phases" aria-label="Completed policy steps">
-          {phases.map((phase) => {
-            const beside = grades.filter((grade) => grade.phase === phase);
-            return (
-              <li key={phase} data-state="done">
-                {activityLabel(phase)}
-                {beside.map((grade) => (
-                  <span
-                    key={grade.armId}
-                    data-grader={grade.passed ? "pass" : "fail"}
-                  >
-                    {` · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`}
-                  </span>
-                ))}
-              </li>
-            );
-          })}
-        </ol>
+      {shownGrades.length ? (
+        <ul className="lab-activity-phases" aria-label="Fixture results">
+          {shownGrades.map((grade) => (
+            <li key={grade.armId} data-grader={grade.passed ? "pass" : "fail"}>
+              {`${grade.phase} · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`}
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {pills.length ? (
+        <ul className="lab-activity-phases" aria-label="Current activity">
+          {pills.map((pill) => (
+            <li key={pill.id} data-kind={pill.kind} data-state="live">
+              {pill.kind === "tool" ? "Tool" : "Subagent"}
+              {` · ${pill.label}`}
+            </li>
+          ))}
+        </ul>
       ) : null}
     </div>
   );
