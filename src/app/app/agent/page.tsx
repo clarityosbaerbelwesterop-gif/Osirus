@@ -4,7 +4,7 @@ import { requireProductSession } from "@/lib/product/session";
 
 export const dynamic = "force-dynamic";
 
-export default async function AppPage({
+export default async function AgentPage({
   searchParams,
 }: {
   searchParams: Promise<{ session?: string; new?: string }>;
@@ -14,14 +14,14 @@ export default async function AppPage({
   const state = await loadSurfaceThread({
     userId: identity.userId,
     workspaceId: identity.workspaceId,
-    surface: "ai",
+    surface: "agent",
     session: params.session,
     fresh: params.new,
   });
 
   return (
     <ChatHub
-      kind="ai"
+      kind="agent"
       key={state.sessionId ?? "new"}
       workspaceName={identity.workspaceName}
       initialSessionId={state.sessionId}

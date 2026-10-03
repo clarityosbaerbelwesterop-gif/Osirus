@@ -24,6 +24,15 @@ const inputSchema = z.object({
   regenerate: z.boolean().optional().default(false),
   attachmentIds: z.array(z.string().uuid()).max(8).optional(),
   mode: z.enum(["auto", "research", "coding", "reasoning", "agent"]).optional(),
+  surface: z.enum(["ai", "agent", "bot", "coding"]).optional(),
+  coding: z
+    .object({
+      repository: z.string().trim().max(300),
+      branch: z.string().trim().min(1).max(100),
+      effort: z.enum(["leicht", "mittel", "hoch", "super", "ultra"]),
+      model: z.enum(["rouge", "quasnir", "darus"]),
+    })
+    .optional(),
 });
 
 export async function POST(request: Request) {
@@ -82,6 +91,29 @@ export async function POST(request: Request) {
     }
     throw error;
   }
+  const surface = parsed.data.surface;
+  if (surface === "coding" && !parsed.data.coding) {
+    return Response.json(
+      {
+        error: "coding_selection_required",
+        message: "Choose a repository and a branch before starting.",
+      },
+      { status: 400 },
+    );
+  }
+  if (surface === "coding" && parsed.data.coding) {
+    const { verifyCodingSelection } = await import("@/lib/coding/grant-check");
+    const verified = await verifyCodingSelection(identity, {
+      repository: parsed.data.coding.repository,
+      branch: parsed.data.coding.branch,
+    });
+    if (!verified.ok) {
+      return Response.json(
+        { error: "coding_not_started", message: verified.message },
+        { status: 409 },
+      );
+    }
+  }
   const capabilities = routeCapabilities(parsed.data.objective);
   let prepared;
   try {
@@ -92,9 +124,26 @@ export async function POST(request: Request) {
       capabilities,
       sessionId: parsed.data.sessionId,
       regenerate: parsed.data.regenerate,
-      mode: parsed.data.mode,
+      mode: surface === "coding" ? "coding" : parsed.data.mode,
+      surface,
+      coding:
+        surface === "coding" && parsed.data.coding
+          ? parsed.data.coding
+          : undefined,
     });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "session_surface_mismatch"
+    ) {
+      return Response.json(
+        {
+          error: "surface_mismatch",
+          message: "That conversation belongs to another surface.",
+        },
+        { status: 409 },
+      );
+    }
     return Response.json(
       { error: publicRuntimeErrorMessage(error) },
       { status: 400 },

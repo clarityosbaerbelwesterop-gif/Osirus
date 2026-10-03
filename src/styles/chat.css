@@ -1002,3 +1002,94 @@
 .onboarding-list li[data-done] svg {
   color: var(--color-success);
 }
+
+.home-calm {
+  min-height: 46vh;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: var(--space-4);
+}
+
+.home-calm .home-title {
+  margin: 0;
+}
+
+.coding-picks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-3) 0;
+  font-size: var(--text-xs);
+}
+
+.coding-picks label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  line-height: 1;
+}
+
+.coding-picks select {
+  box-sizing: border-box;
+  width: 100%;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+.effort-motion {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.45rem;
+  height: calc(10px + var(--effort-scale, 1) * 8px);
+  margin: var(--space-4) 0;
+}
+
+.effort-orb {
+  width: calc(6px + var(--effort-scale, 1) * 2px);
+  height: calc(6px + var(--effort-scale, 1) * 2px);
+  border-radius: 999px;
+  background: var(--color-accent);
+  opacity: 0.45;
+  animation: effort-rise 2.4s ease-in-out infinite;
+}
+
+.effort-motion[data-scale="1"] .effort-orb {
+  animation-duration: 3.2s;
+}
+
+.effort-motion[data-scale="2"] .effort-orb {
+  animation-duration: 2.6s;
+}
+
+.effort-motion[data-scale="3"] .effort-orb {
+  animation-duration: 2.1s;
+}
+
+.effort-motion[data-scale="4"] .effort-orb {
+  animation-duration: 1.7s;
+}
+
+.effort-motion[data-scale="5"] .effort-orb {
+  animation-duration: 1.25s;
+}
+
+@keyframes effort-rise {
+  0%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.3;
+  }
+  50% {
+    transform: translateY(calc(var(--effort-scale, 1) * -7px));
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .effort-orb {
+    animation: none;
+    opacity: 0.7;
+  }
+}

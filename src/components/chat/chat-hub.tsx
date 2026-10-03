@@ -14,7 +14,6 @@ import type {
   RunSnapshot,
   RuntimePacket,
 } from "@/lib/runtime/types";
-import { repositoryInObjective } from "@/lib/coding/repository-ref";
 import {
   INTERACTION_COOKIE,
   LAB_MODEL_COOKIE,
@@ -39,7 +38,6 @@ import {
 } from "@/lib/ui/chat-status";
 import { liveAgentPills } from "@/lib/ui/live-activity";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
-import type { Starter } from "@/lib/ui/starters";
 import {
   autoOpenWorkbench,
   defaultTab,
@@ -49,7 +47,6 @@ import {
   Composer,
   type ComposerAttachment,
   type ComposerHandle,
-  type GithubState,
 } from "../composer/composer";
 import { RunCard } from "../run-status/run-card";
 import { useShell, type SessionSummary } from "../shell/shell-context";
@@ -57,7 +54,7 @@ import { TopBar } from "../shell/top-bar";
 import { Badge } from "../ui/badge";
 import { IconButton } from "../ui/icon-button";
 import { useWideLayout, Workbench } from "../workbench/workbench";
-import { ChatHome, type OnboardingStep } from "./chat-home";
+import { ChatHome } from "./chat-home";
 import { MessageList, type ChatMessage } from "./message-list";
 
 // ChatHub: the conversation, its runs and the workbench.
@@ -128,7 +125,6 @@ function serverInteraction(): InteractionPreference {
 }
 
 export function ChatHub(props: {
-  firstName: string | null;
   workspaceName: string;
   initialSessionId: string | null;
   initialMessages: ChatMessage[];
@@ -136,12 +132,16 @@ export function ChatHub(props: {
   initialSnapshotRunId: string | null;
   /** Server-provided snapshot, so the first paint already shows the run. */
   initialSnapshot?: RunSnapshot | null;
-  onboarding?: OnboardingStep[];
   /**
    * Visual fixtures only. Live product chat leaves this unset so a running
    * task stays one status line. The approval screenshots keep their old layout.
    */
   screenshotLayout?: boolean;
+  /**
+   * ai and agent are separate routes. Fixtures omit this and keep the
+   * previous chrome so the phone composer layout stays put.
+   */
+  kind?: "ai" | "agent";
 }) {
   const shell = useShell();
   const { upsertSession, bindChat } = shell;
@@ -195,10 +195,6 @@ export function ChatHub(props: {
   const [workbenchOpen, setWorkbenchOpen] = useState<boolean | null>(null);
   const [tab, setTab] = useState<WorkbenchTab | null>(null);
   const [width, setWidth] = useState(420);
-  const [github, setGithub] = useState<GithubState>({ status: "loading" });
-  // Set once the GitHub status request has answered; a ref, so recording it
-  // does not re-run the effect and abort the request it belongs to.
-  const githubRequested = useRef(false);
   const streamAbort = useRef<AbortController | null>(null);
   const streamEnd = useRef<HTMLDivElement | null>(null);
   const scroller = useRef<HTMLDivElement | null>(null);
@@ -442,13 +438,25 @@ export function ChatHub(props: {
       const trimmed = value.trim();
       if (!trimmed || running) return;
       advanceView();
-      if (interaction === "ai" && labModel === "external" && !regenerate) {
+      const modelForLab =
+        props.kind === "ai" && labModel === "external" ? "rouge" : labModel;
+      if (
+        props.kind !== "ai" &&
+        props.kind !== "agent" &&
+        interaction === "ai" &&
+        labModel === "external" &&
+        !regenerate
+      ) {
         setError(
           "External API is the Osirus provider pool, not ROUGE 1, QUASNIR, or DARUS.",
         );
         return;
       }
-      if (labAnswers({ interaction, model: labModel }) && !regenerate) {
+      const useLab =
+        props.kind === "ai" ||
+        (props.kind !== "agent" &&
+          labAnswers({ interaction, model: labModel }));
+      if (useLab && !regenerate) {
         const requestId = crypto.randomUUID();
         setObjective("");
         setError(null);
@@ -465,7 +473,7 @@ export function ChatHub(props: {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-              modelId: labModel,
+              modelId: modelForLab,
               interaction: "ai",
               messages: [{ role: "user", content: trimmed }],
             }),
@@ -529,6 +537,38 @@ export function ChatHub(props: {
               caption: customerProgramCaption(body.userLabel),
             },
           ]);
+          if (props.kind === "ai") {
+            const saved = await fetch("/api/chat/turns", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({
+                sessionId,
+                model: modelForLab,
+                user: trimmed,
+                assistant: answer,
+              }),
+            }).catch(() => null);
+            const savedBody = (
+              saved?.ok ? await saved.json().catch(() => null) : null
+            ) as { id?: string } | null;
+            if (savedBody?.id) {
+              sessionRef.current = savedBody.id;
+              setSessionId(savedBody.id);
+              upsertSession({
+                id: savedBody.id,
+                title: trimmed.slice(0, 120),
+                updatedAt: new Date().toISOString(),
+                surface: "ai",
+              });
+              window.history.replaceState(
+                null,
+                "",
+                `/app?session=${savedBody.id}`,
+              );
+            } else {
+              setError("The reply was not saved.");
+            }
+          }
         } catch {
           setLabActivity(null);
           setLabPhases([]);
@@ -537,6 +577,7 @@ export function ChatHub(props: {
         }
         return;
       }
+      if (props.kind === "ai") return;
       const requestId = crypto.randomUUID();
       setObjective("");
       setError(null);
@@ -572,7 +613,11 @@ export function ChatHub(props: {
             requestId,
             sessionId,
             regenerate,
-            ...(mode !== "auto" ? { mode } : {}),
+            ...(props.kind === "agent"
+              ? { mode: "agent", surface: "agent" }
+              : mode !== "auto"
+                ? { mode }
+                : {}),
             ...(attachmentIds.length ? { attachmentIds } : {}),
           }),
           signal: controller.signal,
@@ -598,7 +643,7 @@ export function ChatHub(props: {
           window.history.replaceState(
             null,
             "",
-            `/app?session=${headerSession}`,
+            `${props.kind === "agent" ? "/app/agent" : "/app"}?session=${headerSession}`,
           );
         }
         if (headerRun) {
@@ -659,6 +704,7 @@ export function ChatHub(props: {
       sessionId,
       shell.sessions,
       upsertSession,
+      props.kind,
     ],
   );
 
@@ -690,9 +736,13 @@ export function ChatHub(props: {
     setSnapshot(null);
     setResumed(false);
     setWorkbenchOpen(null);
-    window.history.replaceState(null, "", "/app?new=1");
+    window.history.replaceState(
+      null,
+      "",
+      `${props.kind === "agent" ? "/app/agent" : "/app"}?new=1`,
+    );
     window.setTimeout(() => composer.current?.focus(), 0);
-  }, [advanceView, running]);
+  }, [advanceView, props.kind, running]);
 
   const switchSession = useCallback(
     async (next: SessionSummary) => {
@@ -723,10 +773,14 @@ export function ChatHub(props: {
       setWorkbenchOpen(null);
       setTab(null);
       nearBottom.current = true;
-      window.history.replaceState(null, "", `/app?session=${state.sessionId}`);
+      window.history.replaceState(
+        null,
+        "",
+        `${props.kind === "agent" ? "/app/agent" : "/app"}?session=${state.sessionId}`,
+      );
       if (state.recentRunId) void refreshRun(state.recentRunId);
     },
-    [advanceView, refreshRun, running, sessionId],
+    [advanceView, props.kind, refreshRun, running, sessionId],
   );
 
   useEffect(() => {
@@ -738,44 +792,6 @@ export function ChatHub(props: {
     });
     return () => bindChat(null);
   }, [bindChat, newTask, running, sessionId, switchSession]);
-
-  const hasRepository = Boolean(repositoryInObjective(objective));
-  useEffect(() => {
-    if (!hasRepository || githubRequested.current) return;
-    const controller = new AbortController();
-    const timer = window.setTimeout(() => {
-      fetch("/api/connectors/github", {
-        cache: "no-store",
-        signal: controller.signal,
-      })
-        .then(async (response) => {
-          const body = (await response.json()) as {
-            status?: string;
-            login?: string;
-          };
-          githubRequested.current = true;
-          setGithub(
-            body.status === "CONNECTED" && body.login
-              ? { status: "CONNECTED", login: body.login }
-              : {
-                  status:
-                    body.status === "NOT_CONFIGURED"
-                      ? "NOT_CONFIGURED"
-                      : "NOT_CONNECTED",
-                },
-          );
-        })
-        .catch(() => {
-          if (controller.signal.aborted) return;
-          githubRequested.current = true;
-          setGithub({ status: "unknown" });
-        });
-    }, 0);
-    return () => {
-      window.clearTimeout(timer);
-      controller.abort();
-    };
-  }, [hasRepository]);
 
   const view = useMemo(
     () => (snapshot ? deriveRunView(snapshot) : null),
@@ -802,7 +818,13 @@ export function ChatHub(props: {
   const activeTab = tab ?? defaultTab(snapshot);
   const title =
     shell.sessions.find((item) => item.id === sessionId)?.title ??
-    (messages.length ? "Conversation" : "New task");
+    (messages.length
+      ? "Conversation"
+      : props.kind === "agent"
+        ? "Agent"
+        : props.kind === "ai"
+          ? "Chat"
+          : "New task");
   const empty = messages.length === 0 && !running;
   const pendingApproval = liveView?.pendingApprovals[0];
   const productStatus = !(props.screenshotLayout && liveView?.live);
@@ -815,11 +837,6 @@ export function ChatHub(props: {
   const refresh = useCallback(() => {
     if (snapshot) void refreshRun(snapshot.run.id);
   }, [refreshRun, snapshot]);
-
-  const start = (starter: Starter) => {
-    setObjective(starter.prefix);
-    window.setTimeout(() => composer.current?.focus(), 0);
-  };
 
   return (
     <div
@@ -858,11 +875,7 @@ export function ChatHub(props: {
         >
           <div className="chat-content" ref={content}>
             {empty ? (
-              <ChatHome
-                firstName={props.firstName}
-                onStart={start}
-                onboarding={props.onboarding}
-              />
+              <ChatHome />
             ) : (
               <MessageList
                 messages={messages}
@@ -916,9 +929,9 @@ export function ChatHub(props: {
               : null
           }
           onRegenerate={
-            lastObjective && !empty
-              ? () => void runObjective(lastObjective, true)
-              : null
+            props.kind === "ai" || !lastObjective || empty
+              ? null
+              : () => void runObjective(lastObjective, true)
           }
           running={running}
           cancelling={cancelling}
@@ -945,7 +958,14 @@ export function ChatHub(props: {
             setLabGrades([]);
             for (const listener of labListeners) listener();
           }}
-          github={github}
+          chrome={
+            props.kind === "ai"
+              ? "chat"
+              : props.kind === "agent"
+                ? "agent"
+                : "full"
+          }
+          github={props.kind ? null : undefined}
           approvalAnchor={
             pendingApproval ? `approval-${pendingApproval.id}` : null
           }

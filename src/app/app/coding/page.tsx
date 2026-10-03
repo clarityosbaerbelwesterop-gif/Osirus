@@ -1,10 +1,13 @@
-import { ChatHub } from "@/components/chat/chat-hub";
-import { loadSurfaceThread } from "@/lib/product/surface-thread";
+import { CodingSurface } from "@/components/coding/coding-surface";
 import { requireProductSession } from "@/lib/product/session";
+import {
+  codingSelectionForRun,
+  loadSurfaceThread,
+} from "@/lib/product/surface-thread";
 
 export const dynamic = "force-dynamic";
 
-export default async function AppPage({
+export default async function CodingPage({
   searchParams,
 }: {
   searchParams: Promise<{ session?: string; new?: string }>;
@@ -14,20 +17,22 @@ export default async function AppPage({
   const state = await loadSurfaceThread({
     userId: identity.userId,
     workspaceId: identity.workspaceId,
-    surface: "ai",
+    surface: "coding",
     session: params.session,
     fresh: params.new,
   });
-
+  const selection = await codingSelectionForRun(
+    identity.userId,
+    state.activeRunId ?? state.recentRunId,
+  );
   return (
-    <ChatHub
-      kind="ai"
+    <CodingSurface
       key={state.sessionId ?? "new"}
-      workspaceName={identity.workspaceName}
       initialSessionId={state.sessionId}
       initialMessages={state.messages}
       initialRunId={state.activeRunId}
-      initialSnapshotRunId={state.recentRunId}
+      initialEffort={state.activeRunId && selection ? selection.effort : null}
+      initialModel={selection?.model ?? null}
     />
   );
 }

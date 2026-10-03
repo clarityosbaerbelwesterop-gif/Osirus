@@ -236,3 +236,149 @@ export async function openPullRequest(input: {
     );
   return { url: body.html_url ?? null, number: body.number ?? null };
 }
+
+const GITHUB_HEADERS = {
+  accept: "application/vnd.github+json",
+  "x-github-api-version": "2022-11-28",
+  "user-agent": "osirus",
+} as const;
+
+export type GithubListError =
+  | "not_configured"
+  | "not_connected"
+  | "grant_missing"
+  | "github_rejected"
+  | "github_unreachable";
+
+export type GrantedRepository = {
+  owner: string;
+  name: string;
+  private: boolean;
+  defaultBranch: string;
+};
+
+function githubHeaders(token: string) {
+  return { ...GITHUB_HEADERS, authorization: `Bearer ${token}` };
+}
+
+async function githubGet(token: string, url: string) {
+  try {
+    return await fetch(url, {
+      headers: githubHeaders(token),
+      signal: AbortSignal.timeout(10_000),
+      cache: "no-store",
+    });
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Repositories the already-connected grant can see. The token is sent to
+ * GitHub and is not returned, logged, or copied onto another surface.
+ */
+export async function listGrantedRepositories(
+  identity: Identity,
+): Promise<
+  | { ok: true; repositories: GrantedRepository[] }
+  | { ok: false; error: GithubListError; status?: number }
+> {
+  if (!connectorKeyConfigured()) return { ok: false, error: "not_configured" };
+  const token = await githubCredential(identity, "repo:read");
+  if (!token) {
+    const status = await githubConnectorStatus(identity);
+    return {
+      ok: false,
+      error: status.status === "CONNECTED" ? "grant_missing" : "not_connected",
+    };
+  }
+  const response = await githubGet(
+    token,
+    "https://api.github.com/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member",
+  );
+  if (!response) return { ok: false, error: "github_unreachable" };
+  if (!response.ok)
+    return { ok: false, error: "github_rejected", status: response.status };
+  const body = (await response.json()) as unknown;
+  if (!Array.isArray(body)) return { ok: false, error: "github_rejected" };
+  const repositories: GrantedRepository[] = [];
+  for (const entry of body) {
+    if (!entry || typeof entry !== "object") continue;
+    const row = entry as {
+      name?: unknown;
+      private?: unknown;
+      default_branch?: unknown;
+      owner?: { login?: unknown };
+    };
+    const owner = typeof row.owner?.login === "string" ? row.owner.login : "";
+    const name = typeof row.name === "string" ? row.name : "";
+    if (!owner || !name) continue;
+    repositories.push({
+      owner,
+      name,
+      private: Boolean(row.private),
+      defaultBranch:
+        typeof row.default_branch === "string" && row.default_branch
+          ? row.default_branch
+          : "main",
+    });
+  }
+  return { ok: true, repositories };
+}
+
+export async function listGrantedBranches(
+  identity: Identity,
+  repository: { owner: string; name: string },
+): Promise<
+  | { ok: true; branches: string[] }
+  | { ok: false; error: GithubListError; status?: number }
+> {
+  if (
+    !parseGithubRepository(
+      `https://github.com/${repository.owner}/${repository.name}`,
+    )
+  ) {
+    return { ok: false, error: "github_rejected" };
+  }
+  if (!connectorKeyConfigured()) return { ok: false, error: "not_configured" };
+  const token = await githubCredential(identity, "repo:read");
+  if (!token) {
+    const status = await githubConnectorStatus(identity);
+    return {
+      ok: false,
+      error: status.status === "CONNECTED" ? "grant_missing" : "not_connected",
+    };
+  }
+  const response = await githubGet(
+    token,
+    `https://api.github.com/repos/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}/branches?per_page=100`,
+  );
+  if (!response) return { ok: false, error: "github_unreachable" };
+  if (!response.ok)
+    return { ok: false, error: "github_rejected", status: response.status };
+  const body = (await response.json()) as unknown;
+  if (!Array.isArray(body)) return { ok: false, error: "github_rejected" };
+  const branches = body.flatMap((entry) => {
+    if (!entry || typeof entry !== "object") return [];
+    const name = (entry as { name?: unknown }).name;
+    return typeof name === "string" && name ? [name] : [];
+  });
+  return { ok: true, branches };
+}
+
+export function githubListMessage(error: GithubListError, status?: number) {
+  switch (error) {
+    case "not_configured":
+      return "GitHub is not available in this deployment.";
+    case "not_connected":
+      return "GitHub is not connected.";
+    case "grant_missing":
+      return "The connected GitHub grant cannot read repositories.";
+    case "github_unreachable":
+      return "GitHub could not be reached.";
+    case "github_rejected":
+      return status
+        ? `GitHub refused the connected grant (${status}).`
+        : "GitHub refused the connected grant.";
+  }
+}

@@ -15,6 +15,7 @@ export type SessionSummary = {
   title: string;
   updatedAt: string;
   pinnedAt?: string | null;
+  surface?: "ai" | "agent" | "bot" | "coding";
 };
 
 /** What the chat page lends the sidebar while it is mounted. */
