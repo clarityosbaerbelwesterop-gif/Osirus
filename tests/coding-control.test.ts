@@ -66,7 +66,7 @@ describe("coding effort router", () => {
     ).toBe("Rename the label");
   });
 
-  it("shows a suggestion as text and a choice as chosen", () => {
+  it("shows a suggestion in the same select and a choice as the marked value", () => {
     const suggested = renderToStaticMarkup(
       createElement(EffortField, {
         chosen: null,
@@ -74,9 +74,10 @@ describe("coding effort router", () => {
         onChoose: () => undefined,
       }),
     );
-    expect(suggested).toContain("Suggestion: Hoch");
+    expect(suggested).toContain('value="hoch"');
+    expect(suggested).toContain('data-suggested="true"');
     expect(suggested).toContain('data-chosen="false"');
-    expect(suggested).not.toContain("effort-chosen-mark");
+    expect(suggested).not.toMatch(/Suggestion|Chosen/);
     expect(suggested).not.toMatch(/%|badge|pill/);
     const chosen = renderToStaticMarkup(
       createElement(EffortField, {
@@ -85,9 +86,9 @@ describe("coding effort router", () => {
         onChoose: () => undefined,
       }),
     );
-    expect(chosen).toContain("Chosen");
     expect(chosen).toContain('value="mittel"');
-    expect(chosen).not.toContain("Suggestion:");
+    expect(chosen).toContain('data-chosen="true"');
+    expect(chosen).not.toMatch(/Suggestion|Chosen/);
     const motion = renderToStaticMarkup(
       createElement(EffortMotion, { effort: "hoch", active: false }),
     );
