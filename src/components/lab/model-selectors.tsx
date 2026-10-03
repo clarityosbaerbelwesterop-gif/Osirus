@@ -111,9 +111,14 @@ export function ModelSelectors(props: {
           interaction: props.interaction,
         })}
       </p>
-      {shownGrades.some((grade) => !grade.passed) ? (
+      {shownGrades.length ? (
         <p className="lab-activity" data-activity="idle">
-          A check did not pass.
+          {shownGrades
+            .map(
+              (grade) =>
+                `${grade.phase} · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`,
+            )
+            .join(" ")}
         </p>
       ) : null}
       {pills.length ? (
