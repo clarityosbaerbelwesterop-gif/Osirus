@@ -96,9 +96,7 @@ test("1. sign in, new chat, normal question, streamed answer", async ({
   });
 
   await openSurface(page, "chat-empty");
-  await expect(
-    page.getByRole("heading", { name: /What are we working on/ }),
-  ).toBeVisible();
+  await expect(page.getByText(/Wieder am Start/)).toBeVisible();
   const composer = page.getByRole("textbox", { name: "Message Osirus" });
   await composer.fill(QUESTION);
   await composer.press("Enter");

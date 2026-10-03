@@ -1033,6 +1033,8 @@
 .coding-picks select {
   box-sizing: border-box;
   width: 100%;
+  min-height: 24px;
+  padding: 4px 8px;
   line-height: 1;
   vertical-align: middle;
 }
