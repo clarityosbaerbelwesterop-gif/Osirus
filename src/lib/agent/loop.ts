@@ -1,3 +1,5 @@
+import { CodingTaskLeft } from "../coding/task-bound";
+import { isPauseAbort } from "../runtime/pause";
 import {
   asPromptContext,
   ToolApprovalRequired,
@@ -431,6 +433,14 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
 
   while (true) {
     if (input.signal?.aborted) {
+      if (isPauseAbort(input.signal)) {
+        return {
+          status: "yielded",
+          state,
+          answer: state.answer ?? null,
+          reason: "paused",
+        };
+      }
       return {
         status: "failed",
         state,
@@ -482,6 +492,15 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
         });
       }
     } catch (error) {
+      if (isPauseAbort(input.signal)) {
+        state.modelCalls = Math.max(0, state.modelCalls - 1);
+        return {
+          status: "yielded",
+          state,
+          answer: state.answer ?? null,
+          reason: "paused",
+        };
+      }
       // The provider refused the call: nothing the model said is wrong, so
       // this is not a bad decision to correct. End here, resumable.
       const refusal = providerRefusalOf(error);
@@ -644,6 +663,22 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
             context: { ...input.toolContext, signal: input.signal },
           });
         } catch (error) {
+          if (isPauseAbort(input.signal) || error instanceof CodingTaskLeft) {
+            if (error instanceof CodingTaskLeft) {
+              return {
+                status: "failed",
+                state,
+                answer: null,
+                reason: "action_left_task",
+              };
+            }
+            return {
+              status: "yielded",
+              state,
+              answer: state.answer ?? null,
+              reason: "paused",
+            };
+          }
           if (error instanceof ToolApprovalRequired) {
             state.pendingCall = {
               toolId: decision.toolId!,

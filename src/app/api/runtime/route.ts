@@ -3,6 +3,12 @@ import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
 import { executeRuntimeRun, prepareRuntimeRun } from "@/lib/runtime/executor";
 import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
+import {
+  codingToolsNeeded,
+  routeCodingEffort,
+  taskForEffort,
+} from "@/lib/product/effort-router";
+import { parseEffort } from "@/lib/product/surfaces";
 import { routeCapabilities } from "@/lib/runtime/router";
 import { encodeSse } from "@/lib/runtime/sse";
 import type { RuntimePacket } from "@/lib/runtime/types";
@@ -29,7 +35,11 @@ const inputSchema = z.object({
     .object({
       repository: z.string().trim().max(300),
       branch: z.string().trim().min(1).max(100),
-      effort: z.enum(["leicht", "mittel", "hoch", "super", "ultra"]),
+      effort: z
+        .enum(["leicht", "mittel", "hoch", "super", "ultra"])
+        .nullable()
+        .optional(),
+      effortChosen: z.boolean().optional(),
       model: z.enum(["rouge", "quasnir", "darus"]),
     })
     .optional(),
@@ -92,6 +102,30 @@ export async function POST(request: Request) {
     throw error;
   }
   const surface = parsed.data.surface;
+  let coding = parsed.data.coding;
+  if (surface === "coding" && coding) {
+    const chosen = coding.effortChosen ? parseEffort(coding.effort) : null;
+    if (coding.effortChosen && !chosen) {
+      return Response.json(
+        {
+          error: "invalid_request",
+          message: "Choose one of Leicht, Mittel, Hoch, Super, or Ultra.",
+        },
+        { status: 400 },
+      );
+    }
+    const task = taskForEffort(parsed.data.objective);
+    const routed = routeCodingEffort({
+      chosen,
+      task,
+      toolsNeeded: codingToolsNeeded(task),
+    });
+    coding = {
+      ...coding,
+      effort: routed.effort,
+      effortChosen: routed.source === "chosen",
+    };
+  }
   if (surface === "coding" && !parsed.data.coding) {
     return Response.json(
       {
@@ -127,8 +161,14 @@ export async function POST(request: Request) {
       mode: surface === "coding" ? "coding" : parsed.data.mode,
       surface,
       coding:
-        surface === "coding" && parsed.data.coding
-          ? parsed.data.coding
+        surface === "coding" && coding && coding.effort
+          ? {
+              repository: coding.repository,
+              branch: coding.branch,
+              effort: coding.effort,
+              model: coding.model,
+              effortChosen: coding.effortChosen === true,
+            }
           : undefined,
     });
   } catch (error) {

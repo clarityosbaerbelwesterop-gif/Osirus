@@ -22,6 +22,7 @@ type RunRow = {
   error_code: string | null;
   error_message: string | null;
   cancel_requested: boolean;
+  paused_at?: string | Date | null;
   arm_id: string | null;
   acceptance_contract: Record<string, unknown> | null;
 };
@@ -526,6 +527,7 @@ export class RuntimeRepository {
       branch: string;
       effort: string;
       model: string;
+      effortChosen?: boolean;
     };
   }): Promise<{ run: RunRow; created: boolean }> {
     const id = randomUUID();
@@ -666,6 +668,36 @@ export class RuntimeRepository {
         where id = $1::uuid and status = 'queued'
         returning *`,
       [runId],
+    );
+    return rows[0] ?? null;
+  }
+
+  async isPaused(runId: string) {
+    const rows = await queryAs<{ paused_at: string | Date | null }>(
+      this.actorId,
+      "select paused_at from osirus.runs where id = $1::uuid",
+      [runId],
+    );
+    return Boolean(rows[0]?.paused_at);
+  }
+
+  /**
+   * Pause or resume one coding run. Resume clears the flag on the same row.
+   * It does not insert a run. A run that is not in progress is left alone.
+   */
+  async setCodingPaused(runId: string, paused: boolean) {
+    const rows = await queryAs<RunRow>(
+      this.actorId,
+      `update osirus.runs
+          set paused_at = case when $2::boolean then now() else null end
+        where id = $1::uuid
+          and status not in ('completed', 'failed', 'cancelled', 'cancelling')
+          and (
+            ($2::boolean and paused_at is null)
+            or (not $2::boolean and paused_at is not null)
+          )
+        returning *`,
+      [runId, paused],
     );
     return rows[0] ?? null;
   }
@@ -1074,6 +1106,7 @@ export class RuntimeRepository {
         errorCode: run.error_code,
         errorMessage: run.error_message,
         cancelRequested: run.cancel_requested,
+        pausedAt: run.paused_at ? new Date(run.paused_at).toISOString() : null,
         armId: run.arm_id ?? null,
         acceptanceContract: run.acceptance_contract ?? null,
       },

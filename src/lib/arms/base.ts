@@ -999,6 +999,15 @@ export abstract class BaseArm implements AgentArm {
     };
     notePending();
 
+    if (result.reason === "action_left_task") {
+      return {
+        kind: "FAILED",
+        failureClass: "action_left_task",
+        error: "The coding run stopped because an action left the task.",
+        retryable: false,
+      };
+    }
+
     context.state.toolEvidence = [
       ...readState<unknown[]>(context, "toolEvidence", []),
       ...toolbox.evidence.map((entry) => ({

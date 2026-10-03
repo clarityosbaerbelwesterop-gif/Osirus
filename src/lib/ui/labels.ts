@@ -222,6 +222,8 @@ function genericFailureText(raw: string): string | null {
     return "An action was rejected, so this step stopped.";
   if (/agent_loop_exhausted|bound_reached/.test(text))
     return "Osirus could not finish this step within its limits.";
+  if (/action_left_task|task_left/.test(text))
+    return "The coding run stopped because an action left the task.";
   if (/cancel/.test(text)) return "This step was cancelled.";
   return null;
 }

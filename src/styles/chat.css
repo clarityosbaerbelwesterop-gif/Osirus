@@ -1039,6 +1039,10 @@
   vertical-align: middle;
 }
 
+.coding-picks select[data-suggested="true"] {
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
 .effort-motion {
   display: flex;
   align-items: flex-end;

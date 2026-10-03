@@ -1,7 +1,7 @@
 import { CodingSurface } from "@/components/coding/coding-surface";
 import { requireProductSession } from "@/lib/product/session";
 import {
-  codingSelectionForRun,
+  codingRunControl,
   loadSurfaceThread,
 } from "@/lib/product/surface-thread";
 
@@ -21,10 +21,11 @@ export default async function CodingPage({
     session: params.session,
     fresh: params.new,
   });
-  const selection = await codingSelectionForRun(
+  const control = await codingRunControl(
     identity.userId,
     state.activeRunId ?? state.recentRunId,
   );
+  const selection = control.selection;
   return (
     <CodingSurface
       key={state.sessionId ?? "new"}
@@ -32,6 +33,10 @@ export default async function CodingPage({
       initialMessages={state.messages}
       initialRunId={state.activeRunId}
       initialEffort={state.activeRunId && selection ? selection.effort : null}
+      initialEffortChosen={Boolean(
+        state.activeRunId && selection?.effortChosen,
+      )}
+      initialPaused={Boolean(state.activeRunId && control.paused)}
       initialModel={selection?.model ?? null}
     />
   );

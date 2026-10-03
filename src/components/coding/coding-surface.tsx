@@ -1,10 +1,13 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { navigationLeavesCodingTask } from "@/lib/coding/task-bound";
+import {
+  codingToolsNeeded,
+  routeCodingEffort,
+} from "@/lib/product/effort-router";
 import {
   CUSTOMER_MODELS,
-  EFFORT_LABEL,
-  EFFORTS,
   type CustomerModelId,
   type EffortId,
 } from "@/lib/product/surfaces";
@@ -16,6 +19,7 @@ import { RunCard } from "../run-status/run-card";
 import { useShell } from "../shell/shell-context";
 import { TopBar } from "../shell/top-bar";
 import { Badge } from "../ui/badge";
+import { EffortField } from "./effort-field";
 import { EffortMotion } from "./effort-motion";
 
 type Repo = {
@@ -36,6 +40,8 @@ export function CodingSurface(props: {
   initialMessages: ChatMessage[];
   initialRunId: string | null;
   initialEffort: EffortId | null;
+  initialEffortChosen?: boolean;
+  initialPaused?: boolean;
   initialModel: CustomerModelId | null;
 }) {
   const shell = useShell();
@@ -51,11 +57,14 @@ export function CodingSurface(props: {
   const [model, setModel] = useState<CustomerModelId>(
     props.initialModel ?? "rouge",
   );
-  const [effort, setEffort] = useState<EffortId>(
-    props.initialEffort ?? "leicht",
+  const [chosen, setChosen] = useState<EffortId | null>(
+    props.initialEffortChosen ? props.initialEffort : null,
   );
   const [failure, setFailure] = useState<string | null>(null);
-  const [running, setRunning] = useState(Boolean(props.initialRunId));
+  const [paused, setPaused] = useState(Boolean(props.initialPaused));
+  const [running, setRunning] = useState(
+    Boolean(props.initialRunId) && !props.initialPaused,
+  );
   const [activeEffort, setActiveEffort] = useState<EffortId | null>(
     props.initialRunId ? props.initialEffort : null,
   );
@@ -135,7 +144,9 @@ export function CodingSurface(props: {
     const next = (await response.json()) as RunSnapshot;
     setSnapshot(next);
     const finished = TERMINAL.has(next.run.status);
-    setRunning(!finished);
+    const nextPaused = Boolean(next.run.pausedAt) && !finished;
+    setPaused(nextPaused);
+    setRunning(!finished && !nextPaused);
     if (finished) setActiveEffort(null);
     setMessages(next.messages);
     setSessionId(next.run.sessionId);
@@ -148,8 +159,44 @@ export function CodingSurface(props: {
     return () => window.clearInterval(timer);
   }, [refresh, runId, running]);
 
+  useEffect(() => {
+    if (!running || !runId) return;
+    const id = runId;
+    const onClick = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey)
+        return;
+      const anchor = (event.target as Element | null)?.closest?.("a[href]");
+      if (!anchor) return;
+      const href = anchor.getAttribute("href");
+      if (!href || href.startsWith("#")) return;
+      let target: URL;
+      try {
+        target = new URL(href, window.location.href);
+      } catch {
+        return;
+      }
+      if (!navigationLeavesCodingTask(target, new URL(window.location.href)))
+        return;
+      void fetch(`/api/runtime/${id}/cancel`, { method: "POST" }).catch(
+        () => undefined,
+      );
+      setRunning(false);
+      setActiveEffort(null);
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [runId, running]);
+
+  const taskText = task.trim() || "Work in the selected repository.";
+  const suggestion = routeCodingEffort({
+    chosen: null,
+    task: taskText,
+    toolsNeeded: codingToolsNeeded(taskText),
+  }).effort;
+
   const start = async () => {
-    if (running) return;
+    if (running || paused) return;
     const repo = repos?.find(
       (item) => `${item.owner}/${item.name}` === repoKey,
     );
@@ -178,7 +225,13 @@ export function CodingSurface(props: {
         sessionId,
         surface: "coding",
         mode: "coding",
-        coding: { repository, branch, effort, model },
+        coding: {
+          repository,
+          branch,
+          effort: chosen,
+          effortChosen: chosen !== null,
+          model,
+        },
       }),
     }).catch(() => null);
     if (!response?.ok) {
@@ -198,8 +251,9 @@ export function CodingSurface(props: {
       setActiveEffort(null);
       return;
     }
+    setPaused(false);
     setRunning(true);
-    setActiveEffort(effort);
+    setActiveEffort(chosen ?? suggestion);
     setRunId(started);
     if (startedSession) {
       setSessionId(startedSession);
@@ -222,8 +276,33 @@ export function CodingSurface(props: {
   const view = snapshot ? deriveRunView(snapshot) : null;
   const status = view ? chatRunPresentation(view.status) : null;
   const canStart = Boolean(
-    repoKey && branch && branches?.includes(branch) && !failure && !running,
+    repoKey &&
+    branch &&
+    branches?.includes(branch) &&
+    !failure &&
+    !running &&
+    !paused,
   );
+
+  const control = async (action: "pause" | "resume") => {
+    if (!runId) return;
+    if (action === "pause" && !running) return;
+    if (action === "resume" && !paused) return;
+    const response = await fetch(`/api/runtime/${runId}/pause`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ action }),
+    }).catch(() => null);
+    if (!response?.ok) return;
+    if (action === "pause") {
+      setPaused(true);
+      setRunning(false);
+      return;
+    }
+    setPaused(false);
+    setRunning(true);
+    void refresh(runId);
+  };
 
   return (
     <div className="chat-page">
@@ -231,7 +310,11 @@ export function CodingSurface(props: {
         <TopBar
           title="Coding"
           status={
-            status ? <Badge tone={status.tone}>{status.label}</Badge> : null
+            paused ? (
+              <Badge tone="warning">Paused</Badge>
+            ) : status ? (
+              <Badge tone={status.tone}>{status.label}</Badge>
+            ) : null
           }
         />
         <div className="chat-scroll">
@@ -259,7 +342,7 @@ export function CodingSurface(props: {
                 <p className="home-title">Coding</p>
               </div>
             )}
-            <EffortMotion effort={activeEffort} active={running} />
+            <EffortMotion effort={activeEffort} active={running && !paused} />
             {status ? (
               <p className="sr-only" role="status">
                 {status.label}.{" "}
@@ -286,7 +369,7 @@ export function CodingSurface(props: {
               <select
                 aria-label="Repository"
                 value={repoKey}
-                disabled={running || !repos?.length}
+                disabled={running || paused || !repos?.length}
                 onChange={(event) => {
                   setFailure(repos?.length ? null : failure);
                   setBranches(null);
@@ -310,7 +393,7 @@ export function CodingSurface(props: {
               <select
                 aria-label="Branch"
                 value={branch}
-                disabled={running || !branches?.length}
+                disabled={running || paused || !branches?.length}
                 onChange={(event) => {
                   setFailure(null);
                   setBranch(event.target.value);
@@ -329,7 +412,7 @@ export function CodingSurface(props: {
               <select
                 aria-label="Model"
                 value={model}
-                disabled={running}
+                disabled={running || paused}
                 onChange={(event) =>
                   setModel(event.target.value as CustomerModelId)
                 }
@@ -341,23 +424,12 @@ export function CodingSurface(props: {
                 ))}
               </select>
             </label>
-            {running ? null : (
-              <label>
-                Effort
-                <select
-                  aria-label="Effort"
-                  value={effort}
-                  onChange={(event) =>
-                    setEffort(event.target.value as EffortId)
-                  }
-                >
-                  {EFFORTS.map((item) => (
-                    <option key={item} value={item}>
-                      {EFFORT_LABEL[item]}
-                    </option>
-                  ))}
-                </select>
-              </label>
+            {running || paused ? null : (
+              <EffortField
+                chosen={chosen}
+                suggestion={task.trim() ? suggestion : null}
+                onChoose={setChosen}
+              />
             )}
           </div>
           <label className="sr-only" htmlFor="coding-task">
@@ -367,12 +439,30 @@ export function CodingSurface(props: {
             id="coding-task"
             className="composer-input"
             value={task}
-            disabled={running}
+            disabled={running || paused}
             rows={2}
             placeholder="What should change?"
             onChange={(event) => setTask(event.target.value)}
           />
           <div className="composer-bar">
+            {running ? (
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => void control("pause")}
+              >
+                Pause
+              </button>
+            ) : null}
+            {paused ? (
+              <button
+                type="button"
+                className="btn btn-sm"
+                onClick={() => void control("resume")}
+              >
+                Resume
+              </button>
+            ) : null}
             <button
               type="submit"
               className="btn btn-sm btn-primary"
