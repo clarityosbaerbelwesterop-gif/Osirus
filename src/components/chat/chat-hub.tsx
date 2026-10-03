@@ -32,6 +32,7 @@ import {
 } from "@/lib/lab/choices";
 import { labAnswers } from "@/lib/lab/honesty";
 import { isSessionId, shouldApplyRunSnapshot } from "@/lib/ui/snapshot-gate";
+import { liveAgentPills } from "@/lib/ui/live-activity";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
 import type { Starter } from "@/lib/ui/starters";
 import {
@@ -780,6 +781,10 @@ export function ChatHub(props: {
     () => (snapshot ? deriveRunView(snapshot) : null),
     [snapshot],
   );
+  const livePills = useMemo(
+    () => liveAgentPills({ interaction, snapshot }),
+    [interaction, snapshot],
+  );
   const liveView = useMemo(() => {
     if (!view || !view.live) return view;
     const latest = activities.at(-1)?.label;
@@ -918,9 +923,12 @@ export function ChatHub(props: {
           onModeChange={selectMode}
           labModel={labModel}
           interaction={interaction}
-          labActivity={labActivity}
+          labActivity={
+            interaction === "agent" && streaming ? "typing" : labActivity
+          }
           labPhases={labPhases}
           labGrades={labGrades}
+          livePills={livePills}
           onLabModelChange={(next) => {
             writePreference(LAB_MODEL_COOKIE, next);
             for (const listener of labListeners) listener();
