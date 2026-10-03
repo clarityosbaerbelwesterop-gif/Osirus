@@ -2,7 +2,6 @@ import { BrainCircuit, History, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import type { CSSProperties } from "react";
 import { OsirusMark } from "@/components/shell/osirus-mark";
 import { auth } from "@/lib/auth/server";
 
@@ -64,40 +63,23 @@ export default async function HomePage() {
       </nav>
 
       <section className="landing-hero">
-        <div className="landing-aurora" aria-hidden="true">
-          <span />
-          <span />
-          <span />
-        </div>
         <div className="landing-hero-grid">
           <div>
-            <p
-              className="landing-eyebrow landing-rise"
-              style={{ "--d": "60ms" } as CSSProperties}
-            >
-              <span className="landing-pulse" aria-hidden="true" />
+            <p className="landing-eyebrow">
+              <span className="landing-dot" aria-hidden="true" />
               Agent workspace
             </p>
-            <h1
-              className="landing-rise"
-              style={{ "--d": "140ms" } as CSSProperties}
-            >
+            <h1>
               An agent that{" "}
-              <span className="landing-sheen">finishes the work</span>, and
+              <span className="landing-emphasis">finishes the work</span>, and
               shows it.
             </h1>
-            <p
-              className="landing-copy landing-rise"
-              style={{ "--d": "220ms" } as CSSProperties}
-            >
+            <p className="landing-copy">
               Osirus plans a task, works in an isolated sandbox, asks before it
               acts on anything you connected, and checks its own result before
               it calls it done.
             </p>
-            <div
-              className="landing-actions landing-rise"
-              style={{ "--d": "300ms" } as CSSProperties}
-            >
+            <div className="landing-actions">
               <Link className="btn btn-primary btn-lg" href="/auth/sign-up">
                 Create account
               </Link>
@@ -105,10 +87,7 @@ export default async function HomePage() {
                 Sign in
               </Link>
             </div>
-            <ul
-              className="landing-trust landing-rise"
-              style={{ "--d": "380ms" } as CSSProperties}
-            >
+            <ul className="landing-trust">
               <li>EU-hosted database</li>
               <li>Approval-gated actions</li>
               <li>No payment required</li>
@@ -116,8 +95,7 @@ export default async function HomePage() {
           </div>
 
           <div
-            className="landing-run landing-rise"
-            style={{ "--d": "260ms" } as CSSProperties}
+            className="landing-run"
             role="img"
             aria-label="Illustration of an Osirus run: plan, sandbox execution, approval gate, verification — finished with status verified."
           >
@@ -126,11 +104,7 @@ export default async function HomePage() {
               <span className="landing-run-cmd">$ osirus run</span>
               {RUN_LINES.map((line, i) => (
                 <span className="landing-run-line" key={line.tag}>
-                  <span
-                    className="landing-run-dot"
-                    style={{ "--d": `${i * 900}ms` } as CSSProperties}
-                    aria-hidden="true"
-                  />
+                  <span className="landing-run-dot" aria-hidden="true" />
                   <span className="landing-run-tag">{line.tag}</span>
                   <span>{line.text}</span>
                 </span>

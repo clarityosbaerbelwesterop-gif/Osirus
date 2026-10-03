@@ -481,3 +481,34 @@
     transition: none !important;
   }
 }
+
+/* Calm pass: the page stays still. Motion is not the product. */
+
+.landing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-success);
+}
+
+.landing-emphasis {
+  color: var(--color-accent-text);
+}
+
+.landing-run,
+.landing-run-dot,
+.landing-run-verdict,
+.landing-run-cmd::after,
+.landing .landing-rise,
+.landing .landing-reveal {
+  animation: none;
+}
+
+.landing-principles article:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.landing-cta {
+  background: var(--color-surface);
+}
