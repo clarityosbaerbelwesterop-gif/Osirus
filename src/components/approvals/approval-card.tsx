@@ -28,7 +28,10 @@ export function ApprovalCard({
   const [busy, setBusy] = useState<"approved" | "rejected" | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const decide = async (decision: "approved" | "rejected") => {
+  const decide = async (
+    decision: "approved" | "rejected",
+    adjustment?: string,
+  ) => {
     setBusy(decision);
     setError(null);
     const response = await fetch(
@@ -36,7 +39,10 @@ export function ApprovalCard({
       {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ decision }),
+        body: JSON.stringify({
+          decision,
+          ...(adjustment ? { adjustment } : {}),
+        }),
       },
     ).catch(() => null);
     setBusy(null);
@@ -47,6 +53,73 @@ export function ApprovalCard({
       );
     else setError("Your decision was not recorded. Try again.");
   };
+
+  const [target, setTarget] = useState(approval.intent?.target ?? "");
+  const intent = approval.intent;
+  const yes = () => {
+    if (!intent) return;
+    const next = target.trim();
+    if (!next) return;
+    if (next === intent.target) void decide("approved");
+    else {
+      const sentence = [intent.text, next, intent.tail]
+        .filter(Boolean)
+        .join(" ");
+      void decide("rejected", sentence);
+    }
+  };
+
+  if (intent) {
+    return (
+      <article
+        className="approval approval-intent"
+        id={`approval-${approval.id}`}
+        data-intent="true"
+        aria-label={`${intent.text} ${intent.target}${intent.tail ? ` ${intent.tail}` : ""}`}
+      >
+        <p className="intent-line">
+          <span>{intent.text}</span>
+          <input
+            value={target}
+            aria-label={intent.target}
+            spellCheck={false}
+            onChange={(event) => setTarget(event.target.value)}
+          />
+          {intent.tail ? <span>{intent.tail}</span> : null}
+        </p>
+        {intent.diff.length ? (
+          <pre className="intent-diff">
+            {intent.diff.map((line, index) => (
+              <span
+                key={index}
+                className={line.kind === "add" ? "diff-add" : "diff-remove"}
+              >
+                {line.kind === "add" ? "+" : "-"}
+                {line.text}
+              </span>
+            ))}
+          </pre>
+        ) : null}
+        {approval.decidable ? (
+          <footer className="approval-actions">
+            <button
+              type="button"
+              className="btn btn-sm btn-primary"
+              disabled={busy !== null || !target.trim()}
+              onClick={yes}
+            >
+              Yes
+            </button>
+          </footer>
+        ) : null}
+        {error ? (
+          <p className="field-error" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </article>
+    );
+  }
 
   const highRisk =
     approval.riskLevel === "high" || approval.riskLevel === "critical";

@@ -1,4 +1,5 @@
 import "server-only";
+import { codingPermissionFromInput } from "../coding/intent";
 import { RuntimeRepository } from "../runtime/repository";
 import { codingGrantFromRunInput, type SessionSurface } from "./surfaces";
 
@@ -51,7 +52,7 @@ export async function codingSelectionForRun(
 
 /** Selection plus whether that coding run is paused. No connector secret. */
 export async function codingRunControl(userId: string, runId: string | null) {
-  if (!runId) return { selection: null, paused: false };
+  if (!runId) return { selection: null, permission: null, paused: false };
   const repository = new RuntimeRepository(userId);
   const [input, run] = await Promise.all([
     repository.getRunInput(runId).catch(() => null),
@@ -59,6 +60,7 @@ export async function codingRunControl(userId: string, runId: string | null) {
   ]);
   return {
     selection: codingGrantFromRunInput(input),
+    permission: codingPermissionFromInput(input),
     paused: Boolean(run?.paused_at),
   };
 }

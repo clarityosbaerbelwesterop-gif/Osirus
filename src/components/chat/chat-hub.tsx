@@ -36,7 +36,9 @@ import {
   chatStatusLine,
   customerProgramCaption,
 } from "@/lib/ui/chat-status";
-import { liveAgentPills } from "@/lib/ui/live-activity";
+import { liveAgentPills, showWorkingMotion } from "@/lib/ui/live-activity";
+import { chatSlash } from "@/lib/coding/intent";
+import { WorkingMotion } from "./working-motion";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
 import {
   autoOpenWorkbench,
@@ -898,6 +900,17 @@ export function ChatHub(props: {
                 }
               />
             )}
+            <WorkingMotion
+              active={
+                !props.screenshotLayout &&
+                showWorkingMotion({
+                  label:
+                    chatStatus?.label ??
+                    (running && !liveView ? "Starting" : null),
+                  paused: Boolean(snapshot?.run.pausedAt),
+                })
+              }
+            />
             <div ref={streamEnd} />
           </div>
         </div>
@@ -905,7 +918,20 @@ export function ChatHub(props: {
           ref={composer}
           value={objective}
           onChange={setObjective}
-          onSubmit={() => void runObjective(objective)}
+          onSubmit={() => {
+            const slash = chatSlash(objective);
+            if (slash === "stop") {
+              if (running) void cancel();
+              setObjective("");
+              return;
+            }
+            if (slash === "unknown") {
+              setError("That is not a command.");
+              setObjective("");
+              return;
+            }
+            void runObjective(objective);
+          }}
           attachments={attachments}
           uploading={uploading}
           onAttach={(file) => void attachFile(file)}

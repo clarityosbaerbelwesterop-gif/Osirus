@@ -40,6 +40,7 @@ const inputSchema = z.object({
         .nullable()
         .optional(),
       effortChosen: z.boolean().optional(),
+      permission: z.enum(["ask", "accept-edits"]).optional(),
       model: z.enum(["rouge", "quasnir", "darus"]),
     })
     .optional(),
@@ -168,6 +169,8 @@ export async function POST(request: Request) {
               effort: coding.effort,
               model: coding.model,
               effortChosen: coding.effortChosen === true,
+              permission:
+                coding.permission === "accept-edits" ? "accept-edits" : "ask",
             }
           : undefined,
     });

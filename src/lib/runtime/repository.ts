@@ -528,6 +528,7 @@ export class RuntimeRepository {
       effort: string;
       model: string;
       effortChosen?: boolean;
+      permission?: "ask" | "accept-edits";
     };
   }): Promise<{ run: RunRow; created: boolean }> {
     const id = randomUUID();
@@ -1339,6 +1340,7 @@ export class RuntimeRepository {
     approvalId: string;
     runId: string;
     decision: "approved" | "rejected";
+    adjustment?: string | null;
   }) {
     const rows = await queryAs<{ id: string; stage_id: string | null }>(
       this.actorId,
@@ -1346,7 +1348,11 @@ export class RuntimeRepository {
          update osirus.approvals
             set status = $3,
                 decided_by = $4::uuid,
-                decided_at = now()
+                decided_at = now(),
+                request = case
+                  when $5::text is null then request
+                  else coalesce(request, '{}'::jsonb) || jsonb_build_object('adjustment', $5::text)
+                end
           where id = $1::uuid
             and run_id = $2::uuid
             and status = 'requested'
@@ -1363,8 +1369,33 @@ export class RuntimeRepository {
           returning s.id
        )
        select id, stage_id from decided`,
-      [input.approvalId, input.runId, input.decision, this.actorId],
+      [
+        input.approvalId,
+        input.runId,
+        input.decision,
+        this.actorId,
+        input.decision === "rejected" ? (input.adjustment ?? null) : null,
+      ],
     );
     return rows[0] ?? null;
+  }
+
+  /** Coding-surface permission only. Other surfaces are not updated. */
+  async setCodingPermission(runId: string, permission: "ask" | "accept-edits") {
+    const rows = await queryAs<{ id: string }>(
+      this.actorId,
+      `update osirus.runs
+          set input = jsonb_set(
+            coalesce(input, '{}'::jsonb),
+            '{coding,permission}',
+            to_jsonb($2::text),
+            true
+          )
+        where id = $1::uuid
+          and input ->> 'surface' = 'coding'
+        returning id`,
+      [runId, permission],
+    );
+    return rows[0]?.id ?? null;
   }
 }

@@ -1,3 +1,4 @@
+import { intendedAction, type IntendedAction } from "../coding/intent";
 import { effectLabel, humanize, risk, toolLabel, type Tone } from "./labels";
 import { iso, obj, str, type Row } from "./records";
 
@@ -21,6 +22,8 @@ export type ApprovalView = {
   riskLabel: string;
   riskTone: Tone;
   details: Array<{ label: string; value: string }>;
+  /** The one coding action this approval is for, or null when it is not one. */
+  intent: IntendedAction | null;
   status: "requested" | "approved" | "rejected" | "expired" | "cancelled";
   statusLabel: string;
   decidable: boolean;
@@ -149,6 +152,7 @@ export function approvalView(row: Row, now = Date.now()): ApprovalView {
     riskLabel: riskInfo.label,
     riskTone: riskInfo.tone,
     details,
+    intent: intendedAction(toolId, input),
     status,
     statusLabel: STATUS_LABEL[status] ?? humanize(status),
     decidable: status === "requested",
