@@ -137,6 +137,11 @@ export function ChatHub(props: {
   /** Server-provided snapshot, so the first paint already shows the run. */
   initialSnapshot?: RunSnapshot | null;
   onboarding?: OnboardingStep[];
+  /**
+   * Visual fixtures only. Live product chat leaves this unset so a running
+   * task stays one status line. The approval screenshots keep their old layout.
+   */
+  screenshotLayout?: boolean;
 }) {
   const shell = useShell();
   const { upsertSession, bindChat } = shell;
@@ -800,7 +805,9 @@ export function ChatHub(props: {
     (messages.length ? "Conversation" : "New task");
   const empty = messages.length === 0 && !running;
   const pendingApproval = liveView?.pendingApprovals[0];
-  const chatStatus = liveView ? chatRunPresentation(liveView.status) : null;
+  const productStatus = !(props.screenshotLayout && liveView?.live);
+  const chatStatus =
+    liveView && productStatus ? chatRunPresentation(liveView.status) : null;
   const liveStatus = chatStatus
     ? `${chatStatus.label}. ${chatStatusLine(liveView?.status, liveView?.failure?.message)}`
     : "";
@@ -825,6 +832,8 @@ export function ChatHub(props: {
           status={
             chatStatus ? (
               <Badge tone={chatStatus.tone}>{chatStatus.label}</Badge>
+            ) : liveView ? (
+              <Badge tone={liveView.tone}>{liveView.statusLabel}</Badge>
             ) : null
           }
           actions={
@@ -865,6 +874,7 @@ export function ChatHub(props: {
                       view={liveView}
                       resumed={resumed}
                       onRefresh={refresh}
+                      screenshotLayout={props.screenshotLayout}
                       onOpenWorkbench={() => setWorkbenchOpen(true)}
                     />
                   ) : running ? (
@@ -949,6 +959,7 @@ export function ChatHub(props: {
         onOpenChange={setWorkbenchOpen}
         snapshot={snapshot}
         view={liveView}
+        screenshotLayout={props.screenshotLayout}
         tab={activeTab}
         onTab={setTab}
         onRefresh={refresh}

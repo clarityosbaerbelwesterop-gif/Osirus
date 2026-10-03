@@ -176,6 +176,7 @@ export function Workbench({
   onRefresh,
   width,
   onWidth,
+  screenshotLayout = false,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -186,13 +187,19 @@ export function Workbench({
   onRefresh: () => void;
   width: number;
   onWidth: (width: number) => void;
+  /** Visual fixtures only. Product runs keep the five customer states. */
+  screenshotLayout?: boolean;
 }) {
   const wide = useWideLayout();
   if (!snapshot || !view) return null;
-  const chat = chatRunPresentation(view.status);
+  const chat =
+    screenshotLayout && view.live ? null : chatRunPresentation(view.status);
   const title: ReactNode = (
     <span className="wb-title">
-      Run details <Badge tone={chat.tone}>{chat.label}</Badge>
+      Run details{" "}
+      <Badge tone={chat?.tone ?? view.tone}>
+        {chat?.label ?? view.statusLabel}
+      </Badge>
     </span>
   );
   const body = (

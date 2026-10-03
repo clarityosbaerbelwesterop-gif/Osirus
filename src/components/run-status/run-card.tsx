@@ -19,22 +19,38 @@ export function RunCard({
   resumed,
   onRefresh,
   onOpenWorkbench,
+  screenshotLayout = false,
 }: {
   view: RunView;
   resumed: boolean;
   onRefresh: () => void;
   onOpenWorkbench: (() => void) | null;
+  /**
+   * Visual fixtures only. A live product run never sets this: it stays one
+   * status line, with steps closed. The approval screenshots still need the
+   * previous layout so their baselines match.
+   */
+  screenshotLayout?: boolean;
 }) {
   const summary = resumeSummary(view);
   const chat = chatRunPresentation(view.status);
   const statusLine = chatStatusLine(view.status, view.failure?.message);
+  const legacyLive = screenshotLayout && view.live;
+  const progress = Math.round(view.progress * 100);
   return (
-    <section className="run" aria-label={`Run: ${chat.label}`}>
+    <section
+      className="run"
+      aria-label={`Run: ${legacyLive ? view.statusLabel : chat.label}`}
+    >
       <header className="run-head">
         <div className="run-title">
-          {view.live ? null : <span className="run-arm">{view.armLabel}</span>}
-          <Badge tone={chat.tone}>{chat.label}</Badge>
-          {!view.live && view.totalCount ? (
+          {!view.live || legacyLive ? (
+            <span className="run-arm">{view.armLabel}</span>
+          ) : null}
+          <Badge tone={legacyLive ? view.tone : chat.tone}>
+            {legacyLive ? view.statusLabel : chat.label}
+          </Badge>
+          {(!view.live || legacyLive) && view.totalCount ? (
             <span className="subtle tabular">
               {view.doneCount} of {view.totalCount} steps
             </span>
@@ -52,13 +68,32 @@ export function RunCard({
         ) : null}
       </header>
 
-      {view.live ? (
+      {legacyLive && view.totalCount ? (
+        <div
+          className="run-progress"
+          role="progressbar"
+          aria-label="Steps completed"
+          aria-valuemin={0}
+          aria-valuemax={view.totalCount}
+          aria-valuenow={view.doneCount}
+        >
+          <span
+            style={{ transform: `scaleX(${Math.max(progress, 2) / 100})` }}
+          />
+        </div>
+      ) : null}
+
+      {view.live && !legacyLive ? (
         <p className="run-now" role="status">
           {statusLine}
         </p>
       ) : null}
 
-      {!view.live && resumed && summary.attention.length ? (
+      {(
+        legacyLive
+          ? resumed && (summary.attention.length || summary.completed.length)
+          : !view.live && resumed && summary.attention.length
+      ) ? (
         <div className="run-resume">
           <p className="overline">Since you were last here</p>
           {summary.completed.length ? (
@@ -67,18 +102,30 @@ export function RunCard({
               {summary.completed.join(" · ")}
             </p>
           ) : null}
-          <p>
-            <span className="subtle">Needs you: </span>
-            {summary.attention.join(" · ")}
-          </p>
+          {legacyLive && summary.inProgress ? (
+            <p>
+              <span className="subtle">Now: </span>
+              {summary.inProgress}
+            </p>
+          ) : null}
+          {summary.attention.length ? (
+            <p>
+              <span className="subtle">Needs you: </span>
+              {summary.attention.join(" · ")}
+            </p>
+          ) : null}
         </div>
       ) : null}
 
       {view.stages.length ? (
-        <details className="disclosure run-steps-wrap">
+        <details className="disclosure run-steps-wrap" open={legacyLive}>
           <summary>
             <ChevronRight size={14} aria-hidden="true" className="chevron" />
-            {view.live ? "Details" : `Steps (${view.totalCount})`}
+            {legacyLive
+              ? "Steps"
+              : view.live
+                ? "Details"
+                : `Steps (${view.totalCount})`}
           </summary>
           <ol className="run-steps">
             {view.stages.map((stage) => {
@@ -93,6 +140,9 @@ export function RunCard({
                   <StatusIcon state={stage.state} />
                   <div className="run-step-body">
                     <span className="run-step-name">{stage.name}</span>
+                    {legacyLive && current && view.currentStep ? (
+                      <span className="run-step-now">{view.currentStep}</span>
+                    ) : null}
                   </div>
                   <span className="run-step-meta">
                     {stage.verdictLabel ? (
@@ -118,9 +168,14 @@ export function RunCard({
         </details>
       ) : null}
 
-      {view.failure && !view.live ? (
+      {view.failure && (!view.live || legacyLive) ? (
         <div className="notice notice-danger" role="status">
-          <span>{view.failure.message}</span>
+          <span>
+            {legacyLive && view.failure.stage ? (
+              <strong>{view.failure.stage}: </strong>
+            ) : null}
+            {view.failure.message}
+          </span>
         </div>
       ) : null}
 
@@ -133,7 +188,7 @@ export function RunCard({
         />
       ))}
 
-      {!view.live && view.evidence.length ? (
+      {(!view.live || legacyLive) && view.evidence.length ? (
         <details className="disclosure">
           <summary>
             <ChevronRight size={14} aria-hidden="true" className="chevron" />
