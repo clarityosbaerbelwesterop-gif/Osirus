@@ -164,7 +164,7 @@ export function ChatHub(props: {
   const [objective, setObjective] = useState("");
   const surface: SessionSurface =
     props.kind === "agent" ? "agent" : props.kind === "bot" ? "bot" : "ai";
-  const surfaceRef = useRef<SessionSurface | null>(null);
+  const [seenSurface, setSeenSurface] = useState(surface);
   const threadPath =
     surface === "agent"
       ? "/app/agent"
@@ -203,10 +203,9 @@ export function ChatHub(props: {
   // streamed draft with the stored messages mid-answer.
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  if (surfaceRef.current !== null && surfaceRef.current !== surface) {
-    setObjective(
-      draftAfterSurfaceChange(surfaceRef.current, surface, objective),
-    );
+  if (seenSurface !== surface) {
+    setSeenSurface(surface);
+    setObjective(draftAfterSurfaceChange(seenSurface, surface, objective));
     setMessages(props.initialMessages);
     setSessionId(props.initialSessionId);
     setActiveRunId(props.initialRunId);
@@ -215,7 +214,6 @@ export function ChatHub(props: {
     setRunning(Boolean(props.initialRunId));
     setActivities([]);
   }
-  surfaceRef.current = surface;
   const [failedObjective, setFailedObjective] = useState<string | null>(null);
   const [resumed, setResumed] = useState(
     Boolean(

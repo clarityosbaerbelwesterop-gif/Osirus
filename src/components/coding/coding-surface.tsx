@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   codingSlash,
   passesOnAcceptEdits,
@@ -82,9 +82,9 @@ export function CodingSurface(props: {
   const [snapshot, setSnapshot] = useState<RunSnapshot | null>(null);
   const [runId, setRunId] = useState(props.initialRunId);
   const threadKey = props.initialSessionId ?? "new";
-  const seenThread = useRef(threadKey);
-  if (seenThread.current !== threadKey) {
-    seenThread.current = threadKey;
+  const [seenThread, setSeenThread] = useState(threadKey);
+  if (seenThread !== threadKey) {
+    setSeenThread(threadKey);
     setTask(draftAfterSurfaceChange("ai", "coding", task));
     setMessages(props.initialMessages);
     setSessionId(props.initialSessionId);
