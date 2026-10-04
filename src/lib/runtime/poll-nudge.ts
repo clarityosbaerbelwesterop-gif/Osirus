@@ -64,7 +64,12 @@ export function pollNudge(snapshot: RunSnapshot, now = Date.now()): PollNudge {
     return { ...NOTHING, settleCancel: !live };
   }
   if (snapshot.run.pausedAt) return NOTHING;
-  if (!ACTIVE.has(status) || snapshot.run.cancelRequested) return NOTHING;
+  // Yes releases the answer stage to blocked, but the run stays
+  // waiting_for_approval until a worker picks it up. A poll that ignored
+  // that status left the stage sitting on "Produce the answer".
+  const resumable =
+    ACTIVE.has(status) || status === "waiting_for_approval";
+  if (!resumable || snapshot.run.cancelRequested) return NOTHING;
   if (live || snapshot.stages.length === 0) return NOTHING;
 
   const drive = snapshot.stages.some((stage) => {
@@ -81,5 +86,8 @@ export function pollNudge(snapshot: RunSnapshot, now = Date.now()): PollNudge {
       stage.status === "running"
     );
   });
+  // Still waiting on a person and nothing is claimable: do not finalize
+  // the run out from under the open approval.
+  if (status === "waiting_for_approval" && !drive) return NOTHING;
   return { settleCancel: false, drive, finalize: true };
 }

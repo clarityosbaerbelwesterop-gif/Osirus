@@ -666,7 +666,8 @@ export class RuntimeRepository {
       `update osirus.runs
           set status = 'running',
               started_at = coalesce(started_at, now())
-        where id = $1::uuid and status = 'queued'
+        where id = $1::uuid
+          and status = any(array['queued', 'waiting_for_approval']::text[])
         returning *`,
       [runId],
     );
@@ -1367,6 +1368,23 @@ export class RuntimeRepository {
           where s.id = d.stage_id
             and s.status = 'waiting'
           returning s.id
+       ), resumed as (
+         update osirus.runs r
+            set status = 'running'
+           from decided d
+          where r.id = $2::uuid
+            and $3 = 'approved'
+            and r.status = 'waiting_for_approval'
+            and not exists (
+              select 1
+                from osirus.run_stages s
+               where s.run_id = r.id
+                 and s.status = 'waiting'
+                 and coalesce(s.output->>'waitingOn', 'approval')
+                     in ('approval', 'human')
+                 and s.id is distinct from d.stage_id
+            )
+          returning r.id
        )
        select id, stage_id from decided`,
       [

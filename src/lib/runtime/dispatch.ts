@@ -49,6 +49,11 @@ export type ClaimedWork = {
    * for in-memory work (arena trials), where every failure may be retried.
    */
   maxAttempts?: number;
+  /**
+   * How many tries the stage has been charged, after this claim. A resume
+   * after approval does not increment it. Absent for in-memory work.
+   */
+  attemptCount?: number;
 };
 
 type ClaimRow = {
@@ -71,6 +76,7 @@ type ClaimRow = {
   stage_input: Record<string, unknown> | null;
   requires_verification: boolean;
   retry_policy: Record<string, unknown> | null;
+  stage_attempt_count: number | string | null;
 };
 
 /**
@@ -108,7 +114,8 @@ export async function claimNextStage(input: {
             s.ordinal,
             s.input as stage_input,
             s.requires_verification,
-            s.retry_policy
+            s.retry_policy,
+            s.attempt_count as stage_attempt_count
        from claimed c
        join osirus.run_stages s on s.id = c.stage_id
        join osirus.runs r on r.id = c.run_id`,
@@ -141,6 +148,7 @@ export async function claimNextStage(input: {
         (row.retry_policy as { maxAttempts?: unknown } | null)?.maxAttempts,
       ) || 1,
     ),
+    attemptCount: Number(row.stage_attempt_count ?? 0),
   };
 }
 

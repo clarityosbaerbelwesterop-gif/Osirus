@@ -1111,12 +1111,24 @@
   margin: var(--space-3) 0;
 }
 
+@keyframes work-glow {
+  0%,
+  100% {
+    opacity: 0.45;
+    box-shadow: 0 0 0 0 transparent;
+  }
+  50% {
+    opacity: 1;
+    box-shadow: 0 0 8px 2px color-mix(in srgb, var(--color-accent) 50%, transparent);
+  }
+}
+
 .work-motion span {
   width: 8px;
   height: 8px;
   border-radius: 999px;
   background: var(--color-accent);
-  animation: effort-rise 1.8s ease-in-out infinite;
+  animation: work-glow 1.8s ease-in-out infinite;
 }
 
 .intent-line {

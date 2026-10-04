@@ -38,6 +38,11 @@ import {
 } from "@/lib/ui/chat-status";
 import { liveAgentPills, showWorkingMotion } from "@/lib/ui/live-activity";
 import { chatSlash } from "@/lib/coding/intent";
+import { botRuntimeBody } from "@/lib/product/bot-run";
+import {
+  draftAfterSurfaceChange,
+  type SessionSurface,
+} from "@/lib/product/surfaces";
 import { WorkingMotion } from "./working-motion";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
 import {
@@ -72,6 +77,7 @@ type Activity = { id: string; label: string; at?: string };
 
 type SessionState = {
   sessionId: string;
+  surface?: SessionSurface | null;
   messages: ChatMessage[];
   modelCalls?: Record<string, ModelCallSummary>;
   activeRunId: string | null;
@@ -143,7 +149,7 @@ export function ChatHub(props: {
    * ai and agent are separate routes. Fixtures omit this and keep the
    * previous chrome so the phone composer layout stays put.
    */
-  kind?: "ai" | "agent";
+  kind?: "ai" | "agent" | "bot";
 }) {
   const shell = useShell();
   const { upsertSession, bindChat } = shell;
@@ -156,6 +162,11 @@ export function ChatHub(props: {
     props.initialSnapshot ?? null,
   );
   const [objective, setObjective] = useState("");
+  const surface: SessionSurface =
+    props.kind === "agent" ? "agent" : props.kind === "bot" ? "bot" : "ai";
+  const surfaceRef = useRef<SessionSurface | null>(null);
+  const threadPath =
+    surface === "agent" ? "/app/agent" : surface === "bot" ? "/app/bots" : "/app";
   const mode = useSyncExternalStore(subscribeMode, currentMode, serverMode);
   const labModel = useSyncExternalStore(
     subscribeLab,
@@ -188,6 +199,19 @@ export function ChatHub(props: {
   // streamed draft with the stored messages mid-answer.
   const [streaming, setStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  if (surfaceRef.current !== null && surfaceRef.current !== surface) {
+    setObjective(
+      draftAfterSurfaceChange(surfaceRef.current, surface, objective),
+    );
+    setMessages(props.initialMessages);
+    setSessionId(props.initialSessionId);
+    setActiveRunId(props.initialRunId);
+    setSnapshot(props.initialSnapshot ?? null);
+    setError(null);
+    setRunning(Boolean(props.initialRunId));
+    setActivities([]);
+  }
+  surfaceRef.current = surface;
   const [failedObjective, setFailedObjective] = useState<string | null>(null);
   const [resumed, setResumed] = useState(
     Boolean(
@@ -445,6 +469,7 @@ export function ChatHub(props: {
       if (
         props.kind !== "ai" &&
         props.kind !== "agent" &&
+        props.kind !== "bot" &&
         interaction === "ai" &&
         labModel === "external" &&
         !regenerate
@@ -457,6 +482,7 @@ export function ChatHub(props: {
       const useLab =
         props.kind === "ai" ||
         (props.kind !== "agent" &&
+          props.kind !== "bot" &&
           labAnswers({ interaction, model: labModel }));
       if (useLab && !regenerate) {
         const requestId = crypto.randomUUID();
@@ -610,18 +636,26 @@ export function ChatHub(props: {
         const response = await fetch("/api/runtime", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            objective: trimmed,
-            requestId,
-            sessionId,
-            regenerate,
-            ...(props.kind === "agent"
-              ? { mode: "agent", surface: "agent" }
-              : mode !== "auto"
-                ? { mode }
-                : {}),
-            ...(attachmentIds.length ? { attachmentIds } : {}),
-          }),
+          body: JSON.stringify(
+            props.kind === "bot"
+              ? botRuntimeBody({
+                  objective: trimmed,
+                  requestId,
+                  sessionId,
+                })
+              : {
+                  objective: trimmed,
+                  requestId,
+                  sessionId,
+                  regenerate,
+                  ...(props.kind === "agent"
+                    ? { mode: "agent" as const, surface: "agent" as const }
+                    : mode !== "auto"
+                      ? { mode }
+                      : {}),
+                  ...(attachmentIds.length ? { attachmentIds } : {}),
+                },
+          ),
           signal: controller.signal,
         });
         if (!response.ok || !response.body) {
@@ -640,12 +674,13 @@ export function ChatHub(props: {
               id: headerSession,
               title: trimmed.slice(0, 120),
               updatedAt: new Date().toISOString(),
+              surface,
             });
           }
           window.history.replaceState(
             null,
             "",
-            `${props.kind === "agent" ? "/app/agent" : "/app"}?session=${headerSession}`,
+            `${threadPath}?session=${headerSession}`,
           );
         }
         if (headerRun) {
@@ -707,6 +742,8 @@ export function ChatHub(props: {
       shell.sessions,
       upsertSession,
       props.kind,
+      surface,
+      threadPath,
     ],
   );
 
@@ -741,10 +778,10 @@ export function ChatHub(props: {
     window.history.replaceState(
       null,
       "",
-      `${props.kind === "agent" ? "/app/agent" : "/app"}?new=1`,
+      `${threadPath}?new=1`,
     );
     window.setTimeout(() => composer.current?.focus(), 0);
-  }, [advanceView, props.kind, running]);
+  }, [advanceView, props.kind, running, threadPath]);
 
   const switchSession = useCallback(
     async (next: SessionSummary) => {
@@ -764,6 +801,10 @@ export function ChatHub(props: {
         setError("Could not load that conversation.");
         return;
       }
+      if (state.surface && state.surface !== surface) {
+        setError("That conversation belongs to another surface.");
+        return;
+      }
       sessionRef.current = state.sessionId;
       setSessionId(state.sessionId);
       setMessages(state.messages);
@@ -778,11 +819,11 @@ export function ChatHub(props: {
       window.history.replaceState(
         null,
         "",
-        `${props.kind === "agent" ? "/app/agent" : "/app"}?session=${state.sessionId}`,
+        `${threadPath}?session=${state.sessionId}`,
       );
       if (state.recentRunId) void refreshRun(state.recentRunId);
     },
-    [advanceView, props.kind, refreshRun, running, sessionId],
+    [advanceView, props.kind, refreshRun, running, sessionId, surface, threadPath],
   );
 
   useEffect(() => {
@@ -824,9 +865,11 @@ export function ChatHub(props: {
       ? "Conversation"
       : props.kind === "agent"
         ? "Agent"
-        : props.kind === "ai"
-          ? "Chat"
-          : "New task");
+        : props.kind === "bot"
+          ? "Bot"
+          : props.kind === "ai"
+            ? "Chat"
+            : "New task");
   const empty = messages.length === 0 && !running;
   const pendingApproval = liveView?.pendingApprovals[0];
   const productStatus = !(props.screenshotLayout && liveView?.live);
@@ -877,7 +920,13 @@ export function ChatHub(props: {
         >
           <div className="chat-content" ref={content}>
             {empty ? (
-              <ChatHome />
+              props.kind === "bot" ? (
+                <div className="home home-calm">
+                  <p className="home-title">Bot</p>
+                </div>
+              ) : (
+                <ChatHome />
+              )
             ) : (
               <MessageList
                 messages={messages}
@@ -987,7 +1036,7 @@ export function ChatHub(props: {
           chrome={
             props.kind === "ai"
               ? "chat"
-              : props.kind === "agent"
+              : props.kind === "agent" || props.kind === "bot"
                 ? "agent"
                 : "full"
           }

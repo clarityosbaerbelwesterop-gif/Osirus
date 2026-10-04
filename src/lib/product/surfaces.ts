@@ -106,3 +106,27 @@ export function surfacePath(surface: SessionSurface) {
       return "/app";
   }
 }
+
+/**
+ * Conversations beside one surface. A coding thread is not a chat thread.
+ * A row with no surface is an old chat, not an agent or coding thread.
+ */
+export function sessionsForSurface<T extends { surface?: string | null }>(
+  sessions: readonly T[],
+  surface: SessionSurface | null,
+): T[] {
+  if (!surface) {
+    return sessions.filter((item) => !item.surface || item.surface === "ai");
+  }
+  return sessions.filter((item) => item.surface === surface);
+}
+
+/** Switching Chat to Coding must not keep the previous line in the composer. */
+export function draftAfterSurfaceChange(
+  previous: SessionSurface | null,
+  next: SessionSurface,
+  draft: string,
+) {
+  if (previous !== next) return "";
+  return draft;
+}

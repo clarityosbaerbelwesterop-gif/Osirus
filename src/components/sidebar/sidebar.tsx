@@ -29,7 +29,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { useMemo, useRef, useState } from "react";
 import { SIDEBAR_COOKIE, writePreference } from "@/lib/ui/preferences";
 import { OsirusMark } from "../shell/osirus-mark";
-import { surfacePath } from "@/lib/product/surfaces";
+import {
+  sessionsForSurface,
+  surfacePath,
+  type SessionSurface,
+} from "@/lib/product/surfaces";
 import { useShell, type SessionSummary } from "../shell/shell-context";
 import { SystemStatus } from "./system-status";
 import { cx } from "../ui/cx";
@@ -261,7 +265,11 @@ function SessionLink({
   );
 }
 
-function ArchivedSessions() {
+function ArchivedSessions({
+  surface,
+}: {
+  surface: SessionSurface | null;
+}) {
   const shell = useShell();
   const [open, setOpen] = useState(false);
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
@@ -285,6 +293,10 @@ function ArchivedSessions() {
     else setSessions(previous);
   };
 
+  const visible = sessions
+    ? sessionsForSurface(sessions, surface)
+    : null;
+
   return (
     <section aria-labelledby="archived-heading">
       <button
@@ -303,16 +315,16 @@ function ArchivedSessions() {
           )}
         />
         <span className="nav-label">Archived</span>
-        {sessions?.length ? (
-          <span className="count" aria-label={`${sessions.length} archived`}>
-            {sessions.length > 99 ? "99+" : sessions.length}
+        {visible?.length ? (
+          <span className="count" aria-label={`${visible.length} archived`}>
+            {visible.length > 99 ? "99+" : visible.length}
           </span>
         ) : null}
       </button>
       {open ? (
-        sessions?.length ? (
+        visible?.length ? (
           <ul className="session-list">
-            {sessions.map((session) => (
+            {visible.map((session) => (
               <li key={session.id} className="session-row">
                 <span className="session-link session-archived">
                   <span className="truncate">{session.title}</span>
@@ -331,7 +343,7 @@ function ArchivedSessions() {
           </ul>
         ) : (
           <p className="sidebar-empty">
-            {sessions ? "No archived conversations." : "Loading…"}
+            {visible ? "No archived conversations." : "Loading…"}
           </p>
         )
       ) : null}
@@ -363,11 +375,7 @@ export function SidebarContent({
             : null;
   const { pinned, recent } = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    const scoped = shell.sessions.filter((item) =>
-      listSurface
-        ? item.surface === listSurface
-        : !item.surface || item.surface === "ai",
-    );
+    const scoped = sessionsForSurface(shell.sessions, listSurface);
     const matches = needle
       ? scoped.filter((item) => item.title.toLowerCase().includes(needle))
       : scoped;
@@ -547,7 +555,7 @@ export function SidebarContent({
               </p>
             )}
           </section>
-          <ArchivedSessions />
+          <ArchivedSessions surface={listSurface} />
         </div>
       )}
 
