@@ -67,8 +67,7 @@ export function pollNudge(snapshot: RunSnapshot, now = Date.now()): PollNudge {
   // Yes releases the answer stage to blocked, but the run stays
   // waiting_for_approval until a worker picks it up. A poll that ignored
   // that status left the stage sitting on "Produce the answer".
-  const resumable =
-    ACTIVE.has(status) || status === "waiting_for_approval";
+  const resumable = ACTIVE.has(status) || status === "waiting_for_approval";
   if (!resumable || snapshot.run.cancelRequested) return NOTHING;
   if (live || snapshot.stages.length === 0) return NOTHING;
 

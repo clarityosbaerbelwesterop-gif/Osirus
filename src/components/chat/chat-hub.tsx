@@ -166,7 +166,11 @@ export function ChatHub(props: {
     props.kind === "agent" ? "agent" : props.kind === "bot" ? "bot" : "ai";
   const surfaceRef = useRef<SessionSurface | null>(null);
   const threadPath =
-    surface === "agent" ? "/app/agent" : surface === "bot" ? "/app/bots" : "/app";
+    surface === "agent"
+      ? "/app/agent"
+      : surface === "bot"
+        ? "/app/bots"
+        : "/app";
   const mode = useSyncExternalStore(subscribeMode, currentMode, serverMode);
   const labModel = useSyncExternalStore(
     subscribeLab,
@@ -775,11 +779,7 @@ export function ChatHub(props: {
     setSnapshot(null);
     setResumed(false);
     setWorkbenchOpen(null);
-    window.history.replaceState(
-      null,
-      "",
-      `${threadPath}?new=1`,
-    );
+    window.history.replaceState(null, "", `${threadPath}?new=1`);
     window.setTimeout(() => composer.current?.focus(), 0);
   }, [advanceView, props.kind, running, threadPath]);
 
@@ -823,7 +823,15 @@ export function ChatHub(props: {
       );
       if (state.recentRunId) void refreshRun(state.recentRunId);
     },
-    [advanceView, props.kind, refreshRun, running, sessionId, surface, threadPath],
+    [
+      advanceView,
+      props.kind,
+      refreshRun,
+      running,
+      sessionId,
+      surface,
+      threadPath,
+    ],
   );
 
   useEffect(() => {

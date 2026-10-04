@@ -265,11 +265,7 @@ function SessionLink({
   );
 }
 
-function ArchivedSessions({
-  surface,
-}: {
-  surface: SessionSurface | null;
-}) {
+function ArchivedSessions({ surface }: { surface: SessionSurface | null }) {
   const shell = useShell();
   const [open, setOpen] = useState(false);
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
@@ -293,9 +289,7 @@ function ArchivedSessions({
     else setSessions(previous);
   };
 
-  const visible = sessions
-    ? sessionsForSurface(sessions, surface)
-    : null;
+  const visible = sessions ? sessionsForSurface(sessions, surface) : null;
 
   return (
     <section aria-labelledby="archived-heading">

@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import { botRuntimeBody } from "../src/lib/product/bot-run";
 import { codingGrantFromRunInput } from "../src/lib/product/surfaces";
 import { pollNudge } from "../src/lib/runtime/poll-nudge";
-import { retryAttemptsLeft, settlementFor } from "../src/lib/runtime/settlement";
+import {
+  retryAttemptsLeft,
+  settlementFor,
+} from "../src/lib/runtime/settlement";
 import type { RunSnapshot, RunStatus } from "../src/lib/runtime/types";
 
 function snapshot(
@@ -56,9 +59,7 @@ describe("answer stage after Yes", () => {
       }),
     ).toBe(false);
     // Arena claims have no stage counter; the attempt number is the ceiling.
-    expect(
-      retryAttemptsLeft({ attemptNumber: 1, maxAttempts: 2 }),
-    ).toBe(true);
+    expect(retryAttemptsLeft({ attemptNumber: 1, maxAttempts: 2 })).toBe(true);
     expect(retryAttemptsLeft({ attemptNumber: 9, maxAttempts: null })).toBe(
       true,
     );
@@ -71,12 +72,12 @@ describe("answer stage after Yes", () => {
       error: "boom",
       retryable: true,
     };
-    expect(
-      settlementFor(outcome, Date.now(), true).stageStatus,
-    ).toBe("blocked");
-    expect(
-      settlementFor(outcome, Date.now(), false).stageStatus,
-    ).toBe("failed");
+    expect(settlementFor(outcome, Date.now(), true).stageStatus).toBe(
+      "blocked",
+    );
+    expect(settlementFor(outcome, Date.now(), false).stageStatus).toBe(
+      "failed",
+    );
   });
 
   it("drives a released answer stage that is still waiting_for_approval", () => {

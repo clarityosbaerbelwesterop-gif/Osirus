@@ -1119,7 +1119,8 @@
   }
   50% {
     opacity: 1;
-    box-shadow: 0 0 8px 2px color-mix(in srgb, var(--color-accent) 50%, transparent);
+    box-shadow: 0 0 8px 2px
+      color-mix(in srgb, var(--color-accent) 50%, transparent);
   }
 }
 
