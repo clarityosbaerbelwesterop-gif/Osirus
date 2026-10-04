@@ -20,9 +20,12 @@ export default async function BotsPage({
   });
   return (
     <BotSurface
-      key={state.sessionId ?? "new"}
+      key={`bot:${state.sessionId ?? "new"}`}
+      workspaceName={identity.workspaceName}
       initialSessionId={state.sessionId}
       initialMessages={state.messages}
+      initialRunId={state.activeRunId}
+      initialSnapshotRunId={state.recentRunId}
     />
   );
 }

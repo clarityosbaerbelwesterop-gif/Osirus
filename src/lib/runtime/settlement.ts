@@ -97,6 +97,30 @@ export function budgetStopReason(
  * mapping is the whole contract between a worker and the claim scan, and it
  * has to be testable without a database.
  */
+/**
+ * Whether a retryable failure may park for another try.
+ *
+ * maxAttempts counts tries that were allowed to fail, not every slice.
+ * Parking for approval writes a completed attempt and the next claim gets a
+ * new attempt number. Comparing that number with the ceiling (the answer
+ * stage allows 2) made the first model error after Yes terminal.
+ * attempt_count stays put across that resume, so the retry is still there.
+ */
+export function retryAttemptsLeft(input: {
+  /** Stage attempt_count after this claim. Absent in the arena. */
+  attemptCount?: number | null;
+  attemptNumber: number;
+  maxAttempts?: number | null;
+}) {
+  if (input.maxAttempts == null) return true;
+  const used =
+    typeof input.attemptCount === "number" &&
+    Number.isFinite(input.attemptCount)
+      ? input.attemptCount
+      : input.attemptNumber;
+  return used < input.maxAttempts;
+}
+
 export function settlementFor(
   outcome: StageOutcome,
   now = Date.now(),

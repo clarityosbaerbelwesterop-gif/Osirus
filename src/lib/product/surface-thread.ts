@@ -20,6 +20,18 @@ const empty = {
   recentRunId: null as string | null,
 };
 
+/**
+ * Opening a surface with no session is a new empty thread. A thread from
+ * another surface is not rendered here, even if it was the last one open.
+ */
+export function openedSurfaceThread<
+  T extends { surface: SessionSurface | null; messages: unknown[] },
+>(input: { surface: SessionSurface; state: T | null; hasSession: boolean }) {
+  if (!input.hasSession) return null;
+  if (!input.state || input.state.surface !== input.surface) return null;
+  return input.state;
+}
+
 export async function loadSurfaceThread(input: {
   userId: string;
   workspaceId: string;
@@ -27,17 +39,20 @@ export async function loadSurfaceThread(input: {
   session?: string;
   fresh?: string;
 }) {
-  if (input.fresh === "1") return { ...empty, surface: input.surface };
+  const blank = { ...empty, surface: input.surface };
+  if (input.fresh === "1") return blank;
+  const hasSession = Boolean(input.session && UUID.test(input.session));
+  if (!hasSession) return blank;
   const repository = new RuntimeRepository(input.userId);
-  if (input.session && UUID.test(input.session)) {
-    const state = await repository
-      .getSessionState(input.session, input.workspaceId)
-      .catch(() => null);
-    if (!state || state.surface !== input.surface)
-      return { ...empty, surface: input.surface };
-    return state;
-  }
-  return repository.getRecentWorkspaceState(input.workspaceId, input.surface);
+  const state = await repository
+    .getSessionState(input.session!, input.workspaceId)
+    .catch(() => null);
+  const opened = openedSurfaceThread({
+    surface: input.surface,
+    state,
+    hasSession: true,
+  });
+  return opened ?? blank;
 }
 
 export async function codingSelectionForRun(

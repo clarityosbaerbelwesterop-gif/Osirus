@@ -74,6 +74,8 @@ describe("product surfaces", () => {
       "src/app/api/bots/route.ts",
       "src/app/app/page.tsx",
       "src/app/app/agent/page.tsx",
+      "src/app/app/bots/page.tsx",
+      "src/app/api/bots/messages/route.ts",
     ];
     for (const file of files) {
       const source = readFileSync(join(process.cwd(), file), "utf8");

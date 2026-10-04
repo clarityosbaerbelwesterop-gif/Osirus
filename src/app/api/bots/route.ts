@@ -9,9 +9,8 @@ const createSchema = z.object({
   title: z.string().trim().min(1).max(80),
 });
 
-const note =
-  "This bot keeps its own thread. There is no bot runtime in this build, so messages are saved here and are not sent to a model.";
-
+// Creates an empty bot thread. The reply is produced by the shared runtime
+// when the person sends a message. This route does not invent one.
 export async function POST(request: Request) {
   const guard = await guardWrite(request, {
     schema: createSchema,
@@ -27,19 +26,10 @@ export async function POST(request: Request) {
     title: guard.body.title,
     surface: "bot",
   });
-  await repository.createMessage({
-    organizationId: guard.identity.organizationId,
-    workspaceId: guard.identity.workspaceId,
-    sessionId: id,
-    role: "assistant",
-    content: note,
-    metadata: { surface: "bot", honest: true },
-  });
   return json({
     id,
     title: guard.body.title,
     updatedAt: new Date().toISOString(),
     surface: "bot",
-    note,
   });
 }

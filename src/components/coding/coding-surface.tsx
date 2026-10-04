@@ -13,6 +13,7 @@ import {
 } from "@/lib/product/effort-router";
 import {
   CUSTOMER_MODELS,
+  draftAfterSurfaceChange,
   type CustomerModelId,
   type EffortId,
 } from "@/lib/product/surfaces";
@@ -80,6 +81,19 @@ export function CodingSurface(props: {
   );
   const [snapshot, setSnapshot] = useState<RunSnapshot | null>(null);
   const [runId, setRunId] = useState(props.initialRunId);
+  const threadKey = props.initialSessionId ?? "new";
+  const [seenThread, setSeenThread] = useState(threadKey);
+  if (seenThread !== threadKey) {
+    setSeenThread(threadKey);
+    setTask(draftAfterSurfaceChange("ai", "coding", task));
+    setMessages(props.initialMessages);
+    setSessionId(props.initialSessionId);
+    setRunId(props.initialRunId);
+    setRunning(Boolean(props.initialRunId) && !props.initialPaused);
+    setSnapshot(null);
+    setFailure(null);
+    setPaused(Boolean(props.initialPaused));
+  }
 
   useEffect(() => {
     const controller = new AbortController();

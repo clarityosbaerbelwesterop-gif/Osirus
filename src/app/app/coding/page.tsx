@@ -28,7 +28,7 @@ export default async function CodingPage({
   const selection = control.selection;
   return (
     <CodingSurface
-      key={state.sessionId ?? "new"}
+      key={`coding:${state.sessionId ?? "new"}`}
       initialSessionId={state.sessionId}
       initialMessages={state.messages}
       initialRunId={state.activeRunId}

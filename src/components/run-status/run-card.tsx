@@ -96,7 +96,7 @@ export function RunCard({
       ) ? (
         <div className="run-resume">
           <p className="overline">Since you were last here</p>
-          {summary.completed.length ? (
+          {legacyLive && summary.completed.length ? (
             <p>
               <span className="subtle">Completed: </span>
               {summary.completed.join(" · ")}

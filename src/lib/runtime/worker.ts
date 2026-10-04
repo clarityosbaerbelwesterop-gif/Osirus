@@ -28,6 +28,7 @@ import { SkillRepository } from "../skills/repository";
 import {
   budgetStopReason,
   pendingBudgetOf,
+  retryAttemptsLeft,
   runBudgetAttempts,
   settlementFor,
 } from "./settlement";
@@ -346,7 +347,11 @@ export async function executeClaimedStage(input: {
   const settlement = settlementFor(
     outcome,
     Date.now(),
-    work.maxAttempts === undefined || work.attemptNumber < work.maxAttempts,
+    retryAttemptsLeft({
+      attemptCount: work.attemptCount,
+      attemptNumber: work.attemptNumber,
+      maxAttempts: work.maxAttempts,
+    }),
   );
   const settled = await finishAttempt({
     attemptId: work.attemptId,
@@ -395,9 +400,9 @@ export async function executeClaimedStage(input: {
     .activity(
       outcome.kind === "FAILED" ? "stage.failed" : "stage.completed",
       outcome.kind === "FAILED"
-        ? `${work.stageName} failed`
+        ? "This step could not be finished"
         : `${work.stageName} complete`,
-      { armId, outcome: outcome.kind },
+      { armId, outcome: outcome.kind, stage: work.stageName },
       outcome.kind === "FAILED" ? "user" : "internal",
     )
     .catch(() => undefined);

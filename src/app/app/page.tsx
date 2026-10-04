@@ -22,7 +22,7 @@ export default async function AppPage({
   return (
     <ChatHub
       kind="ai"
-      key={state.sessionId ?? "new"}
+      key={`ai:${state.sessionId ?? "new"}`}
       workspaceName={identity.workspaceName}
       initialSessionId={state.sessionId}
       initialMessages={state.messages}

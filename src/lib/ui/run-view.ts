@@ -179,9 +179,7 @@ export type ResumeSummary = {
 export function resumeSummary(view: RunView): ResumeSummary {
   const attention = [
     ...view.pendingApprovals.map((approval) => `Approval: ${approval.title}`),
-    ...(view.failure
-      ? [view.failure.stage ? `${view.failure.stage} failed` : "The run failed"]
-      : []),
+    ...(view.failure ? [view.failure.message] : []),
   ];
   return {
     completed: view.stages
