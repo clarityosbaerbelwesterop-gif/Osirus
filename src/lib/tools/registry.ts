@@ -133,11 +133,23 @@ export type ToolPolicy = (input: {
   builtinRequiresApproval: boolean;
 }) => Promise<"allow" | "ask" | "deny">;
 
+export type ApprovalGateResult =
+  | "approved"
+  | "rejected"
+  | "pending"
+  | { status: "rejected"; adjustment: string };
+
 export type ApprovalGate = (input: {
   tool: ToolDefinition;
   context: ToolContext;
   request: Record<string, unknown>;
-}) => Promise<"approved" | "rejected" | "pending">;
+}) => Promise<ApprovalGateResult>;
+
+function readApproval(result: ApprovalGateResult) {
+  if (typeof result === "string")
+    return { status: result, adjustment: null as string | null };
+  return { status: result.status, adjustment: result.adjustment };
+}
 
 export type ToolAudit = (entry: {
   context: ToolContext;
@@ -379,25 +391,34 @@ export class ToolRegistry {
       // No gate configured means no way to approve, which means the call does
       // not happen. Defaulting to "allowed" here would make the whole model
       // opt-in.
-      const approval = this.options.approvalGate
-        ? await this.options.approvalGate({
-            tool,
-            context: input.context,
-            request,
-          })
-        : "pending";
-      if (approval !== "approved") {
+      const approval = readApproval(
+        this.options.approvalGate
+          ? await this.options.approvalGate({
+              tool,
+              context: input.context,
+              request,
+            })
+          : "pending",
+      );
+      if (approval.status !== "approved") {
         await this.options.audit?.({
           context: input.context,
           tool,
-          status: approval === "rejected" ? "cancelled" : "awaiting_approval",
+          status:
+            approval.status === "rejected" ? "cancelled" : "awaiting_approval",
           inputMetadata: { effect: tool.effect, risk: tool.risk },
           outputMetadata: {},
           latencyMs: Date.now() - startedAt,
-          errorCode: approval === "rejected" ? "approval_rejected" : null,
+          errorCode:
+            approval.status === "rejected" ? "approval_rejected" : null,
         });
-        if (approval === "rejected") {
-          throw new ToolPermissionError(input.toolId, "approval_rejected");
+        if (approval.status === "rejected") {
+          throw new ToolPermissionError(
+            input.toolId,
+            approval.adjustment
+              ? `approval_rejected:${approval.adjustment}`
+              : "approval_rejected",
+          );
         }
         throw new ToolApprovalRequired(input.toolId, request);
       }

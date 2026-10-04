@@ -54,7 +54,11 @@ describe("status literals match their check constraints", () => {
   it("audits a tool call in a state the constraint permits", () => {
     const allowed = allowedValues(migrations, "tool_calls_status_check");
     const registry = source("src", "lib", "tools", "registry.ts");
-    const declared = /status: ((?:"[a-z_]+"(?: \| )?)+);/.exec(registry)?.[1];
+    // ToolAudit is the type written to osirus.tool_calls.status. Matching the
+    // first `status:` in the file would pick ApprovalGateResult, whose
+    // "rejected" is an approval decision, not a tool-call row.
+    const audit = registry.slice(registry.indexOf("export type ToolAudit"));
+    const declared = /status: ((?:"[a-z_]+"(?: \| )?)+);/.exec(audit)?.[1];
     expect(declared).toBeTruthy();
     for (const value of declared!.match(/"([a-z_]+)"/g) ?? []) {
       const status = value.replaceAll('"', "");

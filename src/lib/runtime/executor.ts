@@ -77,6 +77,7 @@ export async function prepareRuntimeRun(input: {
     effort: string;
     model: string;
     effortChosen?: boolean;
+    permission?: "ask" | "accept-edits";
   };
 }): Promise<PreparedRun> {
   const repository = new RuntimeRepository(input.identity.userId);

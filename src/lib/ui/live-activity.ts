@@ -56,3 +56,17 @@ export function liveAgentPills(input: {
   }
   return pills;
 }
+
+const WORKING = new Set(["Starting", "Working"]);
+
+/**
+ * Motion only while the run is actually working. Needs you, done, and
+ * couldn't finish are not a working animation. A pause is not working.
+ */
+export function showWorkingMotion(input: {
+  label: string | null | undefined;
+  paused?: boolean;
+}) {
+  if (input.paused) return false;
+  return WORKING.has(input.label ?? "");
+}

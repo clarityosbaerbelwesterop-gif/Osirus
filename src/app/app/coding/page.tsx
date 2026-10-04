@@ -38,6 +38,9 @@ export default async function CodingPage({
       )}
       initialPaused={Boolean(state.activeRunId && control.paused)}
       initialModel={selection?.model ?? null}
+      initialPermission={
+        control.permission === "accept-edits" ? "accept-edits" : "ask"
+      }
     />
   );
 }

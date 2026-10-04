@@ -1,6 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import {
+  codingSlash,
+  passesOnAcceptEdits,
+  type CodingPermission,
+} from "@/lib/coding/intent";
 import { navigationLeavesCodingTask } from "@/lib/coding/task-bound";
 import {
   codingToolsNeeded,
@@ -13,6 +18,7 @@ import {
 } from "@/lib/product/surfaces";
 import type { RunSnapshot } from "@/lib/runtime/types";
 import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
+import { showWorkingMotion } from "@/lib/ui/live-activity";
 import { deriveRunView } from "@/lib/ui/run-view";
 import { MessageList, type ChatMessage } from "../chat/message-list";
 import { RunCard } from "../run-status/run-card";
@@ -43,6 +49,7 @@ export function CodingSurface(props: {
   initialEffortChosen?: boolean;
   initialPaused?: boolean;
   initialModel: CustomerModelId | null;
+  initialPermission?: CodingPermission;
 }) {
   const shell = useShell();
   const [sessionId, setSessionId] = useState(props.initialSessionId);
@@ -62,6 +69,9 @@ export function CodingSurface(props: {
   );
   const [failure, setFailure] = useState<string | null>(null);
   const [paused, setPaused] = useState(Boolean(props.initialPaused));
+  const [permission, setPermissionState] = useState<CodingPermission>(
+    props.initialPermission === "accept-edits" ? "accept-edits" : "ask",
+  );
   const [running, setRunning] = useState(
     Boolean(props.initialRunId) && !props.initialPaused,
   );
@@ -230,6 +240,7 @@ export function CodingSurface(props: {
           branch,
           effort: chosen,
           effortChosen: chosen !== null,
+          permission,
           model,
         },
       }),
@@ -283,6 +294,27 @@ export function CodingSurface(props: {
     !running &&
     !paused,
   );
+
+  const setPermission = async (next: CodingPermission) => {
+    setPermissionState(next);
+    if (!runId) return;
+    await fetch(`/api/runtime/${runId}/intent`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ permission: next }),
+    }).catch(() => null);
+    if (next !== "accept-edits") return;
+    const edit = view?.pendingApprovals.find((item) =>
+      passesOnAcceptEdits(item.toolId),
+    );
+    if (!edit) return;
+    await fetch(`/api/runtime/${runId}/approvals/${edit.id}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ decision: "approved" }),
+    }).catch(() => null);
+    void refresh(runId);
+  };
 
   const control = async (action: "pause" | "resume") => {
     if (!runId) return;
@@ -342,7 +374,13 @@ export function CodingSurface(props: {
                 <p className="home-title">Coding</p>
               </div>
             )}
-            <EffortMotion effort={activeEffort} active={running && !paused} />
+            <EffortMotion
+              effort={activeEffort}
+              active={showWorkingMotion({
+                label: status?.label ?? (running ? "Starting" : null),
+                paused,
+              })}
+            />
             {status ? (
               <p className="sr-only" role="status">
                 {status.label}.{" "}
@@ -355,6 +393,18 @@ export function CodingSurface(props: {
           className="composer"
           onSubmit={(event) => {
             event.preventDefault();
+            const slash = codingSlash(task);
+            if (slash) {
+              if (slash === "pause") void control("pause");
+              else if (slash === "resume") void control("resume");
+              else if (slash === "accept-edits")
+                void setPermission("accept-edits");
+              else if (slash === "ask") void setPermission("ask");
+              else setFailure("That is not a command.");
+              if (slash !== "unknown") setFailure(null);
+              setTask("");
+              return;
+            }
             void start();
           }}
         >
@@ -439,12 +489,23 @@ export function CodingSurface(props: {
             id="coding-task"
             className="composer-input"
             value={task}
-            disabled={running || paused}
             rows={2}
             placeholder="What should change?"
             onChange={(event) => setTask(event.target.value)}
           />
           <div className="composer-bar">
+            <button
+              type="button"
+              className="btn btn-sm"
+              aria-pressed={permission === "accept-edits"}
+              onClick={() =>
+                void setPermission(
+                  permission === "accept-edits" ? "ask" : "accept-edits",
+                )
+              }
+            >
+              Accept edits
+            </button>
             {running ? (
               <button
                 type="button"
