@@ -8,6 +8,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "program"))
 
+import launch  # noqa: E402
 import plan  # noqa: E402
 
 
@@ -36,6 +37,15 @@ class PlanTest(unittest.TestCase):
         self.assertEqual({l["id"] for l in program["lines"]}, {"rouge-1", "quesnir", "darus"})
         out = plan.plan(program["lines"], 125.0, self.PRICES)
         self.assertEqual([j["line"] for j in out["parallel_now"]], ["rouge-1"])
+
+
+class LaunchTest(unittest.TestCase):
+    def test_each_admitted_job_gets_its_own_launcher_command(self):
+        job = {"name": "rouge-1-rl-001", "prereg": "experiments/rouge-1-rl-001.json", "machine": "H200_X_8", "hours": 2.5, "ttc_k": 8}
+        cmd = launch.command(job)
+        self.assertEqual(cmd[1:], ["lightning_ai/rouge1_session.py", "--run", "rouge-1-rl-001", "--prereg",
+                                   "experiments/rouge-1-rl-001.json", "--machine", "H200_X_8", "--max-hours", "2.5", "--ttc-k", "8"])
+        self.assertNotIn("--ttc-k", launch.command(dict(job, ttc_k=0)))
 
 
 if __name__ == "__main__":

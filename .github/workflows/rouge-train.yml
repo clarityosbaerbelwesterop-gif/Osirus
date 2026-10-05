@@ -22,7 +22,7 @@ on:
     inputs:
       task:
         type: choice
-        options: [prepare, prepare-parts, train, rouge1, teacher]
+        options: [prepare, prepare-parts, train, rouge1, teacher, program]
         default: prepare
       corpus:
         default: pretrain-v3
@@ -80,7 +80,7 @@ concurrency:
   # paid training shares the tournament lock (one credit check at a time); a push only registers the
   # workflow, and prepare (worst case 2.4 credits) fits the balance next to a T4 tournament level
   # (worst case 1.35), so neither waits behind a level
-  group: rouge-native-${{ github.event_name == 'workflow_dispatch' && (inputs.task == 'train' || inputs.task == 'rouge1' || inputs.task == 'teacher') && 'lightning' || format('train-{0}', github.run_id) }}
+  group: rouge-native-${{ github.event_name == 'workflow_dispatch' && (inputs.task == 'train' || inputs.task == 'rouge1' || inputs.task == 'teacher' || inputs.task == 'program') && 'lightning' || format('train-{0}', github.run_id) }}
   cancel-in-progress: false
 
 env:
@@ -302,7 +302,7 @@ jobs:
 
   rouge1:
     # Paid: the owner approves every run of this job (protected environment).
-    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.task == 'rouge1' || inputs.task == 'teacher') }}
+    if: ${{ github.event_name == 'workflow_dispatch' && (inputs.task == 'rouge1' || inputs.task == 'teacher' || inputs.task == 'program') }}
     runs-on: ubuntu-latest
     environment: rouge-gpu
     timeout-minutes: 355
@@ -328,8 +328,13 @@ jobs:
           MAX_HOURS: ${{ inputs.max_hours }}
           TTC_K: ${{ inputs.ttc_k }}
         run: |
-          test -n "$RUN" || { echo "run name required (rouge-1-rl-<nnn>)"; exit 1; }
           cd "$ROUGE"
+          if [ "$TASK" = program ]; then
+            # every model line the planner admits (program/lines.json), in parallel, under one approval
+            python program/launch.py
+            exit $?
+          fi
+          test -n "$RUN" || { echo "run name required (rouge-1-rl-<nnn>)"; exit 1; }
           if [ "$TASK" = teacher ]; then
             python lightning_ai/rouge1_session.py --run "$RUN" --teacher "$TEACHER" --machine "$MACHINE" --max-hours "$MAX_HOURS"
           else
@@ -344,16 +349,16 @@ jobs:
         run: |
           stash="$RUNNER_TEMP/stash"; mkdir -p "$stash"
           cp "$ROUGE/lightning_ai/ledger.json" "$stash/ledger.json"
-          [ -d "$ROUGE/results/runs/$RUN" ] && cp -r "$ROUGE/results/runs/$RUN" "$stash/run"
+          [ -d "$ROUGE/results/runs" ] && cp -r "$ROUGE/results/runs" "$stash/runs"   # every run of this job (program: several)
           git config user.name "rouge-research[bot]"
           git config user.email "rouge-research@users.noreply.github.com"
           for attempt in 1 2 3 4; do
             git fetch -q origin "$BRANCH" && git reset -q --hard "origin/$BRANCH"
             python3 "$ROUGE/lightning_ai/ledger_merge.py" "$ROUGE/lightning_ai/ledger.json" "$stash/ledger.json"
-            if [ -d "$stash/run" ]; then mkdir -p "$ROUGE/results/runs" && rm -rf "$ROUGE/results/runs/$RUN" && cp -r "$stash/run" "$ROUGE/results/runs/$RUN"; fi
+            if [ -d "$stash/runs" ]; then mkdir -p "$ROUGE/results/runs" && cp -r "$stash/runs/." "$ROUGE/results/runs/"; fi
             git add "$ROUGE/lightning_ai/ledger.json" "$ROUGE/results/runs" 2>/dev/null || true
             git diff --cached --quiet && break
-            git commit -q -m "rouge(rouge1): ledger and records of $RUN (run ${{ github.run_id }})"
+            git commit -q -m "rouge(rouge1): ledger and records of ${RUN:-the program} (run ${{ github.run_id }})"
             git push -q origin "HEAD:$BRANCH" && break
             sleep $((attempt * 5))
           done

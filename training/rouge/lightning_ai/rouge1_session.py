@@ -63,7 +63,7 @@ def preflight(args) -> dict:
     family, n = cost.gpus(args.machine)
     if n < 2:
         raise SystemExit(f"{args.machine}: full training of the base needs a multi-GPU machine")
-    remaining = cost.CEILING_USD - cost.committed(cost.load(HERE / "ledger.json"))
+    remaining = cost.CEILING_USD - cost.committed(cost.load(ledger_file()))
     print(f"[rouge1] {base['source']['repo']}@{base['source']['revision'][:12]} -> {args.run}; {args.machine} for at most "
           f"{args.max_hours} h; {remaining:.2f} USD left under the {cost.CEILING_USD:.2f} USD ceiling", flush=True)
     return prereg
@@ -114,10 +114,16 @@ def run_teacher(args, sha: str) -> int:
     return launch_and_record(args, sha, env, TEACHER_SCRIPT, name=f"{args.run}-teacher")
 
 
+def ledger_file() -> Path:
+    """The ledger this process writes. program/launch.py gives each parallel job its own copy (ROUGE_LEDGER)
+    and merges them afterwards, so parallel jobs never write one file at the same time."""
+    return Path(os.environ.get("ROUGE_LEDGER") or HERE / "ledger.json")
+
+
 def launch_and_record(args, sha: str, env: dict, script: str, name: str | None = None) -> int:
     from lightning_sdk import Job, Machine
 
-    ledger_path = HERE / "ledger.json"
+    ledger_path = ledger_file()
     ledger = lj.load_ledger(ledger_path)
     out = ROOT / "results" / "runs" / (name or args.run)
     out.mkdir(parents=True, exist_ok=True)
