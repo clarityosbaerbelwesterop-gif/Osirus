@@ -1,0 +1,40 @@
+{
+  "schema": "rouge.program/1",
+  "updated": "2026-10-05",
+  "owner_decisions": [
+    "2026-10-05: train Rouge 1, Quesnir and Darus in parallel and for long, as far as the budget allows",
+    "2026-10-05: rouge-1-rl-001 runs the test-time compute check with ttc_k=8 (descriptive, outside the gate)"
+  ],
+  "lines": [
+    {
+      "id": "rouge-1",
+      "role": "generalist product model, runs locally (GGUF, exo)",
+      "base": "Qwen/Qwen3.8-27B@1d4bf0f2ff60 (models/rouge-1/base.json)",
+      "method": "full-parameter RSI iterations (ReST-EM on code-verified answers), pre-registered McNemar gate",
+      "priority": 1,
+      "next": {"name": "rouge-1-rl-001", "task": "rouge1", "machine": "H200_X_8", "hours": 2.5, "ttc_k": 8,
+               "prereg": "experiments/rouge-1-rl-001.json", "ready": true}
+    },
+    {
+      "id": "quesnir",
+      "role": "code and security specialist",
+      "base": "Qwen3.8-27B now; rebased on Rouge 1 after its first PASS",
+      "method": "RSI on prompts with unit tests and security tasks with executable checks; adapter (LoRA) on one H200 first, a long run",
+      "target": "100 % on its own verifiable gates (every test passes, no exploitable finding in the security suite). Public benchmarks are reported as measured; 100 % on them is not a valid target (their item errors cap them below 100 %)",
+      "priority": 2,
+      "next": {"name": "quesnir-rl-001", "task": "rouge1", "machine": "H200", "hours": 6.0,
+               "prereg": "experiments/quesnir-rl-001.json", "ready": false,
+               "blocked_by": "data recipe quesnir-v0 (licence-checked code and security tasks with tests, decontaminated against every eval suite) and its pre-registration"}
+    },
+    {
+      "id": "darus",
+      "role": "flagship generalist",
+      "base": "candidate: deepseek-ai/DeepSeek-V4-Flash (291B MoE, MIT, 159.6 GB; measured 2026-09-30); pinned only after a manifest run",
+      "method": "phase 0: adapters on B200_X_8 with the frozen MoE base; full-parameter training needs about 4.7 TB of optimiser state (multi-node, a separate budget)",
+      "priority": 3,
+      "next": {"name": "darus-phase0-001", "task": "rouge1", "machine": "B200_X_8", "hours": 1.5,
+               "prereg": "experiments/darus-phase0-001.json", "ready": false,
+               "blocked_by": "base pin (manifest run), data, pre-registration, and a budget beyond the current ceiling"}
+    }
+  ]
+}

@@ -70,8 +70,8 @@ on:
         description: "teacher: pinned teacher manifest; answers the hard prompts of the Rouge run named in 'run' (B200_X_8)"
         default: models/teachers/deepseek-v4-pro.json
       ttc_k:
-        description: "rouge1: test-time compute check, k answers per primary item (0 = off; a few extra GPU minutes)"
-        default: "0"
+        description: "rouge1: test-time compute check, k answers per primary item (0 = off; owner chose 8 on 2026-10-05, a few extra GPU minutes)"
+        default: "8"
 
 permissions:
   contents: read
