@@ -137,6 +137,21 @@ import json; from pathlib import Path; from rouge_train.merge import weight_delt
 d = weight_delta(Path('$START_MODEL'), Path('$RUN/model')); json.dump(d, open('$W/weight-delta.json', 'w'), indent=1)
 print('changed tensors', d['changed'], 'of', d['compared'])"
 
+if [[ "${ROUGE_TTC_K:-0}" -gt 0 ]]; then
+  # descriptive only (no part of the gate): k answers per primary item, majority choice blind to the solution
+  phase TTC "k=${ROUGE_TTC_K} on the primary items"
+  python -c "import json,sys; [print(l.rstrip()) for l in open(sys.argv[1]) if json.loads(l).get('suite') == 'primary']" "$DATA/eval.jsonl" > "$W/ttc-items.jsonl"
+  shard "$W/ttc-items.jsonl" "$NPROC" "$W/ttc"
+  for i in $(seq 0 $((NPROC - 1))); do
+    [[ -s "$W/ttc.$i.jsonl" ]] || continue
+    CUDA_VISIBLE_DEVICES=$i timeout 1800 "$EVALPY" -m rouge_train.cli rft-sample --model "$RUN/model" --prompts "$W/ttc.$i.jsonl" \
+      --out "$W/ttc-out.$i.jsonl" --k "$ROUGE_TTC_K" --max-new-tokens "${ROUGE_RFT_MAX_NEW:-6144}" --seed "$((100 + i))" > "$W/ttc-log.$i" 2>&1 &
+  done
+  wait
+  python -m rouge_train.cli ttc-report --items "$W/ttc-items.jsonl" --samples "$W"/ttc-out.*.jsonl --out "$W/ttc-report.json" \
+    || phase TTC_FAILED "see ttc-log.*; the verdict is unaffected"
+fi
+
 phase SAVE
 python -m rouge_train.cli manifest --config "$W/config.json" --merged "$RUN/model" --report "$W/report.json" \
   --storage "lightning-registry://rouge-1/$ROUGE_RUN" --out "$W/checkpoints" > "$W/manifest-path.txt" || fail "checkpoint manifest" 36

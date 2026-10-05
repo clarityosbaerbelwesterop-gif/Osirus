@@ -68,6 +68,10 @@ def main() -> None:
     p.add_argument("--source-prefix", default="rft", help="record source, e.g. teacher-deepseek-v4-pro")
     p.add_argument("--hard-out", help="write the prompts solved at most --hard-max-rate of the time (the teacher's work list)")
     p.add_argument("--hard-max-rate", type=float, default=0.0)
+    p = sub.add_parser("ttc-report", help="test-time compute: majority of k answers vs. the first answer (blind to the solution)")
+    p.add_argument("--items", required=True, help="eval items with checks")
+    p.add_argument("--samples", nargs="+", required=True, help="rft-sample output over the same items")
+    p.add_argument("--out", required=True)
     p = sub.add_parser("compare")
     p.add_argument("--items", required=True)
     p.add_argument("--base", required=True)
@@ -150,6 +154,15 @@ def main() -> None:
                     "tensor_parallel_size": args.tensor_parallel, "max_model_len": args.max_model_len}
         responses = rft.sample(args.model, prompts, settings)
         rft.write_jsonl(args.out, [{"id": p["id"], "responses": r} for p, r in zip(prompts, responses)])
+        return
+
+    if args.command == "ttc-report":
+        from . import rft, ttc
+
+        samples = {row["id"]: row["responses"] for path in args.samples for row in rft.read_jsonl(path)}
+        rep = ttc.report(rft.read_jsonl(args.items), samples)
+        Path(args.out).write_text(json.dumps(rep, indent=1) + "\n")
+        print(json.dumps({k: rep[k] for k in ("k", "compute_multiplier", "overall")}))
         return
 
     if args.command == "rft-select":

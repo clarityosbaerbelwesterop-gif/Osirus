@@ -96,7 +96,7 @@ def run(args) -> int:
     family, n = cost.gpus(args.machine)
     env = {"PYTHONUNBUFFERED": "1", "ROUGE_RUN": args.run, "ROUGE_PREREG": args.prereg, "ROUGE_CONFIG": prereg["config"].removeprefix("training/rouge/"),
            "ROUGE_DATASET": args.dataset, "ROUGE_NPROC": str(n), "ROUGE_EXPECT_GPU": family.split("_")[0],
-           "ROUGE_PEAK_TFLOPS": str(cost.GPU[family][0]), "ROUGE_RFT_PROMPTS": str(args.prompts), "ROUGE_RFT_K": str(args.k),
+           "ROUGE_PEAK_TFLOPS": str(cost.GPU[family][0]), "ROUGE_RFT_PROMPTS": str(args.prompts), "ROUGE_RFT_K": str(args.k), "ROUGE_TTC_K": str(args.ttc_k),
            "ROUGE_TRAIN_HOURS": str(args.train_hours), "ROUGE_PARENT": args.parent or "", "ROUGE_EXTRA_DATA": args.extra_data,
            "LLAMA_CPP_COMMIT": LLAMA_CPP_COMMIT,
            # the registry is the only store that persists; the key stays inside Lightning and is never printed
@@ -150,6 +150,7 @@ def main() -> None:
     parser.add_argument("--train-hours", type=float, default=1.0, help="the trainer's own budget check")
     parser.add_argument("--prompts", type=int, default=3200)
     parser.add_argument("--k", type=int, default=4)
+    parser.add_argument("--ttc-k", type=int, default=0, help="test-time compute check: k answers per primary eval item (0 = off)")
     parser.add_argument("--parent", default="", help="registry path of the Rouge checkpoint to start from (next iteration)")
     parser.add_argument("--parent-ref", default="", help="its lineage name, as the pre-registration names it")
     parser.add_argument("--extra-data", default="", help="registry paths of verified teacher data to train on (space separated)")

@@ -69,6 +69,9 @@ on:
       teacher:
         description: "teacher: pinned teacher manifest; answers the hard prompts of the Rouge run named in 'run' (B200_X_8)"
         default: models/teachers/deepseek-v4-pro.json
+      ttc_k:
+        description: "rouge1: test-time compute check, k answers per primary item (0 = off; a few extra GPU minutes)"
+        default: "0"
 
 permissions:
   contents: read
@@ -323,6 +326,7 @@ jobs:
           TEACHER: ${{ inputs.teacher }}
           MACHINE: ${{ inputs.machine }}
           MAX_HOURS: ${{ inputs.max_hours }}
+          TTC_K: ${{ inputs.ttc_k }}
         run: |
           test -n "$RUN" || { echo "run name required (rouge-1-rl-<nnn>)"; exit 1; }
           cd "$ROUGE"
@@ -330,7 +334,7 @@ jobs:
             python lightning_ai/rouge1_session.py --run "$RUN" --teacher "$TEACHER" --machine "$MACHINE" --max-hours "$MAX_HOURS"
           else
             python lightning_ai/rouge1_session.py --run "$RUN" --prereg "$PREREG" --machine "$MACHINE" --max-hours "$MAX_HOURS" \
-              --extra-data "$EXTRA_DATA"
+              --extra-data "$EXTRA_DATA" --ttc-k "${TTC_K:-0}"
           fi
       - name: Commit the ledger and run records (hashes and numbers; no weights)
         if: ${{ always() && startsWith(github.ref_name, 'rouge/') }}
