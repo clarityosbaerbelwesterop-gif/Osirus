@@ -1,0 +1,79 @@
+{
+  "kind": "merge",
+  "id": "darus-1",
+  "displayName": "Darus",
+  "role": "flagship-fusion",
+  "base": {
+    "upstreamId": "google/gemma-3-27b-it",
+    "revision": "unpinned",
+    "parametersB": 27,
+    "license": {
+      "license": "gemma-terms-of-use",
+      "review": "pending",
+      "evidence": null
+    }
+  },
+  "parents": ["rouge-1", "quasnir-1"],
+  "method": "ties",
+  "weights": { "rouge-1": 0.5, "quasnir-1": 0.5 },
+  "density": 0.5,
+  "normalize": true,
+  "dtype": "bfloat16",
+  "evolution": { "enabled": false, "generations": 20, "population": 8 },
+  "compute": {
+    "provider": "modal",
+    "profileId": "cpu-only",
+    "gpuCount": 1,
+    "maxRuntimeHours": 6,
+    "minRamGb": 64,
+    "minDiskGb": 160
+  },
+  "evalCompute": {
+    "provider": "runpod",
+    "profileId": "a100-80gb",
+    "gpuCount": 1,
+    "maxRuntimeHours": 4
+  },
+  "evals": {
+    "suites": [
+      {
+        "id": "gsm8k",
+        "harness": "lm-eval",
+        "task": "gsm8k",
+        "metric": "exact_match,strict-match",
+        "limit": null,
+        "unsafeCode": false
+      },
+      {
+        "id": "ifeval",
+        "harness": "lm-eval",
+        "task": "ifeval",
+        "metric": "prompt_level_strict_acc,none",
+        "limit": null,
+        "unsafeCode": false
+      },
+      {
+        "id": "humaneval",
+        "harness": "lm-eval",
+        "task": "humaneval",
+        "metric": "pass_at_k,create_test",
+        "limit": null,
+        "unsafeCode": true
+      },
+      {
+        "id": "mbpp",
+        "harness": "lm-eval",
+        "task": "mbpp",
+        "metric": "pass_at_1,none",
+        "limit": null,
+        "unsafeCode": true
+      }
+    ],
+    "gates": [
+      { "suite": "gsm8k", "min": 0.5 },
+      { "suite": "humaneval", "min": 0.3 }
+    ],
+    "maxRegressionVsParents": 0.02
+  },
+  "publish": { "hubRepo": "change-me-hf-org/darus-1", "private": true }
+}

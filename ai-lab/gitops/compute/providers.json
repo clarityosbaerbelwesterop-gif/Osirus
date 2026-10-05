@@ -1,0 +1,17 @@
+{
+  "providers": [
+    {
+      "id": "runpod",
+      "kind": "runpod-serverless",
+      "endpointRef": "RUNPOD_ENDPOINT_ID",
+      "apiKeyRef": "RUNPOD_API_KEY"
+    },
+    {
+      "id": "modal",
+      "kind": "modal-webhook",
+      "endpointRef": "MODAL_JOB_URL",
+      "apiKeyRef": "MODAL_JOB_TOKEN"
+    }
+  ],
+  "budget": { "maxUsdPerRun": 40, "maxUsdTotal": 200 }
+}

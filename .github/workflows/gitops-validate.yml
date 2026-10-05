@@ -1,0 +1,51 @@
+name: GitOps validate
+
+# Every change to the control plane is validated and re-planned on the pull
+# request. No secrets are available here: the plan shows policy blockers only.
+
+on:
+  pull_request:
+    paths:
+      - "ai-lab/gitops/**"
+      - "ai-lab/infra/**"
+      - "ai-lab/tests/gitops-*.ts"
+      - ".github/workflows/gitops-*.yml"
+  push:
+    branches: [main]
+    paths:
+      - "ai-lab/gitops/**"
+      - "ai-lab/infra/**"
+      - ".github/workflows/gitops-*.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: npm ci
+      - run: npx vite-node ai-lab/gitops/cli.ts validate
+      - run: npx vite-node ai-lab/gitops/cli.ts plan --json gitops-plan.json
+      - name: Worker unit tests (stdlib only)
+        run: python -m unittest discover -s ai-lab/gitops/worker -p "test_*.py"
+      - name: Sandbox isolation against a real Docker daemon
+        run: |
+          docker pull -q python:3.12-slim
+          GITOPS_DOCKER_TESTS=1 npx vitest run ai-lab/tests/gitops-runtime.test.ts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gitops-plan
+          path: gitops-plan.json
+          retention-days: 30

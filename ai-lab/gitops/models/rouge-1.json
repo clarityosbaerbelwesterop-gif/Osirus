@@ -1,0 +1,77 @@
+{
+  "kind": "qlora-adapter",
+  "id": "rouge-1",
+  "displayName": "Rouge 1",
+  "role": "generalist",
+  "base": {
+    "upstreamId": "google/gemma-3-27b-it",
+    "revision": "unpinned",
+    "parametersB": 27,
+    "license": {
+      "license": "gemma-terms-of-use",
+      "review": "pending",
+      "evidence": null
+    }
+  },
+  "datasets": [
+    {
+      "id": "general-sft",
+      "uri": "hf://datasets/change-me-hf-org/osirus-general-sft",
+      "revision": "unpinned",
+      "license": {
+        "license": "to-be-selected",
+        "review": "pending",
+        "evidence": null
+      }
+    }
+  ],
+  "hyperparameters": {
+    "rank": 16,
+    "alpha": 32,
+    "dropout": 0.05,
+    "targetModules": ".*language_model.*\\.(q_proj|k_proj|v_proj|o_proj|gate_proj|up_proj|down_proj)",
+    "quantization": "nf4",
+    "doubleQuant": true,
+    "computeDtype": "bfloat16",
+    "learningRate": 0.0001,
+    "epochs": 2,
+    "maxSeqLength": 4096,
+    "microBatchSize": 1,
+    "gradientAccumulation": 16,
+    "warmupRatio": 0.03,
+    "lrScheduler": "cosine",
+    "gradientCheckpointing": true,
+    "seed": 1337
+  },
+  "compute": {
+    "provider": "runpod",
+    "profileId": "a100-80gb",
+    "gpuCount": 1,
+    "maxRuntimeHours": 12
+  },
+  "evals": {
+    "suites": [
+      {
+        "id": "gsm8k",
+        "harness": "lm-eval",
+        "task": "gsm8k",
+        "metric": "exact_match,strict-match",
+        "limit": null,
+        "unsafeCode": false
+      },
+      {
+        "id": "ifeval",
+        "harness": "lm-eval",
+        "task": "ifeval",
+        "metric": "prompt_level_strict_acc,none",
+        "limit": null,
+        "unsafeCode": false
+      }
+    ],
+    "gates": [
+      { "suite": "gsm8k", "min": 0.5 },
+      { "suite": "ifeval", "min": 0.5 }
+    ]
+  },
+  "publish": { "hubRepo": "change-me-hf-org/rouge-1-qlora", "private": true }
+}

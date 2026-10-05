@@ -38,6 +38,7 @@ runtime code, no dependency on `src/`, and no dependency on external packages.
 | `contracts/experiment.ts`    | Experiment registry contract + `validateExperiment`.                      |
 | `contracts/common.ts`        | Shared pure validation helpers (no dependencies).                         |
 | `tests/contracts.test.ts`    | Positive/negative tests for the `validate*` functions.                    |
+| `gitops/`                    | GitOps control plane: manifests, gate, reconciler, swarm, worker.         |
 | `tsconfig.json`              | Standalone strict tsconfig for `contracts/` and the reserved `lib/` slot. |
 
 ## Build & check
