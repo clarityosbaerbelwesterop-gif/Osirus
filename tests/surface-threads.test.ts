@@ -54,6 +54,28 @@ describe("per-surface threads", () => {
     ]);
   });
 
+  it("counts old chats with no surface as Chat, never elsewhere", () => {
+    const rows = [
+      { title: "Chat one", surface: "ai" },
+      { title: "Old null", surface: null },
+      { title: "Old missing" },
+      { title: "Agent one", surface: "agent" },
+      { title: "Bot one", surface: "bot" },
+      { title: "Code one", surface: "coding" },
+    ];
+    expect(sessionsForSurface(rows, "ai").map((row) => row.title)).toEqual([
+      "Chat one",
+      "Old null",
+      "Old missing",
+    ]);
+    for (const surface of ["agent", "bot", "coding"] as const) {
+      const titles = sessionsForSurface(rows, surface).map((row) => row.title);
+      expect(titles).not.toContain("Old null");
+      expect(titles).not.toContain("Old missing");
+      expect(titles).toHaveLength(1);
+    }
+  });
+
   it("clears the composer when leaving Chat for Coding", () => {
     expect(draftAfterSurfaceChange("ai", "coding", "hello")).toBe("");
     expect(draftAfterSurfaceChange("ai", "ai", "hello")).toBe("hello");
