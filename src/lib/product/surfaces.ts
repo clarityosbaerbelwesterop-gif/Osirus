@@ -115,10 +115,8 @@ export function sessionsForSurface<T extends { surface?: string | null }>(
   sessions: readonly T[],
   surface: SessionSurface | null,
 ): T[] {
-  if (!surface) {
-    return sessions.filter((item) => !item.surface || item.surface === "ai");
-  }
-  return sessions.filter((item) => item.surface === surface);
+  const wanted = surface ?? "ai";
+  return sessions.filter((item) => (item.surface || "ai") === wanted);
 }
 
 /** Switching Chat to Coding must not keep the previous line in the composer. */
