@@ -1,0 +1,133 @@
+name: RunPod train (1x B200)
+
+# Startet NUR, wenn sich gpu-job/RUN auf dem Trainings-Branch aendert.
+# Der Runner steuert nur den Pod (Start, Preis-Check, Limit, Stopp).
+# Keine Daten, keine Gewichte, kein Repo-Code auf dem Runner oder Pod.
+on:
+  push:
+    branches: [claude/gitops-multi-model-finetuning-ort4m9]
+    paths: [gpu-job/RUN]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runpod
+  cancel-in-progress: false
+
+jobs:
+  pod:
+    runs-on: ubuntu-latest
+    environment: RUNPOD
+    timeout-minutes: 140          # Notbremse ueber dem berechneten Limit
+    env:
+      BUDGET_USD: "15"            # bewusst in USD < 15 EUR
+      RESERVE: "0.20"
+      MAX_GPU_PRICE: "6.79"
+      GPU_COUNT: "1"
+      GPU_TYPE: "NVIDIA B200"
+      IMAGE: "runpod/base@sha256:e6eb5a38bd3b321f41e7c584334c9ebc15e1e529574c7f2c866d148990cfb817"  # 1.4.0-cuda1281-ubuntu2404 (CPython 3.12, x86_64)
+      BRANCH: claude/gitops-multi-model-finetuning-ort4m9
+    steps:
+      - name: Ein-Zeilen-Auftrag lesen (nur RUN, kein Checkout)
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${{ github.repository }}/contents/gpu-job/RUN?ref=${{ github.sha }}" \
+            -H "Accept: application/vnd.github.raw" > RUN
+          # RUN: Zeile 1 = run_id, Zeile 2 = oeffentlicher SSH-Key der Box (pro Lauf neu)
+          RUN_ID=$(sed -n 1p RUN); PUBKEY=$(sed -n 2p RUN)
+          [[ "$RUN_ID" =~ ^[a-z0-9-]{4,40}$ ]] || { echo "bad run_id"; exit 1; }
+          [[ "$PUBKEY" =~ ^ssh-ed25519\ [A-Za-z0-9+/=]+(\ .*)?$ ]] || { echo "bad pubkey"; exit 1; }
+          echo "run_id=$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "pubkey=$PUBKEY" >> "$GITHUB_OUTPUT"
+
+      - name: age installieren und Selbsttest (vor dem Pod)
+        run: |
+          set -euo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq age openssh-client >/dev/null
+          ssh-keygen -q -t ed25519 -N "" -f t
+          [ "$(printf ok | age -r "$(cat t.pub)" -a | age -d -i t)" = ok ] || { echo "age-Selbsttest fehlgeschlagen"; exit 1; }
+          rm -f t t.pub
+
+      - name: Pod anlegen
+        id: pod
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          PUBKEY: ${{ steps.run.outputs.pubkey }}
+        run: |
+          set -euo pipefail
+          body=$(jq -n --arg img "$IMAGE" --arg gpu "$GPU_TYPE" --argjson n "$GPU_COUNT" --arg pk "$PUBKEY" \
+            '{name:"quasnir-train", imageName:$img, gpuTypeIds:[$gpu], gpuCount:$n,
+              cloudType:"SECURE", containerDiskInGb:50, volumeInGb:0,
+              ports:["22/tcp"], supportPublicIp:true, interruptible:false, env:{PUBLIC_KEY:$pk, EXPECT_DEVICES:($n|tostring)}}')
+          resp=$(curl -fsS -X POST https://rest.runpod.io/v1/pods \
+            -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" -d "$body")
+          id=$(jq -r .id <<<"$resp" || true)
+          echo "id=$id" >> "$GITHUB_OUTPUT"      # sofort, damit Cleanup immer greift
+          price=$(jq -r '.costPerHr // empty' <<<"$resp")
+          [ -n "$id" ] && [ "$id" != null ] || { echo "Pod-Start fehlgeschlagen"; exit 1; }
+          echo "price=$price" >> "$GITHUB_OUTPUT"
+          echo "Preis/h: $price"
+
+      - name: Preis-Check und Limit berechnen
+        id: limit
+        env:
+          PRICE: ${{ steps.pod.outputs.price }}
+        run: |
+          set -euo pipefail
+          [ -n "$PRICE" ] || { echo "kein Preis gemeldet -> Abbruch"; exit 1; }
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          p=float(os.environ["PRICE"]); n=int(os.environ["GPU_COUNT"])
+          if p/n > float(os.environ["MAX_GPU_PRICE"]):
+              raise SystemExit(f"Preis {p}/h ueber Grenze")
+          m=int(float(os.environ["BUDGET_USD"])*(1-float(os.environ["RESERVE"]))/p*60)
+          print(f"minutes={min(m,120)}")
+          PY
+          cat "$GITHUB_OUTPUT" | tail -1
+
+      - name: Warten auf DONE oder hartes Limit
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          POD: ${{ steps.pod.outputs.id }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
+          MINUTES: ${{ steps.limit.outputs.minutes }}
+          PUBKEY: ${{ steps.run.outputs.pubkey }}
+        run: |
+          set -euo pipefail
+          end=$(( $(date +%s) + MINUTES*60 ))
+          while [ "$(date +%s)" -lt "$end" ]; do
+            # SSH-Endpunkt nur verschluesselt an die Box (age mit ihrem SSH-Key), nie im Klartext
+            if [ -z "${SENT:-}" ]; then
+              ep=$(curl -fsS "https://rest.runpod.io/v1/pods/$POD" -H "Authorization: Bearer $RUNPOD_API_KEY" \
+                   | jq -r 'select(.publicIp and .portMappings["22"]) | "\(.publicIp):\(.portMappings["22"])"' || true)
+              if [ -n "$ep" ]; then
+                printf '%s' "$ep" | age -r "$PUBKEY" -a > ep.age
+                echo "::notice title=ENDPOINT_AGE::$(printf '%s' "$ep" | age -r "$PUBKEY" | base64 -w0)"
+                echo "ENDPOINT_AGE_BEGIN"; cat ep.age; echo "ENDPOINT_AGE_END"; SENT=1
+              fi
+            fi
+            # Box meldet Ende per gpu-job/DONE (Inhalt = run_id), nachdem Checkpoints gesichert sind
+            d=$(gh api "repos/${{ github.repository }}/contents/gpu-job/DONE?ref=$BRANCH" \
+                 -H "Accept: application/vnd.github.raw" 2>/dev/null || true)
+            [ "$d" = "$RUN_ID" ] && { echo "DONE erhalten"; exit 0; }
+            sleep 60
+          done
+          echo "Hartes Limit erreicht"
+
+      - name: Pod loeschen (immer)
+        if: always() && steps.pod.outputs.id != ''
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          POD: ${{ steps.pod.outputs.id }}
+        run: |
+          for i in 1 2 3 4 5; do
+            curl -fsS -X DELETE "https://rest.runpod.io/v1/pods/$POD" \
+              -H "Authorization: Bearer $RUNPOD_API_KEY" && { echo "Pod geloescht"; exit 0; }
+            sleep 10
+          done
+          echo "::error::Pod $POD konnte nicht geloescht werden – sofort manuell stoppen"; exit 1
