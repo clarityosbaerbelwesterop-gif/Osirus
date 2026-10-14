@@ -1,4 +1,4 @@
-h200-phase-a-1014
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINqKShnuQ40IV18wW6sUeO0eMlJ7CDWbbfWgVujNVLcK box-h200-phase-a-1014
+h200-phase-a-1014b
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEdv3Nn9q4NveSY1ij14s0jiHzc1GmcqcFDPRMxGc9vF box-h200-phase-a-1014b
 gpu=H200
-max_price=4.99
+max_price=5.29
