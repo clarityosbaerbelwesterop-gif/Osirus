@@ -1,4 +1,5 @@
-h200-phase-a-1015
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILvjp2XtF0Z3c/bX+pacQb6ArNCx2ink6DCuxGZhwk/d box-h200-phase-a-1015
+h200-phase-a-1015b
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIOoh1RgCSVrPq8Mzxzb0P8iVTbxx67KBCBOW34R3BDIb box-h200-phase-a-1015b
 gpu=H200
 max_price=5.29
+budget=11.50
