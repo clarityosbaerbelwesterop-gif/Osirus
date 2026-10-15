@@ -75,6 +75,7 @@ jobs:
           sp=$(curl -fsS -X POST https://api.runpod.io/graphql -H "Authorization: Bearer $RUNPOD_API_KEY" \
                -H "Content-Type: application/json" -d "$q" | jq -r '.data.gpuTypes[0].securePrice // empty')
           [ -n "$sp" ] || { echo "kein Vorab-Preis -> Abbruch, kein Pod angelegt"; exit 1; }
+          [[ "$sp" =~ ^[0-9]{1,3}(\.[0-9]{1,12})?$ ]] || { echo "Vorab-Preis keine Zahl -> Abbruch"; exit 1; }
           echo "Secure-Preis/h: $sp"
           python3 -c "import sys; sys.exit(0 if float('$sp')<=float('$MAX_GPU_PRICE') else 1)" \
             || { echo "Preis $sp ueber Grenze $MAX_GPU_PRICE -> kein Pod angelegt"; exit 1; }
@@ -108,6 +109,7 @@ jobs:
         run: |
           set -euo pipefail
           [ -n "$PRICE" ] || { echo "kein Preis gemeldet -> Abbruch"; exit 1; }
+          [[ "$PRICE" =~ ^[0-9]{1,3}(\.[0-9]{1,12})?$ ]] || { echo "Preis keine Zahl -> Abbruch"; exit 1; }
           python3 - <<'PY' >> "$GITHUB_OUTPUT"
           import os
           p=float(os.environ["PRICE"]); n=int(os.environ["GPU_COUNT"])
@@ -118,28 +120,36 @@ jobs:
           PY
           cat "$GITHUB_OUTPUT" | tail -1
 
+      - name: Endpunkt verschluesselt melden (eigener Schritt, endet sofort)
+        timeout-minutes: 20
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          POD: ${{ steps.pod.outputs.id }}
+          PUBKEY: ${{ steps.run.outputs.pubkey }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 36); do
+            ep=$(curl -fsS "https://rest.runpod.io/v1/pods/$POD" -H "Authorization: Bearer $RUNPOD_API_KEY" \
+                 | jq -r '(.publicIp // "") as $ip | (.portMappings["22"] // "" | tostring) as $p
+                          | select(($ip|test("^[0-9]{1,3}(\\.[0-9]{1,3}){3}$")) and ($p|test("^[0-9]{1,5}$"))) | "\($ip):\($p)"' || true)
+            if [ -n "$ep" ]; then
+              echo "::notice title=ENDPOINT_AGE::$(printf '%s' "$ep" | age -r "$PUBKEY" | base64 -w0)"
+              echo "ENDPOINT_AGE_BEGIN"; printf '%s' "$ep" | age -r "$PUBKEY" -a; echo "ENDPOINT_AGE_END"
+              exit 0
+            fi
+            sleep 30
+          done
+          echo "Kein Endpunkt nach 18 min -> Abbruch"; exit 1
+
       - name: Warten auf DONE oder hartes Limit
         env:
           GH_TOKEN: ${{ github.token }}
-          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
-          POD: ${{ steps.pod.outputs.id }}
           RUN_ID: ${{ steps.run.outputs.run_id }}
           MINUTES: ${{ steps.limit.outputs.minutes }}
-          PUBKEY: ${{ steps.run.outputs.pubkey }}
         run: |
           set -euo pipefail
           end=$(( $(date +%s) + MINUTES*60 ))
           while [ "$(date +%s)" -lt "$end" ]; do
-            # SSH-Endpunkt nur verschluesselt an die Box (age mit ihrem SSH-Key), nie im Klartext
-            if [ -z "${SENT:-}" ]; then
-              ep=$(curl -fsS "https://rest.runpod.io/v1/pods/$POD" -H "Authorization: Bearer $RUNPOD_API_KEY" \
-                   | jq -r 'select(.publicIp and .portMappings["22"]) | "\(.publicIp):\(.portMappings["22"])"' || true)
-              if [ -n "$ep" ]; then
-                printf '%s' "$ep" | age -r "$PUBKEY" -a > ep.age
-                echo "::notice title=ENDPOINT_AGE::$(printf '%s' "$ep" | age -r "$PUBKEY" | base64 -w0)"
-                echo "ENDPOINT_AGE_BEGIN"; cat ep.age; echo "ENDPOINT_AGE_END"; SENT=1
-              fi
-            fi
             # Box meldet Ende per gpu-job/DONE (Inhalt = run_id), nachdem Checkpoints gesichert sind
             d=$(gh api "repos/${{ github.repository }}/contents/gpu-job/DONE?ref=$BRANCH" \
                  -H "Accept: application/vnd.github.raw" 2>/dev/null || true)
