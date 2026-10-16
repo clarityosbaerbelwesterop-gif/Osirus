@@ -1,4 +1,4 @@
-s2-run1-b200
+s2-run1-b200b
 ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJqwGyjVPx/mVMSjwPNkYr4KKoaEWl/V6jCB3u115OwF box-s2-run1-b200
 gpu=B200
 max_price=8.00
