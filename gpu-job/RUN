@@ -1,5 +1,7 @@
-h200-phase-a-1015e
-ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIKutmKctWxaXN7Z+qiFnVafO/Hdzla53cRYg7YAwHR2q box-h200-phase-a-1015e
-gpu=H200
-max_price=5.29
-budget=10.00
+s2-run1-b200
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJqwGyjVPx/mVMSjwPNkYr4KKoaEWl/V6jCB3u115OwF box-s2-run1-b200
+gpu=B200
+max_price=8.00
+budget=12.00
+volume=3qlkuqnr1u
+dc=US-NC-2
