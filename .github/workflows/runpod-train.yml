@@ -28,6 +28,7 @@ jobs:
       MAX_MINUTES: "180"
       IMAGE: "runpod/base@sha256:e6eb5a38bd3b321f41e7c584334c9ebc15e1e529574c7f2c866d148990cfb817"  # 1.4.0-cuda1281-ubuntu2404 (CPython 3.12, x86_64)
       BRANCH: claude/gitops-multi-model-finetuning-ort4m9
+      VOLUME_MOUNT: "/vol"        # Mountpunkt des Network Volumes im Pod (Container-Disk bleibt /workspace)
     steps:
       - name: Ein-Zeilen-Auftrag lesen (nur RUN, kein Checkout)
         id: run
@@ -38,6 +39,7 @@ jobs:
           gh api "repos/${{ github.repository }}/contents/gpu-job/RUN?ref=${{ github.sha }}" \
             -H "Accept: application/vnd.github.raw" > RUN
           # RUN: Z1 run_id, Z2 SSH-Key der Box, Z3 gpu=H200|B200, Z4 max_price=N.NN (USD/h pro GPU)
+          # optional: Z6 volume=<id> und Z7 dc=<Rechenzentrum> (nur zusammen; Z5 darf dann leer sein)
           RUN_ID=$(sed -n 1p RUN); PUBKEY=$(sed -n 2p RUN); G=$(sed -n 3p RUN); M=$(sed -n 4p RUN)
           [[ "$RUN_ID" =~ ^[a-z0-9-]{4,40}$ ]] || { echo "bad run_id"; exit 1; }
           [[ "$PUBKEY" =~ ^ssh-ed25519\ [A-Za-z0-9+/=]+(\ .*)?$ ]] || { echo "bad pubkey"; exit 1; }
@@ -59,7 +61,17 @@ jobs:
             python3 -c "import sys; sys.exit(0 if 0<float('$BUD')<=float('$CAP') else 1)" \
               || { echo "budget ueber $CAP"; exit 1; }
           fi
-          [ -z "$(sed -n '6,$p' RUN | tr -d '[:space:]')" ] || { echo "RUN hat zu viele Zeilen"; exit 1; }
+          V=$(sed -n 6p RUN); D=$(sed -n 7p RUN); VOL=""; DC=""
+          if [ -n "$V$D" ]; then
+            [[ "$V" =~ ^volume=([a-z0-9-]{3,40})$ ]] || { echo "bad volume (Format volume=<id>)"; exit 1; }
+            VOL="${BASH_REMATCH[1]}"
+            [[ "$D" =~ ^dc=([A-Z0-9-]{1,16})$ ]] || { echo "volume= braucht dc=<id> in Zeile 7"; exit 1; }
+            DC="${BASH_REMATCH[1]}"
+            case "$DC" in EU-RO-1|US-NC-2) ;; *) echo "dc nicht in fester Allowlist (EU-RO-1, US-NC-2)"; exit 1 ;; esac
+          fi
+          [ -z "$(sed -n '8,$p' RUN | tr -d '[:space:]')" ] || { echo "RUN hat zu viele Zeilen"; exit 1; }
+          echo "volume=$VOL" >> "$GITHUB_OUTPUT"
+          echo "dc=$DC" >> "$GITHUB_OUTPUT"
           echo "budget=$BUD" >> "$GITHUB_OUTPUT"
           echo "gpu=$GPU_TYPE" >> "$GITHUB_OUTPUT"
           echo "max_price=$MAXP" >> "$GITHUB_OUTPUT"
@@ -91,18 +103,37 @@ jobs:
           python3 -c "import sys; sys.exit(0 if float('$sp')<=float('$MAX_GPU_PRICE') else 1)" \
             || { echo "Preis $sp ueber Grenze $MAX_GPU_PRICE -> kein Pod angelegt"; exit 1; }
 
+      - name: Volume pruefen (nur mit volume=)
+        if: steps.run.outputs.volume != ''
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          VOL: ${{ steps.run.outputs.volume }}
+          DC: ${{ steps.run.outputs.dc }}
+        run: |
+          set -euo pipefail
+          vdc=$(curl -fsS "https://rest.runpod.io/v1/networkvolumes/$VOL" -H "Authorization: Bearer $RUNPOD_API_KEY" | jq -r '.dataCenterId // empty')
+          [ "$vdc" = "$DC" ] || { echo "Volume liegt in '${vdc:-?}', RUN verlangt $DC -> kein Pod angelegt"; exit 1; }
+          echo "Volume ok in $DC"
+
       - name: Pod anlegen
         id: pod
         env:
           RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
           PUBKEY: ${{ steps.run.outputs.pubkey }}
           GPU_TYPE: ${{ steps.run.outputs.gpu }}
+          VOL: ${{ steps.run.outputs.volume }}
+          DC: ${{ steps.run.outputs.dc }}
         run: |
           set -euo pipefail
           body=$(jq -n --arg img "$IMAGE" --arg gpu "$GPU_TYPE" --argjson n "$GPU_COUNT" --arg pk "$PUBKEY" \
             '{name:"quasnir-train", imageName:$img, gpuTypeIds:[$gpu], gpuCount:$n,
               cloudType:"SECURE", containerDiskInGb:50, volumeInGb:0,
               ports:["22/tcp"], supportPublicIp:true, interruptible:false, env:{PUBLIC_KEY:$pk, EXPECT_DEVICES:($n|tostring)}}')
+          if [ -n "$VOL" ]; then
+            body=$(jq --arg v "$VOL" --arg dc "$DC" --arg mp "$VOLUME_MOUNT" \
+              'del(.volumeInGb) + {networkVolumeId:$v, dataCenterIds:[$dc], volumeMountPath:$mp}
+               | .env += {VOL_PATH:$mp}' <<<"$body")
+          fi
           resp=$(curl -fsS -X POST https://rest.runpod.io/v1/pods \
             -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" -d "$body")
           id=$(jq -r .id <<<"$resp" || true)
