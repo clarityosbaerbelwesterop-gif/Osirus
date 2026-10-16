@@ -19,13 +19,13 @@ jobs:
   pod:
     runs-on: ubuntu-latest
     environment: RUNPOD
-    timeout-minutes: 200          # Notbremse ueber dem berechneten Limit (max 180)
+    timeout-minutes: 355          # Notbremse (GitHub-Maximum 360); Warteschritt endet spaetestens 8 min davor
     env:
-      BUDGET_USD: "15"            # bewusst in USD < 15 EUR
-      RESERVE: "0.20"
+      BUDGET_CAP: "42.00"         # feste Obergrenze pro Lauf in USD (Owner); RUN Z5 nur darunter
+      JOB_MAX_MIN: "355"          # = timeout-minutes; Warten endet bei Jobstart + JOB_MAX_MIN - 8 min, damit Loeschen sicher laeuft
       HARD_MAX_GPU_PRICE: "8.00"  # feste Obergrenze, RUN darf nicht darueber
       GPU_COUNT: "1"
-      MAX_MINUTES: "180"
+      MAX_MINUTES: "340"          # Decke; Laufzeit = min(int(budget/Preis*60) - 10 - 10, 340)  (run2: 42$/7.99 -> 295)
       IMAGE: "runpod/base@sha256:e6eb5a38bd3b321f41e7c584334c9ebc15e1e529574c7f2c866d148990cfb817"  # 1.4.0-cuda1281-ubuntu2404 (CPython 3.12, x86_64)
       BRANCH: claude/gitops-multi-model-finetuning-ort4m9
       VOLUME_MOUNT: "/vol"        # Mountpunkt des Network Volumes im Pod (Container-Disk bleibt /workspace)
@@ -36,6 +36,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
+          echo "JOB_T0=$(date +%s)" >> "$GITHUB_ENV"
           gh api "repos/${{ github.repository }}/contents/gpu-job/RUN?ref=${{ github.sha }}" \
             -H "Accept: application/vnd.github.raw" > RUN
           # RUN: Z1 run_id, Z2 SSH-Key der Box, Z3 gpu=H200|B200, Z4 max_price=N.NN (USD/h pro GPU)
@@ -52,9 +53,9 @@ jobs:
           MAXP="${BASH_REMATCH[1]}"
           python3 -c "import sys; sys.exit(0 if 0<float('$MAXP')<=float('$HARD_MAX_GPU_PRICE') else 1)" \
             || { echo "max_price ueber fester Obergrenze $HARD_MAX_GPU_PRICE"; exit 1; }
-          # Z5 optional: budget=NN.NN (USD), nur nach unten, hoechstens BUDGET_USD*(1-RESERVE)
-          B=$(sed -n 5p RUN); CAP=$(python3 -c "print(f'{float(\"$BUDGET_USD\")*(1-float(\"$RESERVE\")):.2f}')")
-          if [ -z "$B" ]; then BUD="$CAP"
+          # Z5 optional: budget=NN.NN (USD), hoechstens BUDGET_CAP; ohne Z5 gilt das bisherige Budget 12.00
+          B=$(sed -n 5p RUN); CAP="$BUDGET_CAP"
+          if [ -z "$B" ]; then BUD="12.00"
           else
             [[ "$B" =~ ^budget=([0-9]{1,2}\.[0-9]{2})$ ]] || { echo "bad budget (Format budget=9.50)"; exit 1; }
             BUD="${BASH_REMATCH[1]}"
@@ -70,6 +71,9 @@ jobs:
             case "$DC" in EU-RO-1|US-NC-2) ;; *) echo "dc nicht in fester Allowlist (EU-RO-1, US-NC-2)"; exit 1 ;; esac
           fi
           [ -z "$(sed -n '8,$p' RUN | tr -d '[:space:]')" ] || { echo "RUN hat zu viele Zeilen"; exit 1; }
+          # Budget muss bei max_price in die Sicherheitsdecke passen, sonst wuerde der Lauf vorzeitig abgeschnitten
+          python3 -c "import sys; sys.exit(0 if float('$BUD')/float('$MAXP')*60<=float('$MAX_MINUTES') else 1)" \
+            || { echo "budget/max_price*60 ueber MAX_MINUTES ($MAX_MINUTES)"; exit 1; }
           echo "volume=$VOL" >> "$GITHUB_OUTPUT"
           echo "dc=$DC" >> "$GITHUB_OUTPUT"
           echo "budget=$BUD" >> "$GITHUB_OUTPUT"
@@ -123,10 +127,11 @@ jobs:
           GPU_TYPE: ${{ steps.run.outputs.gpu }}
           VOL: ${{ steps.run.outputs.volume }}
           DC: ${{ steps.run.outputs.dc }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
         run: |
           set -euo pipefail
-          body=$(jq -n --arg img "$IMAGE" --arg gpu "$GPU_TYPE" --argjson n "$GPU_COUNT" --arg pk "$PUBKEY" \
-            '{name:"quasnir-train", imageName:$img, gpuTypeIds:[$gpu], gpuCount:$n,
+          body=$(jq -n --arg rid "$RUN_ID" --arg img "$IMAGE" --arg gpu "$GPU_TYPE" --argjson n "$GPU_COUNT" --arg pk "$PUBKEY" \
+            '{name:("quasnir-train-"+$rid), imageName:$img, gpuTypeIds:[$gpu], gpuCount:$n,
               cloudType:"SECURE", containerDiskInGb:50, volumeInGb:0,
               ports:["22/tcp"], supportPublicIp:true, interruptible:false, env:{PUBLIC_KEY:$pk, EXPECT_DEVICES:($n|tostring)}}')
           if [ -n "$VOL" ]; then
@@ -164,7 +169,8 @@ jobs:
           p=float(os.environ["PRICE"]); n=int(os.environ["GPU_COUNT"])
           if p/n > float(os.environ["MAX_GPU_PRICE"]):
               raise SystemExit(f"Preis {p}/h ueber Grenze")
-          m=int(float(os.environ["RUN_BUDGET"])/p*60)
+          m=int(float(os.environ["RUN_BUDGET"])/p*60)-10-10   # 10 Puffer + 10 Fetch-Wartezeit
+          if m<=0: raise SystemExit("Budget reicht nicht")
           print(f"minutes={min(m,int(os.environ['MAX_MINUTES']))}")
           PY
           cat "$GITHUB_OUTPUT" | tail -1
@@ -204,27 +210,45 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           RUN_ID: ${{ steps.run.outputs.run_id }}
           MINUTES: ${{ steps.limit.outputs.minutes }}
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          POD: ${{ steps.pod.outputs.id }}
         run: |
           set -euo pipefail
           end=$(( $(date +%s) + MINUTES*60 ))
+          hard=$(( JOB_T0 + (JOB_MAX_MIN - 8)*60 ))
+          if [ "$end" -gt "$hard" ]; then end=$hard; echo "Warten gekuerzt auf Joblimit - 8 min"; fi
           while [ "$(date +%s)" -lt "$end" ]; do
             # Box meldet Ende per gpu-job/DONE (Inhalt = run_id), nachdem Checkpoints gesichert sind
             d=$(gh api "repos/${{ github.repository }}/contents/gpu-job/DONE?ref=$BRANCH" \
                  -H "Accept: application/vnd.github.raw" 2>/dev/null || true)
             [ "$d" = "$RUN_ID" ] && { echo "DONE erhalten"; exit 0; }
+            # Pod loescht sich per trap selbst (EXIT/ERR): existiert er nicht mehr -> fertig
+            c=$(curl -sS -o /dev/null -w '%{http_code}' "https://rest.runpod.io/v1/pods/$POD" -H "Authorization: Bearer $RUNPOD_API_KEY" || echo 000)
+            [ "$c" = 404 ] && { echo "Pod existiert nicht mehr (Selbstloeschung)"; exit 0; }
             sleep 60
           done
           echo "Hartes Limit erreicht"
 
-      - name: Pod loeschen (immer)
-        if: always() && steps.pod.outputs.id != ''
+      - name: Pod loeschen (immer; nur /pods/<id>, nie Volumes)
+        if: always()
         env:
           RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
           POD: ${{ steps.pod.outputs.id }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
         run: |
+          if [ -z "$POD" ]; then   # Create-Step gescheitert: nach Namen suchen (nur Pods, nie Volumes)
+            POD=$(curl -fsS https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+                  | jq -r --arg n "quasnir-train-$RUN_ID" '[.[] | select(.name==$n) | .id] | join(" ")' || true)
+            [ -n "$RUN_ID" ] || { echo "::error::keine RUN_ID - kein Namensabgleich, bitte manuell pruefen"; exit 1; }
+            [ -n "$POD" ] || { echo "kein Pod angelegt"; exit 0; }
+          fi
+          for P in $POD; do POD=$P
           for i in 1 2 3 4 5; do
-            curl -fsS -X DELETE "https://rest.runpod.io/v1/pods/$POD" \
-              -H "Authorization: Bearer $RUNPOD_API_KEY" && { echo "Pod geloescht"; exit 0; }
+            c=$(curl -sS -o /tmp/del.body -w '%{http_code}' -X DELETE "https://rest.runpod.io/v1/pods/$POD" \
+              -H "Authorization: Bearer $RUNPOD_API_KEY" || echo 000)
+            case $c in 2*) echo "Pod geloescht"; continue 2;; 404) echo "Pod war schon weg"; continue 2;; esac
+            echo "http=$c"; head -c 2000 /tmp/del.body; echo
             sleep 10
           done
           echo "::error::Pod $POD konnte nicht geloescht werden – sofort manuell stoppen"; exit 1
+          done
