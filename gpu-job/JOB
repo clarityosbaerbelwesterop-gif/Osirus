@@ -1,6 +1,6 @@
-bench-1b-2
-job=bench-1b
-sha=c96105e2cf4f02288444e969f89be4765865f37c
-volume=3qlkuqnr1u
-budget=5.00
-vcpu=32
+acct-gpu-1
+job=account
+sha=-
+volume=-
+budget=0.00
+vcpu=2

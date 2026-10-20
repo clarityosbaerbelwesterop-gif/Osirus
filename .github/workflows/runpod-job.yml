@@ -77,6 +77,17 @@ jobs:
           echo "== Pods =="; jq -c '.[]' pods.json
           echo "Laufende Pods: $(jq '[.[] | select(.desiredStatus=="RUNNING")] | length' pods.json), zusammen $(jq '[.[] | select(.desiredStatus=="RUNNING") | (.costPerHr // 0)] | add // 0' pods.json) USD/h"
           echo "== Volumes =="; jq -c '.[]' volumes.json
+          # GPU-Bestand und Preise in den Rechenzentren der Volumes (nur lesen)
+          for dc in $(jq -r '[.[].dataCenterId] | unique | .[]' volumes.json); do
+            for n in 1 2; do
+              q=$(jq -n --arg dc "$dc" --argjson n "$n" '{query:"query($i:GpuLowestPriceInput){gpuTypes{id displayName memoryInGb lowestPrice(input:$i){uninterruptablePrice stockStatus}}}",
+                     variables:{i:{gpuCount:$n, dataCenterId:$dc, secureCloud:true}}}')
+              curl -sS -X POST https://api.runpod.io/graphql -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" -d "$q" \
+                | jq -c --arg dc "$dc" --argjson n "$n" '(.errors // empty | {graphql_errors: [.[].message]}),
+                    (.data.gpuTypes // [] | .[] | select(.displayName | test("B300|B200|H200|H100|A100|L40S|RTX 5090|RTX PRO 6000"))
+                     | {dc: $dc, gpus: $n, id, name: .displayName, gb: .memoryInGb, usd_h: .lowestPrice.uninterruptablePrice, stock: .lowestPrice.stockStatus})' || true
+            done
+          done
 
       - name: Commit in 67 pruefen (muss auf dem Trainings-Branch liegen)
         if: steps.run.outputs.job != 'account'
