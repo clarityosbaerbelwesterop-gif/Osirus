@@ -139,7 +139,7 @@ jobs:
           body=$(jq -n --arg rid "$RUN_ID" --arg img "$IMAGE" --arg fl "$CPU_FLAVOR" --argjson vc "$VCPU" \
             --arg v "$VOL" --arg mp "$MOUNT" --arg job "$JOBN" --arg sha "$SHA" --arg tok "$TOKEN" --arg repo "$REPO67" --arg boot "$BOOT" \
             '{name:("quasnir-job-"+$rid), imageName:$img, computeType:"CPU", cpuFlavorIds:[$fl], vcpuCount:$vc,
-              cloudType:"SECURE", containerDiskInGb:40, networkVolumeId:$v, volumeMountPath:$mp,
+              cloudType:"SECURE", containerDiskInGb:20, networkVolumeId:$v, volumeMountPath:$mp,
               ports:["8000/http"], interruptible:false,
               env:{JOB:$job, SHA:$sha, TOKEN:$tok, REPO:$repo, RUN_ID:$rid},
               dockerStartCmd:["bash","-c",$boot]}')
