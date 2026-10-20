@@ -1,6 +1,6 @@
-acct-gpu-1
-job=account
-sha=-
-volume=-
-budget=0.00
-vcpu=2
+train-1-a
+job=train-1
+sha=2d8528edbd3332c2c03dfb3753f08c98deed5858
+volume=3qlkuqnr1u
+budget=105.00
+gpu=B300|B200x2@8.50
