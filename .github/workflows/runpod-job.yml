@@ -33,6 +33,7 @@ jobs:
       GPU_BUDGET_CAP: "110.00"    # feste Obergrenze pro GPU-Job in USD
       HARD_MAX_GPU_PRICE: "9.00"  # USD/h je GPU
       GPU_MAX_MINUTES: "300"      # GPU-Pod hoechstens 5 h; der GitHub-Job endet nach 350 min
+      STOCK_WAIT_MIN: "45"        # so lange wird auf freie GPUs gewartet (kostet nichts)
       JOB_MAX_MIN: "350"
       CPU_FLAVORS: '["cpu3c","cpu3g","cpu5c","cpu5g"]'  # RunPod waehlt eine verfuegbare Familie
       IMAGE: "runpod/base@sha256:e6eb5a38bd3b321f41e7c584334c9ebc15e1e529574c7f2c866d148990cfb817"
@@ -171,7 +172,7 @@ jobs:
             MIN=$MAX_MINUTES
           fi
           DEADLINE=$(( $(date +%s) + (MIN - 5) * 60 ))   # der Job auf dem Pod endet 5 min vor dem Runner
-          echo "minutes=$MIN" >> "$GITHUB_OUTPUT"
+          [ "$MODE" = gpu ] || echo "minutes=$MIN" >> "$GITHUB_OUTPUT"   # GPU: nach dem Anlegen
           mk() {  # $1 = JSON mit den hardware-abhaengigen Feldern
             jq -n --arg rid "$RUN_ID" --arg img "$IMAGE" --arg v "$VOL" --arg mp "$MOUNT" --arg job "$JOBN" --arg sha "$SHA" \
               --arg tok "$TOKEN" --arg repo "$REPO67" --arg boot "$BOOT" --arg dl "$DEADLINE" --argjson hw "$1" \
@@ -191,15 +192,29 @@ jobs:
           }
           resp=""
           if [ "$MODE" = gpu ]; then
-            # GPU-Typen in der Reihenfolge aus JOB; die RunPod-IDs kommen aus der API
+            # GPU-Typen in der Reihenfolge aus JOB; die RunPod-IDs kommen aus der API. Ist keiner frei, alle 5 min
+            # erneut versuchen, hoechstens STOCK_WAIT_MIN lang. Laufzeit und Deadline werden vor jedem Versuch neu
+            # berechnet, damit der Pod immer vor dem Joblimit fertig ist.
             ids=$(curl -fsS -X POST https://api.runpod.io/graphql -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" \
                   -d '{"query":"query{gpuTypes{id displayName}}"}' | jq -c '[.data.gpuTypes[] | {id, displayName}]')
-            for t in $GTYPES; do
-              gid=$(jq -r --arg t "$t" '[.[] | select((.displayName + " " + .id) | test("\\b" + $t + "\\b"))][0].id // empty' <<<"$ids")
-              [ -n "$gid" ] || { echo "GPU-Typ $t bei RunPod nicht gefunden"; continue; }
-              hw=$(jq -n --arg g "$gid" --argjson n "$GCOUNT" '{computeType:"GPU", gpuTypeIds:[$g], gpuCount:$n, containerDiskInGb:80}')
-              try "$(mk "$hw")" "$GCOUNT x $gid" && { echo "Angefragt: $GCOUNT x $gid"; break; }
+            PLAN=$MIN; got=""; wait_end=$(( $(date +%s) + STOCK_WAIT_MIN * 60 ))
+            while :; do
+              left=$(( (JOB_T0 + (JOB_MAX_MIN - 20) * 60 - $(date +%s)) / 60 ))
+              MIN=$(( left < PLAN ? left : PLAN ))
+              [ "$MIN" -ge 60 ] || { echo "weniger als 60 min Joblaufzeit uebrig -> kein Pod"; break; }
+              DEADLINE=$(( $(date +%s) + (MIN - 5) * 60 ))
+              for t in $GTYPES; do
+                gid=$(jq -r --arg t "$t" '[.[] | select((.displayName + " " + .id) | test("\\b" + $t + "\\b"))][0].id // empty' <<<"$ids")
+                [ -n "$gid" ] || { echo "GPU-Typ $t bei RunPod nicht gefunden"; continue; }
+                hw=$(jq -n --arg g "$gid" --argjson n "$GCOUNT" '{computeType:"GPU", gpuTypeIds:[$g], gpuCount:$n, containerDiskInGb:80}')
+                try "$(mk "$hw")" "$GCOUNT x $gid" && { echo "Angefragt: $GCOUNT x $gid"; got=1; break; }
+              done
+              [ -n "$got" ] && break
+              grep -qi "no instances\|no longer any instances" /tmp/pod.json || break   # anderer Fehler: nicht warten
+              [ "$(date +%s)" -lt "$wait_end" ] || { echo "nach $STOCK_WAIT_MIN min weiter kein Bestand"; break; }
+              echo "kein Bestand fuer $GTYPES, neuer Versuch in 5 min"; sleep 300
             done
+            echo "minutes=$MIN" >> "$GITHUB_OUTPUT"
           else
             # Kein Bestand in der gewuenschten Groesse: alle CPU-Familien anbieten, dann halbieren (bis 2 vCPU).
             vc=$VCPU
