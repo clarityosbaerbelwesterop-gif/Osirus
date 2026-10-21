@@ -1,6 +1,6 @@
-train-1-c
+train-1-d
 job=train-1
 sha=2d8528edbd3332c2c03dfb3753f08c98deed5858
 volume=3qlkuqnr1u
 budget=105.00
-gpu=B200|H200x2@8.00
+gpu=B200x2@8.00
