@@ -1,6 +1,6 @@
-train-1-f
-job=train-1
-sha=798fdecd050dfe2524bab6c828186c71fd4fdb6a
+eval-1-a
+job=eval-1
+sha=042dbbcf6d19085a0f17d3843a87a51bc63c68ab
 volume=3qlkuqnr1u
-budget=90.00
-gpu=B200x2@8.00/any
+budget=8.00
+gpu=A100|H100|L40S|H200x1@3.00/any
