@@ -1,5 +1,5 @@
 {
-  "n_experiments": 8,
+  "n_experiments": 9,
   "tests_only": false,
   "all_passed": true,
   "failures": [],
@@ -10,7 +10,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 89.477,
+      "duration_ms": 92.536,
       "status": "passed"
     },
     {
@@ -19,7 +19,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 78.305,
+      "duration_ms": 81.732,
       "status": "passed"
     },
     {
@@ -28,7 +28,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 99.044,
+      "duration_ms": 98.258,
       "status": "passed"
     },
     {
@@ -37,7 +37,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 83.683,
+      "duration_ms": 86.369,
       "status": "passed"
     },
     {
@@ -46,7 +46,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 77.607,
+      "duration_ms": 79.154,
       "status": "passed"
     },
     {
@@ -55,7 +55,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 70.798,
+      "duration_ms": 72.017,
       "status": "passed"
     },
     {
@@ -64,7 +64,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 88.189,
+      "duration_ms": 92.511,
       "status": "passed"
     },
     {
@@ -73,7 +73,16 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 15563.95,
+      "duration_ms": 15723.394,
+      "status": "passed"
+    },
+    {
+      "experiment": "M17 E10 guarded sub-primitive synthesis",
+      "directory": "/workspace/RI/experiments/E10_guarded_subprimitive_synthesis",
+      "tests_exit_code": 0,
+      "evaluation_exit_code": 0,
+      "artifact_valid": true,
+      "duration_ms": 11144.199,
       "status": "passed"
     }
   ]

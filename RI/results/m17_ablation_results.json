@@ -1,0 +1,664 @@
+{
+  "commit_hash": "abf1fad89f61d2b1640f8b3b2d0dcf38153e2841",
+  "experiment_version": "M17.E10.v1",
+  "execution_status": "completed",
+  "n_seeds": 30,
+  "pre_registered_promotion_gate": {
+    "min_train_accuracy": 0.9,
+    "min_val_accuracy": 0.85,
+    "min_independent_size_val_accuracy": 0.85,
+    "min_gain_over_base_grammar": 0.12,
+    "require_permutation_invariance": true,
+    "require_non_degenerate_large_size_support": true,
+    "max_surviving_distinct_alternatives": 1,
+    "max_regression_drop": 0.0
+  },
+  "ablation_variants": {
+    "m17_full_guarded_synthesis": {
+      "valid_tasks_ab_held_out_accuracy": {
+        "mean": 0.995833,
+        "std": 0.019016,
+        "ci95_half_width": 0.004812,
+        "ci95_low": 0.991022,
+        "ci95_high": 1.0
+      },
+      "valid_tasks_ab_large_size_accuracy": {
+        "mean": 0.993519,
+        "std": 0.030842,
+        "ci95_half_width": 0.007804,
+        "ci95_low": 0.985714,
+        "ci95_high": 1.0
+      },
+      "family_a_primitive_synthesis": {
+        "held_out_accuracy": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0
+        },
+        "large_size_accuracy": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0
+        },
+        "exact_primitive_recovery_rate": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0
+        },
+        "promotion_rate": 1.0
+      },
+      "family_b_composition_with_synthesized": {
+        "held_out_accuracy": {
+          "mean": 0.991667,
+          "std": 0.026453,
+          "ci95_half_width": 0.009466,
+          "ci95_low": 0.982201,
+          "ci95_high": 1.0
+        },
+        "large_size_accuracy": {
+          "mean": 0.987037,
+          "std": 0.042992,
+          "ci95_half_width": 0.015384,
+          "ci95_low": 0.971653,
+          "ci95_high": 1.0
+        },
+        "exact_composition_recovery_rate": {
+          "mean": 0.9,
+          "std": 0.305129,
+          "ci95_half_width": 0.109189,
+          "ci95_low": 0.790811,
+          "ci95_high": 1.0
+        },
+        "memory_composition_usage_rate": 0.933333
+      },
+      "family_c_adversarial_traps": {
+        "false_candidate_rejection_rate": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0
+        },
+        "false_promotion_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0
+        },
+        "quarantine_rate": 1.0,
+        "fallback_held_out_accuracy": {
+          "mean": 0.537037,
+          "std": 0.092369,
+          "ci95_half_width": 0.033054,
+          "ci95_low": 0.503983,
+          "ci95_high": 0.570091
+        }
+      },
+      "search_and_lifecycle_stats": {
+        "mean_synthesized_candidates_per_task": 22.37,
+        "mean_validated_candidates_per_task": 0.9,
+        "mean_total_candidates_evaluated_per_task": 190.37,
+        "mean_regression_drop_on_locked_tasks": 0.0,
+        "regression_rate_on_prior_tasks": 0.0,
+        "rollback_verification_pass_rate": 1.0,
+        "mean_runtime_ms_per_seed": 74.0969
+      }
+    },
+    "synthesis_no_validation_guard": {
+      "valid_tasks_ab_held_out_accuracy": {
+        "mean": 0.92963,
+        "std": 0.137561,
+        "ci95_half_width": 0.034808,
+        "ci95_low": 0.894822,
+        "ci95_high": 0.964437
+      },
+      "valid_tasks_ab_large_size_accuracy": {
+        "mean": 0.912963,
+        "std": 0.169118,
+        "ci95_half_width": 0.042793,
+        "ci95_low": 0.87017,
+        "ci95_high": 0.955756
+      },
+      "family_a_primitive_synthesis": {
+        "held_out_accuracy": {
+          "mean": 0.932407,
+          "std": 0.154175,
+          "ci95_half_width": 0.055171,
+          "ci95_low": 0.877237,
+          "ci95_high": 0.987578
+        },
+        "large_size_accuracy": {
+          "mean": 0.925926,
+          "std": 0.173447,
+          "ci95_half_width": 0.062067,
+          "ci95_low": 0.863859,
+          "ci95_high": 0.987993
+        },
+        "exact_primitive_recovery_rate": {
+          "mean": 0.833333,
+          "std": 0.379049,
+          "ci95_half_width": 0.135641,
+          "ci95_low": 0.697692,
+          "ci95_high": 0.968974
+        },
+        "promotion_rate": 0.833333
+      },
+      "family_b_composition_with_synthesized": {
+        "held_out_accuracy": {
+          "mean": 0.926852,
+          "std": 0.121296,
+          "ci95_half_width": 0.043405,
+          "ci95_low": 0.883446,
+          "ci95_high": 0.970257
+        },
+        "large_size_accuracy": {
+          "mean": 0.9,
+          "std": 0.166603,
+          "ci95_half_width": 0.059618,
+          "ci95_low": 0.840382,
+          "ci95_high": 0.959618
+        },
+        "exact_composition_recovery_rate": {
+          "mean": 0.566667,
+          "std": 0.504007,
+          "ci95_half_width": 0.180357,
+          "ci95_low": 0.38631,
+          "ci95_high": 0.747023
+        },
+        "memory_composition_usage_rate": 0.666667
+      },
+      "family_c_adversarial_traps": {
+        "false_candidate_rejection_rate": {
+          "mean": 0.666667,
+          "std": 0.479463,
+          "ci95_half_width": 0.171574,
+          "ci95_low": 0.495093,
+          "ci95_high": 0.83824
+        },
+        "false_promotion_rate": {
+          "mean": 0.333333,
+          "std": 0.479463,
+          "ci95_half_width": 0.171574,
+          "ci95_low": 0.16176,
+          "ci95_high": 0.504907
+        },
+        "quarantine_rate": 0.666667,
+        "fallback_held_out_accuracy": {
+          "mean": 0.523148,
+          "std": 0.097621,
+          "ci95_half_width": 0.034933,
+          "ci95_low": 0.488215,
+          "ci95_high": 0.558081
+        }
+      },
+      "search_and_lifecycle_stats": {
+        "mean_synthesized_candidates_per_task": 24.93,
+        "mean_validated_candidates_per_task": 1.02,
+        "mean_total_candidates_evaluated_per_task": 192.13,
+        "mean_regression_drop_on_locked_tasks": 0.0,
+        "regression_rate_on_prior_tasks": 0.0,
+        "rollback_verification_pass_rate": 0.9,
+        "mean_runtime_ms_per_seed": 76.022
+      }
+    },
+    "synthesis_no_adversarial_checks": {
+      "valid_tasks_ab_held_out_accuracy": {
+        "mean": 0.995833,
+        "std": 0.019016,
+        "ci95_half_width": 0.004812,
+        "ci95_low": 0.991022,
+        "ci95_high": 1.0
+      },
+      "valid_tasks_ab_large_size_accuracy": {
+        "mean": 0.993519,
+        "std": 0.030842,
+        "ci95_half_width": 0.007804,
+        "ci95_low": 0.985714,
+        "ci95_high": 1.0
+      },
+      "family_a_primitive_synthesis": {
+        "held_out_accuracy": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0
+        },
+        "large_size_accuracy": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0
+        },
+        "exact_primitive_recovery_rate": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0
+        },
+        "promotion_rate": 1.0
+      },
+      "family_b_composition_with_synthesized": {
+        "held_out_accuracy": {
+          "mean": 0.991667,
+          "std": 0.026453,
+          "ci95_half_width": 0.009466,
+          "ci95_low": 0.982201,
+          "ci95_high": 1.0
+        },
+        "large_size_accuracy": {
+          "mean": 0.987037,
+          "std": 0.042992,
+          "ci95_half_width": 0.015384,
+          "ci95_low": 0.971653,
+          "ci95_high": 1.0
+        },
+        "exact_composition_recovery_rate": {
+          "mean": 0.9,
+          "std": 0.305129,
+          "ci95_half_width": 0.109189,
+          "ci95_low": 0.790811,
+          "ci95_high": 1.0
+        },
+        "memory_composition_usage_rate": 0.933333
+      },
+      "family_c_adversarial_traps": {
+        "false_candidate_rejection_rate": {
+          "mean": 0.333333,
+          "std": 0.479463,
+          "ci95_half_width": 0.171574,
+          "ci95_low": 0.16176,
+          "ci95_high": 0.504907
+        },
+        "false_promotion_rate": {
+          "mean": 0.666667,
+          "std": 0.479463,
+          "ci95_half_width": 0.171574,
+          "ci95_low": 0.495093,
+          "ci95_high": 0.83824
+        },
+        "quarantine_rate": 0.333333,
+        "fallback_held_out_accuracy": {
+          "mean": 0.536111,
+          "std": 0.077938,
+          "ci95_half_width": 0.02789,
+          "ci95_low": 0.508221,
+          "ci95_high": 0.564001
+        }
+      },
+      "search_and_lifecycle_stats": {
+        "mean_synthesized_candidates_per_task": 22.37,
+        "mean_validated_candidates_per_task": 0.9,
+        "mean_total_candidates_evaluated_per_task": 190.37,
+        "mean_regression_drop_on_locked_tasks": 0.0,
+        "regression_rate_on_prior_tasks": 0.0,
+        "rollback_verification_pass_rate": 1.0,
+        "mean_runtime_ms_per_seed": 53.9287
+      }
+    },
+    "enumerative_no_skill_memory": {
+      "valid_tasks_ab_held_out_accuracy": {
+        "mean": 0.913426,
+        "std": 0.127969,
+        "ci95_half_width": 0.032381,
+        "ci95_low": 0.881045,
+        "ci95_high": 0.945807
+      },
+      "valid_tasks_ab_large_size_accuracy": {
+        "mean": 0.882407,
+        "std": 0.162404,
+        "ci95_half_width": 0.041094,
+        "ci95_low": 0.841314,
+        "ci95_high": 0.923501
+      },
+      "family_a_primitive_synthesis": {
+        "held_out_accuracy": {
+          "mean": 0.989815,
+          "std": 0.029617,
+          "ci95_half_width": 0.010598,
+          "ci95_low": 0.979217,
+          "ci95_high": 1.0
+        },
+        "large_size_accuracy": {
+          "mean": 0.987037,
+          "std": 0.042992,
+          "ci95_half_width": 0.015384,
+          "ci95_low": 0.971653,
+          "ci95_high": 1.0
+        },
+        "exact_primitive_recovery_rate": {
+          "mean": 0.866667,
+          "std": 0.345746,
+          "ci95_half_width": 0.123724,
+          "ci95_low": 0.742943,
+          "ci95_high": 0.99039
+        },
+        "promotion_rate": 1.0
+      },
+      "family_b_composition_with_synthesized": {
+        "held_out_accuracy": {
+          "mean": 0.837037,
+          "std": 0.142712,
+          "ci95_half_width": 0.051069,
+          "ci95_low": 0.785968,
+          "ci95_high": 0.888106
+        },
+        "large_size_accuracy": {
+          "mean": 0.777778,
+          "std": 0.170767,
+          "ci95_half_width": 0.061108,
+          "ci95_low": 0.71667,
+          "ci95_high": 0.838886
+        },
+        "exact_composition_recovery_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0
+        },
+        "memory_composition_usage_rate": 0.0
+      },
+      "family_c_adversarial_traps": {
+        "false_candidate_rejection_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0
+        },
+        "false_promotion_rate": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0
+        },
+        "quarantine_rate": 0.0,
+        "fallback_held_out_accuracy": {
+          "mean": 0.525,
+          "std": 0.081346,
+          "ci95_half_width": 0.029109,
+          "ci95_low": 0.495891,
+          "ci95_high": 0.554109
+        }
+      },
+      "search_and_lifecycle_stats": {
+        "mean_synthesized_candidates_per_task": 88.87,
+        "mean_validated_candidates_per_task": 1.27,
+        "mean_total_candidates_evaluated_per_task": 248.87,
+        "mean_regression_drop_on_locked_tasks": 0.0,
+        "regression_rate_on_prior_tasks": 0.0,
+        "rollback_verification_pass_rate": 0.0,
+        "mean_runtime_ms_per_seed": 56.6296
+      }
+    },
+    "m16_unchanged_grammar": {
+      "valid_tasks_ab_held_out_accuracy": {
+        "mean": 0.713426,
+        "std": 0.14113,
+        "ci95_half_width": 0.035711,
+        "ci95_low": 0.677715,
+        "ci95_high": 0.749137
+      },
+      "valid_tasks_ab_large_size_accuracy": {
+        "mean": 0.682407,
+        "std": 0.170573,
+        "ci95_half_width": 0.043161,
+        "ci95_low": 0.639246,
+        "ci95_high": 0.725568
+      },
+      "family_a_primitive_synthesis": {
+        "held_out_accuracy": {
+          "mean": 0.625,
+          "std": 0.096432,
+          "ci95_half_width": 0.034508,
+          "ci95_low": 0.590492,
+          "ci95_high": 0.659508
+        },
+        "large_size_accuracy": {
+          "mean": 0.590741,
+          "std": 0.101587,
+          "ci95_half_width": 0.036353,
+          "ci95_low": 0.554388,
+          "ci95_high": 0.627093
+        },
+        "exact_primitive_recovery_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0
+        },
+        "promotion_rate": 0.0
+      },
+      "family_b_composition_with_synthesized": {
+        "held_out_accuracy": {
+          "mean": 0.801852,
+          "std": 0.12266,
+          "ci95_half_width": 0.043893,
+          "ci95_low": 0.757959,
+          "ci95_high": 0.845745
+        },
+        "large_size_accuracy": {
+          "mean": 0.774074,
+          "std": 0.17745,
+          "ci95_half_width": 0.0635,
+          "ci95_low": 0.710574,
+          "ci95_high": 0.837574
+        },
+        "exact_composition_recovery_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0
+        },
+        "memory_composition_usage_rate": 0.0
+      },
+      "family_c_adversarial_traps": {
+        "false_candidate_rejection_rate": {
+          "mean": 1.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 1.0,
+          "ci95_high": 1.0
+        },
+        "false_promotion_rate": {
+          "mean": 0.0,
+          "std": 0.0,
+          "ci95_half_width": 0.0,
+          "ci95_low": 0.0,
+          "ci95_high": 0.0
+        },
+        "quarantine_rate": 0.0,
+        "fallback_held_out_accuracy": {
+          "mean": 0.539815,
+          "std": 0.084344,
+          "ci95_half_width": 0.030182,
+          "ci95_low": 0.509633,
+          "ci95_high": 0.569997
+        }
+      },
+      "search_and_lifecycle_stats": {
+        "mean_synthesized_candidates_per_task": 0,
+        "mean_validated_candidates_per_task": 0,
+        "mean_total_candidates_evaluated_per_task": 162,
+        "mean_regression_drop_on_locked_tasks": 0.0,
+        "regression_rate_on_prior_tasks": 0.0,
+        "rollback_verification_pass_rate": 0.0,
+        "mean_runtime_ms_per_seed": 49.6915
+      }
+    }
+  },
+  "paired_comparisons_m17_full_minus_other": {
+    "m16_unchanged_grammar": {
+      "valid_tasks_ab_accuracy_gain": {
+        "mean": 0.282407,
+        "std": 0.148506,
+        "ci95_half_width": 0.037577,
+        "ci95_low": 0.24483,
+        "ci95_high": 0.319985
+      },
+      "false_promotion_rate_difference": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci95_half_width": 0.0,
+        "ci95_low": 0.0,
+        "ci95_high": 0.0
+      }
+    },
+    "enumerative_no_skill_memory": {
+      "valid_tasks_ab_accuracy_gain": {
+        "mean": 0.082407,
+        "std": 0.129682,
+        "ci95_half_width": 0.032814,
+        "ci95_low": 0.049593,
+        "ci95_high": 0.115222
+      },
+      "false_promotion_rate_difference": {
+        "mean": -1.0,
+        "std": 0.0,
+        "ci95_half_width": 0.0,
+        "ci95_low": -1.0,
+        "ci95_high": -1.0
+      }
+    },
+    "synthesis_no_validation_guard": {
+      "valid_tasks_ab_accuracy_gain": {
+        "mean": 0.066204,
+        "std": 0.138662,
+        "ci95_half_width": 0.035086,
+        "ci95_low": 0.031117,
+        "ci95_high": 0.10129
+      },
+      "false_promotion_rate_difference": {
+        "mean": -0.333333,
+        "std": 0.479463,
+        "ci95_half_width": 0.171574,
+        "ci95_low": -0.504907,
+        "ci95_high": -0.16176
+      }
+    },
+    "synthesis_no_adversarial_checks": {
+      "valid_tasks_ab_accuracy_gain": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci95_half_width": 0.0,
+        "ci95_low": 0.0,
+        "ci95_high": 0.0
+      },
+      "false_promotion_rate_difference": {
+        "mean": -0.666667,
+        "std": 0.479463,
+        "ci95_half_width": 0.171574,
+        "ci95_low": -0.83824,
+        "ci95_high": -0.495093
+      }
+    },
+    "random_or_majority_reference": {
+      "valid_tasks_ab_accuracy_gain": {
+        "mean": 0.495833,
+        "std": 0.019016,
+        "ci95_half_width": 0.004812,
+        "ci95_low": 0.491022,
+        "ci95_high": 0.500645
+      },
+      "false_promotion_rate_difference": {
+        "mean": 0.0,
+        "std": 0.0,
+        "ci95_half_width": 0.0,
+        "ci95_low": 0.0,
+        "ci95_high": 0.0
+      }
+    }
+  },
+  "candidate_examples": {
+    "promoted_subprimitives": [
+      {
+        "seed": 0,
+        "target_rule": {
+          "dsl_type": "pair_color_size_delta",
+          "params": {
+            "c1": 0,
+            "c2": 2,
+            "delta": 2
+          }
+        },
+        "promoted_expression": "subprimitive:pair_color_size_delta({'c1': 0, 'c2': 2, 'delta': 2})",
+        "held_out_accuracy": 1,
+        "large_size_held_out_accuracy": 1
+      },
+      {
+        "seed": 1,
+        "target_rule": {
+          "dsl_type": "pair_proximal_dipole",
+          "params": {
+            "color": 0,
+            "max_gap": 1
+          }
+        },
+        "promoted_expression": "subprimitive:pair_proximal_dipole({'color': 0, 'max_gap': 1})",
+        "held_out_accuracy": 1,
+        "large_size_held_out_accuracy": 1
+      },
+      {
+        "seed": 2,
+        "target_rule": {
+          "dsl_type": "triad_monotone_size_distinct_color",
+          "params": {
+            "charge": 0
+          }
+        },
+        "promoted_expression": "subprimitive:triad_monotone_size_distinct_color({'charge': 0})",
+        "held_out_accuracy": 1,
+        "large_size_held_out_accuracy": 1
+      }
+    ],
+    "rejected_or_quarantined_traps": [
+      {
+        "seed": 0,
+        "trap_type": "spurious_positional_shortcut",
+        "staged_candidate": "subprimitive:spurious_slot0_charge({'charge': 1})",
+        "status": "quarantined_fallback_to_base",
+        "rejection_reasons": [
+          "failed_permutation_invariance_audit"
+        ]
+      },
+      {
+        "seed": 1,
+        "trap_type": "confounded_ambiguous_twin",
+        "staged_candidate": "subprimitive:forall_color_charged({'color': 2, 'charge': 1})",
+        "status": "quarantined_fallback_to_base",
+        "rejection_reasons": [
+          "ambiguous_alternative_rules (2 distinct candidates tied on train+val)"
+        ]
+      },
+      {
+        "seed": 2,
+        "trap_type": "corrupted_training_overfit",
+        "staged_candidate": "subprimitive:forall_color_charged({'color': 0, 'charge': 1})",
+        "status": "quarantined_fallback_to_base",
+        "rejection_reasons": [
+          "val_accuracy 0.286 < 0.850",
+          "independent_size_val_accuracy 0.500 < 0.850",
+          "gain_over_base_grammar -0.321 < 0.120"
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Sub-primitive synthesis searches a bounded, typed relational DSL (48 candidate templates) rather than open-ended program synthesis.",
+    "Ambiguous candidates (Trap 1) are quarantined using a finite set of unlabeled canonical probe scenes; subtler equivalences outside the probe distribution could remain undetected.",
+    "All experiments run on synthetic relational object scenes on CPU and do not establish autonomous open-world self-improvement."
+  ]
+}

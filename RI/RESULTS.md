@@ -24,6 +24,7 @@
 | **E7** (`E7_skill_acquisition`) | M8 | `5/5` OK | Held-out acc: `0.9653` | `nearest_neighbour`: `0.8778`, `majority`: `0.6389` | **Positive (bounded):** Threshold induction generalizes to disjoint grid points (`+0.0875` over NN, `+0.3264` over majority). |
 | **E8** (`E8_rule_discovery`) | M9 | `12/12` OK | Family selection: `1.0000`, Exact rule: `0.8667`, Held-out acc: `0.9833` | Held-out acc — `majority`: `0.5611`, `fixed_threshold`: `0.6667`, `random_hypothesis`: `0.7250` | **Positive (bounded):** Selects the true family on `30/30` seeds (`17` `sum_threshold`, `13` `parity`); `threshold_tie_rate = 0.1333` (`4/30` seeds) explains the `0.9833` vs `1.0` gap. |
 | **E9** (`E9_heldout_rule_generalization`) | M16 | `11/11` OK | Identifiable Held-out acc: `0.9938 ± 0.0055`, Exact rule: `0.9222 ± 0.0556`, C2 Abstention: `0.9667` | `ri_no_skill_memory`: `0.9676`, `ri_no_compositional`: `0.9123`, `bounded_enumerative_search`: `0.8324`, `supervised_reference`: `0.6114`, `majority_prior`: `0.4873`, `random_hypothesis`: `0.4802` | **Positive (bounded relational) + Honest Boundary:** Generalizes across unseen operator combinations (`A`: `0.9815`), object-count scaling \(N \in [3..5] \to [9..11]\) (`B`: `1.0000`), and held-out pairwise rules (`C1`: `1.0000`), while flagging unidentifiable out-of-grammar rules (`C2`) on `29/30` seeds. |
+| **E10** (`E10_guarded_subprimitive_synthesis`) | M17 | `11/11` OK | Valid (A+B) Held-out acc: `0.9958 [0.9910, 1.0000]`, Family A Exact Recovery: `1.0000`, Family B Composition Recovery: `0.9000`, Family C False Promotion: `0.0000` | `m16_unchanged_grammar`: `0.7134` (`0.0000` rec), `enumerative_no_skill_memory`: `0.9134` (`0.0000` B-comp, `1.0000` false prom), `synthesis_no_validation_guard`: `0.9296` (`0.3333` false prom), `synthesis_no_adversarial_checks`: `0.9958` (`0.6667` false prom), `random_or_majority_reference`: `0.5000` | **Positive (guarded DSL synthesis):** Synthesizes missing relational primitives (`30/30`), composes them with existing skills (`27/30`), and quarantines `30/30` adversarial traps (`0%` false promotion, `0%` regression). |
 
 ---
 
@@ -148,6 +149,25 @@ Artifacts:
 - **Component Failure / Overhead Cases (`when_components_do_not_help_or_hurt`):**
   - Under a corrupted query oracle (`75%` flip rate) without M15 validation guarding, M13 active querying degrades held-out accuracy by **`-0.0917`** (`0.8167` -> `0.7250`).
   - When `SkillMemory` contains only irrelevant Regime-A unary skills on `C1_heldout_translatable`, M14 skill composition yields `0.0000` accuracy gain while adding `+7.67` candidate evaluations per task.
+
+### 4.8 M17 (`E10_guarded_subprimitive_synthesis`) — Guarded Sub-Primitive Synthesis (30 Seeds, 90 Tasks + 90 Locked Regression Tasks)
+Artifacts:
+- `RI/experiments/E10_guarded_subprimitive_synthesis/results/results.json`
+- `RI/results/m17_summary.json`
+- `RI/results/m17_ablation_results.json`
+
+- **`m17_full_guarded_synthesis`:**
+  - Valid tasks (`A+B`) held-out accuracy: **`0.9958 [0.9910, 1.0000]`** (large-size \(N \in [8, 11]\) accuracy: **`0.9935 [0.9857, 1.0000]`**).
+  - Family A (`A_primitive_synthesis`): Held-out accuracy **`1.0000`**, exact sub-primitive recovery **`1.0000`** (`30/30`), promotion rate `1.0000`.
+  - Family B (`B_composition_with_synthesized`): Held-out accuracy **`0.9917 [0.9822, 1.0000]`**, exact composition recovery **`0.9000 [0.7908, 1.0000]`** (`27/30`), memory composition usage rate `0.9333` (`28/30`).
+  - Family C (`C_spurious_and_noisy_traps`): False candidate rejection rate **`1.0000`** (`30/30`), false promotion rate **`0.0000`** (`0/30`), quarantine rate `1.0000`.
+  - Locked M16 regression rate: **`0.0000`** (`0/30`), rollback verification drill pass rate: **`1.0000`** (`30/30`).
+- **Comparison Baselines & Ablations:**
+  - `m16_unchanged_grammar`: Valid (`A+B`) accuracy `0.7134 [0.6777, 0.7491]`, Family A exact recovery `0.0000`, Family B exact recovery `0.0000` (`+0.2824` paired gain for `m17_full_guarded_synthesis`).
+  - `enumerative_no_skill_memory`: Valid (`A+B`) accuracy `0.9134`, Family A exact recovery `0.8667`, Family B exact composition recovery **`0.0000`**, Family C false promotion rate **`1.0000`** (`30/30`).
+  - `synthesis_no_validation_guard`: Valid (`A+B`) accuracy `0.9296`, Family A exact recovery `0.8333`, Family B exact recovery `0.5667`, Family C false promotion rate **`0.3333`** (`10/30` — promotes all Trap 2 training-overfit rules).
+  - `synthesis_no_adversarial_checks`: Valid (`A+B`) accuracy `0.9958`, Family C false promotion rate **`0.6667`** (`20/30` — promotes all Trap 0 positional-shortcut rules and Trap 1 confounded-twin rules).
+  - `random_or_majority_reference`: Valid (`A+B`) accuracy `0.5000`, exact recovery `0.0000`.
 
 ---
 
