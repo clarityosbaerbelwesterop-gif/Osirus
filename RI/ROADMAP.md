@@ -21,14 +21,15 @@
 - **Scientific status:** no evidence of successful transfer yet. The initial report explicitly records a design flaw: the capability procedure does not yet causally control the transfer agent's choices.
 
 ### M3 acceptance gates
-1. Make the capability's operational procedure causally relevant to agent behavior.
-2. Add fair random, fixed-sequence, no-transfer, and capability-disabled baselines.
-3. Ensure evaluator-only ground truth cannot reach the agent.
-4. Use predeclared, held-out task families and multiple seeds.
-5. Run tests and evaluation; preserve raw results.
-6. Claim support only if transfer and capability ablations show a reproducible advantage. Otherwise revise or reject the hypothesis.
+1. **Partially implemented:** the E2 capability now changes action selection; the ablation uses random sampling.
+2. **Still required:** add a fixed-sequence baseline and a genuinely acquired (not hand-installed) procedure.
+3. Keep evaluator-only ground truth out of agent inputs.
+4. Use predeclared held-out task families and multiple seeds.
+5. **Pending:** execute tests and evaluation in a real runtime and preserve raw results.
+6. Claim support only if capability-enabled performance shows a reproducible advantage. Otherwise revise or reject H2.
 
 ## M4 — Compositional problem solving (blocked)
+M4 remains blocked until E2 is executed, reviewed, and its limits are resolved. Do not advance based on code existence alone.
 Proceed only after M3 evaluation is valid. Test whether independently acquired capabilities can be combined to solve held-out tasks without task-specific hardcoding.
 
 ## M5 — Autonomous learning selection (planned)
