@@ -29,6 +29,9 @@ EXPERIMENTS = (
     ("M17 E10 guarded sub-primitive synthesis", ROOT / "experiments/E10_guarded_subprimitive_synthesis",
      ["--seeds", *map(str, range(30)), "--train-size", "18", "--val-size", "14",
       "--independent-size-val", "14", "--test-size", "36"]),
+    ("M18 E11 active disambiguation", ROOT / "experiments/E11_active_disambiguation",
+     ["--seeds", *map(str, range(30)), "--train-size", "16", "--val-size", "14",
+      "--independent-size-val", "14", "--test-size", "36", "--intervention-budget", "3"]),
 )
 
 SECRET_PATTERN = re.compile(
@@ -124,6 +127,8 @@ def run_suite(experiments=EXPERIMENTS, tests_only=False, summary_output=None, ru
                 ROOT / "results/m16_ablation_results.json",
                 ROOT / "results/m17_summary.json",
                 ROOT / "results/m17_ablation_results.json",
+                ROOT / "results/m18_summary.json",
+                ROOT / "results/m18_ablation_results.json",
             ):
                 valid, reason = validate_results_file(proto_artifact)
                 if not valid:
