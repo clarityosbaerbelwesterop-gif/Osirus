@@ -17,11 +17,13 @@ EXPERIMENTS = (
      ["--seeds", *map(str, range(30))]),
     ("M8 E7 held-out skill acquisition", ROOT / "experiments/E7_skill_acquisition",
      ["--seeds", *map(str, range(30)), "--train-size", "12", "--test-size", "24"]),
+    ("M9 E8 rule-family discovery", ROOT / "experiments/E8_rule_discovery",
+     ["--seeds", *map(str, range(30)), "--train-size", "16", "--test-size", "24"]),
 )
 
 
 def run(label, cwd, args):
-    print(f"\\n=== {label}: {' '.join(args)} ===", flush=True)
+    print(f"\n=== {label}: {' '.join(args)} ===", flush=True)
     return subprocess.run([sys.executable, *args], cwd=cwd, check=False).returncode
 
 
@@ -37,11 +39,11 @@ def main():
                ["evaluate.py", *eval_args, "--output", str(directory / "results/results.json")]):
             failures.append(f"{label}: evaluation failed")
     if failures:
-        print("\\nFAILED:")
+        print("\nFAILED:")
         for failure in failures:
             print("- " + failure)
         return 1
-    print("\\nAll configured test and evaluation commands exited successfully.")
+    print("\nAll configured test and evaluation commands exited successfully.")
     print("This validates code paths only; synthetic results are not evidence of general intelligence.")
     return 0
 
