@@ -1,26 +1,20 @@
 # RI — Reasoning Intelligence
 
-Independent foundational research project investigating whether a new, testable mechanism for developing problem-solving capabilities is possible.
+Foundational research into whether an agent can develop, compose, select, and revise problem-solving capabilities through experience.
 
-## Status (2026-10-22)
+## Status
+- Dedicated branch: `ri/isolated-foundation`.
+- M0–M2: initial research and E1 were reported completed; E1 did not support H1 in its initial setup.
+- M3/E2: operational capability selection and fairer baselines committed.
+- M4/E3: sequential task tests whether a prerequisite operation can be composed with a second operation.
+- M5/E4: synthetic autonomous-curriculum selection compares uncertainty/reuse, random, fixed, and error-only policies.
+- **Validation caveat:** these new M3–M5 experiments have not been executed in a live Python runtime in this work session. Do not treat committed code as passing tests or scientific support.
 
-- **Branch:** `ri/isolated-foundation`
-- **Isolation:** work is confined to `RI/`; no paid resources used.
-- **M0–M2:** initial research and E1 reported completed; H1 was not supported in the first setup.
-- **M3:** autonomous capability development reframing and initial E2 prototype committed.
-- **Important caveat:** E2 source has not been verified as executed in a live Python runtime by this commit. Its initial report flags a substantive design flaw: the stored capability does not yet causally control the transfer agent's decisions. No positive scientific claim is made.
-
-## Key documents
-
-- [PROJECT_CHARTER.md](PROJECT_CHARTER.md)
-- [RESEARCH_PLAN.md](RESEARCH_PLAN.md)
-- [ROADMAP.md](ROADMAP.md)
-- [HYPOTHESES.md](HYPOTHESES.md)
-- [M3 autonomous intelligence research direction](M3_AUTONOMOUS_INTELLIGENCE.md)
-- [Intelligence questions](docs/intelligence_questions.md)
-- [E1 relationship-learning experiment](experiments/E1_relationship_learning/)
-- [E2 capability-transfer experiment](experiments/E2_capability_transfer/)
+## Experiment directories
+- `experiments/E1_relationship_learning/`
+- `experiments/E2_capability_transfer/`
+- `experiments/E3_composition/`
+- `experiments/E4_autonomous_curriculum/`
 
 ## Principles
-
-CPU-first. Small falsifiable experiments. Fair baselines. Separation of observations from interpretations. No claims of consciousness or general intelligence without evidence. Preserve negative results and make changes reproducible.
+CPU-first; isolated and reproducible experiments; fair baselines; evaluator-only ground truth; preserve negative results; separate observed facts from interpretation. Do not claim consciousness, general intelligence, or a novel intelligence principle without evidence.
