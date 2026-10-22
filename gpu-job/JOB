@@ -1,6 +1,6 @@
-eval-1-a
-job=eval-1
-sha=042dbbcf6d19085a0f17d3843a87a51bc63c68ab
+eval-qwen-a
+job=eval-qwen
+sha=7fe5b388a7260a3b98c8337cd92ada821ca2f31b
 volume=3qlkuqnr1u
-budget=8.00
-gpu=A100|H100|L40S|H200x1@3.00/any
+budget=15.00
+gpu=H200|H100x1@4.50/any
