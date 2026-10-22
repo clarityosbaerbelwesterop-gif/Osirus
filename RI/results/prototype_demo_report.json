@@ -3,7 +3,7 @@
   "n_tasks": 5,
   "success_rate": 1.0,
   "mean_held_out_accuracy": 1,
-  "mean_runtime_ms": 1.0082,
+  "mean_runtime_ms": 1.0557,
   "skills_reused_count": 2,
   "skills_composed_count": 1,
   "learning_loop_triggered_count": 1,
@@ -11,6 +11,32 @@
     "majority": 0.62502,
     "fixed_rule": 0.675,
     "random": 0.45832
+  },
+  "m13_active_query_demo": {
+    "initial_version_space_size": 2,
+    "final_version_space_size": 1,
+    "queries_used": 1,
+    "tie_resolved": true,
+    "selected_candidate_id": "cand_sum_ge_8",
+    "held_out_accuracy": 1
+  },
+  "m14_compositional_language_demo": {
+    "task_operator": "XOR",
+    "n_memory_compositions_evaluated": 15,
+    "selected_candidate_id": "composed_XOR(skill_sum_threshold_threshold6@v1,skill_parity_parity0@v1)",
+    "held_out_accuracy": 1
+  },
+  "m15_drift_and_noise_demo": {
+    "guarded_stream_accuracy": 1,
+    "naive_overwrite_stream_accuracy": 0.93334,
+    "static_frozen_stream_accuracy": 0.825,
+    "guarded_actions_by_phase": {
+      "phase_1_clean_regime_a": "acquired_initial",
+      "phase_2_noisy_regime_a": "retained_under_noise",
+      "phase_3_abrupt_drift_regime_b": "adapted_new_version",
+      "phase_4_corrupted_batch_shock": "rejected_noisy_shock_kept_prior",
+      "phase_5_recurring_regime_a": "recovered_prior_version"
+    }
   },
   "skill_memory_summary": {
     "total_skill_lineages": 4,
@@ -350,7 +376,7 @@
       "reused_skill": false,
       "composed_skill": false,
       "stored_skill_id": "skill_sum_threshold_threshold6@v1",
-      "total_runtime_ms": 0.7296,
+      "total_runtime_ms": 0.7764,
       "analysis": {
         "task_id": "demo_1_acquire_sum_threshold",
         "n_train": 20,
@@ -451,7 +477,7 @@
         "status": "ok",
         "ok": true,
         "steps_used": 24,
-        "duration_ms": 0.0131,
+        "duration_ms": 0.0149,
         "error_type": "",
         "error_message": "",
         "n_predictions": 24
@@ -473,7 +499,7 @@
         },
         "n_misclassified_train": 0,
         "failure_reasons": [],
-        "execution_duration_ms": 0.0261
+        "execution_duration_ms": 0.0286
       },
       "learning_loop": {
         "triggered": false,
@@ -501,7 +527,7 @@
       "reused_skill": false,
       "composed_skill": false,
       "stored_skill_id": "skill_parity_parity0@v1",
-      "total_runtime_ms": 0.777,
+      "total_runtime_ms": 0.8017,
       "analysis": {
         "task_id": "demo_2_acquire_parity",
         "n_train": 20,
@@ -602,7 +628,7 @@
         "status": "ok",
         "ok": true,
         "steps_used": 24,
-        "duration_ms": 0.0134,
+        "duration_ms": 0.0155,
         "error_type": "",
         "error_message": "",
         "n_predictions": 24
@@ -624,7 +650,7 @@
         },
         "n_misclassified_train": 0,
         "failure_reasons": [],
-        "execution_duration_ms": 0.0241
+        "execution_duration_ms": 0.0268
       },
       "learning_loop": {
         "triggered": false,
@@ -652,7 +678,7 @@
       "reused_skill": true,
       "composed_skill": false,
       "stored_skill_id": "skill_sum_threshold_threshold6@v1",
-      "total_runtime_ms": 0.7343,
+      "total_runtime_ms": 0.7591,
       "analysis": {
         "task_id": "demo_3_reuse_sum_threshold",
         "n_train": 16,
@@ -753,7 +779,7 @@
         "status": "ok",
         "ok": true,
         "steps_used": 24,
-        "duration_ms": 0.012,
+        "duration_ms": 0.0136,
         "error_type": "",
         "error_message": "",
         "n_predictions": 24
@@ -775,7 +801,7 @@
         },
         "n_misclassified_train": 0,
         "failure_reasons": [],
-        "execution_duration_ms": 0.0203
+        "execution_duration_ms": 0.0227
       },
       "learning_loop": {
         "triggered": false,
@@ -803,7 +829,7 @@
       "reused_skill": true,
       "composed_skill": true,
       "stored_skill_id": "skill_composed_and_parity0_threshold6@v1",
-      "total_runtime_ms": 1.2504,
+      "total_runtime_ms": 1.219,
       "analysis": {
         "task_id": "demo_4_compose_sum_and_parity",
         "n_train": 20,
@@ -908,7 +934,7 @@
         "status": "ok",
         "ok": true,
         "steps_used": 24,
-        "duration_ms": 0.0154,
+        "duration_ms": 0.0159,
         "error_type": "",
         "error_message": "",
         "n_predictions": 24
@@ -930,7 +956,7 @@
         },
         "n_misclassified_train": 0,
         "failure_reasons": [],
-        "execution_duration_ms": 0.0267
+        "execution_duration_ms": 0.0275
       },
       "learning_loop": {
         "triggered": false,
@@ -958,7 +984,7 @@
       "reused_skill": false,
       "composed_skill": false,
       "stored_skill_id": "skill_mod_sum_modulus3_remainder1@v1",
-      "total_runtime_ms": 1.5495,
+      "total_runtime_ms": 1.7225,
       "analysis": {
         "task_id": "demo_5_learning_loop_mod_sum",
         "n_train": 24,
@@ -1060,7 +1086,7 @@
         "status": "ok",
         "ok": true,
         "steps_used": 24,
-        "duration_ms": 0.014,
+        "duration_ms": 0.0164,
         "error_type": "",
         "error_message": "",
         "n_predictions": 24
@@ -1082,7 +1108,7 @@
         },
         "n_misclassified_train": 0,
         "failure_reasons": [],
-        "execution_duration_ms": 0.0277
+        "execution_duration_ms": 0.0323
       },
       "learning_loop": {
         "triggered": true,

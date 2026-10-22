@@ -17,6 +17,9 @@ Research prototype exploring explicit reusable operations, composition, autonomo
 - **M10 (`RI/prototype/`):** integrated 10-step end-to-end reasoning prototype (`TaskSpec` → `TaskAnalyzer` → `CandidateGenerator` → `CandidateSelector` → `SkillMemory` → `SandboxExecutor` → `TaskEvaluator` → `BoundedLearningLoop` → `TaskRunReport`).
 - **M11 (`RI/prototype/memory.py`, `transfer.py`):** versioned `SkillMemory` with `IOContract` compatibility checking, compositional transfer (`composed_and`), quarantine isolation of failing skills, rollback, and 4-family continual learning retention tests.
 - **M12 (`RI/prototype/self_improvement.py`):** `GuardedSelfImprover` with locked baseline config, regression gate, disjoint held-out minimum-gain gate, and automatic rollback.
+- **M13 (`RI/prototype/active_query.py`):** `ActiveBoundaryQuerier` using Shannon-entropy version-space disagreement to resolve threshold/hypothesis ties from an unlabeled pool (`1.0000` held-out accuracy and `1.0000` exact rule recovery across 30 seeds).
+- **M14 (`RI/prototype/compositional_language.py`):** `CompositionalSkillSynthesizer` supporting `AND`, `OR`, `XOR`, and `AND_NOT` over `IOContract`-verified skills (`806x` search space compression and `+0.1208` held-out accuracy gain over unconstrained depth-2 enumeration).
+- **M15 (`RI/prototype/drift_and_noise.py`):** `DriftAndNoiseController` for non-stationary concept drift, label noise robustness (`0%`–`20%`), shock rejection (`40%` noise), and historical skill version reactivation (`recovered_prior_version`).
 
 ## Quickstart Commands
 

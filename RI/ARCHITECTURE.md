@@ -65,6 +65,12 @@ The RI prototype is implemented as a modular Python package under `RI/prototype/
 - `RI/prototype/self_improvement.py` (M12):
   - `PrototypeConfig`: versioned, allow-listed orchestrator configuration (`enable_learning_loop`, `complexity_weight`, `reuse_bonus`, `max_refinement_rounds`).
   - `GuardedSelfImprover.evaluate_candidate()`: locks baseline `v1`, validates candidate `v2`, runs the 3-task regression gate (`regression_drop <= 0.0`), evaluates paired gain on disjoint held-out tasks across all 6 families, and either promotes `v2` or rolls back to `v1`.
+- `RI/prototype/active_query.py` (M13):
+  - `ActiveBoundaryQuerier`: computes the tied version space \(V\) at minimum development error and scores unlabeled pool coordinates by binary Shannon entropy of candidate predictions (`disagreement_score`). Compares `active_disagreement`, `random_query`, and `passive_no_query` without touching held-out test examples.
+- `RI/prototype/compositional_language.py` (M14):
+  - `CompositionalSkillSynthesizer`: composes active, `IOContract`-compatible skills across 4 Boolean combinators (`AND`, `OR`, `XOR`, `AND_NOT`) and benchmarks `memory_guided_composition` against `unconstrained_depth2_enumeration` and `single_primitive_only`.
+- `RI/prototype/drift_and_noise.py` (M15):
+  - `DriftAndNoiseController`: manages continual skill lineages across clean, noisy (`15%`), drifted, shock (`40%` noise), and recurring regimes using `noise_tolerance`, `max_adapt_batch_error`, and `SkillMemory.reactivate_version()`.
 
 ## 4. Safety, Isolation, and Reversibility Boundaries
 

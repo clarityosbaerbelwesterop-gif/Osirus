@@ -91,6 +91,43 @@ Artifacts:
   - Mean paired gain: `+0.0847 >= 0.0500` (`passed = True`)
 - **Decision:** `status = "promoted"`, `active_version = 2` (rollback to `v1` verified by negative test `test_non_improving_candidate_is_rejected_and_rolled_back`).
 
+### 4.4 M13 Active Boundary Querying (`m13_active_boundary_querying`, 30 Seeds, `initial_train_size=10`, `query_pool_size=30`, `test_size=24`, `query_budget=3`)
+- **Initial Tie Rate (`initial_tie_rate`):** `0.5667` (`17/30` seeds had multiple hypotheses tied at minimum training error before querying, with mean version-space size `3.10`).
+- **Policy Comparison:**
+  - `active_disagreement`: **`1.0000` held-out accuracy**, **`1.0000` exact rule recovery**, `1.0333` mean queries used, `0.8824` tie resolution rate (`15/17` tied seeds reduced to a unique hypothesis; the remaining 2 had no boundary point in the finite 30-point pool but still selected the exact true rule).
+  - `random_query` (equal budget=3): `0.9306` held-out accuracy (`+0.0694` active gain), `0.6333` exact rule recovery (`+0.3667` active gain), `1.7000` mean queries used, `0.0588` tie resolution rate.
+  - `passive_no_query` (0 queries): `0.9292` held-out accuracy (`+0.0708` active gain), `0.5667` exact rule recovery (`+0.4333` active gain).
+  - Baselines: `majority = 0.5861`, `fixed_rule = 0.6500`.
+
+### 4.5 M14 Multi-Operator Compositional Skill Language (`m14_compositional_skill_language`, 30 Seeds across `AND`, `OR`, `XOR`, `AND_NOT`, `train_size=14`, `test_size=24`)
+- **Search Space Compression:** `memory_guided_composition` evaluates an average of **`6.8` candidates** vs **`5,482` candidates** for `unconstrained_depth2_enumeration` (**`806.18x` search compression**).
+- **Structural Regularization Against Small-Sample Overfitting:**
+  - `unconstrained_depth2_enumeration` achieves `1.0000` training accuracy on all 30 seeds (`train_size=14`), but drops to **`0.8597` held-out accuracy** (`overfitting_gap = 0.1403`, operator recovery `0.7667`) because brute-forcing 5,482 pairwise combinations finds spurious threshold/box pairs that accidentally fit 14 points.
+  - `memory_guided_composition` (composing verified base skills from `SkillMemory`) achieves **`0.9806` held-out accuracy** (`overfitting_gap = 0.0099`, operator recovery `0.9333`), outperforming unconstrained depth-2 search by **`+0.1208`** and single primitives (`0.6931`) by **`+0.2875`**.
+- **Held-Out Accuracy by Operator (`memory_guided` vs `unconstrained_depth2` vs `single_primitive`):**
+  - `AND` (`n=8`): `0.9583` vs `0.8906` vs `0.7396`
+  - `OR` (`n=8`): `1.0000` vs `0.8750` vs `0.7604`
+  - `XOR` (`n=7`): `1.0000` vs `0.8810` vs `0.4464` (single primitives fail on `XOR` due to non-monotonic parity interaction)
+  - `AND_NOT` (`n=7`): `0.9643` vs `0.7857` vs `0.8095`
+
+### 4.6 M15 Non-Stationary Concept Drift, Noise Robustness & Lineage Recovery (`m15_drift_and_noise_robustness`, 30 Seeds)
+- **5-Phase Continual Stream Accuracy (`mean_stream_held_out_accuracy`):**
+  - `guarded_drift_controller`: **`0.9597`**
+  - `naive_overwrite`: `0.9094` (`+0.0503` guarded gain)
+  - `static_frozen`: `0.8286` (`+0.1311` guarded gain)
+  - `majority_baseline`: `0.6253` (`+0.3344` guarded gain)
+- **Per-Phase Breakdown (`guarded_drift_controller` vs `naive_overwrite` vs `static_frozen`):**
+  1. `phase_1_clean_regime_a` (\(\eta=0.00, n=24\)): `0.9931` vs `0.9931` vs `0.9931` (`30/30` initial acquisitions).
+  2. `phase_2_noisy_regime_a` (\(\eta=0.15, n=10\)): **`0.9792`** vs `0.8833` vs `0.9958` (`naive_overwrite` loses `11.0%` accuracy by re-fitting on a noisy 10-point batch, whereas `guarded_drift_controller` retains or protects the prior skill on `28/30` seeds).
+  3. `phase_3_abrupt_drift_regime_b` (\(\eta=0.05, n=24, t_B = t_A + 4\)): **`0.9792`** vs `0.9792` vs `0.5889` (`static_frozen` collapses by `40.7%` under concept drift, whereas `guarded_drift_controller` adapts to `v2` on `30/30` seeds).
+  4. `phase_4_corrupted_batch_shock` (\(\eta=0.40, n=10\)): **`0.9500`** vs `0.7861` vs `0.5708` (`guarded_drift_controller` rejects the un-realizable noisy shock or retains `v2` on `26/30` seeds, beating `naive_overwrite` by `+0.1639`).
+  5. `phase_5_recurring_regime_a` (\(\eta=0.15, n=10\)): **`0.8972`** (`guarded_drift_controller` reactivates superseded `v1` from `SkillMemory` on `23/30` seeds via `recovered_prior_version`; on 4 seeds the 10-point sample had \(\le 2\) points in the drift band \([t_A, t_B-1]\) so `v2` appeared within `noise_tolerance`, and on 3 seeds `>20%` realized label noise exceeded `noise_tolerance`).
+- **Noise Sensitivity Curve (30 Seeds, `train_size=24`, evaluated on noiseless held-out truth):**
+  - `0%` noise: noisy-train acc `1.0000`, clean held-out acc **`0.9972`** (majority `0.5861`)
+  - `5%` noise: noisy-train acc `0.9653`, clean held-out acc **`0.9847`** (majority `0.5806`)
+  - `10%` noise: noisy-train acc `0.9181`, clean held-out acc **`0.9722`** (majority `0.5778`)
+  - `20%` noise: noisy-train acc `0.8361`, clean held-out acc **`0.9250`** (majority `0.5944`)
+
 ---
 
 ## 5. Known Limitations and Open Risks

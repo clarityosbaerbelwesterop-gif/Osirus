@@ -7,8 +7,22 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
+from prototype.active_query import (
+    ActiveBoundaryQuerier,
+    evaluate_active_boundary_querying,
+)
 from prototype.analyzer import TaskAnalyzer
 from prototype.candidates import CandidateGenerator, CandidateHypothesis
+from prototype.compositional_language import (
+    CompositionalSkillSynthesizer,
+    compose_skill_records,
+    evaluate_compositional_language,
+)
+from prototype.drift_and_noise import (
+    DriftAndNoiseController,
+    corrupt_training_labels,
+    evaluate_drift_and_noise_robustness,
+)
 from prototype.executor import SandboxExecutor
 from prototype.memory import IOContract, SkillMemory
 from prototype.orchestrator import RIPrototypeOrchestrator
@@ -223,6 +237,111 @@ class TestM12GuardedSelfImprovement(unittest.TestCase):
             self.assertEqual(rc, 0)
             self.assertTrue(demo_out.is_file())
             self.assertTrue(mem_out.is_file())
+
+
+class TestM13ActiveBoundaryQuerying(unittest.TestCase):
+    def test_active_querier_resolves_threshold_tie_with_boundary_point(self):
+        # Construct examples where sum=4 is 0 and sum=8 is 1, leaving thresholds 5, 6, 7, 8 tied.
+        train = [{"x": 2, "y": 2, "label": 0}, {"x": 4, "y": 4, "label": 1}]
+        # Pool contains boundary points for sums 5, 6, 7 (true threshold = 7).
+        pool = [
+            {"x": 2, "y": 3, "label": 0},  # sum=5
+            {"x": 3, "y": 3, "label": 0},  # sum=6
+            {"x": 3, "y": 4, "label": 1},  # sum=7
+            {"x": 0, "y": 0, "label": 0},  # non-informative point
+        ]
+        cands = CandidateGenerator().generate(
+            allowed_actions=("predict_sum_threshold",),
+            include_composed=False,
+            extra_families=["sum_threshold"],
+        )
+        querier = ActiveBoundaryQuerier(policy="active_disagreement", budget=2, seed=0)
+        aug, trace = querier.query_and_augment(cands, train, pool)
+        self.assertEqual(trace.initial_version_space_size, 4)
+        self.assertEqual(trace.final_version_space_size, 1)
+        self.assertTrue(trace.tie_resolved)
+        self.assertLessEqual(trace.queries_used, 2)
+        final_vs = ActiveBoundaryQuerier.version_space(cands, aug)
+        self.assertEqual(final_vs[0].parameters["threshold"], 7)
+
+    def test_active_query_evaluation_beats_passive_and_random(self):
+        res = evaluate_active_boundary_querying(list(range(12)), initial_train_size=10, query_budget=3)
+        self.assertGreaterEqual(
+            res["policies"]["active_disagreement"]["mean_held_out_accuracy"],
+            res["policies"]["passive_no_query"]["mean_held_out_accuracy"],
+        )
+        self.assertGreaterEqual(
+            res["policies"]["active_disagreement"]["exact_rule_recovery_rate"],
+            res["policies"]["random_query"]["exact_rule_recovery_rate"],
+        )
+
+
+class TestM14CompositionalSkillLanguage(unittest.TestCase):
+    def test_multi_operator_composition_evaluates_and_or_xor_and_not(self):
+        mem = SkillMemory()
+        s_sum = mem.register_skill(
+            skill_id="s_sum",
+            name="sum_6",
+            purpose="sum>=6",
+            candidate=CandidateHypothesis(
+                candidate_id="c_sum",
+                family="sum_threshold",
+                action_name="predict_sum_threshold",
+                parameters={"threshold": 6},
+            ),
+            unit_tests=[{"x": 3, "y": 3, "label": 1}, {"x": 1, "y": 1, "label": 0}],
+            validation_metrics={"held_out_accuracy": 1.0},
+        )
+        s_par = mem.register_skill(
+            skill_id="s_par",
+            name="parity_0",
+            purpose="even sum",
+            candidate=CandidateHypothesis(
+                candidate_id="c_par",
+                family="parity",
+                action_name="predict_parity",
+                parameters={"parity": 0},
+            ),
+            unit_tests=[{"x": 2, "y": 2, "label": 1}, {"x": 1, "y": 2, "label": 0}],
+            validation_metrics={"held_out_accuracy": 1.0},
+        )
+        # At (3, 3): sum=6 (>=6 -> 1, even -> 1). At (3, 4): sum=7 (>=6 -> 1, even -> 0).
+        c_and = compose_skill_records(s_sum, s_par, "AND")
+        c_or = compose_skill_records(s_sum, s_par, "OR")
+        c_xor = compose_skill_records(s_sum, s_par, "XOR")
+        c_and_not = compose_skill_records(s_sum, s_par, "AND_NOT")
+
+        self.assertEqual(c_and.predict_one(3, 3), 1)
+        self.assertEqual(c_and.predict_one(3, 4), 0)
+        self.assertEqual(c_or.predict_one(1, 1), 1)  # sum=2 (<6 -> 0, even -> 1)
+        self.assertEqual(c_xor.predict_one(3, 3), 0)
+        self.assertEqual(c_xor.predict_one(3, 4), 1)
+        self.assertEqual(c_and_not.predict_one(3, 4), 1)
+        self.assertEqual(c_and_not.predict_one(3, 3), 0)
+
+    def test_memory_guided_composition_compresses_search_space_and_generalizes(self):
+        res = evaluate_compositional_language(list(range(8)), train_size=14, test_size=24)
+        self.assertGreater(res["search_compression_ratio"], 20.0)
+        self.assertGreater(
+            res["policies"]["memory_guided_composition"]["mean_held_out_accuracy"],
+            res["policies"]["single_primitive_only"]["mean_held_out_accuracy"],
+        )
+
+
+class TestM15DriftAndNoiseRobustness(unittest.TestCase):
+    def test_label_corruption_respects_bounds(self):
+        clean = [{"x": x, "y": 0, "label": 1} for x in range(8)]
+        self.assertEqual(corrupt_training_labels(clean, 0.0, seed=1), clean)
+        with self.assertRaises(ValueError):
+            corrupt_training_labels(clean, 0.5, seed=1)
+
+    def test_guarded_drift_controller_outperforms_naive_and_frozen(self):
+        res = evaluate_drift_and_noise_robustness(list(range(10)))
+        g_acc = res["stream_policies"]["guarded_drift_controller"]["mean_stream_held_out_accuracy"]
+        n_acc = res["stream_policies"]["naive_overwrite"]["mean_stream_held_out_accuracy"]
+        s_acc = res["stream_policies"]["static_frozen"]["mean_stream_held_out_accuracy"]
+        self.assertGreater(g_acc, n_acc)
+        self.assertGreater(g_acc, s_acc)
 
 
 if __name__ == "__main__":

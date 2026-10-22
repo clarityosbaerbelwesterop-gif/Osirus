@@ -25,6 +25,9 @@ python3 RI/run_prototype.py
 3. **`demo_3_reuse_sum_threshold` (`sum_threshold`, \(t=6\)):** Queries `SkillMemory`, directly reuses `skill_sum_threshold_threshold6@v1` (`reused_skill = true`), and achieves `1.0` held-out accuracy on a new coordinate split.
 4. **`demo_4_compose_sum_and_parity` (`composed_and`, \(t=6 \land p=0\)):** Verifies `IOContract` compatibility between `skill_sum_threshold_threshold6@v1` and `skill_parity_parity0@v1`, composes them into `composed(skill_sum_threshold_threshold6@v1,skill_parity_parity0@v1)` (`composed_skill = true`), and achieves `1.0` held-out accuracy.
 5. **`demo_5_learning_loop_mod_sum` (`mod_sum`, \(\text{mod}=3, \text{rem}=1\)):** Initial single-primitive search leaves development counterexamples (`train_accuracy = 0.75 < 0.90`); Step 9 (`BoundedLearningLoop`) triggers, expands the candidate space to `mod_sum`, selects `cand_mod_3_rem_1`, and achieves `1.0` held-out accuracy.
+6. **`m13_active_query_demo` (M13 Active Boundary Querying):** Starts with an 8-example sample where 2 thresholds tie (`initial_version_space_size = 2`), queries 1 maximally informative boundary point (`queries_used = 1`), resolves the tie (`final_version_space_size = 1`), and achieves `1.0` held-out accuracy.
+7. **`m14_compositional_language_demo` (M14 Multi-Operator Composition):** Synthesizes 15 `AND`/`OR`/`XOR`/`AND_NOT` combinations from verified skills in `SkillMemory`, selects `composed_XOR(skill_sum_threshold_threshold6@v1,skill_parity_parity0@v1)`, and achieves `1.0` held-out accuracy.
+8. **`m15_drift_and_noise_demo` (M15 Continual Drift & Noise Stream):** Runs a 5-phase stream showing initial acquisition, retention under 15% label noise, adaptation to abrupt concept drift, rejection of a 40% corrupted batch shock, and recovery (`1.0` stream accuracy vs `0.9333` for `naive_overwrite` and `0.8250` for `static_frozen`).
 
 ### Expected CLI Output
 
