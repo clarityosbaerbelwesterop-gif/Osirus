@@ -26,6 +26,9 @@ EXPERIMENTS = (
     ("M16 E9 held-out rule generalization", ROOT / "experiments/E9_heldout_rule_generalization",
      ["--seeds", *map(str, range(30)), "--train-size", "10", "--val-size", "10",
       "--query-pool-size", "16", "--test-size", "36", "--noise", "0.05"]),
+    ("M17 E10 guarded sub-primitive synthesis", ROOT / "experiments/E10_guarded_subprimitive_synthesis",
+     ["--seeds", *map(str, range(30)), "--train-size", "18", "--val-size", "14",
+      "--independent-size-val", "14", "--test-size", "36"]),
 )
 
 SECRET_PATTERN = re.compile(
@@ -119,6 +122,8 @@ def run_suite(experiments=EXPERIMENTS, tests_only=False, summary_output=None, ru
                 ROOT / "results/prototype_skill_memory.json",
                 ROOT / "results/m16_summary.json",
                 ROOT / "results/m16_ablation_results.json",
+                ROOT / "results/m17_summary.json",
+                ROOT / "results/m17_ablation_results.json",
             ):
                 valid, reason = validate_results_file(proto_artifact)
                 if not valid:
