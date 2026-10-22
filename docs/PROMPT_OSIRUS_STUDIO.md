@@ -48,6 +48,10 @@ Ergebnisse.
 - Keine erfundenen Fähigkeiten, Zahlen oder Modellnamen in der Oberfläche.
 - Quasnir erscheint erst als Antwortmodell, wenn es wirklich antwortet. Die Kennzeichnung in
   `src/lib/lab/honesty.ts` bleibt wahr.
+- „Quasnir“ ist seit dem 22.10.2026 der Name eines Systems: Qwen3.8-27B (Apache-2.0) mit unseren LoRA-Gewichten,
+  Quasnir-1B als Vorsortierer und die Sandbox als letzte Prüfung (`67/docs/PLAN_QWEN.md`). In der Modellauswahl
+  steht „Quasnir“; ein Info-Hinweis nennt die Basis „Qwen3.8-27B (Apache-2.0)“. Das Hauptmodell gilt nie als selbst
+  von Grund auf trainiert (`selfTrained: false`).
 - Keine Schwarm-Zahlen („2.800 Agenten“) als Qualitätsversprechen. Angezeigt wird, was wirklich läuft.
 
 **Namen**
@@ -461,7 +465,8 @@ sein Pool verwirft Modelle ohne `:free`, und konfigurierte kostenpflichtige Mode
      gespeichert. Der Nutzer sieht nur die Pool-Antwort.
    - `on`: nur für die Rollen in `QUASNIR_ROLES`, mit Rückfall.
 6. Labels (`src/lib/lab/honesty.ts:10-14`, `src/lib/ui/chat-status.ts`, `ai-lab/tracks/definitions/quasnir.json`)
-   zeigen das tatsächlich antwortende Modell. Steht „Quasnir“ da, hat Quasnir geantwortet.
+   zeigen das tatsächlich antwortende Modell. Steht „Quasnir“ da, hat das Quasnir-System geantwortet, mit dem
+   Info-Hinweis auf die Basis Qwen3.8-27B; beim Rückfall auf den Pool steht der Pool-Modellname da.
 7. Lab-Pfad: `NativeModelProvider` (Fixture) durch den HTTP-Anbieter ersetzen und die Sperren in
    `ai-lab/programs/serve.ts:102-189` und `ai-lab/tracks/status.ts:28-47` an `QUASNIR_ROUTING` binden.
 8. Readiness: Quasnir in `readiness/collect.ts:34-66`, `api/health/route.ts:25` und
