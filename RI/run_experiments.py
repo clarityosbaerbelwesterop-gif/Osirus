@@ -105,6 +105,20 @@ def run_suite(experiments=EXPERIMENTS, tests_only=False, summary_output=None, ru
         if top_rc != 0:
             failures.append(f"RI top-level tests: tests failed (exit code {top_rc})")
 
+    if run_top_level_tests and not tests_only and (ROOT / "run_prototype.py").is_file():
+        proto_rc = run("M10-M12 prototype demo and benchmark", ROOT, ["run_prototype.py", "--mode", "all"])
+        if proto_rc != 0:
+            failures.append(f"M10-M12 prototype: execution failed (exit code {proto_rc})")
+        else:
+            for proto_artifact in (
+                ROOT / "results/prototype_demo_report.json",
+                ROOT / "results/prototype_benchmark.json",
+                ROOT / "results/prototype_skill_memory.json",
+            ):
+                valid, reason = validate_results_file(proto_artifact)
+                if not valid:
+                    failures.append(f"M10-M12 prototype artifact {proto_artifact.name}: {reason}")
+
     summary = {
         "n_experiments": len(records),
         "tests_only": bool(tests_only),

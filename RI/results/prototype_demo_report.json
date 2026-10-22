@@ -1,0 +1,1113 @@
+{
+  "mode": "demo",
+  "n_tasks": 5,
+  "success_rate": 1.0,
+  "mean_held_out_accuracy": 1,
+  "mean_runtime_ms": 1.0287,
+  "skills_reused_count": 2,
+  "skills_composed_count": 1,
+  "learning_loop_triggered_count": 1,
+  "baseline_mean_held_out_accuracy": {
+    "majority": 0.62502,
+    "fixed_rule": 0.675,
+    "random": 0.45832
+  },
+  "skill_memory_summary": {
+    "total_skill_lineages": 4,
+    "total_versions": 4,
+    "active_skills": 4,
+    "quarantined_skills": 0,
+    "rolled_back_skills": 0,
+    "skills": [
+      {
+        "skill_id": "skill_sum_threshold_threshold6",
+        "name": "sum_threshold(threshold6)",
+        "version": 1,
+        "purpose": "Verified rule for sum_threshold with parameters {'threshold': 6}",
+        "family": "sum_threshold",
+        "action_name": "predict_sum_threshold",
+        "parameters": {
+          "threshold": 6
+        },
+        "contract": {
+          "input_schema": {
+            "x": "int[0,7]",
+            "y": "int[0,7]"
+          },
+          "preconditions": [
+            "0 <= x <= 7",
+            "0 <= y <= 7"
+          ],
+          "output_schema": "int{0,1}"
+        },
+        "unit_tests": [
+          {
+            "x": 7,
+            "y": 5,
+            "label": 1
+          },
+          {
+            "x": 6,
+            "y": 2,
+            "label": 1
+          },
+          {
+            "x": 5,
+            "y": 4,
+            "label": 1
+          },
+          {
+            "x": 5,
+            "y": 2,
+            "label": 1
+          },
+          {
+            "x": 6,
+            "y": 5,
+            "label": 1
+          },
+          {
+            "x": 5,
+            "y": 3,
+            "label": 1
+          },
+          {
+            "x": 6,
+            "y": 0,
+            "label": 1
+          },
+          {
+            "x": 4,
+            "y": 2,
+            "label": 1
+          }
+        ],
+        "validation_metrics": {
+          "train_accuracy": 1,
+          "held_out_accuracy": 1
+        },
+        "status": "active",
+        "usage_count": 2,
+        "success_count": 2,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "parent_version": null,
+        "component_skills": [],
+        "known_limitations": [
+          "Bounded to discrete 8x8 integer coordinate grid.",
+          "Rule is deterministic and does not adapt online without explicit re-selection."
+        ]
+      },
+      {
+        "skill_id": "skill_parity_parity0",
+        "name": "parity(parity0)",
+        "version": 1,
+        "purpose": "Verified rule for parity with parameters {'parity': 0}",
+        "family": "parity",
+        "action_name": "predict_parity",
+        "parameters": {
+          "parity": 0
+        },
+        "contract": {
+          "input_schema": {
+            "x": "int[0,7]",
+            "y": "int[0,7]"
+          },
+          "preconditions": [
+            "0 <= x <= 7",
+            "0 <= y <= 7"
+          ],
+          "output_schema": "int{0,1}"
+        },
+        "unit_tests": [
+          {
+            "x": 3,
+            "y": 5,
+            "label": 1
+          },
+          {
+            "x": 5,
+            "y": 6,
+            "label": 0
+          },
+          {
+            "x": 1,
+            "y": 7,
+            "label": 1
+          },
+          {
+            "x": 7,
+            "y": 4,
+            "label": 0
+          },
+          {
+            "x": 3,
+            "y": 0,
+            "label": 0
+          },
+          {
+            "x": 5,
+            "y": 4,
+            "label": 0
+          },
+          {
+            "x": 4,
+            "y": 3,
+            "label": 0
+          },
+          {
+            "x": 6,
+            "y": 2,
+            "label": 1
+          }
+        ],
+        "validation_metrics": {
+          "train_accuracy": 1,
+          "held_out_accuracy": 1
+        },
+        "status": "active",
+        "usage_count": 1,
+        "success_count": 1,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "parent_version": null,
+        "component_skills": [],
+        "known_limitations": [
+          "Bounded to discrete 8x8 integer coordinate grid.",
+          "Rule is deterministic and does not adapt online without explicit re-selection."
+        ]
+      },
+      {
+        "skill_id": "skill_composed_and_parity0_threshold6",
+        "name": "composed_and(parity0_threshold6)",
+        "version": 1,
+        "purpose": "Verified rule for composed_and with parameters {'threshold': 6, 'parity': 0}",
+        "family": "composed_and",
+        "action_name": "predict_composed",
+        "parameters": {
+          "threshold": 6,
+          "parity": 0
+        },
+        "contract": {
+          "input_schema": {
+            "x": "int[0,7]",
+            "y": "int[0,7]"
+          },
+          "preconditions": [
+            "0 <= x <= 7",
+            "0 <= y <= 7"
+          ],
+          "output_schema": "int{0,1}"
+        },
+        "unit_tests": [
+          {
+            "x": 7,
+            "y": 2,
+            "label": 0
+          },
+          {
+            "x": 2,
+            "y": 3,
+            "label": 0
+          },
+          {
+            "x": 5,
+            "y": 6,
+            "label": 0
+          },
+          {
+            "x": 0,
+            "y": 0,
+            "label": 0
+          },
+          {
+            "x": 1,
+            "y": 7,
+            "label": 1
+          },
+          {
+            "x": 2,
+            "y": 5,
+            "label": 0
+          },
+          {
+            "x": 3,
+            "y": 1,
+            "label": 0
+          },
+          {
+            "x": 5,
+            "y": 3,
+            "label": 1
+          }
+        ],
+        "validation_metrics": {
+          "train_accuracy": 1,
+          "held_out_accuracy": 1
+        },
+        "status": "active",
+        "usage_count": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "parent_version": null,
+        "component_skills": [
+          "skill_sum_threshold_threshold6@v1",
+          "skill_parity_parity0@v1"
+        ],
+        "known_limitations": [
+          "Bounded to discrete 8x8 integer coordinate grid.",
+          "Rule is deterministic and does not adapt online without explicit re-selection."
+        ]
+      },
+      {
+        "skill_id": "skill_mod_sum_modulus3_remainder1",
+        "name": "mod_sum(modulus3_remainder1)",
+        "version": 1,
+        "purpose": "Verified rule for mod_sum with parameters {'modulus': 3, 'remainder': 1}",
+        "family": "mod_sum",
+        "action_name": "predict_mod_sum",
+        "parameters": {
+          "modulus": 3,
+          "remainder": 1
+        },
+        "contract": {
+          "input_schema": {
+            "x": "int[0,7]",
+            "y": "int[0,7]"
+          },
+          "preconditions": [
+            "0 <= x <= 7",
+            "0 <= y <= 7"
+          ],
+          "output_schema": "int{0,1}"
+        },
+        "unit_tests": [
+          {
+            "x": 4,
+            "y": 0,
+            "label": 1
+          },
+          {
+            "x": 4,
+            "y": 4,
+            "label": 0
+          },
+          {
+            "x": 0,
+            "y": 2,
+            "label": 0
+          },
+          {
+            "x": 2,
+            "y": 0,
+            "label": 0
+          },
+          {
+            "x": 5,
+            "y": 1,
+            "label": 0
+          },
+          {
+            "x": 7,
+            "y": 3,
+            "label": 1
+          },
+          {
+            "x": 2,
+            "y": 3,
+            "label": 0
+          },
+          {
+            "x": 2,
+            "y": 1,
+            "label": 0
+          }
+        ],
+        "validation_metrics": {
+          "train_accuracy": 1,
+          "held_out_accuracy": 1
+        },
+        "status": "active",
+        "usage_count": 0,
+        "success_count": 0,
+        "failure_count": 0,
+        "success_rate": 1.0,
+        "parent_version": null,
+        "component_skills": [],
+        "known_limitations": [
+          "Bounded to discrete 8x8 integer coordinate grid.",
+          "Rule is deterministic and does not adapt online without explicit re-selection."
+        ]
+      }
+    ]
+  },
+  "tasks": [
+    {
+      "task_id": "demo_1_acquire_sum_threshold",
+      "family": "sum_threshold",
+      "passed": true,
+      "reused_skill": false,
+      "composed_skill": false,
+      "stored_skill_id": "skill_sum_threshold_threshold6@v1",
+      "total_runtime_ms": 0.7862,
+      "analysis": {
+        "task_id": "demo_1_acquire_sum_threshold",
+        "n_train": 20,
+        "n_test": 24,
+        "positive_rate": 0.75,
+        "is_constant_label": false,
+        "is_underdetermined": false,
+        "structural_signals": {
+          "sum_monotonic_signal": 0.3571,
+          "diff_monotonic_signal": 0.119,
+          "parity_alternation_signal": 0.0
+        },
+        "recommended_families": [
+          "sum_threshold",
+          "parity",
+          "diff_threshold",
+          "mod_sum",
+          "coord_box",
+          "composed_and"
+        ],
+        "required_capabilities": [
+          "feature_extraction_2d",
+          "bounded_hypothesis_evaluation",
+          "held_out_generalization_check"
+        ],
+        "subgoals": [
+          "Validate task input and verify train/test split disjointness",
+          "Query skill memory for matching active skills or composable primitives",
+          "Generate and score bounded candidate hypotheses on development examples",
+          "Execute best candidate within sandbox step and timeout limits",
+          "Evaluate predictions on held-out examples against majority, fixed, and random baselines",
+          "Persist verified skill or trigger bounded counterexample refinement loop"
+        ]
+      },
+      "selection": {
+        "selected": {
+          "candidate_id": "cand_sum_ge_6",
+          "family": "sum_threshold",
+          "action_name": "predict_sum_threshold",
+          "parameters": {
+            "threshold": 6
+          },
+          "complexity": 1,
+          "source": "enumerated",
+          "component_skills": []
+        },
+        "train_accuracy": 1.0,
+        "train_errors": 0,
+        "n_candidates_evaluated": 32,
+        "n_tied_at_best_error": 1,
+        "tie_detected": false,
+        "uncertainty_score": 0.0,
+        "rationale": "Selected 'cand_sum_ge_6' (family=sum_threshold, source=enumerated, complexity=1) with 0/20 development errors (accuracy=1.000); 1 candidate(s) tied at minimum error.",
+        "top_candidates": [
+          {
+            "candidate_id": "cand_sum_ge_6",
+            "family": "sum_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 0,
+            "train_accuracy": 1.0
+          },
+          {
+            "candidate_id": "cand_sum_ge_5",
+            "family": "sum_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 2,
+            "train_accuracy": 0.9
+          },
+          {
+            "candidate_id": "cand_sum_ge_7",
+            "family": "sum_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 3,
+            "train_accuracy": 0.85
+          },
+          {
+            "candidate_id": "cand_sum_ge_4",
+            "family": "sum_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 3,
+            "train_accuracy": 0.85
+          },
+          {
+            "candidate_id": "cand_sum_ge_3",
+            "family": "sum_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 4,
+            "train_accuracy": 0.8
+          }
+        ]
+      },
+      "execution": {
+        "status": "ok",
+        "ok": true,
+        "steps_used": 24,
+        "duration_ms": 0.0132,
+        "error_type": "",
+        "error_message": "",
+        "n_predictions": 24
+      },
+      "evaluation": {
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "disjoint_verified": true,
+        "baselines": {
+          "majority": 0.5833,
+          "fixed_rule": 1,
+          "random": 0.4583
+        },
+        "gain_over_baselines": {
+          "majority": 0.4167,
+          "fixed_rule": 0,
+          "random": 0.5417
+        },
+        "n_misclassified_train": 0,
+        "failure_reasons": [],
+        "execution_duration_ms": 0.0261
+      },
+      "learning_loop": {
+        "triggered": false,
+        "rounds_run": 0,
+        "counterexamples_analyzed": 0,
+        "initial_candidate_id": "cand_sum_ge_6",
+        "initial_train_accuracy": 1.0,
+        "refined_candidate_id": "cand_sum_ge_6",
+        "refined_train_accuracy": 1.0,
+        "improved": false,
+        "notes": [
+          "Initial candidate had 0 development counterexamples; no refinement required."
+        ]
+      },
+      "limitations": [
+        "This prototype operates over bounded, explicit discrete grid rule families; it is not a general intelligence system.",
+        "Candidate generation searches a finite allow-listed space of primitives and pairwise conjunctions.",
+        "Learning loop refines hypothesis selection using development counterexamples without rewriting program source code."
+      ]
+    },
+    {
+      "task_id": "demo_2_acquire_parity",
+      "family": "parity",
+      "passed": true,
+      "reused_skill": false,
+      "composed_skill": false,
+      "stored_skill_id": "skill_parity_parity0@v1",
+      "total_runtime_ms": 0.7706,
+      "analysis": {
+        "task_id": "demo_2_acquire_parity",
+        "n_train": 20,
+        "n_test": 24,
+        "positive_rate": 0.5,
+        "is_constant_label": false,
+        "is_underdetermined": false,
+        "structural_signals": {
+          "sum_monotonic_signal": 0.1429,
+          "diff_monotonic_signal": 0.0714,
+          "parity_alternation_signal": 1.0
+        },
+        "recommended_families": [
+          "parity",
+          "sum_threshold",
+          "diff_threshold",
+          "mod_sum",
+          "coord_box",
+          "composed_and"
+        ],
+        "required_capabilities": [
+          "feature_extraction_2d",
+          "bounded_hypothesis_evaluation",
+          "held_out_generalization_check"
+        ],
+        "subgoals": [
+          "Validate task input and verify train/test split disjointness",
+          "Query skill memory for matching active skills or composable primitives",
+          "Generate and score bounded candidate hypotheses on development examples",
+          "Execute best candidate within sandbox step and timeout limits",
+          "Evaluate predictions on held-out examples against majority, fixed, and random baselines",
+          "Persist verified skill or trigger bounded counterexample refinement loop"
+        ]
+      },
+      "selection": {
+        "selected": {
+          "candidate_id": "cand_parity_0",
+          "family": "parity",
+          "action_name": "predict_parity",
+          "parameters": {
+            "parity": 0
+          },
+          "complexity": 1,
+          "source": "enumerated",
+          "component_skills": []
+        },
+        "train_accuracy": 1.0,
+        "train_errors": 0,
+        "n_candidates_evaluated": 33,
+        "n_tied_at_best_error": 1,
+        "tie_detected": false,
+        "uncertainty_score": 0.0,
+        "rationale": "Selected 'cand_parity_0' (family=parity, source=enumerated, complexity=1) with 0/20 development errors (accuracy=1.000); 1 candidate(s) tied at minimum error.",
+        "top_candidates": [
+          {
+            "candidate_id": "cand_parity_0",
+            "family": "parity",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 0,
+            "train_accuracy": 1.0
+          },
+          {
+            "candidate_id": "cand_diff_ge_2",
+            "family": "diff_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 6,
+            "train_accuracy": 0.7
+          },
+          {
+            "candidate_id": "cand_diff_ge_4",
+            "family": "diff_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 7,
+            "train_accuracy": 0.65
+          },
+          {
+            "candidate_id": "cand_diff_ge_3",
+            "family": "diff_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 9,
+            "train_accuracy": 0.55
+          },
+          {
+            "candidate_id": "cand_diff_ge_0",
+            "family": "diff_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 9,
+            "train_accuracy": 0.55
+          }
+        ]
+      },
+      "execution": {
+        "status": "ok",
+        "ok": true,
+        "steps_used": 24,
+        "duration_ms": 0.0137,
+        "error_type": "",
+        "error_message": "",
+        "n_predictions": 24
+      },
+      "evaluation": {
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "disjoint_verified": true,
+        "baselines": {
+          "majority": 0.4167,
+          "fixed_rule": 0.4167,
+          "random": 0.4167
+        },
+        "gain_over_baselines": {
+          "majority": 0.5833,
+          "fixed_rule": 0.5833,
+          "random": 0.5833
+        },
+        "n_misclassified_train": 0,
+        "failure_reasons": [],
+        "execution_duration_ms": 0.0241
+      },
+      "learning_loop": {
+        "triggered": false,
+        "rounds_run": 0,
+        "counterexamples_analyzed": 0,
+        "initial_candidate_id": "cand_parity_0",
+        "initial_train_accuracy": 1.0,
+        "refined_candidate_id": "cand_parity_0",
+        "refined_train_accuracy": 1.0,
+        "improved": false,
+        "notes": [
+          "Initial candidate had 0 development counterexamples; no refinement required."
+        ]
+      },
+      "limitations": [
+        "This prototype operates over bounded, explicit discrete grid rule families; it is not a general intelligence system.",
+        "Candidate generation searches a finite allow-listed space of primitives and pairwise conjunctions.",
+        "Learning loop refines hypothesis selection using development counterexamples without rewriting program source code."
+      ]
+    },
+    {
+      "task_id": "demo_3_reuse_sum_threshold",
+      "family": "sum_threshold",
+      "passed": true,
+      "reused_skill": true,
+      "composed_skill": false,
+      "stored_skill_id": "skill_sum_threshold_threshold6@v1",
+      "total_runtime_ms": 0.7321,
+      "analysis": {
+        "task_id": "demo_3_reuse_sum_threshold",
+        "n_train": 16,
+        "n_test": 24,
+        "positive_rate": 0.6875,
+        "is_constant_label": false,
+        "is_underdetermined": false,
+        "structural_signals": {
+          "sum_monotonic_signal": 0.2506,
+          "diff_monotonic_signal": 0.0195,
+          "parity_alternation_signal": 0.0
+        },
+        "recommended_families": [
+          "sum_threshold",
+          "parity",
+          "diff_threshold",
+          "mod_sum",
+          "coord_box",
+          "composed_and"
+        ],
+        "required_capabilities": [
+          "feature_extraction_2d",
+          "bounded_hypothesis_evaluation",
+          "held_out_generalization_check"
+        ],
+        "subgoals": [
+          "Validate task input and verify train/test split disjointness",
+          "Query skill memory for matching active skills or composable primitives",
+          "Generate and score bounded candidate hypotheses on development examples",
+          "Execute best candidate within sandbox step and timeout limits",
+          "Evaluate predictions on held-out examples against majority, fixed, and random baselines",
+          "Persist verified skill or trigger bounded counterexample refinement loop"
+        ]
+      },
+      "selection": {
+        "selected": {
+          "candidate_id": "skill_sum_threshold_threshold6@v1",
+          "family": "sum_threshold",
+          "action_name": "predict_sum_threshold",
+          "parameters": {
+            "threshold": 6
+          },
+          "complexity": 1,
+          "source": "memory_reuse",
+          "component_skills": []
+        },
+        "train_accuracy": 1.0,
+        "train_errors": 0,
+        "n_candidates_evaluated": 35,
+        "n_tied_at_best_error": 2,
+        "tie_detected": true,
+        "uncertainty_score": 0.0143,
+        "rationale": "Selected 'skill_sum_threshold_threshold6@v1' (family=sum_threshold, source=memory_reuse, complexity=1) with 0/16 development errors (accuracy=1.000); 2 candidate(s) tied at minimum error.",
+        "top_candidates": [
+          {
+            "candidate_id": "skill_sum_threshold_threshold6@v1",
+            "family": "sum_threshold",
+            "source": "memory_reuse",
+            "complexity": 1,
+            "train_errors": 0,
+            "train_accuracy": 1.0
+          },
+          {
+            "candidate_id": "cand_sum_ge_6",
+            "family": "sum_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 0,
+            "train_accuracy": 1.0
+          },
+          {
+            "candidate_id": "cand_sum_ge_7",
+            "family": "sum_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 1,
+            "train_accuracy": 0.9375
+          },
+          {
+            "candidate_id": "cand_sum_ge_5",
+            "family": "sum_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 2,
+            "train_accuracy": 0.875
+          },
+          {
+            "candidate_id": "composed(skill_sum_threshold_threshold6@v1,skill_parity_parity0@v1)",
+            "family": "composed_and",
+            "source": "memory_composition",
+            "complexity": 3,
+            "train_errors": 5,
+            "train_accuracy": 0.6875
+          }
+        ]
+      },
+      "execution": {
+        "status": "ok",
+        "ok": true,
+        "steps_used": 24,
+        "duration_ms": 0.0125,
+        "error_type": "",
+        "error_message": "",
+        "n_predictions": 24
+      },
+      "evaluation": {
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "disjoint_verified": true,
+        "baselines": {
+          "majority": 0.7917,
+          "fixed_rule": 0.8333,
+          "random": 0.5
+        },
+        "gain_over_baselines": {
+          "majority": 0.2083,
+          "fixed_rule": 0.1667,
+          "random": 0.5
+        },
+        "n_misclassified_train": 0,
+        "failure_reasons": [],
+        "execution_duration_ms": 0.0206
+      },
+      "learning_loop": {
+        "triggered": false,
+        "rounds_run": 0,
+        "counterexamples_analyzed": 0,
+        "initial_candidate_id": "skill_sum_threshold_threshold6@v1",
+        "initial_train_accuracy": 1.0,
+        "refined_candidate_id": "skill_sum_threshold_threshold6@v1",
+        "refined_train_accuracy": 1.0,
+        "improved": false,
+        "notes": [
+          "Initial candidate had 0 development counterexamples; no refinement required."
+        ]
+      },
+      "limitations": [
+        "This prototype operates over bounded, explicit discrete grid rule families; it is not a general intelligence system.",
+        "Candidate generation searches a finite allow-listed space of primitives and pairwise conjunctions.",
+        "Learning loop refines hypothesis selection using development counterexamples without rewriting program source code."
+      ]
+    },
+    {
+      "task_id": "demo_4_compose_sum_and_parity",
+      "family": "composed_and",
+      "passed": true,
+      "reused_skill": true,
+      "composed_skill": true,
+      "stored_skill_id": "skill_composed_and_parity0_threshold6@v1",
+      "total_runtime_ms": 1.2295,
+      "analysis": {
+        "task_id": "demo_4_compose_sum_and_parity",
+        "n_train": 20,
+        "n_test": 24,
+        "positive_rate": 0.35,
+        "is_constant_label": false,
+        "is_underdetermined": false,
+        "structural_signals": {
+          "sum_monotonic_signal": 0.1272,
+          "diff_monotonic_signal": 0.0424,
+          "parity_alternation_signal": 0.7
+        },
+        "recommended_families": [
+          "sum_threshold",
+          "parity",
+          "diff_threshold",
+          "mod_sum",
+          "coord_box",
+          "composed_and"
+        ],
+        "required_capabilities": [
+          "feature_extraction_2d",
+          "bounded_hypothesis_evaluation",
+          "held_out_generalization_check"
+        ],
+        "subgoals": [
+          "Validate task input and verify train/test split disjointness",
+          "Query skill memory for matching active skills or composable primitives",
+          "Generate and score bounded candidate hypotheses on development examples",
+          "Execute best candidate within sandbox step and timeout limits",
+          "Evaluate predictions on held-out examples against majority, fixed, and random baselines",
+          "Persist verified skill or trigger bounded counterexample refinement loop"
+        ]
+      },
+      "selection": {
+        "selected": {
+          "candidate_id": "composed(skill_sum_threshold_threshold6@v1,skill_parity_parity0@v1)",
+          "family": "composed_and",
+          "action_name": "predict_composed",
+          "parameters": {
+            "threshold": 6,
+            "parity": 0
+          },
+          "complexity": 3,
+          "source": "memory_composition",
+          "component_skills": [
+            "skill_sum_threshold_threshold6@v1",
+            "skill_parity_parity0@v1"
+          ]
+        },
+        "train_accuracy": 1.0,
+        "train_errors": 0,
+        "n_candidates_evaluated": 35,
+        "n_tied_at_best_error": 1,
+        "tie_detected": false,
+        "uncertainty_score": 0.0,
+        "rationale": "Selected 'composed(skill_sum_threshold_threshold6@v1,skill_parity_parity0@v1)' (family=composed_and, source=memory_composition, complexity=3) with 0/20 development errors (accuracy=1.000); 1 candidate(s) tied at minimum error.",
+        "top_candidates": [
+          {
+            "candidate_id": "composed(skill_sum_threshold_threshold6@v1,skill_parity_parity0@v1)",
+            "family": "composed_and",
+            "source": "memory_composition",
+            "complexity": 3,
+            "train_errors": 0,
+            "train_accuracy": 1.0
+          },
+          {
+            "candidate_id": "skill_parity_parity0@v1",
+            "family": "parity",
+            "source": "memory_reuse",
+            "complexity": 1,
+            "train_errors": 3,
+            "train_accuracy": 0.85
+          },
+          {
+            "candidate_id": "cand_parity_0",
+            "family": "parity",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 3,
+            "train_accuracy": 0.85
+          },
+          {
+            "candidate_id": "cand_sum_ge_8",
+            "family": "sum_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 6,
+            "train_accuracy": 0.7
+          },
+          {
+            "candidate_id": "cand_diff_ge_0",
+            "family": "diff_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 6,
+            "train_accuracy": 0.7
+          }
+        ]
+      },
+      "execution": {
+        "status": "ok",
+        "ok": true,
+        "steps_used": 24,
+        "duration_ms": 0.0152,
+        "error_type": "",
+        "error_message": "",
+        "n_predictions": 24
+      },
+      "evaluation": {
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "disjoint_verified": true,
+        "baselines": {
+          "majority": 0.6667,
+          "fixed_rule": 0.5417,
+          "random": 0.4583
+        },
+        "gain_over_baselines": {
+          "majority": 0.3333,
+          "fixed_rule": 0.4583,
+          "random": 0.5417
+        },
+        "n_misclassified_train": 0,
+        "failure_reasons": [],
+        "execution_duration_ms": 0.0267
+      },
+      "learning_loop": {
+        "triggered": false,
+        "rounds_run": 0,
+        "counterexamples_analyzed": 0,
+        "initial_candidate_id": "composed(skill_sum_threshold_threshold6@v1,skill_parity_parity0@v1)",
+        "initial_train_accuracy": 1.0,
+        "refined_candidate_id": "composed(skill_sum_threshold_threshold6@v1,skill_parity_parity0@v1)",
+        "refined_train_accuracy": 1.0,
+        "improved": false,
+        "notes": [
+          "Initial candidate had 0 development counterexamples; no refinement required."
+        ]
+      },
+      "limitations": [
+        "This prototype operates over bounded, explicit discrete grid rule families; it is not a general intelligence system.",
+        "Candidate generation searches a finite allow-listed space of primitives and pairwise conjunctions.",
+        "Learning loop refines hypothesis selection using development counterexamples without rewriting program source code."
+      ]
+    },
+    {
+      "task_id": "demo_5_learning_loop_mod_sum",
+      "family": "mod_sum",
+      "passed": true,
+      "reused_skill": false,
+      "composed_skill": false,
+      "stored_skill_id": "skill_mod_sum_modulus3_remainder1@v1",
+      "total_runtime_ms": 1.6249,
+      "analysis": {
+        "task_id": "demo_5_learning_loop_mod_sum",
+        "n_train": 24,
+        "n_test": 24,
+        "positive_rate": 0.4167,
+        "is_constant_label": false,
+        "is_underdetermined": false,
+        "structural_signals": {
+          "sum_monotonic_signal": 0.0245,
+          "diff_monotonic_signal": 0.0694,
+          "parity_alternation_signal": 0.0
+        },
+        "recommended_families": [
+          "sum_threshold",
+          "parity",
+          "diff_threshold",
+          "mod_sum",
+          "coord_box",
+          "composed_and"
+        ],
+        "required_capabilities": [
+          "feature_extraction_2d",
+          "bounded_hypothesis_evaluation",
+          "held_out_generalization_check"
+        ],
+        "subgoals": [
+          "Validate task input and verify train/test split disjointness",
+          "Query skill memory for matching active skills or composable primitives",
+          "Generate and score bounded candidate hypotheses on development examples",
+          "Execute best candidate within sandbox step and timeout limits",
+          "Evaluate predictions on held-out examples against majority, fixed, and random baselines",
+          "Persist verified skill or trigger bounded counterexample refinement loop"
+        ]
+      },
+      "selection": {
+        "selected": {
+          "candidate_id": "cand_mod_3_rem_1",
+          "family": "mod_sum",
+          "action_name": "predict_mod_sum",
+          "parameters": {
+            "modulus": 3,
+            "remainder": 1
+          },
+          "complexity": 2,
+          "source": "enumerated",
+          "component_skills": []
+        },
+        "train_accuracy": 1.0,
+        "train_errors": 0,
+        "n_candidates_evaluated": 64,
+        "n_tied_at_best_error": 1,
+        "tie_detected": false,
+        "uncertainty_score": 0.0,
+        "rationale": "Selected 'cand_mod_3_rem_1' (family=mod_sum, source=enumerated, complexity=2) with 0/24 development errors (accuracy=1.000); 1 candidate(s) tied at minimum error.",
+        "top_candidates": [
+          {
+            "candidate_id": "cand_mod_3_rem_1",
+            "family": "mod_sum",
+            "source": "enumerated",
+            "complexity": 2,
+            "train_errors": 0,
+            "train_accuracy": 1.0
+          },
+          {
+            "candidate_id": "cand_sum_ge_13",
+            "family": "sum_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 9,
+            "train_accuracy": 0.625
+          },
+          {
+            "candidate_id": "cand_diff_ge_7",
+            "family": "diff_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 9,
+            "train_accuracy": 0.625
+          },
+          {
+            "candidate_id": "cand_diff_ge_6",
+            "family": "diff_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 9,
+            "train_accuracy": 0.625
+          },
+          {
+            "candidate_id": "cand_diff_ge_5",
+            "family": "diff_threshold",
+            "source": "enumerated",
+            "complexity": 1,
+            "train_errors": 9,
+            "train_accuracy": 0.625
+          }
+        ]
+      },
+      "execution": {
+        "status": "ok",
+        "ok": true,
+        "steps_used": 24,
+        "duration_ms": 0.0217,
+        "error_type": "",
+        "error_message": "",
+        "n_predictions": 24
+      },
+      "evaluation": {
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "disjoint_verified": true,
+        "baselines": {
+          "majority": 0.6667,
+          "fixed_rule": 0.5833,
+          "random": 0.4583
+        },
+        "gain_over_baselines": {
+          "majority": 0.3333,
+          "fixed_rule": 0.4167,
+          "random": 0.5417
+        },
+        "n_misclassified_train": 0,
+        "failure_reasons": [],
+        "execution_duration_ms": 0.0286
+      },
+      "learning_loop": {
+        "triggered": true,
+        "rounds_run": 1,
+        "counterexamples_analyzed": 9,
+        "initial_candidate_id": "cand_sum_ge_13",
+        "initial_train_accuracy": 0.625,
+        "refined_candidate_id": "cand_mod_3_rem_1",
+        "refined_train_accuracy": 1.0,
+        "improved": true,
+        "notes": [
+          "Initial candidate 'cand_sum_ge_13' had 9 counterexample(s) (train_accuracy=0.625).",
+          "Round 1: expanded hypothesis space to include mod_sum and coord_box primitives.",
+          "Refinement improved train_accuracy to 1.000 via 'cand_mod_3_rem_1'."
+        ]
+      },
+      "limitations": [
+        "This prototype operates over bounded, explicit discrete grid rule families; it is not a general intelligence system.",
+        "Candidate generation searches a finite allow-listed space of primitives and pairwise conjunctions.",
+        "Learning loop refines hypothesis selection using development counterexamples without rewriting program source code."
+      ]
+    }
+  ],
+  "limitations": [
+    "Operate over bounded discrete 8x8 grid rule families; not a general intelligence system.",
+    "All candidate actions are restricted to an explicit allow-list with step and timeout bounds."
+  ]
+}

@@ -1,0 +1,1492 @@
+{
+  "n_seeds": 30,
+  "m10_end_to_end": {
+    "n_seeds": 30,
+    "task_pass_rate": 1.0,
+    "mean_train_accuracy": 1,
+    "mean_held_out_accuracy": 0.9944444444444445,
+    "mean_runtime_ms": 0.696,
+    "learning_loop_trigger_rate": 0.5,
+    "baselines": {
+      "majority": 0.6069444444444444,
+      "fixed_rule": 0.6319444444444444,
+      "random": 0.5097222222222222
+    },
+    "mean_gain_over_baselines": {
+      "majority": 0.38750000000000007,
+      "fixed_rule": 0.36250000000000004,
+      "random": 0.4847222222222223
+    },
+    "rows": [
+      {
+        "seed": 0,
+        "task_id": "task_sum_threshold_s500",
+        "family": "sum_threshold",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.3333333333333333,
+          "fixed_rule": 0.7916666666666666,
+          "random": 0.5416666666666666
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.42
+      },
+      {
+        "seed": 1,
+        "task_id": "task_parity_s501",
+        "family": "parity",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.5416666666666666,
+          "fixed_rule": 0.5,
+          "random": 0.5416666666666666
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3808
+      },
+      {
+        "seed": 2,
+        "task_id": "task_diff_threshold_s502",
+        "family": "diff_threshold",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.625,
+          "fixed_rule": 0.5416666666666666,
+          "random": 0.5833333333333334
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3773
+      },
+      {
+        "seed": 3,
+        "task_id": "task_mod_sum_s503",
+        "family": "mod_sum",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.625,
+          "fixed_rule": 0.4583333333333333,
+          "random": 0.3333333333333333
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 0.9957
+      },
+      {
+        "seed": 4,
+        "task_id": "task_coord_box_s504",
+        "family": "coord_box",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.6666666666666666,
+          "fixed_rule": 0.625,
+          "random": 0.4583333333333333
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 0.8448
+      },
+      {
+        "seed": 5,
+        "task_id": "task_composed_and_s505",
+        "family": "composed_and",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.7083333333333334,
+          "fixed_rule": 0.75,
+          "random": 0.3333333333333333
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 1.3535
+      },
+      {
+        "seed": 6,
+        "task_id": "task_sum_threshold_s506",
+        "family": "sum_threshold",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.375,
+          "fixed_rule": 0.875,
+          "random": 0.5
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3586
+      },
+      {
+        "seed": 7,
+        "task_id": "task_parity_s507",
+        "family": "parity",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.4166666666666667,
+          "fixed_rule": 0.5416666666666666,
+          "random": 0.5833333333333334
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3567
+      },
+      {
+        "seed": 8,
+        "task_id": "task_diff_threshold_s508",
+        "family": "diff_threshold",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.7083333333333334,
+          "fixed_rule": 0.625,
+          "random": 0.5833333333333334
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3572
+      },
+      {
+        "seed": 9,
+        "task_id": "task_mod_sum_s509",
+        "family": "mod_sum",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.4583333333333333,
+          "fixed_rule": 0.625,
+          "random": 0.5416666666666666
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 0.8325
+      },
+      {
+        "seed": 10,
+        "task_id": "task_coord_box_s510",
+        "family": "coord_box",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 0.875,
+        "baselines": {
+          "majority": 0.7083333333333334,
+          "fixed_rule": 0.7916666666666666,
+          "random": 0.3333333333333333
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 0.8245
+      },
+      {
+        "seed": 11,
+        "task_id": "task_composed_and_s511",
+        "family": "composed_and",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.625,
+          "fixed_rule": 0.5833333333333334,
+          "random": 0.7083333333333334
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 1.3651
+      },
+      {
+        "seed": 12,
+        "task_id": "task_sum_threshold_s512",
+        "family": "sum_threshold",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.75,
+          "fixed_rule": 0.75,
+          "random": 0.4583333333333333
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3686
+      },
+      {
+        "seed": 13,
+        "task_id": "task_parity_s513",
+        "family": "parity",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.4583333333333333,
+          "fixed_rule": 0.4583333333333333,
+          "random": 0.4583333333333333
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3659
+      },
+      {
+        "seed": 14,
+        "task_id": "task_diff_threshold_s514",
+        "family": "diff_threshold",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.4583333333333333,
+          "fixed_rule": 0.5416666666666666,
+          "random": 0.5
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3703
+      },
+      {
+        "seed": 15,
+        "task_id": "task_mod_sum_s515",
+        "family": "mod_sum",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.6666666666666666,
+          "fixed_rule": 0.4166666666666667,
+          "random": 0.5833333333333334
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 0.8547
+      },
+      {
+        "seed": 16,
+        "task_id": "task_coord_box_s516",
+        "family": "coord_box",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.625,
+          "fixed_rule": 0.7083333333333334,
+          "random": 0.5833333333333334
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 0.9792
+      },
+      {
+        "seed": 17,
+        "task_id": "task_composed_and_s517",
+        "family": "composed_and",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.875,
+          "fixed_rule": 0.625,
+          "random": 0.5833333333333334
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 1.314
+      },
+      {
+        "seed": 18,
+        "task_id": "task_sum_threshold_s518",
+        "family": "sum_threshold",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.375,
+          "fixed_rule": 1,
+          "random": 0.5
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3561
+      },
+      {
+        "seed": 19,
+        "task_id": "task_parity_s519",
+        "family": "parity",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.5416666666666666,
+          "fixed_rule": 0.5,
+          "random": 0.625
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3548
+      },
+      {
+        "seed": 20,
+        "task_id": "task_diff_threshold_s520",
+        "family": "diff_threshold",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.75,
+          "fixed_rule": 0.5416666666666666,
+          "random": 0.4583333333333333
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3549
+      },
+      {
+        "seed": 21,
+        "task_id": "task_mod_sum_s521",
+        "family": "mod_sum",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.6666666666666666,
+          "fixed_rule": 0.4166666666666667,
+          "random": 0.625
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 0.8312
+      },
+      {
+        "seed": 22,
+        "task_id": "task_coord_box_s522",
+        "family": "coord_box",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.625,
+          "fixed_rule": 0.75,
+          "random": 0.5833333333333334
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 0.8308
+      },
+      {
+        "seed": 23,
+        "task_id": "task_composed_and_s523",
+        "family": "composed_and",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.7083333333333334,
+          "fixed_rule": 0.8333333333333334,
+          "random": 0.5
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 1.3041
+      },
+      {
+        "seed": 24,
+        "task_id": "task_sum_threshold_s524",
+        "family": "sum_threshold",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.625,
+          "fixed_rule": 0.875,
+          "random": 0.4166666666666667
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3763
+      },
+      {
+        "seed": 25,
+        "task_id": "task_parity_s525",
+        "family": "parity",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.5833333333333334,
+          "fixed_rule": 0.5416666666666666,
+          "random": 0.5833333333333334
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3599
+      },
+      {
+        "seed": 26,
+        "task_id": "task_diff_threshold_s526",
+        "family": "diff_threshold",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.7083333333333334,
+          "fixed_rule": 0.4583333333333333,
+          "random": 0.20833333333333334
+        },
+        "learning_loop_triggered": false,
+        "runtime_ms": 0.3555
+      },
+      {
+        "seed": 27,
+        "task_id": "task_mod_sum_s527",
+        "family": "mod_sum",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.625,
+          "fixed_rule": 0.4166666666666667,
+          "random": 0.5
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 0.8356
+      },
+      {
+        "seed": 28,
+        "task_id": "task_coord_box_s528",
+        "family": "coord_box",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 0.9583333333333334,
+        "baselines": {
+          "majority": 0.75,
+          "fixed_rule": 0.75,
+          "random": 0.5
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 0.8299
+      },
+      {
+        "seed": 29,
+        "task_id": "task_composed_and_s529",
+        "family": "composed_and",
+        "passed": true,
+        "train_accuracy": 1,
+        "held_out_accuracy": 1,
+        "baselines": {
+          "majority": 0.625,
+          "fixed_rule": 0.6666666666666666,
+          "random": 0.5833333333333334
+        },
+        "learning_loop_triggered": true,
+        "runtime_ms": 1.3713
+      }
+    ]
+  },
+  "m11_skill_transfer_and_continual": {
+    "n_seeds": 30,
+    "direct_reuse_rate": 0.9333333333333333,
+    "mean_direct_reuse_accuracy": 1,
+    "compositional_transfer_rate": 0.9,
+    "compositional_transfer_accuracy": {
+      "skill_memory_composition": 0.9805555555555555,
+      "no_memory_single_primitive": 0.7652777777777777,
+      "majority_baseline": 0.7027777777777777,
+      "fixed_rule_baseline": 0.6930555555555555,
+      "random_baseline": 0.4875
+    },
+    "compositional_gain_over_baselines": {
+      "no_memory_single_primitive": 0.2152777777777778,
+      "majority_baseline": 0.2777777777777778,
+      "fixed_rule_baseline": 0.2875,
+      "random_baseline": 0.4930555555555555
+    },
+    "continual_learning": {
+      "mean_initial_accuracy": 0.9795138888888889,
+      "persistent_memory_retention_accuracy": 0.96875,
+      "reset_memory_ablation_accuracy": 0.6697916666666667,
+      "mean_forgetting_rate": 0.011458333333333329
+    },
+    "rows": [
+      {
+        "seed": 0,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": false,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": false,
+          "held_out_accuracy": 0.875,
+          "no_memory_single_primitive_accuracy": 0.875,
+          "majority_baseline_accuracy": 0.3333333333333333,
+          "fixed_rule_baseline_accuracy": 0.5416666666666666,
+          "random_baseline_accuracy": 0.375
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.9375,
+          "persistent_memory_retention_accuracy": 0.8645833333333334,
+          "reset_memory_ablation_accuracy": 0.6875,
+          "forgetting_rate": 0.07291666666666663,
+          "active_skills_count": 3
+        }
+      },
+      {
+        "seed": 1,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.6666666666666666,
+          "majority_baseline_accuracy": 0.75,
+          "fixed_rule_baseline_accuracy": 0.7916666666666666,
+          "random_baseline_accuracy": 0.5
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.96875,
+          "persistent_memory_retention_accuracy": 0.96875,
+          "reset_memory_ablation_accuracy": 0.6354166666666666,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 2,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.6666666666666666,
+          "majority_baseline_accuracy": 0.6666666666666666,
+          "fixed_rule_baseline_accuracy": 0.8333333333333334,
+          "random_baseline_accuracy": 0.4583333333333333
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.96875,
+          "persistent_memory_retention_accuracy": 0.96875,
+          "reset_memory_ablation_accuracy": 0.65625,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 3,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.875,
+          "majority_baseline_accuracy": 0.625,
+          "fixed_rule_baseline_accuracy": 0.7916666666666666,
+          "random_baseline_accuracy": 0.4583333333333333
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.9895833333333334,
+          "persistent_memory_retention_accuracy": 0.9895833333333334,
+          "reset_memory_ablation_accuracy": 0.6458333333333334,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 4,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.6666666666666666,
+          "majority_baseline_accuracy": 0.6666666666666666,
+          "fixed_rule_baseline_accuracy": 0.75,
+          "random_baseline_accuracy": 0.5416666666666666
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.9791666666666666,
+          "persistent_memory_retention_accuracy": 0.9791666666666666,
+          "reset_memory_ablation_accuracy": 0.7291666666666666,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 5,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.9166666666666666,
+          "majority_baseline_accuracy": 0.7916666666666666,
+          "fixed_rule_baseline_accuracy": 0.7083333333333334,
+          "random_baseline_accuracy": 0.4583333333333333
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.6979166666666666,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 6,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.75,
+          "majority_baseline_accuracy": 0.6666666666666666,
+          "fixed_rule_baseline_accuracy": 0.6666666666666666,
+          "random_baseline_accuracy": 0.375
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.96875,
+          "persistent_memory_retention_accuracy": 0.96875,
+          "reset_memory_ablation_accuracy": 0.6354166666666666,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 7,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.75,
+          "majority_baseline_accuracy": 0.75,
+          "fixed_rule_baseline_accuracy": 0.7916666666666666,
+          "random_baseline_accuracy": 0.5
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.90625,
+          "persistent_memory_retention_accuracy": 0.9166666666666666,
+          "reset_memory_ablation_accuracy": 0.59375,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 3
+        }
+      },
+      {
+        "seed": 8,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.7083333333333334,
+          "majority_baseline_accuracy": 0.875,
+          "fixed_rule_baseline_accuracy": 0.6666666666666666,
+          "random_baseline_accuracy": 0.5416666666666666
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.71875,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 9,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.75,
+          "majority_baseline_accuracy": 0.6666666666666666,
+          "fixed_rule_baseline_accuracy": 0.875,
+          "random_baseline_accuracy": 0.5
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.6875,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 10,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.75,
+          "majority_baseline_accuracy": 0.75,
+          "fixed_rule_baseline_accuracy": 0.7083333333333334,
+          "random_baseline_accuracy": 0.5833333333333334
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.7291666666666666,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 11,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.7916666666666666,
+          "majority_baseline_accuracy": 0.7916666666666666,
+          "fixed_rule_baseline_accuracy": 0.625,
+          "random_baseline_accuracy": 0.20833333333333334
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.9895833333333334,
+          "persistent_memory_retention_accuracy": 0.9895833333333334,
+          "reset_memory_ablation_accuracy": 0.6875,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 12,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.875,
+          "majority_baseline_accuracy": 0.6666666666666666,
+          "fixed_rule_baseline_accuracy": 0.5833333333333334,
+          "random_baseline_accuracy": 0.5416666666666666
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.9479166666666666,
+          "persistent_memory_retention_accuracy": 0.9166666666666666,
+          "reset_memory_ablation_accuracy": 0.5625,
+          "forgetting_rate": 0.03125,
+          "active_skills_count": 3
+        }
+      },
+      {
+        "seed": 13,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.8333333333333334,
+          "majority_baseline_accuracy": 0.7083333333333334,
+          "fixed_rule_baseline_accuracy": 0.7083333333333334,
+          "random_baseline_accuracy": 0.5833333333333334
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.7083333333333334,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 14,
+        "base_skills_acquired": 1,
+        "direct_reuse_succeeded": false,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": false,
+          "held_out_accuracy": 0.8333333333333334,
+          "no_memory_single_primitive_accuracy": 0.8333333333333334,
+          "majority_baseline_accuracy": 0.75,
+          "fixed_rule_baseline_accuracy": 0.75,
+          "random_baseline_accuracy": 0.5
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.6875,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 15,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.75,
+          "majority_baseline_accuracy": 0.6666666666666666,
+          "fixed_rule_baseline_accuracy": 0.7083333333333334,
+          "random_baseline_accuracy": 0.4583333333333333
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.6666666666666666,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 16,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.75,
+          "majority_baseline_accuracy": 0.7083333333333334,
+          "fixed_rule_baseline_accuracy": 0.7083333333333334,
+          "random_baseline_accuracy": 0.5
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.9895833333333334,
+          "persistent_memory_retention_accuracy": 0.9895833333333334,
+          "reset_memory_ablation_accuracy": 0.7395833333333334,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 17,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.875,
+          "majority_baseline_accuracy": 0.8333333333333334,
+          "fixed_rule_baseline_accuracy": 0.625,
+          "random_baseline_accuracy": 0.25
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.7083333333333334,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 18,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.625,
+          "majority_baseline_accuracy": 0.5833333333333334,
+          "fixed_rule_baseline_accuracy": 0.5833333333333334,
+          "random_baseline_accuracy": 0.4583333333333333
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.6770833333333334,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 19,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": false,
+          "held_out_accuracy": 0.7083333333333334,
+          "no_memory_single_primitive_accuracy": 0.7083333333333334,
+          "majority_baseline_accuracy": 0.5416666666666666,
+          "fixed_rule_baseline_accuracy": 0.7083333333333334,
+          "random_baseline_accuracy": 0.5416666666666666
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.6666666666666666,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 20,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.75,
+          "majority_baseline_accuracy": 0.8333333333333334,
+          "fixed_rule_baseline_accuracy": 0.5833333333333334,
+          "random_baseline_accuracy": 0.5
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.9583333333333334,
+          "persistent_memory_retention_accuracy": 0.96875,
+          "reset_memory_ablation_accuracy": 0.59375,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 3
+        }
+      },
+      {
+        "seed": 21,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.7916666666666666,
+          "majority_baseline_accuracy": 0.6666666666666666,
+          "fixed_rule_baseline_accuracy": 0.75,
+          "random_baseline_accuracy": 0.375
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.9583333333333334,
+          "persistent_memory_retention_accuracy": 0.9375,
+          "reset_memory_ablation_accuracy": 0.5729166666666666,
+          "forgetting_rate": 0.02083333333333337,
+          "active_skills_count": 3
+        }
+      },
+      {
+        "seed": 22,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.6666666666666666,
+          "majority_baseline_accuracy": 0.75,
+          "fixed_rule_baseline_accuracy": 0.5833333333333334,
+          "random_baseline_accuracy": 0.5416666666666666
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.65625,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 23,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.9583333333333334,
+          "majority_baseline_accuracy": 0.9583333333333334,
+          "fixed_rule_baseline_accuracy": 0.5833333333333334,
+          "random_baseline_accuracy": 0.6666666666666666
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.96875,
+          "persistent_memory_retention_accuracy": 0.96875,
+          "reset_memory_ablation_accuracy": 0.7291666666666667,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 24,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.875,
+          "majority_baseline_accuracy": 0.6666666666666666,
+          "fixed_rule_baseline_accuracy": 0.625,
+          "random_baseline_accuracy": 0.4583333333333333
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.90625,
+          "persistent_memory_retention_accuracy": 0.7395833333333334,
+          "reset_memory_ablation_accuracy": 0.5729166666666666,
+          "forgetting_rate": 0.16666666666666663,
+          "active_skills_count": 2
+        }
+      },
+      {
+        "seed": 25,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.6666666666666666,
+          "majority_baseline_accuracy": 0.7083333333333334,
+          "fixed_rule_baseline_accuracy": 0.7083333333333334,
+          "random_baseline_accuracy": 0.5
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.7083333333333334,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 26,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.7083333333333334,
+          "majority_baseline_accuracy": 0.5833333333333334,
+          "fixed_rule_baseline_accuracy": 0.7916666666666666,
+          "random_baseline_accuracy": 0.7083333333333334
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.6979166666666666,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 27,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.7083333333333334,
+          "majority_baseline_accuracy": 0.75,
+          "fixed_rule_baseline_accuracy": 0.6666666666666666,
+          "random_baseline_accuracy": 0.5833333333333334
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 0.9479166666666666,
+          "persistent_memory_retention_accuracy": 0.8958333333333334,
+          "reset_memory_ablation_accuracy": 0.6458333333333334,
+          "forgetting_rate": 0.05208333333333326,
+          "active_skills_count": 3
+        }
+      },
+      {
+        "seed": 28,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.75,
+          "majority_baseline_accuracy": 0.6666666666666666,
+          "fixed_rule_baseline_accuracy": 0.6666666666666666,
+          "random_baseline_accuracy": 0.4583333333333333
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.6458333333333334,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      },
+      {
+        "seed": 29,
+        "base_skills_acquired": 2,
+        "direct_reuse_succeeded": true,
+        "direct_reuse_accuracy": 1,
+        "compositional_transfer": {
+          "composed_skill_used": true,
+          "held_out_accuracy": 1,
+          "no_memory_single_primitive_accuracy": 0.6666666666666666,
+          "majority_baseline_accuracy": 0.7083333333333334,
+          "fixed_rule_baseline_accuracy": 0.7083333333333334,
+          "random_baseline_accuracy": 0.5
+        },
+        "continual_learning": {
+          "mean_initial_accuracy": 1,
+          "persistent_memory_retention_accuracy": 1,
+          "reset_memory_ablation_accuracy": 0.75,
+          "forgetting_rate": 0.0,
+          "active_skills_count": 4
+        }
+      }
+    ],
+    "limitations": [
+      "Skill composition is limited to pairwise conjunctions (sum_threshold AND parity) with matching 2D grid contracts.",
+      "Continual learning tasks come from stationary synthetic rule families on an 8x8 grid."
+    ]
+  },
+  "m12_guarded_self_improvement": {
+    "status": "promoted",
+    "promoted": true,
+    "active_version": 2,
+    "baseline_config": {
+      "version": 1,
+      "enable_learning_loop": false,
+      "complexity_weight": 0.02,
+      "reuse_bonus": 0.005,
+      "max_refinement_rounds": 1,
+      "description": "Baseline single-pass configuration without counterexample refinement"
+    },
+    "candidate_config": {
+      "version": 2,
+      "enable_learning_loop": true,
+      "complexity_weight": 0.01,
+      "reuse_bonus": 0.005,
+      "max_refinement_rounds": 2,
+      "description": "Enable 2-round counterexample refinement loop and balanced complexity weight"
+    },
+    "active_config": {
+      "version": 2,
+      "enable_learning_loop": true,
+      "complexity_weight": 0.01,
+      "reuse_bonus": 0.005,
+      "max_refinement_rounds": 2,
+      "description": "Enable 2-round counterexample refinement loop and balanced complexity weight"
+    },
+    "regression_gate": {
+      "n_tasks": 3,
+      "baseline_mean_accuracy": 0.9305555555555556,
+      "candidate_mean_accuracy": 0.9305555555555556,
+      "regression_drop": 0.0,
+      "passed": true
+    },
+    "held_out_gate": {
+      "n_seeds": 30,
+      "minimum_gain": 0.05,
+      "baseline_mean_accuracy": 0.8791666666666667,
+      "candidate_mean_accuracy": 0.9638888888888889,
+      "mean_paired_gain": 0.08472222222222225,
+      "baseline_task_pass_rate": 0.6666666666666666,
+      "candidate_task_pass_rate": 0.9,
+      "passed": true
+    },
+    "decision_reason": "regression suite passed (drop=0.0000) and held-out gain 0.0847 >= 0.0500",
+    "rows": [
+      {
+        "seed": 0,
+        "task_id": "heldout_sum_threshold_s0",
+        "family": "sum_threshold",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 1,
+        "task_id": "heldout_parity_s1",
+        "family": "parity",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 2,
+        "task_id": "heldout_diff_threshold_s2",
+        "family": "diff_threshold",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 3,
+        "task_id": "heldout_mod_sum_s3",
+        "family": "mod_sum",
+        "baseline_held_out_accuracy": 0.6666666666666666,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0.33333333333333337,
+        "baseline_passed": false,
+        "candidate_passed": true
+      },
+      {
+        "seed": 4,
+        "task_id": "heldout_coord_box_s4",
+        "family": "coord_box",
+        "baseline_held_out_accuracy": 0.8333333333333334,
+        "candidate_held_out_accuracy": 0.8333333333333334,
+        "paired_gain": 0.0,
+        "baseline_passed": false,
+        "candidate_passed": false
+      },
+      {
+        "seed": 5,
+        "task_id": "heldout_composed_and_s5",
+        "family": "composed_and",
+        "baseline_held_out_accuracy": 0.7916666666666666,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0.20833333333333337,
+        "baseline_passed": false,
+        "candidate_passed": true
+      },
+      {
+        "seed": 6,
+        "task_id": "heldout_sum_threshold_s6",
+        "family": "sum_threshold",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 7,
+        "task_id": "heldout_parity_s7",
+        "family": "parity",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 8,
+        "task_id": "heldout_diff_threshold_s8",
+        "family": "diff_threshold",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 9,
+        "task_id": "heldout_mod_sum_s9",
+        "family": "mod_sum",
+        "baseline_held_out_accuracy": 0.6666666666666666,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0.33333333333333337,
+        "baseline_passed": false,
+        "candidate_passed": true
+      },
+      {
+        "seed": 10,
+        "task_id": "heldout_coord_box_s10",
+        "family": "coord_box",
+        "baseline_held_out_accuracy": 0.9166666666666666,
+        "candidate_held_out_accuracy": 0.875,
+        "paired_gain": -0.04166666666666663,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 11,
+        "task_id": "heldout_composed_and_s11",
+        "family": "composed_and",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 12,
+        "task_id": "heldout_sum_threshold_s12",
+        "family": "sum_threshold",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 0.7083333333333334,
+        "paired_gain": -0.29166666666666663,
+        "baseline_passed": true,
+        "candidate_passed": false
+      },
+      {
+        "seed": 13,
+        "task_id": "heldout_parity_s13",
+        "family": "parity",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 14,
+        "task_id": "heldout_diff_threshold_s14",
+        "family": "diff_threshold",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 15,
+        "task_id": "heldout_mod_sum_s15",
+        "family": "mod_sum",
+        "baseline_held_out_accuracy": 0.625,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0.375,
+        "baseline_passed": false,
+        "candidate_passed": true
+      },
+      {
+        "seed": 16,
+        "task_id": "heldout_coord_box_s16",
+        "family": "coord_box",
+        "baseline_held_out_accuracy": 0.75,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0.25,
+        "baseline_passed": false,
+        "candidate_passed": true
+      },
+      {
+        "seed": 17,
+        "task_id": "heldout_composed_and_s17",
+        "family": "composed_and",
+        "baseline_held_out_accuracy": 0.875,
+        "candidate_held_out_accuracy": 0.875,
+        "paired_gain": 0.0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 18,
+        "task_id": "heldout_sum_threshold_s18",
+        "family": "sum_threshold",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 19,
+        "task_id": "heldout_parity_s19",
+        "family": "parity",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 20,
+        "task_id": "heldout_diff_threshold_s20",
+        "family": "diff_threshold",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 21,
+        "task_id": "heldout_mod_sum_s21",
+        "family": "mod_sum",
+        "baseline_held_out_accuracy": 0.375,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0.625,
+        "baseline_passed": false,
+        "candidate_passed": true
+      },
+      {
+        "seed": 22,
+        "task_id": "heldout_coord_box_s22",
+        "family": "coord_box",
+        "baseline_held_out_accuracy": 0.875,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0.125,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 23,
+        "task_id": "heldout_composed_and_s23",
+        "family": "composed_and",
+        "baseline_held_out_accuracy": 0.75,
+        "candidate_held_out_accuracy": 0.75,
+        "paired_gain": 0.0,
+        "baseline_passed": false,
+        "candidate_passed": false
+      },
+      {
+        "seed": 24,
+        "task_id": "heldout_sum_threshold_s24",
+        "family": "sum_threshold",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 25,
+        "task_id": "heldout_parity_s25",
+        "family": "parity",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 26,
+        "task_id": "heldout_diff_threshold_s26",
+        "family": "diff_threshold",
+        "baseline_held_out_accuracy": 0.875,
+        "candidate_held_out_accuracy": 0.875,
+        "paired_gain": 0.0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      },
+      {
+        "seed": 27,
+        "task_id": "heldout_mod_sum_s27",
+        "family": "mod_sum",
+        "baseline_held_out_accuracy": 0.5,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0.5,
+        "baseline_passed": false,
+        "candidate_passed": true
+      },
+      {
+        "seed": 28,
+        "task_id": "heldout_coord_box_s28",
+        "family": "coord_box",
+        "baseline_held_out_accuracy": 0.875,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0.125,
+        "baseline_passed": false,
+        "candidate_passed": true
+      },
+      {
+        "seed": 29,
+        "task_id": "heldout_composed_and_s29",
+        "family": "composed_and",
+        "baseline_held_out_accuracy": 1,
+        "candidate_held_out_accuracy": 1,
+        "paired_gain": 0,
+        "baseline_passed": true,
+        "candidate_passed": true
+      }
+    ],
+    "limitations": [
+      "Self-improvement is strictly limited to allow-listed PrototypeConfig parameters.",
+      "Program source code is never generated, modified, or executed dynamically.",
+      "Promotion is gated by deterministic regression checks and disjoint held-out tasks."
+    ]
+  },
+  "limitations": [
+    "All evaluations operate on synthetic 8x8 discrete grid rule families.",
+    "Results validate the software architecture, bounded hypothesis search, skill reuse, and promotion gates\u2014not general intelligence."
+  ]
+}

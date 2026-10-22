@@ -1,0 +1,330 @@
+{
+  "total_skill_lineages": 4,
+  "total_versions": 4,
+  "active_skills": 4,
+  "quarantined_skills": 0,
+  "rolled_back_skills": 0,
+  "skills": [
+    {
+      "skill_id": "skill_sum_threshold_threshold6",
+      "name": "sum_threshold(threshold6)",
+      "version": 1,
+      "purpose": "Verified rule for sum_threshold with parameters {'threshold': 6}",
+      "family": "sum_threshold",
+      "action_name": "predict_sum_threshold",
+      "parameters": {
+        "threshold": 6
+      },
+      "contract": {
+        "input_schema": {
+          "x": "int[0,7]",
+          "y": "int[0,7]"
+        },
+        "preconditions": [
+          "0 <= x <= 7",
+          "0 <= y <= 7"
+        ],
+        "output_schema": "int{0,1}"
+      },
+      "unit_tests": [
+        {
+          "x": 7,
+          "y": 5,
+          "label": 1
+        },
+        {
+          "x": 6,
+          "y": 2,
+          "label": 1
+        },
+        {
+          "x": 5,
+          "y": 4,
+          "label": 1
+        },
+        {
+          "x": 5,
+          "y": 2,
+          "label": 1
+        },
+        {
+          "x": 6,
+          "y": 5,
+          "label": 1
+        },
+        {
+          "x": 5,
+          "y": 3,
+          "label": 1
+        },
+        {
+          "x": 6,
+          "y": 0,
+          "label": 1
+        },
+        {
+          "x": 4,
+          "y": 2,
+          "label": 1
+        }
+      ],
+      "validation_metrics": {
+        "train_accuracy": 1,
+        "held_out_accuracy": 1
+      },
+      "status": "active",
+      "usage_count": 2,
+      "success_count": 2,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "parent_version": null,
+      "component_skills": [],
+      "known_limitations": [
+        "Bounded to discrete 8x8 integer coordinate grid.",
+        "Rule is deterministic and does not adapt online without explicit re-selection."
+      ]
+    },
+    {
+      "skill_id": "skill_parity_parity0",
+      "name": "parity(parity0)",
+      "version": 1,
+      "purpose": "Verified rule for parity with parameters {'parity': 0}",
+      "family": "parity",
+      "action_name": "predict_parity",
+      "parameters": {
+        "parity": 0
+      },
+      "contract": {
+        "input_schema": {
+          "x": "int[0,7]",
+          "y": "int[0,7]"
+        },
+        "preconditions": [
+          "0 <= x <= 7",
+          "0 <= y <= 7"
+        ],
+        "output_schema": "int{0,1}"
+      },
+      "unit_tests": [
+        {
+          "x": 3,
+          "y": 5,
+          "label": 1
+        },
+        {
+          "x": 5,
+          "y": 6,
+          "label": 0
+        },
+        {
+          "x": 1,
+          "y": 7,
+          "label": 1
+        },
+        {
+          "x": 7,
+          "y": 4,
+          "label": 0
+        },
+        {
+          "x": 3,
+          "y": 0,
+          "label": 0
+        },
+        {
+          "x": 5,
+          "y": 4,
+          "label": 0
+        },
+        {
+          "x": 4,
+          "y": 3,
+          "label": 0
+        },
+        {
+          "x": 6,
+          "y": 2,
+          "label": 1
+        }
+      ],
+      "validation_metrics": {
+        "train_accuracy": 1,
+        "held_out_accuracy": 1
+      },
+      "status": "active",
+      "usage_count": 1,
+      "success_count": 1,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "parent_version": null,
+      "component_skills": [],
+      "known_limitations": [
+        "Bounded to discrete 8x8 integer coordinate grid.",
+        "Rule is deterministic and does not adapt online without explicit re-selection."
+      ]
+    },
+    {
+      "skill_id": "skill_composed_and_parity0_threshold6",
+      "name": "composed_and(parity0_threshold6)",
+      "version": 1,
+      "purpose": "Verified rule for composed_and with parameters {'threshold': 6, 'parity': 0}",
+      "family": "composed_and",
+      "action_name": "predict_composed",
+      "parameters": {
+        "threshold": 6,
+        "parity": 0
+      },
+      "contract": {
+        "input_schema": {
+          "x": "int[0,7]",
+          "y": "int[0,7]"
+        },
+        "preconditions": [
+          "0 <= x <= 7",
+          "0 <= y <= 7"
+        ],
+        "output_schema": "int{0,1}"
+      },
+      "unit_tests": [
+        {
+          "x": 7,
+          "y": 2,
+          "label": 0
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "label": 0
+        },
+        {
+          "x": 5,
+          "y": 6,
+          "label": 0
+        },
+        {
+          "x": 0,
+          "y": 0,
+          "label": 0
+        },
+        {
+          "x": 1,
+          "y": 7,
+          "label": 1
+        },
+        {
+          "x": 2,
+          "y": 5,
+          "label": 0
+        },
+        {
+          "x": 3,
+          "y": 1,
+          "label": 0
+        },
+        {
+          "x": 5,
+          "y": 3,
+          "label": 1
+        }
+      ],
+      "validation_metrics": {
+        "train_accuracy": 1,
+        "held_out_accuracy": 1
+      },
+      "status": "active",
+      "usage_count": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "parent_version": null,
+      "component_skills": [
+        "skill_sum_threshold_threshold6@v1",
+        "skill_parity_parity0@v1"
+      ],
+      "known_limitations": [
+        "Bounded to discrete 8x8 integer coordinate grid.",
+        "Rule is deterministic and does not adapt online without explicit re-selection."
+      ]
+    },
+    {
+      "skill_id": "skill_mod_sum_modulus3_remainder1",
+      "name": "mod_sum(modulus3_remainder1)",
+      "version": 1,
+      "purpose": "Verified rule for mod_sum with parameters {'modulus': 3, 'remainder': 1}",
+      "family": "mod_sum",
+      "action_name": "predict_mod_sum",
+      "parameters": {
+        "modulus": 3,
+        "remainder": 1
+      },
+      "contract": {
+        "input_schema": {
+          "x": "int[0,7]",
+          "y": "int[0,7]"
+        },
+        "preconditions": [
+          "0 <= x <= 7",
+          "0 <= y <= 7"
+        ],
+        "output_schema": "int{0,1}"
+      },
+      "unit_tests": [
+        {
+          "x": 4,
+          "y": 0,
+          "label": 1
+        },
+        {
+          "x": 4,
+          "y": 4,
+          "label": 0
+        },
+        {
+          "x": 0,
+          "y": 2,
+          "label": 0
+        },
+        {
+          "x": 2,
+          "y": 0,
+          "label": 0
+        },
+        {
+          "x": 5,
+          "y": 1,
+          "label": 0
+        },
+        {
+          "x": 7,
+          "y": 3,
+          "label": 1
+        },
+        {
+          "x": 2,
+          "y": 3,
+          "label": 0
+        },
+        {
+          "x": 2,
+          "y": 1,
+          "label": 0
+        }
+      ],
+      "validation_metrics": {
+        "train_accuracy": 1,
+        "held_out_accuracy": 1
+      },
+      "status": "active",
+      "usage_count": 0,
+      "success_count": 0,
+      "failure_count": 0,
+      "success_rate": 1.0,
+      "parent_version": null,
+      "component_skills": [],
+      "known_limitations": [
+        "Bounded to discrete 8x8 integer coordinate grid.",
+        "Rule is deterministic and does not adapt online without explicit re-selection."
+      ]
+    }
+  ]
+}
