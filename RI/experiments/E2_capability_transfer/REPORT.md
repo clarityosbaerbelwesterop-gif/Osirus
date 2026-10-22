@@ -1,28 +1,27 @@
-# E2 Initial Report — M3 Capability Transfer
+# E2 Report — operational capability ablation
 
 ## Status
+- Revised experiment source: committed in this revision.
+- Execution status: **pending external execution** unless a CI or local run is attached.
+- Scientific status: no conclusion yet.
 
-**Implementation status:** initial prototype source drafted.  
-**Execution status:** not yet verified in the repository runtime by this commit.  
-**Scientific conclusion:** none. The current implementation is not evidence of autonomous intelligence or genuine capability transfer.
+## Design change
+The prior prototype recorded a generic capability but did not let it affect the transfer agent's choices. This revision makes the stored procedure operational: it selects unseen candidates first, then balances tests across the least-tested candidates. The ablation uses random sampling instead. Both policies receive the same task interface and query budget; the target is held only by the evaluator/environment.
 
-## Critical design review
+## What this does and does not test
+It tests whether a reusable experimental procedure can improve performance over a random policy in a small noisy binary task. It does **not** yet show autonomous acquisition of the procedure, transfer between semantically different domains, composition of capabilities, or general intelligence. The procedure is still hand-specified. A result must not be described as a new intelligence principle.
 
-This prototype is intentionally small, but it is not yet a valid demonstration of capability transfer. The current evaluator changes the target feature between environments, and the transfer agent resets its feature scores. The exported capability currently records a generic procedure and evidence but does not directly control the agent's decision process. Consequently, successful predictions may reflect relearning from environment B rather than transfer from environment A.
+## Reproducibility
+Run:
+```bash
+python -m unittest -v
+python evaluate.py --seeds 0 1 2 3 4 5 6 7 8 9 --budget 4 --noise 0.15
+```
+Raw rows are written to `results/results.json`. The evaluator target appears in output for audit after evaluation, but is never passed to the agent. Never inspect results and then change thresholds while reporting the same run as confirmatory.
 
-This limitation is explicit rather than hidden. Before any claim of transfer, implement and compare:
-1. a transfer agent that genuinely invokes the acquired intervention procedure;
-2. a reset/no-transfer agent;
-3. a random-action baseline;
-4. a fixed-sequence baseline;
-5. an ablation whose capability procedure is disabled;
-6. a blinded evaluator with no ground-truth leakage;
-7. multiple independently generated task families and held-out seeds.
-
-## Required next correction
-
-The next iteration must make capability use causally relevant: disabling the stored procedure should measurably affect action selection or learning efficiency under a preregistered evaluation. If it does not, the capability abstraction has not earned its complexity.
-
-## Interpretation
-
-The value of this milestone is an executable starting point and a clear falsification target, not a positive scientific result.
+## Next research gate
+1. Actually execute tests and evaluation.
+2. Add a fixed-sequence baseline and report paired outcomes across enough seeds.
+3. Add at least a second task family with different surface encoding.
+4. Only then test whether the procedure is acquired from experience rather than hand-installed.
+5. If the capability ablation is not reliably better, report non-support and redesign or reject the mechanism.
