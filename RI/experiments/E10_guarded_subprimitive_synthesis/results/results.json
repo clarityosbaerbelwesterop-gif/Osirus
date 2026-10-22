@@ -1,5 +1,5 @@
 {
-  "commit_hash": "abf1fad89f61d2b1640f8b3b2d0dcf38153e2841",
+  "commit_hash": "751ccf1272e0a98128de870e98c908567c4ec59a",
   "experiment_version": "M17.E10.v1",
   "execution_status": "completed",
   "n_seeds": 30,
@@ -151,7 +151,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 1.0,
-        "mean_runtime_ms_per_seed": 74.0969
+        "mean_runtime_ms_per_seed": 73.4458
       }
     },
     "m16_unchanged_grammar": {
@@ -248,7 +248,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 0.0,
-        "mean_runtime_ms_per_seed": 49.6915
+        "mean_runtime_ms_per_seed": 49.1477
       }
     },
     "enumerative_no_skill_memory": {
@@ -345,7 +345,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 0.0,
-        "mean_runtime_ms_per_seed": 56.6296
+        "mean_runtime_ms_per_seed": 55.7433
       }
     },
     "synthesis_no_validation_guard": {
@@ -442,7 +442,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 0.9,
-        "mean_runtime_ms_per_seed": 76.022
+        "mean_runtime_ms_per_seed": 75.2765
       }
     },
     "synthesis_no_adversarial_checks": {
@@ -539,7 +539,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 1.0,
-        "mean_runtime_ms_per_seed": 53.9287
+        "mean_runtime_ms_per_seed": 53.3998
       }
     },
     "random_or_majority_reference": {
@@ -636,7 +636,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 0.0,
-        "mean_runtime_ms_per_seed": 0.9227
+        "mean_runtime_ms_per_seed": 0.8934
       }
     }
   },
@@ -914,7 +914,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 82.8347
+          "runtime_ms": 82.0847
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -973,7 +973,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.1945
+          "runtime_ms": 48.4598
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -1032,7 +1032,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 55.852
+          "runtime_ms": 55.4477
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -1093,7 +1093,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.1639
+          "runtime_ms": 71.8544
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -1152,7 +1152,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 54.952
+          "runtime_ms": 53.1251
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -1208,7 +1208,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.919
+          "runtime_ms": 0.9115
         }
       }
     },
@@ -1328,7 +1328,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.5289
+          "runtime_ms": 72.8132
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -1387,7 +1387,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 50.1935
+          "runtime_ms": 48.6994
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -1448,7 +1448,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 57.1025
+          "runtime_ms": 56.3852
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -1509,7 +1509,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.2948
+          "runtime_ms": 72.2055
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -1568,7 +1568,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.4514
+          "runtime_ms": 53.4869
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -1624,7 +1624,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8768
+          "runtime_ms": 0.88
         }
       }
     },
@@ -1743,7 +1743,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.6852
+          "runtime_ms": 72.8301
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -1802,7 +1802,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.4574
+          "runtime_ms": 49.2811
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -1863,7 +1863,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 60.7928
+          "runtime_ms": 55.975
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -1924,7 +1924,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 84.4173
+          "runtime_ms": 83.706
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -1987,7 +1987,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 53.3757
+          "runtime_ms": 53.1668
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -2043,7 +2043,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8916
+          "runtime_ms": 0.8994
         }
       }
     },
@@ -2165,7 +2165,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.0738
+          "runtime_ms": 71.4209
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -2224,7 +2224,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.1207
+          "runtime_ms": 48.8908
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -2283,7 +2283,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 55.5885
+          "runtime_ms": 54.7706
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -2344,7 +2344,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 71.9992
+          "runtime_ms": 71.9523
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -2403,7 +2403,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 52.9446
+          "runtime_ms": 52.9024
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -2459,7 +2459,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9147
+          "runtime_ms": 0.9118
         }
       }
     },
@@ -2578,7 +2578,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 74.1844
+          "runtime_ms": 73.4917
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -2637,7 +2637,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.8528
+          "runtime_ms": 49.7324
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -2696,7 +2696,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 57.4464
+          "runtime_ms": 57.1447
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -2759,7 +2759,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 83.3985
+          "runtime_ms": 83.1524
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -2818,7 +2818,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 54.3505
+          "runtime_ms": 54.1423
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -2874,7 +2874,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8969
+          "runtime_ms": 0.8699
         }
       }
     },
@@ -2994,7 +2994,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.7762
+          "runtime_ms": 73.4497
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -3053,7 +3053,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.5017
+          "runtime_ms": 49.2569
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -3112,7 +3112,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 53.4757
+          "runtime_ms": 53.3205
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -3171,7 +3171,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 73.4634
+          "runtime_ms": 73.482
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -3234,7 +3234,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 53.5535
+          "runtime_ms": 53.4417
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -3290,7 +3290,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8948
+          "runtime_ms": 0.8804
         }
       }
     },
@@ -3411,7 +3411,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.4151
+          "runtime_ms": 72.0803
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -3470,7 +3470,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.1807
+          "runtime_ms": 48.6884
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -3531,7 +3531,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 55.7397
+          "runtime_ms": 55.1642
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -3592,7 +3592,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.3426
+          "runtime_ms": 71.865
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -3651,7 +3651,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.144
+          "runtime_ms": 53.0382
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -3707,7 +3707,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8871
+          "runtime_ms": 0.8941
         }
       }
     },
@@ -3827,7 +3827,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.4189
+          "runtime_ms": 72.9496
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -3886,7 +3886,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 50.0185
+          "runtime_ms": 49.3447
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -3945,7 +3945,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 56.2446
+          "runtime_ms": 56.2627
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -4008,7 +4008,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 84.3009
+          "runtime_ms": 82.3043
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -4067,7 +4067,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.8944
+          "runtime_ms": 53.6397
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -4123,7 +4123,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9195
+          "runtime_ms": 0.8807
         }
       }
     },
@@ -4242,7 +4242,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.1412
+          "runtime_ms": 72.9681
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -4301,7 +4301,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.5293
+          "runtime_ms": 49.5168
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -4360,7 +4360,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 57.1744
+          "runtime_ms": 56.3335
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -4419,7 +4419,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 77.0564
+          "runtime_ms": 73.8812
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -4482,7 +4482,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 54.328
+          "runtime_ms": 53.278
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -4538,7 +4538,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9466
+          "runtime_ms": 0.9032
         }
       }
     },
@@ -4660,7 +4660,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.0285
+          "runtime_ms": 72.5066
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -4719,7 +4719,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.2202
+          "runtime_ms": 48.8643
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -4780,7 +4780,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 55.8907
+          "runtime_ms": 55.2312
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -4841,7 +4841,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.5589
+          "runtime_ms": 72.3909
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -4900,7 +4900,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.4324
+          "runtime_ms": 53.3555
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -4956,7 +4956,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9005
+          "runtime_ms": 0.8997
         }
       }
     },
@@ -5075,7 +5075,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.0303
+          "runtime_ms": 73.3929
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -5134,7 +5134,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 50.967
+          "runtime_ms": 49.2141
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -5193,7 +5193,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 54.0279
+          "runtime_ms": 53.4899
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -5254,7 +5254,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.105
+          "runtime_ms": 72.3909
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -5313,7 +5313,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.83
+          "runtime_ms": 53.7626
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -5369,7 +5369,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9194
+          "runtime_ms": 0.9135
         }
       }
     },
@@ -5489,7 +5489,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.6803
+          "runtime_ms": 73.3892
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -5548,7 +5548,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.8977
+          "runtime_ms": 49.1446
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -5607,7 +5607,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 57.0812
+          "runtime_ms": 56.367
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -5666,7 +5666,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 73.975
+          "runtime_ms": 73.3259
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -5729,7 +5729,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 53.8376
+          "runtime_ms": 53.3801
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -5785,7 +5785,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9028
+          "runtime_ms": 0.8919
         }
       }
     },
@@ -5906,7 +5906,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.1483
+          "runtime_ms": 71.7817
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -5965,7 +5965,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.1692
+          "runtime_ms": 48.7925
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -6024,7 +6024,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 61.9565
+          "runtime_ms": 58.5704
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -6085,7 +6085,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.2956
+          "runtime_ms": 72.0516
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -6144,7 +6144,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.2129
+          "runtime_ms": 52.9059
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -6200,7 +6200,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8833
+          "runtime_ms": 0.8653
         }
       }
     },
@@ -6320,7 +6320,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.6207
+          "runtime_ms": 73.2235
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -6379,7 +6379,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.4464
+          "runtime_ms": 49.4331
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -6440,7 +6440,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 57.3374
+          "runtime_ms": 56.6079
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -6501,7 +6501,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.7166
+          "runtime_ms": 73.3057
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -6560,7 +6560,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 54.3073
+          "runtime_ms": 53.6932
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -6616,7 +6616,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9864
+          "runtime_ms": 0.8936
         }
       }
     },
@@ -6735,7 +6735,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.8935
+          "runtime_ms": 72.8559
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -6794,7 +6794,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.8329
+          "runtime_ms": 49.3472
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -6855,7 +6855,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 57.189
+          "runtime_ms": 56.1866
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -6914,7 +6914,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 73.7493
+          "runtime_ms": 73.2989
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -6977,7 +6977,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 56.4375
+          "runtime_ms": 53.2319
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -7033,7 +7033,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9071
+          "runtime_ms": 0.8881
         }
       }
     },
@@ -7155,7 +7155,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.6213
+          "runtime_ms": 71.8647
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -7214,7 +7214,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.164
+          "runtime_ms": 48.9719
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -7273,7 +7273,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 55.5912
+          "runtime_ms": 55.4481
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -7334,7 +7334,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.3487
+          "runtime_ms": 71.7425
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -7393,7 +7393,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.4268
+          "runtime_ms": 53.0436
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -7449,7 +7449,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9305
+          "runtime_ms": 0.9153
         }
       }
     },
@@ -7568,7 +7568,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.9395
+          "runtime_ms": 73.528
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -7627,7 +7627,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.7201
+          "runtime_ms": 49.5066
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -7686,7 +7686,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 57.9431
+          "runtime_ms": 56.9536
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -7751,7 +7751,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 81.4034
+          "runtime_ms": 82.2775
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -7810,7 +7810,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 55.2625
+          "runtime_ms": 54.0255
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -7866,7 +7866,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9155
+          "runtime_ms": 0.9146
         }
       }
     },
@@ -7986,7 +7986,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.6251
+          "runtime_ms": 73.0178
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -8045,7 +8045,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.6191
+          "runtime_ms": 48.7552
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -8106,7 +8106,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 56.5129
+          "runtime_ms": 56.1193
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -8165,7 +8165,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 73.5279
+          "runtime_ms": 72.8535
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -8228,7 +8228,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 53.4105
+          "runtime_ms": 53.2495
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -8284,7 +8284,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 1.1421
+          "runtime_ms": 0.8852
         }
       }
     },
@@ -8410,7 +8410,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 83.605
+          "runtime_ms": 82.2707
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -8469,7 +8469,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.0669
+          "runtime_ms": 48.9538
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -8530,7 +8530,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 55.9525
+          "runtime_ms": 55.0254
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -8594,7 +8594,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 83.3794
+          "runtime_ms": 82.7779
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -8658,7 +8658,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 54.1573
+          "runtime_ms": 53.6622
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -8714,7 +8714,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.909
+          "runtime_ms": 0.8765
         }
       }
     },
@@ -8834,7 +8834,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.8209
+          "runtime_ms": 72.4701
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -8893,7 +8893,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.3781
+          "runtime_ms": 48.8286
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -8952,7 +8952,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 57.1228
+          "runtime_ms": 56.9154
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -9017,7 +9017,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 80.5451
+          "runtime_ms": 79.9409
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -9076,7 +9076,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.8672
+          "runtime_ms": 53.3998
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -9132,7 +9132,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9062
+          "runtime_ms": 0.8995
         }
       }
     },
@@ -9251,7 +9251,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 74.239
+          "runtime_ms": 73.1834
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -9310,7 +9310,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.7542
+          "runtime_ms": 49.2537
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -9369,7 +9369,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 57.4433
+          "runtime_ms": 56.2145
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -9428,7 +9428,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 74.6434
+          "runtime_ms": 74.0531
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -9491,7 +9491,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 53.7558
+          "runtime_ms": 53.476
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -9547,7 +9547,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8859
+          "runtime_ms": 0.8903
         }
       }
     },
@@ -9669,7 +9669,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 74.2895
+          "runtime_ms": 72.2632
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -9728,7 +9728,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.5306
+          "runtime_ms": 49.3291
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -9789,7 +9789,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 55.9563
+          "runtime_ms": 55.3204
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -9850,7 +9850,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.084
+          "runtime_ms": 72.3563
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -9909,7 +9909,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.2461
+          "runtime_ms": 53.0546
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -9965,7 +9965,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9237
+          "runtime_ms": 0.9218
         }
       }
     },
@@ -10084,7 +10084,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.5228
+          "runtime_ms": 72.7763
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -10143,7 +10143,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.6234
+          "runtime_ms": 49.2856
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -10202,7 +10202,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 53.9411
+          "runtime_ms": 53.723
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -10263,7 +10263,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 72.8747
+          "runtime_ms": 72.9738
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -10322,7 +10322,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.9386
+          "runtime_ms": 53.4036
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -10378,7 +10378,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8837
+          "runtime_ms": 0.8807
         }
       }
     },
@@ -10498,7 +10498,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.4095
+          "runtime_ms": 73.238
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -10557,7 +10557,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.7652
+          "runtime_ms": 49.1962
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -10616,7 +10616,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 56.5506
+          "runtime_ms": 55.9055
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -10675,7 +10675,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 74.2152
+          "runtime_ms": 73.5334
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -10738,7 +10738,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 53.9101
+          "runtime_ms": 53.7501
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -10794,7 +10794,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8937
+          "runtime_ms": 0.8861
         }
       }
     },
@@ -10915,7 +10915,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 75.2208
+          "runtime_ms": 73.0435
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -10974,7 +10974,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.6511
+          "runtime_ms": 49.079
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -11035,7 +11035,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 56.7256
+          "runtime_ms": 55.444
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -11096,7 +11096,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.0306
+          "runtime_ms": 72.4622
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -11155,7 +11155,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.5846
+          "runtime_ms": 52.9109
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -11211,7 +11211,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 1.116
+          "runtime_ms": 0.8929
         }
       }
     },
@@ -11331,7 +11331,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 74.0763
+          "runtime_ms": 73.068
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -11390,7 +11390,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.6936
+          "runtime_ms": 49.2018
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -11451,7 +11451,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 56.9549
+          "runtime_ms": 56.8044
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -11517,7 +11517,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 80.1464
+          "runtime_ms": 79.7183
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -11576,7 +11576,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 54.4227
+          "runtime_ms": 53.5731
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -11632,7 +11632,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8993
+          "runtime_ms": 0.8838
         }
       }
     },
@@ -11751,7 +11751,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.9719
+          "runtime_ms": 72.9899
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -11810,7 +11810,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.8345
+          "runtime_ms": 49.1125
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -11869,7 +11869,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 55.6957
+          "runtime_ms": 52.9777
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -11928,7 +11928,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 78.0126
+          "runtime_ms": 73.2153
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -11991,7 +11991,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 54.4954
+          "runtime_ms": 53.4047
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -12047,7 +12047,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9193
+          "runtime_ms": 0.8914
         }
       }
     },
@@ -12169,7 +12169,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.4943
+          "runtime_ms": 72.2538
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -12228,7 +12228,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 51.8249
+          "runtime_ms": 48.9878
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -12289,7 +12289,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 55.8085
+          "runtime_ms": 55.3845
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -12352,7 +12352,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 84.0314
+          "runtime_ms": 82.6669
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -12411,7 +12411,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 53.5156
+          "runtime_ms": 53.2525
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -12467,7 +12467,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.9274
+          "runtime_ms": 0.9032
         }
       }
     },
@@ -12586,7 +12586,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.3314
+          "runtime_ms": 72.6738
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -12645,7 +12645,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.6645
+          "runtime_ms": 49.58
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -12704,7 +12704,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 57.1909
+          "runtime_ms": 56.7186
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -12765,7 +12765,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.3392
+          "runtime_ms": 72.7064
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -12824,7 +12824,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 54.0339
+          "runtime_ms": 53.5678
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -12880,7 +12880,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8884
+          "runtime_ms": 0.8806
         }
       }
     },
@@ -13000,7 +13000,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 73.2796
+          "runtime_ms": 73.4934
         },
         "m16_unchanged_grammar": {
           "tasks": {
@@ -13059,7 +13059,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 2,
-          "runtime_ms": 49.8722
+          "runtime_ms": 49.7241
         },
         "enumerative_no_skill_memory": {
           "tasks": {
@@ -13120,7 +13120,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 56.598
+          "runtime_ms": 56.0885
         },
         "synthesis_no_validation_guard": {
           "tasks": {
@@ -13179,7 +13179,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 4,
-          "runtime_ms": 74.2406
+          "runtime_ms": 73.8501
         },
         "synthesis_no_adversarial_checks": {
           "tasks": {
@@ -13242,7 +13242,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": true,
           "active_skills_count": 3,
-          "runtime_ms": 53.7814
+          "runtime_ms": 53.6708
         },
         "random_or_majority_reference": {
           "tasks": {
@@ -13298,7 +13298,7 @@
           "regression_drop_after_sequence": 0.0,
           "rollback_drill_passed": false,
           "active_skills_count": 0,
-          "runtime_ms": 0.8944
+          "runtime_ms": 0.8978
         }
       }
     }

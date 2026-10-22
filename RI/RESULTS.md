@@ -25,6 +25,7 @@
 | **E8** (`E8_rule_discovery`) | M9 | `12/12` OK | Family selection: `1.0000`, Exact rule: `0.8667`, Held-out acc: `0.9833` | Held-out acc — `majority`: `0.5611`, `fixed_threshold`: `0.6667`, `random_hypothesis`: `0.7250` | **Positive (bounded):** Selects the true family on `30/30` seeds (`17` `sum_threshold`, `13` `parity`); `threshold_tie_rate = 0.1333` (`4/30` seeds) explains the `0.9833` vs `1.0` gap. |
 | **E9** (`E9_heldout_rule_generalization`) | M16 | `11/11` OK | Identifiable Held-out acc: `0.9938 ± 0.0055`, Exact rule: `0.9222 ± 0.0556`, C2 Abstention: `0.9667` | `ri_no_skill_memory`: `0.9676`, `ri_no_compositional`: `0.9123`, `bounded_enumerative_search`: `0.8324`, `supervised_reference`: `0.6114`, `majority_prior`: `0.4873`, `random_hypothesis`: `0.4802` | **Positive (bounded relational) + Honest Boundary:** Generalizes across unseen operator combinations (`A`: `0.9815`), object-count scaling \(N \in [3..5] \to [9..11]\) (`B`: `1.0000`), and held-out pairwise rules (`C1`: `1.0000`), while flagging unidentifiable out-of-grammar rules (`C2`) on `29/30` seeds. |
 | **E10** (`E10_guarded_subprimitive_synthesis`) | M17 | `11/11` OK | Valid (A+B) Held-out acc: `0.9958 [0.9910, 1.0000]`, Family A Exact Recovery: `1.0000`, Family B Composition Recovery: `0.9000`, Family C False Promotion: `0.0000` | `m16_unchanged_grammar`: `0.7134` (`0.0000` rec), `enumerative_no_skill_memory`: `0.9134` (`0.0000` B-comp, `1.0000` false prom), `synthesis_no_validation_guard`: `0.9296` (`0.3333` false prom), `synthesis_no_adversarial_checks`: `0.9958` (`0.6667` false prom), `random_or_majority_reference`: `0.5000` | **Positive (guarded DSL synthesis):** Synthesizes missing relational primitives (`30/30`), composes them with existing skills (`27/30`), and quarantines `30/30` adversarial traps (`0%` false promotion, `0%` regression). |
+| **E11** (`E11_active_disambiguation`) | M18 | `15/15` OK | Identifiable Rule ID: `1.0000` (`75/75`), Held-out acc: `1.0000`, Unidentifiable Abstention: `1.0000` (`45/45`), Equivalence Handling: `1.0000` (`30/30`), False Promotion: `0.0000` (`0/150`) | `random_intervention`: `0.3867` ID, `fixed_heuristic`: `0.0000` ID, `no_active_selection`: `0.0000` ID, `no_equivalence_check`: `0.4000` ID (`0.0000` equiv), `no_m17_guard`: `0.4000` (`60/150`) false prom, `oracle_upper_bound`: `1.0000` ID (`0.77` steps) | **Positive (active experimental disambiguation):** Resolves 4-way confounded hypotheses in `2.0` interventions (`1.0` bit/step), handles single-flip noise (`15/15` on `B1`) and contradictory noise (`15/15` abstention on `B2`), detects equivalence (`30/30`), and stops in `0.0` interventions when no distinguishing experiment exists (`30/30` on `D`). |
 
 ---
 
@@ -168,6 +169,27 @@ Artifacts:
   - `synthesis_no_validation_guard`: Valid (`A+B`) accuracy `0.9296`, Family A exact recovery `0.8333`, Family B exact recovery `0.5667`, Family C false promotion rate **`0.3333`** (`10/30` — promotes all Trap 2 training-overfit rules).
   - `synthesis_no_adversarial_checks`: Valid (`A+B`) accuracy `0.9958`, Family C false promotion rate **`0.6667`** (`20/30` — promotes all Trap 0 positional-shortcut rules and Trap 1 confounded-twin rules).
   - `random_or_majority_reference`: Valid (`A+B`) accuracy `0.5000`, exact recovery `0.0000`.
+
+### 4.9 M18 (`E11_active_disambiguation`) — Active Disambiguation & Experimental Intervention (30 Seeds, 150 Tasks + 150 Locked Regression Tasks)
+Artifacts:
+- `RI/experiments/E11_active_disambiguation/results/results.json`
+- `RI/results/m18_summary.json`
+- `RI/results/m18_ablation_results.json`
+
+- **`ri_full` (Active Disambiguation + Equivalence Check + Corroborated Uncertainty + M17 Guard):**
+  - Identifiable tasks (`A`, `B1`, `E`) exact rule identification rate: **`1.0000 [1.0000, 1.0000]`** (`75/75`), held-out accuracy: **`1.0000 [1.0000, 1.0000]`**.
+  - Unidentifiable / contradictory tasks (`D`, `B2`) abstention rate: **`1.0000 [1.0000, 1.0000]`** (`45/45`), using **`0.00`** interventions on `D_unidentifiable_ambiguity` (`30/30` stopped immediately on `max IG == 0`).
+  - Semantic equivalence handling rate (`C_semantically_equivalent`): **`1.0000 [1.0000, 1.0000]`** (`30/30` — eliminates non-equivalent competitors and resolves equivalent syntax pairs without wasting interventions or claiming single-syntax separation).
+  - Noisy observation robustness (`B_noisy_observations`): **`1.0000`** (`30/30` — `15/15` exact identification on `B1_recoverable_single_flip` with corroboration margin `\ge 2`, and `15/15` safe abstention on `B2_unresolvable_contradictory_noise`).
+  - Distinguishing intervention rate: **`0.9348`** (`215/230` interventions; `1.0000` on noiseless families `A, C, E`), mean interventions used: **`1.5333`**, cumulative realized entropy reduction: **`166.81` bits** (`1.1121` bits/task).
+  - Safety & Regression: **`0/150` (`0.0000`) false identifications**, **`0/150` (`0.0000`) false promotions**, **`30/30` (`1.0000`) successful rollbacks**, **`0.0000` regression drop** on locked M16 and M17 suites.
+- **Comparison Baselines & Ablations:**
+  - `random_intervention`: Identifiable rule ID `0.3867` (`29/75`), distinguishing intervention rate `0.4054` (`180/444`), mean interventions `2.96`, equivalence handling `0.3333` (`10/30`).
+  - `fixed_heuristic` (surface object-count & diversity heuristic): Identifiable rule ID **`0.0000`** (`0/75`), distinguishing intervention rate `0.0521` (`25/480`), mean interventions `3.20` (fooled by high-diversity `IG=0` decoy scenes).
+  - `no_active_selection` (index-order selection without IG calculation): Identifiable rule ID **`0.0000`** (`0/75`), distinguishing intervention rate `0.0833` (`40/480`), mean interventions `3.20` (wastes all `3.0` interventions on `D`).
+  - `no_equivalence_check`: Identifiable rule ID `0.4000` (`30/75`), semantic equivalence handling **`0.0000`** (`0/30` — fails whenever the true rule has an equivalent syntactic twin in the DSL).
+  - `no_m17_guard` (isolated non-productive sandbox): Unidentifiable abstention **`0.0000`** (`0/45`), false identification rate **`0.4000`** (`60/150`), false promotion rate **`0.4000`** (`60/150` overall; `1.0000` (`45/45`) on `D` + `B2`), productive memory mutation **`False`** (`0` mutations).
+  - `oracle_upper_bound` (post-hoc analysis only): Identifiable rule ID `1.0000` (`75/75`) in **`0.7667` mean interventions** (`1.0` step on `A` and `E` via clairvoyant `1-vs-3` isolation vs `2.0` steps for non-clairvoyant `2-vs-2` splitting in `ri_full`).
 
 ---
 

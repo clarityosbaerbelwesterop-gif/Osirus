@@ -1,5 +1,5 @@
 {
-  "commit_hash": "abf1fad89f61d2b1640f8b3b2d0dcf38153e2841",
+  "commit_hash": "751ccf1272e0a98128de870e98c908567c4ec59a",
   "experiment_version": "M17.E10.v1",
   "execution_status": "completed",
   "n_seeds": 30,
@@ -108,7 +108,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 1.0,
-        "mean_runtime_ms_per_seed": 74.0969
+        "mean_runtime_ms_per_seed": 73.4458
       }
     },
     "synthesis_no_validation_guard": {
@@ -205,7 +205,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 0.9,
-        "mean_runtime_ms_per_seed": 76.022
+        "mean_runtime_ms_per_seed": 75.2765
       }
     },
     "synthesis_no_adversarial_checks": {
@@ -302,7 +302,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 1.0,
-        "mean_runtime_ms_per_seed": 53.9287
+        "mean_runtime_ms_per_seed": 53.3998
       }
     },
     "enumerative_no_skill_memory": {
@@ -399,7 +399,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 0.0,
-        "mean_runtime_ms_per_seed": 56.6296
+        "mean_runtime_ms_per_seed": 55.7433
       }
     },
     "m16_unchanged_grammar": {
@@ -496,7 +496,7 @@
         "mean_regression_drop_on_locked_tasks": 0.0,
         "regression_rate_on_prior_tasks": 0.0,
         "rollback_verification_pass_rate": 0.0,
-        "mean_runtime_ms_per_seed": 49.6915
+        "mean_runtime_ms_per_seed": 49.1477
       }
     }
   },
