@@ -23,6 +23,9 @@ EXPERIMENTS = (
      ["--seeds", *map(str, range(30)), "--train-size", "12", "--test-size", "24"]),
     ("M9 E8 rule-family discovery", ROOT / "experiments/E8_rule_discovery",
      ["--seeds", *map(str, range(30)), "--train-size", "16", "--test-size", "24"]),
+    ("M16 E9 held-out rule generalization", ROOT / "experiments/E9_heldout_rule_generalization",
+     ["--seeds", *map(str, range(30)), "--train-size", "10", "--val-size", "10",
+      "--query-pool-size", "16", "--test-size", "36", "--noise", "0.05"]),
 )
 
 SECRET_PATTERN = re.compile(
@@ -114,10 +117,12 @@ def run_suite(experiments=EXPERIMENTS, tests_only=False, summary_output=None, ru
                 ROOT / "results/prototype_demo_report.json",
                 ROOT / "results/prototype_benchmark.json",
                 ROOT / "results/prototype_skill_memory.json",
+                ROOT / "results/m16_summary.json",
+                ROOT / "results/m16_ablation_results.json",
             ):
                 valid, reason = validate_results_file(proto_artifact)
                 if not valid:
-                    failures.append(f"M10-M12 prototype artifact {proto_artifact.name}: {reason}")
+                    failures.append(f"RI artifact {proto_artifact.name}: {reason}")
 
     summary = {
         "n_experiments": len(records),
