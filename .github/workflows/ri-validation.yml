@@ -15,7 +15,7 @@ permissions:
 jobs:
   tests-and-evaluations:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -23,5 +23,15 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Record Python version
+        run: python --version
       - name: Run M3–M7 experiments
         run: python RI/run_experiments.py
+      - name: Upload raw experiment results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ri-experiment-results-${{ github.run_id }}-${{ github.run_attempt }}
+          path: RI/experiments/**/results/results.json
+          if-no-files-found: warn
+          retention-days: 30
