@@ -62,7 +62,11 @@ class SkillRecord:
         return self.success_count / self.usage_count
 
     def to_candidate(self, source: str = "memory_reuse") -> CandidateHypothesis:
-        complexity = 3 if self.family == "composed_and" else (2 if self.family in ("mod_sum", "coord_box") else 1)
+        complexity = (
+            3
+            if self.family in ("composed_and", "composed_op")
+            else (2 if self.family in ("mod_sum", "coord_box") else 1)
+        )
         return CandidateHypothesis(
             candidate_id=f"{self.skill_id}@v{self.version}",
             family=self.family,
@@ -237,22 +241,47 @@ class SkillMemory:
                     candidates.append(composed)
         return candidates
 
-    def compose_skills(self, sum_skill: SkillRecord, parity_skill: SkillRecord) -> CandidateHypothesis:
-        """Compose a sum_threshold skill and a parity skill after checking I/O contracts."""
+    def compose_skills(
+        self,
+        sum_skill: SkillRecord,
+        parity_skill: SkillRecord,
+        operator: str = "AND",
+    ) -> CandidateHypothesis:
+        """Compose two active skills after checking I/O contracts."""
         if sum_skill.status != "active" or parity_skill.status != "active":
             raise ValueError("only active skills can be composed")
         if not sum_skill.contract.is_compatible_with(parity_skill.contract):
             raise ValueError("incompatible skill contracts for composition")
-        if sum_skill.family != "sum_threshold" or parity_skill.family != "parity":
-            raise ValueError("compose_skills requires (sum_threshold, parity) skills")
-        t = int(sum_skill.parameters["threshold"])
-        p = int(parity_skill.parameters["parity"])
-        comp_id = f"composed({sum_skill.skill_id}@v{sum_skill.version},{parity_skill.skill_id}@v{parity_skill.version})"
+        if operator == "AND" and sum_skill.family == "sum_threshold" and parity_skill.family == "parity":
+            t = int(sum_skill.parameters["threshold"])
+            p = int(parity_skill.parameters["parity"])
+            comp_id = f"composed({sum_skill.skill_id}@v{sum_skill.version},{parity_skill.skill_id}@v{parity_skill.version})"
+            return CandidateHypothesis(
+                candidate_id=comp_id,
+                family="composed_and",
+                action_name="predict_composed",
+                parameters={"threshold": t, "parity": p},
+                complexity=3,
+                source="memory_composition",
+                component_skills=(
+                    f"{sum_skill.skill_id}@v{sum_skill.version}",
+                    f"{parity_skill.skill_id}@v{parity_skill.version}",
+                ),
+            )
+        if operator not in ("AND", "OR", "XOR", "AND_NOT"):
+            raise ValueError(f"unsupported operator: {operator}")
+        comp_id = f"composed_{operator}({sum_skill.skill_id}@v{sum_skill.version},{parity_skill.skill_id}@v{parity_skill.version})"
         return CandidateHypothesis(
             candidate_id=comp_id,
-            family="composed_and",
+            family="composed_op",
             action_name="predict_composed",
-            parameters={"threshold": t, "parity": p},
+            parameters={
+                "operator": operator,
+                "left_family": sum_skill.family,
+                "left_params": dict(sum_skill.parameters),
+                "right_family": parity_skill.family,
+                "right_params": dict(parity_skill.parameters),
+            },
             complexity=3,
             source="memory_composition",
             component_skills=(
@@ -284,6 +313,29 @@ class SkillMemory:
                 if rec.failure_count >= self.quarantine_failure_threshold and rec.status == "active":
                     rec.status = "quarantined"
         self._persist()
+
+    def get_lineage(self, skill_id: str) -> List[SkillRecord]:
+        return list(self._versions.get(skill_id, []))
+
+    def reactivate_version(self, skill_id: str, version: int) -> SkillRecord:
+        """Reactivate a prior verified version in a lineage (for example, after recurring regime return)."""
+        versions = self._versions.get(skill_id, [])
+        target = None
+        for rec in versions:
+            if rec.version == version:
+                target = rec
+                break
+        if target is None:
+            raise ValueError(f"skill '{skill_id}' version {version} not found")
+        if not target.run_unit_tests():
+            raise ValueError(f"skill '{skill_id}' v{version} failed unit tests and cannot be reactivated")
+        for rec in versions:
+            if rec.status == "active" and rec.version != version:
+                rec.status = "superseded"
+        target.status = "active"
+        target.failure_count = 0
+        self._persist()
+        return target
 
     def rollback_skill(self, skill_id: str) -> SkillRecord:
         """Roll back the current active/quarantined version of skill_id to its previous version."""

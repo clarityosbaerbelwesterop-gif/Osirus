@@ -15,23 +15,56 @@ class CandidateHypothesis:
     source: str = "enumerated"
     component_skills: Tuple[str, ...] = field(default_factory=tuple)
 
-    def predict_one(self, x: int, y: int) -> int:
-        if self.family == "sum_threshold":
-            return int(x + y >= int(self.parameters["threshold"]))
-        if self.family == "diff_threshold":
-            return int(x - y >= int(self.parameters["threshold"]))
-        if self.family == "parity":
-            return int((x + y) % 2 == int(self.parameters["parity"]))
-        if self.family == "mod_sum":
-            m = int(self.parameters["modulus"])
-            r = int(self.parameters["remainder"])
+    @staticmethod
+    def eval_primitive(family: str, parameters: Dict[str, Any], x: int, y: int) -> int:
+        if family == "sum_threshold":
+            return int(x + y >= int(parameters["threshold"]))
+        if family == "diff_threshold":
+            return int(x - y >= int(parameters["threshold"]))
+        if family == "parity":
+            return int((x + y) % 2 == int(parameters["parity"]))
+        if family == "mod_sum":
+            m = int(parameters["modulus"])
+            r = int(parameters["remainder"])
             return int((x + y) % m == r)
-        if self.family == "coord_box":
-            return int(x >= int(self.parameters["min_x"]) and y >= int(self.parameters["min_y"]))
+        if family == "coord_box":
+            return int(x >= int(parameters["min_x"]) and y >= int(parameters["min_y"]))
+        raise ValueError(f"unsupported primitive family: {family}")
+
+    @staticmethod
+    def apply_operator(operator: str, left_val: int, right_val: int) -> int:
+        if operator == "AND":
+            return int(left_val == 1 and right_val == 1)
+        if operator == "OR":
+            return int(left_val == 1 or right_val == 1)
+        if operator == "XOR":
+            return int(left_val != right_val)
+        if operator == "AND_NOT":
+            return int(left_val == 1 and right_val == 0)
+        raise ValueError(f"unsupported compositional operator: {operator}")
+
+    def predict_one(self, x: int, y: int) -> int:
+        if self.family in ("sum_threshold", "diff_threshold", "parity", "mod_sum", "coord_box"):
+            return self.eval_primitive(self.family, self.parameters, x, y)
         if self.family == "composed_and":
             t = int(self.parameters["threshold"])
             p = int(self.parameters["parity"])
             return int((x + y >= t) and ((x + y) % 2 == p))
+        if self.family == "composed_op":
+            op = str(self.parameters["operator"])
+            left_val = self.eval_primitive(
+                str(self.parameters["left_family"]),
+                dict(self.parameters["left_params"]),
+                x,
+                y,
+            )
+            right_val = self.eval_primitive(
+                str(self.parameters["right_family"]),
+                dict(self.parameters["right_params"]),
+                x,
+                y,
+            )
+            return self.apply_operator(op, left_val, right_val)
         raise ValueError(f"unsupported candidate family: {self.family}")
 
     def to_dict(self) -> Dict[str, Any]:
