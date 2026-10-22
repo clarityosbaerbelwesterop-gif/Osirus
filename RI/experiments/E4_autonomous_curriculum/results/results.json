@@ -1,0 +1,1469 @@
+{
+  "n_seeds": 30,
+  "steps": 80,
+  "noise": 0.1,
+  "policies": {
+    "uncertainty_reuse": {
+      "mean_success": 0.7304166666666667,
+      "mean_coverage": 4
+    },
+    "random": {
+      "mean_success": 0.7258333333333333,
+      "mean_coverage": 4
+    },
+    "fixed": {
+      "mean_success": 0.7320833333333333,
+      "mean_coverage": 4
+    },
+    "error_only": {
+      "mean_success": 0.7345833333333334,
+      "mean_coverage": 4
+    }
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "composition": 35,
+        "causal": 16,
+        "sequence": 18,
+        "spatial": 11
+      }
+    },
+    {
+      "seed": 0,
+      "policy": "random",
+      "mean_success": 0.8125,
+      "coverage": 4,
+      "counts": {
+        "sequence": 21,
+        "composition": 22,
+        "spatial": 18,
+        "causal": 19
+      }
+    },
+    {
+      "seed": 0,
+      "policy": "fixed",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 0,
+      "policy": "error_only",
+      "mean_success": 0.7625,
+      "coverage": 4,
+      "counts": {
+        "composition": 40,
+        "spatial": 2,
+        "sequence": 36,
+        "causal": 2
+      }
+    },
+    {
+      "seed": 1,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.75,
+      "coverage": 4,
+      "counts": {
+        "composition": 29,
+        "causal": 20,
+        "sequence": 20,
+        "spatial": 11
+      }
+    },
+    {
+      "seed": 1,
+      "policy": "random",
+      "mean_success": 0.8,
+      "coverage": 4,
+      "counts": {
+        "composition": 23,
+        "spatial": 27,
+        "causal": 13,
+        "sequence": 17
+      }
+    },
+    {
+      "seed": 1,
+      "policy": "fixed",
+      "mean_success": 0.7875,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 1,
+      "policy": "error_only",
+      "mean_success": 0.75,
+      "coverage": 4,
+      "counts": {
+        "sequence": 9,
+        "spatial": 6,
+        "causal": 12,
+        "composition": 53
+      }
+    },
+    {
+      "seed": 2,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.825,
+      "coverage": 4,
+      "counts": {
+        "composition": 39,
+        "causal": 12,
+        "sequence": 11,
+        "spatial": 18
+      }
+    },
+    {
+      "seed": 2,
+      "policy": "random",
+      "mean_success": 0.8,
+      "coverage": 4,
+      "counts": {
+        "composition": 24,
+        "causal": 23,
+        "spatial": 14,
+        "sequence": 19
+      }
+    },
+    {
+      "seed": 2,
+      "policy": "fixed",
+      "mean_success": 0.775,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 2,
+      "policy": "error_only",
+      "mean_success": 0.825,
+      "coverage": 4,
+      "counts": {
+        "sequence": 3,
+        "causal": 3,
+        "composition": 42,
+        "spatial": 32
+      }
+    },
+    {
+      "seed": 3,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.75,
+      "coverage": 4,
+      "counts": {
+        "composition": 29,
+        "causal": 18,
+        "sequence": 22,
+        "spatial": 11
+      }
+    },
+    {
+      "seed": 3,
+      "policy": "random",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "sequence": 27,
+        "spatial": 18,
+        "composition": 21,
+        "causal": 14
+      }
+    },
+    {
+      "seed": 3,
+      "policy": "fixed",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 3,
+      "policy": "error_only",
+      "mean_success": 0.7,
+      "coverage": 4,
+      "counts": {
+        "composition": 41,
+        "spatial": 14,
+        "sequence": 5,
+        "causal": 20
+      }
+    },
+    {
+      "seed": 4,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.75,
+      "coverage": 4,
+      "counts": {
+        "composition": 21,
+        "causal": 12,
+        "sequence": 14,
+        "spatial": 33
+      }
+    },
+    {
+      "seed": 4,
+      "policy": "random",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "composition": 24,
+        "sequence": 19,
+        "spatial": 18,
+        "causal": 19
+      }
+    },
+    {
+      "seed": 4,
+      "policy": "fixed",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 4,
+      "policy": "error_only",
+      "mean_success": 0.775,
+      "coverage": 4,
+      "counts": {
+        "sequence": 3,
+        "composition": 71,
+        "causal": 3,
+        "spatial": 3
+      }
+    },
+    {
+      "seed": 5,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.6875,
+      "coverage": 4,
+      "counts": {
+        "composition": 46,
+        "causal": 10,
+        "sequence": 17,
+        "spatial": 7
+      }
+    },
+    {
+      "seed": 5,
+      "policy": "random",
+      "mean_success": 0.775,
+      "coverage": 4,
+      "counts": {
+        "sequence": 27,
+        "causal": 17,
+        "spatial": 15,
+        "composition": 21
+      }
+    },
+    {
+      "seed": 5,
+      "policy": "fixed",
+      "mean_success": 0.75,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 5,
+      "policy": "error_only",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "composition": 47,
+        "causal": 12,
+        "spatial": 2,
+        "sequence": 19
+      }
+    },
+    {
+      "seed": 6,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.675,
+      "coverage": 4,
+      "counts": {
+        "composition": 33,
+        "causal": 15,
+        "sequence": 23,
+        "spatial": 9
+      }
+    },
+    {
+      "seed": 6,
+      "policy": "random",
+      "mean_success": 0.7,
+      "coverage": 4,
+      "counts": {
+        "sequence": 17,
+        "causal": 15,
+        "composition": 24,
+        "spatial": 24
+      }
+    },
+    {
+      "seed": 6,
+      "policy": "fixed",
+      "mean_success": 0.675,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 6,
+      "policy": "error_only",
+      "mean_success": 0.6625,
+      "coverage": 4,
+      "counts": {
+        "composition": 26,
+        "spatial": 1,
+        "causal": 16,
+        "sequence": 37
+      }
+    },
+    {
+      "seed": 7,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7625,
+      "coverage": 4,
+      "counts": {
+        "composition": 41,
+        "causal": 7,
+        "sequence": 20,
+        "spatial": 12
+      }
+    },
+    {
+      "seed": 7,
+      "policy": "random",
+      "mean_success": 0.8,
+      "coverage": 4,
+      "counts": {
+        "sequence": 22,
+        "composition": 21,
+        "spatial": 15,
+        "causal": 22
+      }
+    },
+    {
+      "seed": 7,
+      "policy": "fixed",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 7,
+      "policy": "error_only",
+      "mean_success": 0.7875,
+      "coverage": 4,
+      "counts": {
+        "composition": 51,
+        "causal": 3,
+        "spatial": 7,
+        "sequence": 19
+      }
+    },
+    {
+      "seed": 8,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.825,
+      "coverage": 4,
+      "counts": {
+        "composition": 46,
+        "causal": 12,
+        "sequence": 14,
+        "spatial": 8
+      }
+    },
+    {
+      "seed": 8,
+      "policy": "random",
+      "mean_success": 0.8,
+      "coverage": 4,
+      "counts": {
+        "causal": 17,
+        "sequence": 22,
+        "composition": 25,
+        "spatial": 16
+      }
+    },
+    {
+      "seed": 8,
+      "policy": "fixed",
+      "mean_success": 0.8125,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 8,
+      "policy": "error_only",
+      "mean_success": 0.85,
+      "coverage": 4,
+      "counts": {
+        "causal": 4,
+        "spatial": 4,
+        "composition": 23,
+        "sequence": 49
+      }
+    },
+    {
+      "seed": 9,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "composition": 20,
+        "causal": 12,
+        "sequence": 32,
+        "spatial": 16
+      }
+    },
+    {
+      "seed": 9,
+      "policy": "random",
+      "mean_success": 0.6625,
+      "coverage": 4,
+      "counts": {
+        "composition": 30,
+        "sequence": 11,
+        "causal": 21,
+        "spatial": 18
+      }
+    },
+    {
+      "seed": 9,
+      "policy": "fixed",
+      "mean_success": 0.6875,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 9,
+      "policy": "error_only",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "sequence": 2,
+        "spatial": 34,
+        "causal": 11,
+        "composition": 33
+      }
+    },
+    {
+      "seed": 10,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "composition": 41,
+        "causal": 17,
+        "sequence": 16,
+        "spatial": 6
+      }
+    },
+    {
+      "seed": 10,
+      "policy": "random",
+      "mean_success": 0.7625,
+      "coverage": 4,
+      "counts": {
+        "composition": 23,
+        "causal": 13,
+        "spatial": 20,
+        "sequence": 24
+      }
+    },
+    {
+      "seed": 10,
+      "policy": "fixed",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 10,
+      "policy": "error_only",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "sequence": 12,
+        "composition": 33,
+        "spatial": 2,
+        "causal": 33
+      }
+    },
+    {
+      "seed": 11,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.825,
+      "coverage": 4,
+      "counts": {
+        "composition": 42,
+        "causal": 12,
+        "sequence": 15,
+        "spatial": 11
+      }
+    },
+    {
+      "seed": 11,
+      "policy": "random",
+      "mean_success": 0.75,
+      "coverage": 4,
+      "counts": {
+        "sequence": 15,
+        "causal": 27,
+        "spatial": 22,
+        "composition": 16
+      }
+    },
+    {
+      "seed": 11,
+      "policy": "fixed",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 11,
+      "policy": "error_only",
+      "mean_success": 0.8125,
+      "coverage": 4,
+      "counts": {
+        "composition": 3,
+        "spatial": 12,
+        "causal": 22,
+        "sequence": 43
+      }
+    },
+    {
+      "seed": 12,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7,
+      "coverage": 4,
+      "counts": {
+        "composition": 27,
+        "causal": 11,
+        "sequence": 27,
+        "spatial": 15
+      }
+    },
+    {
+      "seed": 12,
+      "policy": "random",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "causal": 24,
+        "composition": 14,
+        "sequence": 21,
+        "spatial": 21
+      }
+    },
+    {
+      "seed": 12,
+      "policy": "fixed",
+      "mean_success": 0.6375,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 12,
+      "policy": "error_only",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "causal": 2,
+        "spatial": 27,
+        "sequence": 2,
+        "composition": 49
+      }
+    },
+    {
+      "seed": 13,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7,
+      "coverage": 4,
+      "counts": {
+        "composition": 29,
+        "causal": 16,
+        "sequence": 18,
+        "spatial": 17
+      }
+    },
+    {
+      "seed": 13,
+      "policy": "random",
+      "mean_success": 0.6875,
+      "coverage": 4,
+      "counts": {
+        "composition": 25,
+        "spatial": 24,
+        "causal": 15,
+        "sequence": 16
+      }
+    },
+    {
+      "seed": 13,
+      "policy": "fixed",
+      "mean_success": 0.75,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 13,
+      "policy": "error_only",
+      "mean_success": 0.675,
+      "coverage": 4,
+      "counts": {
+        "sequence": 22,
+        "causal": 13,
+        "composition": 22,
+        "spatial": 23
+      }
+    },
+    {
+      "seed": 14,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "composition": 24,
+        "causal": 20,
+        "sequence": 30,
+        "spatial": 6
+      }
+    },
+    {
+      "seed": 14,
+      "policy": "random",
+      "mean_success": 0.7,
+      "coverage": 4,
+      "counts": {
+        "sequence": 15,
+        "spatial": 26,
+        "composition": 23,
+        "causal": 16
+      }
+    },
+    {
+      "seed": 14,
+      "policy": "fixed",
+      "mean_success": 0.775,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 14,
+      "policy": "error_only",
+      "mean_success": 0.675,
+      "coverage": 4,
+      "counts": {
+        "composition": 24,
+        "spatial": 22,
+        "sequence": 21,
+        "causal": 13
+      }
+    },
+    {
+      "seed": 15,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.8125,
+      "coverage": 4,
+      "counts": {
+        "composition": 22,
+        "causal": 30,
+        "sequence": 20,
+        "spatial": 8
+      }
+    },
+    {
+      "seed": 15,
+      "policy": "random",
+      "mean_success": 0.775,
+      "coverage": 4,
+      "counts": {
+        "composition": 20,
+        "spatial": 20,
+        "causal": 17,
+        "sequence": 23
+      }
+    },
+    {
+      "seed": 15,
+      "policy": "fixed",
+      "mean_success": 0.7875,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 15,
+      "policy": "error_only",
+      "mean_success": 0.7875,
+      "coverage": 4,
+      "counts": {
+        "sequence": 20,
+        "composition": 50,
+        "causal": 3,
+        "spatial": 7
+      }
+    },
+    {
+      "seed": 16,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.6,
+      "coverage": 4,
+      "counts": {
+        "composition": 28,
+        "causal": 7,
+        "sequence": 29,
+        "spatial": 16
+      }
+    },
+    {
+      "seed": 16,
+      "policy": "random",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "sequence": 19,
+        "composition": 20,
+        "spatial": 22,
+        "causal": 19
+      }
+    },
+    {
+      "seed": 16,
+      "policy": "fixed",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 16,
+      "policy": "error_only",
+      "mean_success": 0.6375,
+      "coverage": 4,
+      "counts": {
+        "composition": 48,
+        "sequence": 27,
+        "causal": 1,
+        "spatial": 4
+      }
+    },
+    {
+      "seed": 17,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "composition": 34,
+        "causal": 17,
+        "sequence": 18,
+        "spatial": 11
+      }
+    },
+    {
+      "seed": 17,
+      "policy": "random",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "composition": 22,
+        "sequence": 21,
+        "causal": 17,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 17,
+      "policy": "fixed",
+      "mean_success": 0.75,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 17,
+      "policy": "error_only",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "sequence": 2,
+        "causal": 28,
+        "composition": 37,
+        "spatial": 13
+      }
+    },
+    {
+      "seed": 18,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.675,
+      "coverage": 4,
+      "counts": {
+        "composition": 35,
+        "causal": 15,
+        "sequence": 23,
+        "spatial": 7
+      }
+    },
+    {
+      "seed": 18,
+      "policy": "random",
+      "mean_success": 0.6875,
+      "coverage": 4,
+      "counts": {
+        "causal": 25,
+        "sequence": 20,
+        "composition": 18,
+        "spatial": 17
+      }
+    },
+    {
+      "seed": 18,
+      "policy": "fixed",
+      "mean_success": 0.7,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 18,
+      "policy": "error_only",
+      "mean_success": 0.6625,
+      "coverage": 4,
+      "counts": {
+        "causal": 2,
+        "spatial": 1,
+        "composition": 59,
+        "sequence": 18
+      }
+    },
+    {
+      "seed": 19,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "composition": 27,
+        "causal": 17,
+        "sequence": 30,
+        "spatial": 6
+      }
+    },
+    {
+      "seed": 19,
+      "policy": "random",
+      "mean_success": 0.6625,
+      "coverage": 4,
+      "counts": {
+        "sequence": 16,
+        "causal": 26,
+        "spatial": 18,
+        "composition": 20
+      }
+    },
+    {
+      "seed": 19,
+      "policy": "fixed",
+      "mean_success": 0.7625,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 19,
+      "policy": "error_only",
+      "mean_success": 0.7625,
+      "coverage": 4,
+      "counts": {
+        "composition": 58,
+        "spatial": 10,
+        "causal": 10,
+        "sequence": 2
+      }
+    },
+    {
+      "seed": 20,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7625,
+      "coverage": 4,
+      "counts": {
+        "composition": 23,
+        "causal": 13,
+        "sequence": 32,
+        "spatial": 12
+      }
+    },
+    {
+      "seed": 20,
+      "policy": "random",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "spatial": 24,
+        "composition": 17,
+        "causal": 19,
+        "sequence": 20
+      }
+    },
+    {
+      "seed": 20,
+      "policy": "fixed",
+      "mean_success": 0.7625,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 20,
+      "policy": "error_only",
+      "mean_success": 0.775,
+      "coverage": 4,
+      "counts": {
+        "spatial": 18,
+        "sequence": 2,
+        "composition": 58,
+        "causal": 2
+      }
+    },
+    {
+      "seed": 21,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7625,
+      "coverage": 4,
+      "counts": {
+        "composition": 35,
+        "causal": 13,
+        "sequence": 20,
+        "spatial": 12
+      }
+    },
+    {
+      "seed": 21,
+      "policy": "random",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "composition": 27,
+        "causal": 16,
+        "sequence": 15,
+        "spatial": 22
+      }
+    },
+    {
+      "seed": 21,
+      "policy": "fixed",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 21,
+      "policy": "error_only",
+      "mean_success": 0.75,
+      "coverage": 4,
+      "counts": {
+        "sequence": 2,
+        "spatial": 2,
+        "causal": 2,
+        "composition": 74
+      }
+    },
+    {
+      "seed": 22,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "composition": 41,
+        "causal": 18,
+        "sequence": 13,
+        "spatial": 8
+      }
+    },
+    {
+      "seed": 22,
+      "policy": "random",
+      "mean_success": 0.675,
+      "coverage": 4,
+      "counts": {
+        "sequence": 29,
+        "composition": 20,
+        "causal": 15,
+        "spatial": 16
+      }
+    },
+    {
+      "seed": 22,
+      "policy": "fixed",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 22,
+      "policy": "error_only",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "composition": 35,
+        "spatial": 12,
+        "sequence": 12,
+        "causal": 21
+      }
+    },
+    {
+      "seed": 23,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "composition": 26,
+        "causal": 24,
+        "sequence": 19,
+        "spatial": 11
+      }
+    },
+    {
+      "seed": 23,
+      "policy": "random",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "spatial": 26,
+        "composition": 21,
+        "sequence": 14,
+        "causal": 19
+      }
+    },
+    {
+      "seed": 23,
+      "policy": "fixed",
+      "mean_success": 0.775,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 23,
+      "policy": "error_only",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "spatial": 11,
+        "composition": 49,
+        "sequence": 18,
+        "causal": 2
+      }
+    },
+    {
+      "seed": 24,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "composition": 29,
+        "causal": 17,
+        "sequence": 18,
+        "spatial": 16
+      }
+    },
+    {
+      "seed": 24,
+      "policy": "random",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "spatial": 27,
+        "causal": 17,
+        "composition": 17,
+        "sequence": 19
+      }
+    },
+    {
+      "seed": 24,
+      "policy": "fixed",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 24,
+      "policy": "error_only",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "spatial": 9,
+        "causal": 5,
+        "composition": 26,
+        "sequence": 40
+      }
+    },
+    {
+      "seed": 25,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.675,
+      "coverage": 4,
+      "counts": {
+        "composition": 42,
+        "causal": 15,
+        "sequence": 14,
+        "spatial": 9
+      }
+    },
+    {
+      "seed": 25,
+      "policy": "random",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "composition": 31,
+        "causal": 17,
+        "spatial": 14,
+        "sequence": 18
+      }
+    },
+    {
+      "seed": 25,
+      "policy": "fixed",
+      "mean_success": 0.6875,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 25,
+      "policy": "error_only",
+      "mean_success": 0.7625,
+      "coverage": 4,
+      "counts": {
+        "sequence": 25,
+        "spatial": 2,
+        "causal": 2,
+        "composition": 51
+      }
+    },
+    {
+      "seed": 26,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.75,
+      "coverage": 4,
+      "counts": {
+        "composition": 29,
+        "causal": 12,
+        "sequence": 14,
+        "spatial": 25
+      }
+    },
+    {
+      "seed": 26,
+      "policy": "random",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "sequence": 20,
+        "composition": 21,
+        "spatial": 19,
+        "causal": 20
+      }
+    },
+    {
+      "seed": 26,
+      "policy": "fixed",
+      "mean_success": 0.6875,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 26,
+      "policy": "error_only",
+      "mean_success": 0.7625,
+      "coverage": 4,
+      "counts": {
+        "composition": 6,
+        "spatial": 2,
+        "sequence": 55,
+        "causal": 17
+      }
+    },
+    {
+      "seed": 27,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.7375,
+      "coverage": 4,
+      "counts": {
+        "composition": 24,
+        "causal": 15,
+        "sequence": 22,
+        "spatial": 19
+      }
+    },
+    {
+      "seed": 27,
+      "policy": "random",
+      "mean_success": 0.7,
+      "coverage": 4,
+      "counts": {
+        "sequence": 23,
+        "composition": 13,
+        "causal": 21,
+        "spatial": 23
+      }
+    },
+    {
+      "seed": 27,
+      "policy": "fixed",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 27,
+      "policy": "error_only",
+      "mean_success": 0.7,
+      "coverage": 4,
+      "counts": {
+        "composition": 15,
+        "sequence": 35,
+        "spatial": 15,
+        "causal": 15
+      }
+    },
+    {
+      "seed": 28,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.625,
+      "coverage": 4,
+      "counts": {
+        "composition": 44,
+        "causal": 9,
+        "sequence": 17,
+        "spatial": 10
+      }
+    },
+    {
+      "seed": 28,
+      "policy": "random",
+      "mean_success": 0.6,
+      "coverage": 4,
+      "counts": {
+        "causal": 19,
+        "composition": 23,
+        "sequence": 23,
+        "spatial": 15
+      }
+    },
+    {
+      "seed": 28,
+      "policy": "fixed",
+      "mean_success": 0.6625,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 28,
+      "policy": "error_only",
+      "mean_success": 0.7125,
+      "coverage": 4,
+      "counts": {
+        "causal": 2,
+        "sequence": 21,
+        "composition": 55,
+        "spatial": 2
+      }
+    },
+    {
+      "seed": 29,
+      "policy": "uncertainty_reuse",
+      "mean_success": 0.725,
+      "coverage": 4,
+      "counts": {
+        "composition": 36,
+        "causal": 17,
+        "sequence": 16,
+        "spatial": 11
+      }
+    },
+    {
+      "seed": 29,
+      "policy": "random",
+      "mean_success": 0.6875,
+      "coverage": 4,
+      "counts": {
+        "sequence": 22,
+        "spatial": 31,
+        "composition": 17,
+        "causal": 10
+      }
+    },
+    {
+      "seed": 29,
+      "policy": "fixed",
+      "mean_success": 0.7,
+      "coverage": 4,
+      "counts": {
+        "causal": 20,
+        "sequence": 20,
+        "composition": 20,
+        "spatial": 20
+      }
+    },
+    {
+      "seed": 29,
+      "policy": "error_only",
+      "mean_success": 0.6625,
+      "coverage": 4,
+      "counts": {
+        "composition": 46,
+        "sequence": 32,
+        "causal": 1,
+        "spatial": 1
+      }
+    }
+  ],
+  "limitations": [
+    "Synthetic probabilities are hand-chosen.",
+    "Priority rule is hand-designed, not autonomously discovered."
+  ]
+}

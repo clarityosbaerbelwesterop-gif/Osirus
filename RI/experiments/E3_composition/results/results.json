@@ -1,0 +1,838 @@
+{
+  "n_seeds": 30,
+  "noise": 0.0,
+  "policies": {
+    "composed": {
+      "n": 30,
+      "success_rate": 1,
+      "mean_queries": 4
+    },
+    "reset": {
+      "n": 30,
+      "success_rate": 0.23333333333333334,
+      "mean_queries": 4
+    },
+    "random": {
+      "n": 30,
+      "success_rate": 0.23333333333333334,
+      "mean_queries": 4
+    }
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 0,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 0,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 1,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 1,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 1,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 2,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 2,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 2,
+      "policy": "random",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 3,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 3,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 3,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 4,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 4,
+      "policy": "reset",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 4,
+      "policy": "random",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 5,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 5,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 5,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 6,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 6,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 6,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 7,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 7,
+      "policy": "reset",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 7,
+      "policy": "random",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 8,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 8,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 8,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 9,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 9,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 9,
+      "policy": "random",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 10,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 10,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 10,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 11,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 11,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 11,
+      "policy": "random",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 12,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 12,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 12,
+      "policy": "random",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 13,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 13,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 13,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 14,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 14,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 14,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 15,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 15,
+      "policy": "reset",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 15,
+      "policy": "random",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 16,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 16,
+      "policy": "reset",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 16,
+      "policy": "random",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 17,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 17,
+      "policy": "reset",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 17,
+      "policy": "random",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 18,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 18,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 18,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 19,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 19,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 19,
+      "policy": "random",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 20,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 20,
+      "policy": "reset",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 20,
+      "policy": "random",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 21,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 21,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 21,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 22,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 22,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 22,
+      "policy": "random",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 23,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 23,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 23,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 24,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 24,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 24,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 25,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 25,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 25,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 26,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 26,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 26,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 27,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 27,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 27,
+      "policy": "random",
+      "success": false,
+      "stage1_success": true,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 28,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 28,
+      "policy": "reset",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 28,
+      "policy": "random",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 29,
+      "policy": "composed",
+      "success": true,
+      "stage1_success": true,
+      "stage2_success": true,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 29,
+      "policy": "reset",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    },
+    {
+      "seed": 29,
+      "policy": "random",
+      "success": false,
+      "stage1_success": false,
+      "stage2_success": false,
+      "queries": 4,
+      "noise": 0.0
+    }
+  ],
+  "limitations": [
+    "Equal query budgets; controls differ in evidence use.",
+    "Operations are hand-coded, not acquired autonomously.",
+    "Toy task is not a general-intelligence benchmark."
+  ]
+}

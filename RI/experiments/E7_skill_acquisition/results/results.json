@@ -1,0 +1,348 @@
+{
+  "n_seeds": 30,
+  "train_size": 12,
+  "requested_test_size": 24,
+  "mean_held_out_accuracy": {
+    "induced_threshold_rule": 0.9652777777777778,
+    "nearest_neighbour": 0.8777777777777778,
+    "majority": 0.6388888888888888
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "hidden_threshold": 10,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.8333333333333334,
+        "majority": 0.8333333333333334
+      }
+    },
+    {
+      "seed": 1,
+      "hidden_threshold": 5,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.9166666666666666,
+        "majority": 0.75
+      }
+    },
+    {
+      "seed": 2,
+      "hidden_threshold": 10,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.9583333333333334,
+        "majority": 0.875
+      }
+    },
+    {
+      "seed": 3,
+      "hidden_threshold": 5,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 0.9166666666666666,
+        "nearest_neighbour": 0.9583333333333334,
+        "majority": 0.75
+      }
+    },
+    {
+      "seed": 4,
+      "hidden_threshold": 5,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.7916666666666666,
+        "majority": 0.75
+      }
+    },
+    {
+      "seed": 5,
+      "hidden_threshold": 8,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.8333333333333334,
+        "majority": 0.2916666666666667
+      }
+    },
+    {
+      "seed": 6,
+      "hidden_threshold": 10,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.9583333333333334,
+        "majority": 0.75
+      }
+    },
+    {
+      "seed": 7,
+      "hidden_threshold": 6,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.875,
+        "majority": 0.75
+      }
+    },
+    {
+      "seed": 8,
+      "hidden_threshold": 5,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.8333333333333334,
+        "majority": 0.75
+      }
+    },
+    {
+      "seed": 9,
+      "hidden_threshold": 7,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.7083333333333334,
+        "majority": 0.5833333333333334
+      }
+    },
+    {
+      "seed": 10,
+      "hidden_threshold": 8,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.9583333333333334,
+        "majority": 0.375
+      }
+    },
+    {
+      "seed": 11,
+      "hidden_threshold": 7,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.8333333333333334,
+        "majority": 0.5
+      }
+    },
+    {
+      "seed": 12,
+      "hidden_threshold": 7,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.8333333333333334,
+        "majority": 0.5416666666666666
+      }
+    },
+    {
+      "seed": 13,
+      "hidden_threshold": 6,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.7916666666666666,
+        "majority": 0.7083333333333334
+      }
+    },
+    {
+      "seed": 14,
+      "hidden_threshold": 4,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 0.875,
+        "nearest_neighbour": 1,
+        "majority": 0.7916666666666666
+      }
+    },
+    {
+      "seed": 15,
+      "hidden_threshold": 5,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 1,
+        "majority": 0.7916666666666666
+      }
+    },
+    {
+      "seed": 16,
+      "hidden_threshold": 6,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 0.8333333333333334,
+        "nearest_neighbour": 0.9166666666666666,
+        "majority": 0.6666666666666666
+      }
+    },
+    {
+      "seed": 17,
+      "hidden_threshold": 8,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.75,
+        "majority": 0.375
+      }
+    },
+    {
+      "seed": 18,
+      "hidden_threshold": 5,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.875,
+        "majority": 0.7083333333333334
+      }
+    },
+    {
+      "seed": 19,
+      "hidden_threshold": 9,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.9166666666666666,
+        "majority": 0.6666666666666666
+      }
+    },
+    {
+      "seed": 20,
+      "hidden_threshold": 9,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.9166666666666666,
+        "majority": 0.20833333333333334
+      }
+    },
+    {
+      "seed": 21,
+      "hidden_threshold": 5,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.9166666666666666,
+        "majority": 0.875
+      }
+    },
+    {
+      "seed": 22,
+      "hidden_threshold": 5,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.875,
+        "majority": 0.7916666666666666
+      }
+    },
+    {
+      "seed": 23,
+      "hidden_threshold": 10,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.9166666666666666,
+        "majority": 0.875
+      }
+    },
+    {
+      "seed": 24,
+      "hidden_threshold": 9,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.9583333333333334,
+        "majority": 0.7083333333333334
+      }
+    },
+    {
+      "seed": 25,
+      "hidden_threshold": 7,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 0.75,
+        "nearest_neighbour": 0.875,
+        "majority": 0.375
+      }
+    },
+    {
+      "seed": 26,
+      "hidden_threshold": 9,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.8333333333333334,
+        "majority": 0.6666666666666666
+      }
+    },
+    {
+      "seed": 27,
+      "hidden_threshold": 9,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 1,
+        "nearest_neighbour": 0.875,
+        "majority": 0.2916666666666667
+      }
+    },
+    {
+      "seed": 28,
+      "hidden_threshold": 4,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 0.7916666666666666,
+        "nearest_neighbour": 0.75,
+        "majority": 0.75
+      }
+    },
+    {
+      "seed": 29,
+      "hidden_threshold": 8,
+      "train_size": 12,
+      "test_size": 24,
+      "accuracy": {
+        "induced_threshold_rule": 0.7916666666666666,
+        "nearest_neighbour": 0.875,
+        "majority": 0.4166666666666667
+      }
+    }
+  ],
+  "limitations": [
+    "The hypothesis class (sum-threshold rules) is known to the rule learner.",
+    "This tests generalization within a narrow synthetic family, not open-ended skill discovery.",
+    "Thresholds and task generator are simple; broader task families are required.",
+    "Held-out examples are disjoint from training examples but come from the same grid and rule."
+  ]
+}

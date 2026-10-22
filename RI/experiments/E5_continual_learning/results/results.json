@@ -1,0 +1,679 @@
+{
+  "n_seeds": 30,
+  "steps": 120,
+  "policies": {
+    "persistent": {
+      "mean_brier": 0.208486328125
+    },
+    "reset": {
+      "mean_brier": 0.2530555555555556
+    }
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "policy": "persistent",
+      "brier": 0.23720703125,
+      "counts": {
+        "causal": 22,
+        "spatial": 23,
+        "composition": 5,
+        "sequence": 18
+      }
+    },
+    {
+      "seed": 0,
+      "policy": "reset",
+      "brier": 0.21944444444444447,
+      "counts": {
+        "causal": 2,
+        "spatial": 2,
+        "composition": 1,
+        "sequence": 1
+      }
+    },
+    {
+      "seed": 1,
+      "policy": "persistent",
+      "brier": 0.198193359375,
+      "counts": {
+        "sequence": 21,
+        "causal": 23,
+        "spatial": 23,
+        "composition": 14
+      }
+    },
+    {
+      "seed": 1,
+      "policy": "reset",
+      "brier": 0.25833333333333336,
+      "counts": {
+        "sequence": 1,
+        "causal": 1,
+        "spatial": 2,
+        "composition": 1
+      }
+    },
+    {
+      "seed": 2,
+      "policy": "persistent",
+      "brier": 0.213623046875,
+      "counts": {
+        "composition": 11,
+        "sequence": 20,
+        "causal": 25,
+        "spatial": 23
+      }
+    },
+    {
+      "seed": 2,
+      "policy": "reset",
+      "brier": 0.2138888888888889,
+      "counts": {
+        "composition": 1,
+        "sequence": 2,
+        "causal": 2,
+        "spatial": 2
+      }
+    },
+    {
+      "seed": 3,
+      "policy": "persistent",
+      "brier": 0.21995442708333335,
+      "counts": {
+        "spatial": 23,
+        "composition": 14,
+        "sequence": 15,
+        "causal": 24
+      }
+    },
+    {
+      "seed": 3,
+      "policy": "reset",
+      "brier": 0.23333333333333336,
+      "counts": {
+        "spatial": 2,
+        "composition": 1,
+        "sequence": 1,
+        "causal": 2
+      }
+    },
+    {
+      "seed": 4,
+      "policy": "persistent",
+      "brier": 0.19334309895833335,
+      "counts": {
+        "causal": 22,
+        "spatial": 25,
+        "composition": 12,
+        "sequence": 22
+      }
+    },
+    {
+      "seed": 4,
+      "policy": "reset",
+      "brier": 0.25,
+      "counts": {
+        "causal": 1,
+        "spatial": 2,
+        "composition": 1,
+        "sequence": 2
+      }
+    },
+    {
+      "seed": 5,
+      "policy": "persistent",
+      "brier": 0.21712239583333331,
+      "counts": {
+        "sequence": 16,
+        "causal": 18,
+        "spatial": 28,
+        "composition": 12
+      }
+    },
+    {
+      "seed": 5,
+      "policy": "reset",
+      "brier": 0.27222222222222225,
+      "counts": {
+        "sequence": 1,
+        "causal": 1,
+        "spatial": 2,
+        "composition": 1
+      }
+    },
+    {
+      "seed": 6,
+      "policy": "persistent",
+      "brier": 0.19378255208333334,
+      "counts": {
+        "composition": 13,
+        "sequence": 18,
+        "causal": 23,
+        "spatial": 24
+      }
+    },
+    {
+      "seed": 6,
+      "policy": "reset",
+      "brier": 0.2,
+      "counts": {
+        "composition": 1,
+        "sequence": 2,
+        "causal": 2,
+        "spatial": 2
+      }
+    },
+    {
+      "seed": 7,
+      "policy": "persistent",
+      "brier": 0.19886067708333333,
+      "counts": {
+        "spatial": 27,
+        "composition": 13,
+        "sequence": 18,
+        "causal": 24
+      }
+    },
+    {
+      "seed": 7,
+      "policy": "reset",
+      "brier": 0.34166666666666673,
+      "counts": {
+        "spatial": 1,
+        "composition": 1,
+        "sequence": 1,
+        "causal": 1
+      }
+    },
+    {
+      "seed": 8,
+      "policy": "persistent",
+      "brier": 0.19313151041666665,
+      "counts": {
+        "causal": 25,
+        "spatial": 26,
+        "composition": 17,
+        "sequence": 20
+      }
+    },
+    {
+      "seed": 8,
+      "policy": "reset",
+      "brier": 0.2694444444444445,
+      "counts": {
+        "causal": 2,
+        "spatial": 1,
+        "composition": 1,
+        "sequence": 2
+      }
+    },
+    {
+      "seed": 9,
+      "policy": "persistent",
+      "brier": 0.207763671875,
+      "counts": {
+        "sequence": 24,
+        "causal": 25,
+        "spatial": 27,
+        "composition": 13
+      }
+    },
+    {
+      "seed": 9,
+      "policy": "reset",
+      "brier": 0.23055555555555557,
+      "counts": {
+        "sequence": 1,
+        "causal": 2,
+        "spatial": 2,
+        "composition": 1
+      }
+    },
+    {
+      "seed": 10,
+      "policy": "persistent",
+      "brier": 0.21124674479166666,
+      "counts": {
+        "composition": 11,
+        "sequence": 24,
+        "causal": 24,
+        "spatial": 26
+      }
+    },
+    {
+      "seed": 10,
+      "policy": "reset",
+      "brier": 0.2638888888888889,
+      "counts": {
+        "composition": 1,
+        "sequence": 2,
+        "causal": 2,
+        "spatial": 1
+      }
+    },
+    {
+      "seed": 11,
+      "policy": "persistent",
+      "brier": 0.20999348958333333,
+      "counts": {
+        "spatial": 24,
+        "composition": 9,
+        "sequence": 21,
+        "causal": 28
+      }
+    },
+    {
+      "seed": 11,
+      "policy": "reset",
+      "brier": 0.2611111111111111,
+      "counts": {
+        "spatial": 1,
+        "composition": 1,
+        "sequence": 2,
+        "causal": 2
+      }
+    },
+    {
+      "seed": 12,
+      "policy": "persistent",
+      "brier": 0.24430338541666666,
+      "counts": {
+        "causal": 26,
+        "spatial": 23,
+        "composition": 19,
+        "sequence": 16
+      }
+    },
+    {
+      "seed": 12,
+      "policy": "reset",
+      "brier": 0.2916666666666667,
+      "counts": {
+        "causal": 2,
+        "spatial": 1,
+        "composition": 1,
+        "sequence": 1
+      }
+    },
+    {
+      "seed": 13,
+      "policy": "persistent",
+      "brier": 0.24923502604166667,
+      "counts": {
+        "sequence": 23,
+        "causal": 26,
+        "spatial": 27,
+        "composition": 7
+      }
+    },
+    {
+      "seed": 13,
+      "policy": "reset",
+      "brier": 0.24166666666666667,
+      "counts": {
+        "sequence": 2,
+        "causal": 2,
+        "spatial": 2,
+        "composition": 2
+      }
+    },
+    {
+      "seed": 14,
+      "policy": "persistent",
+      "brier": 0.20029296875,
+      "counts": {
+        "composition": 17,
+        "sequence": 20,
+        "causal": 22,
+        "spatial": 27
+      }
+    },
+    {
+      "seed": 14,
+      "policy": "reset",
+      "brier": 0.24722222222222226,
+      "counts": {
+        "composition": 1,
+        "sequence": 2,
+        "causal": 1,
+        "spatial": 2
+      }
+    },
+    {
+      "seed": 15,
+      "policy": "persistent",
+      "brier": 0.223291015625,
+      "counts": {
+        "spatial": 19,
+        "composition": 16,
+        "sequence": 20,
+        "causal": 24
+      }
+    },
+    {
+      "seed": 15,
+      "policy": "reset",
+      "brier": 0.25,
+      "counts": {
+        "spatial": 2,
+        "composition": 1,
+        "sequence": 1,
+        "causal": 2
+      }
+    },
+    {
+      "seed": 16,
+      "policy": "persistent",
+      "brier": 0.21608072916666665,
+      "counts": {
+        "causal": 27,
+        "spatial": 25,
+        "composition": 17,
+        "sequence": 21
+      }
+    },
+    {
+      "seed": 16,
+      "policy": "reset",
+      "brier": 0.22777777777777777,
+      "counts": {
+        "causal": 2,
+        "spatial": 2,
+        "composition": 2,
+        "sequence": 2
+      }
+    },
+    {
+      "seed": 17,
+      "policy": "persistent",
+      "brier": 0.20698242187500002,
+      "counts": {
+        "sequence": 19,
+        "causal": 21,
+        "spatial": 25,
+        "composition": 12
+      }
+    },
+    {
+      "seed": 17,
+      "policy": "reset",
+      "brier": 0.2777777777777778,
+      "counts": {
+        "sequence": 2,
+        "causal": 1,
+        "spatial": 2,
+        "composition": 2
+      }
+    },
+    {
+      "seed": 18,
+      "policy": "persistent",
+      "brier": 0.225537109375,
+      "counts": {
+        "composition": 15,
+        "sequence": 17,
+        "causal": 19,
+        "spatial": 26
+      }
+    },
+    {
+      "seed": 18,
+      "policy": "reset",
+      "brier": 0.2666666666666667,
+      "counts": {
+        "composition": 1,
+        "sequence": 1,
+        "causal": 1,
+        "spatial": 2
+      }
+    },
+    {
+      "seed": 19,
+      "policy": "persistent",
+      "brier": 0.19415690104166666,
+      "counts": {
+        "spatial": 29,
+        "composition": 14,
+        "sequence": 21,
+        "causal": 23
+      }
+    },
+    {
+      "seed": 19,
+      "policy": "reset",
+      "brier": 0.25,
+      "counts": {
+        "spatial": 2,
+        "composition": 1,
+        "sequence": 2,
+        "causal": 1
+      }
+    },
+    {
+      "seed": 20,
+      "policy": "persistent",
+      "brier": 0.17527669270833335,
+      "counts": {
+        "causal": 27,
+        "spatial": 27,
+        "composition": 14,
+        "sequence": 19
+      }
+    },
+    {
+      "seed": 20,
+      "policy": "reset",
+      "brier": 0.31388888888888894,
+      "counts": {
+        "causal": 2,
+        "spatial": 1,
+        "composition": 2,
+        "sequence": 1
+      }
+    },
+    {
+      "seed": 21,
+      "policy": "persistent",
+      "brier": 0.19625651041666667,
+      "counts": {
+        "sequence": 22,
+        "causal": 25,
+        "spatial": 20,
+        "composition": 15
+      }
+    },
+    {
+      "seed": 21,
+      "policy": "reset",
+      "brier": 0.21666666666666667,
+      "counts": {
+        "sequence": 2,
+        "causal": 2,
+        "spatial": 2,
+        "composition": 2
+      }
+    },
+    {
+      "seed": 22,
+      "policy": "persistent",
+      "brier": 0.19194335937499998,
+      "counts": {
+        "composition": 14,
+        "sequence": 21,
+        "causal": 23,
+        "spatial": 23
+      }
+    },
+    {
+      "seed": 22,
+      "policy": "reset",
+      "brier": 0.21666666666666667,
+      "counts": {
+        "composition": 2,
+        "sequence": 2,
+        "causal": 2,
+        "spatial": 2
+      }
+    },
+    {
+      "seed": 23,
+      "policy": "persistent",
+      "brier": 0.18798828125,
+      "counts": {
+        "spatial": 25,
+        "composition": 12,
+        "sequence": 20,
+        "causal": 23
+      }
+    },
+    {
+      "seed": 23,
+      "policy": "reset",
+      "brier": 0.3055555555555556,
+      "counts": {
+        "spatial": 1,
+        "composition": 2,
+        "sequence": 1,
+        "causal": 2
+      }
+    },
+    {
+      "seed": 24,
+      "policy": "persistent",
+      "brier": 0.22107747395833333,
+      "counts": {
+        "causal": 28,
+        "spatial": 22,
+        "composition": 14,
+        "sequence": 19
+      }
+    },
+    {
+      "seed": 24,
+      "policy": "reset",
+      "brier": 0.2694444444444445,
+      "counts": {
+        "causal": 2,
+        "spatial": 1,
+        "composition": 2,
+        "sequence": 1
+      }
+    },
+    {
+      "seed": 25,
+      "policy": "persistent",
+      "brier": 0.198681640625,
+      "counts": {
+        "sequence": 21,
+        "causal": 26,
+        "spatial": 24,
+        "composition": 14
+      }
+    },
+    {
+      "seed": 25,
+      "policy": "reset",
+      "brier": 0.2694444444444445,
+      "counts": {
+        "sequence": 2,
+        "causal": 1,
+        "spatial": 2,
+        "composition": 2
+      }
+    },
+    {
+      "seed": 26,
+      "policy": "persistent",
+      "brier": 0.19176432291666667,
+      "counts": {
+        "composition": 14,
+        "sequence": 21,
+        "causal": 21,
+        "spatial": 22
+      }
+    },
+    {
+      "seed": 26,
+      "policy": "reset",
+      "brier": 0.19444444444444448,
+      "counts": {
+        "composition": 1,
+        "sequence": 2,
+        "causal": 2,
+        "spatial": 2
+      }
+    },
+    {
+      "seed": 27,
+      "policy": "persistent",
+      "brier": 0.20406901041666667,
+      "counts": {
+        "spatial": 26,
+        "composition": 13,
+        "sequence": 16,
+        "causal": 27
+      }
+    },
+    {
+      "seed": 27,
+      "policy": "reset",
+      "brier": 0.23333333333333336,
+      "counts": {
+        "spatial": 2,
+        "composition": 2,
+        "sequence": 1,
+        "causal": 2
+      }
+    },
+    {
+      "seed": 28,
+      "policy": "persistent",
+      "brier": 0.22125651041666666,
+      "counts": {
+        "causal": 23,
+        "spatial": 22,
+        "composition": 17,
+        "sequence": 20
+      }
+    },
+    {
+      "seed": 28,
+      "policy": "reset",
+      "brier": 0.21111111111111114,
+      "counts": {
+        "causal": 2,
+        "spatial": 2,
+        "composition": 1,
+        "sequence": 1
+      }
+    },
+    {
+      "seed": 29,
+      "policy": "persistent",
+      "brier": 0.21217447916666668,
+      "counts": {
+        "sequence": 18,
+        "causal": 20,
+        "spatial": 24,
+        "composition": 16
+      }
+    },
+    {
+      "seed": 29,
+      "policy": "reset",
+      "brier": 0.29444444444444445,
+      "counts": {
+        "sequence": 2,
+        "causal": 2,
+        "spatial": 1,
+        "composition": 2
+      }
+    }
+  ],
+  "limitations": [
+    "Toy stationary task probabilities.",
+    "Reset baseline is intentionally memory-poor.",
+    "No evidence of general intelligence."
+  ]
+}

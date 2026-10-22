@@ -1,0 +1,844 @@
+{
+  "design": "paired seeds; ground truth is never passed to agent",
+  "budget_per_episode": 4,
+  "noise": 0.15,
+  "n_seeds": 30,
+  "policies": {
+    "capability": {
+      "n": 30,
+      "accuracy": 0.9,
+      "mean_queries": 4
+    },
+    "random_ablation": {
+      "n": 30,
+      "accuracy": 0.9,
+      "mean_queries": 4
+    },
+    "fixed": {
+      "n": 30,
+      "accuracy": 0.9,
+      "mean_queries": 4
+    }
+  },
+  "paired_accuracy_difference": {
+    "random_ablation": 0,
+    "fixed": 0
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 0,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 0,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 1,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 1,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 1,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 2,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 2,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 2,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 3,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 3,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 3,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 4,
+      "policy": "capability",
+      "correct": false,
+      "queries": 4,
+      "prediction": "v",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 4,
+      "policy": "random_ablation",
+      "correct": false,
+      "queries": 4,
+      "prediction": "v",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 4,
+      "policy": "fixed",
+      "correct": false,
+      "queries": 4,
+      "prediction": "v",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 5,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 5,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 5,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 6,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 6,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 6,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 7,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 7,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 7,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 8,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 8,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 8,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 9,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 9,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 9,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 10,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 10,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 10,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 11,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 11,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 11,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 12,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 12,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 12,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 13,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 13,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 13,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 14,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 14,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 14,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 15,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 15,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 15,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 16,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 16,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 16,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 17,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 17,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 17,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 18,
+      "policy": "capability",
+      "correct": false,
+      "queries": 4,
+      "prediction": "v",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 18,
+      "policy": "random_ablation",
+      "correct": false,
+      "queries": 4,
+      "prediction": "v",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 18,
+      "policy": "fixed",
+      "correct": false,
+      "queries": 4,
+      "prediction": "v",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 19,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 19,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 19,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 20,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 20,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 20,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 21,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 21,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 21,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 22,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 22,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 22,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 23,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 23,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 23,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 24,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 24,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 24,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 25,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 25,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 25,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 26,
+      "policy": "capability",
+      "correct": false,
+      "queries": 4,
+      "prediction": "v",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 26,
+      "policy": "random_ablation",
+      "correct": false,
+      "queries": 4,
+      "prediction": "v",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 26,
+      "policy": "fixed",
+      "correct": false,
+      "queries": 4,
+      "prediction": "v",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 27,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 27,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 27,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "v",
+      "target": "v",
+      "noise": 0.15
+    },
+    {
+      "seed": 28,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 28,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 28,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 29,
+      "policy": "capability",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 29,
+      "policy": "random_ablation",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    },
+    {
+      "seed": 29,
+      "policy": "fixed",
+      "correct": true,
+      "queries": 4,
+      "prediction": "u",
+      "target": "u",
+      "noise": 0.15
+    }
+  ],
+  "limitations": [
+    "Toy binary task only; no evidence of general intelligence.",
+    "The procedure is hand-specified, not yet acquired autonomously.",
+    "This experiment tests active intervention selection, not cross-domain transfer."
+  ]
+}

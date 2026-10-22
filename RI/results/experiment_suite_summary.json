@@ -1,0 +1,71 @@
+{
+  "n_experiments": 7,
+  "tests_only": false,
+  "all_passed": true,
+  "failures": [],
+  "experiments": [
+    {
+      "experiment": "M3 E2 capability use",
+      "directory": "/workspace/RI/experiments/E2_capability_transfer",
+      "tests_exit_code": 0,
+      "evaluation_exit_code": 0,
+      "artifact_valid": true,
+      "duration_ms": 100.29,
+      "status": "passed"
+    },
+    {
+      "experiment": "M4 E3 composition",
+      "directory": "/workspace/RI/experiments/E3_composition",
+      "tests_exit_code": 0,
+      "evaluation_exit_code": 0,
+      "artifact_valid": true,
+      "duration_ms": 82.838,
+      "status": "passed"
+    },
+    {
+      "experiment": "M5 E4 autonomous curriculum",
+      "directory": "/workspace/RI/experiments/E4_autonomous_curriculum",
+      "tests_exit_code": 0,
+      "evaluation_exit_code": 0,
+      "artifact_valid": true,
+      "duration_ms": 97.549,
+      "status": "passed"
+    },
+    {
+      "experiment": "M6 E5 continual learning",
+      "directory": "/workspace/RI/experiments/E5_continual_learning",
+      "tests_exit_code": 0,
+      "evaluation_exit_code": 0,
+      "artifact_valid": true,
+      "duration_ms": 84.439,
+      "status": "passed"
+    },
+    {
+      "experiment": "M7 E6 guarded improvement",
+      "directory": "/workspace/RI/experiments/E6_guarded_self_improvement",
+      "tests_exit_code": 0,
+      "evaluation_exit_code": 0,
+      "artifact_valid": true,
+      "duration_ms": 77.222,
+      "status": "passed"
+    },
+    {
+      "experiment": "M8 E7 held-out skill acquisition",
+      "directory": "/workspace/RI/experiments/E7_skill_acquisition",
+      "tests_exit_code": 0,
+      "evaluation_exit_code": 0,
+      "artifact_valid": true,
+      "duration_ms": 73.573,
+      "status": "passed"
+    },
+    {
+      "experiment": "M9 E8 rule-family discovery",
+      "directory": "/workspace/RI/experiments/E8_rule_discovery",
+      "tests_exit_code": 0,
+      "evaluation_exit_code": 0,
+      "artifact_valid": true,
+      "duration_ms": 88.737,
+      "status": "passed"
+    }
+  ]
+}

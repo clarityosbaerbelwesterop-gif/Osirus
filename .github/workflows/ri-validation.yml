@@ -25,13 +25,15 @@ jobs:
           python-version: '3.12'
       - name: Record Python version
         run: python --version
-      - name: Run M3–M7 experiments
+      - name: Run RI tests and E2–E8 evaluations
         run: python RI/run_experiments.py
       - name: Upload raw experiment results
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ri-experiment-results-${{ github.run_id }}-${{ github.run_attempt }}
-          path: RI/experiments/**/results/results.json
+          path: |
+            RI/experiments/**/results/results.json
+            RI/results/*.json
           if-no-files-found: warn
           retention-days: 30

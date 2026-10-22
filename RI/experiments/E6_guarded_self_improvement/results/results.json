@@ -1,0 +1,426 @@
+{
+  "baseline_config": {
+    "exploration": 0.5,
+    "memory_weight": 0.5
+  },
+  "candidate_config": {
+    "exploration": 0.5,
+    "memory_weight": 0.6
+  },
+  "n_seeds": 30,
+  "baseline_mean": {
+    "coverage": 0.638,
+    "retention": 0.42633333333333334
+  },
+  "candidate_mean": {
+    "coverage": 0.638,
+    "retention": 0.45266666666666666
+  },
+  "promotion_gate": {
+    "primary_metric": "retention",
+    "minimum_gain": 0.01,
+    "baseline": 0.42633333333333334,
+    "candidate": 0.45266666666666666,
+    "mean_paired_gain": 0.026333333333333334,
+    "promoted": true,
+    "reason": "gain threshold and bounds passed"
+  },
+  "rows": [
+    {
+      "baseline": {
+        "coverage": 0.55,
+        "retention": 0.38,
+        "seed": 0
+      },
+      "candidate": {
+        "coverage": 0.55,
+        "retention": 0.41,
+        "seed": 0
+      },
+      "paired_retention_gain": 0.02999999999999997
+    },
+    {
+      "baseline": {
+        "coverage": 0.66,
+        "retention": 0.47,
+        "seed": 1
+      },
+      "candidate": {
+        "coverage": 0.66,
+        "retention": 0.48,
+        "seed": 1
+      },
+      "paired_retention_gain": 0.010000000000000009
+    },
+    {
+      "baseline": {
+        "coverage": 0.59,
+        "retention": 0.38,
+        "seed": 2
+      },
+      "candidate": {
+        "coverage": 0.59,
+        "retention": 0.4,
+        "seed": 2
+      },
+      "paired_retention_gain": 0.020000000000000018
+    },
+    {
+      "baseline": {
+        "coverage": 0.68,
+        "retention": 0.42,
+        "seed": 3
+      },
+      "candidate": {
+        "coverage": 0.68,
+        "retention": 0.43,
+        "seed": 3
+      },
+      "paired_retention_gain": 0.010000000000000009
+    },
+    {
+      "baseline": {
+        "coverage": 0.57,
+        "retention": 0.44,
+        "seed": 4
+      },
+      "candidate": {
+        "coverage": 0.57,
+        "retention": 0.47,
+        "seed": 4
+      },
+      "paired_retention_gain": 0.02999999999999997
+    },
+    {
+      "baseline": {
+        "coverage": 0.56,
+        "retention": 0.34,
+        "seed": 5
+      },
+      "candidate": {
+        "coverage": 0.56,
+        "retention": 0.35,
+        "seed": 5
+      },
+      "paired_retention_gain": 0.009999999999999953
+    },
+    {
+      "baseline": {
+        "coverage": 0.62,
+        "retention": 0.4,
+        "seed": 6
+      },
+      "candidate": {
+        "coverage": 0.62,
+        "retention": 0.42,
+        "seed": 6
+      },
+      "paired_retention_gain": 0.019999999999999962
+    },
+    {
+      "baseline": {
+        "coverage": 0.7,
+        "retention": 0.49,
+        "seed": 7
+      },
+      "candidate": {
+        "coverage": 0.7,
+        "retention": 0.52,
+        "seed": 7
+      },
+      "paired_retention_gain": 0.030000000000000027
+    },
+    {
+      "baseline": {
+        "coverage": 0.71,
+        "retention": 0.44,
+        "seed": 8
+      },
+      "candidate": {
+        "coverage": 0.71,
+        "retention": 0.46,
+        "seed": 8
+      },
+      "paired_retention_gain": 0.020000000000000018
+    },
+    {
+      "baseline": {
+        "coverage": 0.73,
+        "retention": 0.47,
+        "seed": 9
+      },
+      "candidate": {
+        "coverage": 0.73,
+        "retention": 0.48,
+        "seed": 9
+      },
+      "paired_retention_gain": 0.010000000000000009
+    },
+    {
+      "baseline": {
+        "coverage": 0.63,
+        "retention": 0.47,
+        "seed": 10
+      },
+      "candidate": {
+        "coverage": 0.63,
+        "retention": 0.51,
+        "seed": 10
+      },
+      "paired_retention_gain": 0.040000000000000036
+    },
+    {
+      "baseline": {
+        "coverage": 0.62,
+        "retention": 0.46,
+        "seed": 11
+      },
+      "candidate": {
+        "coverage": 0.62,
+        "retention": 0.47,
+        "seed": 11
+      },
+      "paired_retention_gain": 0.009999999999999953
+    },
+    {
+      "baseline": {
+        "coverage": 0.6,
+        "retention": 0.41,
+        "seed": 12
+      },
+      "candidate": {
+        "coverage": 0.6,
+        "retention": 0.44,
+        "seed": 12
+      },
+      "paired_retention_gain": 0.030000000000000027
+    },
+    {
+      "baseline": {
+        "coverage": 0.71,
+        "retention": 0.47,
+        "seed": 13
+      },
+      "candidate": {
+        "coverage": 0.71,
+        "retention": 0.52,
+        "seed": 13
+      },
+      "paired_retention_gain": 0.050000000000000044
+    },
+    {
+      "baseline": {
+        "coverage": 0.66,
+        "retention": 0.45,
+        "seed": 14
+      },
+      "candidate": {
+        "coverage": 0.66,
+        "retention": 0.49,
+        "seed": 14
+      },
+      "paired_retention_gain": 0.03999999999999998
+    },
+    {
+      "baseline": {
+        "coverage": 0.61,
+        "retention": 0.36,
+        "seed": 15
+      },
+      "candidate": {
+        "coverage": 0.61,
+        "retention": 0.38,
+        "seed": 15
+      },
+      "paired_retention_gain": 0.020000000000000018
+    },
+    {
+      "baseline": {
+        "coverage": 0.63,
+        "retention": 0.47,
+        "seed": 16
+      },
+      "candidate": {
+        "coverage": 0.63,
+        "retention": 0.51,
+        "seed": 16
+      },
+      "paired_retention_gain": 0.040000000000000036
+    },
+    {
+      "baseline": {
+        "coverage": 0.68,
+        "retention": 0.38,
+        "seed": 17
+      },
+      "candidate": {
+        "coverage": 0.68,
+        "retention": 0.39,
+        "seed": 17
+      },
+      "paired_retention_gain": 0.010000000000000009
+    },
+    {
+      "baseline": {
+        "coverage": 0.56,
+        "retention": 0.39,
+        "seed": 18
+      },
+      "candidate": {
+        "coverage": 0.56,
+        "retention": 0.43,
+        "seed": 18
+      },
+      "paired_retention_gain": 0.03999999999999998
+    },
+    {
+      "baseline": {
+        "coverage": 0.63,
+        "retention": 0.46,
+        "seed": 19
+      },
+      "candidate": {
+        "coverage": 0.63,
+        "retention": 0.5,
+        "seed": 19
+      },
+      "paired_retention_gain": 0.03999999999999998
+    },
+    {
+      "baseline": {
+        "coverage": 0.71,
+        "retention": 0.44,
+        "seed": 20
+      },
+      "candidate": {
+        "coverage": 0.71,
+        "retention": 0.5,
+        "seed": 20
+      },
+      "paired_retention_gain": 0.06
+    },
+    {
+      "baseline": {
+        "coverage": 0.64,
+        "retention": 0.4,
+        "seed": 21
+      },
+      "candidate": {
+        "coverage": 0.64,
+        "retention": 0.43,
+        "seed": 21
+      },
+      "paired_retention_gain": 0.02999999999999997
+    },
+    {
+      "baseline": {
+        "coverage": 0.61,
+        "retention": 0.4,
+        "seed": 22
+      },
+      "candidate": {
+        "coverage": 0.61,
+        "retention": 0.43,
+        "seed": 22
+      },
+      "paired_retention_gain": 0.02999999999999997
+    },
+    {
+      "baseline": {
+        "coverage": 0.68,
+        "retention": 0.43,
+        "seed": 23
+      },
+      "candidate": {
+        "coverage": 0.68,
+        "retention": 0.46,
+        "seed": 23
+      },
+      "paired_retention_gain": 0.030000000000000027
+    },
+    {
+      "baseline": {
+        "coverage": 0.6,
+        "retention": 0.36,
+        "seed": 24
+      },
+      "candidate": {
+        "coverage": 0.6,
+        "retention": 0.39,
+        "seed": 24
+      },
+      "paired_retention_gain": 0.030000000000000027
+    },
+    {
+      "baseline": {
+        "coverage": 0.66,
+        "retention": 0.48,
+        "seed": 25
+      },
+      "candidate": {
+        "coverage": 0.66,
+        "retention": 0.5,
+        "seed": 25
+      },
+      "paired_retention_gain": 0.020000000000000018
+    },
+    {
+      "baseline": {
+        "coverage": 0.67,
+        "retention": 0.42,
+        "seed": 26
+      },
+      "candidate": {
+        "coverage": 0.67,
+        "retention": 0.45,
+        "seed": 26
+      },
+      "paired_retention_gain": 0.030000000000000027
+    },
+    {
+      "baseline": {
+        "coverage": 0.64,
+        "retention": 0.42,
+        "seed": 27
+      },
+      "candidate": {
+        "coverage": 0.64,
+        "retention": 0.43,
+        "seed": 27
+      },
+      "paired_retention_gain": 0.010000000000000009
+    },
+    {
+      "baseline": {
+        "coverage": 0.65,
+        "retention": 0.45,
+        "seed": 28
+      },
+      "candidate": {
+        "coverage": 0.65,
+        "retention": 0.47,
+        "seed": 28
+      },
+      "paired_retention_gain": 0.019999999999999962
+    },
+    {
+      "baseline": {
+        "coverage": 0.58,
+        "retention": 0.44,
+        "seed": 29
+      },
+      "candidate": {
+        "coverage": 0.58,
+        "retention": 0.46,
+        "seed": 29
+      },
+      "paired_retention_gain": 0.020000000000000018
+    }
+  ],
+  "limitations": [
+    "Synthetic scoring function and proposed change are hand-authored.",
+    "Paired seeds reduce variance but do not remove objective-design bias.",
+    "Only allow-listed parameters change; arbitrary code is never rewritten or executed.",
+    "Promotion is a simulation gate, not evidence of general intelligence."
+  ]
+}
