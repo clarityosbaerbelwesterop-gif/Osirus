@@ -10,7 +10,7 @@ Research prototype exploring explicit reusable operations, composition, autonomo
 - **M4 / E3:** two-stage prerequisite task and probe/verify composition with equal query budgets.
 - **M5 / E4:** heuristic task selection compared with random, fixed and error-only curricula.
 - **M6 / E5:** explicit continual memory and a reset-memory ablation.
-- **M7 / E6:** bounded, allow-listed configuration proposals with a synthetic promotion gate.
+- **M7 / E6:** bounded, allow-listed configuration proposals with a paired-seed synthetic promotion gate.\n- **M8 / E7:** held-out concept learning: infer a threshold rule from examples and compare with nearest-neighbour and majority baselines.
 
 ## Run tests and experiments
 Python 3.12 is configured in GitHub Actions. Locally, from the repository root:
