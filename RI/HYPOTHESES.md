@@ -1,33 +1,29 @@
 # HYPOTHESES
 
-## H1 — Adaptive formation and revision of relationships (provisional)
+## H1 — Adaptive relationship formation and revision
+A system may improve by deriving testable relationships, comparing predictions with outcomes, and revising internal representations.
 
-**Statement:** A system may acquire more capable behavior by detecting environmental changes, deriving testable relationships, examining consequences, comparing predictions with outcomes, and revising internal representations.
+**E1 status:** not supported / unclear in the initial setup. This does not rule out all relationship-based approaches.
 
-**E1 operationalization:** conditional feature/outcome relationships, prediction, and updates from observations.
+## H2 — Operational capability utility
+An agent using an explicit, reusable intervention procedure may outperform random action selection or fixed baselines on noisy diagnostic tasks.
 
-**Status after E1:** not supported in the reported setup / outcome unclear. The candidate did not reliably outperform the reported baselines on held-out cases. See the E1 results and postmortem when available. Do not reinterpret this as proof that all relationship-based learning is impossible.
+**E2 status:** code committed; execution and evaluation pending. The procedure is hand-specified, so even positive results would not establish autonomous acquisition or cross-domain transfer.
 
-## H2 — Reusable capability acquisition and transfer (new, provisional)
+## H3 — Compositional problem solving
+A system that composes reusable probe/verify operations and preserves verified prerequisites may solve sequential hidden-rule tasks more reliably than reset or random controls.
 
-**Statement:** An agent that acquires an explicit, operationally defined problem-solving procedure in one environment and selects/applies it in a structurally different environment will show improved sample efficiency or task performance compared with fair agents that do not transfer that procedure.
+**E3 status:** code committed; execution pending. Operations are hand-coded. Support requires reproducible gains across seeds and task variants, with equal information and action budgets.
 
-**Key distinction:** A capability is not a label or a record that an event occurred. It must change the agent's decisions in a measurable way.
+## H4 — Autonomous curriculum selection
+A task-selection policy using uncertainty, measured error, estimated reuse and cost may improve learning efficiency relative to random, fixed and error-only curricula.
 
-**Independent variable:** availability and use of a validated reusable operation, compared with capability-disabled, reset/no-transfer, random, and fixed-sequence controls.
+**E4 status:** code committed; execution pending. Current task rewards and heuristic are synthetic and hand-designed. Positive results would only validate this specific heuristic in the simulation.
 
-**Dependent variables:** held-out task success, interactions needed to reach a predeclared criterion, calibration, post-contradiction revision, and regression on previously learned tasks.
-
-**Predictions:** If H2 is supported, the capability-enabled agent should show a reproducible advantage on held-out task families and that advantage should decrease when the operational procedure is disabled.
-
-**Alternative explanations:** (1) the second environment is easy enough for a generic baseline; (2) transfer results from shared labels or leaked state rather than the capability; (3) the agent relearns from new feedback and does not use the stored procedure; (4) gains are seed noise.
-
-**Falsification / non-support:** H2 is not supported if the advantage disappears across held-out seeds, if the capability-disabled ablation performs similarly, if evaluator information leaks to the agent, or if complexity adds no measurable value over simpler baselines.
-
-**Status:** not yet tested validly. The initial E2 prototype explicitly has a known limitation: the exported procedure is not yet causally responsible for transfer-agent action selection. It must be fixed before interpreting results.
-
-## Broader research thesis — capability development
-
-RI investigates whether experience can change not only the system's knowledge, but its repertoire of reusable operations, its ability to compose those operations, and its strategy for selecting what to learn next. This is a research program, not a claim of novelty or a proof of general intelligence.
-
-Related areas to review include meta-learning, program induction, hierarchical reinforcement learning, active learning, causal discovery, compositional generalization, developmental robotics, and continual learning. Any novelty claim must be comparative and evidence-based.
+## Shared standards
+- Predeclare the hypothesis, baselines, measures and decision rule.
+- Keep ground truth inaccessible to the agent.
+- Report uncertainty and per-seed outcomes.
+- Include ablations and regression tests.
+- If a simple baseline matches the candidate, record non-support and revise the hypothesis.
+- Never infer general intelligence from toy-world success.
