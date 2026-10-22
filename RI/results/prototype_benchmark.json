@@ -5,7 +5,7 @@
     "task_pass_rate": 1.0,
     "mean_train_accuracy": 1,
     "mean_held_out_accuracy": 0.9944444444444445,
-    "mean_runtime_ms": 0.7919,
+    "mean_runtime_ms": 0.7946,
     "learning_loop_trigger_rate": 0.5,
     "baselines": {
       "majority": 0.6069444444444444,
@@ -31,7 +31,7 @@
           "random": 0.5416666666666666
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4483
+        "runtime_ms": 0.4492
       },
       {
         "seed": 1,
@@ -46,7 +46,7 @@
           "random": 0.5416666666666666
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4232
+        "runtime_ms": 0.4344
       },
       {
         "seed": 2,
@@ -61,7 +61,7 @@
           "random": 0.5833333333333334
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4065
+        "runtime_ms": 0.4141
       },
       {
         "seed": 3,
@@ -76,7 +76,7 @@
           "random": 0.3333333333333333
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 0.9911
+        "runtime_ms": 0.9767
       },
       {
         "seed": 4,
@@ -91,7 +91,7 @@
           "random": 0.4583333333333333
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 0.965
+        "runtime_ms": 0.959
       },
       {
         "seed": 5,
@@ -106,7 +106,7 @@
           "random": 0.3333333333333333
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 1.5789
+        "runtime_ms": 1.6484
       },
       {
         "seed": 6,
@@ -121,7 +121,7 @@
           "random": 0.5
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4036
+        "runtime_ms": 0.4335
       },
       {
         "seed": 7,
@@ -136,7 +136,7 @@
           "random": 0.5833333333333334
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4171
+        "runtime_ms": 0.3989
       },
       {
         "seed": 8,
@@ -151,7 +151,7 @@
           "random": 0.5833333333333334
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.41
+        "runtime_ms": 0.3972
       },
       {
         "seed": 9,
@@ -166,7 +166,7 @@
           "random": 0.5416666666666666
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 0.9696
+        "runtime_ms": 0.9783
       },
       {
         "seed": 10,
@@ -181,7 +181,7 @@
           "random": 0.3333333333333333
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 0.9622
+        "runtime_ms": 0.9568
       },
       {
         "seed": 11,
@@ -196,7 +196,7 @@
           "random": 0.7083333333333334
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 1.5454
+        "runtime_ms": 1.5685
       },
       {
         "seed": 12,
@@ -211,7 +211,7 @@
           "random": 0.4583333333333333
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4019
+        "runtime_ms": 0.3961
       },
       {
         "seed": 13,
@@ -226,7 +226,7 @@
           "random": 0.4583333333333333
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4019
+        "runtime_ms": 0.395
       },
       {
         "seed": 14,
@@ -241,7 +241,7 @@
           "random": 0.5
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4009
+        "runtime_ms": 0.3993
       },
       {
         "seed": 15,
@@ -256,7 +256,7 @@
           "random": 0.5833333333333334
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 0.9636
+        "runtime_ms": 0.9642
       },
       {
         "seed": 16,
@@ -271,7 +271,7 @@
           "random": 0.5833333333333334
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 0.9603
+        "runtime_ms": 0.9966
       },
       {
         "seed": 17,
@@ -286,7 +286,7 @@
           "random": 0.5833333333333334
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 1.6609
+        "runtime_ms": 1.5934
       },
       {
         "seed": 18,
@@ -301,7 +301,7 @@
           "random": 0.5
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4015
+        "runtime_ms": 0.4052
       },
       {
         "seed": 19,
@@ -316,7 +316,7 @@
           "random": 0.625
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.3968
+        "runtime_ms": 0.4032
       },
       {
         "seed": 20,
@@ -331,7 +331,7 @@
           "random": 0.4583333333333333
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.3971
+        "runtime_ms": 0.4085
       },
       {
         "seed": 21,
@@ -346,7 +346,7 @@
           "random": 0.625
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 0.9569
+        "runtime_ms": 0.9651
       },
       {
         "seed": 22,
@@ -361,7 +361,7 @@
           "random": 0.5833333333333334
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 0.9609
+        "runtime_ms": 0.9773
       },
       {
         "seed": 23,
@@ -376,7 +376,7 @@
           "random": 0.5
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 1.524
+        "runtime_ms": 1.5358
       },
       {
         "seed": 24,
@@ -391,7 +391,7 @@
           "random": 0.4166666666666667
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4044
+        "runtime_ms": 0.4016
       },
       {
         "seed": 25,
@@ -406,7 +406,7 @@
           "random": 0.5833333333333334
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4102
+        "runtime_ms": 0.4107
       },
       {
         "seed": 26,
@@ -421,7 +421,7 @@
           "random": 0.20833333333333334
         },
         "learning_loop_triggered": false,
-        "runtime_ms": 0.4093
+        "runtime_ms": 0.398
       },
       {
         "seed": 27,
@@ -436,7 +436,7 @@
           "random": 0.5
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 0.9648
+        "runtime_ms": 0.9566
       },
       {
         "seed": 28,
@@ -451,7 +451,7 @@
           "random": 0.5
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 0.9726
+        "runtime_ms": 1.0432
       },
       {
         "seed": 29,
@@ -466,7 +466,7 @@
           "random": 0.5833333333333334
         },
         "learning_loop_triggered": true,
-        "runtime_ms": 1.6485
+        "runtime_ms": 1.5719
       }
     ]
   },

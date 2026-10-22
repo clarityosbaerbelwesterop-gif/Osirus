@@ -1,5 +1,5 @@
 {
-  "n_experiments": 7,
+  "n_experiments": 8,
   "tests_only": false,
   "all_passed": true,
   "failures": [],
@@ -10,7 +10,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 93.055,
+      "duration_ms": 89.477,
       "status": "passed"
     },
     {
@@ -19,7 +19,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 79.78,
+      "duration_ms": 78.305,
       "status": "passed"
     },
     {
@@ -28,7 +28,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 97.08,
+      "duration_ms": 99.044,
       "status": "passed"
     },
     {
@@ -37,7 +37,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 83.727,
+      "duration_ms": 83.683,
       "status": "passed"
     },
     {
@@ -46,7 +46,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 79.112,
+      "duration_ms": 77.607,
       "status": "passed"
     },
     {
@@ -55,7 +55,7 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 71.167,
+      "duration_ms": 70.798,
       "status": "passed"
     },
     {
@@ -64,7 +64,16 @@
       "tests_exit_code": 0,
       "evaluation_exit_code": 0,
       "artifact_valid": true,
-      "duration_ms": 88.267,
+      "duration_ms": 88.189,
+      "status": "passed"
+    },
+    {
+      "experiment": "M16 E9 held-out rule generalization",
+      "directory": "/workspace/RI/experiments/E9_heldout_rule_generalization",
+      "tests_exit_code": 0,
+      "evaluation_exit_code": 0,
+      "artifact_valid": true,
+      "duration_ms": 15563.95,
       "status": "passed"
     }
   ]

@@ -20,6 +20,7 @@ Research prototype exploring explicit reusable operations, composition, autonomo
 - **M13 (`RI/prototype/active_query.py`):** `ActiveBoundaryQuerier` using Shannon-entropy version-space disagreement to resolve threshold/hypothesis ties from an unlabeled pool (`1.0000` held-out accuracy and `1.0000` exact rule recovery across 30 seeds).
 - **M14 (`RI/prototype/compositional_language.py`):** `CompositionalSkillSynthesizer` supporting `AND`, `OR`, `XOR`, and `AND_NOT` over `IOContract`-verified skills (`806x` search space compression and `+0.1208` held-out accuracy gain over unconstrained depth-2 enumeration).
 - **M15 (`RI/prototype/drift_and_noise.py`):** `DriftAndNoiseController` for non-stationary concept drift, label noise robustness (`0%`–`20%`), shock rejection (`40%` noise), and historical skill version reactivation (`recovered_prior_version`).
+- **M16 / E9 (`RI/experiments/E9_heldout_rule_generalization/`, `RI/docs/M16_HELDOUT_GENERALIZATION.md`):** Held-out relational rule language generalization over variable-size object scenes (\(N \in [3, 11]\)) across compositional (`A`), structural size-transfer (`B`), held-out pairwise relational (`C1`), and unidentifiable out-of-grammar (`C2`) regimes, compared against 6 baselines and 4 ablations (`0.9938 ± 0.0055` identifiable held-out accuracy, `0.9222` exact recovery, and `96.67%` unidentifiable `C2` abstention/detection).
 
 ## Quickstart Commands
 
@@ -35,7 +36,7 @@ Run the full 30-seed M10–M12 prototype benchmark:
 python3 RI/run_prototype.py --mode benchmark
 ```
 
-Run the complete RI test and evaluation suite (`E2`–`E8` + `RI/tests` + `M10`–`M12` prototype):
+Run the complete RI test and evaluation suite (`E2`–`E9` + `RI/tests` + `M10`–`M15` prototype):
 
 ```bash
 python3 RI/run_experiments.py
@@ -47,6 +48,7 @@ python3 RI/run_experiments.py
 - `RI/PROTOTYPE_QUICKSTART.md` — installation, single-command start, and example walkthrough.
 - `RI/TESTING.md` — unit/integration/negative test suites, metrics, and CI workflow.
 - `RI/RESULTS.md` — measured results, baseline comparisons, commit provenance, and limitations.
+- `RI/docs/M16_HELDOUT_GENERALIZATION.md` — detailed M16 (`E9`) specification, formal relational grammar, baselines, ablations, and error analysis.
 - `RI/prompts/` — verification and review prompts (`M9_TEST_AND_WORKFLOW_PROMPTS.md`, `M10_M12_PROTOTYPE_PROMPTS.md`).
 
 ## Scientific Status and Limits

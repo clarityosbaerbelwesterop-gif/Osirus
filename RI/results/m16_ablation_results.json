@@ -1,0 +1,719 @@
+{
+  "commit_hash": "b1c5230ad60df7284fd3d28c18ee11ecdd8aa96a",
+  "experiment_version": "M16.E9.v1",
+  "execution_status": "completed",
+  "n_seeds": 30,
+  "split_sizes": {
+    "train_size": 10,
+    "val_size": 10,
+    "query_pool_size": 16,
+    "test_size": 36,
+    "train_label_noise_prob": 0.05
+  },
+  "budget_limits": {
+    "max_candidates": 420,
+    "max_depth": 2,
+    "query_budget": 3,
+    "size_buckets": {
+      "small_3_5": [
+        3,
+        5
+      ],
+      "medium_6_8": [
+        6,
+        8
+      ],
+      "large_9_11": [
+        9,
+        11
+      ]
+    }
+  },
+  "variants": {
+    "ri_full": {
+      "overall_held_out_accuracy": {
+        "mean": 0.867361,
+        "std": 0.224124,
+        "ci95_half_width": 0.040101,
+        "ci95_low": 0.82726,
+        "ci95_high": 0.907462
+      },
+      "identifiable_held_out_accuracy": {
+        "mean": 0.993827,
+        "std": 0.026591,
+        "ci95_half_width": 0.005494,
+        "ci95_low": 0.988333,
+        "ci95_high": 0.999321
+      },
+      "identifiable_exact_rule_recovery": {
+        "mean": 0.922222,
+        "std": 0.269322,
+        "ci95_half_width": 0.055642,
+        "ci95_low": 0.86658,
+        "ci95_high": 0.977865
+      },
+      "overall_exact_rule_recovery_rate": 0.691667,
+      "size_generalization_on_identifiable": {
+        "small_3_5_accuracy": {
+          "mean": 0.994444,
+          "std": 0.032576,
+          "ci95_half_width": 0.00673,
+          "ci95_low": 0.987714,
+          "ci95_high": 1.001175
+        },
+        "medium_6_8_accuracy": {
+          "mean": 0.993519,
+          "std": 0.033585,
+          "ci95_half_width": 0.006939,
+          "ci95_low": 0.98658,
+          "ci95_high": 1.000457
+        },
+        "large_9_11_accuracy": {
+          "mean": 0.993519,
+          "std": 0.033585,
+          "ci95_half_width": 0.006939,
+          "ci95_low": 0.98658,
+          "ci95_high": 1.000457
+        },
+        "mean_size_transfer_drop": 0.000926
+      },
+      "mean_hypotheses_evaluated": 354.45,
+      "mean_semantically_deduplicated": 194.65,
+      "mean_training_examples_used": 22.49,
+      "mean_queries_used": 2.492,
+      "mean_runtime_ms": 23.0642,
+      "mean_error_rate": 0.132639,
+      "unsolved_or_ambiguous_rate": 0.333333,
+      "unidentifiable_c2_detection_rate": 0.966667,
+      "false_abstention_rate_on_identifiable": 0.022222,
+      "by_regime": {
+        "A_compositional": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.981481,
+            "std": 0.043971,
+            "ci95_half_width": 0.015735,
+            "ci95_low": 0.965747,
+            "ci95_high": 0.997216
+          },
+          "exact_rule_recovery_rate": 0.8,
+          "abstention_rate": 0.066667,
+          "mean_hypotheses_evaluated": 157.8,
+          "mean_queries_used": 2.2
+        },
+        "B_structural_size_transfer": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 1,
+            "std": 0.0,
+            "ci95_half_width": 0.0,
+            "ci95_low": 1.0,
+            "ci95_high": 1.0
+          },
+          "exact_rule_recovery_rate": 0.966667,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 2.667
+        },
+        "C1_heldout_translatable": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 1,
+            "std": 0.0,
+            "ci95_half_width": 0.0,
+            "ci95_low": 1.0,
+            "ci95_high": 1.0
+          },
+          "exact_rule_recovery_rate": 1.0,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 2.2
+        },
+        "C2_heldout_unidentifiable": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.487963,
+            "std": 0.073559,
+            "ci95_half_width": 0.026323,
+            "ci95_low": 0.46164,
+            "ci95_high": 0.514286
+          },
+          "exact_rule_recovery_rate": 0.0,
+          "abstention_rate": 0.966667,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 2.9
+        }
+      }
+    },
+    "ablation_no_m13_active_query": {
+      "overall_held_out_accuracy": {
+        "mean": 0.865046,
+        "std": 0.220032,
+        "ci95_half_width": 0.039369,
+        "ci95_low": 0.825678,
+        "ci95_high": 0.904415
+      },
+      "identifiable_held_out_accuracy": {
+        "mean": 0.987037,
+        "std": 0.052209,
+        "ci95_half_width": 0.010786,
+        "ci95_low": 0.976251,
+        "ci95_high": 0.997823
+      },
+      "identifiable_exact_rule_recovery": {
+        "mean": 0.911111,
+        "std": 0.286178,
+        "ci95_half_width": 0.059125,
+        "ci95_low": 0.851986,
+        "ci95_high": 0.970236
+      },
+      "overall_exact_rule_recovery_rate": 0.683333,
+      "size_generalization_on_identifiable": {
+        "small_3_5_accuracy": {
+          "mean": 0.987037,
+          "std": 0.054325,
+          "ci95_half_width": 0.011224,
+          "ci95_low": 0.975813,
+          "ci95_high": 0.998261
+        },
+        "medium_6_8_accuracy": {
+          "mean": 0.987963,
+          "std": 0.050837,
+          "ci95_half_width": 0.010503,
+          "ci95_low": 0.97746,
+          "ci95_high": 0.998466
+        },
+        "large_9_11_accuracy": {
+          "mean": 0.986111,
+          "std": 0.062773,
+          "ci95_half_width": 0.012969,
+          "ci95_low": 0.973142,
+          "ci95_high": 0.99908
+        },
+        "mean_size_transfer_drop": 0.000926
+      },
+      "mean_hypotheses_evaluated": 354.45,
+      "mean_semantically_deduplicated": 194.65,
+      "mean_training_examples_used": 20,
+      "mean_queries_used": 0,
+      "mean_runtime_ms": 9.3359,
+      "mean_error_rate": 0.134954,
+      "unsolved_or_ambiguous_rate": 0.35,
+      "unidentifiable_c2_detection_rate": 0.966667,
+      "false_abstention_rate_on_identifiable": 0.033333,
+      "by_regime": {
+        "A_compositional": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.961111,
+            "std": 0.08557,
+            "ci95_half_width": 0.030621,
+            "ci95_low": 0.93049,
+            "ci95_high": 0.991732
+          },
+          "exact_rule_recovery_rate": 0.766667,
+          "abstention_rate": 0.1,
+          "mean_hypotheses_evaluated": 157.8,
+          "mean_queries_used": 0
+        },
+        "B_structural_size_transfer": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 1,
+            "std": 0.0,
+            "ci95_half_width": 0.0,
+            "ci95_low": 1.0,
+            "ci95_high": 1.0
+          },
+          "exact_rule_recovery_rate": 0.966667,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 0
+        },
+        "C1_heldout_translatable": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 1,
+            "std": 0.0,
+            "ci95_half_width": 0.0,
+            "ci95_low": 1.0,
+            "ci95_high": 1.0
+          },
+          "exact_rule_recovery_rate": 1.0,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 0
+        },
+        "C2_heldout_unidentifiable": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.499074,
+            "std": 0.074565,
+            "ci95_half_width": 0.026683,
+            "ci95_low": 0.472391,
+            "ci95_high": 0.525757
+          },
+          "exact_rule_recovery_rate": 0.0,
+          "abstention_rate": 0.966667,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 0
+        }
+      }
+    },
+    "ri_no_skill_memory": {
+      "overall_held_out_accuracy": {
+        "mean": 0.847685,
+        "std": 0.22604,
+        "ci95_half_width": 0.040444,
+        "ci95_low": 0.807241,
+        "ci95_high": 0.888129
+      },
+      "identifiable_held_out_accuracy": {
+        "mean": 0.967593,
+        "std": 0.091633,
+        "ci95_half_width": 0.018932,
+        "ci95_low": 0.948661,
+        "ci95_high": 0.986524
+      },
+      "identifiable_exact_rule_recovery": {
+        "mean": 0.811111,
+        "std": 0.393613,
+        "ci95_half_width": 0.081321,
+        "ci95_low": 0.72979,
+        "ci95_high": 0.892432
+      },
+      "overall_exact_rule_recovery_rate": 0.608333,
+      "size_generalization_on_identifiable": {
+        "small_3_5_accuracy": {
+          "mean": 0.966667,
+          "std": 0.106587,
+          "ci95_half_width": 0.022021,
+          "ci95_low": 0.944646,
+          "ci95_high": 0.988688
+        },
+        "medium_6_8_accuracy": {
+          "mean": 0.963889,
+          "std": 0.098403,
+          "ci95_half_width": 0.02033,
+          "ci95_low": 0.943559,
+          "ci95_high": 0.984219
+        },
+        "large_9_11_accuracy": {
+          "mean": 0.972222,
+          "std": 0.088333,
+          "ci95_half_width": 0.01825,
+          "ci95_low": 0.953972,
+          "ci95_high": 0.990472
+        },
+        "mean_size_transfer_drop": -0.005556
+      },
+      "mean_hypotheses_evaluated": 420,
+      "mean_semantically_deduplicated": 237,
+      "mean_training_examples_used": 22.68,
+      "mean_queries_used": 2.683,
+      "mean_runtime_ms": 27.0458,
+      "mean_error_rate": 0.152315,
+      "unsolved_or_ambiguous_rate": 0.375,
+      "unidentifiable_c2_detection_rate": 0.966667,
+      "false_abstention_rate_on_identifiable": 0.088889,
+      "by_regime": {
+        "A_compositional": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.902778,
+            "std": 0.138745,
+            "ci95_half_width": 0.049649,
+            "ci95_low": 0.853128,
+            "ci95_high": 0.952427
+          },
+          "exact_rule_recovery_rate": 0.466667,
+          "abstention_rate": 0.266667,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 2.967
+        },
+        "B_structural_size_transfer": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 1,
+            "std": 0.0,
+            "ci95_half_width": 0.0,
+            "ci95_low": 1.0,
+            "ci95_high": 1.0
+          },
+          "exact_rule_recovery_rate": 0.966667,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 2.667
+        },
+        "C1_heldout_translatable": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 1,
+            "std": 0.0,
+            "ci95_half_width": 0.0,
+            "ci95_low": 1.0,
+            "ci95_high": 1.0
+          },
+          "exact_rule_recovery_rate": 1.0,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 2.2
+        },
+        "C2_heldout_unidentifiable": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.487963,
+            "std": 0.073559,
+            "ci95_half_width": 0.026323,
+            "ci95_low": 0.46164,
+            "ci95_high": 0.514286
+          },
+          "exact_rule_recovery_rate": 0.0,
+          "abstention_rate": 0.966667,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 2.9
+        }
+      }
+    },
+    "ablation_no_m15_validation_guard": {
+      "overall_held_out_accuracy": {
+        "mean": 0.830556,
+        "std": 0.229949,
+        "ci95_half_width": 0.041143,
+        "ci95_low": 0.789413,
+        "ci95_high": 0.871699
+      },
+      "identifiable_held_out_accuracy": {
+        "mean": 0.938272,
+        "std": 0.149082,
+        "ci95_half_width": 0.030801,
+        "ci95_low": 0.907471,
+        "ci95_high": 0.969072
+      },
+      "identifiable_exact_rule_recovery": {
+        "mean": 0.811111,
+        "std": 0.393613,
+        "ci95_half_width": 0.081321,
+        "ci95_low": 0.72979,
+        "ci95_high": 0.892432
+      },
+      "overall_exact_rule_recovery_rate": 0.608333,
+      "size_generalization_on_identifiable": {
+        "small_3_5_accuracy": {
+          "mean": 0.938889,
+          "std": 0.152895,
+          "ci95_half_width": 0.031589,
+          "ci95_low": 0.9073,
+          "ci95_high": 0.970477
+        },
+        "medium_6_8_accuracy": {
+          "mean": 0.939815,
+          "std": 0.148876,
+          "ci95_half_width": 0.030758,
+          "ci95_low": 0.909057,
+          "ci95_high": 0.970573
+        },
+        "large_9_11_accuracy": {
+          "mean": 0.936111,
+          "std": 0.163381,
+          "ci95_half_width": 0.033755,
+          "ci95_low": 0.902356,
+          "ci95_high": 0.969866
+        },
+        "mean_size_transfer_drop": 0.002778
+      },
+      "mean_hypotheses_evaluated": 354.45,
+      "mean_semantically_deduplicated": 194.65,
+      "mean_training_examples_used": 11.05,
+      "mean_queries_used": 1.05,
+      "mean_runtime_ms": 8.4883,
+      "mean_error_rate": 0.169444,
+      "unsolved_or_ambiguous_rate": 0.158333,
+      "unidentifiable_c2_detection_rate": 0.0,
+      "false_abstention_rate_on_identifiable": 0.0,
+      "by_regime": {
+        "A_compositional": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.908333,
+            "std": 0.17525,
+            "ci95_half_width": 0.062712,
+            "ci95_low": 0.845621,
+            "ci95_high": 0.971046
+          },
+          "exact_rule_recovery_rate": 0.666667,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 157.8,
+          "mean_queries_used": 0.767
+        },
+        "B_structural_size_transfer": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.939815,
+            "std": 0.158665,
+            "ci95_half_width": 0.056778,
+            "ci95_low": 0.883037,
+            "ci95_high": 0.996593
+          },
+          "exact_rule_recovery_rate": 0.866667,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 1.167
+        },
+        "C1_heldout_translatable": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.966667,
+            "std": 0.102751,
+            "ci95_half_width": 0.036769,
+            "ci95_low": 0.929898,
+            "ci95_high": 1.003435
+          },
+          "exact_rule_recovery_rate": 0.9,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 0.7
+        },
+        "C2_heldout_unidentifiable": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.507407,
+            "std": 0.068793,
+            "ci95_half_width": 0.024617,
+            "ci95_low": 0.48279,
+            "ci95_high": 0.532025
+          },
+          "exact_rule_recovery_rate": 0.0,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 420,
+          "mean_queries_used": 1.567
+        }
+      }
+    },
+    "ri_no_compositional": {
+      "overall_held_out_accuracy": {
+        "mean": 0.811111,
+        "std": 0.225972,
+        "ci95_half_width": 0.040432,
+        "ci95_low": 0.77068,
+        "ci95_high": 0.851543
+      },
+      "identifiable_held_out_accuracy": {
+        "mean": 0.912346,
+        "std": 0.159322,
+        "ci95_half_width": 0.032916,
+        "ci95_low": 0.879429,
+        "ci95_high": 0.945262
+      },
+      "identifiable_exact_rule_recovery": {
+        "mean": 0.666667,
+        "std": 0.474045,
+        "ci95_half_width": 0.097939,
+        "ci95_low": 0.568728,
+        "ci95_high": 0.764605
+      },
+      "overall_exact_rule_recovery_rate": 0.5,
+      "size_generalization_on_identifiable": {
+        "small_3_5_accuracy": {
+          "mean": 0.911111,
+          "std": 0.162782,
+          "ci95_half_width": 0.033631,
+          "ci95_low": 0.87748,
+          "ci95_high": 0.944742
+        },
+        "medium_6_8_accuracy": {
+          "mean": 0.912037,
+          "std": 0.166367,
+          "ci95_half_width": 0.034372,
+          "ci95_low": 0.877665,
+          "ci95_high": 0.946409
+        },
+        "large_9_11_accuracy": {
+          "mean": 0.913889,
+          "std": 0.174198,
+          "ci95_half_width": 0.03599,
+          "ci95_low": 0.877899,
+          "ci95_high": 0.949879
+        },
+        "mean_size_transfer_drop": -0.002778
+      },
+      "mean_hypotheses_evaluated": 52.46,
+      "mean_semantically_deduplicated": 6,
+      "mean_training_examples_used": 21.78,
+      "mean_queries_used": 1.783,
+      "mean_runtime_ms": 3.0236,
+      "mean_error_rate": 0.188889,
+      "unsolved_or_ambiguous_rate": 0.475,
+      "unidentifiable_c2_detection_rate": 0.966667,
+      "false_abstention_rate_on_identifiable": 0.222222,
+      "by_regime": {
+        "A_compositional": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.737037,
+            "std": 0.173814,
+            "ci95_half_width": 0.062199,
+            "ci95_low": 0.674838,
+            "ci95_high": 0.799236
+          },
+          "exact_rule_recovery_rate": 0.0,
+          "abstention_rate": 0.666667,
+          "mean_hypotheses_evaluated": 53.83,
+          "mean_queries_used": 2.267
+        },
+        "B_structural_size_transfer": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 1,
+            "std": 0.0,
+            "ci95_half_width": 0.0,
+            "ci95_low": 1.0,
+            "ci95_high": 1.0
+          },
+          "exact_rule_recovery_rate": 1.0,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 52,
+          "mean_queries_used": 1.4
+        },
+        "C1_heldout_translatable": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 1,
+            "std": 0.0,
+            "ci95_half_width": 0.0,
+            "ci95_low": 1.0,
+            "ci95_high": 1.0
+          },
+          "exact_rule_recovery_rate": 1.0,
+          "abstention_rate": 0.0,
+          "mean_hypotheses_evaluated": 52,
+          "mean_queries_used": 1.467
+        },
+        "C2_heldout_unidentifiable": {
+          "n_tasks": 30,
+          "held_out_accuracy": {
+            "mean": 0.507407,
+            "std": 0.066432,
+            "ci95_half_width": 0.023772,
+            "ci95_low": 0.483635,
+            "ci95_high": 0.53118
+          },
+          "exact_rule_recovery_rate": 0.0,
+          "abstention_rate": 0.966667,
+          "mean_hypotheses_evaluated": 52,
+          "mean_queries_used": 2
+        }
+      }
+    }
+  },
+  "component_contribution_deltas": {
+    "ablation_no_m13_active_query": {
+      "identifiable_accuracy_drop_when_removed": {
+        "mean": 0.00679,
+        "std": 0.040439,
+        "ci95_half_width": 0.008355,
+        "ci95_low": -0.001565,
+        "ci95_high": 0.015145
+      },
+      "identifiable_exact_recovery_drop_when_removed": {
+        "mean": 0.011111,
+        "std": 0.105409,
+        "ci95_half_width": 0.021778,
+        "ci95_low": -0.010667,
+        "ci95_high": 0.032889
+      }
+    },
+    "ri_no_skill_memory": {
+      "identifiable_accuracy_drop_when_removed": {
+        "mean": 0.026235,
+        "std": 0.089538,
+        "ci95_half_width": 0.018499,
+        "ci95_low": 0.007736,
+        "ci95_high": 0.044733
+      },
+      "identifiable_exact_recovery_drop_when_removed": {
+        "mean": 0.111111,
+        "std": 0.31603,
+        "ci95_half_width": 0.065293,
+        "ci95_low": 0.045819,
+        "ci95_high": 0.176404
+      }
+    },
+    "ablation_no_m15_validation_guard": {
+      "identifiable_accuracy_drop_when_removed": {
+        "mean": 0.055556,
+        "std": 0.140163,
+        "ci95_half_width": 0.028958,
+        "ci95_low": 0.026598,
+        "ci95_high": 0.084513
+      },
+      "identifiable_exact_recovery_drop_when_removed": {
+        "mean": 0.111111,
+        "std": 0.31603,
+        "ci95_half_width": 0.065293,
+        "ci95_low": 0.045819,
+        "ci95_high": 0.176404
+      }
+    },
+    "ri_no_compositional": {
+      "identifiable_accuracy_drop_when_removed": {
+        "mean": 0.081481,
+        "std": 0.153269,
+        "ci95_half_width": 0.031666,
+        "ci95_low": 0.049816,
+        "ci95_high": 0.113147
+      },
+      "identifiable_exact_recovery_drop_when_removed": {
+        "mean": 0.255556,
+        "std": 0.463526,
+        "ci95_half_width": 0.095765,
+        "ci95_low": 0.15979,
+        "ci95_high": 0.351321
+      }
+    }
+  },
+  "when_components_do_not_help_or_hurt": {
+    "m13_degrades_under_noisy_oracle_without_m15_guard": {
+      "description": "When the query oracle is corrupted (75% label flip probability) and M15 validation guard is disabled, hard version-space elimination on faulty query responses discards the true rule and degrades held-out accuracy compared to passive no-query selection.",
+      "active_noisy_oracle_accuracy": {
+        "mean": 0.725,
+        "std": 0.205177,
+        "ci95_half_width": 0.073422,
+        "ci95_low": 0.651578,
+        "ci95_high": 0.798422
+      },
+      "passive_no_query_accuracy": {
+        "mean": 0.816667,
+        "std": 0.192222,
+        "ci95_half_width": 0.068786,
+        "ci95_low": 0.747881,
+        "ci95_high": 0.885452
+      },
+      "mean_accuracy_change": -0.091667
+    },
+    "m14_zero_gain_and_search_overhead_under_irrelevant_skills": {
+      "description": "When SkillMemory contains only Regime-A unary skills but the target task is C1_heldout_translatable (pairwise relational graph rule), M14 skill composition yields zero accuracy gain while adding candidate evaluation overhead.",
+      "with_irrelevant_memory_accuracy": {
+        "mean": 1,
+        "std": 0.0,
+        "ci95_half_width": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "without_memory_accuracy": {
+        "mean": 1,
+        "std": 0.0,
+        "ci95_half_width": 0.0,
+        "ci95_low": 1.0,
+        "ci95_high": 1.0
+      },
+      "mean_accuracy_gain": 0,
+      "mean_extra_candidates_evaluated": 7.67
+    }
+  },
+  "limitations": [
+    "All identifiable rules (Regimes A, B, C1) are composed from a finite typed relational grammar of 8 primitive templates and 5 binary combinators.",
+    "Regime C2 (out-of-grammar ternary cyclic triad rule) is fundamentally unidentifiable without higher-order ternary relational primitives; RI detects this via validation discrepancy and abstains rather than inventing new primitive operators.",
+    "Synthetic object-graph scenes validate compositional, structural size-transfer, and abstention mechanics on CPU, not open-ended human-level scientific discovery."
+  ]
+}

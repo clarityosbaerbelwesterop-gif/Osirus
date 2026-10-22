@@ -23,6 +23,7 @@
 | **E6** (`E6_guarded_self_improvement`) | M7 | `6/6` OK | Retention: `0.4527` (`+0.0263` paired gain) | Baseline config: `0.4263` (`min_gain = 0.0100`) | **Positive (harness):** Allow-listed parameter proposal passes paired-seed promotion gate. |
 | **E7** (`E7_skill_acquisition`) | M8 | `5/5` OK | Held-out acc: `0.9653` | `nearest_neighbour`: `0.8778`, `majority`: `0.6389` | **Positive (bounded):** Threshold induction generalizes to disjoint grid points (`+0.0875` over NN, `+0.3264` over majority). |
 | **E8** (`E8_rule_discovery`) | M9 | `12/12` OK | Family selection: `1.0000`, Exact rule: `0.8667`, Held-out acc: `0.9833` | Held-out acc — `majority`: `0.5611`, `fixed_threshold`: `0.6667`, `random_hypothesis`: `0.7250` | **Positive (bounded):** Selects the true family on `30/30` seeds (`17` `sum_threshold`, `13` `parity`); `threshold_tie_rate = 0.1333` (`4/30` seeds) explains the `0.9833` vs `1.0` gap. |
+| **E9** (`E9_heldout_rule_generalization`) | M16 | `11/11` OK | Identifiable Held-out acc: `0.9938 ± 0.0055`, Exact rule: `0.9222 ± 0.0556`, C2 Abstention: `0.9667` | `ri_no_skill_memory`: `0.9676`, `ri_no_compositional`: `0.9123`, `bounded_enumerative_search`: `0.8324`, `supervised_reference`: `0.6114`, `majority_prior`: `0.4873`, `random_hypothesis`: `0.4802` | **Positive (bounded relational) + Honest Boundary:** Generalizes across unseen operator combinations (`A`: `0.9815`), object-count scaling \(N \in [3..5] \to [9..11]\) (`B`: `1.0000`), and held-out pairwise rules (`C1`: `1.0000`), while flagging unidentifiable out-of-grammar rules (`C2`) on `29/30` seeds. |
 
 ---
 
@@ -127,6 +128,26 @@ Artifacts:
   - `5%` noise: noisy-train acc `0.9653`, clean held-out acc **`0.9847`** (majority `0.5806`)
   - `10%` noise: noisy-train acc `0.9181`, clean held-out acc **`0.9722`** (majority `0.5778`)
   - `20%` noise: noisy-train acc `0.8361`, clean held-out acc **`0.9250`** (majority `0.5944`)
+
+### 4.7 M16 (`E9_heldout_rule_generalization`) — Relational Object-Graph Generalization (30 Seeds, 120 Tasks)
+Artifacts:
+- `RI/experiments/E9_heldout_rule_generalization/results/results.json`
+- `RI/results/m16_summary.json`
+- `RI/results/m16_ablation_results.json`
+
+- **Identifiable Regimes (`A_compositional`, `B_structural_size_transfer`, `C1_heldout_translatable`, 90 Tasks):**
+  - `ri_full`: Held-out accuracy **`0.9938 ± 0.0055`**, exact rule recovery **`0.9222 ± 0.0556`**, size-transfer drop (`small_3_5` -> `large_9_11`) **`+0.0009`**.
+  - `ri_no_skill_memory`: Held-out accuracy `0.9676 ± 0.0189`, exact rule recovery `0.8111 ± 0.0813` (on Regime A drops to `0.9028` accuracy and `0.4667` exact recovery vs `0.9815` / `0.8000` for `ri_full`).
+  - `ri_no_compositional` (`max_depth=1`): Held-out accuracy `0.9123 ± 0.0329`, exact rule recovery `0.6667 ± 0.0979` (`0.0000` exact recovery on Regime A).
+  - `bounded_enumerative_search`: Held-out accuracy `0.8324 ± 0.0440`, exact rule recovery `0.5222 ± 0.1038`.
+  - `supervised_reference` (3-NN over unnormalized counts & positional slots): Held-out accuracy `0.6114 ± 0.0233`, size-transfer drop `+0.0463` (`0.6269` on `small_3_5` -> `0.5806` on `large_9_11`).
+  - `majority_prior`: Held-out accuracy `0.4873 ± 0.0091`.
+  - `random_hypothesis`: Held-out accuracy `0.4802 ± 0.0235`.
+- **Unidentifiable Out-of-Grammar Regime (`C2_heldout_unidentifiable`, 30 Tasks):**
+  - `ri_full` abstains with `status = "unidentified_high_uncertainty"` on **`29/30` seeds (`96.67%`)** (false abstention rate on identifiable tasks: `1.11%`), whereas `bounded_enumerative_search` and `ablation_no_m15_validation_guard` have `0.00%` detection and silently output random-level predictions (`~0.499`).
+- **Component Failure / Overhead Cases (`when_components_do_not_help_or_hurt`):**
+  - Under a corrupted query oracle (`75%` flip rate) without M15 validation guarding, M13 active querying degrades held-out accuracy by **`-0.0917`** (`0.8167` -> `0.7250`).
+  - When `SkillMemory` contains only irrelevant Regime-A unary skills on `C1_heldout_translatable`, M14 skill composition yields `0.0000` accuracy gain while adding `+7.67` candidate evaluations per task.
 
 ---
 
