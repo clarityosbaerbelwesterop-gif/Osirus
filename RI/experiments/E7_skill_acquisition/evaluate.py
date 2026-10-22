@@ -58,7 +58,7 @@ def main():
     data = evaluate(args.seeds, args.train_size, args.test_size)
     output = Path(args.output)
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(json.dumps(data, indent=2) + "\\n", encoding="utf-8")
+    output.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in data.items() if k != "rows"}, indent=2))
 
 
