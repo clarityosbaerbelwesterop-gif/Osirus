@@ -1,0 +1,100 @@
+# RESULTS — Verified Experimental and Prototype Measurements
+
+## 1. Execution Environment and Provenance
+
+- **Repository:** `clarityosbaerbelwesterop-gif/Osirus`
+- **Branch:** `ri/isolated-foundation`
+- **Python Version (Local):** `Python 3.12.3` (Linux 6.12.94+, CPU-only)
+- **Python Version (GitHub Actions CI):** `Python 3.12.15` (`ubuntu-24.04`)
+- **Central Validation Command:** `python3 RI/run_experiments.py` -> **Exit code: `0`**
+- **Prototype CLI Command:** `python3 RI/run_prototype.py --mode all` -> **Exit code: `0`**
+
+---
+
+## 2. Summary of Experiments E1–E8 (30 Seeds Each for E2–E8)
+
+| Experiment | Milestone | Unit Tests | Primary Candidate Metric | Baseline Comparison | Result & Scientific Interpretation |
+| --- | --- | --- | --- | --- | --- |
+| **E1** (`E1_relationship_learning`) | M0–M2 | `2/2` (`test_environment.py`) | Held-out acc: `0.3333` | `memorize`: `1.0000`, `mean`: `1.0000`, `random`: `0.6667` | **Negative / Unclear:** Initial H1 candidate did not beat base-rate/memorize on the 3-seed toy setup. |
+| **E2** (`E2_capability_transfer`) | M3 | `4/4` OK | Accuracy: `0.9000` (4 queries) | `random_ablation`: `0.9000`, `fixed`: `0.9000` | **Neutral:** With budget=4 on a 2-action binary world, all balanced/random query schedules reach `0.9000`. |
+| **E3** (`E3_composition`) | M4 | `4/4` OK | Success rate: `1.0000` | `reset`: `0.2333`, `random`: `0.2333` | **Positive (toy):** Preserving stage-1 evidence yields `+0.7667` gain over equal-budget reset/random controls. |
+| **E4** (`E4_autonomous_curriculum`) | M5 | `3/3` OK | Mean success: `0.7304` | `random`: `0.7258`, `fixed`: `0.7321`, `error_only`: `0.7346` | **Negative / Neutral:** Hand-designed uncertainty+reuse heuristic does not beat `error_only` (`0.7346`). |
+| **E5** (`E5_continual_learning`) | M6 | `4/4` OK | Mean Brier: `0.2085` (lower is better) | `reset` ablation: `0.2531` | **Positive (toy):** Persistent Beta-Bernoulli counts reduce held-out Brier error by `0.0446` vs task-switch reset. |
+| **E6** (`E6_guarded_self_improvement`) | M7 | `6/6` OK | Retention: `0.4527` (`+0.0263` paired gain) | Baseline config: `0.4263` (`min_gain = 0.0100`) | **Positive (harness):** Allow-listed parameter proposal passes paired-seed promotion gate. |
+| **E7** (`E7_skill_acquisition`) | M8 | `5/5` OK | Held-out acc: `0.9653` | `nearest_neighbour`: `0.8778`, `majority`: `0.6389` | **Positive (bounded):** Threshold induction generalizes to disjoint grid points (`+0.0875` over NN, `+0.3264` over majority). |
+| **E8** (`E8_rule_discovery`) | M9 | `12/12` OK | Family selection: `1.0000`, Exact rule: `0.8667`, Held-out acc: `0.9833` | Held-out acc — `majority`: `0.5611`, `fixed_threshold`: `0.6667`, `random_hypothesis`: `0.7250` | **Positive (bounded):** Selects the true family on `30/30` seeds (`17` `sum_threshold`, `13` `parity`); `threshold_tie_rate = 0.1333` (`4/30` seeds) explains the `0.9833` vs `1.0` gap. |
+
+---
+
+## 3. Detailed M9 (`E8_rule_discovery`) Results (30 Seeds, `train_size=16`, `test_size=24`)
+
+Artifact: `RI/experiments/E8_rule_discovery/results/results.json`
+
+- **Rule-Family Selection Rate (`rule_family_selection_rate`):** `1.0000` (`30/30` seeds)
+  - `sum_threshold` (`n = 17` episodes): family selection `1.0000`, exact threshold recovery `0.7647` (`13/17`), held-out accuracy `0.9706`.
+  - `parity` (`n = 13` episodes): family selection `1.0000`, exact rule recovery `1.0000` (`13/13`), held-out accuracy `1.0000`.
+- **Tie & Bias Diagnostics:**
+  - `family_tie_rate`: `0.0000` at `train_size = 16` (tested separately at `train_size = 1` where `family_tie = True` and tie-breaking favors `sum_threshold(0)`).
+  - `threshold_tie_rate`: `0.1333` (`4/30` seeds had multiple adjacent thresholds with `0` training error).
+- **Baseline Comparisons (Held-Out Accuracy / Family Selection Rate):**
+  - `RuleDiscoveryAgent`: `0.9833` held-out accuracy / `1.0000` family selection
+  - `MajorityBaseline`: `0.5611` held-out accuracy (`+0.4222` candidate gain)
+  - `FixedThresholdBaseline (t=7)`: `0.6667` held-out accuracy / `0.5667` family selection (`+0.3167` candidate gain)
+  - `RandomHypothesisBaseline`: `0.7250` held-out accuracy / `0.6000` family selection (`+0.2583` candidate gain)
+
+---
+
+## 4. M10–M12 Prototype Benchmark Results (30 Seeds)
+
+Artifacts:
+- `RI/results/prototype_demo_report.json`
+- `RI/results/prototype_benchmark.json`
+- `RI/results/prototype_skill_memory.json`
+- `RI/results/experiment_suite_summary.json`
+
+### 4.1 M10 End-to-End Prototype (`m10_end_to_end`, 30 Seeds Across 6 Task Families)
+- **Task Pass Rate:** `1.0000` (`30/30` tasks met all train, held-out, disjointness, and runtime criteria)
+- **Mean Development Accuracy:** `1.0000`
+- **Mean Held-Out Accuracy:** `0.9944`
+- **Learning Loop Trigger Rate:** `0.5000` (`15/30` tasks — automatically triggered on `mod_sum`, `coord_box`, and `composed_and` tasks where initial primitive pass had counterexamples)
+- **Mean Runtime per Task:** `~0.70 ms` (CPU-only)
+- **Held-Out Baselines:**
+  - `majority`: `0.6069` (`+0.3875` prototype gain)
+  - `fixed_rule (t=7)`: `0.6319` (`+0.3625` prototype gain)
+  - `random`: `0.5097` (`+0.4847` prototype gain)
+
+### 4.2 M11 Skill-Memory, Compositional Transfer & Continual Learning (`m11_skill_transfer_and_continual`, 30 Seeds)
+- **Direct Skill Reuse Rate:** `0.9333` (`28/30` seeds reused the exact stored skill; `mean_direct_reuse_accuracy = 1.0000`)
+- **Compositional Transfer Rate (`composed_and` Held-Out Family):** `0.9000` (`27/30` seeds composed stored `sum_threshold` and `parity` skills with verified `IOContract` compatibility)
+- **Compositional Transfer Held-Out Accuracy:**
+  - `skill_memory_composition`: `0.9806`
+  - `no_memory_single_primitive` (ablation without skill memory): `0.7653` (`+0.2153` composition gain)
+  - `majority_baseline`: `0.7028` (`+0.2778` gain)
+  - `fixed_rule_baseline`: `0.6931` (`+0.2875` gain)
+  - `random_baseline`: `0.4875` (`+0.4931` gain)
+- **4-Family Continual Learning (`sum_threshold` -> `parity` -> `diff_threshold` -> `coord_box`):**
+  - `mean_initial_accuracy`: `0.9795`
+  - `persistent_memory_retention_accuracy`: `0.9688`
+  - `reset_memory_ablation_accuracy`: `0.6698` (`+0.2990` retention advantage for persistent skill memory)
+  - `mean_forgetting_rate`: `0.0115`
+
+### 4.3 M12 Guarded Self-Improvement (`m12_guarded_self_improvement`, 30 Held-Out Seeds)
+- **Baseline Configuration (`v1`):** `enable_learning_loop = False`, `complexity_weight = 0.02`, `max_refinement_rounds = 1`
+- **Candidate Configuration (`v2`):** `enable_learning_loop = True`, `complexity_weight = 0.01`, `max_refinement_rounds = 2`
+- **Regression Gate (3 Core Tasks):**
+  - Baseline mean accuracy: `0.9306`
+  - Candidate mean accuracy: `0.9306`
+  - Regression drop: `0.0000` (`passed = True`)
+- **Disjoint Held-Out Gate (30 Tasks Across 6 Families, `minimum_gain = 0.05`):**
+  - Baseline mean held-out accuracy: `0.8792` (task pass rate `0.6667`)
+  - Candidate mean held-out accuracy: `0.9639` (task pass rate `0.9000`)
+  - Mean paired gain: `+0.0847 >= 0.0500` (`passed = True`)
+- **Decision:** `status = "promoted"`, `active_version = 2` (rollback to `v1` verified by negative test `test_non_improving_candidate_is_rejected_and_rolled_back`).
+
+---
+
+## 5. Known Limitations and Open Risks
+
+1. **Bounded Hypothesis Space:** All rules in E7, E8, and M10–M12 come from 6 discrete 2D grid rule families (`sum_threshold`, `parity`, `diff_threshold`, `mod_sum`, `coord_box`, `composed_and`). High accuracy on these tasks does not imply open-ended concept invention or general intelligence.
+2. **Finite-Sample Boundary Ambiguity:** On an 8×8 grid (64 points), random training subsets of size 16–28 occasionally omit points along the exact threshold boundary \(x + y = t - 1\), leading to threshold ties (`13.3%` in E8 at `train_size=16`, `6.7%` in M11 at `train_size=28`).
+3. **Configuration-Level Self-Improvement:** M12 tunes allow-listed orchestrator hyperparameters (`PrototypeConfig`); it does not synthesize new primitive operators.

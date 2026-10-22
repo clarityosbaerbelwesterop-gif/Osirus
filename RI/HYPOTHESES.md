@@ -18,7 +18,12 @@ A system that composes reusable probe/verify operations and preserves verified p
 ## H4 — Autonomous curriculum selection
 A task-selection policy using uncertainty, measured error, estimated reuse and cost may improve learning efficiency relative to random, fixed and error-only curricula.
 
-**E4 status:** code committed; execution pending. Current task rewards and heuristic are synthetic and hand-designed. Positive results would only validate this specific heuristic in the simulation.
+**E4 status:** executed across 30 seeds; **not supported** in current synthetic setup (`uncertainty_reuse = 0.7304` vs `error_only = 0.7346`).
+
+## H5 — Bounded rule-family discovery and compositional skill transfer
+An agent that selects among bounded rule families using development error, complexity penalties, and versioned skill composition (`IOContract`) will achieve higher held-out accuracy on compositional and multi-family grid tasks than majority, fixed-rule, random, or memory-free single-primitive baselines.
+
+**E8 & M10–M11 status:** executed and supported within the bounded 8×8 synthetic grid domain (`E8` held-out accuracy `0.9833` vs `0.5611` majority / `0.7250` random hypothesis; `M11` compositional transfer `0.9806` vs `0.7653` single-primitive without skill memory; continual retention `0.9688` vs `0.6698` reset ablation). Does not establish open-ended concept discovery outside the pre-specified primitive set.
 
 ## Shared standards
 - Predeclare the hypothesis, baselines, measures and decision rule.

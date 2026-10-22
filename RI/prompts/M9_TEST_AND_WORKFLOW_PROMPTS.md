@@ -20,12 +20,12 @@ Status: drafted for the M9 E8 rule-discovery experiment. Do not mark M9 as valid
 
 ## Workflow acceptance gate
 
-- [ ] Full runner exits 0 on a clean environment.
-- [ ] All E8 unit tests pass.
-- [ ] E8 results JSON is uploaded and contains 30 per-seed rows.
-- [ ] Repeated runs with the same seeds produce identical metrics.
-- [ ] E7 and E8 results artifacts are inspectable from the Actions run.
-- [ ] Any promotion or integration decision is based on measured held-out performance and an explicit baseline, not a narrative claim.
+- [x] Full runner exits 0 on a clean environment.
+- [x] All E8 unit tests pass (12/12).
+- [x] E8 results JSON is uploaded and contains 30 per-seed rows plus baseline comparisons and tie diagnostics.
+- [x] Repeated runs with the same seeds produce identical metrics.
+- [x] E7 and E8 results artifacts are inspectable from the Actions run.
+- [x] Any promotion or integration decision is based on measured held-out performance and an explicit baseline, not a narrative claim.
 
 ## M10 first-prototype entry criteria
 

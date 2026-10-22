@@ -14,3 +14,8 @@
 **Date:** 2026-10-22  
 **Decision:** Document E1 as not supporting H1 in current form rather than adjusting until it "succeeds".  
 **Rationale:** Scientific integrity. A clean failure is more valuable than an ungrounded success claim.
+
+## D4 — Bounded allow-listed execution and config-only self-improvement (M10–M12)
+**Date:** 2026-10-22  
+**Decision:** Restrict prototype execution (`SandboxExecutor`) to a finite allow-list of 6 discrete grid operations with step and timeout budgets, and restrict self-improvement (`GuardedSelfImprover`) to allow-listed `PrototypeConfig` hyperparameters gated by a 0-drop regression suite and disjoint held-out tasks.  
+**Rationale:** Prevents uncontrolled code execution or unverified self-modification while enabling reproducible, measurable evaluation of counterexample refinement and skill composition.

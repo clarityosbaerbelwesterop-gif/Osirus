@@ -3,7 +3,7 @@
   "n_tasks": 5,
   "success_rate": 1.0,
   "mean_held_out_accuracy": 1,
-  "mean_runtime_ms": 1.0287,
+  "mean_runtime_ms": 1.0082,
   "skills_reused_count": 2,
   "skills_composed_count": 1,
   "learning_loop_triggered_count": 1,
@@ -350,7 +350,7 @@
       "reused_skill": false,
       "composed_skill": false,
       "stored_skill_id": "skill_sum_threshold_threshold6@v1",
-      "total_runtime_ms": 0.7862,
+      "total_runtime_ms": 0.7296,
       "analysis": {
         "task_id": "demo_1_acquire_sum_threshold",
         "n_train": 20,
@@ -451,7 +451,7 @@
         "status": "ok",
         "ok": true,
         "steps_used": 24,
-        "duration_ms": 0.0132,
+        "duration_ms": 0.0131,
         "error_type": "",
         "error_message": "",
         "n_predictions": 24
@@ -501,7 +501,7 @@
       "reused_skill": false,
       "composed_skill": false,
       "stored_skill_id": "skill_parity_parity0@v1",
-      "total_runtime_ms": 0.7706,
+      "total_runtime_ms": 0.777,
       "analysis": {
         "task_id": "demo_2_acquire_parity",
         "n_train": 20,
@@ -602,7 +602,7 @@
         "status": "ok",
         "ok": true,
         "steps_used": 24,
-        "duration_ms": 0.0137,
+        "duration_ms": 0.0134,
         "error_type": "",
         "error_message": "",
         "n_predictions": 24
@@ -652,7 +652,7 @@
       "reused_skill": true,
       "composed_skill": false,
       "stored_skill_id": "skill_sum_threshold_threshold6@v1",
-      "total_runtime_ms": 0.7321,
+      "total_runtime_ms": 0.7343,
       "analysis": {
         "task_id": "demo_3_reuse_sum_threshold",
         "n_train": 16,
@@ -753,7 +753,7 @@
         "status": "ok",
         "ok": true,
         "steps_used": 24,
-        "duration_ms": 0.0125,
+        "duration_ms": 0.012,
         "error_type": "",
         "error_message": "",
         "n_predictions": 24
@@ -775,7 +775,7 @@
         },
         "n_misclassified_train": 0,
         "failure_reasons": [],
-        "execution_duration_ms": 0.0206
+        "execution_duration_ms": 0.0203
       },
       "learning_loop": {
         "triggered": false,
@@ -803,7 +803,7 @@
       "reused_skill": true,
       "composed_skill": true,
       "stored_skill_id": "skill_composed_and_parity0_threshold6@v1",
-      "total_runtime_ms": 1.2295,
+      "total_runtime_ms": 1.2504,
       "analysis": {
         "task_id": "demo_4_compose_sum_and_parity",
         "n_train": 20,
@@ -908,7 +908,7 @@
         "status": "ok",
         "ok": true,
         "steps_used": 24,
-        "duration_ms": 0.0152,
+        "duration_ms": 0.0154,
         "error_type": "",
         "error_message": "",
         "n_predictions": 24
@@ -958,7 +958,7 @@
       "reused_skill": false,
       "composed_skill": false,
       "stored_skill_id": "skill_mod_sum_modulus3_remainder1@v1",
-      "total_runtime_ms": 1.6249,
+      "total_runtime_ms": 1.5495,
       "analysis": {
         "task_id": "demo_5_learning_loop_mod_sum",
         "n_train": 24,
@@ -1060,7 +1060,7 @@
         "status": "ok",
         "ok": true,
         "steps_used": 24,
-        "duration_ms": 0.0217,
+        "duration_ms": 0.014,
         "error_type": "",
         "error_message": "",
         "n_predictions": 24
@@ -1082,7 +1082,7 @@
         },
         "n_misclassified_train": 0,
         "failure_reasons": [],
-        "execution_duration_ms": 0.0286
+        "execution_duration_ms": 0.0277
       },
       "learning_loop": {
         "triggered": true,
