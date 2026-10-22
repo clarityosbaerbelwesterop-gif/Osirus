@@ -1,0 +1,801 @@
+{
+  "n_seeds": 30,
+  "train_size": 16,
+  "test_size": 24,
+  "rule_family_selection_rate": 1.0,
+  "exact_rule_recovery_rate": 0.8666666666666667,
+  "mean_held_out_accuracy": 0.9833333333333333,
+  "family_tie_rate": 0.0,
+  "threshold_tie_rate": 0.13333333333333333,
+  "by_true_family": {
+    "sum_threshold": {
+      "n_episodes": 17,
+      "rule_family_selection_rate": 1.0,
+      "exact_rule_recovery_rate": 0.7647058823529411,
+      "mean_held_out_accuracy": 0.9705882352941176
+    },
+    "parity": {
+      "n_episodes": 13,
+      "rule_family_selection_rate": 1.0,
+      "exact_rule_recovery_rate": 1.0,
+      "mean_held_out_accuracy": 1
+    }
+  },
+  "baselines": {
+    "majority": {
+      "rule_family_selection_rate": null,
+      "mean_held_out_accuracy": 0.5611111111111111
+    },
+    "fixed_threshold": {
+      "rule_family_selection_rate": 0.5666666666666667,
+      "mean_held_out_accuracy": 0.6666666666666666
+    },
+    "random_hypothesis": {
+      "rule_family_selection_rate": 0.6,
+      "mean_held_out_accuracy": 0.725
+    }
+  },
+  "mean_gain_over_baselines": {
+    "majority": 0.42222222222222217,
+    "fixed_threshold": 0.31666666666666665,
+    "random_hypothesis": 0.2583333333333333
+  },
+  "rows": [
+    {
+      "seed": 0,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.5,
+        "fixed_threshold": 0.5416666666666666,
+        "random_hypothesis": 1
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 1,
+      "true_family": "sum_threshold",
+      "true_threshold": 8,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 8,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.4166666666666667,
+        "fixed_threshold": 0.8333333333333334,
+        "random_hypothesis": 0.75
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 2,
+      "true_family": "sum_threshold",
+      "true_threshold": 4,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 4,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.8333333333333334,
+        "fixed_threshold": 0.75,
+        "random_hypothesis": 0.5416666666666666
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 3,
+      "true_family": "sum_threshold",
+      "true_threshold": 8,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 8,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.625,
+        "fixed_threshold": 0.9166666666666666,
+        "random_hypothesis": 0.9166666666666666
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 4,
+      "true_family": "sum_threshold",
+      "true_threshold": 6,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 6,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.7083333333333334,
+        "fixed_threshold": 0.9166666666666666,
+        "random_hypothesis": 0.7083333333333334
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 5,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.375,
+        "fixed_threshold": 0.5,
+        "random_hypothesis": 0.625
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 6,
+      "true_family": "sum_threshold",
+      "true_threshold": 7,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 7,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.625,
+        "fixed_threshold": 1,
+        "random_hypothesis": 0.75
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 7,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.5416666666666666,
+        "fixed_threshold": 0.375,
+        "random_hypothesis": 1
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 8,
+      "true_family": "sum_threshold",
+      "true_threshold": 6,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 5,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": false,
+      "train_error": 0,
+      "n_tied_candidates": 2,
+      "family_tie": false,
+      "threshold_tie": true,
+      "held_out_accuracy": 0.8333333333333334,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.6666666666666666,
+        "fixed_threshold": 0.875,
+        "random_hypothesis": 0.625
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 9,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.4166666666666667,
+        "fixed_threshold": 0.5416666666666666,
+        "random_hypothesis": 0.625
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 10,
+      "true_family": "sum_threshold",
+      "true_threshold": 7,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 7,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.5416666666666666,
+        "fixed_threshold": 1,
+        "random_hypothesis": 1
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 11,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.4166666666666667,
+        "fixed_threshold": 0.4166666666666667,
+        "random_hypothesis": 0.5
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 12,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.5833333333333334,
+        "fixed_threshold": 0.5833333333333334,
+        "random_hypothesis": 1
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 13,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.5416666666666666,
+        "fixed_threshold": 0.5416666666666666,
+        "random_hypothesis": 1
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 14,
+      "true_family": "sum_threshold",
+      "true_threshold": 8,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 8,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.375,
+        "fixed_threshold": 0.9583333333333334,
+        "random_hypothesis": 0.7083333333333334
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 15,
+      "true_family": "sum_threshold",
+      "true_threshold": 4,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 2,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": false,
+      "train_error": 0,
+      "n_tied_candidates": 4,
+      "family_tie": false,
+      "threshold_tie": true,
+      "held_out_accuracy": 0.9166666666666666,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.875,
+        "fixed_threshold": 0.5,
+        "random_hypothesis": 0.7083333333333334
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 16,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.4166666666666667,
+        "fixed_threshold": 0.375,
+        "random_hypothesis": 0.25
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 17,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.375,
+        "fixed_threshold": 0.5416666666666666,
+        "random_hypothesis": 0.375
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 18,
+      "true_family": "sum_threshold",
+      "true_threshold": 4,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 3,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": false,
+      "train_error": 0,
+      "n_tied_candidates": 2,
+      "family_tie": false,
+      "threshold_tie": true,
+      "held_out_accuracy": 0.875,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.75,
+        "fixed_threshold": 0.8333333333333334,
+        "random_hypothesis": 0.5
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 19,
+      "true_family": "sum_threshold",
+      "true_threshold": 10,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 10,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.875,
+        "fixed_threshold": 0.4583333333333333,
+        "random_hypothesis": 0.625
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 20,
+      "true_family": "sum_threshold",
+      "true_threshold": 6,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 5,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": false,
+      "train_error": 0,
+      "n_tied_candidates": 2,
+      "family_tie": false,
+      "threshold_tie": true,
+      "held_out_accuracy": 0.875,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.5833333333333334,
+        "fixed_threshold": 0.9583333333333334,
+        "random_hypothesis": 0.875
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 21,
+      "true_family": "sum_threshold",
+      "true_threshold": 7,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 7,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.375,
+        "fixed_threshold": 1,
+        "random_hypothesis": 1
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 22,
+      "true_family": "sum_threshold",
+      "true_threshold": 5,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 5,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.75,
+        "fixed_threshold": 0.75,
+        "random_hypothesis": 0.4166666666666667
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 23,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.5416666666666666,
+        "fixed_threshold": 0.25,
+        "random_hypothesis": 1
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 24,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.4166666666666667,
+        "fixed_threshold": 0.375,
+        "random_hypothesis": 0.5416666666666666
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 25,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.5,
+        "fixed_threshold": 0.375,
+        "random_hypothesis": 1
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 26,
+      "true_family": "sum_threshold",
+      "true_threshold": 9,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 9,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.6666666666666666,
+        "fixed_threshold": 0.75,
+        "random_hypothesis": 0.8333333333333334
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 27,
+      "true_family": "parity",
+      "true_threshold": null,
+      "selected_family": "parity",
+      "selected_threshold": null,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": false,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.3333333333333333,
+        "fixed_threshold": 0.4166666666666667,
+        "random_hypothesis": 0.4583333333333333
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 28,
+      "true_family": "sum_threshold",
+      "true_threshold": 9,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 9,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": false
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.5833333333333334,
+        "fixed_threshold": 0.75,
+        "random_hypothesis": 0.4166666666666667
+      },
+      "train_size": 16,
+      "test_size": 24
+    },
+    {
+      "seed": 29,
+      "true_family": "sum_threshold",
+      "true_threshold": 6,
+      "selected_family": "sum_threshold",
+      "selected_threshold": 6,
+      "family_selected_correctly": true,
+      "exact_rule_recovered": true,
+      "train_error": 0,
+      "n_tied_candidates": 1,
+      "family_tie": false,
+      "threshold_tie": false,
+      "held_out_accuracy": 1,
+      "baseline_family_selected_correctly": {
+        "fixed_threshold": true,
+        "random_hypothesis": true
+      },
+      "baseline_held_out_accuracy": {
+        "majority": 0.625,
+        "fixed_threshold": 0.9166666666666666,
+        "random_hypothesis": 1
+      },
+      "train_size": 16,
+      "test_size": 24
+    }
+  ],
+  "limitations": [
+    "Only two hand-specified rule families are candidates; this is bounded hypothesis selection, not unrestricted rule discovery.",
+    "All tasks use a small synthetic 8x8 grid with deterministic labels.",
+    "Tie-breaking favors sum_threshold and lower thresholds when small training sets leave multiple candidates with equal error.",
+    "The experiment does not demonstrate general intelligence, autonomous research, or real-world transfer."
+  ]
+}
