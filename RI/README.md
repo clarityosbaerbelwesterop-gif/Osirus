@@ -1,13 +1,23 @@
 # RI — Reasoning Intelligence
 
-This directory contains the independent RI research project.
+Independent foundational research project investigating whether a novel mechanism for constructing developing intelligence is possible.
 
-- **Dedicated branch:** `ri/isolated-foundation`
-- **Master instructions for Gemini 4 Argon:** [MASTER_PROMPT_GEMINI_4_ARGON.md](MASTER_PROMPT_GEMINI_4_ARGON.md)
-- **Scope:** foundational research, reproducible experiments, and incremental implementation of a potentially new intelligence principle.
+## Status (2026-10-22)
 
-## Isolation contract
+- **Branch:** `ri/isolated-foundation` (verified SHA 0a96b44ab14f548682c7a12703708e0db57beb46)
+- **Isolation:** Strict. No dependency on Osirus product, other branches, or paid resources.
+- **Current phase:** M0-M2 initial cycle completed with first experiment E1 executed.
+- **H1 status:** Unclear / not supported in minimal E1. Candidate underperformed or matched weak baselines on held-out transfer in the first discrete causal world. Further refinement required.
 
-RI must not depend on or modify Osirus product code, other model work, infrastructure work, or other research branches. Keep all RI artifacts under `RI/`. Do not merge this branch or open a pull request without explicit authorization. Do not use paid resources without approval.
+## Key Documents
 
-The project must distinguish hypotheses from evidence and planned work from completed work.
+- [PROJECT_CHARTER.md](PROJECT_CHARTER.md)
+- [RESEARCH_PLAN.md](RESEARCH_PLAN.md)
+- [ROADMAP.md](ROADMAP.md)
+- [HYPOTHESES.md](HYPOTHESES.md)
+- [docs/intelligence_questions.md](docs/intelligence_questions.md)
+- [experiments/E1_relationship_learning/](experiments/E1_relationship_learning/)
+
+## Principles
+
+CPU-first. Small falsifiable experiments. Distinguish evidence from hypothesis. No claims of having created intelligence. Honest reporting of failures.
