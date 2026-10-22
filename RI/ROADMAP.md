@@ -1,42 +1,41 @@
 # ROADMAP
 
 ## M0 — Research foundation
-- Core questions, initial H1, evaluation principles and isolation rules.
-- **Status:** documented.
+Questions, hypotheses, isolation, and evaluation principles documented.
 
 ## M1 — First experimental environment
-- Minimal simulated world with hidden rule and noise.
-- **Status:** reported executed in the initial cycle.
+Minimal simulated hidden-rule world. Initial cycle reported executed.
 
-## M2 — First relationship-learning candidate
-- Candidate and baselines evaluated on E1.
-- **Status:** reported outcome unclear / not supportive. H1 was not confirmed.
+## M2 — Relationship-learning candidate
+E1 reported outcome unclear / not supportive. H1 was not confirmed.
 
-## M3 — Capability development and transfer
-- Reframe the target from accumulating rules to acquiring, validating, composing and revising reusable problem-solving operations.
-- Added `M3_AUTONOMOUS_INTELLIGENCE.md`.
-- Added an initial E2 capability-transfer prototype under `experiments/E2_capability_transfer/`.
-- **Engineering status:** source and documentation committed.
-- **Execution status:** not verified in a live Python runtime as part of this commit.
-- **Scientific status:** no evidence of successful transfer yet. The initial report explicitly records a design flaw: the capability procedure does not yet causally control the transfer agent's choices.
+## M3 — Operational capability use (E2)
+- Capability procedure now directly affects action selection.
+- Added random-ablation and fixed balanced baseline, paired seeds, input validation, regression tests.
+- **Code status:** committed.
+- **Execution status:** not verified in this environment; local GitHub clone failed because outbound network/DNS was unavailable. Do not imply tests passed.
+- **Scientific status:** pending actual test and evaluation execution. The procedure remains hand-specified, so E2 tests intervention strategy utility, not autonomous capability acquisition.
 
-### M3 acceptance gates
-1. **Partially implemented:** the E2 capability now changes action selection; the ablation uses random sampling.
-2. **Still required:** add a fixed-sequence baseline and a genuinely acquired (not hand-installed) procedure.
-3. Keep evaluator-only ground truth out of agent inputs.
-4. Use predeclared held-out task families and multiple seeds.
-5. **Pending:** execute tests and evaluation in a real runtime and preserve raw results.
-6. Claim support only if capability-enabled performance shows a reproducible advantage. Otherwise revise or reject H2.
+## M4 — Compositional problem solving (E3)
+- Added two-stage environment in which stage 2 is informative only after stage 1 is correctly solved.
+- Added a probe/verify operation and composed, reset, and random policies.
+- Added tests for prerequisite gating and reproducibility.
+- **Code status:** committed.
+- **Execution/scientific status:** pending. The operations are hand-coded. Composition is not yet evidence of general intelligence.
 
-## M4 — Compositional problem solving (blocked)
-M4 remains blocked until E2 is executed, reviewed, and its limits are resolved. Do not advance based on code existence alone.
-Proceed only after M3 evaluation is valid. Test whether independently acquired capabilities can be combined to solve held-out tasks without task-specific hardcoding.
+## M5 — Autonomous learning selection (E4)
+- Added curriculum policy that chooses among synthetic task families using uncertainty, observed success, and a declared reuse heuristic.
+- Added random, fixed, and error-only controls and seeded evaluation.
+- **Code status:** committed.
+- **Execution/scientific status:** pending. Task difficulty and the selection heuristic are designed by researchers; this is not intrinsic motivation or self-discovered curriculum.
 
-## M5 — Autonomous learning selection (planned)
-Test whether the agent can select useful next experiments based on uncertainty, expected learning value, cross-task reuse and cost, compared with random and fixed curricula.
+## Required validation gates
+1. Run all tests and evaluators in Python 3.10+.
+2. Preserve raw results and record exact command, environment, and commit.
+3. Check for seed sensitivity and compare paired results, not only means.
+4. Add multiple task families and stronger baselines before claims about transfer or composition.
+5. Distinguish a working software milestone from evidence supporting a hypothesis.
+6. Keep M6 blocked until M3–M5 have been executed and reviewed.
 
-## M6 — Continual capability growth (planned)
-Test retention, revision, regression and cumulative learning across sequential tasks.
-
-## M7+ — Broader environments (planned)
-Only after controlled toy experiments work: richer observations, text/video interfaces, external tools and open-ended tasks. No claims of general intelligence from toy benchmarks.
+## M6 — Continual capability growth (blocked)
+Only after the prior experiments pass implementation and validity review: test retention, revision, regression, and cumulative learning across sequential tasks.
