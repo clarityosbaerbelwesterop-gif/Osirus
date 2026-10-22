@@ -1,4 +1,4 @@
-"""M4 evaluation: composition must preserve and use a verified prerequisite."""
+"""M4 paired-budget evaluation of composed, reset, and random policies."""
 import argparse,json,random
 from pathlib import Path
 from statistics import mean
@@ -9,40 +9,29 @@ def episode(seed,policy="composed",noise=0.0):
     rng=random.Random(seed); labels=("a","b")
     t1=rng.choice(labels); t2=rng.choice(labels)
     world=TwoStageWorld(t1,t2,seed+7000,noise,labels); agent=ComposedAgent()
-    queries=0
-    # Stage one: all policies receive identical evidence.
-    obs={label:world.query(1,label) for label in labels}; queries+=2
-    chosen=agent.solve_stage(obs)
-    if policy=="reset":
-        # Ablation: discard the verified prerequisite and guess it again.
-        chosen=rng.choice(labels)
-    first_ok=(chosen==t1 and obs[chosen]==1)
-    # Stage two only yields informative feedback if prerequisite was solved.
+    # Every policy receives the same four queries. The distinction is how evidence is used.
+    obs={label:world.query(1,label) for label in labels}
+    queries=2
+    if policy=="random": chosen=rng.choice(labels)
+    elif policy=="reset": chosen=rng.choice(labels)  # deliberately discards evidence
+    else: chosen=agent.solve_stage(obs)
+    first_ok=bool(chosen==t1 and obs[chosen]==1)
+    world.commit_stage_one(chosen)
     obs2={label:world.query(2,label) for label in labels}; queries+=2
-    chosen2=agent.solve_stage(obs2)
-    second_ok=(chosen2==t2 and obs2[chosen2]==1)
-    return {"seed":seed,"policy":policy,"success":bool(first_ok and second_ok),
-            "stage1_success":bool(first_ok),"stage2_success":bool(second_ok),
-            "queries":queries,"noise":noise}
+    if policy=="random": chosen2=rng.choice(labels)
+    elif policy=="reset": chosen2=rng.choice(labels)
+    else: chosen2=agent.solve_stage(obs2)
+    second_ok=bool(chosen2==t2 and obs2[chosen2]==1)
+    return {"seed":seed,"policy":policy,"success":first_ok and second_ok,
+            "stage1_success":first_ok,"stage2_success":second_ok,"queries":queries,"noise":noise}
 def evaluate(seeds,noise):
     policies=("composed","reset","random")
-    rows=[]
-    for s in seeds:
-        for p in policies:
-            if p=="random":
-                # Fair budget control: one random choice at each stage; stage 2 may remain uninformative.
-                rng=random.Random(s); labels=("a","b"); t1=rng.choice(labels); t2=rng.choice(labels)
-                world=TwoStageWorld(t1,t2,s+7000,noise,labels)
-                c1=rng.choice(labels); o1=world.query(1,c1)
-                c2=rng.choice(labels); o2=world.query(2,c2)
-                rows.append({"seed":s,"policy":p,"success":bool(c1==t1 and o1==1 and c2==t2 and o2==1),"stage1_success":bool(c1==t1 and o1==1),"stage2_success":bool(c2==t2 and o2==1),"queries":2,"noise":noise})
-            else: rows.append(episode(s,p,noise))
+    rows=[episode(s,p,noise) for s in seeds for p in policies]
     summary={p:{"n":len([x for x in rows if x["policy"]==p]),
       "success_rate":mean(x["success"] for x in rows if x["policy"]==p),
       "mean_queries":mean(x["queries"] for x in rows if x["policy"]==p)} for p in policies}
     return {"n_seeds":len(seeds),"noise":noise,"policies":summary,"rows":rows,
-      "limitations":["The operation composition is hand-coded, not acquired autonomously.",
-      "The sequential toy task is a mechanism test, not a general-intelligence benchmark."]}
+      "limitations":["Equal query budgets; controls differ in evidence use.","Operations are hand-coded, not acquired autonomously.","Toy task is not a general-intelligence benchmark."]}
 def main():
     p=argparse.ArgumentParser(); p.add_argument("--seeds",nargs="+",type=int,default=list(range(100)))
     p.add_argument("--noise",type=float,default=0.0); p.add_argument("--output",default="results/results.json"); a=p.parse_args()
