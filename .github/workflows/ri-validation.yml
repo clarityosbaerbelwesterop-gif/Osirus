@@ -25,7 +25,7 @@ jobs:
           python-version: '3.12'
       - name: Record Python version
         run: python --version
-      - name: Run RI tests and E2–E11 evaluations (M3–M18)
+      - name: Run RI tests and E2–E12 evaluations (M3–M19)
         run: python RI/run_experiments.py
       - name: Upload raw experiment results
         if: always()
