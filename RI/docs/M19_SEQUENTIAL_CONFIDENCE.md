@@ -38,7 +38,7 @@ The benchmark's `guarded_promotion_decision` is an adapter for testing admission
 
 ## Reproducibility
 
-- Successful CI run on implementation code: [run 39914581682](https://github.com/clarityosbaerbelwesterop-gif/Osirus/actions/runs/39914581682).
+- Benchmark/results CI run: [run 39914581682](https://github.com/clarityosbaerbelwesterop-gif/Osirus/actions/runs/39914581682). The later full-suite validation, including the corrected task label, noise-estimation tests and committed result records, passed: [run 39914930911](https://github.com/clarityosbaerbelwesterop-gif/Osirus/actions/runs/39914930911).
 - CI-produced raw task rows and summaries are retained in the run artifact; the committed `RI/results/m19_summary.json` and `RI/results/m19_ablation_results.json` are compact, human-readable result records.
 - The evaluation source labels the high-accuracy task as `stable_high_quality`; it is **not** a semantic-equivalence test.
 

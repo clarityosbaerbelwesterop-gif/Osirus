@@ -12,7 +12,21 @@
       "false_acceptances": 18,
       "false_acceptance_rate_all_tasks": 0.066667,
       "correct_action_rate": 0.914286,
-      "inconclusive_rate": 0
+      "inconclusive_rate": 0,
+      "false_acceptance_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 0.066667,
+        "std": 0.062582,
+        "ci95_low": 0.044272,
+        "ci95_high": 0.089062
+      },
+      "mean_observations_identifiable_only_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 13.5,
+        "std": 0,
+        "ci95_low": 13.5,
+        "ci95_high": 13.5
+      }
     },
     "sequential_sprt": {
       "mean_observations_identifiable_only": 28.571,
@@ -20,7 +34,21 @@
       "false_acceptances": 2,
       "false_acceptance_rate_all_tasks": 0.007407,
       "correct_action_rate": 0.980952,
-      "inconclusive_rate": 0.096296
+      "inconclusive_rate": 0.096296,
+      "false_acceptance_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 0.007407,
+        "std": 0.02819,
+        "ci95_low": -0.00268,
+        "ci95_high": 0.017495
+      },
+      "mean_observations_identifiable_only_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 28.570833,
+        "std": 10.891247,
+        "ci95_low": 24.67345,
+        "ci95_high": 32.468216
+      }
     },
     "empirical_bernstein_sequential": {
       "mean_observations_identifiable_only": 1149.2,
@@ -28,7 +56,21 @@
       "false_acceptances": 0,
       "false_acceptance_rate_all_tasks": 0,
       "correct_action_rate": 1,
-      "inconclusive_rate": 0.185185
+      "inconclusive_rate": 0.185185,
+      "false_acceptance_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 0,
+        "std": 0,
+        "ci95_low": 0,
+        "ci95_high": 0
+      },
+      "mean_observations_identifiable_only_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 1149.2,
+        "std": 94.356758,
+        "ci95_low": 1115.434868,
+        "ci95_high": 1182.965132
+      }
     }
   },
   "drift_monitor_vs_no_monitor": {
@@ -67,5 +109,6 @@
     "Synthetic benchmark only.",
     "Statistical acceptance never commits to productive SkillMemory.",
     "No-monitor ablation is a simple always-no-alarm reference, not an alternate adaptive drift algorithm."
-  ]
+  ],
+  "validated_in_full_suite_ci_run": 39914930911
 }

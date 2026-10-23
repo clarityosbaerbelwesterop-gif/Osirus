@@ -74,7 +74,21 @@
       },
       "correct_action_rate_outside_indifference_region": 0.914286,
       "inconclusive_rate": 0,
-      "abstention_rate": 0.111111
+      "abstention_rate": 0.111111,
+      "mean_observations_identifiable_only_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 13.5,
+        "std": 0,
+        "ci95_low": 13.5,
+        "ci95_high": 13.5
+      },
+      "false_acceptance_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 0.066667,
+        "std": 0.062582,
+        "ci95_low": 0.044272,
+        "ci95_high": 0.089062
+      }
     },
     "sequential_sprt": {
       "mean_observations_all_tasks": 25.396,
@@ -100,7 +114,21 @@
       },
       "correct_action_rate_outside_indifference_region": 0.980952,
       "inconclusive_rate": 0.096296,
-      "abstention_rate": 0.207407
+      "abstention_rate": 0.207407,
+      "mean_observations_identifiable_only_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 28.570833,
+        "std": 10.891247,
+        "ci95_low": 24.67345,
+        "ci95_high": 32.468216
+      },
+      "false_acceptance_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 0.007407,
+        "std": 0.02819,
+        "ci95_low": -0.00268,
+        "ci95_high": 0.017495
+      }
     },
     "empirical_bernstein_sequential": {
       "mean_observations_all_tasks": 1021.511,
@@ -126,7 +154,21 @@
       },
       "correct_action_rate_outside_indifference_region": 1,
       "inconclusive_rate": 0.185185,
-      "abstention_rate": 0.296296
+      "abstention_rate": 0.296296,
+      "mean_observations_identifiable_only_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 1149.2,
+        "std": 94.356758,
+        "ci95_low": 1115.434868,
+        "ci95_high": 1182.965132
+      },
+      "false_acceptance_seed_cluster_ci95": {
+        "n": 30,
+        "mean": 0,
+        "std": 0,
+        "ci95_low": 0,
+        "ci95_high": 0
+      }
     }
   },
   "drift": {
@@ -183,5 +225,6 @@
     "Drift attribution assumes stable anchor semantics; target drift and common-mode noise are not generally identifiable without trustworthy references.",
     "A 0/270 observed false acceptance rate still has a nonzero Wilson upper confidence limit and does not establish zero risk.",
     "This E12 benchmark does not replace the existing M17 production lifecycle."
-  ]
+  ],
+  "validated_in_full_suite_ci_run": 39914930911
 }
