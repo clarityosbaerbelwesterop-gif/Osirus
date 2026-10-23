@@ -1,0 +1,187 @@
+{
+  "schema_version": "M19.E12.summary.v1",
+  "experiment_version": "M19.E12.v1",
+  "implementation_commit": "47f500d6ecc1e50851b7b802ae22414d1f31efdb",
+  "generated_from_ci_run": 39914581682,
+  "generated_from_ci_artifact_run": 39914581682,
+  "execution_status": "completed",
+  "n_seeds": 30,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29
+  ],
+  "tasks_per_method": 270,
+  "task_conditions": 9,
+  "preregistered": {
+    "alpha": 0.05,
+    "beta": 0.1,
+    "accuracy_threshold": 0.85,
+    "sprt_p0": 0.85,
+    "sprt_p1": 0.95,
+    "max_samples": 4000,
+    "fixed_baseline_samples": 14
+  },
+  "methods": {
+    "fixed_m18_baseline": {
+      "mean_observations_all_tasks": 12,
+      "mean_observations_identifiable_only": 13.5,
+      "cost_multiple_vs_fixed": 1,
+      "false_statistical_acceptance": {
+        "numerator": 18,
+        "denominator": 270,
+        "rate": 0.066667,
+        "wilson95": [
+          0.042582,
+          0.102909
+        ]
+      },
+      "false_acceptance_when_true_accuracy_le_0_85": {
+        "numerator": 18,
+        "denominator": 90,
+        "rate": 0.2,
+        "wilson95": [
+          0.130423,
+          0.294139
+        ]
+      },
+      "correct_action_rate_outside_indifference_region": 0.914286,
+      "inconclusive_rate": 0,
+      "abstention_rate": 0.111111
+    },
+    "sequential_sprt": {
+      "mean_observations_all_tasks": 25.396,
+      "mean_observations_identifiable_only": 28.571,
+      "cost_multiple_vs_fixed": 2.1164,
+      "false_statistical_acceptance": {
+        "numerator": 2,
+        "denominator": 270,
+        "rate": 0.007407,
+        "wilson95": [
+          0.002034,
+          0.026602
+        ]
+      },
+      "false_acceptance_when_true_accuracy_le_0_85": {
+        "numerator": 2,
+        "denominator": 90,
+        "rate": 0.022222,
+        "wilson95": [
+          0.006115,
+          0.077447
+        ]
+      },
+      "correct_action_rate_outside_indifference_region": 0.980952,
+      "inconclusive_rate": 0.096296,
+      "abstention_rate": 0.207407
+    },
+    "empirical_bernstein_sequential": {
+      "mean_observations_all_tasks": 1021.511,
+      "mean_observations_identifiable_only": 1149.2,
+      "cost_multiple_vs_fixed": 85.1259,
+      "false_statistical_acceptance": {
+        "numerator": 0,
+        "denominator": 270,
+        "rate": 0,
+        "wilson95": [
+          0,
+          0.014029
+        ]
+      },
+      "false_acceptance_when_true_accuracy_le_0_85": {
+        "numerator": 0,
+        "denominator": 90,
+        "rate": 0,
+        "wilson95": [
+          0,
+          0.040937
+        ]
+      },
+      "correct_action_rate_outside_indifference_region": 1,
+      "inconclusive_rate": 0.185185,
+      "abstention_rate": 0.296296
+    }
+  },
+  "drift": {
+    "stationary": {
+      "n": 30,
+      "false_alarms": 0,
+      "false_alarm_rate": 0,
+      "wilson95_upper": 0.113517,
+      "correct_classification_rate": 1
+    },
+    "concept_drift": {
+      "n": 30,
+      "detections": 30,
+      "correct_classification_rate": 1,
+      "mean_detection_delay_after_change": 11.467
+    },
+    "gradual_drift": {
+      "n": 30,
+      "detections": 30,
+      "correct_classification_rate": 1,
+      "mean_detection_delay_after_change": 51.233
+    },
+    "noise_surge": {
+      "n": 30,
+      "correct_classifications": 25,
+      "correct_classification_rate": 0.833333,
+      "wilson95": [
+        0.664353,
+        0.926636
+      ],
+      "mean_detection_delay_after_change": 18.8
+    },
+    "recovery": {
+      "n": 30,
+      "correct_classifications": 29,
+      "correct_classification_rate": 0.966667,
+      "wilson95": [
+        0.833292,
+        0.994092
+      ],
+      "mean_detection_delay_after_change": 11.433
+    }
+  },
+  "safety": {
+    "statistical_acceptance_is_not_promotion": true,
+    "productive_skill_memory_mutated_by_e12": false,
+    "m17_production_gate_replaced": false,
+    "no_monitor_ablation_missed_all_changed_regime_families": true
+  },
+  "limitations": [
+    "Synthetic independent Bernoulli accuracy streams and synthetic target/anchor drift sequences only.",
+    "SPRT interpretation assumes fixed simple Bernoulli hypotheses; the indifference region and unknown changing rates need separate treatment.",
+    "Empirical-Bernstein alpha-spending assumes independent bounded observations and is highly conservative in this benchmark.",
+    "Drift attribution assumes stable anchor semantics; target drift and common-mode noise are not generally identifiable without trustworthy references.",
+    "A 0/270 observed false acceptance rate still has a nonzero Wilson upper confidence limit and does not establish zero risk.",
+    "This E12 benchmark does not replace the existing M17 production lifecycle."
+  ]
+}

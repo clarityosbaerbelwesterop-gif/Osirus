@@ -5,7 +5,7 @@ from sequential import (
     guarded_promotion_decision,
 )
 from environment import make_observations, make_drift_sequence
-from evaluate import run_method, METHODS
+from evaluate import run_method, METHODS, observed_noise_fields
 
 
 class TestM19(unittest.TestCase):
@@ -92,6 +92,18 @@ class TestM19(unittest.TestCase):
         self.assertEqual(result["status"], "inconclusive")
         self.assertEqual(result["n"], 10)
         self.assertFalse(result["accepted_by_statistical_gate"])
+
+
+    def test_observed_noise_rate_is_estimated_from_consumed_binary_outcomes(self):
+        result = observed_noise_fields([1, 1, 0, 1])
+        self.assertAlmostEqual(result["estimated_noise_rate"], 0.25)
+        self.assertEqual(result["estimated_noise_rate_wilson_95"]["numerator"], 1)
+        self.assertEqual(result["estimated_noise_rate_wilson_95"]["denominator"], 4)
+
+    def test_observed_noise_is_undefined_without_evidence(self):
+        result = observed_noise_fields([])
+        self.assertIsNone(result["estimated_noise_rate"])
+        self.assertIsNone(result["estimated_noise_rate_wilson_95"])
 
     def test_observations_are_seed_deterministic(self):
         self.assertEqual(make_observations(7, "noise_5_percent", 50),

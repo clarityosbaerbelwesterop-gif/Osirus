@@ -1,0 +1,71 @@
+{
+  "schema_version": "M19.E12.ablation.v1",
+  "experiment_version": "M19.E12.v1",
+  "implementation_commit": "47f500d6ecc1e50851b7b802ae22414d1f31efdb",
+  "generated_from_ci_run": 39914581682,
+  "n_seeds": 30,
+  "comparison_scope": "paired synthetic Bernoulli tasks; 270 task-method outcomes per method",
+  "methods": {
+    "fixed_m18_baseline": {
+      "mean_observations_identifiable_only": 13.5,
+      "cost_multiple_vs_fixed": 1,
+      "false_acceptances": 18,
+      "false_acceptance_rate_all_tasks": 0.066667,
+      "correct_action_rate": 0.914286,
+      "inconclusive_rate": 0
+    },
+    "sequential_sprt": {
+      "mean_observations_identifiable_only": 28.571,
+      "cost_multiple_vs_fixed": 2.1164,
+      "false_acceptances": 2,
+      "false_acceptance_rate_all_tasks": 0.007407,
+      "correct_action_rate": 0.980952,
+      "inconclusive_rate": 0.096296
+    },
+    "empirical_bernstein_sequential": {
+      "mean_observations_identifiable_only": 1149.2,
+      "cost_multiple_vs_fixed": 85.1259,
+      "false_acceptances": 0,
+      "false_acceptance_rate_all_tasks": 0,
+      "correct_action_rate": 1,
+      "inconclusive_rate": 0.185185
+    }
+  },
+  "drift_monitor_vs_no_monitor": {
+    "stationary": {
+      "monitor_correct": 1,
+      "monitor_false_alarms": 0,
+      "no_monitor_correct": 1,
+      "no_monitor_missed_change_rate": 0
+    },
+    "concept_drift": {
+      "monitor_correct": 1,
+      "mean_detection_delay": 11.467,
+      "no_monitor_correct": 0,
+      "no_monitor_missed_change_rate": 1
+    },
+    "gradual_drift": {
+      "monitor_correct": 1,
+      "mean_detection_delay": 51.233,
+      "no_monitor_correct": 0,
+      "no_monitor_missed_change_rate": 1
+    },
+    "noise_surge": {
+      "monitor_correct": 0.833333,
+      "mean_detection_delay": 18.8,
+      "no_monitor_correct": 0,
+      "no_monitor_missed_change_rate": 1
+    },
+    "recovery": {
+      "monitor_correct": 0.966667,
+      "mean_detection_delay": 11.433,
+      "no_monitor_correct": 0,
+      "no_monitor_missed_change_rate": 1
+    }
+  },
+  "limitations": [
+    "Synthetic benchmark only.",
+    "Statistical acceptance never commits to productive SkillMemory.",
+    "No-monitor ablation is a simple always-no-alarm reference, not an alternate adaptive drift algorithm."
+  ]
+}
