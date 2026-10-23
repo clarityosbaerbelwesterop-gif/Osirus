@@ -126,8 +126,9 @@
         "n": 30,
         "mean": 0.007407,
         "std": 0.02819,
-        "ci95_low": -0.00268,
-        "ci95_high": 0.017495
+        "ci95_low": 0,
+        "ci95_high": 0.017495,
+        "note": "Normal-approximation interval across per-seed rates, clipped to the valid [0,1] rate range."
       }
     },
     "empirical_bernstein_sequential": {
@@ -226,5 +227,5 @@
     "A 0/270 observed false acceptance rate still has a nonzero Wilson upper confidence limit and does not establish zero risk.",
     "This E12 benchmark does not replace the existing M17 production lifecycle."
   ],
-  "validated_in_full_suite_ci_run": 39914930911
+  "validated_in_full_suite_ci_run": 39915276819
 }

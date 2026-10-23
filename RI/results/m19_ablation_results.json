@@ -39,8 +39,9 @@
         "n": 30,
         "mean": 0.007407,
         "std": 0.02819,
-        "ci95_low": -0.00268,
-        "ci95_high": 0.017495
+        "ci95_low": 0,
+        "ci95_high": 0.017495,
+        "note": "Normal-approximation interval across per-seed rates, clipped to the valid [0,1] rate range."
       },
       "mean_observations_identifiable_only_seed_cluster_ci95": {
         "n": 30,
@@ -110,5 +111,5 @@
     "Statistical acceptance never commits to productive SkillMemory.",
     "No-monitor ablation is a simple always-no-alarm reference, not an alternate adaptive drift algorithm."
   ],
-  "validated_in_full_suite_ci_run": 39914930911
+  "validated_in_full_suite_ci_run": 39915276819
 }
