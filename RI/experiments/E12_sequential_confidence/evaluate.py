@@ -57,9 +57,21 @@ def rate_stats(flags):
             "ci95_high": round(min(1.0, center + radius), 6)}
 
 
+def observed_noise_fields(observations):
+    """Estimate mismatch frequency using only the observations consumed by the method."""
+    if not observations:
+        return {"estimated_noise_rate": None, "estimated_noise_rate_wilson_95": None}
+    errors = [int(x == 0) for x in observations]
+    return {
+        "estimated_noise_rate": round(mean(errors), 6),
+        "estimated_noise_rate_wilson_95": rate_stats(errors),
+    }
+
+
 def run_method(method, observations):
     if not observations:
         return {"status": "abstain", "accepted_by_statistical_gate": False, "n": 0, "estimate": None,
+                **observed_noise_fields([]),
                 "reason": "no_identifying_evidence_available"}
     if method == "fixed_m18_baseline":
         prefix = observations[:14]
@@ -67,6 +79,7 @@ def run_method(method, observations):
         accepted = estimate >= THRESHOLD
         return {"status": "accept_candidate" if accepted else "reject_candidate",
                 "accepted_by_statistical_gate": accepted, "n": len(prefix), "estimate": estimate,
+                **observed_noise_fields(prefix),
                 "reason": "fixed_m18_14_example_accuracy_threshold"}
     if method == "sequential_sprt":
         result = sprt_bernoulli(observations, p0=.85, p1=.95, alpha=.05, beta=.10, max_n=MAX_N)
@@ -77,11 +90,15 @@ def run_method(method, observations):
     accepted = result.status == "accept_candidate"
     guard = guarded_promotion_decision(result.status, independent_validation_pass=False,
                                        adversarial_checks_pass=False, regression_pass=False, rollback_available=False)
+    used = observations[:result.n]
     return {"status": result.status, "accepted_by_statistical_gate": accepted,
             "m17_guard_example": guard, "n": result.n,
-            "estimate": round(result.estimate, 6), "lower_bound": result.lower_bound,
-            "upper_bound": result.upper_bound, "log_likelihood_ratio": result.log_likelihood_ratio,
-            "reason": result.reason}
+            "estimate": round(result.estimate, 6), **observed_noise_fields(used),
+            "noise_rate_bound_from_accuracy_bounds": (
+                [round(1.0 - result.upper_bound, 6), round(1.0 - result.lower_bound, 6)]
+                if result.lower_bound is not None and result.upper_bound is not None else None),
+            "lower_bound": result.lower_bound, "upper_bound": result.upper_bound,
+            "log_likelihood_ratio": result.log_likelihood_ratio, "reason": result.reason}
 
 
 def run_drift(seed, kind):
@@ -134,6 +151,8 @@ def evaluate(seeds):
         task_summary[method] = {
             "observations_used_ci95_task_level": stats([float(r["n"]) for r in subset], clamp_unit=False),
             "mean_observations_used": round(mean([r["n"] for r in subset]), 3),
+            "mean_observations_used_identifiable_only": round(
+                mean([r["n"] for r in subset if r["ground_truth_identifiable"]]), 3),
             "mean_observations_used_seed_cluster_ci95": stats([mean([r["n"] for r in g]) for g in seed_groups], clamp_unit=False),
             "statistical_acceptance_rate": round(mean([float(x) for x in accepted_flags]), 6),
             "statistical_acceptance_rate_ci95_wilson": rate_stats(accepted_flags),
@@ -157,6 +176,16 @@ def evaluate(seeds):
                 "inconclusive_rate": round(mean([float(r["status"] == "inconclusive") for r in ts]), 6),
             }
 
+    fixed_identifiable_cost = task_summary["fixed_m18_baseline"]["mean_observations_used_identifiable_only"]
+    for method in METHODS:
+        cost = task_summary[method]["mean_observations_used_identifiable_only"]
+        task_summary[method]["sample_cost_multiple_vs_fixed_identifiable"] = (
+            round(cost / fixed_identifiable_cost, 4) if fixed_identifiable_cost else None
+        )
+        task_summary[method]["mean_identifiable_observations_saved_vs_fixed"] = round(
+            fixed_identifiable_cost - cost, 3
+        )
+
     drift_rows = []
     drift_kinds = ("stationary", "concept_drift", "gradual_drift", "noise_surge", "recovery")
     for seed in seeds:
@@ -175,7 +204,12 @@ def evaluate(seeds):
             "alarm_rate_ci95_wilson": rate_stats(detected),
             "correct_classification_rate": round(mean([float(x) for x in correct]), 6),
             "correct_classification_rate_ci95_wilson": rate_stats(correct),
-            "mean_detection_delay_after_change": round(mean(delays), 3) if delays else None
+            "mean_detection_delay_after_change": round(mean(delays), 3) if delays else None,
+            "no_monitor_ablation": {
+                "alarm_rate": 0.0,
+                "missed_change_rate": 0.0 if kind == "stationary" else 1.0,
+                "correct_classification_rate": 1.0 if kind == "stationary" else 0.0,
+            },
         }
 
     return {

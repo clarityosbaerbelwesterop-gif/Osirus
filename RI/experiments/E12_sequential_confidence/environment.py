@@ -9,7 +9,7 @@ TASKS = {
     "noise_30_percent": {"p_correct": 0.70, "identifiable": True},
     "noise_40_percent": {"p_correct": 0.60, "identifiable": True},
     "insufficient_evidence": {"p_correct": 0.90, "identifiable": True, "sample_cap": 10},
-    "semantic_equivalence": {"p_correct": 0.99, "identifiable": True, "equivalent": True},
+    "stable_high_quality": {"p_correct": 0.99, "identifiable": True},
     "unidentifiable": {"p_correct": None, "identifiable": False},
 }
 
