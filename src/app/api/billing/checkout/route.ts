@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { env } from "@/lib/env";
-import { PAID_PLANS } from "@/lib/billing/config";
+import { BILLING_CONFIG, PAID_PLANS } from "@/lib/billing/config";
 import { customerIdFor, saveCustomer } from "@/lib/billing/store";
 import {
   billingConfigured,
@@ -21,8 +21,10 @@ function origin(request: Request) {
 }
 
 /**
- * Starts a Stripe Checkout Session (subscription mode, EUR, Stripe Tax) for
- * one of the four plans and returns its URL. The plan is applied only by the
+ * Starts a Stripe Checkout Session (subscription mode, EUR) for one of the
+ * four plans and returns its URL. Stripe Tax stays off unless
+ * BILLING_CONFIG.stripeAutomaticTax is on (§ 19 UStG: no VAT charged); the
+ * § 19 note goes on the Checkout page and the customer's invoice footer. The plan is applied only by the
  * webhook once Stripe confirms the subscription.
  */
 export async function POST(request: Request) {
@@ -42,6 +44,7 @@ export async function POST(request: Request) {
   const session = await loadProductSession();
   const existingCustomer = await customerIdFor(userId);
   const client = stripe();
+  const taxNote = BILLING_CONFIG.taxNote;
   let customer = existingCustomer;
   if (!customer) {
     // One Stripe customer per Osirus user, created up front so the webhook
@@ -51,11 +54,17 @@ export async function POST(request: Request) {
         email: session?.user.email ?? undefined,
         name: session?.user.name ?? undefined,
         metadata: { userId },
+        ...(taxNote ? { invoice_settings: { footer: taxNote } } : {}),
       },
       { idempotencyKey: `osirus-customer-${userId}` },
     );
     customer = created.id;
     await saveCustomer(userId, customer);
+  } else if (taxNote) {
+    // Customers created before the note existed get it too.
+    await client.customers.update(customer, {
+      invoice_settings: { footer: taxNote },
+    });
   }
 
   const base = origin(request);
@@ -65,7 +74,8 @@ export async function POST(request: Request) {
     client_reference_id: userId,
     line_items: [{ price, quantity: 1 }],
     currency: "eur",
-    automatic_tax: { enabled: true },
+    automatic_tax: { enabled: BILLING_CONFIG.stripeAutomaticTax },
+    ...(taxNote ? { custom_text: { submit: { message: taxNote } } } : {}),
     billing_address_collection: "required",
     customer_update: { address: "auto", name: "auto" },
     tax_id_collection: { enabled: true },

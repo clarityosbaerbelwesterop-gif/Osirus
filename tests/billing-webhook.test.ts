@@ -454,10 +454,10 @@ describe("billing tables and usage", () => {
       },
     );
     const { runId, stageId } = await db.seedRun(tenant);
-    // 1 USD -> 0.92 EUR > Pro's 0.75 EUR 5-hour budget.
+    // 1.2 USD logged > Pro's 1.01 USD 5-hour budget (no conversion).
     await db.raw(
       `insert into osirus.model_calls (organization_id, workspace_id, run_id, stage_id, provider, model, logical_role, status, estimated_cost_usd, created_at)
-       values ($1, $2, $3, $4, 'unorouter', 'm', 'FAST', 'completed', 1, now() - interval '1 hour')`,
+       values ($1, $2, $3, $4, 'unorouter', 'm', 'FAST', 'completed', 1.2, now() - interval '1 hour')`,
       [tenant.organizationId, tenant.workspaceId, runId, stageId],
     );
     const status = await quotaStatusFor(tenant.userId);

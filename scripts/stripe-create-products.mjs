@@ -5,9 +5,11 @@
 //   (add --dry-run to only print what would be created)
 //
 // Refuses live keys. Idempotent: a product is found by its lookup metadata
-// and a price by its lookup_key, so rerunning creates nothing twice. Prices
-// are tax_behavior "inclusive": the list price is what the customer pays,
-// Stripe Tax carves the VAT out of it. Nothing secret is printed.
+// and a price by its lookup_key, so rerunning creates nothing twice. No VAT
+// is charged (Kleinunternehmer, § 19 UStG) and Stripe Tax is off, so the
+// list price is exactly what the customer pays. tax_behavior "inclusive"
+// only matters if Stripe Tax is ever switched on: the price would then stay
+// the same. Nothing secret is printed.
 
 import Stripe from "stripe";
 

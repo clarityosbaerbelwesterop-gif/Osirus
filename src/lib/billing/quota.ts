@@ -1,6 +1,6 @@
 import {
   BILLING_CONFIG,
-  callCostEur,
+  callCostUsd,
   type BillingConfig,
   type BillingPlan,
 } from "./config";
@@ -17,9 +17,9 @@ export type WindowName = "fiveHour" | "weekly";
 export type WindowStatus = {
   window: WindowName;
   windowMs: number;
-  budgetEur: number;
-  spentEur: number;
-  remainingEur: number;
+  budgetUsd: number;
+  spentUsd: number;
+  remainingUsd: number;
   exhausted: boolean;
   /** When the window has budget again (now when it already has). */
   availableAt: Date;
@@ -45,10 +45,10 @@ const round = (value: number) => Math.round(value * 1e6) / 1e6;
 export function windowStatus(input: {
   window: WindowName;
   windowMs: number;
-  budgetEur: number;
+  budgetUsd: number;
   calls: UsageCall[];
   now: Date;
-  config?: Pick<BillingConfig, "usdToEur" | "infraBufferEur">;
+  config?: Pick<BillingConfig, "infraBufferUsd">;
 }): WindowStatus {
   const now = input.now.getTime();
   const start = now - input.windowMs;
@@ -59,19 +59,19 @@ export function windowStatus(input: {
     })
     .map((call) => ({
       at: call.at.getTime(),
-      eur: callCostEur(call.costUsd, input.config),
+      usd: callCostUsd(call.costUsd, input.config),
     }))
     .sort((a, b) => a.at - b.at);
-  const spent = inWindow.reduce((sum, call) => sum + call.eur, 0);
-  const exhausted = spent >= input.budgetEur;
+  const spent = inWindow.reduce((sum, call) => sum + call.usd, 0);
+  const exhausted = spent >= input.budgetUsd;
 
   let availableAt = now;
   if (exhausted) {
     // Age out the oldest calls until the spend is back under the budget.
     let remaining = spent;
     for (const call of inWindow) {
-      remaining -= call.eur;
-      if (remaining < input.budgetEur) {
+      remaining -= call.usd;
+      if (remaining < input.budgetUsd) {
         availableAt = call.at + input.windowMs;
         break;
       }
@@ -82,9 +82,9 @@ export function windowStatus(input: {
   return {
     window: input.window,
     windowMs: input.windowMs,
-    budgetEur: input.budgetEur,
-    spentEur: round(spent),
-    remainingEur: round(Math.max(0, input.budgetEur - spent)),
+    budgetUsd: input.budgetUsd,
+    spentUsd: round(spent),
+    remainingUsd: round(Math.max(0, input.budgetUsd - spent)),
     exhausted,
     availableAt: new Date(availableAt),
     retryAfterMs: Math.max(0, availableAt - now),
@@ -114,7 +114,7 @@ export function quotaStatus(input: {
     windowStatus({
       window: "fiveHour",
       windowMs: config.windows.fiveHourMs,
-      budgetEur: plan.fiveHourBudgetEur,
+      budgetUsd: plan.fiveHourBudgetUsd,
       calls: input.calls,
       now,
       config,
@@ -122,7 +122,7 @@ export function quotaStatus(input: {
     windowStatus({
       window: "weekly",
       windowMs: config.windows.weeklyMs,
-      budgetEur: plan.weeklyBudgetEur,
+      budgetUsd: plan.weeklyBudgetUsd,
       calls: input.calls,
       now,
       config,
@@ -180,9 +180,9 @@ export function serializeQuota(status: QuotaStatus) {
     windows: status.windows.map((window) => ({
       window: window.window,
       windowHours: window.windowMs / 3_600_000,
-      budgetEur: window.budgetEur,
-      spentEur: window.spentEur,
-      remainingEur: window.remainingEur,
+      budgetUsd: window.budgetUsd,
+      spentUsd: window.spentUsd,
+      remainingUsd: window.remainingUsd,
       exhausted: window.exhausted,
       availableAt: window.availableAt.toISOString(),
       retryAfterSeconds: Math.ceil(window.retryAfterMs / 1000),

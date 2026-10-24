@@ -8,7 +8,8 @@ export const runtime = "nodejs";
 
 /**
  * The signed-in user's plan and, per window (5 hours, 7 days), the budget,
- * what is spent, what remains and when it refills. Amounts are EUR.
+ * what is spent, what remains and when it refills. Amounts are USD
+ * (UNOROUTER model cost).
  */
 export async function GET() {
   const identity = await apiIdentity();

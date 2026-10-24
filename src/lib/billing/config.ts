@@ -1,15 +1,32 @@
 // Billing and usage quotas: every number in one place.
 //
 // Owner decisions (2026-10-24): four paid monthly plans, no free plan, and
-// each plan has two budgets of model cost in EUR -- a rolling 5-hour window
-// and a rolling 7-day window. An empty window means waiting until it refills;
-// there is no top-up and no hard ban. Stripe handles currency and tax, so
-// there is no margin or exchange-rate logic beyond the fixed usdToEur below,
-// which only converts the USD cost UNOROUTER reports per call.
+// each plan has two budgets of model cost -- a rolling 5-hour window and a
+// rolling 7-day window. An empty window means waiting until it refills;
+// there is no top-up and no hard ban.
 //
-// Budgets are computed from the net amount after 19 % VAT, the Stripe fee and
-// Stripe Tax (about 81 % of the list price), spread over 4.33 weeks per month;
-// the 5-hour window is a fifth of the weekly budget.
+// The operator is a Kleinunternehmer under § 19 UStG: no VAT is charged, so
+// there is no VAT and no Stripe Tax fee in the math, and Stripe Tax
+// (automatic_tax) is off by default.
+//
+// Budgets are fixed USD amounts compared directly against the USD cost that
+// UNOROUTER logs per call. There is no exchange-rate logic at runtime; the
+// EUR budgets were converted to USD once, by hand:
+//
+//   net (EUR)    = price - (1.5 % * price + 0.25 EUR)   Stripe card fee
+//   week (EUR)   = net / 4.333                         weeks per month
+//   5h (EUR)     = week (rounded) / 5
+//   USD          = EUR * 1.1253                        fixed, 1 EUR = 1.1253 USD
+//   all values rounded to cents
+//
+//   plan        price  net     week EUR  5h EUR  ->  week USD  5h USD
+//   Pro           20   19.45     4.49     0.90        5.05     1.01
+//   Developer     50   49.00    11.31     2.26       12.73     2.54
+//   Ultra 100    100   98.25    22.67     4.53       25.51     5.10
+//   Ultra 200    200  196.75    45.41     9.08       51.10    10.22
+//
+// To change a budget, redo this derivation and update the table and the
+// numbers below together.
 
 export const PAID_PLANS = [
   "pro",
@@ -23,12 +40,12 @@ export type BillingPlan = PaidPlan | "free";
 export type PlanConfig = {
   /** Shown to users; the UI owns the final copy. */
   label: string;
-  /** List price per month in EUR, incl. VAT (what the Stripe price says). */
+  /** Price per month in EUR (what the Stripe price says; no VAT, § 19 UStG). */
   monthlyPriceEur: number;
-  /** Model-cost budget in EUR per rolling 7 days. */
-  weeklyBudgetEur: number;
-  /** Model-cost budget in EUR per rolling 5 hours. */
-  fiveHourBudgetEur: number;
+  /** Model-cost budget in USD (UNOROUTER cost) per rolling 7 days. */
+  weeklyBudgetUsd: number;
+  /** Model-cost budget in USD (UNOROUTER cost) per rolling 5 hours. */
+  fiveHourBudgetUsd: number;
   /** Env var holding the Stripe price id (price_...). Never a literal id. */
   priceEnv: string | null;
 };
@@ -45,13 +62,23 @@ export const BILLING_CONFIG = {
    * subscription the `free` budgets below instead of no budget at all.
    */
   freePlanEnabled: false,
-  /** Fixed USD->EUR factor for UNOROUTER's USD cost. Not a live rate. */
-  usdToEur: 0.92,
   /**
-   * Placeholder surcharge in EUR added to every model call to cover Vercel
+   * Stripe Tax (automatic_tax) in Checkout. Off: the operator is a
+   * Kleinunternehmer (§ 19 UStG) and charges no VAT. Turning it on also
+   * needs an active tax registration in the Stripe Dashboard.
+   */
+  stripeAutomaticTax: false,
+  /**
+   * Note shown on the Checkout page and as the customer's invoice footer.
+   * Set to null to show nothing.
+   */
+  taxNote: "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet." as
+    string | null,
+  /**
+   * Placeholder surcharge in USD added to every model call to cover Vercel
    * and Neon. 0 until the owner sets it.
    */
-  infraBufferEur: 0,
+  infraBufferUsd: 0,
   windows: {
     fiveHourMs: 5 * 60 * 60 * 1000,
     weeklyMs: 7 * 24 * 60 * 60 * 1000,
@@ -62,37 +89,37 @@ export const BILLING_CONFIG = {
     pro: {
       label: "Pro",
       monthlyPriceEur: 20,
-      weeklyBudgetEur: 3.73,
-      fiveHourBudgetEur: 0.75,
+      weeklyBudgetUsd: 5.05,
+      fiveHourBudgetUsd: 1.01,
       priceEnv: "STRIPE_PRICE_PRO",
     },
     developer: {
       label: "Developer",
       monthlyPriceEur: 50,
-      weeklyBudgetEur: 9.41,
-      fiveHourBudgetEur: 1.88,
+      weeklyBudgetUsd: 12.73,
+      fiveHourBudgetUsd: 2.54,
       priceEnv: "STRIPE_PRICE_DEVELOPER",
     },
     ultra_100: {
       label: "Ultra 100",
       monthlyPriceEur: 100,
-      weeklyBudgetEur: 18.87,
-      fiveHourBudgetEur: 3.77,
+      weeklyBudgetUsd: 25.51,
+      fiveHourBudgetUsd: 5.1,
       priceEnv: "STRIPE_PRICE_ULTRA_100",
     },
     ultra_200: {
       label: "Ultra 200",
       monthlyPriceEur: 200,
-      weeklyBudgetEur: 37.8,
-      fiveHourBudgetEur: 7.56,
+      weeklyBudgetUsd: 51.1,
+      fiveHourBudgetUsd: 10.22,
       priceEnv: "STRIPE_PRICE_ULTRA_200",
     },
     // Only used when freePlanEnabled is true. Placeholder values.
     free: {
       label: "Free",
       monthlyPriceEur: 0,
-      weeklyBudgetEur: 0.25,
-      fiveHourBudgetEur: 0.05,
+      weeklyBudgetUsd: 0.25,
+      fiveHourBudgetUsd: 0.05,
       priceEnv: null,
     },
   } satisfies Record<BillingPlan, PlanConfig>,
@@ -107,14 +134,14 @@ export function isPaidPlan(value: unknown): value is PaidPlan {
   );
 }
 
-/** EUR charged against the quota for one model call's USD cost. */
-export function callCostEur(
+/** USD charged against the quota for one model call's logged USD cost. */
+export function callCostUsd(
   costUsd: number | null | undefined,
-  config: Pick<BillingConfig, "usdToEur" | "infraBufferEur"> = BILLING_CONFIG,
+  config: Pick<BillingConfig, "infraBufferUsd"> = BILLING_CONFIG,
 ) {
   const usd =
     typeof costUsd === "number" && Number.isFinite(costUsd) && costUsd > 0
       ? costUsd
       : 0;
-  return usd * config.usdToEur + config.infraBufferEur;
+  return usd + config.infraBufferUsd;
 }
