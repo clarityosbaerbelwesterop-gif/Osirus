@@ -4,6 +4,7 @@ import {
   OIDC_AUDIENCE,
   OIDC_ISSUER,
   PULSE_REPOSITORY,
+  expectedImmutableOidcSubject,
   expectedOidcSubject,
   expectedWorkflowRef,
   resetOidcKeyCache,
@@ -71,6 +72,26 @@ describe("GitHub OIDC for the hourly tick", () => {
     );
   });
 
+  it("accepts the immutable subject this repository is configured for", async () => {
+    const immutable = expectedImmutableOidcSubject(PULSE_EXPECTATION);
+    expect(immutable).toBe(
+      "repo:clarityosbaerbelwesterop-gif@273620343/Osirus@1378273477:ref:refs/heads/main",
+    );
+    expect(
+      (
+        await check(
+          token(
+            claims({
+              sub: immutable,
+              repository_id: "1378273477",
+              repository_owner_id: "273620343",
+            }),
+          ),
+        )
+      ).ok,
+    ).toBe(true);
+  });
+
   it("refuses a token GitHub did not sign", async () => {
     const forged = await check(token(claims(), { key: attacker.privateKey }));
     expect(forged).toEqual({ ok: false, reason: "signature" });
@@ -113,6 +134,20 @@ describe("GitHub OIDC for the hourly tick", () => {
         "job_workflow",
       ],
       [{ repository_owner: "someone-else" }, "repository_owner"],
+      [{ repository_id: "1" }, "repository_id"],
+      [{ repository_owner_id: "1" }, "repository_owner_id"],
+      [
+        {
+          sub: "repo:clarityosbaerbelwesterop-gif@1/Osirus@1378273477:ref:refs/heads/main",
+        },
+        "subject",
+      ],
+      [
+        {
+          sub: "repo:clarityosbaerbelwesterop-gif@273620343/Osirus@1378273477:pull_request",
+        },
+        "subject",
+      ],
     ];
     for (const [overrides, reason] of cases)
       expect(await check(token(claims(overrides))), reason).toEqual({
