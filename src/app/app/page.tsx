@@ -1,4 +1,5 @@
 import { ChatHub } from "@/components/chat/chat-hub";
+import { isFreeTierEnabled } from "@/app/free-tier";
 import { loadSurfaceThread } from "@/lib/product/surface-thread";
 import { requireProductSession } from "@/lib/product/session";
 
@@ -28,6 +29,7 @@ export default async function AppPage({
       initialMessages={state.messages}
       initialRunId={state.activeRunId}
       initialSnapshotRunId={state.recentRunId}
+      freeQuotaEmpty={isFreeTierEnabled()}
     />
   );
 }

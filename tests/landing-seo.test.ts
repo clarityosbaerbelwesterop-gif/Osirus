@@ -39,32 +39,33 @@ describe("landing page", () => {
     );
     expect(html).toContain("Bots, Work und");
     expect(html).toContain('href="/auth/sign-up"');
-    expect(html).toContain('href="/auth/sign-up?plan=pro"');
-    expect(html).toContain('href="/auth/sign-up?plan=developer"');
-    expect(html).toContain('href="/auth/sign-up?plan=ultra-100"');
-    expect(html).toContain('href="/auth/sign-up?plan=ultra-200"');
+    expect(html).toContain("Kostenlos starten");
+    expect(html).not.toContain("Konto erstellen");
+    expect(html).not.toContain("für immer");
+    expect(html).not.toContain("plan=");
+    expect(html).not.toContain("20 €");
+    expect(html).not.toContain("50 €");
+    expect(html).not.toContain("100 €");
+    expect(html).not.toContain("200 €");
+    expect(html).not.toContain("§ 19");
+    expect(html).toContain("begrenztes kostenloses Kontingent");
     expect(html).toContain('href="/auth/sign-in"');
     expect(html).toContain('href="/legal/impressum"');
     expect(html).toContain('href="/legal/privacy"');
     expect(html).toContain('href="/legal/terms"');
     expect(html).toContain('href="/legal/eula"');
     expect(html).toContain('href="/legal/cookies"');
-    expect(html).toContain(
-      "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
-    );
-    expect(html).toContain("5-Stunden-Kontingent");
-    expect(html).toContain("Wochenkontingent");
-    expect(html).toContain("Wieder verfügbar in 2 h 14 min");
+    expect(html).not.toContain('href="#preise"');
     expect(html).toContain("Bald verfügbar");
     expect(html).not.toMatch(
-      /ROUGE|QUASNIR|DARUS|kostenlos|inkl\. MwSt|zzgl\. MwSt|brutto|netto/i,
+      /ROUGE|QUASNIR|DARUS|inkl\. MwSt|zzgl\. MwSt|brutto|netto/i,
     );
     expect(html).not.toContain("osirus.vercel.app");
     expect(html).not.toContain("No payment required");
     expect(html).not.toContain("✓ verified");
   });
 
-  it("ships parseable SoftwareApplication structured data for the four paid plans", async () => {
+  it("ships SoftwareApplication data without prices", async () => {
     const html = renderToStaticMarkup(
       (await HomePage()) as ReturnType<typeof createElement>,
     );
@@ -76,13 +77,8 @@ describe("landing page", () => {
     expect(data["@type"]).toBe("SoftwareApplication");
     expect(data.name).toBe("Osirus");
     expect(data.url).toBe("https://osirus-ai.vercel.app/");
-    expect(data.offers.map((offer: { price: string }) => offer.price)).toEqual([
-      "20",
-      "50",
-      "100",
-      "200",
-    ]);
-    expect(html).not.toContain('"price":"0"');
+    expect(data.offers).toBeUndefined();
+    expect(html).not.toContain('"price"');
   });
 });
 

@@ -219,6 +219,42 @@
   background: var(--color-surface);
 }
 
+.quota-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.quota-choice p {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.quota-offer,
+.plan-offer {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.quota-offer {
+  margin: var(--space-4) var(--space-5) 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.plan-current,
+.plan-tax,
+.quota-offer > p {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 .price-card h3 {
   font-size: var(--text-base);
 }

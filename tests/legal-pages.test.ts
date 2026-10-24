@@ -66,16 +66,18 @@ describe("legal pages", () => {
 
   it("terms state the four end prices, both quota windows, and German withdrawal rules", () => {
     const html = render(TermsPage);
-    expect(html).toContain("20 €");
-    expect(html).toContain("50 €");
-    expect(html).toContain("100 €");
-    expect(html).toContain("200 €");
+    expect(html).toContain("Planübersicht");
+    expect(html).toContain("Checkout");
+    expect(html).toContain("Endpreise");
+    expect(html).not.toContain("20 €");
     expect(html).toContain(
       "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
     );
     expect(html).not.toMatch(/inkl\. MwSt|zzgl\. MwSt|brutto|netto|USt-IdNr/i);
     expect(html).toContain("5-Stunden-Kontingent");
     expect(html).toContain("Wochenkontingent");
+    expect(html).toContain("begrenztes kostenloses Kontingent");
+    expect(html).not.toContain("wird nicht angeboten");
     expect(html).toContain("Muster-Widerrufsformular");
     expect(html).toContain("Bundesrepublik Deutschland");
     expect(html).not.toContain("[[OPERATOR:");

@@ -4,16 +4,14 @@ import Link from "next/link";
 import { useState } from "react";
 import { useActionState } from "react";
 import { GitHubSignInButton } from "@/components/auth/github-sign-in-button";
-import { planById } from "@/components/marketing/plans";
 import { OsirusMark } from "@/components/shell/osirus-mark";
 import { assertSignupLegal, signUpWithEmail } from "./actions";
 
-export function SignUpForm({ plan }: { plan?: string }) {
+export function SignUpForm() {
   const [state, action, pending] = useActionState(signUpWithEmail, null);
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
   const accepted = terms && privacy;
-  const selected = planById(plan);
 
   return (
     <main className="auth-page">
@@ -26,12 +24,6 @@ export function SignUpForm({ plan }: { plan?: string }) {
         <p className="auth-lede">
           Your personal workspace is ready after your first sign-in.
         </p>
-        {selected ? (
-          <p className="plan-note">
-            Gewählter Plan: {selected.name}, {selected.price} pro Monat. Gemäß §
-            19 UStG wird keine Umsatzsteuer berechnet.
-          </p>
-        ) : null}
         <label>
           Name
           <input name="name" type="text" autoComplete="name" required />

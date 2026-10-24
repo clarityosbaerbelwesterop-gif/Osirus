@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { PLANS, PRICE_TAX_NOTE } from "@/components/marketing/plans";
+import { PRICE_TAX_NOTE } from "@/components/marketing/plans";
 import { LegalDraftNote } from "@/components/legal/draft-note";
 import { OPERATOR } from "../operator";
 
@@ -48,19 +48,13 @@ export default function TermsPage() {
 
       <h2>3. Abos und Preise</h2>
       <p>
-        Es gibt vier Abos. Die Preise sind Endpreise in Euro pro Monat.{" "}
-        {PRICE_TAX_NOTE} Die Abrechnung läuft über Stripe, sobald die Buchung
-        freigeschaltet ist. Bis dahin ist die Zahlung noch nicht verfügbar, und
-        es wird kein Entgelt eingezogen. Ein Tarif ohne Entgelt wird nicht
-        angeboten.
+        Es kann ein begrenztes kostenloses Kontingent geben. Seinen Umfang zeigt
+        die App. Konkrete Mengen stehen hier nicht. Die Preise der Abos stehen
+        in der Planübersicht in der App und werden vor Vertragsschluss im
+        Checkout angezeigt. Es sind Endpreise. {PRICE_TAX_NOTE} Die Abrechnung
+        läuft über Stripe, sobald die Buchung freigeschaltet ist. Bis dahin ist
+        die Zahlung noch nicht verfügbar.
       </p>
-      <ul>
-        {PLANS.map((plan) => (
-          <li key={plan.id}>
-            {plan.name}: {plan.price} pro Monat
-          </li>
-        ))}
-      </ul>
       <h2>4. Kontingente</h2>
       <p>
         Jedes Abo hat zwei Fenster: ein 5-Stunden-Kontingent und ein

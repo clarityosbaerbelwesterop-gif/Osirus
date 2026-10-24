@@ -43,6 +43,7 @@ import {
   draftAfterSurfaceChange,
   type SessionSurface,
 } from "@/lib/product/surfaces";
+import { FreeQuotaPanel } from "../settings/plan-offer";
 import { WorkingMotion } from "./working-motion";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
 import {
@@ -150,6 +151,8 @@ export function ChatHub(props: {
    * previous chrome so the phone composer layout stays put.
    */
   kind?: "ai" | "agent" | "bot";
+  /** Set by the chat page when the free tier is on and its quota is empty. */
+  freeQuotaEmpty?: boolean;
 }) {
   const shell = useShell();
   const { upsertSession, bindChat } = shell;
@@ -925,6 +928,7 @@ export function ChatHub(props: {
           }}
         >
           <div className="chat-content" ref={content}>
+            {props.freeQuotaEmpty ? <FreeQuotaPanel /> : null}
             {empty ? (
               props.kind === "bot" ? (
                 <div className="home home-calm">

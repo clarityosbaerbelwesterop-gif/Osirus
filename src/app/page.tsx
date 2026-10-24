@@ -6,10 +6,9 @@ import {
   BotStory,
   WorkStory,
 } from "@/components/marketing/stories";
-import { PLANS, PRICE_TAX_NOTE } from "@/components/marketing/plans";
-import { PLACEHOLDER_QUOTA, QuotaBars } from "@/components/motion/quota-bars";
 import { OsirusMark } from "@/components/shell/osirus-mark";
 import { auth } from "@/lib/auth/server";
+import { isFreeTierEnabled, startAccountLabel } from "./free-tier";
 import { absoluteUrl } from "./site-url";
 
 export const dynamic = "force-dynamic";
@@ -17,38 +16,51 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Osirus — Bots, Work und Agents",
   description:
-    "Osirus ist ein Workspace für Assistent, Work und Agents. Modelle laufen über UNOROUTER. Abos: Pro, Developer, Ultra 100 und Ultra 200.",
+    "Osirus ist ein Workspace für Assistent, Work und Agents. Modelle laufen über UNOROUTER.",
   alternates: { canonical: "/" },
 };
 
-const FAQ = [
-  {
-    q: "Was ist heute nutzbar?",
-    a: "Du kannst ein Konto anlegen und mit dem Assistenten arbeiten. Aktionen nach außen warten auf deine Freigabe. Eigene Bots, Deploy, Gruppenchats und die Empfehlung aus Modell, Prüfer und Sub-Agents sind bald verfügbar.",
-  },
-  {
-    q: "Welche Modelle gibt es?",
-    a: "Aufrufe laufen über UNOROUTER. Eine auswählbare Modellliste ist bald verfügbar. Eigene Modelle werden nicht angeboten.",
-  },
-  {
-    q: "Was kosten die Abos?",
-    a: `Pro 20 €, Developer 50 €, Ultra 100 100 € und Ultra 200 200 € pro Monat, als Endpreise. ${PRICE_TAX_NOTE} Die Buchung ist bald verfügbar. Einen Tarif ohne Entgelt gibt es nicht.`,
-  },
-  {
-    q: "Was passiert, wenn das Kontingent leer ist?",
-    a: "Jedes Abo hat ein 5-Stunden-Fenster und ein Wochenfenster. Ist ein Fenster aufgebraucht, wartest du, bis es sich füllt. Zusätzliches Guthaben kann nicht gekauft werden. Konkrete Mengen sind noch nicht veröffentlicht.",
-  },
-  {
-    q: "Prüft Osirus jede Antwort?",
-    a: "Nein. Eine Modellantwort allein ist kein Beleg. Ein getrenntes Prüfermodell ist bald verfügbar.",
-  },
-] as const;
+function faq(freeTier: boolean) {
+  return [
+    {
+      q: "Was ist heute nutzbar?",
+      a: "Du kannst ein Konto anlegen und mit dem Assistenten arbeiten. Aktionen nach außen warten auf deine Freigabe. Eigene Bots, Deploy, Gruppenchats und die Empfehlung aus Modell, Prüfer und Sub-Agents sind bald verfügbar.",
+    },
+    {
+      q: "Welche Modelle gibt es?",
+      a: "Aufrufe laufen über UNOROUTER. Eine auswählbare Modellliste ist bald verfügbar. Eigene Modelle werden nicht angeboten.",
+    },
+    ...(freeTier
+      ? [
+          {
+            q: "Gibt es ein kostenloses Kontingent?",
+            a: "Ja, ein begrenztes kostenloses Kontingent. Den Umfang zeigt die App. Konkrete Mengen stehen hier nicht.",
+          },
+          {
+            q: "Was passiert, wenn das Kontingent leer ist?",
+            a: "Ist das begrenzte kostenlose Kontingent aufgebraucht, wartest du bis es sich füllt oder wählst in der App ein Abo. Zusätzliches Guthaben kann nicht gekauft werden.",
+          },
+        ]
+      : [
+          {
+            q: "Wo sehe ich Abos?",
+            a: "In der App, im Bereich Plan. Preise stehen dort und vor dem Vertrag im Checkout.",
+          },
+        ]),
+    {
+      q: "Prüft Osirus jede Antwort?",
+      a: "Nein. Eine Modellantwort allein ist kein Beleg. Ein getrenntes Prüfermodell ist bald verfügbar.",
+    },
+  ];
+}
 
 export default async function HomePage() {
   const { data: session } = await auth
     .getSession()
     .catch(() => ({ data: null }));
   if (session?.user) redirect("/app");
+  const startLabel = startAccountLabel();
+  const freeTier = isFreeTierEnabled();
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -59,12 +71,6 @@ export default async function HomePage() {
     url: absoluteUrl("/"),
     description:
       "Workspace für Assistent, Work und Agents. Modelle über UNOROUTER.",
-    offers: PLANS.map((plan) => ({
-      "@type": "Offer",
-      name: plan.name,
-      price: plan.price.replace(" €", ""),
-      priceCurrency: "EUR",
-    })),
   };
 
   return (
@@ -85,7 +91,6 @@ export default async function HomePage() {
           <a href="#bots">Bots</a>
           <a href="#work">Work</a>
           <a href="#agents">Agents</a>
-          <a href="#preise">Preise</a>
           <Link className="btn btn-ghost" href="/auth/sign-in">
             Anmelden
           </Link>
@@ -108,7 +113,7 @@ export default async function HomePage() {
           </p>
           <div className="landing-actions">
             <Link className="btn btn-primary btn-lg" href="/auth/sign-up">
-              Konto erstellen
+              {startLabel}
             </Link>
             <Link className="btn btn-secondary btn-lg" href="/auth/sign-in">
               Anmelden
@@ -129,7 +134,7 @@ export default async function HomePage() {
               Gruppenchat zusammenbringen, ist bald verfügbar.
             </p>
             <Link className="btn btn-secondary" href="/auth/sign-up">
-              Konto erstellen
+              {startLabel}
             </Link>
           </div>
           <BotStory />
@@ -182,41 +187,9 @@ export default async function HomePage() {
           </div>
         </section>
 
-        <section
-          id="preise"
-          className="landing-prices"
-          aria-labelledby="preise-title"
-        >
-          <h2 id="preise-title">Preise</h2>
-          <p className="landing-copy">
-            Endpreise in Euro pro Monat. {PRICE_TAX_NOTE} Die Abrechnung läuft
-            über Stripe, sobald die Buchung verfügbar ist.
-          </p>
-          <ul className="price-grid">
-            {PLANS.map((plan) => (
-              <li key={plan.id} className="price-card">
-                <h3>{plan.name}</h3>
-                <p className="price-amount">
-                  {plan.price} <span>/ Monat</span>
-                </p>
-                <p>5-Stunden- und Wochenkontingent. Mengen: bald verfügbar.</p>
-                <Link className="btn btn-primary" href={plan.href}>
-                  Mit {plan.name} registrieren
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <QuotaBars
-            fiveHourRatio={PLACEHOLDER_QUOTA.fiveHourRatio}
-            weekRatio={PLACEHOLDER_QUOTA.weekRatio}
-            fiveHourRefill={PLACEHOLDER_QUOTA.fiveHourRefill}
-            note={PLACEHOLDER_QUOTA.note}
-          />
-        </section>
-
         <section id="faq" className="landing-faq" aria-labelledby="faq-title">
           <h2 id="faq-title">Fragen</h2>
-          {FAQ.map((item) => (
+          {faq(freeTier).map((item) => (
             <details key={item.q}>
               <summary>{item.q}</summary>
               <p>{item.a}</p>
