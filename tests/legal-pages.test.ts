@@ -27,20 +27,23 @@ function render(component: () => ReactNode) {
 }
 
 describe("legal pages", () => {
-  it("impressum cites § 5 DDG, names the operator, and drops the repealed TMG and the discontinued ODR platform", () => {
+  it("impressum cites § 5 DDG and carries the operator's complete, real identity", () => {
     const html = render(ImpressumPage);
     expect(html).toContain("§ 5 DDG");
     expect(html).not.toContain("TMG");
     expect(html).toContain("Bärbel Westerop");
     expect(html).toContain("ClarityCompassAI");
+    expect(html).toContain("Drinhausstraße 22");
     expect(html).toContain("47447 Moers");
-    // The EU Online Dispute Resolution platform was discontinued on
-    // 20 July 2025 (Regulation (EU) 2024/3228); linking it is now wrong.
-    expect(html).not.toContain("ec.europa.eu/consumers/odr");
-    expect(html).toContain("20 July 2025");
-    // The § 36 VSBG statement is required; unknown operator facts stay marked.
+    expect(html).toContain('href="tel:+4916094486598"');
+    expect(html).toContain("mailto:clarityos.baerbelwesterop@gmail.com");
+    expect(html).toContain("§ 18 Abs. 2 MStV");
     expect(html).toContain("§ 36 VSBG");
-    expect(html).toContain("[[OPERATOR:");
+    // The EU ODR platform was discontinued on 20 July 2025; never link it.
+    expect(html).not.toContain("ec.europa.eu/consumers/odr");
+    // A published imprint must not show placeholders or a draft banner.
+    expect(html).not.toContain("[[OPERATOR:");
+    expect(html).not.toContain("DRAFT");
   });
 
   it("privacy notice carries the GDPR structure and the real cookie inventory", () => {

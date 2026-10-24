@@ -4,98 +4,53 @@ export const metadata = {
   title: "Impressum",
 };
 
-const DRAFT = "DRAFT — REQUIRES OPERATOR/LEGAL REVIEW";
-const TODO = "[[OPERATOR:";
 const CONTACT_EMAIL = "clarityos.baerbelwesterop@gmail.com";
+const PHONE_DISPLAY = "+49 160 94486598";
+const PHONE_HREF = "tel:+4916094486598";
 
 export default function ImpressumPage() {
   return (
-    <article className="legal-body">
-      <p className="legal-draft" role="note">
-        {DRAFT}. This is not a lawyer-reviewed notice.
-      </p>
+    <article className="legal-body" lang="de">
       <h1>Impressum</h1>
-      <p>
-        Draft imprint for a service offered from North Rhine-Westphalia
-        (Nordrhein-Westfalen), Germany. It also notes the EU and, briefly, use
-        from outside the EU. Do not treat missing fields as filled in.
-      </p>
-      <p>
-        Angaben gemäß § 5 DDG (Digitale-Dienste-Gesetz). The operator must
-        review and complete every field marked {TODO} …]] before this page is
-        treated as published. Fields without a marker are filled from the
-        project identity and still require operator confirmation.
-      </p>
+      <p>Angaben gemäß § 5 DDG (Digitale-Dienste-Gesetz)</p>
 
-      <h2>Anbieter / Provider</h2>
+      <h2>Anbieter</h2>
       <p>
-        Bärbel Westerop
+        ClarityCompassAI
         <br />
-        ClarityCompassAI (project: Osirus)
+        Inhaberin: Bärbel Westerop
         <br />
-        {TODO} legal form — e.g. Einzelunternehmen; do not publish a GmbH/UG
-        form that is not registered]]
+        Drinhausstraße 22
         <br />
-        {TODO} street and house number]]
+        47447 Moers-Kapellen
         <br />
-        47447 Moers
-        <br />
-        Germany
+        Deutschland
       </p>
 
-      <h2>Kontakt / Contact</h2>
+      <h2>Kontakt</h2>
       <p>
-        E-Mail: {CONTACT_EMAIL} (drafted from the project mailbox — operator
-        confirms this is the public contact address)
+        Telefon: <a href={PHONE_HREF}>{PHONE_DISPLAY}</a>
         <br />
-        {TODO} telephone or a second channel for rapid electronic contact — § 5
-        DDG requires one in addition to the email address]]
+        E-Mail (Geschäft und Support):{" "}
+        <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
       </p>
 
-      <h2>Vertretungsberechtigt / Represented by</h2>
-      <p>Bärbel Westerop (operator confirms).</p>
+      <h2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</h2>
+      <p>Bärbel Westerop, Anschrift wie oben</p>
 
-      <h2>Registereintrag / Commercial register</h2>
+      <h2>Verbraucherstreitbeilegung (§ 36 VSBG)</h2>
       <p>
-        {TODO} register court (Registergericht) and register number, or the
-        statement that no register entry exists]]
-      </p>
-
-      <h2>Umsatzsteuer / VAT</h2>
-      <p>
-        {TODO} VAT identification number per § 27a UStG, or the statement that
-        none has been issued. If a Wirtschafts-Identifikationsnummer (§ 139c AO)
-        has been assigned, list it here as well]]
-      </p>
-
-      <h2>Verantwortlich für den Inhalt / Responsible for content</h2>
-      <p>
-        Bärbel Westerop, address as above — per § 18 Abs. 2 MStV, if and when
-        this site publishes journalistic or editorial content. The operator
-        confirms whether this designation is required.
-      </p>
-
-      <h2>Verbraucherstreitbeilegung / Consumer dispute resolution</h2>
-      <p>
-        {TODO} operator confirms the § 36 VSBG statement. Drafted default:
-        &quot;Wir sind nicht verpflichtet und nicht bereit, an einem
+        Wir sind nicht verpflichtet und nicht bereit, an einem
         Streitbeilegungsverfahren vor einer Verbraucherschlichtungsstelle
-        teilzunehmen.&quot; (We are neither obliged nor willing to participate
-        in dispute resolution proceedings before a consumer arbitration
-        board.)]]
-      </p>
-      <p>
-        Note: the European Commission&apos;s Online Dispute Resolution platform
-        was discontinued on 20 July 2025 (Regulation (EU) 2024/3228). The former
-        obligation to link it no longer applies, which is why this page does not
-        reference it.
+        teilzunehmen.
       </p>
 
-      <h2>Technischer Dienstleister / Technical service providers</h2>
+      <h2>Technische Dienstleister</h2>
       <p>
-        This application is hosted by Vercel Inc. and uses Neon (database and
-        authentication) and third-party model inference. The full inventory is
-        described in the <Link href="/legal/privacy">privacy notice</Link>.
+        Diese Anwendung wird bei Vercel Inc. gehostet und nutzt Neon
+        (Datenbank und Anmeldung) sowie Modell-Anbieter über eine API.
+        Einzelheiten stehen in der{" "}
+        <Link href="/legal/privacy">Datenschutzerklärung</Link>.
       </p>
     </article>
   );
