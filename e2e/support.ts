@@ -23,6 +23,8 @@ export const SURFACES = [
   "inbox",
   "automations",
   "intelligence",
+  "work",
+  "agents",
 ] as const;
 export type Surface = (typeof SURFACES)[number];
 

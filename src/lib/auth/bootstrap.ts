@@ -14,11 +14,12 @@ type WorkspaceRow = {
   workspace_name: string;
 };
 
-export async function bootstrapProductIdentity(user: {
+/** The app user row only. A workspace is not created here. */
+export async function ensureOsirusUser(user: {
   id: string;
   email?: string | null;
   name?: string | null;
-}): Promise<ProductIdentity> {
+}) {
   await queryAs(
     user.id,
     `insert into osirus.users (id, email, display_name)
@@ -29,6 +30,14 @@ export async function bootstrapProductIdentity(user: {
            updated_at = now()`,
     [user.id, user.email ?? null, user.name ?? null],
   );
+}
+
+export async function bootstrapProductIdentity(user: {
+  id: string;
+  email?: string | null;
+  name?: string | null;
+}): Promise<ProductIdentity> {
+  await ensureOsirusUser(user);
 
   const existing = await queryAs<WorkspaceRow>(
     user.id,

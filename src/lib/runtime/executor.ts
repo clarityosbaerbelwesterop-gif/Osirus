@@ -70,15 +70,16 @@ export async function prepareRuntimeRun(input: {
   /** User-selected working mode; persisted on the run, biases routing. */
   mode?: RoutingMode;
   /** Product surface. Only coding may carry a repository selection. */
-  surface?: "ai" | "agent" | "bot" | "coding";
+  surface?: "ai" | "agent" | "bot" | "coding" | "work";
   coding?: {
     repository: string;
     branch: string;
     effort: string;
-    model: string;
+    model?: string;
     effortChosen?: boolean;
     permission?: "ask" | "accept-edits";
   };
+  pinnedModel?: string;
 }): Promise<PreparedRun> {
   const repository = new RuntimeRepository(input.identity.userId);
   const existing = await repository.findRunByRequestId(
@@ -132,6 +133,7 @@ export async function prepareRuntimeRun(input: {
     mode: input.mode && input.mode !== "auto" ? input.mode : undefined,
     surface: input.surface,
     coding: input.surface === "coding" ? input.coding : undefined,
+    pinnedModel: input.pinnedModel,
   });
 
   if (created.created && !input.regenerate) {
@@ -223,19 +225,27 @@ export async function planRuntimeRun(input: {
   attachments?: Array<{ id: string; kind: string }>;
   /** User-selected working mode; biases the routing decision. */
   mode?: RoutingMode;
+  /** User-selected UNOROUTER id. No fallback to another model. */
+  pinnedModel?: string;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
-  const provider = input.policy?.model
+  const provider = input.pinnedModel
     ? new UnoRouterProvider({
-        model: input.policy.model,
-        // M48: a model per role, from the free-model allowlist only.
-        roleModels: freeRoleModels(input.policy.genome.modelUse?.roles),
-        maxRateLimitWaitSeconds: 60,
-        // M49: a strategy trial (Foundry / RSI) is P4 -- it yields free
-        // model capacity to user requests.
-        priority: "P4",
+        model: input.pinnedModel,
+        fallback: false,
+        priority: "P0",
       })
-    : new UnoRouterProvider();
+    : input.policy?.model
+      ? new UnoRouterProvider({
+          model: input.policy.model,
+          // M48: a model per role, from the free-model allowlist only.
+          roleModels: freeRoleModels(input.policy.genome.modelUse?.roles),
+          maxRateLimitWaitSeconds: 60,
+          // M49: a strategy trial (Foundry / RSI) is P4 -- it yields free
+          // model capacity to user requests.
+          priority: "P4",
+        })
+      : new UnoRouterProvider();
 
   const activity = async (
     type: string,
@@ -343,6 +353,9 @@ export async function planRuntimeRun(input: {
   if (input.stageInput)
     for (const node of composed.graph.nodes)
       node.input = { ...node.input, ...input.stageInput };
+  if (input.pinnedModel)
+    for (const node of composed.graph.nodes)
+      node.input = { ...node.input, pinnedModel: input.pinnedModel };
   if (input.attachments?.length)
     for (const node of composed.graph.nodes)
       node.input = {
@@ -461,6 +474,7 @@ export async function executeRuntimeRun(input: {
   correlationId?: string;
   attachments?: Array<{ id: string; kind: string }>;
   mode?: RoutingMode;
+  pinnedModel?: string;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
   const controller = new AbortController();
@@ -502,6 +516,7 @@ export async function executeRuntimeRun(input: {
       correlationId: input.correlationId,
       attachments: input.attachments,
       mode: input.mode,
+      pinnedModel: input.pinnedModel,
       signal: controller.signal,
     });
 

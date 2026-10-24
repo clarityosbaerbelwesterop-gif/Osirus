@@ -1,6 +1,8 @@
 import type { MetadataRoute } from "next";
+import { publicBaseOrigin } from "@/lib/public-base";
 
 export default function robots(): MetadataRoute.Robots {
+  const origin = publicBaseOrigin();
   return {
     rules: [
       {
@@ -9,6 +11,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/app", "/api", "/auth", "/internal", "/ui-fixtures"],
       },
     ],
-    sitemap: "https://osirus.vercel.app/sitemap.xml",
+    ...(origin ? { sitemap: `${origin}/sitemap.xml` } : {}),
   };
 }

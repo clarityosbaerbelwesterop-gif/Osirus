@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
-
-const BASE = "https://osirus.vercel.app";
+import { publicBaseOrigin } from "@/lib/public-base";
 
 export default function sitemap(): MetadataRoute.Sitemap {
+  const BASE = publicBaseOrigin();
+  if (!BASE) return [];
   const lastModified = new Date("2026-10-01");
   return [
     { url: `${BASE}/`, lastModified, changeFrequency: "weekly", priority: 1 },
