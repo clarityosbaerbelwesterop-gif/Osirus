@@ -3,6 +3,7 @@
 import { Check, Copy } from "lucide-react";
 import dynamic from "next/dynamic";
 import { useState, type ReactNode } from "react";
+import { mentionsOwnModel } from "../motion/public-text";
 import { OsirusMark } from "../shell/osirus-mark";
 
 // The Markdown pipeline (micromark, GFM, hast) is the largest client module;
@@ -117,7 +118,7 @@ export function MessageList({
                   <CopyButton text={message.content} />
                 </div>
               ) : null}
-              {message.caption ? (
+              {message.caption && !mentionsOwnModel(message.caption) ? (
                 <p className="message-model">{message.caption}</p>
               ) : null}
             </div>

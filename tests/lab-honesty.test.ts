@@ -62,10 +62,10 @@ describe("honest AI mode labels", () => {
         onInteractionChange: () => undefined,
       }),
     );
-    expect(html).toContain("DARUS · API fallback");
+    expect(html).not.toMatch(/DARUS|QUASNIR|ROUGE/);
+    expect(html).toContain("Bald verfügbar");
     expect(html).not.toContain("deep reasoning · API fallback");
     expect(html).not.toContain("Native inference");
-    expect(html).toContain(">DARUS<");
     expect(html).toContain("Not a native checkpoint");
     expect(html).toContain('aria-label="Model"');
   });
@@ -81,7 +81,7 @@ describe("honest AI mode labels", () => {
       }),
     );
     expect(html).toContain(">Idle<");
-    expect(html).toContain("not the agent");
-    expect(html).toContain(">ROUGE 1<");
+    expect(html).not.toMatch(/ROUGE|QUASNIR|DARUS/);
+    expect(html).toContain("Bald verfügbar");
   });
 });

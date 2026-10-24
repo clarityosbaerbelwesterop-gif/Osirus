@@ -1,4 +1,5 @@
 import { CodingSurface } from "@/components/coding/coding-surface";
+import { isFreeTierEnabled } from "@/app/free-tier";
 import { requireProductSession } from "@/lib/product/session";
 import {
   codingRunControl,
@@ -41,6 +42,7 @@ export default async function CodingPage({
       initialPermission={
         control.permission === "accept-edits" ? "accept-edits" : "ask"
       }
+      freeQuotaEmpty={isFreeTierEnabled()}
     />
   );
 }

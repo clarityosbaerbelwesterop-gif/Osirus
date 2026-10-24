@@ -88,6 +88,25 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.landing-nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3) var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.landing-nav-links a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.landing-nav-links a:hover {
+  color: var(--color-text);
 }
 
 .landing-brand {
@@ -146,6 +165,171 @@
 
 .landing-footer a:hover {
   color: var(--color-text);
+}
+
+.landing-block,
+.landing-prices,
+.landing-faq {
+  display: grid;
+  gap: var(--space-6);
+  width: 100%;
+  max-width: 1120px;
+  margin: var(--space-16) auto 0;
+}
+
+.landing-block {
+  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+  align-items: start;
+}
+
+.landing-block-single {
+  grid-template-columns: minmax(0, 70ch);
+}
+
+.landing-block h2,
+.landing-prices h2,
+.landing-faq h2 {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+
+.landing-block p,
+.price-card p,
+.landing-faq p {
+  margin-top: var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.price-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.price-card {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.quota-choice {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.quota-choice p {
+  margin: 0;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+.quota-offer,
+.plan-offer {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.quota-offer {
+  margin: var(--space-4) var(--space-5) 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.plan-current,
+.plan-tax,
+.quota-offer > p {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.price-card h3 {
+  font-size: var(--text-base);
+}
+
+.price-amount {
+  color: var(--color-text);
+  font-size: var(--text-xl);
+  font-weight: var(--weight-semibold);
+}
+
+.price-amount span,
+.price-card p {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+
+.landing-faq details {
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-3) 0;
+}
+
+.landing-faq summary {
+  cursor: pointer;
+  font-weight: var(--weight-medium);
+}
+
+.status-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.status-links a:not(.btn) {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.status-rise {
+  animation: story-in 220ms var(--ease-out) both;
+}
+
+.auth-check {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-regular);
+}
+
+.auth-card .auth-check input {
+  width: 1.05rem;
+  height: 1.05rem;
+  min-height: 0;
+  margin-top: 0.15rem;
+  accent-color: var(--color-accent-text);
+}
+
+.auth-check a {
+  color: var(--color-accent-text);
+  text-decoration: underline;
+}
+
+.plan-note {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+@media (max-width: 900px) {
+  .landing-block,
+  .price-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .landing-principles article {

@@ -28,7 +28,6 @@ import {
   repositoryShortName,
 } from "@/lib/coding/repository-ref";
 import type { InteractionPreference, LabModelId } from "@/lib/lab/choices";
-import { CUSTOMER_MODELS } from "@/lib/product/surfaces";
 import type { ModePreference } from "@/lib/ui/preferences";
 import { ModelSelectors, type PhaseGrade } from "../lab/model-selectors";
 import type { LivePill } from "@/lib/ui/live-activity";
@@ -182,22 +181,15 @@ export const Composer = forwardRef<
             <label>
               Model
               <span id="lab-model-route" className="sr-only">
-                Not a native checkpoint.
+                Eigene Modelle werden nicht angeboten.
               </span>
               <select
                 aria-label="Model"
                 aria-describedby="lab-model-route"
-                value={props.labModel === "external" ? "rouge" : props.labModel}
-                disabled={props.running}
-                onChange={(event) =>
-                  props.onLabModelChange(event.target.value as LabModelId)
-                }
+                value="unavailable"
+                disabled
               >
-                {CUSTOMER_MODELS.map((model) => (
-                  <option key={model.id} value={model.id}>
-                    {model.label}
-                  </option>
-                ))}
+                <option value="unavailable">Bald verfügbar</option>
               </select>
             </label>
           </div>

@@ -1,34 +1,21 @@
 import type { MetadataRoute } from "next";
+import { absoluteUrl } from "./site-url";
 
-const BASE = "https://osirus.vercel.app";
+const PATHS = [
+  "/",
+  "/legal/impressum",
+  "/legal/privacy",
+  "/legal/terms",
+  "/legal/eula",
+  "/legal/cookies",
+] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const lastModified = new Date("2026-10-01");
-  return [
-    { url: `${BASE}/`, lastModified, changeFrequency: "weekly", priority: 1 },
-    {
-      url: `${BASE}/legal/impressum`,
-      lastModified,
-      changeFrequency: "yearly",
-      priority: 0.2,
-    },
-    {
-      url: `${BASE}/legal/privacy`,
-      lastModified,
-      changeFrequency: "yearly",
-      priority: 0.3,
-    },
-    {
-      url: `${BASE}/legal/terms`,
-      lastModified,
-      changeFrequency: "yearly",
-      priority: 0.2,
-    },
-    {
-      url: `${BASE}/legal/cookies`,
-      lastModified,
-      changeFrequency: "yearly",
-      priority: 0.2,
-    },
-  ];
+  const lastModified = new Date("2026-10-24");
+  return PATHS.map((path) => ({
+    url: absoluteUrl(path),
+    lastModified,
+    changeFrequency: path === "/" ? "weekly" : "yearly",
+    priority: path === "/" ? 1 : 0.2,
+  }));
 }
