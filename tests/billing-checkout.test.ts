@@ -6,6 +6,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const holder = vi.hoisted(() => ({
   customer: null as string | null,
+  footer: null as string | null,
   calls: [] as { method: string; args: unknown[] }[],
 }));
 
@@ -57,6 +58,14 @@ vi.mock("../src/lib/billing/stripe", async (importOriginal) => {
     stripe: () => ({
       customers: {
         create: record("customers.create", { id: "cus_test_1" }),
+        retrieve: async (...args: unknown[]) => {
+          holder.calls.push({ method: "customers.retrieve", args });
+          return {
+            id: args[0],
+            object: "customer",
+            invoice_settings: { footer: holder.footer },
+          };
+        },
         update: record("customers.update", { id: "cus_test_1" }),
       },
       checkout: {
@@ -87,6 +96,7 @@ const call = (method: string) =>
 
 beforeEach(() => {
   holder.customer = null;
+  holder.footer = null;
   holder.calls = [];
 });
 
@@ -127,6 +137,10 @@ describe("billing checkout (§ 19 UStG)", () => {
     holder.customer = "cus_existing";
     expect((await checkout()).status).toBe(200);
     expect(call("customers.create")).toBeUndefined();
+    expect(holder.calls[0]).toEqual({
+      method: "customers.retrieve",
+      args: ["cus_existing"],
+    });
     const update = holder.calls.find((c) => c.method === "customers.update");
     expect(update?.args).toEqual([
       "cus_existing",
@@ -135,5 +149,23 @@ describe("billing checkout (§ 19 UStG)", () => {
     expect(call("checkout.sessions.create")).toMatchObject({
       customer: "cus_existing",
     });
+  });
+
+  it("does not update a customer whose footer already carries the note", async () => {
+    holder.customer = "cus_existing";
+    holder.footer = NOTE;
+    expect((await checkout()).status).toBe(200);
+    expect(holder.calls.map((c) => c.method)).toEqual([
+      "customers.retrieve",
+      "checkout.sessions.create",
+    ]);
+  });
+
+  it("new customers get the footer on create, without retrieve or update", async () => {
+    expect((await checkout()).status).toBe(200);
+    expect(holder.calls.map((c) => c.method)).toEqual([
+      "customers.create",
+      "checkout.sessions.create",
+    ]);
   });
 });

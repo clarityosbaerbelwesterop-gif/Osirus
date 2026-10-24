@@ -61,10 +61,14 @@ export async function POST(request: Request) {
     customer = created.id;
     await saveCustomer(userId, customer);
   } else if (taxNote) {
-    // Customers created before the note existed get it too.
-    await client.customers.update(customer, {
-      invoice_settings: { footer: taxNote },
-    });
+    // Customers created before the note existed get it too. Only write when
+    // the footer actually differs, so a checkout is not a customer update.
+    const current = await client.customers.retrieve(customer);
+    const deleted = "deleted" in current && current.deleted === true;
+    if (!deleted && current.invoice_settings?.footer !== taxNote)
+      await client.customers.update(customer, {
+        invoice_settings: { footer: taxNote },
+      });
   }
 
   const base = origin(request);
