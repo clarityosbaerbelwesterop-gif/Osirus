@@ -47,10 +47,9 @@ export default function ImpressumPage() {
 
       <h2>Technische Dienstleister</h2>
       <p>
-        Diese Anwendung wird bei Vercel Inc. gehostet und nutzt Neon
-        (Datenbank und Anmeldung) sowie Modell-Anbieter über eine API.
-        Einzelheiten stehen in der{" "}
-        <Link href="/legal/privacy">Datenschutzerklärung</Link>.
+        Diese Anwendung wird bei Vercel Inc. gehostet und nutzt Neon (Datenbank
+        und Anmeldung) sowie Modell-Anbieter über eine API. Einzelheiten stehen
+        in der <Link href="/legal/privacy">Datenschutzerklärung</Link>.
       </p>
     </article>
   );
