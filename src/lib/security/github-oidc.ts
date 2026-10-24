@@ -88,7 +88,24 @@ function decodePart(part: string) {
 export type OidcResult =
   { ok: true; claims: Record<string, unknown> } | { ok: false; reason: string };
 
-/** Check the claims of a token whose signature already verified. */
+/** `owner/name/.github/workflows/file.yml@refs/heads/main` */
+export function expectedWorkflowRef(expected: OidcExpectation) {
+  return `${expected.repository}/${expected.workflow}@${expected.ref}`;
+}
+
+/**
+ * GitHub's subject for a branch run. Pull-request and environment subjects
+ * (`repo:o/r:pull_request`, `repo:o/r:environment:name`) do not match.
+ */
+export function expectedOidcSubject(expected: OidcExpectation) {
+  return `repo:${expected.repository}:ref:${expected.ref}`;
+}
+
+function audienceIsExact(aud: unknown, expected: string) {
+  if (typeof aud === "string") return aud === expected;
+  return Array.isArray(aud) && aud.length === 1 && aud[0] === expected;
+}
+
 export function checkClaims(
   claims: Record<string, unknown>,
   expected: OidcExpectation,
@@ -96,8 +113,9 @@ export function checkClaims(
 ): OidcResult {
   const fail = (reason: string): OidcResult => ({ ok: false, reason });
   if (claims.iss !== OIDC_ISSUER) return fail("issuer");
-  const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-  if (!audience.includes(expected.audience)) return fail("audience");
+  // One audience, exactly. A token that also names some other audience is
+  // not a token minted for this endpoint.
+  if (!audienceIsExact(claims.aud, expected.audience)) return fail("audience");
   const exp = Number(claims.exp);
   const nbf = Number(claims.nbf ?? claims.iat);
   if (!Number.isFinite(exp) || exp + CLOCK_SKEW_S < nowSeconds)
@@ -107,13 +125,27 @@ export function checkClaims(
   const repository = String(claims.repository ?? "");
   if (repository.toLowerCase() !== expected.repository.toLowerCase())
     return fail("repository");
-  if (claims.ref !== expected.ref) return fail("ref");
-  const workflowRef = String(claims.workflow_ref ?? "");
+  const owner = expected.repository.split("/")[0] ?? "";
   if (
-    workflowRef.toLowerCase() !==
-    `${expected.repository}/${expected.workflow}@${expected.ref}`.toLowerCase()
+    claims.repository_owner !== undefined &&
+    String(claims.repository_owner).toLowerCase() !== owner.toLowerCase()
+  )
+    return fail("repository_owner");
+  if (claims.ref !== expected.ref) return fail("ref");
+  const workflowRef = expectedWorkflowRef(expected);
+  if (
+    String(claims.workflow_ref ?? "").toLowerCase() !==
+    workflowRef.toLowerCase()
   )
     return fail("workflow");
+  // Present on current GitHub tokens. A reusable workflow from another
+  // repository sets this to the callee while workflow_ref stays the caller.
+  if (
+    claims.job_workflow_ref !== undefined &&
+    String(claims.job_workflow_ref).toLowerCase() !== workflowRef.toLowerCase()
+  )
+    return fail("job_workflow");
+  if (claims.sub !== expectedOidcSubject(expected)) return fail("subject");
   if (!expected.events.includes(String(claims.event_name ?? "")))
     return fail("event");
   return { ok: true, claims };
