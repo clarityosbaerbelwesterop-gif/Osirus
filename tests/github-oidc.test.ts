@@ -4,9 +4,11 @@ import {
   OIDC_AUDIENCE,
   OIDC_ISSUER,
   PULSE_REPOSITORY,
-  PULSE_WORKFLOW,
+  expectedOidcSubject,
+  expectedWorkflowRef,
   resetOidcKeyCache,
   verifyGithubOidc,
+  PULSE_EXPECTATION,
 } from "../src/lib/security/github-oidc";
 
 const github = generateKeyPairSync("rsa", { modulusLength: 2048 });
@@ -27,8 +29,11 @@ function claims(overrides: Record<string, unknown> = {}) {
     nbf: now - 10,
     exp: now + 300,
     repository: PULSE_REPOSITORY,
+    repository_owner: "clarityosbaerbelwesterop-gif",
     ref: "refs/heads/main",
-    workflow_ref: `${PULSE_REPOSITORY}/${PULSE_WORKFLOW}@refs/heads/main`,
+    workflow_ref: expectedWorkflowRef(PULSE_EXPECTATION),
+    job_workflow_ref: expectedWorkflowRef(PULSE_EXPECTATION),
+    sub: expectedOidcSubject(PULSE_EXPECTATION),
     event_name: "schedule",
     ...overrides,
   };
@@ -61,6 +66,9 @@ describe("GitHub OIDC for the hourly tick", () => {
     expect(
       (await check(token(claims({ event_name: "workflow_dispatch" })))).ok,
     ).toBe(true);
+    expect((await check(token(claims({ aud: [OIDC_AUDIENCE] })))).ok).toBe(
+      true,
+    );
   });
 
   it("refuses a token GitHub did not sign", async () => {
@@ -90,8 +98,21 @@ describe("GitHub OIDC for the hourly tick", () => {
       ],
       [{ event_name: "pull_request" }, "event"],
       [{ aud: "https://github.com/clarityosbaerbelwesterop-gif" }, "audience"],
+      [{ aud: [OIDC_AUDIENCE, "https://evil.example"] }, "audience"],
       [{ iss: "https://evil.example" }, "issuer"],
       [{ exp: now - 3600 }, "expired"],
+      [
+        { sub: "repo:clarityosbaerbelwesterop-gif/Osirus:pull_request" },
+        "subject",
+      ],
+      [
+        {
+          job_workflow_ref:
+            "attacker/reusable/.github/workflows/caller.yml@refs/heads/main",
+        },
+        "job_workflow",
+      ],
+      [{ repository_owner: "someone-else" }, "repository_owner"],
     ];
     for (const [overrides, reason] of cases)
       expect(await check(token(claims(overrides))), reason).toEqual({
