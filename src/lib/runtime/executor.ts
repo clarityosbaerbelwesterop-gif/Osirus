@@ -24,6 +24,7 @@ import { capabilitiesFor, routeObjective, type RoutingMode } from "./router-v2";
 import { isTerminalRunStatus } from "./state-machine";
 import type { Capability, RuntimePacket } from "./types";
 import { driveSlices, finalizeRun } from "./worker";
+import { forUser } from "../billing/enforce";
 
 export type { RuntimeIdentity };
 
@@ -235,7 +236,8 @@ export async function planRuntimeRun(input: {
         // model capacity to user requests.
         priority: "P4",
       })
-    : new UnoRouterProvider();
+    : // Billing: a user's own run spends their 5-hour/weekly budget.
+      forUser(new UnoRouterProvider(), input.identity.userId);
 
   const activity = async (
     type: string,
