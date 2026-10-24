@@ -235,18 +235,28 @@ export async function executeClaimedStage(input: {
   const guard = new LeaseGuard(work, input.leaseSeconds, input.signal);
 
   const stagePolicy = policyOfStage(work.stageInput);
+  const pinnedModel =
+    typeof work.stageInput.pinnedModel === "string"
+      ? work.stageInput.pinnedModel
+      : null;
   const runtime: ArmRuntime = {
-    provider: stagePolicy.model
+    provider: pinnedModel
       ? new UnoRouterProvider({
-          model: stagePolicy.model,
-          // M48: a model per role, from the free-model allowlist only.
-          roleModels: freeRoleModels(stagePolicy.genome.modelUse?.roles),
-          maxRateLimitWaitSeconds: 60,
-          // M49: a strategy trial (Foundry / RSI) is P4 -- it yields free
-          // model capacity to user requests.
-          priority: "P4",
+          model: pinnedModel,
+          fallback: false,
+          priority: "P0",
         })
-      : new UnoRouterProvider(),
+      : stagePolicy.model
+        ? new UnoRouterProvider({
+            model: stagePolicy.model,
+            // M48: a model per role, from the free-model allowlist only.
+            roleModels: freeRoleModels(stagePolicy.genome.modelUse?.roles),
+            maxRateLimitWaitSeconds: 60,
+            // M49: a strategy trial (Foundry / RSI) is P4 -- it yields free
+            // model capacity to user requests.
+            priority: "P4",
+          })
+        : new UnoRouterProvider(),
     repository,
     memory: new MemoryOS(identity.userId),
     skills: new SkillRepository(identity.userId),

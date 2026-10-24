@@ -2,10 +2,13 @@ import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import "@fontsource-variable/inter";
 import "./globals.css";
+import { publicBaseUrl } from "@/lib/public-base";
 import { parseTheme, THEME_COOKIE } from "@/lib/ui/preferences";
 
+const publicBase = publicBaseUrl();
+
 export const metadata: Metadata = {
-  metadataBase: new URL("https://osirus.vercel.app"),
+  ...(publicBase ? { metadataBase: publicBase } : {}),
   title: { default: "Osirus", template: "%s · Osirus" },
   description:
     "An agent workspace that plans, acts with approval, and verifies its work.",

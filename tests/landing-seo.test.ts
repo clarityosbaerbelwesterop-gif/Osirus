@@ -74,24 +74,30 @@ describe("seo surface", () => {
     expect(disallowed).toEqual(
       expect.arrayContaining(["/app", "/api", "/auth", "/internal"]),
     );
-    expect(robots().sitemap).toBe("https://osirus.vercel.app/sitemap.xml");
+    expect(robots().sitemap).toBeUndefined();
+    vi.stubEnv("OSIRUS_PUBLIC_BASE_URL", "https://app.example.test");
+    expect(robots().sitemap).toBe("https://app.example.test/sitemap.xml");
+    vi.stubEnv("OSIRUS_PUBLIC_BASE_URL", "https://osirus.vercel.app");
+    expect(robots().sitemap).toBeUndefined();
   });
 
   it("sitemap lists the landing page and the four legal pages", () => {
+    vi.stubEnv("OSIRUS_PUBLIC_BASE_URL", "https://app.example.test");
     const urls = sitemap().map((entry) => entry.url);
     expect(urls).toEqual([
-      "https://osirus.vercel.app/",
-      "https://osirus.vercel.app/legal/impressum",
-      "https://osirus.vercel.app/legal/privacy",
-      "https://osirus.vercel.app/legal/terms",
-      "https://osirus.vercel.app/legal/cookies",
+      "https://app.example.test/",
+      "https://app.example.test/legal/impressum",
+      "https://app.example.test/legal/privacy",
+      "https://app.example.test/legal/terms",
+      "https://app.example.test/legal/cookies",
     ]);
+    expect(urls.join("")).not.toContain("osirus.vercel.app");
   });
 
   it("root metadata is indexable with OpenGraph; auth stays noindex", () => {
     expect(rootMetadata.robots).toMatchObject({ index: true, follow: true });
     expect(rootMetadata.openGraph).toMatchObject({ siteName: "Osirus" });
-    expect((rootMetadata.metadataBase as URL).host).toBe("osirus.vercel.app");
+    expect(rootMetadata.metadataBase).toBeUndefined();
     expect(authMetadata.robots).toMatchObject({ index: false, follow: false });
   });
 });

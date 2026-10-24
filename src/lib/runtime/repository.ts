@@ -61,7 +61,7 @@ export type WorkspaceSession = {
   title: string;
   updatedAt: string;
   pinnedAt: string | null;
-  surface?: "ai" | "agent" | "bot" | "coding";
+  surface?: "ai" | "agent" | "bot" | "coding" | "work";
 };
 
 function mapEvent(row: EventRow): RuntimeEvent {
@@ -111,7 +111,7 @@ export class RuntimeRepository {
     workspaceId: string;
     title: string;
     /** Which product surface owns this thread. Runtime sessions default to agent. */
-    surface?: "ai" | "agent" | "bot" | "coding";
+    surface?: "ai" | "agent" | "bot" | "coding" | "work";
   }) {
     const id = randomUUID();
     const surface = input.surface ?? "agent";
@@ -145,11 +145,11 @@ export class RuntimeRepository {
 
   async getRecentWorkspaceState(
     workspaceId: string,
-    surface?: "ai" | "agent" | "bot" | "coding",
+    surface?: "ai" | "agent" | "bot" | "coding" | "work",
   ) {
     const sessions = await queryAs<{
       id: string;
-      surface: "ai" | "agent" | "bot" | "coding";
+      surface: "ai" | "agent" | "bot" | "coding" | "work";
     }>(
       this.actorId,
       `select id, surface from osirus.sessions
@@ -226,14 +226,14 @@ export class RuntimeRepository {
 
   async listWorkspaceSessions(
     workspaceId: string,
-    surface?: "ai" | "agent" | "bot" | "coding",
+    surface?: "ai" | "agent" | "bot" | "coding" | "work",
   ): Promise<WorkspaceSession[]> {
     const sessions = await queryAs<{
       id: string;
       title: string;
       updated_at: string | Date;
       pinned_at: string | Date | null;
-      surface: "ai" | "agent" | "bot" | "coding";
+      surface: "ai" | "agent" | "bot" | "coding" | "work";
     }>(
       this.actorId,
       `select id, title, updated_at, pinned_at, surface
@@ -261,7 +261,7 @@ export class RuntimeRepository {
       title: string;
       updated_at: string | Date;
       pinned_at: string | Date | null;
-      surface: "ai" | "agent" | "bot" | "coding";
+      surface: "ai" | "agent" | "bot" | "coding" | "work";
     }>(
       this.actorId,
       `select id, title, updated_at, pinned_at, surface
@@ -374,7 +374,7 @@ export class RuntimeRepository {
       this.modelCallsForSession(resolved),
     ]);
     const surfaceRows = await queryAs<{
-      surface: "ai" | "agent" | "bot" | "coding";
+      surface: "ai" | "agent" | "bot" | "coding" | "work";
     }>(
       this.actorId,
       `select surface from osirus.sessions where id = $1::uuid`,
@@ -521,15 +521,16 @@ export class RuntimeRepository {
     requestId: string;
     /** User-selected working mode; persisted on the run for audit. */
     mode?: string;
-    surface?: "ai" | "agent" | "bot" | "coding";
+    surface?: "ai" | "agent" | "bot" | "coding" | "work";
     coding?: {
       repository: string;
       branch: string;
       effort: string;
-      model: string;
+      model?: string;
       effortChosen?: boolean;
       permission?: "ask" | "accept-edits";
     };
+    pinnedModel?: string;
   }): Promise<{ run: RunRow; created: boolean }> {
     const id = randomUUID();
     const rows = await queryAs<RunRow & { created: boolean }>(
@@ -569,6 +570,7 @@ export class RuntimeRepository {
           ...(input.surface === "coding" && input.coding
             ? { coding: input.coding }
             : {}),
+          ...(input.pinnedModel ? { pinnedModel: input.pinnedModel } : {}),
         }),
         input.requestId,
       ],

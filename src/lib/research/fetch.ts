@@ -3,6 +3,7 @@ import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { Agent, fetch as undiciFetch } from "undici";
 import { guardedLookup, OutboundBlockedError } from "../security/outbound";
+import { researchUserAgent } from "./site-url";
 
 // Fetching the open web, safely.
 //
@@ -135,7 +136,7 @@ export async function safeFetch(
         signal: controller.signal,
         dispatcher: agent,
         headers: {
-          "user-agent": "OsirusResearch/1.0 (+https://osirus.vercel.app)",
+          "user-agent": researchUserAgent(),
           accept:
             options.accept ??
             "text/html,application/json,text/plain;q=0.9,*/*;q=0.5",
