@@ -25,6 +25,7 @@ import {
   mergeReproductionArtifacts,
   type ReproductionArtifact,
 } from "../coding/reproduction";
+import { allowedHiddenTestCommand } from "../coding/hidden-command";
 import type { RuntimePolicy } from "../strategy/runtime";
 import { policyOfStage } from "../strategy/runtime";
 
@@ -973,7 +974,9 @@ export function hiddenChecksOf(input: Record<string, unknown> | undefined) {
   const command = raw.command.filter(
     (part): part is string => typeof part === "string",
   );
-  if (!files.length || !command.length) return null;
+  // Anything other than node --test is dropped. A fetched order must not
+  // be able to name bash, curl, or a path into /proc.
+  if (!files.length || !allowedHiddenTestCommand(command)) return null;
   return { files, command };
 }
 
