@@ -106,6 +106,7 @@ describe("seo surface", () => {
       "https://osirus-ai.vercel.app/legal/eula",
       "https://osirus-ai.vercel.app/legal/cookies",
     ]);
+    expect(urls.join("")).not.toContain("osirus.vercel.app");
   });
 
   it("root metadata is indexable with OpenGraph; auth stays noindex", () => {

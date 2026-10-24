@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { guardWrite, json } from "@/lib/product/api";
+import { isAllowedProductModel } from "@/lib/models/allowlist";
 import { RuntimeRepository } from "@/lib/runtime/repository";
 
 export const dynamic = "force-dynamic";
@@ -7,7 +8,7 @@ export const runtime = "nodejs";
 
 const schema = z.object({
   sessionId: z.string().uuid().nullable().optional(),
-  model: z.enum(["rouge", "quasnir", "darus"]),
+  model: z.string().trim().min(1).max(200),
   user: z.string().trim().min(1).max(8000),
   assistant: z.string().trim().min(1).max(16000),
 });
@@ -21,6 +22,15 @@ export async function POST(request: Request) {
     maxBytes: 32_000,
   });
   if (!guard.ok) return guard.response;
+  if (!isAllowedProductModel(guard.body.model)) {
+    return json(
+      {
+        error: "model_not_allowed",
+        message: "That model is not on the UNOROUTER allowlist.",
+      },
+      400,
+    );
+  }
   const repository = new RuntimeRepository(guard.identity.userId);
   let sessionId = guard.body.sessionId ?? null;
   if (sessionId) {

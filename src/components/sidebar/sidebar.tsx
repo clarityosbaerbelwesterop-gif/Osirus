@@ -7,6 +7,8 @@ import {
   Gauge,
   Bot,
   Code2,
+  Layers,
+  Users,
   Inbox,
   MessageSquare,
   Sparkles,
@@ -50,8 +52,10 @@ type NavItem = {
 
 const SURFACES: NavItem[] = [
   { href: "/app" as Route, label: "Chat", icon: MessageSquare },
-  { href: "/app/agent" as Route, label: "Agent", icon: Sparkles },
   { href: "/app/bots" as Route, label: "Bot", icon: Bot },
+  { href: "/app/work" as Route, label: "Work", icon: Layers },
+  { href: "/app/agents" as Route, label: "Agents", icon: Users },
+  { href: "/app/agent" as Route, label: "Agent", icon: Sparkles },
   { href: "/app/coding" as Route, label: "Coding", icon: Code2 },
 ];
 
@@ -367,7 +371,9 @@ export function SidebarContent({
           ? "bot"
           : pathname.startsWith("/app/coding")
             ? "coding"
-            : null;
+            : pathname.startsWith("/app/work")
+              ? "work"
+              : null;
   const { pinned, recent } = useMemo(() => {
     const needle = search.trim().toLowerCase();
     const scoped = sessionsForSurface(shell.sessions, listSurface);

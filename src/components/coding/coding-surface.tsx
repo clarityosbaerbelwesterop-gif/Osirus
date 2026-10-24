@@ -11,11 +11,9 @@ import {
   codingToolsNeeded,
   routeCodingEffort,
 } from "@/lib/product/effort-router";
-import {
-  draftAfterSurfaceChange,
-  type CustomerModelId,
-  type EffortId,
-} from "@/lib/product/surfaces";
+import { PRODUCT_MODEL_ALLOWLIST } from "@/config/recommendations";
+import { productModelOrDefault } from "@/lib/models/allowlist";
+import { draftAfterSurfaceChange, type EffortId } from "@/lib/product/surfaces";
 import type { RunSnapshot } from "@/lib/runtime/types";
 import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
 import { showWorkingMotion } from "@/lib/ui/live-activity";
@@ -49,7 +47,7 @@ export function CodingSurface(props: {
   initialEffort: EffortId | null;
   initialEffortChosen?: boolean;
   initialPaused?: boolean;
-  initialModel: CustomerModelId | null;
+  initialModel?: string | null;
   initialPermission?: CodingPermission;
   /** Set by the work page when the free tier is on and its quota is empty. */
   freeQuotaEmpty?: boolean;
@@ -64,7 +62,9 @@ export function CodingSurface(props: {
   const [repoKey, setRepoKey] = useState("");
   const [branches, setBranches] = useState<string[] | null>(null);
   const [branch, setBranch] = useState("");
-  const [model] = useState<CustomerModelId>(props.initialModel ?? "rouge");
+  const [model, setModel] = useState(() =>
+    productModelOrDefault(props.initialModel),
+  );
   const [chosen, setChosen] = useState<EffortId | null>(
     props.initialEffortChosen ? props.initialEffort : null,
   );
@@ -474,8 +474,19 @@ export function CodingSurface(props: {
             </label>
             <label>
               Model
-              <select aria-label="Model" value="unavailable" disabled>
-                <option value="unavailable">Bald verfügbar</option>
+              <select
+                aria-label="Model"
+                value={model}
+                disabled={running || paused}
+                onChange={(event) =>
+                  setModel(productModelOrDefault(event.target.value))
+                }
+              >
+                {PRODUCT_MODEL_ALLOWLIST.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
+                  </option>
+                ))}
               </select>
             </label>
             {running || paused ? null : (

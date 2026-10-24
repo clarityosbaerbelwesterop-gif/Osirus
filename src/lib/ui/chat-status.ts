@@ -49,17 +49,13 @@ export function chatStatusLine(
   return chatRunPresentation(status).line;
 }
 
-const PROGRAM_NAMES = ["ROUGE 1", "QUASNIR", "DARUS"] as const;
-
 /**
- * The name under an AI-mode answer. Never a catalog id, never UnoRouter,
- * and never a claim that the answer is a native checkpoint.
+ * Captions no longer name retired product models. A message list may still
+ * show a caption the caller passes explicitly.
  */
 export function customerProgramCaption(
   userLabel: string | null | undefined,
 ): string | null {
-  if (!userLabel) return null;
-  const name = PROGRAM_NAMES.find((item) => userLabel.startsWith(item));
-  if (!name) return null;
-  return `${name}. Not a native checkpoint.`;
+  void userLabel;
+  return null;
 }

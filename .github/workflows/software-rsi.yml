@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 150
     env:
-      RSI_URL: https://osirus.vercel.app/api/rsi/software
+      RSI_URL: ${{ vars.OSIRUS_PUBLIC_BASE_URL }}/api/rsi/software
     steps:
       - uses: actions/checkout@v4
         with:
