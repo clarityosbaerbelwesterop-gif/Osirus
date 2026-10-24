@@ -19,6 +19,7 @@ import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
 import { showWorkingMotion } from "@/lib/ui/live-activity";
 import { deriveRunView } from "@/lib/ui/run-view";
 import { MessageList, type ChatMessage } from "../chat/message-list";
+import { FreeQuotaPanel } from "../settings/plan-offer";
 import { RunCard } from "../run-status/run-card";
 import { useShell } from "../shell/shell-context";
 import { TopBar } from "../shell/top-bar";
@@ -48,6 +49,8 @@ export function CodingSurface(props: {
   initialPaused?: boolean;
   initialModel?: string | null;
   initialPermission?: CodingPermission;
+  /** Set by the work page when the free tier is on and its quota is empty. */
+  freeQuotaEmpty?: boolean;
 }) {
   const shell = useShell();
   const [sessionId, setSessionId] = useState(props.initialSessionId);
@@ -362,6 +365,7 @@ export function CodingSurface(props: {
         />
         <div className="chat-scroll">
           <div className="chat-content">
+            {props.freeQuotaEmpty ? <FreeQuotaPanel /> : null}
             {messages.length ? (
               <MessageList
                 messages={messages}

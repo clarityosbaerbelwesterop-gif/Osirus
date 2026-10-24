@@ -5,8 +5,10 @@
 export function WorkingMotion({ active }: { active: boolean }) {
   if (!active) return null;
   return (
-    <div className="work-motion" data-live="true" aria-hidden="true">
-      <span />
+    <div className="work-motion" data-live="true">
+      <span className="think-shimmer" role="status">
+        Denkt nach…
+      </span>
     </div>
   );
 }

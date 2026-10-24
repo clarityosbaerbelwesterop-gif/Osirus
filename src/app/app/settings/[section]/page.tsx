@@ -162,7 +162,7 @@ export default async function SettingsSection({
         <Group
           id="models"
           title="Models"
-          lede="Status from the model calls this workspace made in the last 24 hours. Models come from UNOROUTER. Osirus does not switch to a different model when one fails."
+          lede="Status from the model calls this workspace made in the last 24 hours. Models come from UNOROUTER. Osirus does not switch to a different model when one fails. Own models are not offered."
         >
           <ModelStatusTable roles={roles} />
         </Group>

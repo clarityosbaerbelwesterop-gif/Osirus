@@ -3,6 +3,7 @@
 import type { InteractionPreference, LabModelId } from "@/lib/lab/choices";
 import type { ProductModelId } from "@/config/recommendations";
 import { activityCaption } from "@/lib/lab/honesty";
+import { withoutOwnModel } from "../motion/public-text";
 import type { LivePill } from "@/lib/ui/live-activity";
 
 export interface PhaseGrade {
@@ -103,7 +104,7 @@ export function ModelSelectors(props: {
           {shownGrades
             .map(
               (grade) =>
-                `${grade.phase} · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`,
+                `${withoutOwnModel(grade.phase ?? "")} · ${withoutOwnModel(grade.armId)}: ${grade.passed ? "pass" : "fail"}`,
             )
             .join(" ")}
         </p>

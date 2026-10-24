@@ -9,12 +9,7 @@ import { expect, test, type Page } from "@playwright/test";
 // never logged, cookie values and query strings are never logged, and the
 // answer text is not stored -- only that it exists.
 
-function requiredBase() {
-  const value = process.env.PROD_BASE_URL;
-  if (!value) throw new Error("PROD_BASE_URL is required");
-  return value;
-}
-const base = requiredBase();
+const base = process.env.PROD_BASE_URL ?? "https://osirus-ai.vercel.app";
 const runId = process.env.GITHUB_RUN_ID ?? `${Date.now()}`;
 const email = `journey-${runId}@example.com`;
 const password = randomBytes(24).toString("base64url");

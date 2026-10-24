@@ -8,15 +8,31 @@ import { GithubMark } from "./github-mark";
  * Starts Neon Auth's server-managed OAuth flow. The provider owns PKCE/state,
  * while this component keeps the return location fixed inside Osirus.
  */
-export function GitHubSignInButton() {
+export function GitHubSignInButton({
+  disabled = false,
+  beforeStart,
+}: {
+  disabled?: boolean;
+  /** Return an error string to stop the redirect. Used by registration. */
+  beforeStart?: () => Promise<string | null>;
+}) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function signInWithGitHub() {
+    if (disabled) return;
     setPending(true);
     setError(null);
 
     try {
+      if (beforeStart) {
+        const blocked = await beforeStart();
+        if (blocked) {
+          setError(blocked);
+          setPending(false);
+          return;
+        }
+      }
       const result = await authClient.signIn.social({
         provider: "github",
         callbackURL: "/app",
@@ -44,7 +60,7 @@ export function GitHubSignInButton() {
       <button
         className="social-auth-button"
         type="button"
-        disabled={pending}
+        disabled={disabled || pending}
         onClick={signInWithGitHub}
       >
         <GithubMark />

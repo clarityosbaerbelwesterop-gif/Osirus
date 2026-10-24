@@ -1,8 +1,7 @@
 import type { MetadataRoute } from "next";
-import { publicBaseOrigin } from "@/lib/public-base";
+import { absoluteUrl } from "./site-url";
 
 export default function robots(): MetadataRoute.Robots {
-  const origin = publicBaseOrigin();
   return {
     rules: [
       {
@@ -11,6 +10,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ["/app", "/api", "/auth", "/internal", "/ui-fixtures"],
       },
     ],
-    ...(origin ? { sitemap: `${origin}/sitemap.xml` } : {}),
+    sitemap: absoluteUrl("/sitemap.xml"),
   };
 }
