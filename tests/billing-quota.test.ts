@@ -24,7 +24,7 @@ const ago = (ms: number) => new Date(now.getTime() - ms);
 describe("billing config", () => {
   it("holds the owner's plans, prices and fixed USD budgets", () => {
     const plans = BILLING_CONFIG.plans;
-    expect(BILLING_CONFIG.freePlanEnabled).toBe(false);
+    expect(BILLING_CONFIG.freePlanEnabled).toBe(true);
     expect(BILLING_CONFIG.infraBufferUsd).toBe(0);
     expect("usdToEur" in BILLING_CONFIG).toBe(false);
     expect(
@@ -145,25 +145,41 @@ describe("rolling windows", () => {
     expect(ultra.windows[1]!.remainingUsd).toBeCloseTo(49.9);
   });
 
-  it("no plan means no budget, and the free plan only when switched on", () => {
+  it("no plan means no budget; the free plan unless switched off", () => {
     expect(quotaStatus({ plan: null, calls: [], now }).reason).toBe(
       "no_subscription",
     );
-    expect(effectivePlan(null)).toBeNull();
-    expect(effectivePlan({ plan: "pro", status: "active" })).toBe("pro");
-    expect(effectivePlan({ plan: "ultra_100", status: "trialing" })).toBe(
-      "ultra_100",
-    );
-    expect(effectivePlan({ plan: "pro", status: "past_due" })).toBeNull();
-    expect(effectivePlan({ plan: "pro", status: "canceled" })).toBeNull();
-    const withFree: BillingConfig = {
+    const off = "false";
+    expect(effectivePlan(null, BILLING_CONFIG, off)).toBeNull();
+    expect(
+      effectivePlan({ plan: "pro", status: "active" }, BILLING_CONFIG, off),
+    ).toBe("pro");
+    expect(
+      effectivePlan(
+        { plan: "ultra_100", status: "trialing" },
+        BILLING_CONFIG,
+        off,
+      ),
+    ).toBe("ultra_100");
+    expect(
+      effectivePlan({ plan: "pro", status: "past_due" }, BILLING_CONFIG, off),
+    ).toBeNull();
+    expect(
+      effectivePlan({ plan: "pro", status: "canceled" }, BILLING_CONFIG, off),
+    ).toBeNull();
+    expect(effectivePlan(null, BILLING_CONFIG, undefined)).toBe("free");
+    expect(
+      effectivePlan(
+        { plan: "pro", status: "canceled" },
+        BILLING_CONFIG,
+        undefined,
+      ),
+    ).toBe("free");
+    const configOff: BillingConfig = {
       ...BILLING_CONFIG,
-      freePlanEnabled: true,
+      freePlanEnabled: false,
     };
-    expect(effectivePlan(null, withFree)).toBe("free");
-    expect(effectivePlan({ plan: "pro", status: "canceled" }, withFree)).toBe(
-      "free",
-    );
+    expect(effectivePlan(null, configOff, undefined)).toBeNull();
   });
 
   it("serializes remaining budget and refill times for the UI", () => {

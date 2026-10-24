@@ -1,6 +1,7 @@
 import {
   BILLING_CONFIG,
   callCostUsd,
+  freeTierEnabled,
   type BillingConfig,
   type BillingPlan,
 } from "./config";
@@ -38,6 +39,12 @@ export type QuotaStatus = {
   /** Latest availableAt of the spent windows; null when allowed or no plan. */
   availableAt: Date | null;
   retryAfterMs: number;
+  /**
+   * True when a paid plan would lift the limit (free plan or no plan) and
+   * Stripe is configured, so the UI offers waiting and upgrading side by
+   * side. False on paid plans and while Stripe is not configured.
+   */
+  upgradeAvailable: boolean;
 };
 
 const round = (value: number) => Math.round(value * 1e6) / 1e6;
@@ -97,8 +104,11 @@ export function quotaStatus(input: {
   calls: UsageCall[];
   now?: Date;
   config?: BillingConfig;
+  /** Stripe configured, so a paid plan can be bought. Default true. */
+  upgradable?: boolean;
 }): QuotaStatus {
   const config = input.config ?? BILLING_CONFIG;
+  const upgradable = input.upgradable ?? true;
   const now = input.now ?? new Date();
   if (!input.plan)
     return {
@@ -108,7 +118,9 @@ export function quotaStatus(input: {
       windows: [],
       availableAt: null,
       retryAfterMs: 0,
+      upgradeAvailable: upgradable,
     };
+  const upgradeAvailable = upgradable && input.plan === "free";
   const plan = config.plans[input.plan];
   const windows = [
     windowStatus({
@@ -137,6 +149,7 @@ export function quotaStatus(input: {
       windows,
       availableAt: null,
       retryAfterMs: 0,
+      upgradeAvailable,
     };
   const availableAt = new Date(
     Math.max(...spent.map((window) => window.availableAt.getTime())),
@@ -148,6 +161,7 @@ export function quotaStatus(input: {
     windows,
     availableAt,
     retryAfterMs: Math.max(0, availableAt.getTime() - now.getTime()),
+    upgradeAvailable,
   };
 }
 
@@ -158,6 +172,7 @@ export function quotaStatus(input: {
 export function effectivePlan(
   subscription: { plan: string | null; status: string } | null,
   config: BillingConfig = BILLING_CONFIG,
+  freeTierEnv: string | undefined = process.env.OSIRUS_FREE_TIER_ENABLED,
 ): BillingPlan | null {
   if (
     subscription?.plan &&
@@ -166,7 +181,7 @@ export function effectivePlan(
     config.entitledStatuses.includes(subscription.status)
   )
     return subscription.plan as BillingPlan;
-  return config.freePlanEnabled ? "free" : null;
+  return freeTierEnabled(config, freeTierEnv) ? "free" : null;
 }
 
 /** JSON shape for the UI. */
@@ -177,6 +192,7 @@ export function serializeQuota(status: QuotaStatus) {
     reason: status.reason,
     availableAt: status.availableAt?.toISOString() ?? null,
     retryAfterSeconds: Math.ceil(status.retryAfterMs / 1000),
+    upgradeAvailable: status.upgradeAvailable,
     windows: status.windows.map((window) => ({
       window: window.window,
       windowHours: window.windowMs / 3_600_000,

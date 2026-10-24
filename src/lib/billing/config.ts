@@ -1,7 +1,7 @@
 // Billing and usage quotas: every number in one place.
 //
-// Owner decisions (2026-10-24): four paid monthly plans, no free plan, and
-// each plan has two budgets of model cost -- a rolling 5-hour window and a
+// Owner decisions (2026-10-24): four paid monthly plans plus a free quota,
+// and each plan has two budgets of model cost -- a rolling 5-hour window and a
 // rolling 7-day window. An empty window means waiting until it refills;
 // there is no top-up and no hard ban.
 //
@@ -37,6 +37,27 @@ export const PAID_PLANS = [
 export type PaidPlan = (typeof PAID_PLANS)[number];
 export type BillingPlan = PaidPlan | "free";
 
+/**
+ * Free-plan model lock, enforced server-side in billing/enforce.ts.
+ * TODO: wire to the central UNOROUTER model config once that lands (other PR);
+ * until then these ids live here.
+ */
+export type FreePlanLimits = {
+  /** Main (non-reviewer) models a free user may run. Empty = no restriction. */
+  allowedModels: readonly string[];
+  /** Most sub-agents one free run may start. */
+  maxSubAgents: number;
+  /** The only reviewer/checker (VERIFY role) model allowed. */
+  reviewerModel: string;
+};
+
+/**
+ * PLACEHOLDER: amount pending owner decision. The free budgets below
+ * (0.25 USD / 7 days, 0.05 USD / 5 hours) are AI Trainer's proposal; flip
+ * this to true once the owner confirms (or changes) them.
+ */
+export const FREE_TIER_AMOUNTS_CONFIRMED = false;
+
 export type PlanConfig = {
   /** Shown to users; the UI owns the final copy. */
   label: string;
@@ -53,15 +74,19 @@ export type PlanConfig = {
 export const BILLING_CONFIG = {
   currency: "eur" as const,
   /**
-   * Master switch for server-side quota enforcement. Enforcement is also off
-   * while STRIPE_SECRET_KEY is unset (billing not configured).
+   * Master switch for server-side quota enforcement. Independent of Stripe:
+   * without STRIPE_SECRET_KEY users without a paid plan are simply on the
+   * free plan (budgets and model lock still enforced); only Checkout,
+   * Portal and upgrading need Stripe.
    */
   enforceQuotas: true,
   /**
-   * No free plan (owner decision). Turning this on gives users without a
-   * subscription the `free` budgets below instead of no budget at all.
+   * Free quota, on by default (owner decision 2026-10-24): users without an
+   * entitled subscription get the `free` budgets below. Emergency kill
+   * switch: env OSIRUS_FREE_TIER_ENABLED=false (exactly) turns it off at
+   * runtime; see freeTierEnabled().
    */
-  freePlanEnabled: false,
+  freePlanEnabled: true,
   /**
    * Stripe Tax (automatic_tax) in Checkout. Off: the operator is a
    * Kleinunternehmer (§ 19 UStG) and charges no VAT. Turning it on also
@@ -114,15 +139,27 @@ export const BILLING_CONFIG = {
       fiveHourBudgetUsd: 10.22,
       priceEnv: "STRIPE_PRICE_ULTRA_200",
     },
-    // Only used when freePlanEnabled is true. Placeholder values.
+    // Users without an entitled subscription, while the free tier is on.
+    // Same mechanics as the paid plans: 5h + 7-day window, wait, no top-up.
     free: {
       label: "Free",
       monthlyPriceEur: 0,
+      // PLACEHOLDER: amount pending owner decision (FREE_TIER_AMOUNTS_CONFIRMED)
       weeklyBudgetUsd: 0.25,
+      // PLACEHOLDER: amount pending owner decision (FREE_TIER_AMOUNTS_CONFIRMED)
       fiveHourBudgetUsd: 0.05,
       priceEnv: null,
     },
   } satisfies Record<BillingPlan, PlanConfig>,
+  /**
+   * Free-plan model lock (server-side). TODO: move to the central UNOROUTER
+   * config when it lands; keep the ids in sync until then.
+   */
+  freePlanLimits: {
+    allowedModels: ["glm-5.3-flash"],
+    maxSubAgents: 2,
+    reviewerModel: "gpt-6.1-sol",
+  } as FreePlanLimits,
 };
 
 export type BillingConfig = typeof BILLING_CONFIG;
@@ -132,6 +169,26 @@ export function isPaidPlan(value: unknown): value is PaidPlan {
     typeof value === "string" &&
     (PAID_PLANS as readonly string[]).includes(value)
   );
+}
+
+/**
+ * Whether users without a subscription get the free plan right now: on in
+ * config and not killed by OSIRUS_FREE_TIER_ENABLED=false (exactly "false";
+ * any other value, or unset, leaves it on).
+ */
+export function freeTierEnabled(
+  config: Pick<BillingConfig, "freePlanEnabled"> = BILLING_CONFIG,
+  envValue: string | undefined = process.env.OSIRUS_FREE_TIER_ENABLED,
+) {
+  return config.freePlanEnabled && envValue !== "false";
+}
+
+/**
+ * Server-side: is the free plan on right now? For the landing CTA ("start
+ * free") and anything else that must not offer a free quota while it is off.
+ */
+export function isFreeTierEnabled(): boolean {
+  return freeTierEnabled();
 }
 
 /** USD charged against the quota for one model call's logged USD cost. */

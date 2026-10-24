@@ -30,6 +30,10 @@ export function publicRuntimeErrorMessage(error: unknown) {
       return "Your usage budget for this window is spent. It refills automatically; this work resumes when it does.";
     case "subscription_required":
       return "An active subscription is required to run models.";
+    case "model_not_in_plan":
+      return "This model is not included in the free plan. Upgrade to a paid plan to use it.";
+    case "subagent_limit":
+      return "The free plan allows fewer sub-agents. Upgrade to a paid plan for more.";
     case "invalid_stream":
     case "invalid_json":
       return "The model returned an unusable response. Please try again.";

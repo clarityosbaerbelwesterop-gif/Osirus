@@ -86,6 +86,9 @@ const PERMANENT_REFUSALS = new Set([
   "model_not_configured",
   // Billing: no active subscription (and no free plan).
   "subscription_required",
+  // Billing: the free plan's model lock (model or sub-agent count).
+  "model_not_in_plan",
+  "subagent_limit",
 ]);
 
 export function providerRefusalOf(error: unknown): ProviderRefusal | null {
