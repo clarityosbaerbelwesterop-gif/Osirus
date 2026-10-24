@@ -158,9 +158,9 @@ export default function TermsPage() {
       <p>
         Wir können diese Bedingungen mit einem angemessenen Vorlauf ändern und
         dich in der Anwendung oder per E-Mail informieren. Widersprichst du
-        nicht bis zum Wirksamwerden, gelten die neuen Bedingungen. Auf dieses
-        Folgen weisen wir im Hinweis hin. Kündigst du zum Änderungstermin,
-        gelten die bisherigen Bedingungen bis zum Vertragsende.
+        nicht bis zum Wirksamwerden, gelten die neuen Bedingungen. Auf diese
+        Folge weisen wir im Hinweis hin. Kündigst du zum Änderungstermin, gelten
+        die bisherigen Bedingungen bis zum Vertragsende.
       </p>
     </article>
   );
