@@ -322,9 +322,10 @@ describe("stripe webhook route", () => {
       ),
     );
     expect((await rowsFor(tenant.userId))[0]!.status).toBe("canceled");
+    // No paid plan left: the user falls back to the free tier (on by default).
     const quota = await quotaStatusFor(tenant.userId);
-    expect(quota.allowed).toBe(false);
-    expect(quota.reason).toBe("no_subscription");
+    expect(quota.plan).toBe("free");
+    expect(quota.upgradeAvailable).toBe(true);
   });
 
   it("stores an unknown price without granting a plan", async () => {
@@ -348,9 +349,8 @@ describe("stripe webhook route", () => {
       )
     ).json();
     expect(result).toMatchObject({ handled: true, plan: null });
-    expect((await quotaStatusFor(tenant.userId)).reason).toBe(
-      "no_subscription",
-    );
+    // An unknown price grants no paid plan, only the free tier.
+    expect((await quotaStatusFor(tenant.userId)).plan).toBe("free");
   });
 
   it("ignores events for unknown users and unrelated event types", async () => {
