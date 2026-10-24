@@ -83,3 +83,13 @@ CREATE POLICY stripe_events_system_only ON osirus.stripe_events
 GRANT SELECT, INSERT, UPDATE ON osirus.billing_customers TO osirus_app;
 GRANT SELECT, INSERT, UPDATE ON osirus.billing_subscriptions TO osirus_app;
 GRANT SELECT, INSERT, DELETE ON osirus.stripe_events TO osirus_app;
+
+-- Default privileges from 007 also grant every table verb. No code path
+-- deletes a customer or subscription row (a deleted user's rows go by
+-- ON DELETE CASCADE, which runs as the table owner), and an event claim is
+-- only inserted or released, never updated. TRUNCATE, REFERENCES and TRIGGER
+-- are never needed by the app; they are revoked explicitly so a future
+-- default-privilege change cannot hand them out.
+REVOKE DELETE, TRUNCATE, REFERENCES, TRIGGER ON osirus.billing_customers FROM osirus_app;
+REVOKE DELETE, TRUNCATE, REFERENCES, TRIGGER ON osirus.billing_subscriptions FROM osirus_app;
+REVOKE UPDATE, TRUNCATE, REFERENCES, TRIGGER ON osirus.stripe_events FROM osirus_app;

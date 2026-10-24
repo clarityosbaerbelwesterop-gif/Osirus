@@ -425,6 +425,67 @@ describe("billing tables and usage", () => {
     ).resolves.toEqual([]);
   });
 
+  it("grants osirus_app only the verbs the billing code uses", async () => {
+    const rows = await db.raw<{ table_name: string; verbs: string }>(
+      `select c.relname as table_name,
+              concat_ws(',',
+                case when has_table_privilege('osirus_app', c.oid, 'SELECT') then 'SELECT' end,
+                case when has_table_privilege('osirus_app', c.oid, 'INSERT') then 'INSERT' end,
+                case when has_table_privilege('osirus_app', c.oid, 'UPDATE') then 'UPDATE' end,
+                case when has_table_privilege('osirus_app', c.oid, 'DELETE') then 'DELETE' end,
+                case when has_table_privilege('osirus_app', c.oid, 'TRUNCATE') then 'TRUNCATE' end,
+                case when has_table_privilege('osirus_app', c.oid, 'REFERENCES') then 'REFERENCES' end,
+                case when has_table_privilege('osirus_app', c.oid, 'TRIGGER') then 'TRIGGER' end
+              ) as verbs
+         from pg_class c
+         join pg_namespace n on n.oid = c.relnamespace
+        where n.nspname = 'osirus'
+          and c.relname in ('billing_customers', 'billing_subscriptions', 'stripe_events')
+        order by c.relname`,
+    );
+    expect(rows).toEqual([
+      { table_name: "billing_customers", verbs: "SELECT,INSERT,UPDATE" },
+      { table_name: "billing_subscriptions", verbs: "SELECT,INSERT,UPDATE" },
+      { table_name: "stripe_events", verbs: "SELECT,INSERT,DELETE" },
+    ]);
+  });
+
+  it("deleting a user still cascades to their billing rows", async () => {
+    // A bare user: seedTenant's organization would RESTRICT the delete.
+    const gone = { userId: randomUUID() };
+    await db.raw(
+      `insert into neon_auth."user" (id, email, name) values ($1, $2, 'gone')`,
+      [gone.userId, `gone-${gone.userId.slice(0, 8)}@example.test`],
+    );
+    await db.raw("insert into osirus.users (id) values ($1)", [gone.userId]);
+    await store.saveCustomer(
+      gone.userId,
+      `cus_gone_${gone.userId.slice(0, 8)}`,
+    );
+    await store.upsertSubscription({
+      subscriptionId: `sub_gone_${gone.userId.slice(0, 8)}`,
+      userId: gone.userId,
+      customerId: `cus_gone_${gone.userId.slice(0, 8)}`,
+      plan: "pro",
+      priceId: PRICES.STRIPE_PRICE_PRO,
+      status: "active",
+      currentPeriodEnd: null,
+      cancelAtPeriodEnd: false,
+      eventCreated: new Date(),
+    });
+    // osirus_app has no DELETE on the billing tables; the cascade runs as
+    // the table owner, so the user's deletion still removes their rows.
+    await db.querySystem("delete from osirus.users where id = $1", [
+      gone.userId,
+    ]);
+    const left = await db.raw<{ n: number }>(
+      `select (select count(*) from osirus.billing_customers where user_id = $1)::int
+            + (select count(*) from osirus.billing_subscriptions where user_id = $1)::int as n`,
+      [gone.userId],
+    );
+    expect(left[0]!.n).toBe(0);
+  });
+
   it("charges the run requester's model calls against their windows", async () => {
     holder.subscriptions.set(
       "sub_usage",
