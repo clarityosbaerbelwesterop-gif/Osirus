@@ -34,6 +34,7 @@ import {
 } from "./settlement";
 import type { RuntimePacket } from "./types";
 import { policyOfStage } from "../strategy/runtime";
+import { forUser } from "../billing/enforce";
 
 // The slice loop.
 //
@@ -246,7 +247,8 @@ export async function executeClaimedStage(input: {
           // model capacity to user requests.
           priority: "P4",
         })
-      : new UnoRouterProvider(),
+      : // Billing: a user's own run spends their 5-hour/weekly budget.
+        forUser(new UnoRouterProvider(), identity.userId),
     repository,
     memory: new MemoryOS(identity.userId),
     skills: new SkillRepository(identity.userId),

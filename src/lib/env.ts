@@ -53,6 +53,17 @@ const schema = z.object({
   // endpoint refuses every request; it is never open when unconfigured.
   OSIRUS_SCHEDULER_SECRET: z.string().min(32).optional(),
   VERCEL_GIT_COMMIT_SHA: z.string().min(1).optional(),
+  // Stripe billing (test mode until the owner switches). Unset means the
+  // billing routes answer 503 and never call Stripe. Prefer a restricted key
+  // (rk_...) over a full secret key.
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_PRICE_PRO: z.string().min(1).optional(),
+  STRIPE_PRICE_DEVELOPER: z.string().min(1).optional(),
+  STRIPE_PRICE_ULTRA_100: z.string().min(1).optional(),
+  STRIPE_PRICE_ULTRA_200: z.string().min(1).optional(),
+  // Public origin for Checkout/Portal return URLs. Unset: the request origin.
+  OSIRUS_PUBLIC_URL: z.string().url().optional(),
 });
 
 export const env = schema.parse(process.env);

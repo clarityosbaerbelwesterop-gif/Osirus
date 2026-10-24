@@ -26,6 +26,10 @@ export function publicRuntimeErrorMessage(error: unknown) {
       return "The model provider is temporarily unavailable. Please try again later.";
     case "insufficient_credit":
       return "The model provider declined the request: the account's free quota or credit is exhausted.";
+    case "quota_exhausted":
+      return "Your usage budget for this window is spent. It refills automatically; this work resumes when it does.";
+    case "subscription_required":
+      return "An active subscription is required to run models.";
     case "invalid_stream":
     case "invalid_json":
       return "The model returned an unusable response. Please try again.";
