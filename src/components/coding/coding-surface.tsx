@@ -12,7 +12,6 @@ import {
   routeCodingEffort,
 } from "@/lib/product/effort-router";
 import {
-  CUSTOMER_MODELS,
   draftAfterSurfaceChange,
   type CustomerModelId,
   type EffortId,
@@ -62,9 +61,7 @@ export function CodingSurface(props: {
   const [repoKey, setRepoKey] = useState("");
   const [branches, setBranches] = useState<string[] | null>(null);
   const [branch, setBranch] = useState("");
-  const [model, setModel] = useState<CustomerModelId>(
-    props.initialModel ?? "rouge",
-  );
+  const [model] = useState<CustomerModelId>(props.initialModel ?? "rouge");
   const [chosen, setChosen] = useState<EffortId | null>(
     props.initialEffortChosen ? props.initialEffort : null,
   );
@@ -473,19 +470,8 @@ export function CodingSurface(props: {
             </label>
             <label>
               Model
-              <select
-                aria-label="Model"
-                value={model}
-                disabled={running || paused}
-                onChange={(event) =>
-                  setModel(event.target.value as CustomerModelId)
-                }
-              >
-                {CUSTOMER_MODELS.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
-                  </option>
-                ))}
+              <select aria-label="Model" value="unavailable" disabled>
+                <option value="unavailable">Bald verfügbar</option>
               </select>
             </label>
             {running || paused ? null : (

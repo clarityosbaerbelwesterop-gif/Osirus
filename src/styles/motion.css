@@ -1,0 +1,306 @@
+/* Motion for stories, thinking, and quota bars.
+   150–300 ms, ease-out, opacity and transform only. */
+
+.story,
+.story-agents {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+}
+
+.story-kicker,
+.quota-note,
+.story-count {
+  color: var(--color-text-subtle);
+  font-size: var(--text-xs);
+}
+
+.story-who,
+.story-badge {
+  color: var(--color-accent-text);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-semibold);
+}
+
+.story-msg,
+.story-typing,
+.story-recs li,
+.story-steps li,
+.story-agents li {
+  animation: story-in 220ms var(--ease-out) both;
+  animation-delay: var(--d, 0ms);
+}
+
+.story-msg,
+.story-recs li,
+.story-steps li,
+.story-agents li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.story-prompt {
+  font-weight: var(--weight-semibold);
+}
+
+.story-recs,
+.story-steps,
+.story-agents {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.story-typing {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.story-dots {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.story-dots i,
+.story-mark {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-full);
+  background: var(--color-text-subtle);
+}
+
+.story-dots i {
+  animation: dot-in 200ms var(--ease-out) infinite alternate;
+}
+
+.story-dots i:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.story-dots i:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.story-steps li[data-state="done"] .story-mark {
+  background: var(--color-success);
+}
+
+.story-steps li[data-state="run"] .story-mark {
+  background: var(--color-accent-text);
+  animation: dot-in 220ms var(--ease-out) infinite alternate;
+}
+
+.think,
+.tool-card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-canvas);
+  font-size: var(--text-sm);
+}
+
+.think summary,
+.tool-card summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+
+.think p,
+.tool-card p {
+  padding: 0 var(--space-3) var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.think-shimmer {
+  animation: think-in 240ms var(--ease-out) infinite alternate;
+}
+
+.work-motion .think-shimmer {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.quota {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.quota-label {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--space-1) var(--space-2);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+}
+
+.quota-refill {
+  color: var(--color-text);
+}
+
+.quota-track {
+  height: 6px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--color-border);
+}
+
+.quota-fill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  border-radius: inherit;
+  background: var(--color-accent-text);
+  animation: quota-in 240ms var(--ease-out) backwards;
+}
+
+.quota-fill[data-empty="true"] {
+  background: var(--color-warning);
+}
+
+.cookie-banner {
+  position: fixed;
+  z-index: var(--z-toast, 40);
+  right: var(--space-4);
+  bottom: var(--space-4);
+  left: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  max-width: 880px;
+  margin: 0 auto;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  animation: story-in 220ms var(--ease-out) both;
+}
+
+body:has(.cookie-banner) .auth-page,
+body:has(.cookie-banner) .status-page {
+  padding-bottom: 220px;
+}
+
+@media (max-width: 700px) {
+  .cookie-banner {
+    top: 0;
+    right: 0;
+    bottom: auto;
+    left: 0;
+    max-height: 42dvh;
+    overflow: auto;
+    border-radius: 0;
+  }
+
+  body:has(.cookie-banner) .auth-page,
+  body:has(.cookie-banner) .status-page,
+  body:has(.cookie-banner) .landing,
+  body:has(.cookie-banner) .legal {
+    padding-top: 42dvh;
+    padding-bottom: var(--space-8);
+  }
+
+  body:has(.cookie-banner) .auth-page {
+    align-items: start;
+  }
+}
+
+.cookie-banner-copy {
+  display: grid;
+  gap: var(--space-1);
+  max-width: 62ch;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.cookie-banner-copy p:first-child {
+  color: var(--color-text);
+  font-weight: var(--weight-semibold);
+}
+
+.cookie-banner-copy a {
+  color: var(--color-accent-text);
+  text-decoration: underline;
+}
+
+.cookie-banner-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+@keyframes story-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dot-in {
+  from {
+    opacity: 0.35;
+    transform: translateY(1px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes think-in {
+  from {
+    opacity: 0.45;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes quota-in {
+  from {
+    transform: scaleX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .story-msg,
+  .story-typing,
+  .story-recs li,
+  .story-steps li,
+  .story-agents li,
+  .story-dots i,
+  .story-mark,
+  .think-shimmer,
+  .quota-fill,
+  .cookie-banner,
+  .status-rise {
+    animation: none;
+  }
+}

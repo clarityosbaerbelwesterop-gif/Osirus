@@ -35,6 +35,7 @@ import {
   type SessionSurface,
 } from "@/lib/product/surfaces";
 import { useShell, type SessionSummary } from "../shell/shell-context";
+import { PLACEHOLDER_QUOTA, QuotaBars } from "../motion/quota-bars";
 import { SystemStatus } from "./system-status";
 import { cx } from "../ui/cx";
 import { IconButton } from "../ui/icon-button";
@@ -554,6 +555,14 @@ export function SidebarContent({
       )}
 
       <div className="sidebar-footer">
+        {collapsed ? null : (
+          <QuotaBars
+            fiveHourRatio={PLACEHOLDER_QUOTA.fiveHourRatio}
+            weekRatio={PLACEHOLDER_QUOTA.weekRatio}
+            fiveHourRefill={PLACEHOLDER_QUOTA.fiveHourRefill}
+            note={PLACEHOLDER_QUOTA.note}
+          />
+        )}
         <Link
           href={"/app/settings" as Route}
           className="account-link"

@@ -302,9 +302,9 @@ describe("graders on the completion path", () => {
         onInteractionChange: () => undefined,
       }),
     );
-    expect(html).toContain("reasoning");
-    expect(html).toContain("ROUGE_MATH: pass");
+    expect(html).toContain("reasoning · Bald verfügbar: pass");
     expect(html).not.toContain("thinking");
+    expect(html).not.toContain("ROUGE_MATH");
     expect(html).not.toContain("ROUGE_THINKING");
   });
 });

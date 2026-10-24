@@ -477,7 +477,7 @@ export function ChatHub(props: {
         !regenerate
       ) {
         setError(
-          "External API is the Osirus provider pool, not ROUGE 1, QUASNIR, or DARUS.",
+          "Diese Route ist der Modellanbieter. Eigene Modelle werden nicht angeboten.",
         );
         return;
       }

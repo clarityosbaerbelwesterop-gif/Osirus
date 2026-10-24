@@ -37,19 +37,34 @@ describe("landing page", () => {
     const html = renderToStaticMarkup(
       (await HomePage()) as ReturnType<typeof createElement>,
     );
-    expect(html).toContain("finishes the work");
+    expect(html).toContain("Bots, Work und");
     expect(html).toContain('href="/auth/sign-up"');
+    expect(html).toContain('href="/auth/sign-up?plan=pro"');
+    expect(html).toContain('href="/auth/sign-up?plan=developer"');
+    expect(html).toContain('href="/auth/sign-up?plan=ultra-100"');
+    expect(html).toContain('href="/auth/sign-up?plan=ultra-200"');
     expect(html).toContain('href="/auth/sign-in"');
     expect(html).toContain('href="/legal/impressum"');
     expect(html).toContain('href="/legal/privacy"');
     expect(html).toContain('href="/legal/terms"');
+    expect(html).toContain('href="/legal/eula"');
     expect(html).toContain('href="/legal/cookies"');
-    // The animated run card is decorative and labelled as such.
-    expect(html).toContain('role="img"');
-    expect(html).toContain("verified");
+    expect(html).toContain(
+      "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
+    );
+    expect(html).toContain("5-Stunden-Kontingent");
+    expect(html).toContain("Wochenkontingent");
+    expect(html).toContain("Wieder verfügbar in 2 h 14 min");
+    expect(html).toContain("Bald verfügbar");
+    expect(html).not.toMatch(
+      /ROUGE|QUASNIR|DARUS|kostenlos|inkl\. MwSt|zzgl\. MwSt|brutto|netto/i,
+    );
+    expect(html).not.toContain("osirus.vercel.app");
+    expect(html).not.toContain("No payment required");
+    expect(html).not.toContain("✓ verified");
   });
 
-  it("ships parseable SoftwareApplication structured data", async () => {
+  it("ships parseable SoftwareApplication structured data for the four paid plans", async () => {
     const html = renderToStaticMarkup(
       (await HomePage()) as ReturnType<typeof createElement>,
     );
@@ -60,7 +75,14 @@ describe("landing page", () => {
     const data = JSON.parse(match![1]);
     expect(data["@type"]).toBe("SoftwareApplication");
     expect(data.name).toBe("Osirus");
-    expect(data.offers.price).toBe("0");
+    expect(data.url).toBe("https://osirus-ai.vercel.app/");
+    expect(data.offers.map((offer: { price: string }) => offer.price)).toEqual([
+      "20",
+      "50",
+      "100",
+      "200",
+    ]);
+    expect(html).not.toContain('"price":"0"');
   });
 });
 
@@ -74,24 +96,35 @@ describe("seo surface", () => {
     expect(disallowed).toEqual(
       expect.arrayContaining(["/app", "/api", "/auth", "/internal"]),
     );
-    expect(robots().sitemap).toBe("https://osirus.vercel.app/sitemap.xml");
+    expect(robots().sitemap).toBe("https://osirus-ai.vercel.app/sitemap.xml");
+    expect(String(robots().sitemap)).not.toContain("osirus.vercel.app");
   });
 
-  it("sitemap lists the landing page and the four legal pages", () => {
+  it("sitemap lists the landing page and the legal pages", () => {
     const urls = sitemap().map((entry) => entry.url);
     expect(urls).toEqual([
-      "https://osirus.vercel.app/",
-      "https://osirus.vercel.app/legal/impressum",
-      "https://osirus.vercel.app/legal/privacy",
-      "https://osirus.vercel.app/legal/terms",
-      "https://osirus.vercel.app/legal/cookies",
+      "https://osirus-ai.vercel.app/",
+      "https://osirus-ai.vercel.app/legal/impressum",
+      "https://osirus-ai.vercel.app/legal/privacy",
+      "https://osirus-ai.vercel.app/legal/terms",
+      "https://osirus-ai.vercel.app/legal/eula",
+      "https://osirus-ai.vercel.app/legal/cookies",
     ]);
   });
 
   it("root metadata is indexable with OpenGraph; auth stays noindex", () => {
     expect(rootMetadata.robots).toMatchObject({ index: true, follow: true });
     expect(rootMetadata.openGraph).toMatchObject({ siteName: "Osirus" });
-    expect((rootMetadata.metadataBase as URL).host).toBe("osirus.vercel.app");
+    expect((rootMetadata.metadataBase as URL).host).toBe(
+      "osirus-ai.vercel.app",
+    );
     expect(authMetadata.robots).toMatchObject({ index: false, follow: false });
+  });
+
+  it("refuses the unrelated osirus.vercel.app host", async () => {
+    vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://osirus.vercel.app");
+    const { publicSiteUrl } = await import("../src/app/site-url");
+    expect(publicSiteUrl().host).toBe("osirus-ai.vercel.app");
+    vi.unstubAllEnvs();
   });
 });

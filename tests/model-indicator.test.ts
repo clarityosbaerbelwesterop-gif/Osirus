@@ -283,7 +283,8 @@ describe("MessageList model caption", () => {
         streamingId: null,
       }),
     );
-    expect(html).toContain("ROUGE 1. Not a native checkpoint.");
+    expect(html).not.toContain("ROUGE 1");
+    expect(html).not.toContain("message-model");
     expect(html).not.toContain("qwen");
     expect(html).not.toContain("UnoRouter");
   });

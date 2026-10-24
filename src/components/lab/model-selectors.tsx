@@ -1,12 +1,12 @@
 "use client";
 
 import {
-  LAB_BUILD,
   LAB_MODELS,
   type InteractionPreference,
   type LabModelId,
 } from "@/lib/lab/choices";
 import { activityCaption, modelRouteDescription } from "@/lib/lab/honesty";
+import { mentionsOwnModel, withoutOwnModel } from "../motion/public-text";
 import type { LivePill } from "@/lib/ui/live-activity";
 
 export interface PhaseGrade {
@@ -28,6 +28,10 @@ export function ModelSelectors(props: {
   onInteractionChange: (interaction: InteractionPreference) => void;
 }) {
   const pills = props.pills ?? [];
+  const ownModel = mentionsOwnModel(props.model);
+  const routeText = ownModel
+    ? "Eigene Modelle werden nicht angeboten."
+    : modelRouteDescription(props.model, props.interaction);
   const ran = new Set(props.phases ?? []);
   const shownGrades = (props.grades ?? []).filter(
     (grade) =>
@@ -40,26 +44,28 @@ export function ModelSelectors(props: {
       <label>
         Model
         <span id="lab-model-route" className="sr-only">
-          {modelRouteDescription(props.model, props.interaction)}
+          {routeText}
         </span>
         <select
           aria-label="Model"
           aria-describedby="lab-model-route"
-          title={modelRouteDescription(props.model, props.interaction)}
-          value={props.model}
-          disabled={props.disabled}
+          title={routeText}
+          value={ownModel ? "unavailable" : props.model}
+          disabled={props.disabled || ownModel}
           onChange={(event) =>
             props.onModelChange(event.target.value as LabModelId)
           }
         >
-          {LAB_MODELS.map((model) => (
-            <option key={model.id} value={model.id}>
-              {model.label}
-              {model.id !== "external" && !LAB_BUILD[model.id]
-                ? " (not in this build)"
-                : ""}
-            </option>
-          ))}
+          {ownModel ? (
+            <option value="unavailable">Bald verfügbar</option>
+          ) : null}
+          {LAB_MODELS.filter((model) => !mentionsOwnModel(model.id)).map(
+            (model) => (
+              <option key={model.id} value={model.id}>
+                {withoutOwnModel(model.label)}
+              </option>
+            ),
+          )}
         </select>
       </label>
       <div role="radiogroup" aria-label="Interaction">
@@ -116,7 +122,7 @@ export function ModelSelectors(props: {
           {shownGrades
             .map(
               (grade) =>
-                `${grade.phase} · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`,
+                `${withoutOwnModel(grade.phase ?? "")} · ${withoutOwnModel(grade.armId)}: ${grade.passed ? "pass" : "fail"}`,
             )
             .join(" ")}
         </p>

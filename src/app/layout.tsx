@@ -2,27 +2,32 @@ import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import "@fontsource-variable/inter";
 import "./globals.css";
+import {
+  CookieBanner,
+  type ConsentChoice,
+} from "@/components/legal/cookie-banner";
 import { parseTheme, THEME_COOKIE } from "@/lib/ui/preferences";
+import { publicSiteUrl } from "./site-url";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://osirus.vercel.app"),
+  metadataBase: publicSiteUrl(),
   title: { default: "Osirus", template: "%s · Osirus" },
   description:
-    "An agent workspace that plans, acts with approval, and verifies its work.",
+    "Osirus ist ein Workspace für Assistent, Work und Agents. Modelle laufen über UNOROUTER.",
   robots: { index: true, follow: true },
   openGraph: {
     type: "website",
     siteName: "Osirus",
-    title: "Osirus — an agent that finishes the work, and shows it",
+    title: "Osirus — Bots, Work und Agents",
     description:
-      "An agent workspace that plans, acts with approval, and verifies its work.",
+      "Workspace für Assistent, Work und Agents. Modelle über UNOROUTER.",
     url: "/",
   },
   twitter: {
     card: "summary",
-    title: "Osirus — an agent that finishes the work, and shows it",
+    title: "Osirus — Bots, Work und Agents",
     description:
-      "An agent workspace that plans, acts with approval, and verifies its work.",
+      "Workspace für Assistent, Work und Agents. Modelle über UNOROUTER.",
   },
 };
 
@@ -40,10 +45,17 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+  const jar = await cookies();
+  const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
+  const consent = jar.get("osirus-consent")?.value;
+  const initialChoice: ConsentChoice | null =
+    consent === "all" || consent === "necessary" ? consent : null;
   return (
     <html lang="en" data-theme={theme === "system" ? undefined : theme}>
-      <body>{children}</body>
+      <body>
+        {children}
+        <CookieBanner initialChoice={initialChoice} />
+      </body>
     </html>
   );
 }

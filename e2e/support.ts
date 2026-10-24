@@ -74,6 +74,13 @@ export async function mockApis(
     }
   };
 
+  await page.context().addCookies([
+    {
+      name: "osirus-consent",
+      value: "necessary",
+      url: process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3000",
+    },
+  ]);
   await page.route("**/api/health", (route) => json(route, HEALTHY));
   await page.route("**/api/connectors/github/repos", (route) => {
     record(route);
