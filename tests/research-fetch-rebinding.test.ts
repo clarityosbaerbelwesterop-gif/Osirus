@@ -1,3 +1,4 @@
+import { createServer } from "node:http";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // RT2-02 regression: the research fetcher checks a URL's DNS answer when the
@@ -75,7 +76,8 @@ vi.mock("node:dns", async (importOriginal) => {
   return { ...real, lookup, default: { ...real, lookup } };
 });
 
-const { FetchRefused, safeFetch } = await import("../src/lib/research/fetch");
+const { FetchRefused, assertPublicUrl, safeFetch } =
+  await import("../src/lib/research/fetch");
 
 afterEach(() => {
   checkTimeDns.map.clear();
@@ -116,5 +118,54 @@ describe("research fetch: DNS rebinding (RT2-02)", () => {
       safeFetch("https://rebind.research.example/page"),
     ).rejects.toThrow("fetch_refused:private_address");
     expect(connectTimeDns.queried).toEqual([]);
+  });
+});
+
+describe("research fetch: IP-literal destination validation", () => {
+  it("refuses a mapped IPv4 loopback literal before opening a connection", async () => {
+    let received = false;
+    const server = createServer((_request, response) => {
+      received = true;
+      response.end("local");
+    });
+    await new Promise<void>((resolve) =>
+      server.listen(0, "127.0.0.1", resolve),
+    );
+    const address = server.address();
+    if (!address || typeof address === "string")
+      throw new Error("server did not bind to a TCP port");
+
+    try {
+      await expect(
+        safeFetch(`http://[::ffff:127.0.0.1]:${address.port}/`),
+      ).rejects.toThrow(/fetch_refused/);
+      expect(received).toBe(false);
+    } finally {
+      await new Promise<void>((resolve, reject) =>
+        server.close((error) => (error ? reject(error) : resolve())),
+      );
+    }
+  });
+
+  it("rejects private and special IPv6 literals while accepting public IP literals", async () => {
+    for (const url of [
+      "http://[::ffff:127.0.0.1]/",
+      "http://[::ffff:169.254.169.254]/latest/meta-data",
+      "http://[::127.0.0.1]/",
+      "http://[::ffff:0:7f00:1]/",
+      "http://[64:ff9b::a9fe:a9fe]/",
+      "http://[fec0::1]/",
+      "http://[ff02::1]/",
+      "http://[2002:7f00:1::]/",
+    ]) {
+      await expect(assertPublicUrl(url), url).rejects.toThrow(/fetch_refused/);
+    }
+
+    await expect(
+      assertPublicUrl("http://[2606:4700:4700::1111]/"),
+    ).resolves.toBeInstanceOf(URL);
+    await expect(assertPublicUrl("http://1.1.1.1/")).resolves.toBeInstanceOf(
+      URL,
+    );
   });
 });
