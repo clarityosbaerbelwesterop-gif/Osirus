@@ -24,6 +24,7 @@ import { capabilitiesFor, routeObjective, type RoutingMode } from "./router-v2";
 import { isTerminalRunStatus } from "./state-machine";
 import type { Capability, RuntimePacket } from "./types";
 import { driveSlices, finalizeRun } from "./worker";
+import { forUser } from "../billing/enforce";
 
 export type { RuntimeIdentity };
 
@@ -229,7 +230,7 @@ export async function planRuntimeRun(input: {
   pinnedModel?: string;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
-  const provider = input.pinnedModel
+  const baseProvider = input.pinnedModel
     ? new UnoRouterProvider({
         model: input.pinnedModel,
         fallback: false,
@@ -246,6 +247,10 @@ export async function planRuntimeRun(input: {
           priority: "P4",
         })
       : new UnoRouterProvider();
+  // Billing: a user's own run spends their 5-hour/weekly budget.
+  const provider = input.policy?.model
+    ? baseProvider
+    : forUser(baseProvider, input.identity.userId);
 
   const activity = async (
     type: string,

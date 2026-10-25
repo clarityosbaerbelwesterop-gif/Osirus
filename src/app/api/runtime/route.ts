@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
+import { quotaEnforced, quotaStatusFor } from "@/lib/billing/enforce";
+import { serializeQuota } from "@/lib/billing/quota";
 import { executeRuntimeRun, prepareRuntimeRun } from "@/lib/runtime/executor";
 import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 import {
@@ -105,6 +107,29 @@ export async function POST(request: Request) {
       return Response.json({ error: "service_unavailable" }, { status: 503 });
     }
     throw error;
+  }
+  // Billing: refuse up front when the user has no plan or a spent window,
+  // telling them when it refills. The model calls are guarded again inside.
+  if (quotaEnforced()) {
+    const quota = await quotaStatusFor(identity.userId);
+    if (!quota.allowed) {
+      const noPlan = quota.reason === "no_subscription";
+      return Response.json(
+        {
+          error: noPlan ? "subscription_required" : "quota_exhausted",
+          message: publicRuntimeErrorMessage({
+            code: noPlan ? "subscription_required" : "quota_exhausted",
+          }),
+          quota: serializeQuota(quota),
+        },
+        {
+          status: noPlan ? 402 : 429,
+          headers: noPlan
+            ? undefined
+            : { "Retry-After": String(Math.ceil(quota.retryAfterMs / 1000)) },
+        },
+      );
+    }
   }
   let pinnedModel: string | undefined;
   if (parsed.data.coding?.model || parsed.data.modelId) {
