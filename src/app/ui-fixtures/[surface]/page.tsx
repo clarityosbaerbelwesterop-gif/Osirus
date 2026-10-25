@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AgentsStudio } from "@/components/agents/agents-studio";
 import { ChatHub } from "@/components/chat/chat-hub";
+import { WorkStudio } from "@/components/work/work-studio";
 import { CodingSurface } from "@/components/coding/coding-surface";
 import { AppShell } from "@/components/shell/app-shell";
 import { ApprovalList } from "@/components/approvals/approval-list";
@@ -15,6 +17,7 @@ import { SettingsNav } from "@/components/settings/settings-nav";
 import { PageFrame } from "@/components/shell/page-frame";
 import { resolvePolicy } from "@/lib/policy/model";
 import { approvalView } from "@/lib/ui/approval-view";
+import { recommendWork } from "@/lib/work/recommend";
 import { fixturesEnabled } from "@/lib/ui/fixtures-flag";
 import {
   approvalsFixture,
@@ -57,6 +60,47 @@ export default async function FixturePage({
   );
 
   switch (surface) {
+    case "work":
+      return (
+        <AppShell data={shell}>
+          <PageFrame
+            title="Work"
+            lede="Zuerst die Aufgabe. Danach empfiehlt Osirus Modell, Prüfer und Subagents."
+          >
+            <WorkStudio
+              initialRecommendation={recommendWork(
+                "Erkläre MVCC in einem Satz.",
+              )}
+            />
+          </PageFrame>
+        </AppShell>
+      );
+    case "agents":
+      return (
+        <AppShell data={shell}>
+          <PageFrame
+            title="Agents"
+            lede="Bots mit eigenem Modell und Gruppenchats. Deploy gibt es nicht."
+          >
+            <AgentsStudio
+              initialAgents={[
+                {
+                  id: "11111111-1111-4111-8111-111111111111",
+                  name: "Ada",
+                  modelId: "glm-5.3-flash",
+                  status: "active",
+                },
+                {
+                  id: "22222222-2222-4222-8222-222222222222",
+                  name: "Bea",
+                  modelId: "claude-opus-5.5",
+                  status: "active",
+                },
+              ]}
+            />
+          </PageFrame>
+        </AppShell>
+      );
     case "chat-empty":
       return chat(null);
     case "chat-active":
