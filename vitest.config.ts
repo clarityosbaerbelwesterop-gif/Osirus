@@ -12,11 +12,6 @@ export default defineConfig({
       ),
     },
   },
-  // UI view models and the Markdown renderer are tested in node with
-  // react-dom/server; JSX compiles with the automatic runtime.
-  esbuild: {
-    target: "node20",
-  },
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts", "ai-lab/tests/**/*.test.ts"],

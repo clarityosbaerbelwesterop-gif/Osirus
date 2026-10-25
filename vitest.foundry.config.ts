@@ -12,9 +12,6 @@ export default defineConfig({
       ),
     },
   },
-  esbuild: {
-    target: "node20",
-  },
   test: {
     environment: "node",
     include: ["evals/foundry.eval.ts"],

@@ -13,9 +13,6 @@ export default defineConfig({
       ),
     },
   },
-  esbuild: {
-    target: "node20",
-  },
   test: {
     environment: "node",
     include: [process.env.RSI_EVAL ?? "evals/rsi-measure.eval.ts"],
