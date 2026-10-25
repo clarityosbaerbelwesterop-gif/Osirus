@@ -384,6 +384,8 @@ describe("the runners' exchange with production", () => {
       repository: "clarityosbaerbelwesterop-gif/Osirus",
       ref: "refs/heads/main",
       workflow_ref: `clarityosbaerbelwesterop-gif/Osirus/.github/workflows/${workflow}@refs/heads/main`,
+      job_workflow_ref: `clarityosbaerbelwesterop-gif/Osirus/.github/workflows/${workflow}@refs/heads/main`,
+      sub: "repo:clarityosbaerbelwesterop-gif/Osirus:ref:refs/heads/main",
       event_name: "workflow_run",
     });
     expect(

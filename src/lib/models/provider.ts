@@ -76,12 +76,19 @@ const TRANSIENT_REFUSALS = new Set([
   "rate_limited",
   "provider_unavailable",
   "capacity_deferred",
+  // Billing: the user's 5-hour or weekly budget is spent; it refills itself.
+  "quota_exhausted",
 ]);
 const PERMANENT_REFUSALS = new Set([
   "insufficient_credit",
   "credential_rejected",
   "provider_not_configured",
   "model_not_configured",
+  // Billing: no active subscription (and no free plan).
+  "subscription_required",
+  // Billing: the free plan's model lock (model or sub-agent count).
+  "model_not_in_plan",
+  "subagent_limit",
 ]);
 
 export function providerRefusalOf(error: unknown): ProviderRefusal | null {

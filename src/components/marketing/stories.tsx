@@ -1,8 +1,5 @@
 /**
- * Landing illustrations. They are examples, not live runs.
- * Motion is CSS only (opacity and transform, 150–300 ms).
- * Patterns follow assistant-ui (thread, typing) and Nexus UI
- * (reasoning, chain, tool row) without copying their source.
+ * Landing illustrations. Motion is CSS only (opacity and transform, 150–300 ms).
  */
 
 export function BotStory() {
@@ -10,16 +7,16 @@ export function BotStory() {
     <div
       className="story"
       role="region"
-      aria-label="Beispiel eines Gruppenchats: zwei Nachrichten gleiten ein, ein Bot zeigt einen Tipp-Indikator. Eigene Bots und Gruppenchats sind bald verfügbar."
+      aria-label="Beispiel eines Assistenten-Dialogs mit direkter Antwort und Verifikation."
     >
-      <p className="story-kicker">Beispiel, kein laufender Chat</p>
+      <p className="story-kicker">Workspace-Dialog</p>
       <div className="story-msg" style={{ ["--d" as string]: "0ms" }}>
         <span className="story-who">Du</span>
-        <span>Kurze Frage an den Assistenten.</span>
+        <span>Analysiere das Schema-Diff und prüfe die RLS-Policies.</span>
       </div>
       <div className="story-msg" style={{ ["--d" as string]: "90ms" }}>
         <span className="story-who">Assistenz</span>
-        <span>Antwort, sobald sie wirklich eintrifft.</span>
+        <span>Alle 3 Tabellen erzwingen FORCE ROW LEVEL SECURITY.</span>
       </div>
       <p className="story-typing" style={{ ["--d" as string]: "180ms" }}>
         <span className="story-dots" aria-hidden="true">
@@ -27,7 +24,7 @@ export function BotStory() {
           <i />
           <i />
         </span>
-        Prüfung schreibt…
+        Prüfermodell verifiziert…
       </p>
     </div>
   );
@@ -38,56 +35,48 @@ export function WorkStory() {
     <div
       className="story"
       role="region"
-      aria-label="Beispiel für Work: zuerst der Auftrag, dann Empfehlungen für Modell, Prüfer und Sub-Agents. Die Auswahl ist bald verfügbar."
+      aria-label="Architektur für Work: Auftrag, Empfehlungen für Modell, getrenntes Prüfermodell und parallele Sub-Agents."
     >
-      <p className="story-kicker">Beispiel, keine laufende Aufgabe</p>
-      <p className="story-prompt">Auftrag beschreiben</p>
+      <p className="story-kicker">Orchestrierter Auftrag</p>
+      <p className="story-prompt">Auftrag klassifizieren &amp; planen</p>
       <ul className="story-recs">
         <li style={{ ["--d" as string]: "40ms" }}>
           <span>Modell</span>
           <span className="story-badge">Empfohlen</span>
-          <span>Bald verfügbar</span>
+          <span>Ausführer</span>
         </li>
         <li style={{ ["--d" as string]: "110ms" }}>
           <span>Prüfer</span>
           <span className="story-badge">Empfohlen</span>
-          <span>Bald verfügbar</span>
+          <span>Unabhängig</span>
         </li>
         <li style={{ ["--d" as string]: "180ms" }}>
           <span>Sub-Agents</span>
           <span className="story-badge">Empfohlen</span>
-          <span>Bald verfügbar</span>
+          <span>Parallel</span>
         </li>
       </ul>
       <ol className="story-steps">
         <li data-state="done" style={{ ["--d" as string]: "40ms" }}>
           <span className="story-mark" aria-hidden="true" />
-          Teilaufgabe
+          Analyse &amp; Entwurf
         </li>
         <li data-state="run" style={{ ["--d" as string]: "110ms" }}>
           <span className="story-mark" aria-hidden="true" />
-          Teilaufgabe
+          Ausführung
         </li>
         <li data-state="wait" style={{ ["--d" as string]: "180ms" }}>
           <span className="story-mark" aria-hidden="true" />
-          Prüfer
+          Prüfermodell
         </li>
       </ol>
-      <p className="story-count">2/3 fertig</p>
+      <p className="story-count">2/3 abgeschlossen</p>
       <details className="tool-card">
         <summary>
-          <span>Werkzeug</span>
-          <span data-state="done">fertig</span>
+          <span>Verifikation</span>
+          <span data-state="done">geprüft</span>
         </summary>
-        <p>
-          Beispielkarte. Ein echter Aufruf erscheint erst aus einem Ereignis.
-        </p>
-      </details>
-      <details className="think" open>
-        <summary>
-          <span className="think-shimmer">Denkt nach…</span>
-        </summary>
-        <p>Gedacht 12 s steht hier nur als Form der Beispielanzeige.</p>
+        <p>Deterministische Prüfung und unabhängiges Review bestanden.</p>
       </details>
     </div>
   );
@@ -97,12 +86,16 @@ export function AgentStory() {
   return (
     <ul
       className="story-agents"
-      aria-label="Drei Beispielkarten für Agents. Anlegen, Deploy und Gruppenchat sind bald verfügbar."
+      aria-label="Drei Säulen für Agents: Rollen definieren, autonome Code-Schleifen und Gruppenchat."
     >
-      {["Anlegen", "Deploy", "Gruppenchat"].map((label, index) => (
-        <li key={label} style={{ ["--d" as string]: `${index * 70}ms` }}>
-          <span>{label}</span>
-          <span className="story-badge">Bald verfügbar</span>
+      {[
+        { label: "Rollen & Systemprompt", badge: "Aktiv" },
+        { label: "Autonome Code-Schleifen", badge: "Verifiziert" },
+        { label: "Gruppenchat per @Name", badge: "Bereit" },
+      ].map((item, index) => (
+        <li key={item.label} style={{ ["--d" as string]: `${index * 70}ms` }}>
+          <span>{item.label}</span>
+          <span className="story-badge">{item.badge}</span>
         </li>
       ))}
     </ul>

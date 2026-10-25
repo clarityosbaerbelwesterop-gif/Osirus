@@ -82,6 +82,7 @@ describe("cookies page", () => {
   });
 
   it("sitemap includes /legal/cookies", () => {
+    vi.stubEnv("OSIRUS_PUBLIC_BASE_URL", "https://app.example.test");
     const urls = sitemap().map((entry) => entry.url);
     expect(urls).toContain("https://osirus-ai.vercel.app/legal/cookies");
     expect(urls.join(" ")).not.toContain("osirus.vercel.app");

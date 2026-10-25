@@ -8,6 +8,9 @@ on:
   # requests opened with the workflow token do not trigger it on their own.
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   quality:
     runs-on: ubuntu-latest

@@ -258,6 +258,18 @@ stays the default.
 - The first development run could not be scored: rate limits hit, and the
   raw core got every task it answered right.
 - The benchmark was made harder and retries were added.
+- The second development run (36386430279, harder tiers, retries) ran into
+  its 300-minute budget after 20 of 40 tasks. The free core took a median
+  248 s per raw answer and 958 s per Rouge answer. On what was answered:
+  - raw 16/16 correct;
+  - Rouge 17/17 correct.
+
+  The arithmetic, date, weekday, letter-count and modular-power families
+  are at the raw core's ceiling. Tasks were ordered by family, so the last
+  five families were never reached. Tasks are now interleaved across
+  families, and a family filter lets a raw-only calibration find where the
+  core actually errs before any holdout is drawn.
+
 - p2 becomes the default only after it passes a holdout run. M57 stays open
   until then, and M58 does not start.
 

@@ -57,10 +57,10 @@ export function LabRoutingPanel({ initial }: { initial: LabRoutingSnapshot }) {
     >
       <h3>Model routes</h3>
       <p className="subtle">
-        Live routing. The dot moves only while this process would actually send
-        inference to the shown provider. Own models are not offered. Nothing
-        here is a training animation. Training has not been started. Observed{" "}
-        {snapshot.observedAt}.
+        Live routing for UNOROUTER. The dot moves only while this process would
+        actually send inference to the shown provider. Own models are not
+        offered. Nothing here is a training animation. Training has not been
+        started. Observed {snapshot.observedAt}.
       </p>
       {snapshot.tracks.length === 0 ? (
         <p>No track definitions are registered in this build.</p>

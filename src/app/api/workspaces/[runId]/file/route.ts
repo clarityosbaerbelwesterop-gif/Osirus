@@ -72,7 +72,12 @@ export async function GET(
     return Response.json({ path: query.data.path, content });
   } catch (error) {
     const reason = error instanceof Error ? error.message : "read_failed";
-    const status = /outside|escapes/.test(reason) ? 400 : 404;
-    return Response.json({ error: reason.slice(0, 80) }, { status });
+    if (/outside|escapes/.test(reason)) {
+      return Response.json({ error: "path_escapes" }, { status: 400 });
+    }
+    if (/binary_file/.test(reason)) {
+      return Response.json({ error: "binary_file" }, { status: 415 });
+    }
+    return Response.json({ error: "read_failed" }, { status: 404 });
   }
 }

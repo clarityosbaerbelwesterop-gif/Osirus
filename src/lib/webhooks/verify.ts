@@ -111,8 +111,10 @@ export function normalizeEvent(input: {
 
   if (input.source === "github") {
     const event = input.headers.get("x-github-event") ?? "";
-    const deliveryId =
-      pick(input.headers.get("x-github-delivery"), DELIVERY) ?? hash;
+    // X-GitHub-Delivery is not part of the HMAC. Keying idempotency on it
+    // lets a captured delivery be replayed under a new id. The signed body
+    // is the id.
+    const deliveryId = hash;
     const repository = pick(obj(payload.repository).full_name, REPO);
     const base = { deliveryId, repository };
     switch (event) {
@@ -189,9 +191,11 @@ export function normalizeEvent(input: {
   const event = String(
     input.headers.get("x-osirus-event") ?? payload.event ?? "",
   );
+  // The generic signature covers timestamp and body, not X-Osirus-Delivery.
+  const signed = `${input.headers.get("x-osirus-timestamp") ?? ""}.${input.body}`;
   return {
     kind: event.startsWith("db.") ? "db_event" : "generic",
-    deliveryId: pick(input.headers.get("x-osirus-delivery"), DELIVERY) ?? hash,
+    deliveryId: createHash("sha256").update(signed).digest("hex").slice(0, 40),
     repository: null,
     ref: null,
     sha: null,

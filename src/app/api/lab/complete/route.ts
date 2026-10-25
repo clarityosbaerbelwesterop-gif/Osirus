@@ -1,5 +1,14 @@
 import { join } from "node:path";
+import { quotaEnforced, quotaStatusFor } from "@/lib/billing/enforce";
+import { serializeQuota } from "@/lib/billing/quota";
 import { loadProductSession } from "@/lib/product/session";
+import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
+import {
+  enforceRateLimit,
+  RateLimitError,
+  RateLimitUnavailableError,
+} from "@/lib/security/rate-limit";
+import { hasSameOrigin, readJsonBody } from "@/lib/security/request";
 import { labKeyPool } from "../../../../../ai-lab/inference/key-pool";
 import { redactSecrets } from "../../../../../ai-lab/observability/log";
 import { programInBuild } from "../../../../../ai-lab/programs/catalog";
@@ -36,7 +45,44 @@ export async function POST(request: Request) {
   const session = await loadProductSession();
   if (!session)
     return Response.json({ error: "unauthorized" }, { status: 401 });
-  const body = (await request.json().catch(() => null)) as {
+  if (!hasSameOrigin(request))
+    return Response.json({ error: "invalid_origin" }, { status: 403 });
+  try {
+    await enforceRateLimit({
+      subject: `user:${session.identity.userId}`,
+      route: "lab.complete",
+      limit: 20,
+    });
+  } catch (error) {
+    if (error instanceof RateLimitError)
+      return Response.json({ error: "rate_limited" }, { status: 429 });
+    if (error instanceof RateLimitUnavailableError)
+      return Response.json({ error: "service_unavailable" }, { status: 503 });
+    throw error;
+  }
+  if (quotaEnforced()) {
+    const quota = await quotaStatusFor(session.identity.userId);
+    if (!quota.allowed) {
+      const noPlan = quota.reason === "no_subscription";
+      return Response.json(
+        {
+          error: noPlan ? "subscription_required" : "quota_exhausted",
+          message: publicRuntimeErrorMessage({
+            code: noPlan ? "subscription_required" : "quota_exhausted",
+          }),
+          quota: serializeQuota(quota),
+        },
+        {
+          status: noPlan ? 402 : 429,
+          headers: noPlan
+            ? undefined
+            : { "Retry-After": String(Math.ceil(quota.retryAfterMs / 1000)) },
+        },
+      );
+    }
+  }
+  const parsedBody = await readJsonBody(request, 256_000);
+  const body = (parsedBody.ok ? parsedBody.value : null) as {
     modelId?: unknown;
     interaction?: unknown;
     messages?: unknown;

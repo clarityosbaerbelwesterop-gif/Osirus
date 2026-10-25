@@ -1,9 +1,12 @@
 import { z } from "zod";
 import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
+import { quotaEnforced, quotaStatusFor } from "@/lib/billing/enforce";
+import { serializeQuota } from "@/lib/billing/quota";
 import { createRougeRuntime } from "@/lib/rouge";
 import { rougeErrorMessage } from "@/lib/rouge/errors";
 import type { RougeStreamEvent } from "@/lib/rouge/types";
+import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 import { hasSameOrigin, readJsonBody } from "@/lib/security/request";
 import {
   enforceRateLimit,
@@ -95,6 +98,28 @@ export async function POST(request: Request) {
       return Response.json({ error: "service_unavailable" }, { status: 503 });
     }
     throw error;
+  }
+
+  if (quotaEnforced()) {
+    const quota = await quotaStatusFor(identity.userId);
+    if (!quota.allowed) {
+      const noPlan = quota.reason === "no_subscription";
+      return Response.json(
+        {
+          error: noPlan ? "subscription_required" : "quota_exhausted",
+          message: publicRuntimeErrorMessage({
+            code: noPlan ? "subscription_required" : "quota_exhausted",
+          }),
+          quota: serializeQuota(quota),
+        },
+        {
+          status: noPlan ? 402 : 429,
+          headers: noPlan
+            ? undefined
+            : { "Retry-After": String(Math.ceil(quota.retryAfterMs / 1000)) },
+        },
+      );
+    }
   }
 
   // "ultra" maps to the core's most expensive reasoning level. Until plans

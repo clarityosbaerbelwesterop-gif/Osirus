@@ -86,7 +86,7 @@ export const Composer = forwardRef<
     /** User-selected working mode; "auto" lets the router decide alone. */
     mode: ModePreference;
     onModeChange: (mode: ModePreference) => void;
-    labModel: LabModelId;
+    labModel: string;
     interaction: InteractionPreference;
     labActivity: string | null;
     labPhases?: readonly string[];
@@ -181,15 +181,15 @@ export const Composer = forwardRef<
             <label>
               Model
               <span id="lab-model-route" className="sr-only">
-                Eigene Modelle werden nicht angeboten.
+                UNOROUTER models appear when the key list is known.
               </span>
               <select
                 aria-label="Model"
                 aria-describedby="lab-model-route"
-                value="unavailable"
                 disabled
+                value=""
               >
-                <option value="unavailable">Bald verfügbar</option>
+                <option value="">Bald verfügbar</option>
               </select>
             </label>
           </div>

@@ -82,6 +82,16 @@ export async function saveAttachment(
   await assertWithinLimit(identity, "attachmentsPerDay");
   const inspection = inspectAttachment(filename, input.bytes);
   if (!inspection.ok) throw new AttachmentError(inspection.error);
+  let resolvedSessionId: string | null = null;
+  if (input.sessionId) {
+    const [sessionRow] = await queryAs<{ id: string }>(
+      identity.userId,
+      `select id from osirus.sessions where id = $1::uuid and workspace_id = $2::uuid limit 1`,
+      [input.sessionId, identity.workspaceId],
+    );
+    if (!sessionRow) throw new Error("session_not_accessible");
+    resolvedSessionId = sessionRow.id;
+  }
   const parsed = await parseAttachment(inspection.kind, input.bytes);
   const [row] = await queryAs<Row>(
     identity.userId,
@@ -95,7 +105,7 @@ export async function saveAttachment(
     [
       identity.organizationId,
       identity.workspaceId,
-      input.sessionId ?? null,
+      resolvedSessionId,
       identity.userId,
       filename,
       inspection.mediaType,
