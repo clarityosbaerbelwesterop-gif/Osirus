@@ -4,7 +4,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { expect, it } from "vitest";
 import { arenaById } from "../src/lib/intelligence/generation/arenas";
-import type { CodeHypothesisContent } from "../src/lib/intelligence/rsi/exchange";
+import { parseCodeOrder } from "../src/lib/intelligence/rsi/runner-intake";
 import {
   credentialFreeEnv,
   evidenceTable,
@@ -88,25 +88,16 @@ async function measure(input: {
 }
 
 it("attempts one bounded code improvement", async () => {
-  const taken = JSON.parse(
+  const raw = JSON.parse(
     process.env.RSI_HYPOTHESIS ??
       (await readFile(
         process.env.RSI_HYPOTHESIS_FILE ?? "hypothesis.json",
         "utf8",
       )),
-  ) as {
-    id: string;
-    calls: number;
-    hypothesis: CodeHypothesisContent;
-    model?: string;
-  };
-  const { hypothesis } = taken;
-  // The server names the probe-verified free model (M49); RSI_MODEL only
-  // overrides it for a local run.
-  const model =
-    process.env.RSI_MODEL ?? taken.model ?? "deepseek-v4-pro-0813:free";
+  ) as unknown;
+  const parsedOrder = parseCodeOrder(raw);
   const report = {
-    id: taken.id,
+    id: parsedOrder.ok ? parsedOrder.order.id : "refused",
     outcome: "no_improvement" as
       | "ready"
       | "pr_opened"
@@ -125,15 +116,28 @@ it("attempts one bounded code improvement", async () => {
     },
     spent: { modelCalls: 0, tokens: 0 },
   };
+  let statement = "";
   const finish = async () => {
     await writeFile(reportPath, JSON.stringify(report));
     if (process.env.GITHUB_STEP_SUMMARY)
       await writeFile(
         process.env.GITHUB_STEP_SUMMARY,
-        `## Software RSI\n\n${hypothesis.statement}\n\n**${report.outcome}**: ${report.summary}\n`,
+        `## Software RSI\n\n${statement}\n\n**${report.outcome}**: ${report.summary}\n`,
         { flag: "a" },
       );
   };
+  if (!parsedOrder.ok) {
+    report.outcome = "refused";
+    report.summary = `fetched order refused (${parsedOrder.reason})`;
+    await finish();
+    return;
+  }
+  const taken = parsedOrder.order;
+  const { hypothesis } = taken;
+  statement = hypothesis.statement;
+  // The server names the probe-verified free model (M49); RSI_MODEL only
+  // overrides it for a local run.
+  const model = process.env.RSI_MODEL ?? taken.model;
 
   // The trust root is never touched; the allowlist is enforced first.
   const area = trustRootArea(hypothesis.file);
