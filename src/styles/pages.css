@@ -118,23 +118,43 @@
 }
 
 .landing-hero {
-  max-width: 820px;
+  max-width: 840px;
   margin: auto 0;
-  padding: var(--space-16) 0;
+  padding: var(--space-16) 0 var(--space-12);
+}
+
+.landing-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  margin-bottom: var(--space-4);
+  color: var(--color-text-muted);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.landing-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-accent);
 }
 
 .landing-hero h1 {
-  font-size: clamp(2.25rem, 6vw, 4rem);
+  font-size: clamp(2.5rem, 5.5vw, 4.25rem);
   font-weight: var(--weight-semibold);
-  line-height: 1.05;
+  letter-spacing: -0.035em;
+  line-height: 1.04;
 }
 
 .landing-copy {
-  max-width: 60ch;
+  max-width: 62ch;
   margin-top: var(--space-5);
   color: var(--color-text-muted);
-  font-size: clamp(1rem, 1.6vw, 1.125rem);
-  line-height: var(--leading-normal);
+  font-size: clamp(1.025rem, 1.5vw, 1.1875rem);
+  line-height: var(--leading-relaxed);
 }
 
 .landing-actions {

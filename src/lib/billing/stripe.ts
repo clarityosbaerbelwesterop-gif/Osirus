@@ -41,6 +41,65 @@ export function priceIdFor(
   return name ? (prices[name] ?? null) : null;
 }
 
+export function lookupKeyFor(plan: PaidPlan): string {
+  return `osirus_${plan}_monthly_eur`;
+}
+
+const resolvedPriceCache = new Map<PaidPlan, string>();
+
+/**
+ * Resolves the Stripe Price ID for a paid plan:
+ * 1. Returns the configured STRIPE_PRICE_* env var when present.
+ * 2. Otherwise queries Stripe by `lookup_key` (`osirus_<plan>_monthly_eur`)
+ *    and provisions the product + monthly EUR price on the fly if missing.
+ */
+export async function resolvePriceId(
+  plan: PaidPlan,
+  prices: Record<string, string | undefined> = priceEnv(),
+): Promise<string | null> {
+  const fromEnv = priceIdFor(plan, prices);
+  if (fromEnv) return fromEnv;
+  const cached = resolvedPriceCache.get(plan);
+  if (cached) return cached;
+  if (!billingConfigured()) return null;
+
+  try {
+    const s = stripe();
+    const lookupKey = lookupKeyFor(plan);
+    const existing = await s.prices.list({
+      lookup_keys: [lookupKey],
+      limit: 1,
+    });
+    if (existing.data[0]?.id) {
+      resolvedPriceCache.set(plan, existing.data[0].id);
+      return existing.data[0].id;
+    }
+    const cfg = BILLING_CONFIG.plans[plan];
+    const search = await s.products.search({
+      query: `metadata['osirus_plan']:'${plan}'`,
+    });
+    const product =
+      search.data[0] ??
+      (await s.products.create({
+        name: `Osirus ${cfg.label}`,
+        metadata: { osirus_plan: plan },
+      }));
+    const created = await s.prices.create({
+      product: product.id,
+      currency: "eur",
+      unit_amount: cfg.monthlyPriceEur * 100,
+      recurring: { interval: "month" },
+      tax_behavior: "inclusive",
+      lookup_key: lookupKey,
+      metadata: { osirus_plan: plan },
+    });
+    resolvedPriceCache.set(plan, created.id);
+    return created.id;
+  } catch {
+    return null;
+  }
+}
+
 /** The plan a Stripe price id belongs to; null for an unknown price. */
 export function planForPrice(
   priceId: string | null | undefined,

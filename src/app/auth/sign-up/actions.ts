@@ -55,11 +55,33 @@ export async function signUpWithEmail(
     }
   }
 
-  const { error } = await auth.signUp.email({ name, email, password });
-  if (error) {
+  const result = await auth.signUp.email({ name, email, password });
+  if (result.error) {
     return {
       error: "Unable to create account with these details. Please try again.",
     };
+  }
+
+  const createdUser = (
+    result as {
+      data?: {
+        user?: { id?: string; email?: string | null; name?: string | null };
+      };
+    }
+  ).data?.user;
+  if (process.env.DATABASE_URL && createdUser?.id) {
+    try {
+      const { ensureOsirusUser } = await import("@/lib/auth/bootstrap");
+      const { recordCurrentConsent } = await import("@/lib/legal/store");
+      await ensureOsirusUser({
+        id: createdUser.id,
+        email: createdUser.email ?? email,
+        name: createdUser.name ?? name,
+      });
+      await recordCurrentConsent(createdUser.id);
+    } catch {
+      // If DB consent recording fails here, /app will redirect to /consent.
+    }
   }
 
   redirect("/app");

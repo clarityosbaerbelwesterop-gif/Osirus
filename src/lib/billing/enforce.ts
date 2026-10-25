@@ -3,6 +3,7 @@ import type { ModelProvider, ModelRole } from "../models/provider";
 import { cachedProvider } from "../models/cache";
 import { ProviderError } from "../models/unorouter";
 import { env } from "../env";
+import { isNvidiaTopModelId } from "../../config/recommendations";
 import {
   BILLING_CONFIG,
   type BillingPlan,
@@ -141,8 +142,12 @@ function assertFreeModel(
 ) {
   const id = provider.modelId(role);
   // Verified free-pool models (:free) consume zero paid credit and are the
-  // default unpinned pool in free-first mode.
+  // default unpinned pool in free-first mode. Curated Top NVIDIA models are
+  // also permitted on the default product allowlist.
   if (id.endsWith(":free")) return;
+  if (limits === BILLING_CONFIG.freePlanLimits && isNvidiaTopModelId(id)) {
+    return;
+  }
   assertFreePlanAllowed(
     role === "VERIFY" ? { reviewerModel: id } : { model: id },
     limits,

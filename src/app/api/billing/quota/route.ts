@@ -1,3 +1,4 @@
+import { authConfigured } from "@/lib/auth/server";
 import { isFreeTierEnabled } from "@/lib/billing/config";
 import {
   quotaEnforced,
@@ -19,6 +20,7 @@ export const runtime = "nodejs";
  * should offer upgrading next to waiting.
  */
 export async function GET() {
+  if (!authConfigured) return json({ error: "unauthorized" }, 401);
   const identity = await apiIdentity();
   if (!identity) return json({ error: "unauthorized" }, 401);
   const [status, subscription] = await Promise.all([

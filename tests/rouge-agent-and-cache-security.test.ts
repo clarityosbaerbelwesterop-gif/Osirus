@@ -1,10 +1,17 @@
 import { describe, expect, it, vi } from "vitest";
 import {
+  NVIDIA_TOP_MODELS,
+  ROUGE_AGENT_DEFAULT_MODEL,
+  ROUGE_AGENT_REVIEWER_MODEL,
+} from "../src/config/recommendations";
+import { coerceAgentDecision } from "../src/lib/agent/decision";
+import {
   cachedProvider,
   compactMessagesForCost,
   ModelCostCache,
   normalizeTextForSemanticCache,
 } from "../src/lib/models/cache";
+import { listNvidiaTopModels } from "../src/lib/models/key-models";
 import type { ModelProvider, ModelRole } from "../src/lib/models/provider";
 import {
   createRougeAgent,
@@ -317,5 +324,88 @@ describe("Security hardening regressions (RT2-06, RT2-09)", () => {
     const r2 = await signInWithEmail(null, f2);
     expect(r1).toEqual({ error: "Invalid email or password." });
     expect(r2).toEqual({ error: "Invalid email or password." });
+  });
+
+  it("coerces non-strict model JSON decisions so agent loops do not fail with invalid_json", () => {
+    const d1 = coerceAgentDecision({
+      action: "finish",
+      finalAnswer: "Das Ergebnis lautet 42.",
+    });
+    expect(d1.action).toBe("FINISH");
+    expect(d1.answer).toBe("Das Ergebnis lautet 42.");
+    expect(d1.summary.length).toBeGreaterThan(0);
+
+    const d2 = coerceAgentDecision({
+      response: "Direkte Antwort ohne explizite Action.",
+    });
+    expect(d2.action).toBe("FINISH");
+    expect(d2.answer).toBe("Direkte Antwort ohne explizite Action.");
+  });
+
+  it("lists only curated Top NVIDIA models in listNvidiaTopModels", async () => {
+    const res = await listNvidiaTopModels({
+      baseUrl: "https://integrate.api.nvidia.com/v1/chat/completions",
+      keys: ["nvapi-test-key"],
+      fetchImpl: async () =>
+        new Response(
+          JSON.stringify({
+            data: [
+              { id: "nvidia/llama-3.1-nemotron-ultra-253b-v1" },
+              { id: "deepseek-ai/deepseek-r1" },
+              { id: "some-other-unlisted-model" },
+            ],
+          }),
+          { status: 200 },
+        ),
+    });
+    expect(res.availability).toBe("ready");
+    expect(res.models.map((m) => m.id)).toEqual([
+      "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+      "deepseek-ai/deepseek-r1",
+    ]);
+    for (const m of res.models) {
+      expect(NVIDIA_TOP_MODELS).toContain(m.id);
+      expect(m.vendor).toBe("nvidia");
+    }
+  });
+
+  it("self-heals transient clone errors in RougeAgent and preserves model/effort/subAgent config", async () => {
+    const agent = createRougeAgent({
+      executorModelId: ROUGE_AGENT_DEFAULT_MODEL,
+      reviewerModelId: ROUGE_AGENT_REVIEWER_MODEL,
+      thinkingEffort: "ultra",
+      subAgentCount: 3,
+      selfHealingRecovery: true,
+    });
+    let calls = 0;
+    const result = await agent.executeUntilPerfect({
+      objective: "Ensure resilient execution",
+      initialFiles: { "src/a.ts": "export const x = 1;" },
+      cloneExecutor: async (spec) => {
+        calls += 1;
+        if (calls === 1) throw new Error("transient network glitch");
+        return {
+          summary: `OK ${spec.role}`,
+          patches: [],
+          findings: [],
+          confidence: 0.95,
+        };
+      },
+      verifier: async () => [
+        {
+          name: "check",
+          kind: "unit_test",
+          passed: true,
+          output: "ok",
+          durationMs: 1,
+        },
+      ],
+    });
+    expect(result.status).toBe("verified_perfect");
+    expect(result.selfHealedErrors).toBe(1);
+    expect(result.executorModelId).toBe(ROUGE_AGENT_DEFAULT_MODEL);
+    expect(result.reviewerModelId).toBe(ROUGE_AGENT_REVIEWER_MODEL);
+    expect(result.thinkingEffort).toBe("ultra");
+    expect(result.subAgentCount).toBe(3);
   });
 });

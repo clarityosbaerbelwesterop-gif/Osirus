@@ -532,14 +532,16 @@ export function ChatHub(props: {
         if (isSessionId(headerSession)) {
           sessionRef.current = headerSession;
           setSessionId(headerSession);
-          if (!shell.sessions.some((item) => item.id === headerSession)) {
-            upsertSession({
-              id: headerSession,
-              title: trimmed.slice(0, 120),
-              updatedAt: new Date().toISOString(),
-              surface,
-            });
-          }
+          const existingSession = shell.sessions.find(
+            (item) => item.id === headerSession,
+          );
+          upsertSession({
+            id: headerSession,
+            title: existingSession?.title ?? trimmed.slice(0, 120),
+            updatedAt: new Date().toISOString(),
+            pinnedAt: existingSession?.pinnedAt ?? null,
+            surface,
+          });
           window.history.replaceState(
             null,
             "",

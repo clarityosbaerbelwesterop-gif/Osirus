@@ -154,7 +154,7 @@ export class RuntimeRepository {
       this.actorId,
       `select id, surface from osirus.sessions
         where workspace_id = $1::uuid and archived_at is null
-          and ($2::text is null or surface = $2)
+          and ($2::text is null or surface = $2 or ($2 = 'ai' and surface is null))
         order by updated_at desc
         limit 1`,
       [workspaceId, surface ?? null],
@@ -382,7 +382,7 @@ export class RuntimeRepository {
     );
     return {
       sessionId: resolved,
-      surface: surfaceRows[0]?.surface ?? "agent",
+      surface: surfaceRows[0]?.surface ?? "ai",
       messages: messages.map((message) => ({
         id: message.id,
         role: message.role,

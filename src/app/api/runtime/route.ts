@@ -13,7 +13,7 @@ import {
 import { parseEffort } from "@/lib/product/surfaces";
 import { isAllowedProductModel } from "@/lib/models/allowlist";
 import { env, serverKeys } from "@/lib/env";
-import { listKeyModels } from "@/lib/models/key-models";
+import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
 import { routeCapabilities } from "@/lib/runtime/router";
 import { encodeSse } from "@/lib/runtime/sse";
 import type { RuntimePacket } from "@/lib/runtime/types";
@@ -144,14 +144,18 @@ export async function POST(request: Request) {
       );
     }
     const modelId = requested;
-    const keyModels = await listKeyModels({
-      baseUrl: env.UNOROUTER_BASE_URL,
-      keys: serverKeys(),
-    });
-    if (
-      keyModels.availability !== "ready" ||
-      !keyModels.models.some((model) => model.id === modelId)
-    ) {
+    const [nvidia, keyModels] = await Promise.all([
+      listNvidiaTopModels(),
+      listKeyModels({
+        baseUrl: env.UNOROUTER_BASE_URL,
+        keys: serverKeys(),
+      }),
+    ]);
+    const allowed = [
+      ...(nvidia.availability === "ready" ? nvidia.models : []),
+      ...(keyModels.availability === "ready" ? keyModels.models : []),
+    ];
+    if (!allowed.some((model) => model.id === modelId)) {
       return Response.json(
         {
           error: "key_models_unknown",

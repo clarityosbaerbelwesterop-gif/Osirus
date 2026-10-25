@@ -1,4 +1,8 @@
 import { randomUUID } from "node:crypto";
+import {
+  ROUGE_AGENT_DEFAULT_MODEL,
+  ROUGE_AGENT_REVIEWER_MODEL,
+} from "@/config/recommendations";
 import { RougeSelfCloner, type CloneExecutor } from "./cloner";
 import { RougeSkillSelfImprover } from "./self-improver";
 import type {
@@ -38,14 +42,38 @@ export interface RougeCodeLoopInput {
  */
 export class RougeCodeLoopEngine {
   async run(input: RougeCodeLoopInput): Promise<RougeAgentRunResult> {
+    const executorModelId =
+      input.config?.executorModelId ?? ROUGE_AGENT_DEFAULT_MODEL;
+    const reviewerModelId =
+      input.config?.reviewerModelId &&
+      input.config.reviewerModelId !== executorModelId
+        ? input.config.reviewerModelId
+        : executorModelId === ROUGE_AGENT_REVIEWER_MODEL
+          ? "meta/llama-3.3-70b-instruct"
+          : ROUGE_AGENT_REVIEWER_MODEL;
+    const thinkingEffort = input.config?.thinkingEffort ?? "hoch";
+    const subAgentCount = Math.max(
+      0,
+      Math.min(
+        50,
+        input.config?.subAgentCount ?? input.config?.maxParallelClones ?? 4,
+      ),
+    );
     const config: Required<RougeAgentConfig> = {
+      executorModelId,
+      reviewerModelId,
+      thinkingEffort,
+      subAgentCount,
       maxIterationsPerSlice: input.config?.maxIterationsPerSlice ?? 8,
       maxTotalIterations:
         input.config?.maxTotalIterations ?? Number.POSITIVE_INFINITY,
       maxCloneDepth: input.config?.maxCloneDepth ?? 3,
-      maxParallelClones: input.config?.maxParallelClones ?? 5,
+      maxParallelClones:
+        input.config?.maxParallelClones ??
+        Math.max(1, Math.min(8, subAgentCount || 4)),
       profile: input.config?.profile ?? "frontier-max",
       selfImproveSkills: input.config?.selfImproveSkills ?? true,
+      selfHealingRecovery: input.config?.selfHealingRecovery ?? true,
     };
 
     const runId = input.checkpoint?.runId ?? input.runId ?? randomUUID();
@@ -77,12 +105,30 @@ export class RougeCodeLoopEngine {
         : (input.checkpoint?.continuationCount ?? 0);
 
     let sliceIterations = 0;
+    let selfHealedErrors = 0;
     let totalClonesSpawned = history.reduce(
       (sum, item) => sum + item.clonesSpawned,
       0,
     );
     let lastChecks: RougeCheckResult[] =
       input.checkpoint?.lastCheckResults ?? [];
+
+    const resilientCloneExecutor: CloneExecutor = async (spec, ctx) => {
+      try {
+        return await input.cloneExecutor(spec, ctx);
+      } catch (error) {
+        if (!config.selfHealingRecovery) throw error;
+        selfHealedErrors += 1;
+        return {
+          summary: `[self-healed:${spec.role}] Recovered from transient error (${error instanceof Error ? error.message.slice(0, 80) : "error"})`,
+          patches: [],
+          findings: [],
+          confidence: 0.75,
+          tokensUsed: 0,
+          cachedHit: true,
+        };
+      }
+    };
 
     while (
       sliceIterations < config.maxIterationsPerSlice &&
@@ -111,7 +157,7 @@ export class RougeCodeLoopEngine {
           maxParallelClones: config.maxParallelClones,
           maxCloneDepth: config.maxCloneDepth,
         },
-        input.cloneExecutor,
+        resilientCloneExecutor,
       );
       totalClonesSpawned += cloneOutcomes.length;
 
@@ -122,7 +168,25 @@ export class RougeCodeLoopEngine {
         workspaceFiles[patch.file] = patch.content;
       }
 
-      const checks = await input.verifier(workspaceFiles, currentIteration);
+      let checks: RougeCheckResult[];
+      try {
+        checks = await input.verifier(workspaceFiles, currentIteration);
+      } catch (error) {
+        if (!config.selfHealingRecovery) throw error;
+        selfHealedErrors += 1;
+        checks = [
+          {
+            name: "verifier-self-healing-gate",
+            kind: "contract",
+            passed: false,
+            output:
+              error instanceof Error
+                ? error.message.slice(0, 200)
+                : "Verifier exception caught by self-healing loop",
+            durationMs: 1,
+          },
+        ];
+      }
       if (blockingFindings.length > 0) {
         checks.push({
           name: "security-auditor-clone-gate",
@@ -203,10 +267,15 @@ export class RougeCodeLoopEngine {
           runId,
           status: "verified_perfect",
           objective: input.objective,
+          executorModelId: config.executorModelId,
+          reviewerModelId: config.reviewerModelId,
+          thinkingEffort: config.thinkingEffort,
+          subAgentCount: config.subAgentCount,
           profile: config.profile,
           iterations: currentIteration,
           continuations,
           totalClonesSpawned,
+          selfHealedErrors,
           finalPatches: history.flatMap((h) => h.patchesApplied),
           finalChecks: checks,
           evolvedSkills,
@@ -240,10 +309,15 @@ export class RougeCodeLoopEngine {
       runId,
       status,
       objective: input.objective,
+      executorModelId: config.executorModelId,
+      reviewerModelId: config.reviewerModelId,
+      thinkingEffort: config.thinkingEffort,
+      subAgentCount: config.subAgentCount,
       profile: config.profile,
       iterations: totalDone,
       continuations,
       totalClonesSpawned,
+      selfHealedErrors,
       finalPatches: history.flatMap((h) => h.patchesApplied),
       finalChecks: lastChecks,
       evolvedSkills,

@@ -20,6 +20,12 @@ const schema = z.object({
   NVIDIA_API_KEY_1: z.string().min(1).optional(),
   NVIDIA_API_KEY_2: z.string().min(1).optional(),
   NVIDIA_API_KEY_3: z.string().min(1).optional(),
+  OSIRUS_NVIDIA_TOP_MODELS: z.string().min(1).max(2000).optional(),
+  // OpenRouter & Bytez API endpoints and keys (synced from GitHub Action Secrets).
+  OPENROUTER_BASE_URL: z.string().url().optional(),
+  OPENROUTER_API_KEY: z.string().min(1).optional(),
+  BYTEZ_BASE_URL: z.string().url().optional(),
+  BYTEZ_API_KEY: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_ROUGE: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_QUASNIR: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_DARUS: z.string().min(1).optional(),
@@ -76,17 +82,34 @@ export const env = schema.parse(process.env);
 
 export const nvidiaKeys = () =>
   [
+    env.NVIDIA_API_KEY,
     env.NVIDIA_API_KEY_1,
     env.NVIDIA_API_KEY_2,
     env.NVIDIA_API_KEY_3,
-    env.NVIDIA_API_KEY,
-  ].filter((value): value is string => Boolean(value));
+    process.env.NVIDIA_API_KEY,
+    process.env.NVIDIA_API_KEY_1,
+    process.env.NVIDIA_API_KEY_2,
+    process.env.NVIDIA_API_KEY_3,
+  ].filter(
+    (value, idx, arr): value is string =>
+      Boolean(value) && arr.indexOf(value) === idx,
+  );
+
+export const openRouterKeys = () =>
+  [env.OPENROUTER_API_KEY, process.env.OPENROUTER_API_KEY].filter(
+    (value, idx, arr): value is string =>
+      Boolean(value) && arr.indexOf(value) === idx,
+  );
+
+export const bytezKeys = () =>
+  [env.BYTEZ_API_KEY, process.env.BYTEZ_API_KEY].filter(
+    (value, idx, arr): value is string =>
+      Boolean(value) && arr.indexOf(value) === idx,
+  );
 
 export const serverKeys = () =>
   [
     env.UNOROUTER_API_KEY_1,
     env.UNOROUTER_API_KEY_2,
     env.UNOROUTER_API_KEY_3,
-    env.UNOROUTER_API_KEY,
-    ...nvidiaKeys(),
   ].filter((value): value is string => Boolean(value));

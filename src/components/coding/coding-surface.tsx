@@ -11,7 +11,10 @@ import {
   codingToolsNeeded,
   routeCodingEffort,
 } from "@/lib/product/effort-router";
-import { PRODUCT_MODEL_ALLOWLIST } from "@/config/recommendations";
+import {
+  NVIDIA_TOP_MODELS,
+  PRODUCT_MODEL_ALLOWLIST,
+} from "@/config/recommendations";
 import { productModelOrDefault } from "@/lib/models/allowlist";
 import { draftAfterSurfaceChange, type EffortId } from "@/lib/product/surfaces";
 import type { RunSnapshot } from "@/lib/runtime/types";
@@ -63,7 +66,10 @@ export function CodingSurface(props: {
   const [branches, setBranches] = useState<string[] | null>(null);
   const [branch, setBranch] = useState("");
   const [model, setModel] = useState(() =>
-    productModelOrDefault(props.initialModel),
+    props.initialModel &&
+    (PRODUCT_MODEL_ALLOWLIST as readonly string[]).includes(props.initialModel)
+      ? productModelOrDefault(props.initialModel)
+      : NVIDIA_TOP_MODELS[0],
   );
   const [chosen, setChosen] = useState<EffortId | null>(
     props.initialEffortChosen ? props.initialEffort : null,
@@ -482,7 +488,7 @@ export function CodingSurface(props: {
                   setModel(productModelOrDefault(event.target.value))
                 }
               >
-                {PRODUCT_MODEL_ALLOWLIST.map((id) => (
+                {NVIDIA_TOP_MODELS.map((id) => (
                   <option key={id} value={id}>
                     {id}
                   </option>

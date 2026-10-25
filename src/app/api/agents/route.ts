@@ -3,7 +3,7 @@ import { env, serverKeys } from "@/lib/env";
 import { apiIdentity, guardWrite, json } from "@/lib/product/api";
 import { createAgent, listAgents } from "@/lib/agents/store";
 import { isRetiredProductModel } from "@/lib/models/catalog";
-import { listKeyModels } from "@/lib/models/key-models";
+import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -15,11 +15,20 @@ const schema = z.object({
 });
 
 async function allowedModelIds() {
-  const list = await listKeyModels({
-    baseUrl: env.UNOROUTER_BASE_URL,
-    keys: serverKeys(),
-  });
-  return list;
+  const [nvidia, unorouter] = await Promise.all([
+    listNvidiaTopModels(),
+    listKeyModels({
+      baseUrl: env.UNOROUTER_BASE_URL,
+      keys: serverKeys(),
+    }),
+  ]);
+  const merged = [
+    ...(nvidia.availability === "ready" ? nvidia.models : []),
+    ...(unorouter.availability === "ready" ? unorouter.models : []),
+  ];
+  return merged.length
+    ? ({ availability: "ready" as const, models: merged } as const)
+    : unorouter;
 }
 
 export async function GET() {

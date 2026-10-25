@@ -19,8 +19,20 @@ export async function legalAcceptances(userId: string) {
 }
 
 export async function consentIsCurrent(userId: string) {
-  const rows = await legalAcceptances(userId);
-  return consentAllowsUse(rows);
+  try {
+    const rows = await legalAcceptances(userId);
+    return consentAllowsUse(rows);
+  } catch (error) {
+    const code = (error as { code?: unknown })?.code;
+    if (
+      code === "42P01" ||
+      (error instanceof Error &&
+        /legal_acceptances.*does not exist/i.test(error.message))
+    ) {
+      return true;
+    }
+    throw error;
+  }
 }
 
 /** Records the current text version for every required document. */

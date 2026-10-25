@@ -1,8 +1,7 @@
 import { AgentsStudio } from "@/components/agents/agents-studio";
 import { PageFrame } from "@/components/shell/page-frame";
 import { listAgents } from "@/lib/agents/store";
-import { env, serverKeys } from "@/lib/env";
-import { listKeyModels } from "@/lib/models/key-models";
+import { listNvidiaTopModels } from "@/lib/models/key-models";
 import { requireProductSession } from "@/lib/product/session";
 
 export const dynamic = "force-dynamic";
@@ -11,10 +10,7 @@ export default async function AgentsPage() {
   const { identity } = await requireProductSession();
   const [agents, models] = await Promise.all([
     listAgents(identity),
-    listKeyModels({
-      baseUrl: env.UNOROUTER_BASE_URL,
-      keys: serverKeys(),
-    }),
+    listNvidiaTopModels(),
   ]);
   return (
     <PageFrame
