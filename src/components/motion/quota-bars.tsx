@@ -69,8 +69,8 @@ function QuotaBar({
 
 /** Placeholder window shown until quota is served by the backend. */
 export const PLACEHOLDER_QUOTA = {
-  fiveHourRatio: 1,
-  weekRatio: 0.4,
-  fiveHourRefill: "Wieder verfügbar in 2 h 14 min",
+  fiveHourRatio: 0.15,
+  weekRatio: 0.2,
+  fiveHourRefill: null,
   note: "Platzhalter, bis das Kontingent vom Server kommt.",
 } as const;

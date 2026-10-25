@@ -7,6 +7,7 @@ description: Frontier AI lab design system (Anthropic / OpenAI / Apple standard)
 # SKILL: Open Design — Frontier AI Lab UI & UX Polish
 
 ## Aesthetic & UX Standards (Anthropic / OpenAI / Apple Level)
+
 1. **Editorial Clarity & Calm Authority**:
    - Crisp typography, generous whitespace, subtle hairline borders (`1px solid`), and zero decorative noise or "coming soon" badges.
    - No intrusive cookie banners or draft disclaimers on legal/public pages when strictly-necessary storage is used.

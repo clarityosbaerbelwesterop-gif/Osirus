@@ -6,7 +6,7 @@ import {
   disconnectGithub,
   githubConnectorStatus,
 } from "@/lib/connectors/github";
-import { hasSameOrigin } from "@/lib/security/request";
+import { hasSameOrigin, readJsonBody } from "@/lib/security/request";
 import {
   enforceRateLimit,
   RateLimitError,
@@ -65,7 +65,13 @@ export async function POST(request: Request) {
     return Response.json({ error: "invalid_origin" }, { status: 403 });
   const blocked = await limited(who.userId);
   if (blocked) return blocked;
-  const body = bodySchema.safeParse(await request.json().catch(() => null));
+  const raw = await readJsonBody(request, 4 * 1024);
+  if (!raw.ok)
+    return Response.json(
+      { error: raw.error },
+      { status: raw.error === "payload_too_large" ? 413 : 400 },
+    );
+  const body = bodySchema.safeParse(raw.value);
   if (!body.success)
     return Response.json({ error: "invalid_request" }, { status: 400 });
   try {

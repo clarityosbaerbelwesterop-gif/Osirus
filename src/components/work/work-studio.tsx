@@ -223,7 +223,22 @@ export function WorkStudio(props: {
                 min={recommendation.subAgents.min}
                 max={recommendation.subAgents.max}
                 value={count}
-                onChange={(event) => setCount(Number(event.target.value))}
+                onChange={(event) => {
+                  const parsed = Number(event.target.value);
+                  if (!Number.isFinite(parsed)) {
+                    setCount(recommendation.subAgents.count);
+                    return;
+                  }
+                  setCount(
+                    Math.max(
+                      recommendation.subAgents.min,
+                      Math.min(
+                        recommendation.subAgents.max,
+                        Math.floor(parsed),
+                      ),
+                    ),
+                  );
+                }}
               />
             </label>
             <p className="subtle">

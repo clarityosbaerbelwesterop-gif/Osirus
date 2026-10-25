@@ -13,7 +13,7 @@ const FIELDS: {
   {
     name: "eula",
     label: "Ich akzeptiere die EULA",
-    href: "/legal/terms",
+    href: "/legal/eula",
   },
   {
     name: "privacy",

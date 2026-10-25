@@ -61,9 +61,9 @@ const COUNT: Record<
   "automations" | "webhookEndpoints" | "attachmentsPerDay",
   string
 > = {
-  automations: `select count(*) as n from osirus.automations where organization_id = $1::uuid`,
-  webhookEndpoints: `select count(*) as n from osirus.webhook_endpoints where organization_id = $1::uuid`,
-  attachmentsPerDay: `select count(*) as n from osirus.attachments where organization_id = $1::uuid and created_at > now() - interval '1 day'`,
+  automations: `select pg_advisory_xact_lock(hashtextextended($1::text || ':automations', 0)), count(*) as n from osirus.automations where organization_id = $1::uuid`,
+  webhookEndpoints: `select pg_advisory_xact_lock(hashtextextended($1::text || ':webhookEndpoints', 0)), count(*) as n from osirus.webhook_endpoints where organization_id = $1::uuid`,
+  attachmentsPerDay: `select pg_advisory_xact_lock(hashtextextended($1::text || ':attachmentsPerDay', 0)), count(*) as n from osirus.attachments where organization_id = $1::uuid and created_at > now() - interval '1 day'`,
 };
 
 /** Throws EntitlementError when creating one more would exceed the plan. */

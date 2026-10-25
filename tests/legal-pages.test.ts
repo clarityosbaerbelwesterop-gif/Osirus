@@ -17,6 +17,8 @@ vi.mock("next/link", () => ({
     ),
 }));
 
+import CookiesPage from "../src/app/legal/cookies/page";
+import EulaPage from "../src/app/legal/eula/page";
 import ImpressumPage from "../src/app/legal/impressum/page";
 import LegalLayout from "../src/app/legal/layout";
 import PrivacyPage from "../src/app/legal/privacy/page";
@@ -58,6 +60,7 @@ describe("legal pages", () => {
     expect(html).toContain("GitHub");
     expect(html).toContain("Stripe");
     expect(html).toContain("UNOROUTER");
+    expect(html).toContain("NVIDIA");
     expect(html).toContain("Anthropic");
     expect(html).toContain("OpenAI");
     expect(html).toContain("eu-central-1");
@@ -65,6 +68,8 @@ describe("legal pages", () => {
     expect(html).not.toContain("[[OPERATOR:");
     expect(html).not.toContain("USt-IdNr");
     expect(html).not.toContain("osirus.vercel.app");
+    expect(html).not.toContain("Entwurf:");
+    expect(html).not.toContain("noch nicht verfügbar");
   });
 
   it("terms state the four end prices, both quota windows, and German withdrawal rules", () => {
@@ -85,6 +90,23 @@ describe("legal pages", () => {
     expect(html).toContain("Bundesrepublik Deutschland");
     expect(html).not.toContain("[[OPERATOR:");
     expect(html).not.toContain("osirus.vercel.app");
+    expect(html).not.toContain("Entwurf:");
+    expect(html).not.toContain("noch nicht verfügbar");
+  });
+
+  it("all legal pages render without draft or warning banners", () => {
+    for (const Page of [
+      ImpressumPage,
+      PrivacyPage,
+      TermsPage,
+      CookiesPage,
+      EulaPage,
+    ]) {
+      const html = render(Page);
+      expect(html).not.toContain("Entwurf:");
+      expect(html).not.toContain("legal-draft");
+      expect(html).not.toContain("DRAFT");
+    }
   });
 
   it("legal layout links every public legal page", () => {

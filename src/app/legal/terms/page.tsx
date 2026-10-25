@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PRICE_TAX_NOTE } from "@/components/marketing/plans";
-import { LegalDraftNote } from "@/components/legal/draft-note";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
@@ -12,7 +11,6 @@ export const metadata = {
 export default function TermsPage() {
   return (
     <article className="legal-body" lang="de">
-      <LegalDraftNote />
       <h1>Allgemeine Geschäftsbedingungen</h1>
       <p>
         Diese Bedingungen gelten für die Nutzung von Osirus zwischen dir und{" "}
@@ -24,71 +22,74 @@ export default function TermsPage() {
 
       <h2>1. Leistung</h2>
       <p>
-        Osirus ist ein Workspace mit einem Assistenten. Du beschreibst einen
-        Auftrag. Aktionen nach außen, etwa ein Push in ein verbundenes
-        Repository, warten auf deine Freigabe. Modelle werden über UNOROUTER
-        aufgerufen. Ein getrenntes Prüfermodell, eigene Bots mit festem Modell,
-        Deploy und Gruppenchats sind noch nicht verfügbar.
+        Osirus ist ein KI-Workspace für Assistenz, mehrstufige Work-Aufträge mit
+        getrenntem Prüfermodell und parallelen Sub-Agents sowie eigene Agents
+        und Gruppenchats. Aktionen nach außen, etwa ein Push in ein verbundenes
+        Repository, warten auf deine ausdrückliche Freigabe. Sprachmodelle
+        werden über UNOROUTER und NVIDIA angebunden.
       </p>
       <p>
-        Antworten von Sprachmodellen können falsch sein. Osirus ist keine
-        Rechts-, Steuer- oder Medizinberatung. Prüfe Ergebnisse, bevor du sie
-        verwendest.
+        Antworten von Sprachmodellen können trotz Verifikation Fehler enthalten.
+        Osirus ist keine Rechts-, Steuer- oder Medizinberatung. Prüfe Ergebnisse
+        eigenverantwortlich, bevor du sie einsetzt.
       </p>
 
       <h2>2. Konto</h2>
       <p>
         Für den Workspace brauchst du ein Konto, per E-Mail und Passwort oder
-        über GitHub. Du bist für die Zugangsdaten und für das verantwortlich,
-        was unter deinem Konto geschieht. Die Registrierung setzt voraus, dass
-        du diese AGB und die <Link href="/legal/eula">EULA</Link> akzeptierst
-        und die <Link href="/legal/privacy">Datenschutzerklärung</Link> gelesen
-        hast.
+        über GitHub. Du bist für die Geheimhaltung deiner Zugangsdaten und für
+        Aktivitäten unter deinem Konto verantwortlich. Die Nutzung setzt voraus,
+        dass du diese AGB und die <Link href="/legal/eula">EULA</Link>{" "}
+        akzeptierst und die{" "}
+        <Link href="/legal/privacy">Datenschutzerklärung</Link> zur Kenntnis
+        genommen hast.
       </p>
 
       <h2>3. Abos und Preise</h2>
       <p>
-        Es kann ein begrenztes kostenloses Kontingent geben. Seinen Umfang zeigt
-        die App. Konkrete Mengen stehen hier nicht. Die Preise der Abos stehen
-        in der Planübersicht in der App und werden vor Vertragsschluss im
-        Checkout angezeigt. Es sind Endpreise. {PRICE_TAX_NOTE} Die Abrechnung
-        läuft über Stripe, sobald die Buchung freigeschaltet ist. Bis dahin ist
-        die Zahlung noch nicht verfügbar.
+        Es steht ein begrenztes kostenloses Kontingent zur Verfügung, dessen
+        aktuellen Stand die Anwendung anzeigt. Die Preise der kostenpflichtigen
+        Abonnements stehen in der Planübersicht in der App und werden vor
+        Vertragsschluss im Checkout ausgewiesen. Es sind Endpreise.{" "}
+        {PRICE_TAX_NOTE} Die Zahlungsabwicklung erfolgt über Stripe.
       </p>
+
       <h2>4. Kontingente</h2>
       <p>
-        Jedes Abo hat zwei Fenster: ein 5-Stunden-Kontingent und ein
-        Wochenkontingent. Die Größe der Fenster wird mit dem Abo festgelegt.
-        Konkrete Mengen stehen hier nicht, weil sie noch nicht veröffentlicht
-        sind. Ist ein Fenster aufgebraucht, wartet die weitere Nutzung, bis sich
-        dieses Fenster wieder füllt. Zusätzliches Guthaben kann nicht
-        dazugekauft werden. Ein erschöpftes Fenster schaltet nicht still auf ein
+        Jeder Tarif verfügt über zwei rollierende Nutzungsfenster: ein
+        5-Stunden-Kontingent und ein Wochenkontingent. Ist ein Fenster
+        aufgebraucht, pausiert die weitere Modellnutzung automatisch, bis sich
+        das jeweilige Fenster wieder auffüllt, oder du wechselst in einen
+        höheren Tarif. Zusätzliches Einzelguthaben kann nicht nachgekauft
+        werden. Ein erschöpftes Fenster schaltet niemals stillschweigend auf ein
         anderes Modell um.
       </p>
 
       <h2>5. Zulässige Nutzung</h2>
       <ul>
         <li>
-          Nutze den Dienst nicht, um Gesetze oder Rechte anderer zu brechen.
+          Nutze den Dienst nicht, um Gesetze oder Rechte Dritter zu verletzen.
         </li>
         <li>
-          Greife den Dienst, andere Mandanten oder die Infrastruktur nicht an.
+          Greife den Dienst, andere Mandanten, Sicherheitsgrenzen oder die
+          Infrastruktur nicht an und umgehe keine Kontingent- oder
+          Paywall-Schranken.
         </li>
         <li>
           Nutze den Assistenten nicht für rechtswidrige Inhalte und nicht, um
-          Sperren der Modellanbieter zu umgehen.
+          Sicherheitsfilter der Modellanbieter zu umgehen.
         </li>
       </ul>
 
       <h2>6. Laufzeit und Kündigung</h2>
       <p>
-        Ein gebuchtes Abo läuft bis zum Ende der laufenden Abrechnungsperiode
-        und verlängert sich, bis du kündigst. Du kannst zum Periodenende
-        kündigen, sobald die Buchung verfügbar ist, über das Kundenportal von
-        Stripe oder per E-Mail an {OPERATOR.email}. Nach dem Periodenende endet
-        das Abo. Das Konto kannst du unabhängig davon löschen lassen. Wir können
-        ein Konto sperren, das Abschnitt 5 verletzt, nach Möglichkeit mit
-        vorherigem Hinweis.
+        Ein gebuchtes Abonnement läuft jeweils für einen Monat und verlängert
+        sich automatisch um jeweils einen weiteren Monat, sofern du nicht vor
+        Ablauf der laufenden Abrechnungsperiode über das Stripe-Kundenportal in
+        den Einstellungen oder per E-Mail an {OPERATOR.email} kündigst. Nach dem
+        Periodenende endet das Abonnement. Dein Konto kannst du jederzeit
+        unabhängig davon löschen lassen. Wir können ein Konto bei erheblichen
+        Verstößen gegen Abschnitt 5 sperren.
       </p>
 
       <h2>7. Widerruf</h2>
@@ -101,10 +102,10 @@ export default function TermsPage() {
         dafür das folgende Muster verwenden, musst es aber nicht.
       </p>
       <p>
-        Hast du verlangt, dass wir vor Ablauf der Widerrufsfrist beginnen, und
-        ist die Leistung vollständig erbracht, erlischt das Widerrufsrecht.
-        Wurde die Leistung teilweise erbracht, zahlst du einen angemessenen
-        Betrag für das bis zum Widerruf Geleistete.
+        Hast du verlangt, dass wir vor Ablauf der Widerrufsfrist mit der
+        Leistung beginnen, und ist die Leistung vollständig erbracht, erlischt
+        das Widerrufsrecht. Wurde die Leistung teilweise erbracht, zahlst du
+        einen angemessenen Betrag für das bis zum Widerruf Geleistete.
       </p>
       <h3>Muster-Widerrufsformular</h3>
       <p>
@@ -140,21 +141,20 @@ export default function TermsPage() {
         unberührt.
       </p>
 
-      <h2>9. Recht</h2>
+      <h2>9. Anwendbares Recht</h2>
       <p>
         Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des
         UN-Kaufrechts. Wenn du Verbraucher bist, bleiben zwingende Vorschriften
         des Staates, in dem du deinen gewöhnlichen Aufenthalt hast, unberührt.
-        Für Kaufleute ist Gerichtsstand Moers, soweit zulässig.
+        Für Kaufleute ist Gerichtsstand Moers, soweit gesetzlich zulässig.
       </p>
 
       <h2>10. Änderung der Bedingungen</h2>
       <p>
         Wir können diese Bedingungen mit einem angemessenen Vorlauf ändern und
-        dich in der Anwendung oder per E-Mail informieren. Widersprichst du
-        nicht bis zum Wirksamwerden, gelten die neuen Bedingungen. Auf diese
-        Folge weisen wir im Hinweis hin. Kündigst du zum Änderungstermin, gelten
-        die bisherigen Bedingungen bis zum Vertragsende.
+        dich in der Anwendung oder per E-Mail informieren. Bei wesentlichen
+        Änderungen bitten wir dich in der Anwendung um deine ausdrückliche
+        Zustimmung zur neuen Fassung.
       </p>
     </article>
   );

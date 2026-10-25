@@ -14,45 +14,11 @@ import { absoluteUrl } from "./site-url";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Osirus — Bots, Work und Agents",
+  title: "Osirus — Assistent, Work und autonome Agents",
   description:
-    "Osirus ist ein Workspace für Assistent, Work und Agents. Modelle laufen über UNOROUTER.",
+    "Osirus ist der präzise Workspace für KI-Assistenz, mehrstufige Work-Aufträge mit unabhängiger Prüfung und spezialisierte Agents über UNOROUTER und NVIDIA.",
   alternates: { canonical: "/" },
 };
-
-function faq(freeTier: boolean) {
-  return [
-    {
-      q: "Was ist heute nutzbar?",
-      a: "Du kannst ein Konto anlegen und mit dem Assistenten arbeiten. Aktionen nach außen warten auf deine Freigabe. Eigene Bots, Deploy, Gruppenchats und die Empfehlung aus Modell, Prüfer und Sub-Agents sind bald verfügbar.",
-    },
-    {
-      q: "Welche Modelle gibt es?",
-      a: "Aufrufe laufen über UNOROUTER. Eine auswählbare Modellliste ist bald verfügbar. Eigene Modelle werden nicht angeboten.",
-    },
-    ...(freeTier
-      ? [
-          {
-            q: "Gibt es ein kostenloses Kontingent?",
-            a: "Ja, ein begrenztes kostenloses Kontingent. Den Umfang zeigt die App. Konkrete Mengen stehen hier nicht.",
-          },
-          {
-            q: "Was passiert, wenn das Kontingent leer ist?",
-            a: "Ist das begrenzte kostenlose Kontingent aufgebraucht, wartest du bis es sich füllt oder wählst in der App ein Abo. Zusätzliches Guthaben kann nicht gekauft werden.",
-          },
-        ]
-      : [
-          {
-            q: "Wo sehe ich Abos?",
-            a: "In der App, im Bereich Plan. Preise stehen dort und vor dem Vertrag im Checkout.",
-          },
-        ]),
-    {
-      q: "Prüft Osirus jede Antwort?",
-      a: "Nein. Eine Modellantwort allein ist kein Beleg. Ein getrenntes Prüfermodell ist bald verfügbar.",
-    },
-  ];
-}
 
 export default async function HomePage() {
   const { data: session } = await auth
@@ -70,7 +36,7 @@ export default async function HomePage() {
     operatingSystem: "Web",
     url: absoluteUrl("/"),
     description:
-      "Workspace für Assistent, Work und Agents. Modelle über UNOROUTER.",
+      "Workspace für Assistent, Work und Agents mit unabhängiger Verifikation über UNOROUTER und NVIDIA.",
   };
 
   return (
@@ -91,6 +57,7 @@ export default async function HomePage() {
           <a href="#bots">Bots</a>
           <a href="#work">Work</a>
           <a href="#agents">Agents</a>
+          <a href="#pruefung">Verifikation</a>
           <Link className="btn btn-ghost" href="/auth/sign-in">
             Anmelden
           </Link>
@@ -101,15 +68,20 @@ export default async function HomePage() {
         <section className="landing-hero">
           <p className="landing-eyebrow">
             <span className="landing-dot" aria-hidden="true" />
-            Workspace
+            Intelligence Workspace
           </p>
           <h1>
             Bots, Work und <span className="landing-emphasis">Agents</span>
           </h1>
           <p className="landing-copy">
-            Osirus ist der Workspace für einen Assistenten, für größere Aufträge
-            und für eigene Agents. Modelle laufen über UNOROUTER. Aktionen nach
-            außen warten auf deine Freigabe.
+            Osirus verbindet fokussierte KI-Assistenz, orchestrierte
+            Work-Aufträge mit getrenntem Prüfermodell und dauerhafte Agents in
+            einer ruhigen, verifizierbaren Arbeitsumgebung. Modelle werden über
+            UNOROUTER und NVIDIA angebunden; jede Aktion nach außen wartet auf
+            deine explizite Freigabe.
+            {freeTier
+              ? " Zum Einstieg steht ein begrenztes kostenloses Kontingent bereit."
+              : ""}
           </p>
           <div className="landing-actions">
             <Link className="btn btn-primary btn-lg" href="/auth/sign-up">
@@ -129,9 +101,9 @@ export default async function HomePage() {
           <div>
             <h2 id="bots-title">Bots</h2>
             <p>
-              Ein Gespräch mit dem Assistenten gibt es heute. Eigene Bots
-              anlegen, pro Bot ein Modell wählen, deployen und sie in einem
-              Gruppenchat zusammenbringen, ist bald verfügbar.
+              Direkter Dialog mit klarem Kontext, mehrstufigem Caching und
+              präziser Modellwahl. Lege spezialisierte Bots mit festem Modell
+              und eigener Systemanweisung an und bündele ihre Perspektiven.
             </p>
             <Link className="btn btn-secondary" href="/auth/sign-up">
               {startLabel}
@@ -148,10 +120,11 @@ export default async function HomePage() {
           <div>
             <h2 id="work-title">Work</h2>
             <p>
-              Zuerst kommt der Auftrag. Danach sollen Modell, Prüfermodell und
-              die Anzahl der Sub-Agents erscheinen, jeweils mit dem Hinweis
-              Empfohlen. Diese Auswahl ist bald verfügbar. Du kannst die
-              Vorschläge später überschreiben.
+              Für komplexe Vorhaben analysiert Osirus zuerst den Auftrag (Klasse
+              S bis XL) und empfiehlt das optimale Ausführermodell, ein
+              unabhängiges Prüfermodell sowie die passende Anzahl paralleler
+              Sub-Agents. Alle Empfehlungen lassen sich vor dem Start gezielt
+              anpassen.
             </p>
           </div>
           <WorkStory />
@@ -165,8 +138,10 @@ export default async function HomePage() {
           <div>
             <h2 id="agents-title">Agents</h2>
             <p>
-              Agents sind dauerhafte Rollen. Anlegen, Deploy und Gruppenchat
-              sind bald verfügbar.
+              Definiere dauerhafte Rollen in deinem Workspace, kombiniere
+              mehrere Spezialisten im Gruppenchat per @Erwähnung und nutze
+              autonome Code- und Prüfschleifen, die Änderungen deterministisch
+              gegen Tests und Sicherheitsregeln validieren.
             </p>
           </div>
           <AgentStory />
@@ -178,23 +153,14 @@ export default async function HomePage() {
           aria-labelledby="pruefung-title"
         >
           <div>
-            <h2 id="pruefung-title">Prüfsystem</h2>
+            <h2 id="pruefung-title">Unabhängiges Prüfsystem</h2>
             <p>
-              Eine Modellantwort allein ist kein Beleg. Ein Prüfer, der vom
-              ausführenden Modell getrennt ist, ist bald verfügbar. Was schon
-              gilt: eine Aktion nach außen wartet auf dein Ja.
+              Eine Modellantwort allein gilt in Osirus nie als Beleg. Ergebnisse
+              werden durch deterministische Checks und ein vom Ausführer
+              getrenntes Prüfermodell kontrolliert, während Schreibzugriffe auf
+              verbundene Systeme zwingend deine Freigabe erfordern.
             </p>
           </div>
-        </section>
-
-        <section id="faq" className="landing-faq" aria-labelledby="faq-title">
-          <h2 id="faq-title">Fragen</h2>
-          {faq(freeTier).map((item) => (
-            <details key={item.q}>
-              <summary>{item.q}</summary>
-              <p>{item.a}</p>
-            </details>
-          ))}
         </section>
       </div>
 

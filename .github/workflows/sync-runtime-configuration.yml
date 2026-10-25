@@ -2,7 +2,7 @@ name: Sync runtime configuration
 
 on:
   push:
-    branches: [main, build/m1-m5-production-gate]
+    branches: [main]
     paths:
       - .github/workflows/sync-runtime-configuration.yml
       - scripts/sync-vercel-runtime-env.mjs
@@ -41,13 +41,13 @@ concurrency:
 jobs:
   sync:
     # Never expose deployment credentials to arbitrary pull-request code.
-    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' || github.ref == 'refs/heads/build/m1-m5-production-gate'
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
-      VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
+      VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
       DATABASE_URL: ${{ secrets.DATABASE_URL }}
       NEON_AUTH_URL: ${{ secrets.NEON_AUTH_URL }}
       NEON_AUTH_COOKIE_SECRET: ${{ secrets.NEON_AUTH_COOKIE_SECRET }}

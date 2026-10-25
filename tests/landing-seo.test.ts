@@ -56,7 +56,9 @@ describe("landing page", () => {
     expect(html).toContain('href="/legal/eula"');
     expect(html).toContain('href="/legal/cookies"');
     expect(html).not.toContain('href="#preise"');
-    expect(html).toContain("Bald verfügbar");
+    expect(html).not.toContain('id="faq"');
+    expect(html).not.toContain("Fragen");
+    expect(html).not.toContain("Bald verfügbar");
     expect(html).not.toMatch(
       /ROUGE|QUASNIR|DARUS|inkl\. MwSt|zzgl\. MwSt|brutto|netto/i,
     );

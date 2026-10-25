@@ -30,7 +30,7 @@ const paramsSchema = z.object({ runId: z.string().uuid() });
 const CONTINUATION_BUDGET_MS = 240_000;
 
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ runId: string }> },
 ) {
   requireAuthConfiguration();
@@ -63,12 +63,14 @@ export async function GET(
   }
 
   const nudge = pollNudge(snapshot);
-  if (nudge.settleCancel) {
+  const crossSite =
+    request.headers.get("sec-fetch-site")?.toLowerCase() === "cross-site";
+  if (!crossSite && nudge.settleCancel) {
     // Nobody holds the run, so nobody would ever acknowledge the cancel.
     if (await repository.settleCancellationWithoutWorker(parsed.data.runId)) {
       snapshot = await repository.getSnapshot(parsed.data.runId);
     }
-  } else if (nudge.drive || nudge.finalize) {
+  } else if (!crossSite && (nudge.drive || nudge.finalize)) {
     const identity = await bootstrapProductIdentity({
       id: session.user.id,
       email: session.user.email,

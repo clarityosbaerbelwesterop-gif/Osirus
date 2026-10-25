@@ -39,8 +39,28 @@ export async function signUpWithEmail(
 
   requireAuthConfiguration();
 
+  if (process.env.DATABASE_URL) {
+    try {
+      const { enforceRateLimit, RateLimitError } =
+        await import("@/lib/security/rate-limit");
+      await enforceRateLimit({
+        subject: `auth.signup:${email.toLowerCase().slice(0, 120)}`,
+        route: "auth.signup",
+        limit: 6,
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === "RateLimitError") {
+        return { error: "Too many sign-up attempts. Please wait a minute." };
+      }
+    }
+  }
+
   const { error } = await auth.signUp.email({ name, email, password });
-  if (error) return { error: error.message || "Account creation failed." };
+  if (error) {
+    return {
+      error: "Unable to create account with these details. Please try again.",
+    };
+  }
 
   redirect("/app");
 }

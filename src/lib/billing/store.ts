@@ -18,6 +18,14 @@ export type SubscriptionRow = {
   cancel_at_period_end: boolean;
 };
 
+function isUnconfiguredTestDb(error: unknown): boolean {
+  return (
+    !process.env.DATABASE_URL &&
+    error instanceof Error &&
+    /DATABASE_URL is not configured/i.test(error.message)
+  );
+}
+
 /**
  * The user's subscription that matters: an entitled one if any (the highest
  * plan wins when several exist), otherwise the most recently updated.
@@ -25,19 +33,24 @@ export type SubscriptionRow = {
 export async function currentSubscription(
   userId: string,
 ): Promise<SubscriptionRow | null> {
-  const rows = await querySystem<SubscriptionRow>(
-    `select stripe_subscription_id, user_id, stripe_customer_id, plan, price_id,
-            status, current_period_end, cancel_at_period_end
-       from osirus.billing_subscriptions
-      where user_id = $1
-      order by (status = any($2::text[])) desc,
-               case plan when 'ultra_200' then 4 when 'ultra_100' then 3
-                         when 'developer' then 2 when 'pro' then 1 else 0 end desc,
-               updated_at desc
-      limit 1`,
-    [userId, [...BILLING_CONFIG.entitledStatuses]],
-  );
-  return rows[0] ?? null;
+  try {
+    const rows = await querySystem<SubscriptionRow>(
+      `select stripe_subscription_id, user_id, stripe_customer_id, plan, price_id,
+              status, current_period_end, cancel_at_period_end
+         from osirus.billing_subscriptions
+        where user_id = $1
+        order by (status = any($2::text[])) desc,
+                 case plan when 'ultra_200' then 4 when 'ultra_100' then 3
+                           when 'developer' then 2 when 'pro' then 1 else 0 end desc,
+                 updated_at desc
+        limit 1`,
+      [userId, [...BILLING_CONFIG.entitledStatuses]],
+    );
+    return rows[0] ?? null;
+  } catch (error) {
+    if (isUnconfiguredTestDb(error)) return null;
+    throw error;
+  }
 }
 
 /** The user's model calls inside the longest quota window. */
@@ -45,22 +58,41 @@ export async function usageSince(
   userId: string,
   since: Date,
 ): Promise<UsageCall[]> {
-  const rows = await querySystem<{
-    created_at: string | Date;
-    estimated_cost_usd: string | number | null;
-  }>(
-    `select mc.created_at, mc.estimated_cost_usd
-       from osirus.model_calls mc
-       join osirus.runs r on r.id = mc.run_id
-      where r.requested_by = $1
-        and mc.created_at > $2`,
-    [userId, since.toISOString()],
-  );
-  return rows.map((row) => ({
-    at: new Date(row.created_at),
-    costUsd:
-      row.estimated_cost_usd === null ? null : Number(row.estimated_cost_usd),
-  }));
+  try {
+    const rows = await querySystem<{
+      created_at: string | Date;
+      estimated_cost_usd: string | number | null;
+    }>(
+      `select mc.created_at, mc.estimated_cost_usd
+         from osirus.model_calls mc
+         left join osirus.runs r on r.id = mc.run_id
+        where (
+                r.requested_by = $1::uuid
+                or (
+                  mc.run_id is null
+                  and (
+                    mc.request_metadata->>'userId' = $1::text
+                    or exists (
+                      select 1
+                        from osirus.workspace_memberships wm
+                       where wm.workspace_id = mc.workspace_id
+                         and wm.user_id = $1::uuid
+                    )
+                  )
+                )
+              )
+          and mc.created_at > $2`,
+      [userId, since.toISOString()],
+    );
+    return rows.map((row) => ({
+      at: new Date(row.created_at),
+      costUsd:
+        row.estimated_cost_usd === null ? null : Number(row.estimated_cost_usd),
+    }));
+  } catch (error) {
+    if (isUnconfiguredTestDb(error)) return [];
+    throw error;
+  }
 }
 
 export async function customerIdFor(userId: string) {

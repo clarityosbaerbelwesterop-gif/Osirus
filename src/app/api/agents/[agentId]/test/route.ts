@@ -1,8 +1,11 @@
 import { z } from "zod";
+import { quotaEnforced, quotaStatusFor } from "@/lib/billing/enforce";
+import { serializeQuota } from "@/lib/billing/quota";
 import { guardWrite, json } from "@/lib/product/api";
 import { getAgent } from "@/lib/agents/store";
 import { completePinned } from "@/lib/models/pinned-call";
 import { queryAs } from "@/lib/db/client";
+import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -27,6 +30,27 @@ export async function POST(
     maxBytes: 12_000,
   });
   if (!guard.ok) return guard.response;
+  if (quotaEnforced()) {
+    const quota = await quotaStatusFor(guard.identity.userId);
+    if (!quota.allowed) {
+      const noPlan = quota.reason === "no_subscription";
+      return Response.json(
+        {
+          error: noPlan ? "subscription_required" : "quota_exhausted",
+          message: publicRuntimeErrorMessage({
+            code: noPlan ? "subscription_required" : "quota_exhausted",
+          }),
+          quota: serializeQuota(quota),
+        },
+        {
+          status: noPlan ? 402 : 429,
+          headers: noPlan
+            ? undefined
+            : { "Retry-After": String(Math.ceil(quota.retryAfterMs / 1000)) },
+        },
+      );
+    }
+  }
   const agent = await getAgent(guard.identity, agentId);
   if (!agent) return json({ error: "not_found" }, 404);
   if (agent.status !== "active") {
@@ -42,6 +66,7 @@ export async function POST(
   try {
     const result = await completePinned({
       modelId: agent.model_id,
+      userId: guard.identity.userId,
       messages: [
         ...(agent.system_prompt
           ? [{ role: "system" as const, content: agent.system_prompt }]
@@ -64,7 +89,11 @@ export async function POST(
         result.inputTokens ?? null,
         result.outputTokens ?? null,
         result.costUsd ?? null,
-        JSON.stringify({ purpose: "agent_test", agentId }),
+        JSON.stringify({
+          purpose: "agent_test",
+          agentId,
+          userId: guard.identity.userId,
+        }),
       ],
     );
     return json({

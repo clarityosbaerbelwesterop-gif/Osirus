@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LegalDraftNote } from "@/components/legal/draft-note";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
@@ -11,7 +10,6 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <article className="legal-body" lang="de">
-      <LegalDraftNote />
       <h1>Datenschutzerklärung</h1>
       <p>
         Diese Erklärung beschreibt, welche personenbezogenen Daten Osirus
@@ -44,40 +42,44 @@ export default function PrivacyPage() {
       <ul>
         <li>
           <strong>Konto.</strong> Name, E-Mail-Adresse und die Authentifizierung
-          über E-Mail und Passwort oder über GitHub OAuth. Zweck: Konto
-          bereitstellen. Quelle: deine Registrierung. Rechtsgrundlage: Art. 6
-          Abs. 1 lit. b DSGVO.
+          über E-Mail und Passwort oder über GitHub OAuth sowie die
+          protokollierte Zustimmung zu AGB, EULA und Datenschutzhinweisen.
+          Zweck: Konto bereitstellen. Quelle: deine Registrierung.
+          Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO und Art. 6 Abs. 1 lit. c
+          DSGVO.
         </li>
         <li>
           <strong>Workspace.</strong> Sitzungstitel, Nachrichten, Aufträge,
-          Pläne, Prüfpunkte und Ereignisse. Zweck: den Assistenten ausführen und
-          den Verlauf anzeigen. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
+          Work-Läufe, Agents, Gruppenchats, Pläne, Prüfpunkte und Ereignisse.
+          Zweck: den Assistenten, Work und Agents ausführen und den Verlauf
+          anzeigen. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
         </li>
         <li>
           <strong>Erinnerung.</strong> Angaben, die der Assistent aus deinen
-          Sitzungen übernimmt, begrenzt auf deinen Workspace. Rechtsgrundlage:
-          Art. 6 Abs. 1 lit. b DSGVO.
+          verifizierten Sitzungen übernimmt, begrenzt auf deinen Workspace.
+          Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
         </li>
         <li>
           <strong>Dateien.</strong> Dateien, die du hochlädst, werden zum
-          Weiterverwenden in Text überführt. Rechtsgrundlage: Art. 6 Abs. 1 lit.
-          b DSGVO.
+          Weiterverwenden im eigenen Workspace in Text überführt.
+          Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
         </li>
         <li>
-          <strong>Modellaufrufe.</strong> Rolle, Modellkennung, Tokenzahl,
-          Laufzeit und bei einem Fehler eine Fehlerkategorie. Prompt und Antwort
-          stehen nicht in diesen Protokollen. Rechtsgrundlage: Art. 6 Abs. 1
-          lit. b DSGVO und Art. 6 Abs. 1 lit. f DSGVO (Betrieb und Kapazität).
+          <strong>Modellaufrufe und Kontingente.</strong> Rolle, Modellkennung,
+          Tokenzahl, abgerechnete Kosten in USD, Laufzeit und bei einem Fehler
+          eine Fehlerkategorie zur Abrechnung des 5-Stunden- und
+          Wochenkontingents. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO und
+          Art. 6 Abs. 1 lit. f DSGVO (Betrieb, Caching und Kapazität).
         </li>
         <li>
           <strong>Sicherheit.</strong> Freigaben, abgelehnte Werkzeugaufrufe und
-          Zähler gegen Missbrauch. Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO.
+          Rate-Limit-Zähler gegen Missbrauch. Rechtsgrundlage: Art. 6 Abs. 1
+          lit. f DSGVO.
         </li>
         <li>
-          <strong>Einwilligung in optionale Cookies.</strong> Deine Wahl im
-          Cookie-Hinweis, damit wir sie nicht bei jedem Besuch neu fragen.
-          Rechtsgrundlage: Art. 6 Abs. 1 lit. c DSGVO in Verbindung mit § 25
-          TDDDG. Derzeit setzen wir keine optionalen Cookies.
+          <strong>Technisch notwendige Cookies und Präferenzen.</strong> Sitzung
+          und ausdrücklich gewählte Einstellungen gemäß § 25 Abs. 2 TDDDG. Wir
+          setzen keine Analyse- oder Marketing-Cookies.
         </li>
       </ul>
 
@@ -90,29 +92,30 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Vercel Inc.</strong> — Hosting, Ausführung der Anwendung und,
-          soweit konfiguriert, die Sandbox.
+          soweit konfiguriert, die isolierte Sandbox-Ausführung.
         </li>
         <li>
           <strong>GitHub</strong> (GitHub, Inc. / Microsoft) — nur wenn du dich
-          mit GitHub anmeldest oder GitHub verbindest. Dabei erhält GitHub die
-          für OAuth nötigen Daten.
+          mit GitHub anmeldest oder ein GitHub-Repository verbindest. Dabei
+          erhält GitHub die für OAuth bzw. API-Zugriffe nötigen Daten.
         </li>
         <li>
           <strong>Stripe</strong> (Stripe Payments Europe, Ltd. und Stripe,
-          Inc.) — Zahlungsdienst für die Abos. Solange die Buchung nicht
-          freigeschaltet ist, übermitteln wir keine Zahlungsdaten. Sobald ein
-          Abo buchbar ist, verarbeitet Stripe die zur Zahlung nötigen Daten als
-          eigener Verantwortlicher.
+          Inc.) — Zahlungsdienst für Abonnements, Checkout und Kundenportal. Bei
+          Buchung eines Abos verarbeitet Stripe die zur Zahlungsabwicklung
+          erforderlichen Daten. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
         </li>
         <li>
-          <strong>UNOROUTER</strong> — Inhalte, die du zur Beantwortung sendest,
-          gehen an den konfigurierten Modellzugang UNOROUTER.
+          <strong>UNOROUTER und NVIDIA Corporation</strong> — Inhalte, die du
+          zur Beantwortung oder Prüfung sendest, werden über die konfigurierten
+          API-Schnittstellen von UNOROUTER bzw. NVIDIA NIM verarbeitet.
         </li>
         <li>
           <strong>Anthropic, PBC und OpenAI, L.L.C.</strong> — UNOROUTER kann
-          eine Anfrage an diese Modellanbieter weiterleiten. Welche Anbieter ein
-          konkreter Aufruf erreicht, hängt von der Route ab. Sende nichts, das
-          du diesen Stellen nicht anvertrauen willst.
+          Anfragen je nach gewähltem Modell an diese oder weitere im Katalog
+          ausgewiesene Modellanbieter weiterleiten. Sende keine besonderen
+          Kategorien personenbezogener Daten (Art. 9 DSGVO), die du diesen
+          Empfängern nicht anvertrauen möchtest.
         </li>
       </ul>
 
@@ -132,9 +135,10 @@ export default function PrivacyPage() {
       <p>
         Kontodaten und Workspace-Inhalte speichern wir, solange das Konto
         besteht. Nach einer Löschanfrage an die oben genannte Adresse löschen
-        oder anonymisieren wir sie, soweit kein Gesetz eine weitere Aufbewahrung
-        verlangt. Sicherungen werden überschrieben, sobald der laufende
-        Sicherungszyklus sie ersetzt.
+        oder anonymisieren wir sie unverzüglich, soweit keine gesetzlichen
+        Aufbewahrungspflichten (insbesondere handels- und steuerrechtliche
+        Pflichten für Abrechnungsdaten) entgegenstehen. Sicherungen werden im
+        regulären Sicherungszyklus überschrieben.
       </p>
 
       <h2>6. Deine Rechte</h2>
@@ -157,9 +161,9 @@ export default function PrivacyPage() {
       <h2>7. Cookies und Speicher (§ 25 TDDDG)</h2>
       <p>
         Notwendige und von dir ausdrücklich gewünschte Speicherungen sind in der{" "}
-        <Link href="/legal/cookies">Cookie-Erklärung</Link> aufgezählt.
-        Optionale Cookies setzen wir erst, nachdem du im Hinweis zugestimmt
-        hast. Ein Ablehnen lässt die notwendige Nutzung unberührt.
+        <Link href="/legal/cookies">Cookie-Erklärung</Link> vollständig
+        aufgeführt. Optionale Analyse- oder Marketing-Cookies werden nicht
+        eingesetzt.
       </p>
 
       <h2>8. Verbundene Systeme</h2>
@@ -173,10 +177,10 @@ export default function PrivacyPage() {
 
       <h2>9. Hinweise zu Modellantworten</h2>
       <p>
-        Antworten erzeugt ein Sprachmodell. Sie können falsch sein. Eine Antwort
-        des Modells allein ist kein Beleg. Ein getrenntes Prüfermodell ist noch
-        nicht verfügbar. Inhalte, die du sendest, können von UNOROUTER und den
-        in Abschnitt 3 genannten Modellanbietern verarbeitet werden.
+        Antworten erzeugt ein Sprachmodell. Sie können trotz unabhängigem
+        Prüfermodell und deterministischer Verifikation Fehler enthalten.
+        Inhalte, die du sendest, werden von UNOROUTER, NVIDIA und den in
+        Abschnitt 3 genannten Modellanbietern zur Beantwortung verarbeitet.
       </p>
 
       <h2>10. Pflicht zur Bereitstellung</h2>
@@ -186,10 +190,11 @@ export default function PrivacyPage() {
         zustande. Alle weiteren Angaben sind freiwillig.
       </p>
 
-      <h2>11. Änderung</h2>
+      <h2>11. Stand und Änderung</h2>
       <p>
-        Wenn sich die Verarbeitung ändert, aktualisieren wir diese Seite. Die
-        jeweils veröffentlichte Fassung ist die geltende.
+        Wenn sich die Verarbeitung ändert, aktualisieren wir diese
+        Datenschutzerklärung. Die jeweils veröffentlichte Fassung ist die
+        geltende.
       </p>
     </article>
   );

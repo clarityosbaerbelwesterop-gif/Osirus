@@ -1,22 +1,20 @@
 import Link from "next/link";
-import { LegalDraftNote } from "@/components/legal/draft-note";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
   title: "Cookies",
   description:
-    "Cookie-Hinweis für Osirus nach § 25 TDDDG: notwendige Speicherungen und der Einwilligungs-Hinweis.",
+    "Cookie-Hinweis für Osirus nach § 25 TDDDG: technisch notwendige Speicherungen.",
   robots: { index: true },
 };
 
 export default function CookiesPage() {
   return (
     <article className="legal-body" lang="de">
-      <LegalDraftNote />
       <h1>Cookie-Hinweis</h1>
       <p>
-        Diese Seite listet die Cookies von Osirus, ihren Zweck, die
-        Rechtsgrundlage und die Dauer. Sie ergänzt die{" "}
+        Diese Seite listet sämtliche Cookies von Osirus, ihren Zweck, die
+        Rechtsgrundlage und die Speicherdauer. Sie ergänzt die{" "}
         <Link href="/legal/privacy">Datenschutzerklärung</Link>.
       </p>
 
@@ -42,13 +40,13 @@ export default function CookiesPage() {
           <tbody>
             <tr>
               <td>Sitzung von Neon Auth</td>
-              <td>Hält dich angemeldet.</td>
+              <td>Hält dich sicher angemeldet.</td>
               <td>§ 25 Abs. 2 TDDDG, Art. 6 Abs. 1 lit. b DSGVO</td>
               <td>Sitzung, HttpOnly</td>
             </tr>
             <tr>
               <td>osirus-consent</td>
-              <td>Merkt deine Wahl im Cookie-Hinweis.</td>
+              <td>Speichert eine gesetzte Cookie-Präferenz.</td>
               <td>§ 25 Abs. 2 TDDDG</td>
               <td>1 Jahr, SameSite=Lax</td>
             </tr>
@@ -72,7 +70,7 @@ export default function CookiesPage() {
             </tr>
             <tr>
               <td>osirus-lab-model</td>
-              <td>Eine frühere Modellwahl, nur wenn du sie gesetzt hast.</td>
+              <td>Deine Modellwahl, nur wenn du sie gesetzt hast.</td>
               <td>§ 25 Abs. 2 TDDDG</td>
               <td>1 Jahr, SameSite=Lax</td>
             </tr>
@@ -89,24 +87,24 @@ export default function CookiesPage() {
       </div>
       <p>
         Die Anwendung nutzt kein localStorage und kein sessionStorage. Analyse-
-        oder Marketing-Cookies gibt es nicht. Kommen sie hinzu, werden sie erst
-        nach Einwilligung gesetzt (§ 25 Abs. 1 TDDDG).
+        oder Marketing-Cookies gibt es nicht. Sollten jemals optionale Cookies
+        hinzukommen, werden sie erst nach vorheriger Einwilligung („Nur
+        notwendige“ / „Alle akzeptieren“) gemäß § 25 Abs. 1 TDDDG gesetzt.
       </p>
 
-      <h2>3. Hinweis</h2>
+      <h2>3. Rechtsgrundlage ohne Banner-Belästigung</h2>
       <p>
-        Beim ersten Besuch fragt der Hinweis nach der Wahl. „Nur notwendige“
-        speichert osirus-consent mit dem Wert necessary. „Alle akzeptieren“
-        speichert den Wert all. Solange keine optionalen Cookies existieren,
-        setzt auch die Zustimmung keine zusätzlichen Cookies. Die Entscheidung
-        kannst du löschen, indem du osirus-consent im Browser entfernst. Danach
-        erscheint der Hinweis wieder.
+        Da Osirus ausschließlich technisch notwendige bzw. ausdrücklich vom
+        Nutzer angeforderte Präferenz-Cookies nach § 25 Abs. 2 TDDDG einsetzt,
+        wird die Nutzung nicht durch Werbe- oder Tracking-Banner blockiert. Eine
+        gespeicherte Wahl in osirus-consent (`necessary` oder `all`) setzt keine
+        optionalen Drittanbieter-Cookies.
       </p>
 
       <h2>4. Löschen</h2>
       <p>
-        Cookies lassen sich in den Browsereinstellungen löschen oder sperren.
-        Ohne das Sitzungs-Cookie ist keine Anmeldung möglich. Ohne die
+        Cookies lassen sich jederzeit in den Browsereinstellungen löschen oder
+        sperren. Ohne das Sitzungs-Cookie ist keine Anmeldung möglich. Ohne die
         Präferenz-Cookies gelten die Voreinstellungen.
       </p>
     </article>

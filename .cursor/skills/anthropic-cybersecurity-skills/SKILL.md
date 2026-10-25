@@ -7,6 +7,7 @@ description: Offensive/defensive red-team security auditing — SSRF, OIDC/JWT c
 # SKILL: Anthropic Cybersecurity Skills — Red-Team Audit & Hardening
 
 ## Security Audit Checklist
+
 1. **Authentication & OIDC Claim Binding**:
    - Bind OIDC tokens strictly to single `aud`, exact `sub` (including immutable repository IDs), `repository_owner`, and `job_workflow_ref === workflow_ref`.
    - Never send OIDC bearer tokens to untrusted or foreign deployment hosts.

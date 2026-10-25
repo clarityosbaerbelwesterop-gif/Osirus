@@ -28,42 +28,69 @@ const CODE_CALLS = 3;
  */
 export type RsiAdmission = () => Promise<boolean>;
 
+// Serializes order/hypothesis intake within the process and verifies the
+// artifact is still open before committing a reservation, closing the TOCTOU
+// window between concurrent runner polls.
+let intakeChain: Promise<unknown> = Promise.resolve();
+function withIntakeLock<T>(fn: () => Promise<T>): Promise<T> {
+  const next = intakeChain.then(fn, fn);
+  intakeChain = next.then(
+    () => undefined,
+    () => undefined,
+  );
+  return next;
+}
+
 export async function takeLiveOrder(
   intel: IntelStore,
   now = new Date(),
   admit?: RsiAdmission,
 ) {
-  if (admit && !(await admit())) return null;
-  const orders = await intel.listArtifacts({ kind: "live_order", limit: 50 });
-  const order = orders.find(
-    (artifact) => (artifact.content as LiveOrderContent).state === "open",
-  );
-  if (!order) return null;
-  const content = order.content as LiveOrderContent;
-  const { granted, budget } = await reserveCalls(intel, content.calls, now);
-  if (granted < 2) {
-    // Not even a pair: give back what was reserved and leave it open.
-    if (granted)
+  return withIntakeLock(async () => {
+    if (admit && !(await admit())) return null;
+    const orders = await intel.listArtifacts({ kind: "live_order", limit: 50 });
+    const order = orders.find(
+      (artifact) => (artifact.content as LiveOrderContent).state === "open",
+    );
+    if (!order) return null;
+    const content = order.content as LiveOrderContent;
+    const { granted, budget } = await reserveCalls(intel, content.calls, now);
+    if (granted < 2) {
+      // Not even a pair: give back what was reserved and leave it open.
+      if (granted)
+        await settleCalls(intel, {
+          reserved: granted,
+          spent: 0,
+          tokens: 0,
+          day: budget.day,
+        });
+      return null;
+    }
+    const fresh = (
+      await intel.listArtifacts({ kind: "live_order", limit: 50 })
+    ).find((artifact) => artifact.fingerprint === order.fingerprint);
+    if (fresh && (fresh.content as LiveOrderContent).state !== "open") {
       await settleCalls(intel, {
         reserved: granted,
         spent: 0,
         tokens: 0,
         day: budget.day,
       });
-    return null;
-  }
-  const taken: LiveOrderContent = {
-    ...content,
-    state: "taken",
-    takenAt: now.toISOString(),
-    reserved: granted,
-  };
-  await intel.upsertArtifact({
-    ...order,
-    content: taken as unknown as Record<string, unknown>,
-    evidence: { ...order.evidence, reservationDay: budget.day },
+      return null;
+    }
+    const taken: LiveOrderContent = {
+      ...content,
+      state: "taken",
+      takenAt: now.toISOString(),
+      reserved: granted,
+    };
+    await intel.upsertArtifact({
+      ...order,
+      content: taken as unknown as Record<string, unknown>,
+      evidence: { ...order.evidence, reservationDay: budget.day },
+    });
+    return taken;
   });
-  return taken;
 }
 
 const trialRow = z.object({
@@ -206,44 +233,47 @@ export async function takeCodeHypothesis(
   now = new Date(),
   admit?: RsiAdmission,
 ) {
-  if (admit && !(await admit())) return null;
-  const candidates = (
-    await intel.listArtifacts({ kind: "code_hypothesis", limit: 100 })
-  )
-    .filter((artifact) => artifact.status === "proposed")
-    .filter((artifact) => {
-      const content = artifact.content as CodeHypothesisContent;
-      const last = content.lastAttemptAt
-        ? Date.parse(content.lastAttemptAt)
-        : 0;
-      return (
-        !content.trustRoot &&
-        onAllowlist(content.file) &&
-        now.getTime() - last >= CODE_ATTEMPT_INTERVAL_MS
-      );
-    })
-    .sort((a, b) => b.support - a.support);
-  const chosen = candidates[0];
-  if (!chosen) return null;
-  const { granted, budget } = await reserveCalls(intel, CODE_CALLS, now);
-  if (granted < 1) return null;
-  const content = chosen.content as CodeHypothesisContent;
-  const next: CodeHypothesisContent = {
-    ...content,
-    attempts: (content.attempts ?? 0) + 1,
-    lastAttemptAt: now.toISOString(),
-    reservation: { calls: granted, day: budget.day },
-  };
-  await intel.upsertArtifact({
-    ...chosen,
-    content: next as unknown as Record<string, unknown>,
+  return withIntakeLock(async () => {
+    if (admit && !(await admit())) return null;
+    const candidates = (
+      await intel.listArtifacts({ kind: "code_hypothesis", limit: 100 })
+    )
+      .filter((artifact) => artifact.status === "proposed")
+      .filter((artifact) => {
+        const content = artifact.content as CodeHypothesisContent;
+        const last = content.lastAttemptAt
+          ? Date.parse(content.lastAttemptAt)
+          : 0;
+        return (
+          !content.trustRoot &&
+          onAllowlist(content.file) &&
+          !content.reservation &&
+          now.getTime() - last >= CODE_ATTEMPT_INTERVAL_MS
+        );
+      })
+      .sort((a, b) => b.support - a.support);
+    const chosen = candidates[0];
+    if (!chosen) return null;
+    const { granted, budget } = await reserveCalls(intel, CODE_CALLS, now);
+    if (granted < 1) return null;
+    const content = chosen.content as CodeHypothesisContent;
+    const next: CodeHypothesisContent = {
+      ...content,
+      attempts: (content.attempts ?? 0) + 1,
+      lastAttemptAt: now.toISOString(),
+      reservation: { calls: granted, day: budget.day },
+    };
+    await intel.upsertArtifact({
+      ...chosen,
+      content: next as unknown as Record<string, unknown>,
+    });
+    return {
+      id: chosen.fingerprint,
+      calls: granted,
+      hypothesis: next,
+      model: rsiModel(),
+    };
   });
-  return {
-    id: chosen.fingerprint,
-    calls: granted,
-    hypothesis: next,
-    model: rsiModel(),
-  };
 }
 
 export const codeReportSchema = z.object({

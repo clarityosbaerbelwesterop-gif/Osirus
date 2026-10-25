@@ -1,5 +1,6 @@
 import "server-only";
 import type { ModelProvider, ModelRole } from "../models/provider";
+import { cachedProvider } from "../models/cache";
 import { ProviderError } from "../models/unorouter";
 import { env } from "../env";
 import {
@@ -32,9 +33,10 @@ export function upgradesAvailable() {
   return Boolean(env.STRIPE_SECRET_KEY);
 }
 
-/** The provider for a user's product run: quota-guarded when enforced. */
+/** The provider for a user's product run: quota-guarded and cached when enforced. */
 export function forUser(provider: ModelProvider, userId: string) {
-  return quotaEnforced() ? quotaGuardedProvider(provider, userId) : provider;
+  const withCache = cachedProvider(provider);
+  return quotaEnforced() ? quotaGuardedProvider(withCache, userId) : withCache;
 }
 
 export async function quotaStatusFor(
@@ -138,6 +140,9 @@ function assertFreeModel(
   limits: FreePlanLimits,
 ) {
   const id = provider.modelId(role);
+  // Verified free-pool models (:free) consume zero paid credit and are the
+  // default unpinned pool in free-first mode.
+  if (id.endsWith(":free")) return;
   assertFreePlanAllowed(
     role === "VERIFY" ? { reviewerModel: id } : { model: id },
     limits,

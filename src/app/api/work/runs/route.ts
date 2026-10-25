@@ -1,8 +1,15 @@
 import { z } from "zod";
+import {
+  assertFreePlanAllowed,
+  quotaEnforced,
+  quotaStatusFor,
+} from "@/lib/billing/enforce";
+import { serializeQuota } from "@/lib/billing/quota";
 import { env, serverKeys } from "@/lib/env";
 import { guardWrite, json } from "@/lib/product/api";
 import { listKeyModels } from "@/lib/models/key-models";
 import { completePinned } from "@/lib/models/pinned-call";
+import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 import { executeWork, type WorkCaller } from "@/lib/work/execute";
 import { recommendWork } from "@/lib/work/recommend";
 import { applyWorkSelection } from "@/lib/work/selection";
@@ -31,6 +38,31 @@ export async function POST(request: Request) {
     maxBytes: 24_000,
   });
   if (!guard.ok) return guard.response;
+
+  let userPlan: string | null = null;
+  if (quotaEnforced()) {
+    const quota = await quotaStatusFor(guard.identity.userId);
+    userPlan = quota.plan;
+    if (!quota.allowed) {
+      const noPlan = quota.reason === "no_subscription";
+      return Response.json(
+        {
+          error: noPlan ? "subscription_required" : "quota_exhausted",
+          message: publicRuntimeErrorMessage({
+            code: noPlan ? "subscription_required" : "quota_exhausted",
+          }),
+          quota: serializeQuota(quota),
+        },
+        {
+          status: noPlan ? 402 : 429,
+          headers: noPlan
+            ? undefined
+            : { "Retry-After": String(Math.ceil(quota.retryAfterMs / 1000)) },
+        },
+      );
+    }
+  }
+
   const recommendation = recommendWork(guard.body.prompt);
   const keyModels = await listKeyModels({
     baseUrl: env.UNOROUTER_BASE_URL,
@@ -52,6 +84,19 @@ export async function POST(request: Request) {
       applied.error === "key_models_unknown" ? 503 : 400,
     );
   }
+  if (userPlan === "free" && guard.body.subAgentCount !== undefined) {
+    try {
+      assertFreePlanAllowed({ subAgents: applied.selection.subAgentCount });
+    } catch {
+      return json(
+        {
+          error: "subagent_limit",
+          message: publicRuntimeErrorMessage({ code: "subagent_limit" }),
+        },
+        403,
+      );
+    }
+  }
 
   const opened = await openWorkRun({
     identity: guard.identity,
@@ -65,6 +110,8 @@ export async function POST(request: Request) {
         const result = await completePinned({
           modelId: call.modelId,
           messages: call.messages,
+          userId: guard.identity.userId,
+          role: call.purpose === "reviewer" ? "VERIFY" : "STRONG",
         });
         await recordWorkModelCall({
           identity: guard.identity,

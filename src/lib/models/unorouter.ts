@@ -393,13 +393,23 @@ export class UnoRouterProvider implements ModelProvider {
   }
 
   private endpoint() {
-    if (!env.UNOROUTER_BASE_URL) {
-      throw new ProviderError(
-        "UNOROUTER_BASE_URL is not configured",
-        "provider_not_configured",
+    if (env.UNOROUTER_BASE_URL) return env.UNOROUTER_BASE_URL;
+    if (
+      env.NVIDIA_BASE_URL ||
+      env.NVIDIA_API_KEY ||
+      env.NVIDIA_API_KEY_1 ||
+      env.NVIDIA_API_KEY_2 ||
+      env.NVIDIA_API_KEY_3
+    ) {
+      return (
+        env.NVIDIA_BASE_URL ??
+        "https://integrate.api.nvidia.com/v1/chat/completions"
       );
     }
-    return env.UNOROUTER_BASE_URL;
+    throw new ProviderError(
+      "UNOROUTER_BASE_URL is not configured",
+      "provider_not_configured",
+    );
   }
 
   private eligibleKeys() {
