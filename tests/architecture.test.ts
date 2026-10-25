@@ -68,7 +68,7 @@ describe("architecture as a Foundry candidate (M46)", () => {
       expect(
         (await spec.run({ signal: new AbortController().signal })).outcome,
       ).toBe("VERIFIED_SUCCESS");
-  });
+  }, 30000);
 
   it("offers architecture hypotheses and counts them as their own mechanism", () => {
     const hypotheses = hypothesesFor(

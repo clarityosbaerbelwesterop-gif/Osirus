@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LegalDraftNote } from "@/components/legal/draft-note";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
@@ -11,7 +10,6 @@ export const metadata = {
 export default function PrivacyPage() {
   return (
     <article className="legal-body" lang="de">
-      <LegalDraftNote />
       <h1>Datenschutzerklärung</h1>
       <p>
         Diese Erklärung beschreibt, welche personenbezogenen Daten Osirus

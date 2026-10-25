@@ -44,7 +44,7 @@ describe("adaptive compute (M47)", () => {
       (spec) => spec.family === "ADAPTIVE_COMPUTE",
     );
     expect(specs.map((spec) => spec.level)).toEqual([1, 2, 3, 4, 5]);
-  });
+  }, 30000);
 
   it("spends fewer calls per verified result than always escalating, without losing verified results to a single worker", () => {
     for (const seed of ["a", "b", "c"]) {

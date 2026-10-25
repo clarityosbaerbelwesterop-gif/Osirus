@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { LegalDraftNote } from "@/components/legal/draft-note";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
@@ -12,7 +11,6 @@ export const metadata = {
 export default function CookiesPage() {
   return (
     <article className="legal-body" lang="de">
-      <LegalDraftNote />
       <h1>Cookie-Hinweis</h1>
       <p>
         Diese Seite listet die Cookies von Osirus, ihren Zweck, die

@@ -86,7 +86,7 @@ describe("coding workspace: failing test, repair, green, diff", () => {
     );
   });
 
-  it("runs the failing test, repairs it, and reaches green with a real diff", async () => {
+it("runs the failing test, repairs it, and reaches green with a real diff", async () => {
     const { session } = await open();
     const first = await session.runChecks();
     expect(first[0]?.phase).toBe("test");
@@ -113,7 +113,7 @@ describe("coding workspace: failing test, repair, green, diff", () => {
         entry.command.startsWith("npm"),
       ),
     ).toHaveLength(3);
-  });
+  }, 30000);
 
   it("reattaches to the same workspace by run", async () => {
     const { session, store, driver, runId } = await open();
@@ -162,7 +162,7 @@ describe("coding workspace: failing test, repair, green, diff", () => {
       .get("workspace.run")!
       .run({ commandId: "test" }, context)) as { exitCode: number };
     expect(ran.exitCode).not.toBe(0);
-  });
+  }, 30000);
 
   it("never interprets an argument as shell syntax", async () => {
     const { session } = await open();

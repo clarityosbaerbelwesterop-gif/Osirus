@@ -94,6 +94,9 @@ export default async function HomePage() {
           <Link className="btn btn-ghost" href="/auth/sign-in">
             Anmelden
           </Link>
+          <Link className="btn btn-ghost" href="/en">
+            EN
+          </Link>
         </div>
       </nav>
 

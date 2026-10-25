@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { PRICE_TAX_NOTE } from "@/components/marketing/plans";
-import { LegalDraftNote } from "@/components/legal/draft-note";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
@@ -12,7 +11,6 @@ export const metadata = {
 export default function TermsPage() {
   return (
     <article className="legal-body" lang="de">
-      <LegalDraftNote />
       <h1>Allgemeine Geschäftsbedingungen</h1>
       <p>
         Diese Bedingungen gelten für die Nutzung von Osirus zwischen dir und{" "}

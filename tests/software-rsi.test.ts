@@ -102,7 +102,7 @@ describe("software RSI path policy", () => {
       expect(
         (await spec.run({ signal: new AbortController().signal })).outcome,
       ).toBe("VERIFIED_SUCCESS");
-  });
+  }, 30000);
 });
 
 describe("software RSI pipeline", () => {

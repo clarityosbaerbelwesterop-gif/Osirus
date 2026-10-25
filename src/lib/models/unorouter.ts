@@ -8,6 +8,7 @@ import {
   type FailureCategory,
 } from "./free-registry";
 import { modelRuntime, type ModelRuntime } from "./model-runtime";
+import { modelResponseCache } from "../cache/model-response-cache";
 import type {
   ModelProvider,
   ModelRole,
@@ -825,16 +826,36 @@ export class UnoRouterProvider implements ModelProvider {
     signal?: AbortSignal;
     sampling?: Sampling;
   }) {
+    const model = this.modelFor(input.role);
+    const keys = this.eligibleKeys();
+    const allowCache = keys.length === 1 && process.env.NODE_ENV !== "test";
+
+    if (allowCache) {
+      const cached = modelResponseCache.get<{
+        text: string;
+        usage: Usage;
+      }>(model, input.messages, { sampling: input.sampling });
+      if (cached) {
+        return cached;
+      }
+    }
+
     const { response, cleanup } = await this.request({
       ...input,
       stream: false,
     });
     try {
       const body = (await response.json()) as OpenAICompletion;
-      return {
+      const result = {
         text: body.choices?.[0]?.message?.content ?? "",
         usage: this.normalizeUsage(body.usage),
       };
+      if (allowCache) {
+        modelResponseCache.set(model, input.messages, result, {
+          sampling: input.sampling,
+        });
+      }
+      return result;
     } finally {
       cleanup();
     }

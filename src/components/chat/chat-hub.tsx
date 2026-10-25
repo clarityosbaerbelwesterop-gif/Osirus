@@ -782,7 +782,7 @@ export function ChatHub(props: {
     setWorkbenchOpen(null);
     window.history.replaceState(null, "", `${threadPath}?new=1`);
     window.setTimeout(() => composer.current?.focus(), 0);
-  }, [advanceView, props.kind, running, threadPath]);
+  }, [advanceView, running, threadPath]);
 
   const switchSession = useCallback(
     async (next: SessionSummary) => {
@@ -826,7 +826,6 @@ export function ChatHub(props: {
     },
     [
       advanceView,
-      props.kind,
       refreshRun,
       running,
       sessionId,

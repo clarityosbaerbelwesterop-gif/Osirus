@@ -12,7 +12,9 @@ export default defineConfig({
       ),
     },
   },
-  esbuild: { jsx: "automatic" },
+  esbuild: {
+    target: "node20",
+  },
   test: {
     environment: "node",
     include: ["evals/foundry.eval.ts"],

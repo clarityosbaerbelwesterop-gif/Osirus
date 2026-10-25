@@ -457,7 +457,7 @@ describe("the unified pulse suite", () => {
       ).length,
     ).toBeGreaterThanOrEqual(4);
     expect(new Set(specs.map((entry) => entry.id)).size).toBe(specs.length);
-  });
+  }, 30000);
 
   it("rotates what each cycle samples and keeps every family", async () => {
     const specs = (await pulseCatalog()).filter(

@@ -221,3 +221,32 @@ export async function forgetMemoryItem(identity: ProductIdentity, id: string) {
   );
   return rows.length > 0;
 }
+
+export type PlanInfo = {
+  plan: string | null;
+  status: string | null;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+};
+
+export async function planInfo(identity: ProductIdentity): Promise<PlanInfo> {
+  const rows = await queryAs<{
+    stripe_plan: string | null;
+    stripe_status: string | null;
+    stripe_current_period_end: Date | string | null;
+    stripe_cancel_at_period_end: boolean;
+  }>(
+    identity.userId,
+    `select stripe_plan, stripe_status, stripe_current_period_end, stripe_cancel_at_period_end
+       from osirus.workspaces
+      where id = $1::uuid`,
+    [identity.workspaceId],
+  ).catch(() => []);
+  const row = rows[0];
+  return {
+    plan: row?.stripe_plan ?? null,
+    status: row?.stripe_status ?? null,
+    currentPeriodEnd: iso(row?.stripe_current_period_end),
+    cancelAtPeriodEnd: row?.stripe_cancel_at_period_end ?? false,
+  };
+}

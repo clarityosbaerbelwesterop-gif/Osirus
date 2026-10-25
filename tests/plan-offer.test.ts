@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 import {
   CurrentPlan,
   PlanCards,
-  PlanSection,
 } from "../src/components/settings/plan-offer";
+import { PlanInfo } from "../src/lib/product/settings";
 
 const TAX = "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.";
 
@@ -26,29 +26,20 @@ describe("plan section", () => {
   });
 
   it("marks the current plan as a placeholder", () => {
+    const freePlan: PlanInfo = { plan: null, status: null, currentPeriodEnd: null, cancelAtPeriodEnd: false };
     const on = renderToStaticMarkup(
-      createElement(CurrentPlan, { freeTier: true }),
+      createElement(CurrentPlan, { planInfo: freePlan }),
     );
     expect(on).toContain("Free");
-    expect(on).toContain("Platzhalter");
+    expect(on).toContain("kein Abo");
     expect(on).not.toMatch(/\d/);
-    const off = renderToStaticMarkup(
-      createElement(CurrentPlan, { freeTier: false }),
-    );
-    expect(off).not.toContain("Free");
-    expect(off).toContain("Platzhalter");
-  });
 
-  it("places the bars above the paid plans", () => {
-    const html = renderToStaticMarkup(
-      createElement(PlanSection, { freeTier: true }),
+    const paidPlan: PlanInfo = { plan: "pro", status: "active", currentPeriodEnd: "2025-12-31T23:59:59.000Z", cancelAtPeriodEnd: false };
+    const off = renderToStaticMarkup(
+      createElement(CurrentPlan, { planInfo: paidPlan }),
     );
-    expect(html).toContain("Plan");
-    expect(html).toContain("5-Stunden-Kontingent");
-    expect(html).toContain("Wochenkontingent");
-    expect(html.indexOf("5-Stunden-Kontingent")).toBeLessThan(
-      html.indexOf("20 €"),
-    );
-    expect(html).toContain(TAX);
+    expect(off).toContain("Pro");
+    expect(off).toContain("Aktiv");
+    expect(off).toContain("2025");
   });
 });
