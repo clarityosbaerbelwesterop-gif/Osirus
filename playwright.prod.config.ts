@@ -12,7 +12,7 @@ export default defineConfig({
   timeout: 8 * 60_000,
   reporter: [["list"]],
   use: {
-    baseURL: process.env.PROD_BASE_URL ?? "https://osirus.vercel.app",
+    baseURL: process.env.PROD_BASE_URL ?? "https://osirus-ai.vercel.app",
     // A failure keeps a screenshot, never a trace: traces record request
     // bodies, and the repository's Action logs are public.
     screenshot: "only-on-failure",

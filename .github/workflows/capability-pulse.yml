@@ -31,7 +31,8 @@ jobs:
     steps:
       - name: Request an OIDC token and call the tick
         env:
-          TICK_URL: https://osirus.vercel.app/api/scheduler/tick
+          # osirus.vercel.app is a different product: never send it an OIDC token.
+          TICK_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}/api/scheduler/tick
         run: |
           set -euo pipefail
           token=$(curl -sS --fail -H "Authorization: Bearer ${ACTIONS_ID_TOKEN_REQUEST_TOKEN}" \

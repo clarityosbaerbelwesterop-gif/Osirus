@@ -107,7 +107,7 @@ export async function safeFetch(
         signal: controller.signal,
         dispatcher: agent,
         headers: {
-          "user-agent": "OsirusResearch/1.0 (+https://osirus.vercel.app)",
+          "user-agent": "OsirusResearch/1.0 (+https://osirus-ai.vercel.app)",
           accept:
             options.accept ??
             "text/html,application/json,text/plain;q=0.9,*/*;q=0.5",
