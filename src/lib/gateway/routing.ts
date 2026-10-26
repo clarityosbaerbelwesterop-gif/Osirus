@@ -108,6 +108,11 @@ export function candidatesFor(
     coding?: boolean;
     reasoning?: boolean;
     limit?: number;
+    /**
+     * At most this many models from one service: a rate-limited or unfunded
+     * key fails all its models alike, so one service cannot use up the chain.
+     */
+    perProvider?: number;
     /** Extra rank for a model, e.g. recent failures or slowness. */
     penalty?: (ref: string) => number;
     /** Tried first, in this order. */
@@ -140,8 +145,26 @@ export function candidatesFor(
     (model, index) =>
       out.findIndex((other) => other.ref === model.ref) === index,
   );
-  return unique.slice(0, options.limit ?? unique.length);
+  const perService = new Map<string, number>();
+  const spread = unique.filter((model) => {
+    if (options.perProvider === undefined) return true;
+    const used = perService.get(model.provider) ?? 0;
+    perService.set(model.provider, used + 1);
+    return used < options.perProvider;
+  });
+  return spread.slice(0, options.limit ?? spread.length);
 }
+
+/**
+ * Failures that hold for every model of one service (its key is limited,
+ * unfunded or refused): the chain skips that service's other models.
+ */
+export const PROVIDER_WIDE_CODES = new Set([
+  "rate_limited",
+  "insufficient_credit",
+  "credential_rejected",
+  "provider_not_configured",
+]);
 
 /** Error codes after which the next candidate is tried (before any text). */
 export const FALLBACK_CODES = new Set([

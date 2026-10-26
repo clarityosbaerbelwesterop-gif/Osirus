@@ -378,6 +378,49 @@ describe("POST /api/chat/stream", () => {
     ).toBe(answer);
   });
 
+  it("skips a rate-limited service and answers from another one", async () => {
+    // Live 2026-10-26: every model of one key was rate-limited and the chain
+    // spent all its attempts there, so a new account's "Hallo" got no answer.
+    process.env.UNOROUTER_API_KEY = "uno-test-key";
+    resetGatewayModelCache();
+    const chats: string[] = [];
+    const base = globalThis.fetch;
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (url.includes("unorouter")) {
+          if (url.endsWith("/models"))
+            return Response.json({
+              data: [
+                "qwen3.5-4b:free",
+                "gemma-3-4b:free",
+                "llama-3.2-3b:free",
+              ].map((id) => ({ id })),
+            });
+          chats.push(url);
+          return new Response("busy", { status: 429 });
+        }
+        return base(input, init);
+      },
+    );
+    try {
+      const events = await frames(await post({ message: "Hallo" }));
+      expect(events.at(-1)).toMatchObject({ type: "done" });
+      expect(
+        events
+          .filter((e) => e.type === "text")
+          .map((e) => e.text)
+          .join(""),
+      ).toBe(answer);
+      // One refusal is enough to leave that service for this answer.
+      expect(chats).toHaveLength(1);
+    } finally {
+      delete process.env.UNOROUTER_API_KEY;
+      resetGatewayModelCache();
+    }
+  });
+
   it("reports a provider refusal as an error frame and stores no answer", async () => {
     vi.stubGlobal("fetch", async (input: RequestInfo | URL) => {
       const url = String(input);

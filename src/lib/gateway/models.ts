@@ -603,6 +603,17 @@ export function verifiedLead(
   );
 }
 
+/**
+ * Every model the runtime sync measured answering, of both classes and
+ * healthy on this instance: the safety net right after a class's own lead,
+ * ahead of ranked models nobody has measured.
+ */
+export function verifiedBackup(models: readonly GatewayModel[]) {
+  return [...verifiedTopModels(models), ...verifiedFastModels(models)].filter(
+    (model) => modelPenalty(model.ref) === 0,
+  );
+}
+
 /** One entry per model name (the best-ranked copy), as Code's picker lists them. */
 export function uniqueByName<T extends { name: string }>(models: readonly T[]) {
   const seen = new Set<string>();
