@@ -485,3 +485,30 @@ test("coding surface lists repos from the connected grant and does not start wit
   await expect(page.getByRole("button", { name: "Start" })).toBeEnabled();
   await expect(page.locator(".effort-motion")).toHaveCount(0);
 });
+
+test("work recommends a model, a reviewer and sub-agents", async ({ page }) => {
+  await mockApis(page);
+  await openSurface(page, "work");
+  await expect(page.getByText("Klasse")).toBeVisible();
+  await expect(page.getByText("Empfohlen").first()).toBeVisible();
+  expect(await page.getByText("Empfohlen").count()).toBeGreaterThanOrEqual(3);
+  await expect(
+    page.getByText(/Platzhalter PLACEHOLDER_EXECUTOR_S/),
+  ).toBeVisible();
+  await expect(page.getByText("ROUGE")).toHaveCount(0);
+  const count = page.getByRole("spinbutton", { name: "Anzahl Subagents" });
+  await count.fill("1");
+  await expect(page.getByText("eigene Wahl")).toBeVisible();
+});
+
+test("agents address only the mentioned bot", async ({ page }) => {
+  await mockApis(page);
+  await openSurface(page, "agents");
+  await expect(page.getByRole("button", { name: "Deploy" })).toHaveCount(0);
+  await expect(page.getByText("glm-5.3-flash")).toBeVisible();
+  await expect(page.getByText("claude-opus-5.5")).toBeVisible();
+  const message = page.getByRole("textbox", { name: "Nachricht" });
+  await message.fill("@Ada bitte kurz antworten");
+  await expect(page.getByText("Antwortet: Ada")).toBeVisible();
+  await expect(page.getByText("Antwortet: Bea")).toHaveCount(0);
+});

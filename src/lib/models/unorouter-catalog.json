@@ -1,0 +1,2047 @@
+{
+  "capturedAt": "2026-10-24",
+  "source": "https://api.unorouter.com/api/pricing/catalog",
+  "note": "Public catalog snapshot. Which ids the deployment key may call is not in this file.",
+  "models": [
+    {
+      "id": "absolutereality:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "agents-a1:free",
+      "vendor": "Unknown",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "albedobase-xl-31:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "albedobase-xl-sdxl:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "allam-2-7b:free",
+      "vendor": "SDAIA",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "amponyxl:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "anything-v5:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "anything-xl",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "aura-1:free",
+      "vendor": "Deepgram",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "autismmix-sdxl",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "beam:free",
+      "vendor": "Unknown",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "bge-base-en-v1.5:free",
+      "vendor": "BAAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "bge-large-en-v1.5:free",
+      "vendor": "BAAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "bge-multilingual-gemma2:free",
+      "vendor": "BAAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "bge-small-en-v1.5:free",
+      "vendor": "BAAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "claude-fable-5",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 2.235,
+      "outputPerMillionUsd": 11.174999999999999
+    },
+    {
+      "id": "claude-fable-5.1",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 2.235,
+      "outputPerMillionUsd": 11.174999999999999
+    },
+    {
+      "id": "claude-haiku-4-5-20251001",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.169,
+      "outputPerMillionUsd": 0.8450000000000001
+    },
+    {
+      "id": "claude-haiku-5-5",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.03564,
+      "outputPerMillionUsd": 0.1782
+    },
+    {
+      "id": "claude-opus-4-5",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.1175,
+      "outputPerMillionUsd": 5.5874999999999995
+    },
+    {
+      "id": "claude-opus-4-5-thinking",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 3.15,
+      "outputPerMillionUsd": 15.75
+    },
+    {
+      "id": "claude-opus-4-6-thinking",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 2.235,
+      "outputPerMillionUsd": 11.174999999999999
+    },
+    {
+      "id": "claude-opus-4-7-thinking",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.7825,
+      "outputPerMillionUsd": 3.9124999999999996
+    },
+    {
+      "id": "claude-opus-4-8-thinking",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 2.4,
+      "outputPerMillionUsd": 12
+    },
+    {
+      "id": "claude-opus-4.6",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.25,
+      "outputPerMillionUsd": 6.25
+    },
+    {
+      "id": "claude-opus-4.7",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.1175,
+      "outputPerMillionUsd": 5.5874999999999995
+    },
+    {
+      "id": "claude-opus-4.8",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.1175,
+      "outputPerMillionUsd": 5.5874999999999995
+    },
+    {
+      "id": "claude-opus-5",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.25,
+      "outputPerMillionUsd": 6.25
+    },
+    {
+      "id": "claude-opus-5-thinking",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 3.15,
+      "outputPerMillionUsd": 15.75
+    },
+    {
+      "id": "claude-opus-5.5",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.894,
+      "outputPerMillionUsd": 4.47
+    },
+    {
+      "id": "claude-sonnet-4-5-thinking",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 2.0999999999999996,
+      "outputPerMillionUsd": 10.499999999999998
+    },
+    {
+      "id": "claude-sonnet-4-6-thinking",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.341,
+      "outputPerMillionUsd": 6.705
+    },
+    {
+      "id": "claude-sonnet-4.5",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.6705,
+      "outputPerMillionUsd": 3.3525
+    },
+    {
+      "id": "claude-sonnet-4.6",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.6705,
+      "outputPerMillionUsd": 3.3525
+    },
+    {
+      "id": "claude-sonnet-5",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.447,
+      "outputPerMillionUsd": 2.235
+    },
+    {
+      "id": "claude-sonnet-5-5",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.5,
+      "outputPerMillionUsd": 2.5
+    },
+    {
+      "id": "claude-sonnet-5-thinking",
+      "vendor": "Anthropic",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.96,
+      "outputPerMillionUsd": 4.8
+    },
+    {
+      "id": "codestral-latest:free",
+      "vendor": "Mistral",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "cohere-command-a:free",
+      "vendor": "Cohere",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "custom-civitai",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "cyberrealistic-pony",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "cyberrealistic-pony:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "deepseek-r1",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.1199999999999999,
+      "outputPerMillionUsd": 3.8400319999999994
+    },
+    {
+      "id": "deepseek-r1-0528",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.12,
+      "outputPerMillionUsd": 4.816
+    },
+    {
+      "id": "deepseek-r1-distill-qwen-32b:free",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "deepseek-v3",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.559968,
+      "outputPerMillionUsd": 2.239872
+    },
+    {
+      "id": "deepseek-v3-0324",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.504336,
+      "outputPerMillionUsd": 1.89126
+    },
+    {
+      "id": "deepseek-v3.1",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.017325,
+      "outputPerMillionUsd": 0.06583499999999999
+    },
+    {
+      "id": "deepseek-v3.1-terminus",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.596538,
+      "outputPerMillionUsd": 2.2093977906
+    },
+    {
+      "id": "deepseek-v3.2",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.56,
+      "outputPerMillionUsd": 0.8400000000000001
+    },
+    {
+      "id": "deepseek-v3.2-exp",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.56,
+      "outputPerMillionUsd": 0.8400000000000001
+    },
+    {
+      "id": "deepseek-v4-flash",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.007196000000000001,
+      "outputPerMillionUsd": 0.014392000000000002
+    },
+    {
+      "id": "deepseek-v4-flash-0731",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.007196000000000001,
+      "outputPerMillionUsd": 0.014392000000000002
+    },
+    {
+      "id": "deepseek-v4-pro",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.022794000000000002,
+      "outputPerMillionUsd": 0.045588000000000004
+    },
+    {
+      "id": "deepseek-v4-pro-0813",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.011963599999999998,
+      "outputPerMillionUsd": 0.035890799999999994
+    },
+    {
+      "id": "deepseek-v4.1-flash",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.0072,
+      "outputPerMillionUsd": 0.036
+    },
+    {
+      "id": "deepseek-v4.1-flash-1017",
+      "vendor": "DeepSeek",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.0071955000000000005,
+      "outputPerMillionUsd": 0.028782000000000002
+    },
+    {
+      "id": "deliberate:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "diffusiongemma-26b-a4b-it:free",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "dots-3-note-preview:free",
+      "vendor": "Dots Studio",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "dreamshaper-v8",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "dreamshaper-xl",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "dreamshaper:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "embeddinggemma-300m:free",
+      "vendor": "Google",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "epicrealism",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "flat-2d-animerge:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "flux-1-dev-runware",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "flux.2-dev",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "flux.2-flex",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "flux.2-klein-4b",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "flux.2-klein-9b",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "flux.2-max",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "flux.2-pro",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "fustercluck:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gemini-2.5-flash",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.2682,
+      "outputPerMillionUsd": 2.23499106
+    },
+    {
+      "id": "gemini-2.5-pro",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.9239999999999999,
+      "outputPerMillionUsd": 7.3919999999999995
+    },
+    {
+      "id": "gemini-2.5-pro-thinking",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.8799999999999999,
+      "outputPerMillionUsd": 7.039999999999999
+    },
+    {
+      "id": "gemini-2.5-pro-tts",
+      "vendor": "Google",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 1.5,
+      "outputPerMillionUsd": 30
+    },
+    {
+      "id": "gemini-3-flash",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.035,
+      "outputPerMillionUsd": 0.21000000000000002
+    },
+    {
+      "id": "gemini-3-pro",
+      "vendor": "Google",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0.56,
+      "outputPerMillionUsd": 3.3600000000000003
+    },
+    {
+      "id": "gemini-3.1-flash-lite",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.03725,
+      "outputPerMillionUsd": 0.22349999999999998
+    },
+    {
+      "id": "gemini-3.1-pro",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.298,
+      "outputPerMillionUsd": 1.7879999999999998
+    },
+    {
+      "id": "gemini-3.5-flash",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.10500000000000001,
+      "outputPerMillionUsd": 0.6300000000000001
+    },
+    {
+      "id": "gemini-3.5-flash-lite",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.14304,
+      "outputPerMillionUsd": 1.191995232
+    },
+    {
+      "id": "gemini-3.5-flash-lite:free",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gemini-3.6-flash:free",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gemini-3.7-flash",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.11174999999999999,
+      "outputPerMillionUsd": 0.55875
+    },
+    {
+      "id": "gemini-3.8-flash",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.07350000000000001,
+      "outputPerMillionUsd": 0.36750000000000005
+    },
+    {
+      "id": "gemini-4-argon",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.45,
+      "outputPerMillionUsd": 2.25
+    },
+    {
+      "id": "gemini-embedding-001:free",
+      "vendor": "Google",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gemini-embedding-2:free",
+      "vendor": "Google",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gemini-nano-banana-2.1",
+      "vendor": "Google",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gemma-4-26b:free",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gemma-4-31b-it:free",
+      "vendor": "Google",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "glm-4.5",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.041159999999999995,
+      "outputPerMillionUsd": 0.150921372
+    },
+    {
+      "id": "glm-4.5-flash:free",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "glm-4.6",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.09998,
+      "outputPerMillionUsd": 4.033296666
+    },
+    {
+      "id": "glm-4.6v-flash:free",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "glm-4.7",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.9545399999999999,
+      "outputPerMillionUsd": 3.500011818
+    },
+    {
+      "id": "glm-4.7-flash:free",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "glm-4.7-thinking",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.9545399999999999,
+      "outputPerMillionUsd": 3.500011818
+    },
+    {
+      "id": "glm-5.1",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.9291999999999998,
+      "outputPerMillionUsd": 6.0632826799999995
+    },
+    {
+      "id": "glm-5.2",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.0014,
+      "outputPerMillionUsd": 0.00440006
+    },
+    {
+      "id": "glm-5.3",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.030464,
+      "outputPerMillionUsd": 0.1196808704
+    },
+    {
+      "id": "glm-5.3-flash",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.013199999999999998,
+      "outputPerMillionUsd": 0.04399955999999999
+    },
+    {
+      "id": "glm-5.3-flash-search:free",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "glm-5.3:free",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gpt-4o-image",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 26.25,
+      "outputPerMillionUsd": 105
+    },
+    {
+      "id": "gpt-4o:free",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gpt-5.5",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.44999999999999996,
+      "outputPerMillionUsd": 2.6999999999999997
+    },
+    {
+      "id": "gpt-5.6-luna",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.036,
+      "outputPerMillionUsd": 0.21599999999999997
+    },
+    {
+      "id": "gpt-5.6-sol",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.0356,
+      "outputPerMillionUsd": 0.178
+    },
+    {
+      "id": "gpt-5.6-terra",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.36,
+      "outputPerMillionUsd": 2.16
+    },
+    {
+      "id": "gpt-5.6-terra-y",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.12,
+      "outputPerMillionUsd": 6.720000000000001
+    },
+    {
+      "id": "gpt-6-astra",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.5,
+      "outputPerMillionUsd": 7.5
+    },
+    {
+      "id": "gpt-6-luna",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.021,
+      "outputPerMillionUsd": 0.10500000000000001
+    },
+    {
+      "id": "gpt-6-sol",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.3,
+      "outputPerMillionUsd": 1.5
+    },
+    {
+      "id": "gpt-6.1-sol",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.3,
+      "outputPerMillionUsd": 1.5
+    },
+    {
+      "id": "gpt-image-2",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gpt-image-2.5",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gpt-image-2.5-flare",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 1.75,
+      "outputPerMillionUsd": 1.75
+    },
+    {
+      "id": "gpt-image-2.5-flare:flat",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gpt-image-2.5-sunburst",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gpt-image-2.5-sunburst:flat",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gpt-oss-20b:free",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "gpt-oss-safeguard-20b:free",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "granite-4.0-micro:free",
+      "vendor": "IBM",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "grok-4.1-fast",
+      "vendor": "xAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.08940000000000001,
+      "outputPerMillionUsd": 0.22350000000000003
+    },
+    {
+      "id": "grok-4.20-non-reasoning",
+      "vendor": "xAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.96875,
+      "outputPerMillionUsd": 3.9375
+    },
+    {
+      "id": "grok-4.20-reasoning",
+      "vendor": "xAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.96875,
+      "outputPerMillionUsd": 3.9375
+    },
+    {
+      "id": "grok-4.3",
+      "vendor": "xAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.875,
+      "outputPerMillionUsd": 1.75
+    },
+    {
+      "id": "grok-4.5",
+      "vendor": "xAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.1,
+      "outputPerMillionUsd": 0.30000000000000004
+    },
+    {
+      "id": "grok-4.6",
+      "vendor": "xAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.1,
+      "outputPerMillionUsd": 0.30000000000000004
+    },
+    {
+      "id": "grok-4.7",
+      "vendor": "xAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.0096,
+      "outputPerMillionUsd": 0.0288
+    },
+    {
+      "id": "hassaku-xl-illustrious",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "hy3",
+      "vendor": "Tencent",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.10000200000000002,
+      "outputPerMillionUsd": 0.4142982858000001
+    },
+    {
+      "id": "hy3:free",
+      "vendor": "Tencent",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "hy4-preview",
+      "vendor": "Tencent",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.17997719999999998,
+      "outputPerMillionUsd": 0.53971562736
+    },
+    {
+      "id": "icbinp-i-cant-believe-its-not-photography:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "intern-s2:free",
+      "vendor": "InternLM",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "ising-calibration-1.5-31b:free",
+      "vendor": "NVIDIA",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "jev-1.13",
+      "vendor": "TypeSafe",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0.0887,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "jev-1.14",
+      "vendor": "TypeSafe",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0.0887,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "jina-code-embeddings-0.5b:free",
+      "vendor": "Jina",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "jina-code-embeddings-1.5b:free",
+      "vendor": "Jina",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "jina-embeddings-v3:free",
+      "vendor": "Jina",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "jina-embeddings-v4:free",
+      "vendor": "Jina",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "jina-embeddings-v5-omni-nano:free",
+      "vendor": "Jina",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "jina-embeddings-v5-omni-small:free",
+      "vendor": "Jina",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "jina-embeddings-v5-text-nano:free",
+      "vendor": "Jina",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "jina-embeddings-v5-text-small:free",
+      "vendor": "Jina",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "juggernaut-xl",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "juggernaut-xl:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "k2-horizon:free",
+      "vendor": "IFM",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "kimi-k2.5",
+      "vendor": "Moonshot",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.0396,
+      "outputPerMillionUsd": 0.198
+    },
+    {
+      "id": "kimi-k2.6",
+      "vendor": "Moonshot",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.039615,
+      "outputPerMillionUsd": 0.16679895749999998
+    },
+    {
+      "id": "kimi-k2.7-code",
+      "vendor": "Moonshot",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.039615,
+      "outputPerMillionUsd": 0.16679895749999998
+    },
+    {
+      "id": "kimi-k3",
+      "vendor": "Moonshot",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.10200000000000001,
+      "outputPerMillionUsd": 0.51
+    },
+    {
+      "id": "kimi-k3:free",
+      "vendor": "Moonshot",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "l3-70b-euryale-v2.1:free",
+      "vendor": "Sao10K",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "l3-8b-stheno-v3.2:free",
+      "vendor": "Sao10K",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "l3.3-ms-nevoria-70b:free",
+      "vendor": "Steelskull",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "laguna-s-2.1:free",
+      "vendor": "Poolside",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "laguna-xs-2.1:free",
+      "vendor": "Poolside",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "lfm-2.5-2.6b-free:free",
+      "vendor": "Liquid",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "lfm-2.5-2.6b:free",
+      "vendor": "Liquid",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "ling-3.1-flash:free",
+      "vendor": "InclusionAI",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "llama-3.2-11b-vision:free",
+      "vendor": "Meta",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "llama-3.3-70b:free",
+      "vendor": "Meta",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "llama-4-scout:free",
+      "vendor": "Meta",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "longcat-2.0",
+      "vendor": "Meituan",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.6000051599999999,
+      "outputPerMillionUsd": 2.4000206399999997
+    },
+    {
+      "id": "majicmix-realistic",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "manta-flash-1.0:free",
+      "vendor": "MegaNova",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "manta-mini-1.0:free",
+      "vendor": "MegaNova",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "mercury-2.5:free",
+      "vendor": "Inception",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "mercury-2:free",
+      "vendor": "Inception",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "mercury-decide:free",
+      "vendor": "Inception",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "mimo-v2.5",
+      "vendor": "Xiaomi",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.09998800000000001,
+      "outputPerMillionUsd": 0.19997600000000001
+    },
+    {
+      "id": "mimo-v2.5-pro",
+      "vendor": "Xiaomi",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.86999256,
+      "outputPerMillionUsd": 1.73998512
+    },
+    {
+      "id": "mimo-v2.6-flash",
+      "vendor": "Xiaomi",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.033600000000000005,
+      "outputPerMillionUsd": 0.06720000000000001
+    },
+    {
+      "id": "mimo-v2.6-pro",
+      "vendor": "Xiaomi",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.87,
+      "outputPerMillionUsd": 1.74
+    },
+    {
+      "id": "minicpm5-2b:free",
+      "vendor": "OpenBMB",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "minimax-m2-her",
+      "vendor": "MiniMax",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.6,
+      "outputPerMillionUsd": 2.4
+    },
+    {
+      "id": "minimax-m2.5",
+      "vendor": "MiniMax",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.11567999999999999,
+      "outputPerMillionUsd": 0.46271999999999996
+    },
+    {
+      "id": "minimax-m2.7",
+      "vendor": "MiniMax",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.21,
+      "outputPerMillionUsd": 0.84
+    },
+    {
+      "id": "minimax-m2.7:free",
+      "vendor": "MiniMax",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "minimax-m3",
+      "vendor": "MiniMax",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.0648,
+      "outputPerMillionUsd": 0.2592
+    },
+    {
+      "id": "minimax-m3.1-flash:free",
+      "vendor": "MiniMax",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "mistral-7b-instruct:free",
+      "vendor": "Mistral",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "mistral-large-3",
+      "vendor": "Mistral",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.175,
+      "outputPerMillionUsd": 0.5249999999999999
+    },
+    {
+      "id": "mistral-large-4",
+      "vendor": "Mistral",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.36,
+      "outputPerMillionUsd": 4.08
+    },
+    {
+      "id": "mistral-small",
+      "vendor": "Mistral",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.30000000000000004,
+      "outputPerMillionUsd": 0.9000000000000001
+    },
+    {
+      "id": "mistral-small-3.2:free",
+      "vendor": "Mistral",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "mistral-small:free",
+      "vendor": "Mistral",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "mn-violet-lotus-12b:free",
+      "vendor": "FallenMerick",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "muse-glimmer-30b:free",
+      "vendor": "Meta",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "muse-spark-1.2-contributor",
+      "vendor": "Meta",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.2,
+      "outputPerMillionUsd": 0.4
+    },
+    {
+      "id": "muse-spark-1.3-contributor",
+      "vendor": "Meta",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.2,
+      "outputPerMillionUsd": 0.4
+    },
+    {
+      "id": "muse-wonder",
+      "vendor": "Meta",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 8,
+      "outputPerMillionUsd": 40
+    },
+    {
+      "id": "nemotron-3-nano-omni-30b-a3b-reasoning:free",
+      "vendor": "NVIDIA",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "nemotron-3-super-120b-a12b:free",
+      "vendor": "NVIDIA",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "nemotron-3-ultra-550b-a55b:free",
+      "vendor": "NVIDIA",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "nemotron-3.5-lightning-30b-a3b:free",
+      "vendor": "NVIDIA",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "nemotron-3.5-super-vl:free",
+      "vendor": "NVIDIA",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "north-mini-code:free",
+      "vendor": "Cohere",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "nova-3:free",
+      "vendor": "Deepgram",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "nova-anime-xl:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "nova-furry-pony:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "nova-furry-xl",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "ntr-mix-il-noob-xl:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "or-glm-5.3",
+      "vendor": "Zhipu",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 1.400028,
+      "outputPerMillionUsd": 4.4001480012
+    },
+    {
+      "id": "or-kimi-k3",
+      "vendor": "Moonshot",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 4.86,
+      "outputPerMillionUsd": 24.3
+    },
+    {
+      "id": "or-kimi-k3.1-pro",
+      "vendor": "Moonshot",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 5.3334,
+      "outputPerMillionUsd": 26.667
+    },
+    {
+      "id": "pony-diffusion-v6-xl",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "pony-realism",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "prefect-pony:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "quiet-goodnight-xl:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwen-sea-lion-v4-32b-it:free",
+      "vendor": "AI Singapore",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwen-sea-lion-v4.5-27b-it:free",
+      "vendor": "AI Singapore",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwen2.5-coder-32b:free",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwen2.5-vl-7b-instruct-awq:free",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwen3-coder-plus:free",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwen3.5-4b:free",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwen3.6-27b:free",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwen3.6-35b-a3b:free",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwen3.7-max",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.51,
+      "outputPerMillionUsd": 1.53
+    },
+    {
+      "id": "qwen3.8-27b:free",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwen3.8-flash",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.009494999999999998,
+      "outputPerMillionUsd": 0.029750683499999996
+    },
+    {
+      "id": "qwen3.8-max",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.42,
+      "outputPerMillionUsd": 1.26
+    },
+    {
+      "id": "qwen3.8-omni-flash",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0.3,
+      "outputPerMillionUsd": 0.93999
+    },
+    {
+      "id": "qwen3:free",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "qwq-32b:free",
+      "vendor": "Alibaba",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "realistic-vision-v6",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "rev-animated",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "rev-animated:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "riva-translate-4b-instruct-v2:free",
+      "vendor": "NVIDIA",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "sea-lion-e5-embedding-600m:free",
+      "vendor": "AI Singapore",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "sea-lion-modernbert-embedding-300m:free",
+      "vendor": "AI Singapore",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "sea-lion-modernbert-embedding-600m:free",
+      "vendor": "AI Singapore",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "sensenova-6.8-flash-lite:free",
+      "vendor": "SenseNova",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "step-5-preview",
+      "vendor": "StepFun",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 2,
+      "outputPerMillionUsd": 5.4
+    },
+    {
+      "id": "swamponyxl:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "swe-1-6-slow:free",
+      "vendor": "Codeium",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "text-embedding-3-large",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0.0364,
+      "outputPerMillionUsd": 0.0364
+    },
+    {
+      "id": "tunix-pony:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "typhoon-v2.5-30b-a3b-instruct:free",
+      "vendor": "Typhoon",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "villanova-2b-2512-preview-apnea-ft:free",
+      "vendor": "Villanova",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "wai-cute-pony:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "wai-nsfw-illustrious-sdxl",
+      "vendor": "Runware",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "wai-nsfw-illustrious-sdxl:free",
+      "vendor": "AI Horde",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "whisper-large-v3-turbo:free",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "whisper-large-v3:free",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "whisper-tiny-en:free",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "whisper:free",
+      "vendor": "OpenAI",
+      "online": true,
+      "chat": false,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    },
+    {
+      "id": "xing4.0-29b-a4b:free",
+      "vendor": "Unknown",
+      "online": true,
+      "chat": true,
+      "inputPerMillionUsd": 0,
+      "outputPerMillionUsd": 0
+    }
+  ]
+}

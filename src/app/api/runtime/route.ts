@@ -1,6 +1,8 @@
 import { z } from "zod";
 import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
+import { quotaEnforced, quotaStatusFor } from "@/lib/billing/enforce";
+import { serializeQuota } from "@/lib/billing/quota";
 import { executeRuntimeRun, prepareRuntimeRun } from "@/lib/runtime/executor";
 import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 import {
@@ -9,6 +11,9 @@ import {
   taskForEffort,
 } from "@/lib/product/effort-router";
 import { parseEffort } from "@/lib/product/surfaces";
+import { isAllowedProductModel } from "@/lib/models/allowlist";
+import { env, serverKeys } from "@/lib/env";
+import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
 import { routeCapabilities } from "@/lib/runtime/router";
 import { encodeSse } from "@/lib/runtime/sse";
 import type { RuntimePacket } from "@/lib/runtime/types";
@@ -31,6 +36,7 @@ const inputSchema = z.object({
   attachmentIds: z.array(z.string().uuid()).max(8).optional(),
   mode: z.enum(["auto", "research", "coding", "reasoning", "agent"]).optional(),
   surface: z.enum(["ai", "agent", "bot", "coding"]).optional(),
+  modelId: z.string().trim().min(1).max(200).optional(),
   coding: z
     .object({
       repository: z.string().trim().max(300),
@@ -41,7 +47,7 @@ const inputSchema = z.object({
         .optional(),
       effortChosen: z.boolean().optional(),
       permission: z.enum(["ask", "accept-edits"]).optional(),
-      model: z.enum(["rouge", "quasnir", "darus"]),
+      model: z.string().trim().min(1).max(200).optional(),
     })
     .optional(),
 });
@@ -102,6 +108,65 @@ export async function POST(request: Request) {
     }
     throw error;
   }
+  // Billing: refuse up front when the user has no plan or a spent window,
+  // telling them when it refills. The model calls are guarded again inside.
+  if (quotaEnforced()) {
+    const quota = await quotaStatusFor(identity.userId);
+    if (!quota.allowed) {
+      const noPlan = quota.reason === "no_subscription";
+      return Response.json(
+        {
+          error: noPlan ? "subscription_required" : "quota_exhausted",
+          message: publicRuntimeErrorMessage({
+            code: noPlan ? "subscription_required" : "quota_exhausted",
+          }),
+          quota: serializeQuota(quota),
+        },
+        {
+          status: noPlan ? 402 : 429,
+          headers: noPlan
+            ? undefined
+            : { "Retry-After": String(Math.ceil(quota.retryAfterMs / 1000)) },
+        },
+      );
+    }
+  }
+  let pinnedModel: string | undefined;
+  if (parsed.data.coding?.model || parsed.data.modelId) {
+    const requested = parsed.data.coding?.model ?? parsed.data.modelId ?? "";
+    if (!isAllowedProductModel(requested)) {
+      return Response.json(
+        {
+          error: "model_not_allowed",
+          message: "That model is not on the UNOROUTER allowlist.",
+        },
+        { status: 400 },
+      );
+    }
+    const modelId = requested;
+    const [nvidia, keyModels] = await Promise.all([
+      listNvidiaTopModels(),
+      listKeyModels({
+        baseUrl: env.UNOROUTER_BASE_URL,
+        keys: serverKeys(),
+      }),
+    ]);
+    const allowed = [
+      ...(nvidia.availability === "ready" ? nvidia.models : []),
+      ...(keyModels.availability === "ready" ? keyModels.models : []),
+    ];
+    if (!allowed.some((model) => model.id === modelId)) {
+      return Response.json(
+        {
+          error: "key_models_unknown",
+          message:
+            "Bald verfügbar. Which models this key can call is not known, so the run was not started on another model.",
+        },
+        { status: 503 },
+      );
+    }
+    pinnedModel = modelId;
+  }
   const surface = parsed.data.surface;
   let coding = parsed.data.coding;
   if (surface === "coding" && coding) {
@@ -161,6 +226,7 @@ export async function POST(request: Request) {
       regenerate: parsed.data.regenerate,
       mode: surface === "coding" ? "coding" : parsed.data.mode,
       surface,
+      pinnedModel,
       coding:
         surface === "coding" && coding && coding.effort
           ? {
@@ -252,6 +318,7 @@ export async function POST(request: Request) {
         correlationId,
         attachments,
         mode: parsed.data.mode,
+        pinnedModel,
       })
         .catch((error: unknown) => {
           emit({

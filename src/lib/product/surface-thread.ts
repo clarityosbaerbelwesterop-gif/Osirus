@@ -28,7 +28,8 @@ export function openedSurfaceThread<
   T extends { surface: SessionSurface | null; messages: unknown[] },
 >(input: { surface: SessionSurface; state: T | null; hasSession: boolean }) {
   if (!input.hasSession) return null;
-  if (!input.state || input.state.surface !== input.surface) return null;
+  if (!input.state || (input.state.surface ?? "ai") !== input.surface)
+    return null;
   return input.state;
 }
 
@@ -41,9 +42,17 @@ export async function loadSurfaceThread(input: {
 }) {
   const blank = { ...empty, surface: input.surface };
   if (input.fresh === "1") return blank;
-  const hasSession = Boolean(input.session && UUID.test(input.session));
-  if (!hasSession) return blank;
   const repository = new RuntimeRepository(input.userId);
+  const hasSession = Boolean(input.session && UUID.test(input.session));
+  if (!hasSession) {
+    const recent = await repository
+      .getRecentWorkspaceState(input.workspaceId, input.surface)
+      .catch(() => null);
+    if (recent && recent.sessionId) {
+      return { ...recent, surface: input.surface };
+    }
+    return blank;
+  }
   const state = await repository
     .getSessionState(input.session!, input.workspaceId)
     .catch(() => null);

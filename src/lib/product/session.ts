@@ -16,22 +16,28 @@ export type ProductSession = {
  * The signed-in person and their workspace, once per request: the layout and
  * the page share the result instead of bootstrapping twice.
  */
+export const loadAuthUser = cache(async () => {
+  requireAuthConfiguration();
+  const { data: session } = await auth.getSession();
+  if (!session?.user) return null;
+  return {
+    id: session.user.id,
+    email: session.user.email ?? null,
+    name: session.user.name ?? null,
+  };
+});
+
 export const loadProductSession = cache(
   async (): Promise<ProductSession | null> => {
-    requireAuthConfiguration();
-    const { data: session } = await auth.getSession();
-    if (!session?.user) return null;
+    const user = await loadAuthUser();
+    if (!user) return null;
     const identity = await bootstrapProductIdentity({
-      id: session.user.id,
-      email: session.user.email,
-      name: session.user.name,
+      id: user.id,
+      email: user.email,
+      name: user.name,
     });
     return {
-      user: {
-        id: session.user.id,
-        email: session.user.email ?? null,
-        name: session.user.name ?? null,
-      },
+      user,
       identity,
     };
   },

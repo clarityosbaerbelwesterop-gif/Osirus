@@ -6,15 +6,9 @@ import type { InteractionPreference, LabModelId } from "./choices";
  * name; the route label is the honest one.
  */
 
-const FALLBACK_LABEL: Record<Exclude<LabModelId, "external">, string> = {
-  rouge: "ROUGE 1 · API fallback",
-  quasnir: "QUASNIR · API fallback",
-  darus: "DARUS · API fallback",
-};
-
 export function honestRouteLabel(model: LabModelId): string {
-  if (model === "external") return "External API";
-  return FALLBACK_LABEL[model];
+  if (model === "external") return "UNOROUTER";
+  return "Bald verfügbar";
 }
 
 /**
@@ -22,16 +16,13 @@ export function honestRouteLabel(model: LabModelId): string {
  * composer row does not reflow. Agent mode is Osirus, not the selected model.
  */
 export function modelRouteDescription(
-  model: LabModelId,
+  _model: LabModelId,
   interaction: InteractionPreference,
 ): string {
   if (interaction === "agent") {
     return "Agent mode runs Osirus. The selected model is not the agent.";
   }
-  if (model === "external") {
-    return "External API is the Osirus provider pool, not ROUGE 1, QUASNIR, or DARUS.";
-  }
-  return `${honestRouteLabel(model)}. Not a native checkpoint.`;
+  return "UNOROUTER models appear when the key list is known.";
 }
 
 /**
@@ -40,7 +31,7 @@ export function modelRouteDescription(
  */
 export function activityCaption(input: {
   activity: string | null;
-  model: LabModelId;
+  model: string;
   interaction: InteractionPreference;
 }): string {
   if (input.activity === "waiting") return "Waiting";

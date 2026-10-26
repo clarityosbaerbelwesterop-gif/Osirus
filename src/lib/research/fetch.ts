@@ -2,7 +2,14 @@ import { createHash } from "node:crypto";
 import { lookup } from "node:dns/promises";
 import { isIP } from "node:net";
 import { Agent, fetch as undiciFetch } from "undici";
-import { guardedLookup, OutboundBlockedError } from "../security/outbound";
+import {
+  guardedLookup,
+  isPrivateAddress,
+  OutboundBlockedError,
+} from "../security/outbound";
+import { researchUserAgent } from "./site-url";
+
+export { isPrivateAddress };
 
 // Fetching the open web, safely.
 //
@@ -39,40 +46,6 @@ export class FetchRefused extends Error {
     super(`fetch_refused:${reason}`);
     this.name = "FetchRefused";
   }
-}
-
-function privateV4(address: string) {
-  const [a, b] = address.split(".").map(Number) as [number, number];
-  return (
-    a === 10 ||
-    a === 127 ||
-    a === 0 ||
-    (a === 169 && b === 254) ||
-    (a === 172 && b >= 16 && b <= 31) ||
-    (a === 192 && b === 168) ||
-    (a === 100 && b >= 64 && b <= 127) ||
-    a >= 224
-  );
-}
-
-function privateV6(address: string) {
-  const lower = address.toLowerCase();
-  if (lower === "::1" || lower === "::") return true;
-  if (
-    lower.startsWith("fe80") ||
-    lower.startsWith("fc") ||
-    lower.startsWith("fd")
-  )
-    return true;
-  const mapped = lower.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/);
-  return mapped ? privateV4(mapped[1]!) : false;
-}
-
-export function isPrivateAddress(address: string) {
-  const family = isIP(address);
-  if (family === 4) return privateV4(address);
-  if (family === 6) return privateV6(address);
-  return true;
 }
 
 export async function assertPublicUrl(raw: string): Promise<URL> {
@@ -135,7 +108,7 @@ export async function safeFetch(
         signal: controller.signal,
         dispatcher: agent,
         headers: {
-          "user-agent": "OsirusResearch/1.0 (+https://osirus.vercel.app)",
+          "user-agent": researchUserAgent(),
           accept:
             options.accept ??
             "text/html,application/json,text/plain;q=0.9,*/*;q=0.5",

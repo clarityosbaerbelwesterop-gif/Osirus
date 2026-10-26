@@ -79,16 +79,10 @@ describe("chat run status", () => {
     ).not.toMatch(/ground|qwen|UnoRouter|token/i);
   });
 
-  it("keeps the selected name and does not claim a native checkpoint", () => {
-    expect(customerProgramCaption("ROUGE 1 · API fallback")).toBe(
-      "ROUGE 1. Not a native checkpoint.",
-    );
-    expect(customerProgramCaption("QUASNIR · API fallback")).toContain(
-      "QUASNIR",
-    );
-    expect(
-      customerProgramCaption("ROUGE-1 / api_fallback / UnoRouter / qwen3:free"),
-    ).toBeNull();
+  it("does not caption an answer with a retired model name", () => {
+    expect(customerProgramCaption("ROUGE 1 · API fallback")).toBeNull();
+    expect(customerProgramCaption("QUASNIR · API fallback")).toBeNull();
+    expect(customerProgramCaption("DARUS")).toBeNull();
     expect(customerProgramCaption("eye2-qwen")).toBeNull();
   });
 });

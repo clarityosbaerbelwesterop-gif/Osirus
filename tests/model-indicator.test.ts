@@ -275,7 +275,7 @@ describe("MessageList model caption", () => {
         messages: [
           {
             ...baseMessage,
-            caption: "ROUGE 1. Not a native checkpoint.",
+            caption: "Saved.",
           },
         ],
         runObjective: null,
@@ -283,7 +283,8 @@ describe("MessageList model caption", () => {
         streamingId: null,
       }),
     );
-    expect(html).toContain("ROUGE 1. Not a native checkpoint.");
+    expect(html).toContain("Saved.");
+    expect(html).not.toContain("ROUGE");
     expect(html).not.toContain("qwen");
     expect(html).not.toContain("UnoRouter");
   });

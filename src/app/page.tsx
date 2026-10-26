@@ -1,43 +1,23 @@
-import { BrainCircuit, History, ShieldCheck } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import {
+  AgentStory,
+  BotStory,
+  WorkStory,
+} from "@/components/marketing/stories";
 import { OsirusMark } from "@/components/shell/osirus-mark";
 import { auth } from "@/lib/auth/server";
+import { isFreeTierEnabled, startAccountLabel } from "./free-tier";
+import { absoluteUrl } from "./site-url";
 
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Osirus — an agent that finishes the work, and shows it",
+  title: "Osirus — Assistent, Work und autonome Agents",
   description:
-    "Osirus plans a task, works in an isolated sandbox, asks before it acts on anything you connected, and verifies its own result before it calls it done.",
+    "Osirus ist der präzise Workspace für KI-Assistenz, mehrstufige Work-Aufträge mit unabhängiger Prüfung und spezialisierte Agents über UNOROUTER und NVIDIA.",
   alternates: { canonical: "/" },
-};
-
-const RUN_LINES = [
-  { tag: "plan", text: "4 stages drafted, budgeted" },
-  { tag: "sandbox", text: "12 steps executed, isolated" },
-  { tag: "approval", text: "git push — waiting for your yes" },
-  { tag: "verify", text: "result checked against evidence" },
-] as const;
-
-const STEPS = [
-  "Describe the objective in plain language. Osirus drafts a plan with stages and budgets.",
-  "Work happens in an isolated sandbox with deny-all networking by default.",
-  "Anything that touches your connected systems waits for your explicit approval.",
-  "Every result carries a verification status — verified, unverified, conflicted, rejected.",
-] as const;
-
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "SoftwareApplication",
-  name: "Osirus",
-  applicationCategory: "DeveloperApplication",
-  operatingSystem: "Web",
-  url: "https://osirus.vercel.app/",
-  description:
-    "An agent workspace that plans, acts with approval, and verifies its work.",
-  offers: { "@type": "Offer", price: "0", priceCurrency: "EUR" },
 };
 
 export default async function HomePage() {
@@ -45,123 +25,150 @@ export default async function HomePage() {
     .getSession()
     .catch(() => ({ data: null }));
   if (session?.user) redirect("/app");
+  const startLabel = startAccountLabel();
+  const freeTier = isFreeTierEnabled();
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "SoftwareApplication",
+    name: "Osirus",
+    applicationCategory: "BusinessApplication",
+    operatingSystem: "Web",
+    url: absoluteUrl("/"),
+    description:
+      "Workspace für Assistent, Work und Agents mit unabhängiger Verifikation über UNOROUTER und NVIDIA.",
+  };
 
   return (
-    <main className="landing">
+    <main className="landing" lang="de">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <nav className="landing-nav" aria-label="Primary navigation">
+      <a className="skip-link" href="#inhalt">
+        Zum Inhalt
+      </a>
+      <nav className="landing-nav" aria-label="Hauptnavigation">
         <span className="landing-brand">
           <OsirusMark />
           Osirus
         </span>
-        <Link className="btn btn-ghost" href="/auth/sign-in">
-          Sign in
-        </Link>
+        <div className="landing-nav-links">
+          <a href="#bots">Bots</a>
+          <a href="#work">Work</a>
+          <a href="#agents">Agents</a>
+          <a href="#pruefung">Verifikation</a>
+          <Link className="btn btn-ghost" href="/auth/sign-in">
+            Anmelden
+          </Link>
+        </div>
       </nav>
 
-      <section className="landing-hero">
-        <div className="landing-hero-grid">
+      <div id="inhalt">
+        <section className="landing-hero">
+          <p className="landing-eyebrow">
+            <span className="landing-dot" aria-hidden="true" />
+            Intelligence Workspace
+          </p>
+          <h1>
+            Bots, Work und <span className="landing-emphasis">Agents</span>
+          </h1>
+          <p className="landing-copy">
+            Osirus verbindet fokussierte KI-Assistenz, orchestrierte
+            Work-Aufträge mit getrenntem Prüfermodell und dauerhafte Agents in
+            einer ruhigen, verifizierbaren Arbeitsumgebung. Modelle werden über
+            UNOROUTER und NVIDIA angebunden; jede Aktion nach außen wartet auf
+            deine explizite Freigabe.
+            {freeTier
+              ? " Zum Einstieg steht ein begrenztes kostenloses Kontingent bereit."
+              : ""}
+          </p>
+          <div className="landing-actions">
+            <Link className="btn btn-primary btn-lg" href="/auth/sign-up">
+              {startLabel}
+            </Link>
+            <Link className="btn btn-secondary btn-lg" href="/auth/sign-in">
+              Anmelden
+            </Link>
+          </div>
+        </section>
+
+        <section
+          id="bots"
+          className="landing-block"
+          aria-labelledby="bots-title"
+        >
           <div>
-            <p className="landing-eyebrow">
-              <span className="landing-dot" aria-hidden="true" />
-              Agent workspace
+            <h2 id="bots-title">Bots</h2>
+            <p>
+              Direkter Dialog mit klarem Kontext, mehrstufigem Caching und
+              präziser Modellwahl. Lege spezialisierte Bots mit festem Modell
+              und eigener Systemanweisung an und bündele ihre Perspektiven.
             </p>
-            <h1>
-              An agent that{" "}
-              <span className="landing-emphasis">finishes the work</span>, and
-              shows it.
-            </h1>
-            <p className="landing-copy">
-              Osirus plans a task, works in an isolated sandbox, asks before it
-              acts on anything you connected, and checks its own result before
-              it calls it done.
+            <Link className="btn btn-secondary" href="/auth/sign-up">
+              {startLabel}
+            </Link>
+          </div>
+          <BotStory />
+        </section>
+
+        <section
+          id="work"
+          className="landing-block"
+          aria-labelledby="work-title"
+        >
+          <div>
+            <h2 id="work-title">Work</h2>
+            <p>
+              Für komplexe Vorhaben analysiert Osirus zuerst den Auftrag (Klasse
+              S bis XL) und empfiehlt das optimale Ausführermodell, ein
+              unabhängiges Prüfermodell sowie die passende Anzahl paralleler
+              Sub-Agents. Alle Empfehlungen lassen sich vor dem Start gezielt
+              anpassen.
             </p>
-            <div className="landing-actions">
-              <Link className="btn btn-primary btn-lg" href="/auth/sign-up">
-                Create account
-              </Link>
-              <Link className="btn btn-secondary btn-lg" href="/auth/sign-in">
-                Sign in
-              </Link>
-            </div>
-            <ul className="landing-trust">
-              <li>EU-hosted database</li>
-              <li>Approval-gated actions</li>
-              <li>No payment required</li>
-            </ul>
           </div>
+          <WorkStory />
+        </section>
 
-          <div
-            className="landing-run"
-            role="img"
-            aria-label="Illustration of an Osirus run: plan, sandbox execution, approval gate, verification — finished with status verified."
-          >
-            <div className="landing-run-bar">run · audit this repository</div>
-            <div className="landing-run-body">
-              <span className="landing-run-cmd">$ osirus run</span>
-              {RUN_LINES.map((line, i) => (
-                <span className="landing-run-line" key={line.tag}>
-                  <span className="landing-run-dot" aria-hidden="true" />
-                  <span className="landing-run-tag">{line.tag}</span>
-                  <span>{line.text}</span>
-                </span>
-              ))}
-              <span className="landing-run-verdict">✓ verified</span>
-            </div>
+        <section
+          id="agents"
+          className="landing-block"
+          aria-labelledby="agents-title"
+        >
+          <div>
+            <h2 id="agents-title">Agents</h2>
+            <p>
+              Definiere dauerhafte Rollen in deinem Workspace, kombiniere
+              mehrere Spezialisten im Gruppenchat per @Erwähnung und nutze
+              autonome Code- und Prüfschleifen, die Änderungen deterministisch
+              gegen Tests und Sicherheitsregeln validieren.
+            </p>
           </div>
-        </div>
-      </section>
+          <AgentStory />
+        </section>
 
-      <section className="landing-principles" aria-label="How Osirus works">
-        <article className="landing-reveal">
-          <h2>
-            <History size={17} aria-hidden="true" />
-            Durable runs
-          </h2>
-          <p>Runs, steps and checkpoints survive reloads and restarts.</p>
-        </article>
-        <article className="landing-reveal">
-          <h2>
-            <ShieldCheck size={17} aria-hidden="true" />
-            You approve what matters
-          </h2>
-          <p>Pushes, pull requests and external actions wait for your yes.</p>
-        </article>
-        <article className="landing-reveal">
-          <h2>
-            <BrainCircuit size={17} aria-hidden="true" />
-            Verified results
-          </h2>
-          <p>Every answer is checked against evidence before it is final.</p>
-        </article>
-      </section>
-
-      <section className="landing-steps landing-reveal" aria-label="The loop">
-        <h2>One loop, four honest steps</h2>
-        <ol>
-          {STEPS.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="landing-cta landing-reveal">
-        <div>
-          <h2>Give it one real task.</h2>
-          <p>Watch it plan, ask, act — and prove what it did.</p>
-        </div>
-        <Link className="btn btn-primary btn-lg" href="/auth/sign-up">
-          Create account
-        </Link>
-      </section>
+        <section
+          id="pruefung"
+          className="landing-block landing-block-single"
+          aria-labelledby="pruefung-title"
+        >
+          <div>
+            <h2 id="pruefung-title">Unabhängiges Prüfsystem</h2>
+            <p>
+              Eine Modellantwort allein gilt in Osirus nie als Beleg. Ergebnisse
+              werden durch deterministische Checks und ein vom Ausführer
+              getrenntes Prüfermodell kontrolliert, während Schreibzugriffe auf
+              verbundene Systeme zwingend deine Freigabe erfordern.
+            </p>
+          </div>
+        </section>
+      </div>
 
       <footer className="landing-footer">
         <Link href="/legal/impressum">Impressum</Link>
-        <Link href="/legal/privacy">Privacy</Link>
-        <Link href="/legal/terms">Terms</Link>
+        <Link href="/legal/privacy">Datenschutz</Link>
+        <Link href="/legal/terms">AGB</Link>
+        <Link href="/legal/eula">EULA</Link>
         <Link href="/legal/cookies">Cookies</Link>
       </footer>
     </main>

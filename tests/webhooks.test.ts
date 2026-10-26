@@ -111,12 +111,28 @@ describe("webhook events", () => {
     );
     expect(event).toEqual({
       kind: "ci_failure",
-      deliveryId: "d-1",
+      deliveryId: event?.deliveryId,
       repository: "acme/shop",
       ref: "feature/cart",
       sha: "0123456789abcdef0123456789abcdef01234567",
       status: "failure",
     });
+    const replay = normalizeEvent(
+      github(
+        "workflow_run",
+        {
+          repository: { full_name: "acme/shop" },
+          workflow_run: {
+            conclusion: "failure",
+            head_branch: "feature/cart",
+            head_sha: "0123456789abcdef0123456789abcdef01234567",
+          },
+        },
+        "another-delivery-id",
+      ),
+    );
+    expect(replay?.deliveryId).toBe(event?.deliveryId);
+    expect(replay?.deliveryId).not.toBe("d-1");
     expect(describeEvent(event!)).toBe(
       "ci failure in acme/shop on feature/cart at 0123456789ab (failure)",
     );
@@ -150,14 +166,35 @@ describe("webhook events", () => {
       headers: new Headers({
         "x-osirus-event": "db.row_inserted",
         "x-osirus-delivery": "evt_1",
+        "x-osirus-timestamp": "100",
       }),
       body: "{}",
     });
     expect(event).toMatchObject({
       kind: "db_event",
-      deliveryId: "evt_1",
       status: "db_row_inserted",
     });
+    const replay = normalizeEvent({
+      source: "generic",
+      headers: new Headers({
+        "x-osirus-event": "db.row_inserted",
+        "x-osirus-delivery": "evt_2",
+        "x-osirus-timestamp": "100",
+      }),
+      body: "{}",
+    });
+    const shifted = normalizeEvent({
+      source: "generic",
+      headers: new Headers({
+        "x-osirus-event": "db.row_inserted",
+        "x-osirus-delivery": "evt_1",
+        "x-osirus-timestamp": "200",
+      }),
+      body: "{}",
+    });
+    expect(event?.deliveryId).not.toBe("evt_1");
+    expect(replay?.deliveryId).toBe(event?.deliveryId);
+    expect(shifted?.deliveryId).not.toBe(event?.deliveryId);
   });
 });
 

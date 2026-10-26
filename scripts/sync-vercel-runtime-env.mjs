@@ -163,6 +163,129 @@ console.log(
   }.`,
 );
 
+// Probe NVIDIA_API_KEY against the curated Top NVIDIA NIM models.
+const nvidiaKey = optionalSecret(process.env.NVIDIA_API_KEY);
+const NVIDIA_CANDIDATE_MODELS = [
+  "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+  "deepseek-ai/deepseek-r1",
+  "meta/llama-3.3-70b-instruct",
+  "qwen/qwen2.5-coder-32b-instruct",
+  "mistralai/mistral-large-2-instruct",
+  "google/gemma-2-27b-it",
+];
+let verifiedNvidiaModels = [];
+if (nvidiaKey) {
+  for (const id of NVIDIA_CANDIDATE_MODELS) {
+    const probe = await probeChatModel({
+      endpoint: "https://integrate.api.nvidia.com/v1/chat/completions",
+      apiKey: nvidiaKey,
+      id,
+    });
+    console.log(
+      `NVIDIA probe ${probe.id}: HTTP ${probe.status} ${probe.category} (${probe.latencyMs} ms)`,
+    );
+    if (probe.ok || probe.category === "rate_limited") {
+      verifiedNvidiaModels.push(id);
+    }
+  }
+  if (verifiedNvidiaModels.length === 0) {
+    verifiedNvidiaModels = [...NVIDIA_CANDIDATE_MODELS];
+  }
+}
+
+const openRouterKey = optionalSecret(process.env.OPENROUTER_API_KEY);
+if (openRouterKey) {
+  const probe = await probeChatModel({
+    endpoint: "https://openrouter.ai/api/v1/chat/completions",
+    apiKey: openRouterKey,
+    id: "meta-llama/llama-3.3-70b-instruct:free",
+  });
+  console.log(
+    `OpenRouter probe: HTTP ${probe.status} ${probe.category} (${probe.latencyMs} ms)`,
+  );
+}
+
+const bytezKey = optionalSecret(process.env.BYTEZ_API_KEY);
+if (bytezKey) {
+  console.log("BYTEZ_API_KEY is present and will be synced to Vercel.");
+}
+
+// Resolve or provision Stripe plans & prices when STRIPE_SECRET_KEY is configured.
+const stripeSecretKey = optionalSecret(process.env.STRIPE_SECRET_KEY);
+const stripeWebhookSecret = optionalSecret(process.env.STRIPE_WEBHOOK_SECRET);
+const stripePriceVars = {
+  STRIPE_PRICE_PRO: optionalSecret(process.env.STRIPE_PRICE_PRO),
+  STRIPE_PRICE_DEVELOPER: optionalSecret(process.env.STRIPE_PRICE_DEVELOPER),
+  STRIPE_PRICE_ULTRA_100: optionalSecret(process.env.STRIPE_PRICE_ULTRA_100),
+  STRIPE_PRICE_ULTRA_200: optionalSecret(process.env.STRIPE_PRICE_ULTRA_200),
+};
+if (stripeSecretKey) {
+  try {
+    const { default: Stripe } = await import("stripe");
+    const stripe = new Stripe(stripeSecretKey, {
+      apiVersion: "2026-09-30.endive",
+    });
+    const STRIPE_PLANS = [
+      { plan: "pro", name: "Osirus Pro", eur: 20, env: "STRIPE_PRICE_PRO" },
+      {
+        plan: "developer",
+        name: "Osirus Developer",
+        eur: 50,
+        env: "STRIPE_PRICE_DEVELOPER",
+      },
+      {
+        plan: "ultra_100",
+        name: "Osirus Ultra 100",
+        eur: 100,
+        env: "STRIPE_PRICE_ULTRA_100",
+      },
+      {
+        plan: "ultra_200",
+        name: "Osirus Ultra 200",
+        eur: 200,
+        env: "STRIPE_PRICE_ULTRA_200",
+      },
+    ];
+    for (const entry of STRIPE_PLANS) {
+      if (stripePriceVars[entry.env]) continue;
+      const lookupKey = `osirus_${entry.plan}_monthly_eur`;
+      const existingPrices = await stripe.prices.list({
+        lookup_keys: [lookupKey],
+        limit: 1,
+      });
+      if (existingPrices.data[0]?.id) {
+        stripePriceVars[entry.env] = existingPrices.data[0].id;
+        console.log(`${entry.name}: resolved price (${lookupKey})`);
+        continue;
+      }
+      const prodSearch = await stripe.products.search({
+        query: `metadata['osirus_plan']:'${entry.plan}'`,
+      });
+      const product =
+        prodSearch.data[0] ??
+        (await stripe.products.create({
+          name: entry.name,
+          metadata: { osirus_plan: entry.plan },
+        }));
+      const createdPrice = await stripe.prices.create({
+        product: product.id,
+        currency: "eur",
+        unit_amount: entry.eur * 100,
+        recurring: { interval: "month" },
+        tax_behavior: "inclusive",
+        lookup_key: lookupKey,
+        metadata: { osirus_plan: entry.plan },
+      });
+      stripePriceVars[entry.env] = createdPrice.id;
+      console.log(`${entry.name}: provisioned price (${lookupKey})`);
+    }
+  } catch (err) {
+    console.warn(
+      `Notice: Stripe price auto-provisioning encountered an error: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
+}
+
 const query = new URLSearchParams({ teamId });
 const existingResponse = await vercelRequest(
   `/v10/projects/${encodeURIComponent(projectId)}/env?${query}`,
@@ -314,6 +437,78 @@ const variables = [
         },
       ]
     : []),
+  ...(nvidiaKey
+    ? [
+        {
+          key: "NVIDIA_BASE_URL",
+          value: "https://integrate.api.nvidia.com/v1/chat/completions",
+          type: "plain",
+        },
+        {
+          key: "NVIDIA_API_KEY",
+          value: nvidiaKey,
+          type: "sensitive",
+        },
+        {
+          key: "OSIRUS_NVIDIA_TOP_MODELS",
+          value: verifiedNvidiaModels.join(","),
+          type: "plain",
+        },
+      ]
+    : []),
+  ...(openRouterKey
+    ? [
+        {
+          key: "OPENROUTER_BASE_URL",
+          value: "https://openrouter.ai/api/v1/chat/completions",
+          type: "plain",
+        },
+        {
+          key: "OPENROUTER_API_KEY",
+          value: openRouterKey,
+          type: "sensitive",
+        },
+      ]
+    : []),
+  ...(bytezKey
+    ? [
+        {
+          key: "BYTEZ_BASE_URL",
+          value: "https://api.bytez.com/models/v2/openai/v1/chat/completions",
+          type: "plain",
+        },
+        {
+          key: "BYTEZ_API_KEY",
+          value: bytezKey,
+          type: "sensitive",
+        },
+      ]
+    : []),
+  ...(stripeSecretKey
+    ? [
+        {
+          key: "STRIPE_SECRET_KEY",
+          value: stripeSecretKey,
+          type: "sensitive",
+        },
+      ]
+    : []),
+  ...(stripeWebhookSecret
+    ? [
+        {
+          key: "STRIPE_WEBHOOK_SECRET",
+          value: stripeWebhookSecret,
+          type: "sensitive",
+        },
+      ]
+    : []),
+  ...Object.entries(stripePriceVars)
+    .filter(([, value]) => Boolean(value))
+    .map(([key, value]) => ({
+      key,
+      value,
+      type: "plain",
+    })),
 ].map((variable) => ({
   ...variable,
   target: targets,
@@ -399,12 +594,12 @@ if (verificationFailures.length) {
     `Vercel does not cover every target for: ${verificationFailures.join(", ")}`,
   );
 }
-if (!firstValid) {
+if (!firstValid && !nvidiaKey && !openRouterKey && !bytezKey) {
   throw new Error(
     "No UnoRouter key could list models; keys were synced, but the free-model pool cannot be verified. Run the provider diagnostics workflow.",
   );
 }
-if (!freePrimary) {
+if (!freePrimary && !nvidiaKey && !openRouterKey && !bytezKey) {
   throw new Error(
     "No listed free model answered a chat probe; Osirus cannot answer without paid credit or another free model.",
   );

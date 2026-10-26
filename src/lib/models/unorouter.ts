@@ -1,4 +1,5 @@
-import { env, serverKeys } from "../env";
+import { isNvidiaTopModelId } from "../../config/recommendations";
+import { bytezKeys, env, nvidiaKeys, openRouterKeys, serverKeys } from "../env";
 import type { CapacityPriority } from "./capacity";
 import { FailureReportBuilder, type FailureReport } from "./failure-report";
 import { FREE_MODELS } from "./free";
@@ -392,25 +393,54 @@ export class UnoRouterProvider implements ModelProvider {
     return this.modelFor(role);
   }
 
-  private endpoint() {
-    if (!env.UNOROUTER_BASE_URL) {
-      throw new ProviderError(
-        "UNOROUTER_BASE_URL is not configured",
-        "provider_not_configured",
+  private endpoint(model?: string) {
+    if (model && isNvidiaTopModelId(model) && nvidiaKeys().length > 0) {
+      return (
+        env.NVIDIA_BASE_URL ??
+        "https://integrate.api.nvidia.com/v1/chat/completions"
       );
     }
-    return env.UNOROUTER_BASE_URL;
+    if (env.UNOROUTER_BASE_URL) return env.UNOROUTER_BASE_URL;
+    if (nvidiaKeys().length > 0 || env.NVIDIA_BASE_URL) {
+      return (
+        env.NVIDIA_BASE_URL ??
+        "https://integrate.api.nvidia.com/v1/chat/completions"
+      );
+    }
+    if (openRouterKeys().length > 0 || env.OPENROUTER_BASE_URL) {
+      return (
+        env.OPENROUTER_BASE_URL ??
+        "https://openrouter.ai/api/v1/chat/completions"
+      );
+    }
+    if (bytezKeys().length > 0 || env.BYTEZ_BASE_URL) {
+      return (
+        env.BYTEZ_BASE_URL ??
+        "https://api.bytez.com/models/v2/openai/v1/chat/completions"
+      );
+    }
+    throw new ProviderError(
+      "UNOROUTER_BASE_URL is not configured",
+      "provider_not_configured",
+    );
   }
 
-  private eligibleKeys() {
-    const keys = serverKeys();
-    if (!keys.length) {
-      throw new ProviderError(
-        "No UNOROUTER API key is configured",
-        "provider_not_configured",
-      );
+  private eligibleKeys(model?: string) {
+    if (model && isNvidiaTopModelId(model) && nvidiaKeys().length > 0) {
+      return nvidiaKeys();
     }
-    return keys;
+    const keys = serverKeys();
+    if (keys.length) return keys;
+    const nvidia = nvidiaKeys();
+    if (nvidia.length) return nvidia;
+    const openRouter = openRouterKeys();
+    if (openRouter.length) return openRouter;
+    const bytez = bytezKeys();
+    if (bytez.length) return bytez;
+    throw new ProviderError(
+      "No UNOROUTER API key is configured",
+      "provider_not_configured",
+    );
   }
 
   private combineSignal(
@@ -685,7 +715,7 @@ export class UnoRouterProvider implements ModelProvider {
    * - 5xx / 408 / network: the next key is tried (provider-side failure).
    */
   private async requestOnce(input: RequestInput & { model: string }) {
-    const keys = this.eligibleKeys();
+    const keys = this.eligibleKeys(input.model);
     const runtime = this.runtime();
     const order = runtime.keyOrder(keys.length, Date.now());
     let lastError: Error | undefined;
@@ -698,7 +728,7 @@ export class UnoRouterProvider implements ModelProvider {
         input.signal,
       );
       try {
-        const response = await fetch(this.endpoint(), {
+        const response = await fetch(this.endpoint(input.model), {
           method: "POST",
           headers: {
             Authorization: `Bearer ${keys[index]}`,

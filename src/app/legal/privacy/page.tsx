@@ -1,188 +1,200 @@
-export const metadata = {
-  title: "Privacy",
-};
+import Link from "next/link";
+import { OPERATOR } from "../operator";
 
-const DRAFT = "DRAFT — REQUIRES OPERATOR/LEGAL REVIEW";
-const TODO = "[[OPERATOR:";
-const CONTACT_EMAIL = "clarityos.baerbelwesterop@gmail.com";
+export const metadata = {
+  title: "Datenschutz",
+  description:
+    "Datenschutzerklärung von Osirus: Verantwortliche, Empfänger, Rechte und Cookies.",
+};
 
 export default function PrivacyPage() {
   return (
-    <article className="legal-body">
-      <p className="legal-draft" role="note">
-        {DRAFT}. This is not a lawyer-reviewed notice.
-      </p>
-      <h1>Privacy Notice (Datenschutzerklärung)</h1>
+    <article className="legal-body" lang="de">
+      <h1>Datenschutzerklärung</h1>
       <p>
-        This notice describes, at the technical level of the current product,
-        which personal data Osirus processes, why, on which legal basis, and for
-        how long. Every commitment in it remains subject to operator/legal
-        review; fields marked {TODO} …]] must be completed by the operator
-        before publication.
+        Diese Erklärung beschreibt, welche personenbezogenen Daten Osirus
+        verarbeitet, zu welchem Zweck, auf welcher Rechtsgrundlage und wie
+        lange. Sie gilt für die Website und den Workspace.
       </p>
 
-      <h2>1. Controller (Verantwortlicher)</h2>
+      <h2>1. Verantwortliche</h2>
       <p>
-        Bärbel Westerop — ClarityCompassAI (project: Osirus)
+        {OPERATOR.name}
         <br />
-        {TODO} street and house number]], 47447 Moers, Germany
+        Inhaberin: {OPERATOR.owner}
         <br />
-        E-Mail: {CONTACT_EMAIL} (operator confirms)
+        {OPERATOR.street}
+        <br />
+        {OPERATOR.city}
+        <br />
+        {OPERATOR.country}
+        <br />
+        Telefon: <a href={OPERATOR.phoneHref}>{OPERATOR.phoneDisplay}</a>
+        <br />
+        E-Mail: <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>
+      </p>
+      <p>
+        Ein Datenschutzbeauftragter ist nicht benannt. Anfragen zu deinen
+        Rechten richtest du an die genannte Adresse.
       </p>
 
-      <h2>2. What is stored, why, and on which legal basis</h2>
+      <h2>2. Welche Daten wir verarbeiten</h2>
       <ul>
         <li>
-          <strong>Account data.</strong> Email address, display name and the
-          authentication identity (email/password via Neon Auth, or GitHub
-          OAuth). Purpose: providing the account. Source: your sign-up. Legal
-          basis: Art. 6(1)(b) GDPR (performance of the user contract).
+          <strong>Konto.</strong> Name, E-Mail-Adresse und die Authentifizierung
+          über E-Mail und Passwort oder über GitHub OAuth sowie die
+          protokollierte Zustimmung zu AGB, EULA und Datenschutzhinweisen.
+          Zweck: Konto bereitstellen. Quelle: deine Registrierung.
+          Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO und Art. 6 Abs. 1 lit. c
+          DSGVO.
         </li>
         <li>
-          <strong>Workspace content.</strong> Session titles, messages you send,
-          run objectives, plans, stages, checkpoints and events. Purpose:
-          running the agent and showing you your history. Legal basis: Art.
-          6(1)(b) GDPR.
+          <strong>Workspace.</strong> Sitzungstitel, Nachrichten, Aufträge,
+          Work-Läufe, Agents, Gruppenchats, Pläne, Prüfpunkte und Ereignisse.
+          Zweck: den Assistenten, Work und Agents ausführen und den Verlauf
+          anzeigen. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
         </li>
         <li>
-          <strong>Memory.</strong> Facts the agent learns from your sessions
-          (episodic, semantic and related memory planes) so later runs can use
-          them. Memory is scoped to your workspace. Legal basis: Art. 6(1)(b)
-          GDPR.
+          <strong>Erinnerung.</strong> Angaben, die der Assistent aus deinen
+          verifizierten Sitzungen übernimmt, begrenzt auf deinen Workspace.
+          Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
         </li>
         <li>
-          <strong>Attachments.</strong> Files you upload (currently up to
-          10&nbsp;MB per file), parsed into text chunks for retrieval. Legal
-          basis: Art. 6(1)(b) GDPR.
+          <strong>Dateien.</strong> Dateien, die du hochlädst, werden zum
+          Weiterverwenden im eigenen Workspace in Text überführt.
+          Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
         </li>
         <li>
-          <strong>Model call records.</strong> Per call: role, model identifier,
-          token usage, latency, and an error category on failure. Prompts and
-          completions are not stored in these records. Legal basis: Art. 6(1)(b)
-          GDPR (service operation) and Art. 6(1)(f) GDPR (legitimate interest in
-          capacity planning).
+          <strong>Modellaufrufe und Kontingente.</strong> Rolle, Modellkennung,
+          Tokenzahl, abgerechnete Kosten in USD, Laufzeit und bei einem Fehler
+          eine Fehlerkategorie zur Abrechnung des 5-Stunden- und
+          Wochenkontingents. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO und
+          Art. 6 Abs. 1 lit. f DSGVO (Betrieb, Caching und Kapazität).
         </li>
         <li>
-          <strong>Security events.</strong> Approval decisions, tool-call
-          denials and rate-limit counters, for abuse prevention and audit. Legal
-          basis: Art. 6(1)(f) GDPR (legitimate interest in the security of the
-          service; the logs are append-only for the application role).
+          <strong>Sicherheit.</strong> Freigaben, abgelehnte Werkzeugaufrufe und
+          Rate-Limit-Zähler gegen Missbrauch. Rechtsgrundlage: Art. 6 Abs. 1
+          lit. f DSGVO.
+        </li>
+        <li>
+          <strong>Technisch notwendige Cookies und Präferenzen.</strong> Sitzung
+          und ausdrücklich gewählte Einstellungen gemäß § 25 Abs. 2 TDDDG. Wir
+          setzen keine Analyse- oder Marketing-Cookies.
         </li>
       </ul>
 
-      <h2>3. Who receives data (processors and recipients)</h2>
+      <h2>3. Empfänger</h2>
       <ul>
         <li>
-          <strong>Neon, LLC</strong> (a Databricks company) — database hosting
-          and authentication. Database region: European Union (eu-central-1,
-          Frankfurt).
+          <strong>Neon, LLC</strong> (ein Unternehmen von Databricks) —
+          Datenbank und Anmeldung. Die Datenbankregion ist die Europäische Union
+          (eu-central-1, Frankfurt).
         </li>
         <li>
-          <strong>Vercel Inc.</strong> — application hosting, serverless
-          execution and sandbox execution.
+          <strong>Vercel Inc.</strong> — Hosting, Ausführung der Anwendung und,
+          soweit konfiguriert, die isolierte Sandbox-Ausführung.
         </li>
         <li>
-          <strong>Model inference provider</strong> — message content is sent to
-          the configured OpenAI-compatible provider to generate answers.
-          {TODO} operator names the configured provider and its region here.]]
-          Do not enter content you are not willing to process with the
-          configured model provider.
+          <strong>GitHub</strong> (GitHub, Inc. / Microsoft) — nur wenn du dich
+          mit GitHub anmeldest oder ein GitHub-Repository verbindest. Dabei
+          erhält GitHub die für OAuth bzw. API-Zugriffe nötigen Daten.
         </li>
         <li>
-          <strong>GitHub</strong> — only if you connect GitHub or use
-          &quot;Continue with GitHub&quot;.
+          <strong>Stripe</strong> (Stripe Payments Europe, Ltd. und Stripe,
+          Inc.) — Zahlungsdienst für Abonnements, Checkout und Kundenportal. Bei
+          Buchung eines Abos verarbeitet Stripe die zur Zahlungsabwicklung
+          erforderlichen Daten. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
+        </li>
+        <li>
+          <strong>UNOROUTER und NVIDIA Corporation</strong> — Inhalte, die du
+          zur Beantwortung oder Prüfung sendest, werden über die konfigurierten
+          API-Schnittstellen von UNOROUTER bzw. NVIDIA NIM verarbeitet.
+        </li>
+        <li>
+          <strong>Anthropic, PBC und OpenAI, L.L.C.</strong> — UNOROUTER kann
+          Anfragen je nach gewähltem Modell an diese oder weitere im Katalog
+          ausgewiesene Modellanbieter weiterleiten. Sende keine besonderen
+          Kategorien personenbezogener Daten (Art. 9 DSGVO), die du diesen
+          Empfängern nicht anvertrauen möchtest.
         </li>
       </ul>
 
-      <h2>4. International transfers</h2>
+      <h2>4. Drittland</h2>
       <p>
-        Where personal data is processed outside the EU/EEA (the providers above
-        are US entities), the transfer relies on the EU-U.S. Data Privacy
-        Framework (DPF, Commission Implementing Decision (EU) 2023/1795): Vercel
-        Inc. and Neon, LLC (via Databricks, Inc.) are DPF-certified;
-        certifications can be verified at dataprivacyframework.gov. {TODO}{" "}
-        operator confirms a data processing agreement (Art. 28 GDPR) is in place
-        with each processor and records the fallback safeguard (EU Standard
-        Contractual Clauses 2021/914) where applicable.]]
+        Die genannten Stellen können Daten in den USA verarbeiten. Soweit ein
+        Empfänger unter dem EU-US Data Privacy Framework zertifiziert ist,
+        stützt sich die Übermittlung auf den Angemessenheitsbeschluss
+        (Durchführungsbeschluss (EU) 2023/1795). Andernfalls verwenden wir
+        Standardvertragsklauseln nach dem Durchführungsbeschluss (EU) 2021/914,
+        soweit sie für den Empfänger gelten. Vercel Inc. und Neon über
+        Databricks, Inc. sind nach dem Data Privacy Framework zertifiziert; das
+        lässt sich unter dataprivacyframework.gov prüfen.
       </p>
 
-      <h2>5. Retention and deletion</h2>
+      <h2>5. Speicherdauer</h2>
       <p>
-        Workspace content is kept while your account exists so that sessions,
-        runs and memory remain usable. {TODO} the operator defines concrete
-        retention periods, a deletion procedure (account deletion request via
-        the contact above), and backup expiry before publication.]]
+        Kontodaten und Workspace-Inhalte speichern wir, solange das Konto
+        besteht. Nach einer Löschanfrage an die oben genannte Adresse löschen
+        oder anonymisieren wir sie unverzüglich, soweit keine gesetzlichen
+        Aufbewahrungspflichten (insbesondere handels- und steuerrechtliche
+        Pflichten für Abrechnungsdaten) entgegenstehen. Sicherungen werden im
+        regulären Sicherungszyklus überschrieben.
       </p>
 
-      <h2>6. Your rights</h2>
+      <h2>6. Deine Rechte</h2>
       <p>
-        You have the rights of access (Art. 15), rectification (Art. 16),
-        erasure (Art. 17), restriction of processing (Art. 18), data portability
-        (Art. 20), and objection (Art. 21) GDPR; where processing is based on
-        consent, you may withdraw it at any time with effect for the future
-        (Art. 7(3)). Contact the controller above; requests are answered within
-        one month (Art. 12(3)).
+        Du hast das Recht auf Auskunft (Art. 15 DSGVO), Berichtigung (Art. 16),
+        Löschung (Art. 17), Einschränkung (Art. 18), Datenübertragbarkeit (Art.
+        20) und Widerspruch (Art. 21). Beruht eine Verarbeitung auf
+        Einwilligung, kannst du sie jederzeit mit Wirkung für die Zukunft
+        widerrufen (Art. 7 Abs. 3 DSGVO). Wir antworten innerhalb eines Monats
+        (Art. 12 Abs. 3 DSGVO).
       </p>
       <p>
-        You also have the right to lodge a complaint with a supervisory
-        authority (Art. 77 GDPR). The authority competent for the
-        controller&apos;s location is the Landesbeauftragte für Datenschutz und
-        Informationsfreiheit Nordrhein-Westfalen (LDI NRW) (operator confirms).
-      </p>
-
-      <h2>7. Cookies and device storage (§ 25 TDDDG)</h2>
-      <p>
-        The product stores only what is technically required or explicitly
-        requested by you:
-      </p>
-      <ul>
-        <li>
-          <strong>Neon Auth session cookies</strong> — keep you signed in.
-          Strictly necessary (§ 25 Abs. 2 TDDDG; Art. 6(1)(b) GDPR).
-        </li>
-        <li>
-          <strong>osirus-theme</strong> — your colour theme choice, stored for
-          one year, SameSite=Lax. Set only when you choose a theme, so the
-          server can render it on first paint (§ 25 Abs. 2 TDDDG as an expressly
-          requested setting; Art. 6(1)(b) GDPR).
-        </li>
-        <li>
-          <strong>osirus-sidebar</strong> — your sidebar collapsed/expanded
-          choice, stored for one year, SameSite=Lax (same basis as the theme
-          cookie).
-        </li>
-      </ul>
-      <p>
-        No analytics, advertising or tracking cookies are set, and no consent
-        banner is therefore required. If non-essential storage is ever added, it
-        will be activated only after prior consent (§ 25 Abs. 1 TDDDG).
+        Du kannst dich bei einer Aufsichtsbehörde beschweren (Art. 77 DSGVO).
+        Zuständig für den Sitz der Verantwortlichen ist die Landesbeauftragte
+        für Datenschutz und Informationsfreiheit Nordrhein-Westfalen (LDI NRW),
+        Kavalleriestraße 2–4, 40213 Düsseldorf,{" "}
+        <a href="https://www.ldi.nrw.de">www.ldi.nrw.de</a>.
       </p>
 
-      <h2>8. What the agent does with connected systems</h2>
+      <h2>7. Cookies und Speicher (§ 25 TDDDG)</h2>
       <p>
-        The agent may act on systems you connect (for example GitHub
-        repositories) only after you approve each high-risk action. Approvals
-        are recorded. Connected credentials are stored envelope-encrypted
-        (AES-256-GCM); the database holds no plaintext credentials.
+        Notwendige und von dir ausdrücklich gewünschte Speicherungen sind in der{" "}
+        <Link href="/legal/cookies">Cookie-Erklärung</Link> vollständig
+        aufgeführt. Optionale Analyse- oder Marketing-Cookies werden nicht
+        eingesetzt.
       </p>
 
-      <h2>9. AI transparency</h2>
+      <h2>8. Verbundene Systeme</h2>
       <p>
-        Answers are generated by a language model and can be wrong. Runs show
-        their steps, and results are labelled with a verification status
-        (verified, unverified, conflicted, rejected) rather than presented as
-        fact. Generated answers may be processed by the model provider listed
-        above.
+        Der Assistent handelt an Systemen, die du verbindest, etwa einem
+        GitHub-Repository, erst nach deiner Freigabe für die konkrete Aktion.
+        Freigaben werden protokolliert. Hinterlegte Zugangsdaten werden
+        verschlüsselt gespeichert (AES-256-GCM). Die Datenbank hält sie nicht im
+        Klartext.
       </p>
 
-      <h2>10. People outside Germany and the EU</h2>
+      <h2>9. Hinweise zu Modellantworten</h2>
       <p>
-        This draft is written for a product offered from North Rhine-Westphalia,
-        Germany, and for the GDPR as it applies in the EU and EEA. If you use
-        Osirus from elsewhere, the same processing described above still
-        happens. This page does not claim that every other country&apos;s
-        privacy law has been reviewed, and it does not waive rights you have
-        where you live.
+        Antworten erzeugt ein Sprachmodell. Sie können trotz unabhängigem
+        Prüfermodell und deterministischer Verifikation Fehler enthalten.
+        Inhalte, die du sendest, werden von UNOROUTER, NVIDIA und den in
+        Abschnitt 3 genannten Modellanbietern zur Beantwortung verarbeitet.
+      </p>
+
+      <h2>10. Pflicht zur Bereitstellung</h2>
+      <p>
+        Name, E-Mail und ein Passwort oder die Anmeldung über GitHub sind für
+        das Konto erforderlich. Ohne diese Angaben kommt der Vertrag nicht
+        zustande. Alle weiteren Angaben sind freiwillig.
+      </p>
+
+      <h2>11. Stand und Änderung</h2>
+      <p>
+        Wenn sich die Verarbeitung ändert, aktualisieren wir diese
+        Datenschutzerklärung. Die jeweils veröffentlichte Fassung ist die
+        geltende.
       </p>
     </article>
   );

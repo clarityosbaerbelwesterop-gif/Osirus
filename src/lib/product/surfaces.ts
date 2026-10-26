@@ -1,7 +1,16 @@
-// The four product surfaces. A thread belongs to one of them. Coding is the
+// Product surfaces. A thread belongs to one of them. Coding is the
 // only surface that may carry a repository grant on the run.
 
-export const SESSION_SURFACES = ["ai", "agent", "bot", "coding"] as const;
+import { isPlaceholderModelId } from "@/config/recommendations";
+import { catalogModel, isRetiredProductModel } from "@/lib/models/catalog";
+
+export const SESSION_SURFACES = [
+  "ai",
+  "agent",
+  "bot",
+  "coding",
+  "work",
+] as const;
 
 export type SessionSurface = (typeof SESSION_SURFACES)[number];
 
@@ -17,21 +26,18 @@ export const EFFORT_LABEL: Record<EffortId, string> = {
   ultra: "Ultra",
 };
 
-export const CUSTOMER_MODELS = [
-  { id: "rouge", label: "ROUGE 1" },
-  { id: "quasnir", label: "QUASNIR" },
-  { id: "darus", label: "DARUS" },
-] as const;
-
-export type CustomerModelId = (typeof CUSTOMER_MODELS)[number]["id"];
-
 export function parseSessionSurface(value: unknown): SessionSurface | null {
-  return value === "ai" ||
-    value === "agent" ||
-    value === "bot" ||
-    value === "coding"
-    ? value
+  return SESSION_SURFACES.includes(value as SessionSurface)
+    ? (value as SessionSurface)
     : null;
+}
+
+/** A catalog id the product may store. Retired names and placeholders are not. */
+export function parseProductModel(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const id = value.trim();
+  if (!id || isRetiredProductModel(id) || isPlaceholderModelId(id)) return null;
+  return catalogModel(id)?.online ? id : null;
 }
 
 export function parseEffort(value: unknown): EffortId | null {
@@ -40,12 +46,6 @@ export function parseEffort(value: unknown): EffortId | null {
     value === "hoch" ||
     value === "super" ||
     value === "ultra"
-    ? value
-    : null;
-}
-
-export function parseCustomerModel(value: unknown): CustomerModelId | null {
-  return value === "rouge" || value === "quasnir" || value === "darus"
     ? value
     : null;
 }
@@ -61,7 +61,8 @@ export type CodingGrantTarget = {
   effort: EffortId;
   /** True only when the person chose the level. A suggestion is not a choice. */
   effortChosen: boolean;
-  model: CustomerModelId;
+  /** Catalog id when one was stored. Absent for older rows and for runs without a pin. */
+  model: string | null;
 };
 
 /**
@@ -81,15 +82,14 @@ export function codingGrantFromRunInput(
     typeof coding.repository === "string" ? coding.repository : "";
   const branch = typeof coding.branch === "string" ? coding.branch : "";
   const effort = parseEffort(coding.effort);
-  const model = parseCustomerModel(coding.model);
   if (!/^https:\/\/github\.com\/[^/]+\/[^/]+$/.test(repository)) return null;
   if (!branch || branch.startsWith("-") || branch.includes("..")) return null;
-  if (!effort || !model) return null;
+  if (!effort) return null;
   return {
     repository,
     branch,
     effort,
-    model,
+    model: parseProductModel(coding.model),
     effortChosen: coding.effortChosen === true,
   };
 }
@@ -102,6 +102,8 @@ export function surfacePath(surface: SessionSurface) {
       return "/app/bots";
     case "coding":
       return "/app/coding";
+    case "work":
+      return "/app/work";
     default:
       return "/app";
   }
@@ -115,10 +117,8 @@ export function sessionsForSurface<T extends { surface?: string | null }>(
   sessions: readonly T[],
   surface: SessionSurface | null,
 ): T[] {
-  if (!surface) {
-    return sessions.filter((item) => !item.surface || item.surface === "ai");
-  }
-  return sessions.filter((item) => item.surface === surface);
+  const wanted = surface ?? "ai";
+  return sessions.filter((item) => (item.surface || "ai") === wanted);
 }
 
 /** Switching Chat to Coding must not keep the previous line in the composer. */

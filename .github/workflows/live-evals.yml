@@ -2,8 +2,7 @@ name: Live evals
 
 # The Agent Arena against the real model, real retrieval, real Vercel Sandbox
 # and a real browser. It spends model budget, so it never runs on ordinary
-# pushes or pull requests: only when dispatched, or on a push whose commit
-# message explicitly asks for it with [run-live-evals].
+# pushes or pull requests: only when dispatched.
 
 on:
   workflow_dispatch:
@@ -41,8 +40,6 @@ on:
         required: false
         type: boolean
         default: false
-  push:
-    branches: [build/m11-m15-agent-intelligence]
 
 permissions:
   contents: read
@@ -112,8 +109,8 @@ jobs:
           # never reads these; it authenticates through OIDC.
           OSIRUS_SANDBOX_CREDENTIALS: ${{ env.SANDBOX == 'vercel' && 'ci' || '' }}
           VERCEL_TOKEN: ${{ env.SANDBOX == 'vercel' && secrets.VERCEL_TOKEN || '' }}
-          VERCEL_TEAM_ID: team_5KyyWAPW9vLU4EiaKaYZuhaG
-          VERCEL_PROJECT_ID: prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
           OSIRUS_ALLOW_LOCAL_EXEC: "1"
         run: |
           MODEL="${MODEL_OVERRIDE:-$MODEL}"

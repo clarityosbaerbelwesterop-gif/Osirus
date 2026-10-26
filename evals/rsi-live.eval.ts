@@ -1,7 +1,7 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { expect, it } from "vitest";
 import { InProcessExecutor } from "../src/lib/intelligence/executors/in-process";
-import type { LiveOrderContent } from "../src/lib/intelligence/rsi/phases";
+import type { RunnerLiveOrder } from "../src/lib/intelligence/rsi/runner-intake";
 import {
   budgetedProvider,
   rawVsOsirusSide,
@@ -12,6 +12,7 @@ import type {
   TaskSpec,
   Trial,
 } from "../src/lib/intelligence/types";
+import { parseLiveOrder } from "../src/lib/intelligence/rsi/runner-intake";
 import { UnoRouterProvider } from "../src/lib/models/unorouter";
 import { LocalWorkspaceDriver } from "../src/lib/sandbox/local";
 
@@ -30,7 +31,7 @@ const outPath = process.env.RSI_EVIDENCE ?? "evidence.json";
 
 function version(
   id: string,
-  order: LiveOrderContent,
+  order: RunnerLiveOrder,
   genome: Record<string, unknown>,
 ): StrategyVersion {
   return {
@@ -72,10 +73,10 @@ function evalTask(entry: {
 
 it("runs one live order within its reserved calls", async () => {
   const startedAt = new Date().toISOString();
-  const { order } = JSON.parse(await readFile(orderPath, "utf8")) as {
-    order: LiveOrderContent;
-  };
-  const reserved = order.reserved ?? 0;
+  const loaded = parseLiveOrder(JSON.parse(await readFile(orderPath, "utf8")));
+  if (!loaded.ok) throw new Error(`live_order_refused:${loaded.reason}`);
+  const { order } = loaded;
+  const reserved = order.reserved;
   const meter = budgetedProvider(
     new UnoRouterProvider({ model: order.model, maxRateLimitWaitSeconds: 90 }),
     reserved,

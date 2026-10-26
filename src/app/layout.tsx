@@ -3,26 +3,27 @@ import { cookies } from "next/headers";
 import "@fontsource-variable/inter";
 import "./globals.css";
 import { parseTheme, THEME_COOKIE } from "@/lib/ui/preferences";
+import { publicSiteUrl } from "./site-url";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://osirus.vercel.app"),
+  metadataBase: publicSiteUrl(),
   title: { default: "Osirus", template: "%s · Osirus" },
   description:
-    "An agent workspace that plans, acts with approval, and verifies its work.",
+    "Osirus ist ein Workspace für Assistent, Work und Agents. Modelle laufen über UNOROUTER und NVIDIA.",
   robots: { index: true, follow: true },
   openGraph: {
     type: "website",
     siteName: "Osirus",
-    title: "Osirus — an agent that finishes the work, and shows it",
+    title: "Osirus — Bots, Work und Agents",
     description:
-      "An agent workspace that plans, acts with approval, and verifies its work.",
+      "Workspace für Assistent, Work und Agents. Modelle über UNOROUTER und NVIDIA.",
     url: "/",
   },
   twitter: {
     card: "summary",
-    title: "Osirus — an agent that finishes the work, and shows it",
+    title: "Osirus — Bots, Work und Agents",
     description:
-      "An agent workspace that plans, acts with approval, and verifies its work.",
+      "Workspace für Assistent, Work und Agents. Modelle über UNOROUTER und NVIDIA.",
   },
 };
 
@@ -40,9 +41,10 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const theme = parseTheme((await cookies()).get(THEME_COOKIE)?.value);
+  const jar = await cookies();
+  const theme = parseTheme(jar.get(THEME_COOKIE)?.value);
   return (
-    <html lang="en" data-theme={theme === "system" ? undefined : theme}>
+    <html lang="de" data-theme={theme === "system" ? undefined : theme}>
       <body>{children}</body>
     </html>
   );

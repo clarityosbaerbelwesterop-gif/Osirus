@@ -14,21 +14,54 @@ type WorkspaceRow = {
   workspace_name: string;
 };
 
+/** The app user row only. A workspace is not created here. */
+export async function ensureOsirusUser(user: {
+  id: string;
+  email?: string | null;
+  name?: string | null;
+}) {
+  try {
+    await queryAs(
+      user.id,
+      `insert into osirus.users (id, email, display_name)
+       values ($1::uuid, $2, $3)
+       on conflict (id) do update
+         set email = coalesce(excluded.email, osirus.users.email),
+             display_name = coalesce(excluded.display_name, osirus.users.display_name),
+             updated_at = now()`,
+      [user.id, user.email ?? null, user.name ?? null],
+    );
+  } catch (error) {
+    // If another auth identity already claimed the same email address
+    // (users_email_unique), still ensure this user's UUID row exists so
+    // sign-in and workspace bootstrap never crash with a 500.
+    const code = (error as { code?: unknown })?.code;
+    if (
+      code === "23505" ||
+      (error instanceof Error &&
+        /users_email_unique|duplicate key/i.test(error.message))
+    ) {
+      await queryAs(
+        user.id,
+        `insert into osirus.users (id, email, display_name)
+         values ($1::uuid, null, $2)
+         on conflict (id) do update
+           set display_name = coalesce(excluded.display_name, osirus.users.display_name),
+               updated_at = now()`,
+        [user.id, user.name ?? null],
+      );
+      return;
+    }
+    throw error;
+  }
+}
+
 export async function bootstrapProductIdentity(user: {
   id: string;
   email?: string | null;
   name?: string | null;
 }): Promise<ProductIdentity> {
-  await queryAs(
-    user.id,
-    `insert into osirus.users (id, email, display_name)
-     values ($1::uuid, $2, $3)
-     on conflict (id) do update
-       set email = excluded.email,
-           display_name = excluded.display_name,
-           updated_at = now()`,
-    [user.id, user.email ?? null, user.name ?? null],
-  );
+  await ensureOsirusUser(user);
 
   const existing = await queryAs<WorkspaceRow>(
     user.id,

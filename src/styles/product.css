@@ -816,3 +816,214 @@
     gap: 0;
   }
 }
+
+/* Work and agents. Motion is original. Step names follow the MIT templates
+   cited in src/components/assistant. */
+
+.prompt-input {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.prompt-textarea {
+  width: 100%;
+  min-height: 7rem;
+  resize: vertical;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md, 12px);
+  background: var(--color-surface);
+  color: inherit;
+  font: inherit;
+}
+
+.prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  justify-content: flex-end;
+}
+
+.recommend-grid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.recommend-grid > .card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.recommend-grid label {
+  display: grid;
+  gap: var(--space-1-5);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.recommend-grid input:not([type="checkbox"]),
+.recommend-grid select,
+.recommend-grid textarea {
+  width: 100%;
+  min-height: var(--control-h);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.recommend-grid textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.recommend-grid input:not([type="checkbox"]):focus-visible,
+.recommend-grid select:focus-visible,
+.recommend-grid textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.recommend-grid ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recommend-grid ul li label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  font-weight: var(--weight-regular);
+}
+
+.model-select {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.model-select-label {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+}
+
+.chain {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chain-step {
+  display: grid;
+  grid-template-columns: 1rem minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: start;
+}
+
+.chain-mark {
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-top: 0.4rem;
+  border-radius: 999px;
+  background: var(--color-text-subtle);
+}
+
+.chain-step[data-status="active"] .chain-mark {
+  background: var(--color-accent);
+  animation: chain-pulse 1.2s ease-in-out infinite;
+}
+
+.chain-step[data-status="completed"] .chain-mark {
+  background: var(--color-success, var(--color-accent));
+}
+
+.chain-step[data-status="error"] .chain-mark,
+.chain-step[data-status="unavailable"] .chain-mark {
+  background: var(--color-warning, var(--color-text-subtle));
+}
+
+.chain-title,
+.chain-detail {
+  margin: 0;
+}
+
+.chain-detail {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.text-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-text-muted),
+    var(--color-text),
+    var(--color-text-muted)
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: text-shimmer 1.6s linear infinite;
+}
+
+.stream-line::after {
+  content: "";
+  display: inline-block;
+  width: 0.45em;
+  height: 0.9em;
+  margin-left: 0.15rem;
+  background: currentColor;
+  vertical-align: text-bottom;
+  animation: stream-caret 1s steps(1) infinite;
+}
+
+@keyframes chain-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.45;
+    transform: scale(0.85);
+  }
+}
+
+@keyframes text-shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chain-mark,
+  .text-shimmer,
+  .stream-line::after {
+    animation: none;
+  }
+  .text-shimmer {
+    color: inherit;
+    background: none;
+  }
+}

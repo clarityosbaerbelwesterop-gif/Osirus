@@ -12,16 +12,17 @@ import {
   routeCodingEffort,
 } from "@/lib/product/effort-router";
 import {
-  CUSTOMER_MODELS,
-  draftAfterSurfaceChange,
-  type CustomerModelId,
-  type EffortId,
-} from "@/lib/product/surfaces";
+  NVIDIA_TOP_MODELS,
+  PRODUCT_MODEL_ALLOWLIST,
+} from "@/config/recommendations";
+import { productModelOrDefault } from "@/lib/models/allowlist";
+import { draftAfterSurfaceChange, type EffortId } from "@/lib/product/surfaces";
 import type { RunSnapshot } from "@/lib/runtime/types";
 import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
 import { showWorkingMotion } from "@/lib/ui/live-activity";
 import { deriveRunView } from "@/lib/ui/run-view";
 import { MessageList, type ChatMessage } from "../chat/message-list";
+import { FreeQuotaPanel } from "../settings/plan-offer";
 import { RunCard } from "../run-status/run-card";
 import { useShell } from "../shell/shell-context";
 import { TopBar } from "../shell/top-bar";
@@ -49,8 +50,10 @@ export function CodingSurface(props: {
   initialEffort: EffortId | null;
   initialEffortChosen?: boolean;
   initialPaused?: boolean;
-  initialModel: CustomerModelId | null;
+  initialModel?: string | null;
   initialPermission?: CodingPermission;
+  /** Set by the work page when the free tier is on and its quota is empty. */
+  freeQuotaEmpty?: boolean;
 }) {
   const shell = useShell();
   const [sessionId, setSessionId] = useState(props.initialSessionId);
@@ -62,8 +65,11 @@ export function CodingSurface(props: {
   const [repoKey, setRepoKey] = useState("");
   const [branches, setBranches] = useState<string[] | null>(null);
   const [branch, setBranch] = useState("");
-  const [model, setModel] = useState<CustomerModelId>(
-    props.initialModel ?? "rouge",
+  const [model, setModel] = useState(() =>
+    props.initialModel &&
+    (PRODUCT_MODEL_ALLOWLIST as readonly string[]).includes(props.initialModel)
+      ? productModelOrDefault(props.initialModel)
+      : NVIDIA_TOP_MODELS[0],
   );
   const [chosen, setChosen] = useState<EffortId | null>(
     props.initialEffortChosen ? props.initialEffort : null,
@@ -365,6 +371,7 @@ export function CodingSurface(props: {
         />
         <div className="chat-scroll">
           <div className="chat-content">
+            {props.freeQuotaEmpty ? <FreeQuotaPanel /> : null}
             {messages.length ? (
               <MessageList
                 messages={messages}
@@ -478,12 +485,12 @@ export function CodingSurface(props: {
                 value={model}
                 disabled={running || paused}
                 onChange={(event) =>
-                  setModel(event.target.value as CustomerModelId)
+                  setModel(productModelOrDefault(event.target.value))
                 }
               >
-                {CUSTOMER_MODELS.map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
+                {NVIDIA_TOP_MODELS.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
                   </option>
                 ))}
               </select>

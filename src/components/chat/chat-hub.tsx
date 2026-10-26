@@ -25,17 +25,12 @@ import {
 } from "@/lib/ui/preferences";
 import {
   parseInteraction,
-  parseLabModel,
   type InteractionPreference,
-  type LabModelId,
 } from "@/lib/lab/choices";
-import { labAnswers } from "@/lib/lab/honesty";
+import { DEFAULT_PRODUCT_MODEL_ID } from "@/config/recommendations";
+import { productModelOrDefault } from "@/lib/models/allowlist";
 import { isSessionId, shouldApplyRunSnapshot } from "@/lib/ui/snapshot-gate";
-import {
-  chatRunPresentation,
-  chatStatusLine,
-  customerProgramCaption,
-} from "@/lib/ui/chat-status";
+import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
 import { liveAgentPills, showWorkingMotion } from "@/lib/ui/live-activity";
 import { chatSlash } from "@/lib/coding/intent";
 import { botRuntimeBody } from "@/lib/product/bot-run";
@@ -43,6 +38,7 @@ import {
   draftAfterSurfaceChange,
   type SessionSurface,
 } from "@/lib/product/surfaces";
+import { FreeQuotaPanel } from "../settings/plan-offer";
 import { WorkingMotion } from "./working-motion";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
 import {
@@ -116,12 +112,12 @@ function subscribeLab(listener: () => void) {
   };
 }
 
-function currentLabModel(): LabModelId {
-  return parseLabModel(readPreference(LAB_MODEL_COOKIE));
+function currentLabModel(): string {
+  return productModelOrDefault(readPreference(LAB_MODEL_COOKIE));
 }
 
-function serverLabModel(): LabModelId {
-  return "rouge";
+function serverLabModel() {
+  return DEFAULT_PRODUCT_MODEL_ID;
 }
 
 function currentInteraction(): InteractionPreference {
@@ -150,6 +146,8 @@ export function ChatHub(props: {
    * previous chrome so the phone composer layout stays put.
    */
   kind?: "ai" | "agent" | "bot";
+  /** Set by the chat page when the free tier is on and its quota is empty. */
+  freeQuotaEmpty?: boolean;
 }) {
   const shell = useShell();
   const { upsertSession, bindChat } = shell;
@@ -466,148 +464,6 @@ export function ChatHub(props: {
       const trimmed = value.trim();
       if (!trimmed || running) return;
       advanceView();
-      const modelForLab =
-        props.kind === "ai" && labModel === "external" ? "rouge" : labModel;
-      if (
-        props.kind !== "ai" &&
-        props.kind !== "agent" &&
-        props.kind !== "bot" &&
-        interaction === "ai" &&
-        labModel === "external" &&
-        !regenerate
-      ) {
-        setError(
-          "External API is the Osirus provider pool, not ROUGE 1, QUASNIR, or DARUS.",
-        );
-        return;
-      }
-      const useLab =
-        props.kind === "ai" ||
-        (props.kind !== "agent" &&
-          props.kind !== "bot" &&
-          labAnswers({ interaction, model: labModel }));
-      if (useLab && !regenerate) {
-        const requestId = crypto.randomUUID();
-        setObjective("");
-        setError(null);
-        setFailedObjective(null);
-        setLabActivity("waiting");
-        setLabPhases([]);
-        setLabGrades([]);
-        setMessages((current) => [
-          ...current,
-          { id: `pending:${requestId}`, role: "user", content: trimmed },
-        ]);
-        try {
-          const response = await fetch("/api/lab/complete", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              modelId: modelForLab,
-              interaction: "ai",
-              messages: [{ role: "user", content: trimmed }],
-            }),
-          });
-          const body = (await response.json().catch(() => ({}))) as {
-            message?: string;
-            text?: string;
-            userLabel?: string;
-            provenance?: string;
-            activity?: string;
-            phases?: unknown;
-            fixtureChecks?: unknown;
-          };
-          if (!response.ok || typeof body.text !== "string") {
-            setLabActivity(null);
-            setLabPhases([]);
-            setLabGrades([]);
-            setError(body.message ?? "The model program did not answer.");
-            return;
-          }
-          setLabActivity(
-            typeof body.activity === "string" ? body.activity : null,
-          );
-          setLabPhases(
-            Array.isArray(body.phases)
-              ? body.phases.filter((phase) => typeof phase === "string")
-              : [],
-          );
-          const shown = Array.isArray(body.phases)
-            ? body.phases.filter((phase) => typeof phase === "string")
-            : [];
-          setLabGrades(
-            Array.isArray(body.fixtureChecks)
-              ? body.fixtureChecks.flatMap((item) => {
-                  if (!item || typeof item !== "object") return [];
-                  const row = item as {
-                    armId?: unknown;
-                    phase?: unknown;
-                    passed?: unknown;
-                  };
-                  if (
-                    typeof row.armId !== "string" ||
-                    typeof row.passed !== "boolean"
-                  ) {
-                    return [];
-                  }
-                  const phase =
-                    typeof row.phase === "string" ? row.phase : null;
-                  if (phase && !shown.includes(phase)) return [];
-                  return [{ armId: row.armId, phase, passed: row.passed }];
-                })
-              : [],
-          );
-          const answer = body.text;
-          setMessages((current) => [
-            ...current,
-            {
-              id: `lab:${requestId}`,
-              role: "assistant",
-              content: answer,
-              caption: customerProgramCaption(body.userLabel),
-            },
-          ]);
-          if (props.kind === "ai") {
-            const saved = await fetch("/api/chat/turns", {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({
-                sessionId,
-                model: modelForLab,
-                user: trimmed,
-                assistant: answer,
-              }),
-            }).catch(() => null);
-            const savedBody = (
-              saved?.ok ? await saved.json().catch(() => null) : null
-            ) as { id?: string } | null;
-            if (savedBody?.id) {
-              sessionRef.current = savedBody.id;
-              setSessionId(savedBody.id);
-              upsertSession({
-                id: savedBody.id,
-                title: trimmed.slice(0, 120),
-                updatedAt: new Date().toISOString(),
-                surface: "ai",
-              });
-              window.history.replaceState(
-                null,
-                "",
-                `/app?session=${savedBody.id}`,
-              );
-            } else {
-              setError("The reply was not saved.");
-            }
-          }
-        } catch {
-          setLabActivity(null);
-          setLabPhases([]);
-          setLabGrades([]);
-          setError("The model program did not answer.");
-        }
-        return;
-      }
-      if (props.kind === "ai") return;
       const requestId = crypto.randomUUID();
       setObjective("");
       setError(null);
@@ -652,9 +508,14 @@ export function ChatHub(props: {
                   regenerate,
                   ...(props.kind === "agent"
                     ? { mode: "agent" as const, surface: "agent" as const }
-                    : mode !== "auto"
-                      ? { mode }
+                    : props.kind === "ai"
+                      ? { surface: "ai" as const }
                       : {}),
+                  ...(props.kind !== "agent" &&
+                  props.kind !== "ai" &&
+                  mode !== "auto"
+                    ? { mode }
+                    : {}),
                   ...(attachmentIds.length ? { attachmentIds } : {}),
                 },
           ),
@@ -671,14 +532,16 @@ export function ChatHub(props: {
         if (isSessionId(headerSession)) {
           sessionRef.current = headerSession;
           setSessionId(headerSession);
-          if (!shell.sessions.some((item) => item.id === headerSession)) {
-            upsertSession({
-              id: headerSession,
-              title: trimmed.slice(0, 120),
-              updatedAt: new Date().toISOString(),
-              surface,
-            });
-          }
+          const existingSession = shell.sessions.find(
+            (item) => item.id === headerSession,
+          );
+          upsertSession({
+            id: headerSession,
+            title: existingSession?.title ?? trimmed.slice(0, 120),
+            updatedAt: new Date().toISOString(),
+            pinnedAt: existingSession?.pinnedAt ?? null,
+            surface,
+          });
           window.history.replaceState(
             null,
             "",
@@ -734,9 +597,7 @@ export function ChatHub(props: {
     [
       applyPacket,
       attachments,
-      interaction,
       advanceView,
-      labModel,
       mode,
       refreshRun,
       running,
@@ -779,7 +640,7 @@ export function ChatHub(props: {
     setWorkbenchOpen(null);
     window.history.replaceState(null, "", `${threadPath}?new=1`);
     window.setTimeout(() => composer.current?.focus(), 0);
-  }, [advanceView, props.kind, running, threadPath]);
+  }, [advanceView, running, threadPath]);
 
   const switchSession = useCallback(
     async (next: SessionSummary) => {
@@ -821,15 +682,7 @@ export function ChatHub(props: {
       );
       if (state.recentRunId) void refreshRun(state.recentRunId);
     },
-    [
-      advanceView,
-      props.kind,
-      refreshRun,
-      running,
-      sessionId,
-      surface,
-      threadPath,
-    ],
+    [advanceView, refreshRun, running, sessionId, surface, threadPath],
   );
 
   useEffect(() => {
@@ -925,6 +778,7 @@ export function ChatHub(props: {
           }}
         >
           <div className="chat-content" ref={content}>
+            {props.freeQuotaEmpty ? <FreeQuotaPanel /> : null}
             {empty ? (
               props.kind === "bot" ? (
                 <div className="home home-calm">

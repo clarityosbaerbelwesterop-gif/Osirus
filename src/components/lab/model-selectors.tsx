@@ -1,12 +1,9 @@
 "use client";
 
-import {
-  LAB_BUILD,
-  LAB_MODELS,
-  type InteractionPreference,
-  type LabModelId,
-} from "@/lib/lab/choices";
-import { activityCaption, modelRouteDescription } from "@/lib/lab/honesty";
+import type { InteractionPreference, LabModelId } from "@/lib/lab/choices";
+import type { ProductModelId } from "@/config/recommendations";
+import { activityCaption } from "@/lib/lab/honesty";
+import { withoutOwnModel } from "../motion/public-text";
 import type { LivePill } from "@/lib/ui/live-activity";
 
 export interface PhaseGrade {
@@ -16,7 +13,7 @@ export interface PhaseGrade {
 }
 
 export function ModelSelectors(props: {
-  model: LabModelId;
+  model: LabModelId | ProductModelId | string;
   interaction: InteractionPreference;
   activity: string | null;
   /** Kept so callers can pass grader rows without rendering them as thinking. */
@@ -40,26 +37,17 @@ export function ModelSelectors(props: {
       <label>
         Model
         <span id="lab-model-route" className="sr-only">
-          {modelRouteDescription(props.model, props.interaction)}
+          {props.interaction === "agent"
+            ? "Agent mode runs Osirus. The selected model is not the agent."
+            : "UNOROUTER models appear when the key list is known."}
         </span>
         <select
           aria-label="Model"
           aria-describedby="lab-model-route"
-          title={modelRouteDescription(props.model, props.interaction)}
-          value={props.model}
-          disabled={props.disabled}
-          onChange={(event) =>
-            props.onModelChange(event.target.value as LabModelId)
-          }
+          value=""
+          disabled
         >
-          {LAB_MODELS.map((model) => (
-            <option key={model.id} value={model.id}>
-              {model.label}
-              {model.id !== "external" && !LAB_BUILD[model.id]
-                ? " (not in this build)"
-                : ""}
-            </option>
-          ))}
+          <option value="">Bald verfügbar</option>
         </select>
       </label>
       <div role="radiogroup" aria-label="Interaction">
@@ -116,7 +104,7 @@ export function ModelSelectors(props: {
           {shownGrades
             .map(
               (grade) =>
-                `${grade.phase} · ${grade.armId}: ${grade.passed ? "pass" : "fail"}`,
+                `${withoutOwnModel(grade.phase ?? "")} · ${withoutOwnModel(grade.armId)}: ${grade.passed ? "pass" : "fail"}`,
             )
             .join(" ")}
         </p>

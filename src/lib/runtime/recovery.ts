@@ -4,8 +4,8 @@ import { RuntimeRepository } from "./repository";
 import { finalizeRun } from "./worker";
 
 // Recovery for runs nothing will ever touch again: the process that planned
-// them died mid-plan, or the worker that settled their last stage died
-// before closing the run. Expired stage leases are already reclaimed by
+// them died mid-plan, the worker that settled their last stage died before
+// closing the run, or a stage failed with no worker left to close the run. Expired stage leases are already reclaimed by
 // claim_next_stage; this closes what that cannot see. Run by the scheduler
 // tick, as the run's own requester.
 
@@ -34,6 +34,10 @@ export async function recoverStuckRuns(limit = 10) {
      having (r.status in ('created', 'planning') and count(s.id) = 0)
          or (count(s.id) > 0
              and count(s.id) = count(s.id) filter (where s.status in ('completed', 'skipped')))
+         -- A failed stage is never claimed again. When the claim that failed
+         -- it came from the scheduler (no run in scope), nobody finalizes.
+         or (count(s.id) filter (where s.status = 'failed') > 0
+             and count(s.id) filter (where s.status = 'running') = 0)
       order by r.updated_at
       limit $2`,
     [STALE_MINUTES, limit],

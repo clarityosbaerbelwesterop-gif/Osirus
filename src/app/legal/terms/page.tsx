@@ -1,135 +1,160 @@
-export const metadata = {
-  title: "Terms",
-};
+import Link from "next/link";
+import { PRICE_TAX_NOTE } from "@/components/marketing/plans";
+import { OPERATOR } from "../operator";
 
-const DRAFT = "DRAFT — REQUIRES OPERATOR/LEGAL REVIEW";
-const TODO = "[[OPERATOR:";
-const CONTACT_EMAIL = "clarityos.baerbelwesterop@gmail.com";
+export const metadata = {
+  title: "AGB",
+  description:
+    "Allgemeine Geschäftsbedingungen für Osirus: Abos, Kontingente, Kündigung und Widerruf.",
+};
 
 export default function TermsPage() {
   return (
-    <article className="legal-body">
-      <p className="legal-draft" role="note">
-        {DRAFT}. This is not a lawyer-reviewed notice.
-      </p>
-      <h1>Terms of Service (AGB)</h1>
+    <article className="legal-body" lang="de">
+      <h1>Allgemeine Geschäftsbedingungen</h1>
       <p>
-        These draft terms describe how the Osirus service may be used. They
-        become binding only after the operator reviews and adopts them; until
-        then this page documents the intended contract. Fields marked {TODO} …]]
-        require an operator decision.
+        Diese Bedingungen gelten für die Nutzung von Osirus zwischen dir und{" "}
+        {OPERATOR.name}, Inhaberin {OPERATOR.owner}, {OPERATOR.street},{" "}
+        {OPERATOR.city}, {OPERATOR.country}. Kontakt:{" "}
+        <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>, Telefon{" "}
+        <a href={OPERATOR.phoneHref}>{OPERATOR.phoneDisplay}</a>.
       </p>
 
-      <h2>1. The service</h2>
+      <h2>1. Leistung</h2>
       <p>
-        Osirus is an agent workspace operated by Bärbel Westerop —
-        ClarityCompassAI, 47447 Moers, Germany (contact: {CONTACT_EMAIL}). You
-        describe an objective, the service plans and executes steps for it, may
-        use tools and connected systems with your approval, and reports a
-        verification status for its results.
+        Osirus ist ein KI-Workspace für Assistenz, mehrstufige Work-Aufträge mit
+        getrenntem Prüfermodell und parallelen Sub-Agents sowie eigene Agents
+        und Gruppenchats. Aktionen nach außen, etwa ein Push in ein verbundenes
+        Repository, warten auf deine ausdrückliche Freigabe. Sprachmodelle
+        werden über UNOROUTER und NVIDIA angebunden.
+      </p>
+      <p>
+        Antworten von Sprachmodellen können trotz Verifikation Fehler enthalten.
+        Osirus ist keine Rechts-, Steuer- oder Medizinberatung. Prüfe Ergebnisse
+        eigenverantwortlich, bevor du sie einsetzt.
       </p>
 
-      <h2>2. Accounts</h2>
+      <h2>2. Konto</h2>
       <p>
-        You need an account (email or GitHub) to use the service. You are
-        responsible for the activity in your account and keep your credentials
-        safe.
+        Für den Workspace brauchst du ein Konto, per E-Mail und Passwort oder
+        über GitHub. Du bist für die Geheimhaltung deiner Zugangsdaten und für
+        Aktivitäten unter deinem Konto verantwortlich. Die Nutzung setzt voraus,
+        dass du diese AGB und die <Link href="/legal/eula">EULA</Link>{" "}
+        akzeptierst und die{" "}
+        <Link href="/legal/privacy">Datenschutzerklärung</Link> zur Kenntnis
+        genommen hast.
       </p>
 
-      <h2>3. Acceptable use</h2>
+      <h2>3. Abos und Preise</h2>
+      <p>
+        Es steht ein begrenztes kostenloses Kontingent zur Verfügung, dessen
+        aktuellen Stand die Anwendung anzeigt. Die Preise der kostenpflichtigen
+        Abonnements stehen in der Planübersicht in der App und werden vor
+        Vertragsschluss im Checkout ausgewiesen. Es sind Endpreise.{" "}
+        {PRICE_TAX_NOTE} Die Zahlungsabwicklung erfolgt über Stripe.
+      </p>
+
+      <h2>4. Kontingente</h2>
+      <p>
+        Jeder Tarif verfügt über zwei rollierende Nutzungsfenster: ein
+        5-Stunden-Kontingent und ein Wochenkontingent. Ist ein Fenster
+        aufgebraucht, pausiert die weitere Modellnutzung automatisch, bis sich
+        das jeweilige Fenster wieder auffüllt, oder du wechselst in einen
+        höheren Tarif. Zusätzliches Einzelguthaben kann nicht nachgekauft
+        werden. Ein erschöpftes Fenster schaltet niemals stillschweigend auf ein
+        anderes Modell um.
+      </p>
+
+      <h2>5. Zulässige Nutzung</h2>
       <ul>
-        <li>Do not use the service to break the law or others&apos; rights.</li>
         <li>
-          Do not attack the service, other tenants, or the underlying
-          infrastructure (probing, injection, scraping other users&apos; data,
-          denial of service).
+          Nutze den Dienst nicht, um Gesetze oder Rechte Dritter zu verletzen.
         </li>
         <li>
-          Do not use the agent to generate content that is unlawful or harmful,
-          or to evade model provider restrictions.
+          Greife den Dienst, andere Mandanten, Sicherheitsgrenzen oder die
+          Infrastruktur nicht an und umgehe keine Kontingent- oder
+          Paywall-Schranken.
+        </li>
+        <li>
+          Nutze den Assistenten nicht für rechtswidrige Inhalte und nicht, um
+          Sicherheitsfilter der Modellanbieter zu umgehen.
         </li>
       </ul>
 
-      <h2>4. Approvals and side effects</h2>
+      <h2>6. Laufzeit und Kündigung</h2>
       <p>
-        Actions outside the isolated sandbox (for example pushing to a
-        repository you connected) require your explicit approval in the product.
-        An approval you grant is your instruction; the service records it.
+        Ein gebuchtes Abonnement läuft jeweils für einen Monat und verlängert
+        sich automatisch um jeweils einen weiteren Monat, sofern du nicht vor
+        Ablauf der laufenden Abrechnungsperiode über das Stripe-Kundenportal in
+        den Einstellungen oder per E-Mail an {OPERATOR.email} kündigst. Nach dem
+        Periodenende endet das Abonnement. Dein Konto kannst du jederzeit
+        unabhängig davon löschen lassen. Wir können ein Konto bei erheblichen
+        Verstößen gegen Abschnitt 5 sperren.
       </p>
 
-      <h2>5. Availability and model limits</h2>
+      <h2>7. Widerruf</h2>
       <p>
-        The service is provided on a best-effort basis. Model capacity depends
-        on third-party providers; when a provider limits requests or its quota
-        is exhausted, runs wait, retry, or stop with an explanation. The service
-        is not continuously available and may change.
+        Wenn du Verbraucher im Sinne von § 13 BGB bist, kannst du den Vertrag
+        innerhalb von 14 Tagen ohne Angabe von Gründen widerrufen. Die Frist
+        beginnt mit dem Vertragsschluss. Um das Widerrufsrecht auszuüben,
+        informiere uns mit einer eindeutigen Erklärung, etwa per E-Mail an{" "}
+        {OPERATOR.email} oder per Post an die oben genannte Anschrift. Du kannst
+        dafür das folgende Muster verwenden, musst es aber nicht.
+      </p>
+      <p>
+        Hast du verlangt, dass wir vor Ablauf der Widerrufsfrist mit der
+        Leistung beginnen, und ist die Leistung vollständig erbracht, erlischt
+        das Widerrufsrecht. Wurde die Leistung teilweise erbracht, zahlst du
+        einen angemessenen Betrag für das bis zum Widerruf Geleistete.
+      </p>
+      <h3>Muster-Widerrufsformular</h3>
+      <p>
+        (Wenn du den Vertrag widerrufen willst, fülle dieses Formular aus und
+        sende es zurück.)
+      </p>
+      <p>
+        An {OPERATOR.name}, Inhaberin {OPERATOR.owner}, {OPERATOR.street},{" "}
+        {OPERATOR.city}, {OPERATOR.country}, E-Mail {OPERATOR.email}:
+      </p>
+      <ul>
+        <li>
+          Hiermit widerrufe ich den von mir abgeschlossenen Vertrag über die
+          Erbringung der folgenden Dienstleistung: Osirus.
+        </li>
+        <li>Bestellt am / erhalten am:</li>
+        <li>Name der Verbraucherin oder des Verbrauchers:</li>
+        <li>Anschrift:</li>
+        <li>Datum:</li>
+        <li>Unterschrift (nur bei Mitteilung auf Papier):</li>
+      </ul>
+
+      <h2>8. Haftung</h2>
+      <p>
+        Wir haften unbeschränkt bei Vorsatz und grober Fahrlässigkeit, bei
+        Verletzung von Leben, Körper oder Gesundheit und nach dem
+        Produkthaftungsgesetz. Bei einfacher Fahrlässigkeit haften wir nur bei
+        Verletzung einer wesentlichen Vertragspflicht, also einer Pflicht, deren
+        Erfüllung die Durchführung des Vertrags erst ermöglicht, und nur für den
+        vorhersehbaren, typischerweise eintretenden Schaden. Die Haftung für
+        Datenverlust ist auf den Aufwand begrenzt, der entsteht, wenn du
+        angemessene Sicherungen vorhältst. Zwingende gesetzliche Haftung bleibt
+        unberührt.
       </p>
 
-      <h2>6. AI output</h2>
+      <h2>9. Anwendbares Recht</h2>
       <p>
-        Generated answers and code are produced by language models and may be
-        wrong, incomplete, or unsuitable for your purpose. Review results before
-        relying on them. The service labels verification status but does not
-        guarantee correctness — it is not a professional advisor, and nothing
-        here is legal, financial, or medical advice.
+        Es gilt das Recht der Bundesrepublik Deutschland unter Ausschluss des
+        UN-Kaufrechts. Wenn du Verbraucher bist, bleiben zwingende Vorschriften
+        des Staates, in dem du deinen gewöhnlichen Aufenthalt hast, unberührt.
+        Für Kaufleute ist Gerichtsstand Moers, soweit gesetzlich zulässig.
       </p>
 
-      <h2>7. Billing</h2>
+      <h2>10. Änderung der Bedingungen</h2>
       <p>
-        No payment is currently taken. When billing launches, the plan, prices,
-        renewal and cancellation terms will be published here before checkout is
-        enabled.
-      </p>
-
-      <h2>8. Term and termination</h2>
-      <p>
-        The contract runs while your account exists. You may delete your account
-        at any time; on deletion your workspace content is removed according to
-        the retention section of the privacy notice. The operator may suspend or
-        terminate accounts that breach section 3, with prior notice where
-        reasonable. {TODO} operator confirms the notice period and the
-        data-export window after termination.]]
-      </p>
-
-      <h2>9. Liability (Haftung)</h2>
-      <p>
-        {TODO} operator has this clause reviewed by counsel. Drafted under
-        standard German-law structure:]] The operator is liable without
-        limitation for intent and gross negligence, for injury to life, body or
-        health, and under the Produkthaftungsgesetz where applicable. For
-        ordinary negligence the operator is liable only for breach of a cardinal
-        duty (a duty whose fulfilment makes the proper performance of the
-        contract possible in the first place), and then limited to the
-        foreseeable, typically occurring damage. Liability for data loss is
-        limited to the cost of restoration from a backup the user could
-        reasonably have expected to exist. Mandatory statutory liability remains
-        unaffected.
-      </p>
-
-      <h2>10. Governing law</h2>
-      <p>
-        These terms are governed by the law of the Federal Republic of Germany,
-        excluding the UN Convention on Contracts for the International Sale of
-        Goods. If you are a consumer, mandatory consumer-protection provisions
-        of your country of residence remain unaffected. {TODO} operator confirms
-        venue for business users, if one is desired.]]
-      </p>
-
-      <h2>11. Changes to these terms</h2>
-      <p>
-        The operator may update these terms with reasonable advance notice;
-        continued use after the effective date constitutes acceptance. {TODO}
-        operator confirms the notice channel (in-app notice or email).]]
-      </p>
-
-      <h2>12. Outside Germany</h2>
-      <p>
-        These draft terms are for a service offered from North Rhine-Westphalia,
-        Germany. German law is the draft governing law, as section 10 says, and
-        EU consumer rules still apply where they must. A short note for the rest
-        of the world: using Osirus from outside the EU does not choose another
-        country&apos;s law in this draft, and it does not remove mandatory
-        protections where you live. This section is not lawyer-reviewed.
+        Wir können diese Bedingungen mit einem angemessenen Vorlauf ändern und
+        dich in der Anwendung oder per E-Mail informieren. Bei wesentlichen
+        Änderungen bitten wir dich in der Anwendung um deine ausdrückliche
+        Zustimmung zur neuen Fassung.
       </p>
     </article>
   );

@@ -73,4 +73,24 @@ describe("proxy request boundary", () => {
   it("has no dead duplicate proxy at the repository root", () => {
     expect(existsSync(join(__dirname, "..", "proxy.ts"))).toBe(false);
   });
+
+  it("rewrites Stripe webhook POSTs on /app to /api/billing/webhook without invoking auth", async () => {
+    state.configured = false;
+    const { default: proxy } = await import("@/proxy");
+    const req = {
+      method: "POST",
+      url: "https://osirus-ai.vercel.app/app",
+      headers: new Headers({
+        "stripe-signature": "t=1700000000,v1=deadbeef",
+        "x-request-id": "stripe-req-1",
+      }),
+    } as unknown as NextRequest;
+    const response = await proxy(req);
+    expect(response.status).toBe(200);
+    expect(response.headers.get("x-middleware-rewrite")).toBe(
+      "https://osirus-ai.vercel.app/api/billing/webhook",
+    );
+    expect(response.headers.get("x-request-id")).toBe("stripe-req-1");
+    expect(state.handler).not.toHaveBeenCalled();
+  });
 });

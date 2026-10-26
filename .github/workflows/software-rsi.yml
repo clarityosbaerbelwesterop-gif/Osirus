@@ -33,10 +33,12 @@ concurrency:
 
 jobs:
   improve:
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 150
     env:
-      RSI_URL: https://osirus.vercel.app/api/rsi/software
+      # osirus.vercel.app is a different product: never send it an OIDC token.
+      RSI_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}/api/rsi/software
     steps:
       - uses: actions/checkout@v4
         with:

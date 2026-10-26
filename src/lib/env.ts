@@ -14,6 +14,18 @@ const schema = z.object({
   UNOROUTER_API_KEY_3: z.string().min(1).optional(),
   // Lab fallback pool. UNOROUTER_API_KEY alone is enough. _1/_2/_3 are failover.
   UNOROUTER_API_KEY: z.string().min(1).optional(),
+  // NVIDIA NIM OpenAI-compatible API endpoint & key pool.
+  NVIDIA_BASE_URL: z.string().url().optional(),
+  NVIDIA_API_KEY: z.string().min(1).optional(),
+  NVIDIA_API_KEY_1: z.string().min(1).optional(),
+  NVIDIA_API_KEY_2: z.string().min(1).optional(),
+  NVIDIA_API_KEY_3: z.string().min(1).optional(),
+  OSIRUS_NVIDIA_TOP_MODELS: z.string().min(1).max(2000).optional(),
+  // OpenRouter & Bytez API endpoints and keys (synced from GitHub Action Secrets).
+  OPENROUTER_BASE_URL: z.string().url().optional(),
+  OPENROUTER_API_KEY: z.string().min(1).optional(),
+  BYTEZ_BASE_URL: z.string().url().optional(),
+  BYTEZ_API_KEY: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_ROUGE: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_QUASNIR: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_DARUS: z.string().min(1).optional(),
@@ -53,9 +65,47 @@ const schema = z.object({
   // endpoint refuses every request; it is never open when unconfigured.
   OSIRUS_SCHEDULER_SECRET: z.string().min(32).optional(),
   VERCEL_GIT_COMMIT_SHA: z.string().min(1).optional(),
+  // Stripe billing (test mode until the owner switches). Unset means the
+  // billing routes answer 503 and never call Stripe. Prefer a restricted key
+  // (rk_...) over a full secret key.
+  STRIPE_SECRET_KEY: z.string().min(1).optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  STRIPE_PRICE_PRO: z.string().min(1).optional(),
+  STRIPE_PRICE_DEVELOPER: z.string().min(1).optional(),
+  STRIPE_PRICE_ULTRA_100: z.string().min(1).optional(),
+  STRIPE_PRICE_ULTRA_200: z.string().min(1).optional(),
+  // Public origin for Checkout/Portal return URLs. Unset: the request origin.
+  OSIRUS_PUBLIC_URL: z.string().url().optional(),
 });
 
 export const env = schema.parse(process.env);
+
+export const nvidiaKeys = () =>
+  [
+    env.NVIDIA_API_KEY,
+    env.NVIDIA_API_KEY_1,
+    env.NVIDIA_API_KEY_2,
+    env.NVIDIA_API_KEY_3,
+    process.env.NVIDIA_API_KEY,
+    process.env.NVIDIA_API_KEY_1,
+    process.env.NVIDIA_API_KEY_2,
+    process.env.NVIDIA_API_KEY_3,
+  ].filter(
+    (value, idx, arr): value is string =>
+      Boolean(value) && arr.indexOf(value) === idx,
+  );
+
+export const openRouterKeys = () =>
+  [env.OPENROUTER_API_KEY, process.env.OPENROUTER_API_KEY].filter(
+    (value, idx, arr): value is string =>
+      Boolean(value) && arr.indexOf(value) === idx,
+  );
+
+export const bytezKeys = () =>
+  [env.BYTEZ_API_KEY, process.env.BYTEZ_API_KEY].filter(
+    (value, idx, arr): value is string =>
+      Boolean(value) && arr.indexOf(value) === idx,
+  );
 
 export const serverKeys = () =>
   [

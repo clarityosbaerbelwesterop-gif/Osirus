@@ -14,6 +14,10 @@ export const OIDC_ISSUER = "https://token.actions.githubusercontent.com";
 export const OIDC_AUDIENCE = "osirus-scheduler";
 export const PULSE_REPOSITORY = "clarityosbaerbelwesterop-gif/Osirus";
 export const PULSE_WORKFLOW = ".github/workflows/capability-pulse.yml";
+// From GET /repos/{owner}/{repo}/actions/oidc/customization/sub, whose
+// sub_claim_prefix is repo:<owner>@<owner_id>/<repo>@<repo_id>.
+export const PULSE_OWNER_ID = "273620343";
+export const PULSE_REPOSITORY_ID = "1378273477";
 const JWKS_URL = `${OIDC_ISSUER}/.well-known/jwks`;
 const CLOCK_SKEW_S = 60;
 
@@ -25,6 +29,9 @@ export type OidcExpectation = {
   ref: string;
   events: string[];
   audience: string;
+  /** Numeric GitHub ids; they survive a rename or transfer, names do not. */
+  ownerId?: string;
+  repositoryId?: string;
 };
 
 export const PULSE_EXPECTATION: OidcExpectation = {
@@ -33,6 +40,8 @@ export const PULSE_EXPECTATION: OidcExpectation = {
   ref: "refs/heads/main",
   events: ["schedule", "workflow_dispatch"],
   audience: OIDC_AUDIENCE,
+  ownerId: PULSE_OWNER_ID,
+  repositoryId: PULSE_REPOSITORY_ID,
 };
 
 /**
@@ -49,6 +58,8 @@ export const RSI_LIVE_EXPECTATION: OidcExpectation = {
   ref: "refs/heads/main",
   events: RSI_EVENTS,
   audience: RSI_AUDIENCE,
+  ownerId: PULSE_OWNER_ID,
+  repositoryId: PULSE_REPOSITORY_ID,
 };
 
 export const SOFTWARE_RSI_EXPECTATION: OidcExpectation = {
@@ -57,6 +68,8 @@ export const SOFTWARE_RSI_EXPECTATION: OidcExpectation = {
   ref: "refs/heads/main",
   events: RSI_EVENTS,
   audience: RSI_AUDIENCE,
+  ownerId: PULSE_OWNER_ID,
+  repositoryId: PULSE_REPOSITORY_ID,
 };
 
 let cache: { keys: Jwk[]; at: number } | null = null;
@@ -88,7 +101,45 @@ function decodePart(part: string) {
 export type OidcResult =
   { ok: true; claims: Record<string, unknown> } | { ok: false; reason: string };
 
-/** Check the claims of a token whose signature already verified. */
+/** `owner/name/.github/workflows/file.yml@refs/heads/main` */
+export function expectedWorkflowRef(expected: OidcExpectation) {
+  return `${expected.repository}/${expected.workflow}@${expected.ref}`;
+}
+
+/**
+ * GitHub's subject for a branch run. Pull-request and environment subjects
+ * (`repo:o/r:pull_request`, `repo:o/r:environment:name`) do not match.
+ */
+export function expectedOidcSubject(expected: OidcExpectation) {
+  return `repo:${expected.repository}:ref:${expected.ref}`;
+}
+
+/**
+ * The same subject when the repository uses GitHub's immutable subject
+ * (`use_immutable_subject`), which this one does:
+ * `repo:owner@123/name@456:ref:refs/heads/main`.
+ */
+export function expectedImmutableOidcSubject(expected: OidcExpectation) {
+  if (!expected.ownerId || !expected.repositoryId) return null;
+  const [owner, name] = expected.repository.split("/");
+  return `repo:${owner}@${expected.ownerId}/${name}@${expected.repositoryId}:ref:${expected.ref}`;
+}
+
+function subjectMatches(sub: unknown, expected: OidcExpectation) {
+  if (typeof sub !== "string") return false;
+  const actual = sub.toLowerCase();
+  const immutable = expectedImmutableOidcSubject(expected);
+  return (
+    actual === expectedOidcSubject(expected).toLowerCase() ||
+    (immutable !== null && actual === immutable.toLowerCase())
+  );
+}
+
+function audienceIsExact(aud: unknown, expected: string) {
+  if (typeof aud === "string") return aud === expected;
+  return Array.isArray(aud) && aud.length === 1 && aud[0] === expected;
+}
+
 export function checkClaims(
   claims: Record<string, unknown>,
   expected: OidcExpectation,
@@ -96,8 +147,9 @@ export function checkClaims(
 ): OidcResult {
   const fail = (reason: string): OidcResult => ({ ok: false, reason });
   if (claims.iss !== OIDC_ISSUER) return fail("issuer");
-  const audience = Array.isArray(claims.aud) ? claims.aud : [claims.aud];
-  if (!audience.includes(expected.audience)) return fail("audience");
+  // One audience, exactly. A token that also names some other audience is
+  // not a token minted for this endpoint.
+  if (!audienceIsExact(claims.aud, expected.audience)) return fail("audience");
   const exp = Number(claims.exp);
   const nbf = Number(claims.nbf ?? claims.iat);
   if (!Number.isFinite(exp) || exp + CLOCK_SKEW_S < nowSeconds)
@@ -107,13 +159,39 @@ export function checkClaims(
   const repository = String(claims.repository ?? "");
   if (repository.toLowerCase() !== expected.repository.toLowerCase())
     return fail("repository");
-  if (claims.ref !== expected.ref) return fail("ref");
-  const workflowRef = String(claims.workflow_ref ?? "");
+  const owner = expected.repository.split("/")[0] ?? "";
   if (
-    workflowRef.toLowerCase() !==
-    `${expected.repository}/${expected.workflow}@${expected.ref}`.toLowerCase()
+    claims.repository_owner !== undefined &&
+    String(claims.repository_owner).toLowerCase() !== owner.toLowerCase()
+  )
+    return fail("repository_owner");
+  if (
+    expected.repositoryId &&
+    claims.repository_id !== undefined &&
+    String(claims.repository_id) !== expected.repositoryId
+  )
+    return fail("repository_id");
+  if (
+    expected.ownerId &&
+    claims.repository_owner_id !== undefined &&
+    String(claims.repository_owner_id) !== expected.ownerId
+  )
+    return fail("repository_owner_id");
+  if (claims.ref !== expected.ref) return fail("ref");
+  const workflowRef = expectedWorkflowRef(expected);
+  if (
+    String(claims.workflow_ref ?? "").toLowerCase() !==
+    workflowRef.toLowerCase()
   )
     return fail("workflow");
+  // Present on current GitHub tokens. A reusable workflow from another
+  // repository sets this to the callee while workflow_ref stays the caller.
+  if (
+    claims.job_workflow_ref !== undefined &&
+    String(claims.job_workflow_ref).toLowerCase() !== workflowRef.toLowerCase()
+  )
+    return fail("job_workflow");
+  if (!subjectMatches(claims.sub, expected)) return fail("subject");
   if (!expected.events.includes(String(claims.event_name ?? "")))
     return fail("event");
   return { ok: true, claims };

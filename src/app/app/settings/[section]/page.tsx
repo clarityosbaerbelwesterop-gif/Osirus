@@ -7,14 +7,12 @@ import {
   MemoryConflictList,
   MemoryList,
 } from "@/components/settings/memory-list";
-import { LabRoutingPanel } from "@/components/settings/lab-routing";
 import { ModelStatusTable } from "@/components/settings/model-status";
 import { AgentBehaviorSettings } from "@/components/settings/agent-behavior";
 import { SecurityEventList } from "@/components/settings/security-events";
 import { Badge } from "@/components/ui/badge";
 import { githubConnectorStatus } from "@/lib/connectors/github";
 import { listMcpServers } from "@/lib/connectors/mcp-store";
-import { labRoutingSnapshot } from "@/lib/lab/snapshot";
 import { modelStatus } from "@/lib/product/model-status";
 import { requireProductSession } from "@/lib/product/session";
 import {
@@ -164,10 +162,9 @@ export default async function SettingsSection({
         <Group
           id="models"
           title="Models"
-          lede="Status from the model calls this workspace made in the last 24 hours. Osirus never switches to a different model when one fails. ROUGE 1, QUASNIR, and DARUS answer through the API fallback until a native checkpoint is trained and measured. That has not happened."
+          lede="Status from the model calls this workspace made in the last 24 hours. Models come from UNOROUTER. Osirus does not switch to a different model when one fails. Own models are not offered."
         >
           <ModelStatusTable roles={roles} />
-          <LabRoutingPanel initial={labRoutingSnapshot()} />
         </Group>
       );
     }

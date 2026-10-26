@@ -1,4 +1,6 @@
 import { CodingSurface } from "@/components/coding/coding-surface";
+import { isFreeTierEnabled } from "@/app/free-tier";
+import { quotaEnforced, quotaStatusFor } from "@/lib/billing/enforce";
 import { requireProductSession } from "@/lib/product/session";
 import {
   codingRunControl,
@@ -26,6 +28,12 @@ export default async function CodingPage({
     state.activeRunId ?? state.recentRunId,
   );
   const selection = control.selection;
+  const quota = quotaEnforced()
+    ? await quotaStatusFor(identity.userId).catch(() => null)
+    : null;
+  const freeQuotaEmpty = Boolean(
+    isFreeTierEnabled() && quota && !quota.allowed && quota.plan === "free",
+  );
   return (
     <CodingSurface
       key={`coding:${state.sessionId ?? "new"}`}
@@ -41,6 +49,7 @@ export default async function CodingPage({
       initialPermission={
         control.permission === "accept-edits" ? "accept-edits" : "ask"
       }
+      freeQuotaEmpty={freeQuotaEmpty}
     />
   );
 }

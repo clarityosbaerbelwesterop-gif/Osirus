@@ -1,4 +1,6 @@
 import { ChatHub } from "@/components/chat/chat-hub";
+import { isFreeTierEnabled } from "@/app/free-tier";
+import { quotaEnforced, quotaStatusFor } from "@/lib/billing/enforce";
 import { loadSurfaceThread } from "@/lib/product/surface-thread";
 import { requireProductSession } from "@/lib/product/session";
 
@@ -18,6 +20,12 @@ export default async function AppPage({
     session: params.session,
     fresh: params.new,
   });
+  const quota = quotaEnforced()
+    ? await quotaStatusFor(identity.userId).catch(() => null)
+    : null;
+  const freeQuotaEmpty = Boolean(
+    isFreeTierEnabled() && quota && !quota.allowed && quota.plan === "free",
+  );
 
   return (
     <ChatHub
@@ -28,6 +36,7 @@ export default async function AppPage({
       initialMessages={state.messages}
       initialRunId={state.activeRunId}
       initialSnapshotRunId={state.recentRunId}
+      freeQuotaEmpty={freeQuotaEmpty}
     />
   );
 }

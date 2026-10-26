@@ -31,7 +31,9 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Run the journey against production
         env:
-          PROD_BASE_URL: https://osirus.vercel.app
+          # Public production origin. vars.NEXT_PUBLIC_SITE_URL overrides it.
+          # osirus.vercel.app is a different product and must not be used.
+          PROD_BASE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}
         run: npx playwright test --config playwright.prod.config.ts
       - uses: actions/upload-artifact@v4
         if: failure()

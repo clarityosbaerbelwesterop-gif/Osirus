@@ -661,7 +661,7 @@
    A percentage width does not resolve: the select's containing block is the
    label, which shrink-wraps the select. 170px is the baseline closed control
    (mobile-active-run, border box x=60..230 on the 375px shot), the width
-   Chromium gave the longest option "QUASNIR (not in this build)".
+   Chromium sized the row for the longest model option.
    The label's inherited line box is also a fraction taller than that control
    (baseline alignment + line-height). On the bottom-pinned composer that
    fraction crosses a pixel, the scrollport shrinks by 1px, and the transcript
@@ -1106,9 +1106,21 @@
 
 .work-motion {
   display: flex;
-  justify-content: center;
-  height: 10px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: var(--space-2);
+  min-height: 22px;
   margin: var(--space-3) 0;
+}
+
+.work-motion::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  flex: none;
+  border-radius: 999px;
+  background: var(--color-accent);
+  animation: work-glow 1.8s ease-in-out infinite;
 }
 
 @keyframes work-glow {
@@ -1124,7 +1136,7 @@
   }
 }
 
-.work-motion span {
+.work-motion span:not(.think-shimmer) {
   width: 8px;
   height: 8px;
   border-radius: 999px;

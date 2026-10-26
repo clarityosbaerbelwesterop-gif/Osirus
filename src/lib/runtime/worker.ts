@@ -34,6 +34,7 @@ import {
 } from "./settlement";
 import type { RuntimePacket } from "./types";
 import { policyOfStage } from "../strategy/runtime";
+import { forUser } from "../billing/enforce";
 
 // The slice loop.
 //
@@ -235,8 +236,17 @@ export async function executeClaimedStage(input: {
   const guard = new LeaseGuard(work, input.leaseSeconds, input.signal);
 
   const stagePolicy = policyOfStage(work.stageInput);
-  const runtime: ArmRuntime = {
-    provider: stagePolicy.model
+  const pinnedModel =
+    typeof work.stageInput.pinnedModel === "string"
+      ? work.stageInput.pinnedModel
+      : null;
+  const baseProvider = pinnedModel
+    ? new UnoRouterProvider({
+        model: pinnedModel,
+        fallback: false,
+        priority: "P0",
+      })
+    : stagePolicy.model
       ? new UnoRouterProvider({
           model: stagePolicy.model,
           // M48: a model per role, from the free-model allowlist only.
@@ -246,7 +256,12 @@ export async function executeClaimedStage(input: {
           // model capacity to user requests.
           priority: "P4",
         })
-      : new UnoRouterProvider(),
+      : new UnoRouterProvider();
+  const runtime: ArmRuntime = {
+    // Billing: a user's own run spends their 5-hour/weekly budget.
+    provider: stagePolicy.model
+      ? baseProvider
+      : forUser(baseProvider, identity.userId),
     repository,
     memory: new MemoryOS(identity.userId),
     skills: new SkillRepository(identity.userId),

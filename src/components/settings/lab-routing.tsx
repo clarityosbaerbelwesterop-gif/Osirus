@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { withoutOwnModel } from "../motion/public-text";
 
 export type LabRoutingSnapshot = {
   observedAt: string;
@@ -56,10 +57,10 @@ export function LabRoutingPanel({ initial }: { initial: LabRoutingSnapshot }) {
     >
       <h3>Model routes</h3>
       <p className="subtle">
-        Live routing for ROUGE 1, QUASNIR, and DARUS. The dot moves only while
-        this process would actually send inference to the shown provider.
-        Nothing here is a training animation. Training has not been started.
-        Observed {snapshot.observedAt}.
+        Live routing for UNOROUTER. The dot moves only while this process would
+        actually send inference to the shown provider. Own models are not
+        offered. Nothing here is a training animation. Training has not been
+        started. Observed {snapshot.observedAt}.
       </p>
       {snapshot.tracks.length === 0 ? (
         <p>No track definitions are registered in this build.</p>
@@ -77,8 +78,8 @@ export function LabRoutingPanel({ initial }: { initial: LabRoutingSnapshot }) {
                 aria-hidden="true"
               />
               <div>
-                <strong>{track.displayName}</strong>
-                <div>{track.nativeSummary}</div>
+                <strong>{withoutOwnModel(track.displayName)}</strong>
+                <div>{withoutOwnModel(track.nativeSummary)}</div>
                 <div>
                   {track.blocked ? "Not connected — API key missing. " : ""}
                   Not a native checkpoint.

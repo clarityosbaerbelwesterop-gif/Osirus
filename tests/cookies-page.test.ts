@@ -39,31 +39,36 @@ describe("cookies page", () => {
     expect(html).toContain("osirus-theme");
     expect(html).toContain("osirus-sidebar");
     expect(html).toContain("osirus-mode");
-    expect(html).toContain("Neon Auth session cookie");
+    expect(html).toContain("Neon Auth");
     // Durations and flags must match writePreference in preferences.ts.
-    expect(html).toContain("1 year");
+    expect(html).toContain("1 Jahr");
     expect(html).toContain("SameSite=Lax");
     expect(html).toContain("HttpOnly");
     // No Web Storage is used anywhere in src/; the page must say so.
     expect(html).toContain("localStorage");
     expect(html).toContain("sessionStorage");
+    expect(html).toContain("osirus-consent");
+    expect(html).toContain("osirus-lab-model");
+    expect(html).toContain("osirus-interaction");
   });
 
-  it("cites § 25 TDDDG and explains why no consent banner is required", () => {
+  it("cites § 25 TDDDG and gates optional cookies on consent", () => {
     const html = renderToStaticMarkup(createElement(CookiesPage));
     expect(html).toContain("§ 25 Abs. 2 TDDDG");
-    expect(html).toContain("no consent banner is required");
-    // Future non-essential storage requires prior consent.
     expect(html).toContain("§ 25 Abs. 1 TDDDG");
-    expect(html).toContain("prior consent");
+    expect(html).toContain("Nur notwendige");
+    expect(html).toContain("Alle akzeptieren");
+    expect(html).not.toContain("no consent banner");
   });
 
-  it("keeps operator-dependent facts marked and the page public", () => {
+  it("names the operator without placeholders and stays public", () => {
     const html = renderToStaticMarkup(createElement(CookiesPage));
-    expect(html).toContain("[[OPERATOR:");
+    expect(html).not.toContain("[[OPERATOR:");
+    expect(html).not.toContain("USt-IdNr");
     expect(html).toContain("Bärbel Westerop");
     expect(html).toContain("ClarityCompassAI");
     expect(html).toContain("47447 Moers");
+    expect(html).toContain("Drinhausstraße 22");
     expect(metadata.title).toBe("Cookies");
     expect(metadata.description).toContain("§ 25 TDDDG");
     expect(metadata.robots).toMatchObject({ index: true });
@@ -77,7 +82,9 @@ describe("cookies page", () => {
   });
 
   it("sitemap includes /legal/cookies", () => {
+    vi.stubEnv("OSIRUS_PUBLIC_BASE_URL", "https://app.example.test");
     const urls = sitemap().map((entry) => entry.url);
-    expect(urls).toContain("https://osirus.vercel.app/legal/cookies");
+    expect(urls).toContain("https://osirus-ai.vercel.app/legal/cookies");
+    expect(urls.join(" ")).not.toContain("osirus.vercel.app");
   });
 });
