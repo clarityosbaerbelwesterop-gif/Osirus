@@ -165,4 +165,4 @@ jobs:
           node -e "const r = require(process.env.PROBE_OUT);
           console.log('verified top: ' + (r.verified.join(', ') || 'none'));
           console.log('paid without credit: ' + (r.unfunded.join(', ') || 'none'));
-          for (const x of r.results) console.log((x.correct ? 'PASS ' : 'FAIL ') + x.ref + ' ' + x.ms + ' ms ' + x.outcome);"
+          for (const x of r.results) console.log((x.correct ? 'PASS ' : 'FAIL ') + x.ref + ' rank ' + x.rank + ' ' + x.ms + ' ms ' + x.outcome);"

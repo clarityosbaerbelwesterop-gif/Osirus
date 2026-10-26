@@ -21,9 +21,13 @@ import { completeGateway } from "@/lib/gateway/stream";
 
 const QUESTION =
   "Ein Lager hat 17 Regale mit je 23 Kisten. Wie viele Kisten sind es? Antworte nur mit der Zahl.";
-// Few free calls per provider: the runtime sync probes the same free pool
-// right after this and must not find it rate limited.
-const FREE_PER_PROVIDER = 4;
+// Free calls per provider. UnoRouter gets few: the runtime sync probes the
+// same free pool right after this and must not find it rate limited.
+const FREE_PER_PROVIDER = 6;
+const FREE_UNOROUTER = 4;
+// Everyday-class models probed where a provider has few top-class ones, to
+// show whether the provider answers at all (reported, never verified as top).
+const BALANCED_FALLBACK = 3;
 const PAID_PER_PROVIDER = 2;
 const CONCURRENCY = 6;
 const TIMEOUT_MS = 40_000;
@@ -79,17 +83,27 @@ async function probe(model: GatewayModel): Promise<Result> {
 
 /** Per provider: its best free and its best paid top-class models. */
 function pick(models: GatewayModel[], providers: string[]) {
-  const top = models.filter((model) => tierOf(model) === "top");
   return providers.flatMap((provider) => {
-    const own = top.filter((model) => model.provider === provider);
+    const own = models.filter((model) => model.provider === provider);
+    const top = own.filter((model) => tierOf(model) === "top");
+    const freeTop = candidatesFor(
+      top.filter((model) => model.free),
+      "top",
+      { limit: provider === "unorouter" ? FREE_UNOROUTER : FREE_PER_PROVIDER },
+    );
+    const balanced =
+      provider !== "unorouter" && freeTop.length < 2
+        ? candidatesFor(
+            own.filter((model) => model.free && tierOf(model) === "balanced"),
+            "balanced",
+            { limit: BALANCED_FALLBACK },
+          )
+        : [];
     return [
+      ...freeTop,
+      ...balanced,
       ...candidatesFor(
-        own.filter((model) => model.free),
-        "top",
-        { limit: FREE_PER_PROVIDER },
-      ),
-      ...candidatesFor(
-        own.filter((model) => !model.free),
+        top.filter((model) => !model.free),
         "top",
         { limit: PAID_PER_PROVIDER },
       ),
@@ -119,7 +133,7 @@ it("finds the top-class models the keys can really use", async () => {
     );
   for (const row of results)
     console.log(
-      `${row.correct ? "PASS " : "FAIL "} ${row.ref} (${row.free ? "free" : "paid"}${row.reasoning ? ", thinks" : ""}) ${row.ms} ms ${row.outcome}`,
+      `${row.correct ? "PASS " : "FAIL "} ${row.ref} (${tierOf({ id: row.ref, rank: row.rank })}, ${row.free ? "free" : "paid"}${row.reasoning ? ", thinks" : ""}) ${row.ms} ms ${row.outcome}`,
     );
 
   // Bytez hosts too many models to list: every candidate gets the question,
@@ -141,12 +155,8 @@ it("finds the top-class models the keys can really use", async () => {
     .filter((row) => row.correct)
     .map((row) => row.ref.slice("bytez:".length));
 
-  const verified = [
-    ...results,
-    ...bytezResults.filter(
-      (row) => tierOf({ id: row.ref, rank: row.rank }) === "top",
-    ),
-  ]
+  const verified = [...results, ...bytezResults]
+    .filter((row) => tierOf({ id: row.ref, rank: row.rank }) === "top")
     .filter((row) => row.correct && row.ms <= MAX_MS)
     .sort((a, b) => a.rank - b.rank || a.ms - b.ms)
     .slice(0, KEEP)
