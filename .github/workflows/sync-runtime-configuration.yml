@@ -98,6 +98,8 @@ jobs:
           cache: npm
       - run: npm ci
       - name: Check Neon (region, schema)
+        # A report, not a gate: the key sync must run even if Neon's API is down.
+        continue-on-error: true
         run: node scripts/neon-sync.mjs
       - name: Synchronize GitHub runtime configuration to Vercel
         run: node scripts/sync-vercel-runtime-env.mjs
