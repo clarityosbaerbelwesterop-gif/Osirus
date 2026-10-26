@@ -50,6 +50,7 @@ export default async function CodingPage({
         control.permission === "accept-edits" ? "accept-edits" : "ask"
       }
       freeQuotaEmpty={freeQuotaEmpty}
+      freeQuotaAvailableAt={quota?.availableAt?.toISOString() ?? null}
     />
   );
 }

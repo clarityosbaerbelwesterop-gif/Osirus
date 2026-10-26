@@ -14,9 +14,9 @@ import { absoluteUrl } from "./site-url";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Osirus — Assistent, Work und autonome Agents",
+  title: "Osirus — Dein KI-Team mit Freigabeknopf",
   description:
-    "Osirus ist der präzise Workspace für KI-Agents, autonome Agents und Code: mit unabhängiger Prüfung und Freigabe vor jeder Aktion nach außen.",
+    "Osirus antwortet mit Quellen, erledigt Aufgaben selbstständig und arbeitet in deinen Repositories. Das passende Modell wählt Osirus selbst; alles, was nach außen wirkt, wartet auf deine Freigabe. Gehostet in der EU.",
   alternates: { canonical: "/" },
 };
 
@@ -36,7 +36,7 @@ export default async function HomePage() {
     operatingSystem: "Web",
     url: absoluteUrl("/"),
     description:
-      "Workspace für KI-Agents, autonome Agents und Code mit unabhängiger Verifikation.",
+      "KI-Team für Chat, autonome Aufgaben und Code, mit Freigabe vor jeder Aktion nach außen.",
   };
 
   return (
@@ -54,10 +54,10 @@ export default async function HomePage() {
           Osirus
         </span>
         <div className="landing-nav-links">
-          <a href="#bots">Bots</a>
-          <a href="#work">Work</a>
-          <a href="#agents">Agents</a>
-          <a href="#pruefung">Verifikation</a>
+          <a href="#chat">Chat</a>
+          <a href="#agent">Agent</a>
+          <a href="#code">Code</a>
+          <Link href="/sicherheit">Sicherheit</Link>
           <Link className="btn btn-ghost" href="/auth/sign-in">
             Anmelden
           </Link>
@@ -68,17 +68,17 @@ export default async function HomePage() {
         <section className="landing-hero">
           <p className="landing-eyebrow">
             <span className="landing-dot" aria-hidden="true" />
-            Intelligence Workspace
+            Gehostet in der EU
           </p>
           <h1>
-            Bots, Work und <span className="landing-emphasis">Agents</span>
+            Dein KI-Team mit{" "}
+            <span className="landing-emphasis">Freigabeknopf</span>
           </h1>
           <p className="landing-copy">
-            Osirus verbindet fokussierte KI-Assistenz, orchestrierte
-            Work-Aufträge mit getrenntem Prüfermodell und dauerhafte Agents in
-            einer ruhigen, verifizierbaren Arbeitsumgebung. Osirus wählt für
-            jede Aufgabe das passende Modell; jede Aktion nach außen wartet auf
-            deine explizite Freigabe.
+            Osirus antwortet mit Quellen, erledigt Aufgaben selbstständig und
+            arbeitet in deinen Repositories. Für jede Aufgabe wählt es das
+            passende Modell; alles, was nach außen wirkt, wartet auf deine
+            Freigabe.
             {freeTier
               ? " Zum Einstieg steht ein begrenztes kostenloses Kontingent bereit."
               : ""}
@@ -94,16 +94,18 @@ export default async function HomePage() {
         </section>
 
         <section
-          id="bots"
+          id="chat"
           className="landing-block"
-          aria-labelledby="bots-title"
+          aria-labelledby="chat-title"
         >
           <div>
-            <h2 id="bots-title">Bots</h2>
+            <h2 id="chat-title">Chat: fragen, anhängen, belegen</h2>
             <p>
-              Direkter Dialog mit klarem Kontext, mehrstufigem Caching und
-              präziser Modellwahl. Lege spezialisierte Bots mit eigener Rolle
-              und eigener Systemanweisung an und bündele ihre Perspektiven.
+              Schreib einfach los, wie in einem Chat. Osirus nimmt für Kurzes
+              ein schnelles Modell und für Schweres ein Top-Modell, liest
+              angehängte PDFs, Tabellen und Code und belegt Antworten aus dem
+              Web mit nummerierten Quellen. Eigene Bots mit fester Rolle
+              arbeiten mit einem Modell, das zu ihrer Aufgabe passt.
             </p>
             <Link className="btn btn-secondary" href="/auth/sign-up">
               {startLabel}
@@ -113,35 +115,34 @@ export default async function HomePage() {
         </section>
 
         <section
-          id="work"
+          id="agent"
           className="landing-block"
-          aria-labelledby="work-title"
+          aria-labelledby="agent-title"
         >
           <div>
-            <h2 id="work-title">Work</h2>
+            <h2 id="agent-title">Agent: Aufgaben statt Prompts</h2>
             <p>
-              Für komplexe Vorhaben analysiert Osirus zuerst den Auftrag (Klasse
-              S bis XL) und empfiehlt das optimale Ausführermodell, ein
-              unabhängiges Prüfermodell sowie die passende Anzahl paralleler
-              Sub-Agents. Alle Empfehlungen lassen sich vor dem Start gezielt
-              anpassen.
+              Gib ein Ziel, keine Anleitung. Der Agent plant, recherchiert und
+              arbeitet mit deinen verbundenen Werkzeugen wie GitHub, Datenbanken
+              oder eigenen MCP-Servern. Ein getrenntes Prüfermodell kontrolliert
+              das Ergebnis, und vor jedem schreibenden Schritt fragt er dich.
             </p>
           </div>
           <WorkStory />
         </section>
 
         <section
-          id="agents"
+          id="code"
           className="landing-block"
-          aria-labelledby="agents-title"
+          aria-labelledby="code-title"
         >
           <div>
-            <h2 id="agents-title">Agents</h2>
+            <h2 id="code-title">Code: vom Auftrag zum Pull Request</h2>
             <p>
-              Definiere dauerhafte Rollen in deinem Workspace, kombiniere
-              mehrere Spezialisten im Gruppenchat per @Erwähnung und nutze
-              autonome Code- und Prüfschleifen, die Änderungen deterministisch
-              gegen Tests und Sicherheitsregeln validieren.
+              Verbinde GitHub, wähle ein Repository und beschreibe, was sich
+              ändern soll. Osirus liest den Code, ändert ihn, führt die Tests
+              aus und öffnet einen Pull Request zur Prüfung. Hier wählst du das
+              Modell auch selbst.
             </p>
           </div>
           <AgentStory />
@@ -158,8 +159,13 @@ export default async function HomePage() {
               Eine Modellantwort allein gilt in Osirus nie als Beleg. Ergebnisse
               werden durch deterministische Checks und ein vom Ausführer
               getrenntes Prüfermodell kontrolliert, während Schreibzugriffe auf
-              verbundene Systeme zwingend deine Freigabe erfordern.
+              verbundene Systeme zwingend deine Freigabe erfordern. Deine Daten
+              liegen in Frankfurt, jeder Workspace ist auf Datenbankebene
+              getrennt.
             </p>
+            <Link className="btn btn-secondary" href="/sicherheit">
+              Sicherheit im Detail
+            </Link>
           </div>
         </section>
       </div>
@@ -170,6 +176,7 @@ export default async function HomePage() {
         <Link href="/legal/terms">AGB</Link>
         <Link href="/legal/eula">EULA</Link>
         <Link href="/legal/cookies">Cookies</Link>
+        <Link href="/sicherheit">Sicherheit</Link>
       </footer>
     </main>
   );

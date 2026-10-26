@@ -69,15 +69,23 @@ describe("free tier switch", () => {
 
 describe("empty free quota panel", () => {
   it("keeps waiting and upgrading equally visible and does not invent a duration", () => {
-    const html = renderToStaticMarkup(createElement(FreeQuotaPanel));
+    const html = renderToStaticMarkup(
+      createElement(FreeQuotaPanel, {
+        availableAt: "2026-10-26T15:30:00.000Z",
+      }),
+    );
     expect(html).toContain("Dein kostenloses Kontingent ist aufgebraucht.");
-    expect(html).toContain("Wieder verfügbar in X h.");
+    // The real refill time in Berlin, never a placeholder.
+    expect(html).toContain("Wieder verfügbar ab Mo., 16:30 Uhr");
     expect(html).toContain("oder jetzt upgraden.");
-    expect(html).toContain("Platzhalter");
+    expect(html).not.toMatch(/Platzhalter|\bX\b/);
     expect(html).toContain("20 €");
     expect(html).toContain(
       "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.",
     );
-    expect(html).not.toMatch(/\d+\s*h/);
+    const unknown = renderToStaticMarkup(
+      createElement(FreeQuotaPanel, { availableAt: null }),
+    );
+    expect(unknown).toContain("sobald sich das Zeitfenster erneuert");
   });
 });

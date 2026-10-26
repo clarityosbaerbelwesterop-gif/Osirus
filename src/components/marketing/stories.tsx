@@ -35,7 +35,7 @@ export function WorkStory() {
     <div
       className="story"
       role="region"
-      aria-label="Architektur für Work: Auftrag, Empfehlungen für Modell, getrenntes Prüfermodell und parallele Sub-Agents."
+      aria-label="Ablauf eines Auftrags: planen, Modell wählen, getrenntes Prüfermodell und parallele Sub-Agents."
     >
       <p className="story-kicker">Orchestrierter Auftrag</p>
       <p className="story-prompt">Auftrag klassifizieren &amp; planen</p>
@@ -86,12 +86,12 @@ export function AgentStory() {
   return (
     <ul
       className="story-agents"
-      aria-label="Drei Säulen für Agents: Rollen definieren, autonome Code-Schleifen und Gruppenchat."
+      aria-label="Code: Repository verbinden, Änderung mit Tests prüfen, Pull Request öffnen."
     >
       {[
-        { label: "Rollen & Systemprompt", badge: "Aktiv" },
-        { label: "Autonome Code-Schleifen", badge: "Verifiziert" },
-        { label: "Gruppenchat per @Name", badge: "Bereit" },
+        { label: "Repository verbunden", badge: "Aktiv" },
+        { label: "Änderung & Tests", badge: "Verifiziert" },
+        { label: "Pull Request", badge: "Bereit" },
       ].map((item, index) => (
         <li key={item.label} style={{ ["--d" as string]: `${index * 70}ms` }}>
           <span>{item.label}</span>

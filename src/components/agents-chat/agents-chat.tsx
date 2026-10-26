@@ -36,6 +36,7 @@ import { notifyUsage } from "../motion/quota-bars";
 import { OsirusMark } from "../shell/osirus-mark";
 import { TopBar } from "../shell/top-bar";
 import { cx } from "../ui/cx";
+import { ShareDialog } from "./share-dialog";
 import { readChatStream } from "./sse";
 
 export type AgentsChatMessage = {
@@ -943,7 +944,15 @@ export function AgentsChat(props: {
 
   return (
     <div className={cx("ac", empty && "ac-empty")}>
-      <TopBar title={title ?? "Agents"} titleAs="p" />
+      <TopBar
+        title={title ?? "Agents"}
+        titleAs="p"
+        actions={
+          sessionId && !busy && messages.length ? (
+            <ShareDialog sessionId={sessionId} />
+          ) : null
+        }
+      />
       <div className="ac-scroll" ref={scrollRef} onScroll={onScroll}>
         {empty ? (
           <div className="ac-hero">

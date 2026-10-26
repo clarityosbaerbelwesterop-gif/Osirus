@@ -52,18 +52,29 @@ export function linksIn(message: string) {
 }
 
 const STOPWORDS = new Set(
-  `a an and are as at be bin bitte by can could der die das den dem des dies diese do does du ein eine einen einer erkläre erklär erzähl es für gib has hat have haben how i ich ihr im in ins is ist it kannst me mich mir mit of on or please sag schreib sind tell that the this to über und von was werden wer what when where which who wie wird wo why with you zu zum zur`.split(
-    " ",
-  ),
+  [
+    // Filler words, German and English.
+    "a an and auch auf aus are as at be bei bin bitte by can could der die das den dem des dies diese do does du ein eine einen einer es für has hat have haben how i ich ihr im in ins is ist it kannst me mich mir mit of on or please sind that the this to über und von war waren was werden wer what when where which who wie wird wo why with you zu zum zur",
+    // Instructions about the answer, not its topic.
+    "beschreibe briefly describe drei erkläre erklären erklär erstelle erzähl explain fasse find finde gib kurz kurze list liste mach mache nenne recherchiere sag satz schreib schreibe search short show summarize suche sätze sätzen vergleiche worten write wörtern zeige zusammen zwei",
+  ]
+    .join(" ")
+    .split(" "),
 );
 
-/** A short keyword query for search engines that match words, not intent. */
+/**
+ * A short keyword query for search engines that match words, not intent:
+ * the question itself (instructions such as "in two sentences" left out),
+ * without filler words.
+ */
 export function keywordQuery(message: string) {
-  return message
-    .replace(URL_PATTERN, " ")
+  const text = message.replace(URL_PATTERN, " ");
+  const question = text.match(/[^.?!\n]*\?/)?.[0] ?? text;
+  return question
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s.-]/gu, " ")
     .split(/\s+/)
+    .map((word) => word.replace(/^[.-]+|[.-]+$/g, ""))
     .filter((word) => word.length > 1 && !STOPWORDS.has(word))
     .slice(0, 8)
     .join(" ");
@@ -119,13 +130,19 @@ async function searchWeb(
   }
   const query = keywordQuery(message);
   if (!query) return [];
-  const lists = await Promise.all(
-    ["de", "en"].map((language) =>
-      new WikipediaProvider(language)
-        .search(query, { limit: 2, signal })
-        .catch((): SearchHit[] => []),
-    ),
-  );
+  const lookup = (words: string) =>
+    Promise.all(
+      ["de", "en"].map((language) =>
+        new WikipediaProvider(language)
+          .search(words, { limit: 2, signal })
+          .catch((): SearchHit[] => []),
+      ),
+    );
+  let lists = await lookup(query);
+  // Nothing for every word together: the first few words carry the topic.
+  const short = query.split(" ").slice(0, 3).join(" ");
+  if (lists.every((list) => list.length === 0) && short !== query)
+    lists = await lookup(short);
   // German first (the product speaks German), then English.
   const hits = lists.flat().slice(0, 3);
   const documents = await Promise.all(

@@ -3,6 +3,7 @@ import { absoluteUrl } from "./site-url";
 
 const PATHS = [
   "/",
+  "/sicherheit",
   "/legal/impressum",
   "/legal/privacy",
   "/legal/terms",

@@ -37,7 +37,11 @@ describe("landing page", () => {
     const html = renderToStaticMarkup(
       (await HomePage()) as ReturnType<typeof createElement>,
     );
-    expect(html).toContain("Bots, Work und");
+    expect(html).toContain("Dein KI-Team mit");
+    expect(html).toContain("Freigabeknopf");
+    expect(html).toContain('href="/sicherheit"');
+    // One promise: the product's internal surfaces stay off the public page.
+    expect(html).not.toMatch(/\bWork\b|Lab\b|Intelligence|\bRSI\b/);
     expect(html).toContain('href="/auth/sign-up"');
     expect(html).toContain("Kostenlos starten");
     expect(html).not.toContain("Konto erstellen");
@@ -102,6 +106,7 @@ describe("seo surface", () => {
     const urls = sitemap().map((entry) => entry.url);
     expect(urls).toEqual([
       "https://osirus-ai.vercel.app/",
+      "https://osirus-ai.vercel.app/sicherheit",
       "https://osirus-ai.vercel.app/legal/impressum",
       "https://osirus-ai.vercel.app/legal/privacy",
       "https://osirus-ai.vercel.app/legal/terms",

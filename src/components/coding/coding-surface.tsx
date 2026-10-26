@@ -52,6 +52,8 @@ export function CodingSurface(props: {
   initialPermission?: CodingPermission;
   /** Set by the work page when the free tier is on and its quota is empty. */
   freeQuotaEmpty?: boolean;
+  /** When the spent free quota refills (ISO), if known. */
+  freeQuotaAvailableAt?: string | null;
 }) {
   const shell = useShell();
   const [sessionId, setSessionId] = useState(props.initialSessionId);
@@ -371,7 +373,11 @@ export function CodingSurface(props: {
         />
         <div className="chat-scroll">
           <div className="chat-content">
-            {props.freeQuotaEmpty ? <FreeQuotaPanel /> : null}
+            {props.freeQuotaEmpty ? (
+              <FreeQuotaPanel
+                availableAt={props.freeQuotaAvailableAt ?? null}
+              />
+            ) : null}
             {messages.length ? (
               <MessageList
                 messages={messages}

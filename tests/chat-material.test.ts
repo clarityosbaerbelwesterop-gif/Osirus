@@ -25,7 +25,7 @@ describe("chat material", () => {
       keywordQuery(
         "Kannst du mir bitte erklären, was die Relativitätstheorie ist?",
       ),
-    ).toBe("erklären relativitätstheorie");
+    ).toBe("relativitätstheorie");
     expect(keywordQuery("What is the capital of France?")).toBe(
       "capital france",
     );
@@ -54,5 +54,16 @@ describe("chat material", () => {
 
   it("does nothing without a search and without links", async () => {
     expect(await webMaterial({ message: "Hallo", search: false })).toEqual([]);
+  });
+});
+
+describe("search words", () => {
+  it("keeps the question and drops instructions around it", () => {
+    expect(keywordQuery("Wer war Konrad Adenauer? Zwei Sätze.")).toBe(
+      "konrad adenauer",
+    );
+    expect(
+      keywordQuery("Fasse kurz zusammen: Geschichte der Stadt Moers"),
+    ).toBe("geschichte stadt moers");
   });
 });

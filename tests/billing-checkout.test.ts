@@ -8,6 +8,7 @@ const holder = vi.hoisted(() => ({
   customer: null as string | null,
   footer: null as string | null,
   calls: [] as { method: string; args: unknown[] }[],
+  subscriptions: [] as unknown[],
 }));
 
 vi.hoisted(() => {
@@ -68,6 +69,12 @@ vi.mock("../src/lib/billing/stripe", async (importOriginal) => {
         },
         update: record("customers.update", { id: "cus_test_1" }),
       },
+      subscriptions: {
+        list: async (...args: unknown[]) => {
+          holder.calls.push({ method: "subscriptions.list", args });
+          return { data: holder.subscriptions };
+        },
+      },
       checkout: {
         sessions: {
           create: record("checkout.sessions.create", {
@@ -82,12 +89,12 @@ vi.mock("../src/lib/billing/stripe", async (importOriginal) => {
 const { POST } = await import("../src/app/api/billing/checkout/route");
 const NOTE = "Gemäß § 19 UStG wird keine Umsatzsteuer berechnet.";
 
-const checkout = () =>
+const checkout = (plan = "pro") =>
   POST(
     new Request("https://osirus.test/api/billing/checkout", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ plan: "pro" }),
+      body: JSON.stringify({ plan }),
     }),
   );
 const call = (method: string) =>
@@ -98,6 +105,7 @@ beforeEach(() => {
   holder.customer = null;
   holder.footer = null;
   holder.calls = [];
+  holder.subscriptions = [];
 });
 
 afterAll(() => {
@@ -117,6 +125,7 @@ describe("billing checkout (§ 19 UStG)", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({
       url: "https://checkout.stripe.test/s",
+      trialDays: 7,
     });
     expect(call("customers.create")).toMatchObject({
       invoice_settings: { footer: NOTE },
@@ -157,6 +166,7 @@ describe("billing checkout (§ 19 UStG)", () => {
     expect((await checkout()).status).toBe(200);
     expect(holder.calls.map((c) => c.method)).toEqual([
       "customers.retrieve",
+      "subscriptions.list",
       "checkout.sessions.create",
     ]);
   });
@@ -167,5 +177,34 @@ describe("billing checkout (§ 19 UStG)", () => {
       "customers.create",
       "checkout.sessions.create",
     ]);
+  });
+
+  it("gives a first Pro subscription seven free days, once", async () => {
+    expect((await checkout()).status).toBe(200);
+    expect(call("checkout.sessions.create")).toMatchObject({
+      subscription_data: { trial_period_days: 7 },
+    });
+
+    // An earlier subscription, in any state, means no second trial.
+    holder.calls = [];
+    holder.customer = "cus_existing";
+    holder.footer = NOTE;
+    holder.subscriptions = [{ id: "sub_old", status: "canceled" }];
+    const again = await checkout();
+    await expect(again.json()).resolves.toMatchObject({ trialDays: 0 });
+    expect(
+      (call("checkout.sessions.create")!.subscription_data as object) ?? {},
+    ).not.toHaveProperty("trial_period_days");
+    expect(holder.calls[1]).toEqual({
+      method: "subscriptions.list",
+      args: [{ customer: "cus_existing", status: "all", limit: 1 }],
+    });
+  });
+
+  it("starts other plans without a trial", async () => {
+    expect((await checkout("developer")).status).toBe(200);
+    expect(
+      call("checkout.sessions.create")!.subscription_data as object,
+    ).not.toHaveProperty("trial_period_days");
   });
 });
