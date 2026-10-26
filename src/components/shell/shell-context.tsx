@@ -34,6 +34,8 @@ export type ShellData = {
   isAdmin: boolean;
   sidebar: "expanded" | "collapsed";
   theme: ThemePreference;
+  /** The introduction tour; `open` until it was finished or skipped once. */
+  tour?: { open: boolean };
 };
 
 type ShellValue = ShellData & {

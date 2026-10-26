@@ -6,13 +6,17 @@ import { completeGateway } from "@/lib/gateway/stream";
 
 // Which top-class models the configured keys can really use. The production
 // gateway lists every provider's models; the strongest free and paid ones of
-// each provider get a question with one checkable answer. Those that answer
-// correctly and in time are exported as OSIRUS_VERIFIED_TOP_MODELS (via
-// GITHUB_ENV) for the runtime sync. Prints model ids and timings, never keys.
+// each provider get a question with one checkable answer. Exported via
+// GITHUB_ENV for the runtime sync:
+//   OSIRUS_VERIFIED_TOP_MODELS  answered correctly and in time, best first
+//   OSIRUS_UNFUNDED_PROVIDERS   every probed paid model refused for missing
+//                               credit ("none" when no provider is)
+// Prints model ids and timings, never keys.
 
 const QUESTION =
   "Ein Lager hat 17 Regale mit je 23 Kisten. Wie viele Kisten sind es? Antworte nur mit der Zahl.";
-const PER_PROVIDER = 4;
+const FREE_PER_PROVIDER = 6;
+const PAID_PER_PROVIDER = 2;
 const CONCURRENCY = 6;
 const TIMEOUT_MS = 40_000;
 const MAX_MS = 20_000;
@@ -20,6 +24,7 @@ const KEEP = 6;
 
 type Result = {
   ref: string;
+  provider: string;
   free: boolean;
   reasoning: boolean;
   rank: number;
@@ -32,6 +37,7 @@ async function probe(model: GatewayModel): Promise<Result> {
   const started = Date.now();
   const base = {
     ref: model.ref,
+    provider: model.provider,
     free: model.free,
     reasoning: model.reasoning,
     rank: model.rank,
@@ -68,13 +74,18 @@ function pick(models: GatewayModel[], providers: string[]) {
   const top = models.filter((model) => tierOf(model) === "top");
   return providers.flatMap((provider) => {
     const own = top.filter((model) => model.provider === provider);
-    return [true, false].flatMap((free) =>
-      candidatesFor(
-        own.filter((model) => model.free === free),
+    return [
+      ...candidatesFor(
+        own.filter((model) => model.free),
         "top",
-        { limit: PER_PROVIDER },
+        { limit: FREE_PER_PROVIDER },
       ),
-    );
+      ...candidatesFor(
+        own.filter((model) => !model.free),
+        "top",
+        { limit: PAID_PER_PROVIDER },
+      ),
+    ];
   });
 }
 
@@ -107,15 +118,31 @@ it("finds the top-class models the keys can really use", async () => {
     .sort((a, b) => a.rank - b.rank || a.ms - b.ms)
     .slice(0, KEEP)
     .map((row) => row.ref);
+  const unfunded = [...new Set(results.map((row) => row.provider))].filter(
+    (provider) => {
+      const paid = results.filter(
+        (row) => row.provider === provider && !row.free,
+      );
+      return (
+        paid.length > 0 &&
+        paid.every((row) => row.outcome === "insufficient_credit")
+      );
+    },
+  );
   writeFileSync(
     process.env.PROBE_OUT ?? "probe-top-models.json",
-    JSON.stringify({ verified, results }, null, 2),
+    JSON.stringify({ verified, unfunded, results }, null, 2),
   );
   console.log(`verified top models: ${verified.join(", ") || "none"}`);
-  if (process.env.GITHUB_ENV && verified.length > 0)
-    appendFileSync(
-      process.env.GITHUB_ENV,
-      `OSIRUS_VERIFIED_TOP_MODELS=${verified.join(",")}\n`,
-    );
+  console.log(`paid models without credit: ${unfunded.join(", ") || "none"}`);
+  if (process.env.GITHUB_ENV) {
+    const lines = [
+      `OSIRUS_UNFUNDED_PROVIDERS=${unfunded.join(",") || "none"}`,
+      ...(verified.length
+        ? [`OSIRUS_VERIFIED_TOP_MODELS=${verified.join(",")}`]
+        : []),
+    ];
+    appendFileSync(process.env.GITHUB_ENV, `${lines.join("\n")}\n`);
+  }
   expect(picked.length).toBeGreaterThan(0);
 });

@@ -2,8 +2,10 @@
 
 import { Tooltip } from "@base-ui/react/tooltip";
 import type { ReactNode } from "react";
+import { completeTour } from "@/app/app/actions";
 import { SidebarContent, Sidebar } from "../sidebar/sidebar";
 import { Sheet } from "../ui/sheet";
+import { OnboardingTour } from "./onboarding-tour";
 import { ShellProvider, useShell, type ShellData } from "./shell-context";
 
 function MobileNav() {
@@ -51,6 +53,13 @@ export function AppShell({
     <ShellProvider data={data}>
       <Tooltip.Provider delay={400}>
         <Frame>{children}</Frame>
+        {data.tour ? (
+          <OnboardingTour
+            initialOpen={data.tour.open}
+            name={data.user.name?.trim().split(/\s+/)[0] || null}
+            onDone={completeTour}
+          />
+        ) : null}
       </Tooltip.Provider>
     </ShellProvider>
   );

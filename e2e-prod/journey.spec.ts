@@ -73,6 +73,31 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     console.log(`Signed up as ${email} and landed in /app`);
   });
 
+  await test.step("a new account gets the introduction, once", async () => {
+    const tour = page.getByRole("dialog");
+    await expect(
+      tour.getByRole("heading", { name: "Willkommen bei Osirus, Journey" }),
+    ).toBeVisible({ timeout: 30_000 });
+    await tour.getByRole("button", { name: "Los geht's" }).click();
+    for (let step = 2; step < 8; step++)
+      await tour.getByRole("button", { name: "Weiter" }).click();
+    await expect(tour.getByRole("heading", { name: "Leg los" })).toBeVisible();
+    // The server action that records it on the account.
+    const recorded = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        Boolean(response.request().headers()["next-action"]),
+    );
+    await tour.getByRole("button", { name: "Fertig" }).click();
+    await expect(tour).toBeHidden();
+    expect((await recorded).ok()).toBe(true);
+    // Recorded on the account: a reload does not open it again.
+    await page.reload();
+    await expect(page.locator(".ac-hero-title")).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    console.log("Introduction shown once and recorded");
+  });
+
   await test.step("the greeting and the account use the account's name", async () => {
     await expect(page.locator(".ac-hero-title")).toContainText("Journey");
     await expect(page.locator(".account-text")).toContainText(

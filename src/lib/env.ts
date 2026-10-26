@@ -66,6 +66,9 @@ const schema = z.object({
   // Comma-separated "provider:model" refs that answered the sync's top-class
   // probe correctly; they lead the top class.
   OSIRUS_VERIFIED_TOP_MODELS: z.string().min(3).max(2000).optional(),
+  // Comma-separated providers whose paid models the probe found refused for
+  // missing credit ("none": all funded); their paid models are not offered.
+  OSIRUS_UNFUNDED_PROVIDERS: z.string().min(1).max(200).optional(),
   // Rouge 1 (M56): the foundation core. Unset means grok-4.6. A different
   // core is a migration decision made on evaluations, never a silent switch.
   ROUGE_CORE_MODEL: z.string().min(1).max(120).optional(),

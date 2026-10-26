@@ -265,6 +265,8 @@ type CacheEntry = { at: number; models: GatewayModel[]; ok: boolean };
 const cache = new Map<ProviderId, CacheEntry>();
 const inflight = new Map<ProviderId, Promise<CacheEntry>>();
 const hidden = new Map<string, number>();
+// Providers that refused a paid model for missing credit, until when.
+const unfunded = new Map<ProviderId, number>();
 
 // How each model behaved lately on this instance: failures and time to the
 // first token. Routing puts slow or failing models behind the others.
@@ -387,7 +389,9 @@ export async function listGatewayModels(options?: {
   const models: GatewayModel[] = [];
   const status: ProviderStatus[] = [];
   providers.forEach((provider, index) => {
+    const paidBlocked = noCredit(provider.id, now);
     const list = lists[index].models.filter((model) => {
+      if (paidBlocked && !model.free) return false;
       const until = hidden.get(model.ref);
       return !until || until < now;
     });
@@ -428,6 +432,38 @@ export async function resolveGatewayModel(
   return parseProviderModels(spec, [{ id: parsed.model }])[0] ?? null;
 }
 
+/**
+ * Providers without credit for paid models: measured by the runtime sync
+ * (OSIRUS_UNFUNDED_PROVIDERS, "none" when all are funded) or refused here
+ * within the last hour. Their paid models are not offered; free ones stay.
+ */
+function noCredit(provider: ProviderId, now: number) {
+  const until = unfunded.get(provider);
+  if (until && until > now) return true;
+  const measured =
+    env.OSIRUS_UNFUNDED_PROVIDERS ?? process.env.OSIRUS_UNFUNDED_PROVIDERS;
+  return Boolean(
+    measured
+      ?.split(",")
+      .map((id) => id.trim())
+      .includes(provider),
+  );
+}
+
+/**
+ * A call was refused for missing credit: a paid model takes its provider's
+ * paid models off the lists for an hour, a free one is hidden by itself.
+ */
+export function noteNoCredit(ref: string, now = Date.now()) {
+  const parsed = parseModelRef(ref);
+  if (!parsed) return;
+  const listed = cache
+    .get(parsed.provider)
+    ?.models.find((model) => model.ref === ref);
+  if (listed?.free) hideModel(ref, now);
+  else unfunded.set(parsed.provider, now + HIDE_MS);
+}
+
 /** Hide a model the provider said does not exist (404), for an hour. */
 export function hideModel(ref: string, now = Date.now()) {
   hidden.set(ref, now + HIDE_MS);
@@ -457,6 +493,7 @@ export function resetGatewayModelCache() {
   inflight.clear();
   hidden.clear();
   health.clear();
+  unfunded.clear();
 }
 
 /**

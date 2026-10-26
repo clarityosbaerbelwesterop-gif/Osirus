@@ -47,3 +47,25 @@ export async function onboardingSteps(identity: ProductIdentity) {
     },
   ];
 }
+
+/** False until the person finished or skipped the introduction tour once. */
+export async function tourSeen(userId: string) {
+  const [row] = await queryAs<{ onboarded_at: string | null }>(
+    userId,
+    "select onboarded_at from osirus.users where id = $1::uuid",
+    [userId],
+  );
+  // No row yet (first request races the bootstrap): show the tour.
+  return Boolean(row?.onboarded_at);
+}
+
+/** Record the first time the tour was finished or skipped; later calls keep it. */
+export async function markTourSeen(userId: string) {
+  await queryAs(
+    userId,
+    `update osirus.users
+        set onboarded_at = coalesce(onboarded_at, now())
+      where id = $1::uuid`,
+    [userId],
+  );
+}

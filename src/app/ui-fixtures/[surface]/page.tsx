@@ -199,6 +199,14 @@ export default async function FixturePage({
         </AppShell>
       );
     }
+    case "tour":
+      return (
+        <AppShell data={{ ...shell, tour: { open: true } }}>
+          <PageFrame title="Agents">
+            <p>Willkommen.</p>
+          </PageFrame>
+        </AppShell>
+      );
     case "settings":
       return (
         <AppShell data={shell}>

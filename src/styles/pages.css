@@ -536,3 +536,9 @@
 .status-card .btn {
   justify-self: start;
 }
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}

@@ -628,3 +628,62 @@ test("rouge agent: a suggested task fills the composer and Osirus picks the mode
     .toMatchObject({ surface: "agent", mode: "agent" });
   expect(runBody).not.toHaveProperty("modelId");
 });
+
+test("tour: a new account is walked through every part and can start a first task", async ({
+  page,
+}) => {
+  await mockApis(page);
+  await openSurface(page, "tour");
+  const tour = page.getByRole("dialog");
+  await expect(tour).toBeVisible();
+  await expect(
+    tour.getByRole("heading", { name: "Willkommen bei Osirus, Bärbel" }),
+  ).toBeVisible();
+  await expect(tour.getByText("Schritt 1 von 8")).toBeVisible();
+  // Focus is inside the dialog, and the keyboard drives it.
+  await expect(tour.getByRole("button", { name: "Los geht's" })).toBeVisible();
+  await tour.getByRole("button", { name: "Los geht's" }).click();
+  const titles = [
+    "Agents: einfach fragen",
+    "Bots: deine Spezialisten",
+    "Rouge Agent: erledigt Aufgaben",
+    "Code: dein Entwickler",
+    "Verbindungen: deine Werkzeuge",
+    "Kontingent, Pläne und Sicherheit",
+    "Leg los",
+  ];
+  for (const [index, title] of titles.entries()) {
+    await expect(tour.getByRole("heading", { name: title })).toBeVisible();
+    await expect(tour.getByText(`Schritt ${index + 2} von 8`)).toBeVisible();
+    if (index < titles.length - 1)
+      await tour.getByRole("button", { name: "Weiter" }).click();
+  }
+  // Back works, and the last step offers real first tasks.
+  await tour.getByRole("button", { name: "Zurück" }).click();
+  await expect(
+    tour.getByRole("heading", { name: "Kontingent, Pläne und Sicherheit" }),
+  ).toBeVisible();
+  await tour.getByRole("button", { name: "Weiter" }).click();
+  const ask = tour.getByRole("link", { name: /Eine Frage stellen/ });
+  await expect(ask).toHaveAttribute("href", /^\/app\?prompt=/);
+  await expect(
+    tour.getByRole("link", { name: /Eine Aufgabe übergeben/ }),
+  ).toHaveAttribute("href", /^\/app\/agent\?new=1&prompt=/);
+  await tour.getByRole("button", { name: "Fertig" }).click();
+  await expect(tour).toBeHidden();
+});
+
+test("tour: skipping closes it and Escape does too after a replay", async ({
+  page,
+}) => {
+  await mockApis(page);
+  await openSurface(page, "tour");
+  const tour = page.getByRole("dialog");
+  await tour.getByRole("button", { name: "Überspringen" }).click();
+  await expect(tour).toBeHidden();
+  await page.evaluate(() => window.dispatchEvent(new Event("osirus:tour")));
+  await expect(tour).toBeVisible();
+  await expect(tour.getByText("Schritt 1 von 8")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(tour).toBeHidden();
+});

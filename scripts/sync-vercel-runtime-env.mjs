@@ -409,6 +409,18 @@ const variables = [
         },
       ]
     : []),
+  // Providers whose paid models the probe found refused for missing credit.
+  ...(/^(none|[a-z]+(,[a-z]+)*)$/.test(
+    process.env.OSIRUS_UNFUNDED_PROVIDERS ?? "",
+  )
+    ? [
+        {
+          key: "OSIRUS_UNFUNDED_PROVIDERS",
+          value: process.env.OSIRUS_UNFUNDED_PROVIDERS,
+          type: "plain",
+        },
+      ]
+    : []),
   ...(roleModel === "grok-4.6"
     ? [
         {

@@ -24,7 +24,8 @@ export default async function AgentsPage({
   ]);
   return (
     <AgentsChat
-      key={thread?.sessionId ?? "new"}
+      // A new prompt link (e.g. from the tour) on this page starts fresh.
+      key={thread?.sessionId ?? `new:${params.prompt ?? ""}`}
       initialThread={thread}
       bots={bots
         .filter((bot) => bot.status === "active")
