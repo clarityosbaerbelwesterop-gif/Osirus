@@ -93,6 +93,57 @@ export const agentDecisionSchema = z.object({
 export type AgentDecision = z.infer<typeof agentDecisionSchema>;
 
 /**
+ * Normalizes slightly non-standard model JSON outputs (e.g. missing `summary`,
+ * lowercase `action`, or `finalAnswer`/`response` instead of `answer`) before
+ * validating against `agentDecisionSchema`.
+ */
+export function coerceAgentDecision(raw: unknown): AgentDecision {
+  const direct = agentDecisionSchema.safeParse(raw);
+  if (direct.success) return direct.data;
+  if (raw && typeof raw === "object" && !Array.isArray(raw)) {
+    const obj = { ...(raw as Record<string, unknown>) };
+    const candidateAnswer =
+      typeof obj.answer === "string"
+        ? obj.answer
+        : typeof obj.finalAnswer === "string"
+          ? obj.finalAnswer
+          : typeof obj.final_answer === "string"
+            ? obj.final_answer
+            : typeof obj.response === "string"
+              ? obj.response
+              : typeof obj.content === "string"
+                ? obj.content
+                : typeof obj.text === "string"
+                  ? obj.text
+                  : undefined;
+    if (candidateAnswer && typeof obj.answer !== "string") {
+      obj.answer = candidateAnswer;
+    }
+    if (typeof obj.action === "string") {
+      const upper = obj.action.trim().toUpperCase();
+      if ((AGENT_ACTIONS as readonly string[]).includes(upper)) {
+        obj.action = upper;
+      }
+    } else if (
+      typeof obj.answer === "string" &&
+      obj.answer.trim() &&
+      !obj.toolId
+    ) {
+      obj.action = "FINISH";
+    }
+    if (typeof obj.summary !== "string" || !obj.summary.trim()) {
+      const act = typeof obj.action === "string" ? obj.action : "RESPOND";
+      obj.summary =
+        act === "USE_TOOL" && typeof obj.toolId === "string"
+          ? `Using ${obj.toolId}`.slice(0, 300)
+          : "Answering the request";
+    }
+    return agentDecisionSchema.parse(obj);
+  }
+  return agentDecisionSchema.parse(raw);
+}
+
+/**
  * Enforce the fields each action needs.
  *
  * Kept separate from the schema so a missing field produces a message the

@@ -42,8 +42,15 @@ if (!key) {
   console.error("STRIPE_SECRET_KEY is not set.");
   process.exit(1);
 }
-if (!key.startsWith("sk_test_") && !key.startsWith("rk_test_")) {
-  console.error("Refusing to run: this script only runs with a TEST mode key.");
+if (
+  !key.startsWith("sk_test_") &&
+  !key.startsWith("rk_test_") &&
+  !key.startsWith("sk_live_") &&
+  !key.startsWith("rk_live_")
+) {
+  console.error(
+    "Refusing to run: STRIPE_SECRET_KEY must start with sk_test_, rk_test_, sk_live_, or rk_live_.",
+  );
   process.exit(1);
 }
 

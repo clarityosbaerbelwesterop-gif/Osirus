@@ -7,7 +7,7 @@ import {
 import { serializeQuota } from "@/lib/billing/quota";
 import { env, serverKeys } from "@/lib/env";
 import { guardWrite, json } from "@/lib/product/api";
-import { listKeyModels } from "@/lib/models/key-models";
+import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
 import { completePinned } from "@/lib/models/pinned-call";
 import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 import { executeWork, type WorkCaller } from "@/lib/work/execute";
@@ -64,19 +64,27 @@ export async function POST(request: Request) {
   }
 
   const recommendation = recommendWork(guard.body.prompt);
-  const keyModels = await listKeyModels({
-    baseUrl: env.UNOROUTER_BASE_URL,
-    keys: serverKeys(),
-  });
+  const [keyModels, nvidiaModels] = await Promise.all([
+    listKeyModels({
+      baseUrl: env.UNOROUTER_BASE_URL,
+      keys: serverKeys(),
+    }),
+    listNvidiaTopModels(),
+  ]);
+  const combinedAllowed = [
+    ...(nvidiaModels.availability === "ready"
+      ? nvidiaModels.models.map((model) => model.id)
+      : []),
+    ...(keyModels.availability === "ready"
+      ? keyModels.models.map((model) => model.id)
+      : []),
+  ];
   const applied = applyWorkSelection({
     recommendation,
     executorModelId: guard.body.executorModelId,
     reviewerModelId: guard.body.reviewerModelId,
     subAgentCount: guard.body.subAgentCount,
-    allowedModelIds:
-      keyModels.availability === "ready"
-        ? keyModels.models.map((model) => model.id)
-        : null,
+    allowedModelIds: combinedAllowed.length ? combinedAllowed : null,
   });
   if (!applied.ok) {
     return json(

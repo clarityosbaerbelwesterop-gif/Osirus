@@ -8,6 +8,9 @@ export type RougeCloneRole =
 
 export type RougeDeliberationProfile = "standard" | "deep" | "frontier-max";
 
+export type RougeThinkingEffort =
+  "leicht" | "mittel" | "hoch" | "super" | "ultra";
+
 export interface RougeCheckResult {
   name: string;
   kind: "typecheck" | "lint" | "unit_test" | "security" | "contract" | "custom";
@@ -88,6 +91,14 @@ export interface RougeAgentCheckpoint {
 }
 
 export interface RougeAgentConfig {
+  /** Dedicated or user-selected executor model ID (defaults to ROUGE_AGENT_DEFAULT_MODEL). */
+  executorModelId?: string;
+  /** Distinct user-selected or default reviewer model ID (Prüfermodell). */
+  reviewerModelId?: string;
+  /** User-configurable thinking effort level (leicht, mittel, hoch, super, ultra). */
+  thinkingEffort?: RougeThinkingEffort;
+  /** User-configurable number of sub-agents / clones for the task (0..50). */
+  subAgentCount?: number;
   /** Maximum iterations per slice before yielding for durable continuation. */
   maxIterationsPerSlice?: number;
   /** Maximum total iterations across continuations (Infinity for unbounded until green). */
@@ -100,16 +111,23 @@ export interface RougeAgentConfig {
   profile?: RougeDeliberationProfile;
   /** Enable automatic skill extraction and self-improvement after repair rounds. */
   selfImproveSkills?: boolean;
+  /** Enable self-healing error recovery so transient clone/verifier errors never abort the run. */
+  selfHealingRecovery?: boolean;
 }
 
 export interface RougeAgentRunResult {
   runId: string;
   status: "verified_perfect" | "yielded_for_continuation" | "failed";
   objective: string;
+  executorModelId: string;
+  reviewerModelId: string;
+  thinkingEffort: RougeThinkingEffort;
+  subAgentCount: number;
   profile: RougeDeliberationProfile;
   iterations: number;
   continuations: number;
   totalClonesSpawned: number;
+  selfHealedErrors: number;
   finalPatches: RougeCodePatch[];
   finalChecks: RougeCheckResult[];
   evolvedSkills: RougeLearnedSkill[];

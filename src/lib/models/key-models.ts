@@ -1,5 +1,11 @@
+import { NVIDIA_TOP_MODELS } from "@/config/recommendations";
+import { env, nvidiaKeys } from "@/lib/env";
 import { parseModelList } from "@/lib/models/free-registry";
-import { CATALOG_MODELS, type CatalogModel } from "@/lib/models/catalog";
+import {
+  CATALOG_MODELS,
+  NVIDIA_CATALOG_MODELS,
+  type CatalogModel,
+} from "@/lib/models/catalog";
 
 export type ListedKeyModel = {
   id: string;
@@ -100,5 +106,91 @@ export async function listKeyModels(input: {
     availability: "unknown",
     models: [],
     reason: `Bald verfügbar. Die Key-Liste konnte nicht gelesen werden${lastStatus ? ` (${lastStatus})` : ""}.`,
+  };
+}
+
+export const DEFAULT_NVIDIA_BASE_URL =
+  "https://integrate.api.nvidia.com/v1/chat/completions";
+
+/**
+ * Lists ONLY the curated Top NVIDIA NIM models for user-facing model
+ * selectors, backed exclusively by NVIDIA_API_KEY (never UNOROUTER_API_KEY).
+ */
+export async function listNvidiaTopModels(input?: {
+  baseUrl?: string | null;
+  keys?: readonly string[];
+  fetchImpl?: typeof fetch;
+}): Promise<KeyModelList> {
+  const keys = input?.keys ?? nvidiaKeys();
+  const baseUrl =
+    input?.baseUrl ??
+    env.NVIDIA_BASE_URL ??
+    process.env.NVIDIA_BASE_URL ??
+    DEFAULT_NVIDIA_BASE_URL;
+  const fetchImpl = input?.fetchImpl ?? fetch;
+
+  const configuredTop = (
+    env.OSIRUS_NVIDIA_TOP_MODELS ?? process.env.OSIRUS_NVIDIA_TOP_MODELS
+  )
+    ?.split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const topSet = new Set<string>(
+    configuredTop?.length ? configuredTop : NVIDIA_TOP_MODELS,
+  );
+  const topCatalog = NVIDIA_CATALOG_MODELS.filter((m) => topSet.has(m.id)).map(
+    toListed,
+  );
+
+  if (keys.length === 0) {
+    return {
+      availability: "ready",
+      models: topCatalog.length
+        ? topCatalog
+        : NVIDIA_CATALOG_MODELS.map(toListed),
+    };
+  }
+
+  const endpoint = modelsEndpoint(baseUrl);
+  if (!endpoint) {
+    return {
+      availability: "ready",
+      models: topCatalog.length
+        ? topCatalog
+        : NVIDIA_CATALOG_MODELS.map(toListed),
+    };
+  }
+
+  for (const key of keys) {
+    try {
+      const response = await fetchImpl(endpoint, {
+        headers: { Authorization: `Bearer ${key}`, Accept: "application/json" },
+        cache: "no-store",
+      });
+      if (!response.ok) continue;
+      const body: unknown = await response.json();
+      const listedIds = new Set(parseModelList(body).map((m) => m.id));
+      const matched = NVIDIA_CATALOG_MODELS.filter(
+        (m) => topSet.has(m.id) && listedIds.has(m.id),
+      ).map(toListed);
+      return {
+        availability: "ready",
+        models: matched.length
+          ? matched
+          : topCatalog.length
+            ? topCatalog
+            : NVIDIA_CATALOG_MODELS.map(toListed),
+      };
+    } catch {
+      // Fall through to next key or curated top models.
+    }
+  }
+
+  return {
+    availability: "ready",
+    models: topCatalog.length
+      ? topCatalog
+      : NVIDIA_CATALOG_MODELS.map(toListed),
   };
 }

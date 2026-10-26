@@ -3,7 +3,7 @@ import { env, serverKeys } from "@/lib/env";
 import { guardAction, guardWrite, json } from "@/lib/product/api";
 import { deleteAgent, updateAgent } from "@/lib/agents/store";
 import { isRetiredProductModel } from "@/lib/models/catalog";
-import { listKeyModels } from "@/lib/models/key-models";
+import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -34,17 +34,30 @@ export async function PATCH(
     if (isRetiredProductModel(guard.body.modelId)) {
       return json({ error: "retired_model" }, 400);
     }
-    const keyModels = await listKeyModels({
-      baseUrl: env.UNOROUTER_BASE_URL,
-      keys: serverKeys(),
-    });
-    if (keyModels.availability !== "ready") {
+    const [nvidia, keyModels] = await Promise.all([
+      listNvidiaTopModels(),
+      listKeyModels({
+        baseUrl: env.UNOROUTER_BASE_URL,
+        keys: serverKeys(),
+      }),
+    ]);
+    const allowed = [
+      ...(nvidia.availability === "ready" ? nvidia.models : []),
+      ...(keyModels.availability === "ready" ? keyModels.models : []),
+    ];
+    if (!allowed.length) {
       return json(
-        { error: "key_models_unknown", message: keyModels.reason },
+        {
+          error: "key_models_unknown",
+          message:
+            keyModels.availability === "unknown"
+              ? keyModels.reason
+              : "Bald verfügbar.",
+        },
         503,
       );
     }
-    if (!keyModels.models.some((model) => model.id === guard.body.modelId)) {
+    if (!allowed.some((model) => model.id === guard.body.modelId)) {
       return json({ error: "model_not_on_key" }, 400);
     }
   }

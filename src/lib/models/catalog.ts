@@ -18,7 +18,61 @@ export type CatalogModel = {
 
 export const CATALOG_CAPTURED_AT = snapshot.capturedAt;
 
-export const CATALOG_MODELS: readonly CatalogModel[] = snapshot.models;
+export const NVIDIA_CATALOG_MODELS: readonly CatalogModel[] = [
+  {
+    id: "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+    vendor: "nvidia",
+    online: true,
+    chat: true,
+    inputPerMillionUsd: 0.6,
+    outputPerMillionUsd: 1.8,
+  },
+  {
+    id: "deepseek-ai/deepseek-r1",
+    vendor: "nvidia",
+    online: true,
+    chat: true,
+    inputPerMillionUsd: 0.55,
+    outputPerMillionUsd: 2.19,
+  },
+  {
+    id: "meta/llama-3.3-70b-instruct",
+    vendor: "nvidia",
+    online: true,
+    chat: true,
+    inputPerMillionUsd: 0.2,
+    outputPerMillionUsd: 0.4,
+  },
+  {
+    id: "qwen/qwen2.5-coder-32b-instruct",
+    vendor: "nvidia",
+    online: true,
+    chat: true,
+    inputPerMillionUsd: 0.18,
+    outputPerMillionUsd: 0.36,
+  },
+  {
+    id: "mistralai/mistral-large-2-instruct",
+    vendor: "nvidia",
+    online: true,
+    chat: true,
+    inputPerMillionUsd: 0.8,
+    outputPerMillionUsd: 2.4,
+  },
+  {
+    id: "google/gemma-2-27b-it",
+    vendor: "nvidia",
+    online: true,
+    chat: true,
+    inputPerMillionUsd: 0.15,
+    outputPerMillionUsd: 0.3,
+  },
+];
+
+export const CATALOG_MODELS: readonly CatalogModel[] = [
+  ...snapshot.models,
+  ...NVIDIA_CATALOG_MODELS,
+];
 
 const BY_ID = new Map(CATALOG_MODELS.map((model) => [model.id, model]));
 

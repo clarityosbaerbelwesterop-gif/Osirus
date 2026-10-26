@@ -616,7 +616,8 @@ export abstract class BaseArm implements AgentArm {
     );
     const policyContext = await this.policyContext(context, policy);
     const modelUse = modelUseUnder(policy);
-    const { agentDecisionSchema } = await import("../agent/decision");
+    const { agentDecisionSchema, coerceAgentDecision } =
+      await import("../agent/decision");
 
     let callIndex = 0;
     const decide = async (input: {
@@ -646,8 +647,9 @@ export abstract class BaseArm implements AgentArm {
             { role: "system", content: input.system },
             { role: "user", content: input.user },
           ],
-          validate: (raw) => agentDecisionSchema.parse(raw),
+          validate: (raw) => coerceAgentDecision(raw),
         });
+        void agentDecisionSchema;
         await runtime.repository.finishModelCall(modelCallId, {
           status: "completed",
           inputTokens: usage.inputTokens,
@@ -1128,7 +1130,27 @@ export abstract class BaseArm implements AgentArm {
         });
         answer = final.answer?.trim() || null;
       } catch {
-        answer = null;
+        try {
+          const fallback = await runtime.provider.complete({
+            requestId: `${work.runId}:${work.stageId}:${work.attemptNumber}:fallback`,
+            role,
+            signal,
+            messages: [
+              {
+                role: "system",
+                content:
+                  "Provide a clear, complete, and direct answer to the user's objective based on the observations.",
+              },
+              {
+                role: "user",
+                content: `Objective:\n${work.objective}\n\nObservations:\n${result.state.observations.slice(-6).join("\n\n")}`,
+              },
+            ],
+          });
+          answer = fallback.text.trim() || null;
+        } catch {
+          answer = null;
+        }
       } finally {
         notePending(1);
       }

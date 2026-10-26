@@ -1,5 +1,5 @@
 import type Stripe from "stripe";
-import { BILLING_CONFIG, type PaidPlan } from "./config";
+import { BILLING_CONFIG, isPaidPlan, type PaidPlan } from "./config";
 
 // Stripe webhook handling, kept free of I/O so it is testable: the route
 // verifies the signature and passes the event plus the dependencies here.
@@ -116,7 +116,14 @@ export async function handleStripeEvent(
 
     const item = subscription.items.data[0];
     const priceId = item?.price?.id ?? null;
-    const plan = deps.planForPrice(priceId);
+    let plan = deps.planForPrice(priceId);
+    if (!plan) {
+      const metaPlan =
+        subscription.metadata?.plan ?? item?.price?.metadata?.osirus_plan;
+      if (isPaidPlan(metaPlan)) {
+        plan = metaPlan;
+      }
+    }
     if (!plan)
       deps.log?.("stripe webhook: price is not an Osirus plan", {
         eventId: event.id,

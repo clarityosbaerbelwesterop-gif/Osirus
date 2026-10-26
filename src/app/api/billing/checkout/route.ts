@@ -5,7 +5,7 @@ import { customerIdFor, saveCustomer } from "@/lib/billing/store";
 import {
   billingConfigured,
   integrationIdentifier,
-  priceIdFor,
+  resolvePriceId,
   stripe,
 } from "@/lib/billing/stripe";
 import { guardWrite, json } from "@/lib/product/api";
@@ -37,7 +37,7 @@ export async function POST(request: Request) {
   if (!guard.ok) return guard.response;
   if (!billingConfigured())
     return json({ error: "billing_not_configured" }, 503);
-  const price = priceIdFor(guard.body.plan);
+  const price = await resolvePriceId(guard.body.plan);
   if (!price) return json({ error: "plan_not_configured" }, 503);
 
   const userId = guard.identity.userId;

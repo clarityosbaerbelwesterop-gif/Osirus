@@ -60,16 +60,40 @@ export function isPlaceholderModelId(id: string) {
 }
 
 /**
- * Models the product UI may name. Every id is in the public UNOROUTER
- * catalog snapshot. This list is not a claim that the deployment key can
- * call them. AI Trainer and Kai replace the default and the list once the
- * key list is known. The recommendation table above stays on placeholders.
+ * Curated Top NVIDIA NIM models exposed in user-facing model selectors
+ * when NVIDIA_API_KEY is configured (independent of UNOROUTER_API_KEY).
+ */
+export const NVIDIA_TOP_MODELS = [
+  "nvidia/llama-3.1-nemotron-ultra-253b-v1",
+  "deepseek-ai/deepseek-r1",
+  "meta/llama-3.3-70b-instruct",
+  "qwen/qwen2.5-coder-32b-instruct",
+  "mistralai/mistral-large-2-instruct",
+  "google/gemma-2-27b-it",
+] as const;
+
+export type NvidiaTopModelId = (typeof NVIDIA_TOP_MODELS)[number];
+
+/** Dedicated default models for Rouge Agent & internal verification roles. */
+export const ROUGE_AGENT_DEFAULT_MODEL: NvidiaTopModelId =
+  "nvidia/llama-3.1-nemotron-ultra-253b-v1";
+export const ROUGE_AGENT_REVIEWER_MODEL: NvidiaTopModelId =
+  "deepseek-ai/deepseek-r1";
+
+export function isNvidiaTopModelId(id: string): id is NvidiaTopModelId {
+  return (NVIDIA_TOP_MODELS as readonly string[]).includes(id);
+}
+
+/**
+ * Models the product UI and runtime allowlist accept. Includes the curated
+ * Top NVIDIA NIM models as well as the baseline catalog IDs.
  */
 export const PRODUCT_MODEL_ALLOWLIST = [
   "glm-5.3-flash",
   "gpt-6.1-sol",
   "gpt-6-astra",
   "claude-opus-5.5",
+  ...NVIDIA_TOP_MODELS,
 ] as const;
 
 export type ProductModelId = (typeof PRODUCT_MODEL_ALLOWLIST)[number];

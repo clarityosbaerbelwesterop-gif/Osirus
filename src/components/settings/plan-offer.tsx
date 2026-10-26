@@ -1,5 +1,5 @@
 import { PLANS, PRICE_TAX_NOTE } from "@/components/marketing/plans";
-import { PLACEHOLDER_QUOTA, QuotaBars } from "@/components/motion/quota-bars";
+import { QuotaBarsLive } from "@/components/motion/quota-bars";
 import { PlanCheckoutButton } from "./plan-checkout-button";
 
 /** Four paid plans. Prices stay off the public landing page. */
@@ -39,12 +39,7 @@ export function PlanSection({ freeTier }: { freeTier: boolean }) {
     <section className="card settings-group" aria-labelledby="plan-heading">
       <h2 id="plan-heading">Plan</h2>
       <CurrentPlan freeTier={freeTier} />
-      <QuotaBars
-        fiveHourRatio={PLACEHOLDER_QUOTA.fiveHourRatio}
-        weekRatio={PLACEHOLDER_QUOTA.weekRatio}
-        fiveHourRefill={PLACEHOLDER_QUOTA.fiveHourRefill}
-        note={PLACEHOLDER_QUOTA.note}
-      />
+      <QuotaBarsLive showNote />
       <PlanCards />
     </section>
   );

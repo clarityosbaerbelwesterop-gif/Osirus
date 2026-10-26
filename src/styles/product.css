@@ -849,6 +849,68 @@
   gap: var(--space-4);
 }
 
+.recommend-grid > .card {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.recommend-grid label {
+  display: grid;
+  gap: var(--space-1-5);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+
+.recommend-grid input:not([type="checkbox"]),
+.recommend-grid select,
+.recommend-grid textarea {
+  width: 100%;
+  min-height: var(--control-h);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-control);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  transition:
+    border-color var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.recommend-grid textarea {
+  min-height: 5.5rem;
+  resize: vertical;
+}
+
+.recommend-grid input:not([type="checkbox"]):focus-visible,
+.recommend-grid select:focus-visible,
+.recommend-grid textarea:focus-visible {
+  outline: none;
+  border-color: var(--color-focus);
+  box-shadow: var(--focus-ring);
+}
+
+.recommend-grid ul {
+  display: grid;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recommend-grid ul li label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2-5);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-sunken);
+  font-weight: var(--weight-regular);
+}
+
 .model-select {
   display: grid;
   gap: var(--space-1);
