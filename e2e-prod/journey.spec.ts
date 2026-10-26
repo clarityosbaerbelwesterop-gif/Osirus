@@ -249,7 +249,11 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     const runIdHeader = response.headers()["x-osirus-run-id"];
     await response.text();
     type Snapshot = {
-      run?: { status?: string };
+      run?: {
+        status?: string;
+        errorCode?: string | null;
+        errorMessage?: string | null;
+      };
       messages?: Array<{ role: string; content: string }>;
     };
     const terminal = new Set(["completed", "failed", "cancelled", "blocked"]);
@@ -267,6 +271,11 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     console.log(
       `Rouge run ${snapshot.run?.status}; ${answers.length} answer(s); ${Math.round((Date.now() - started) / 1000)} s`,
     );
+    // The cause, when it did not finish (the public code and message).
+    if (snapshot.run?.status !== "completed")
+      console.log(
+        `Rouge cause: ${snapshot.run?.errorCode ?? "none"}: ${snapshot.run?.errorMessage ?? ""}`,
+      );
     expect(snapshot.run?.status).toBe("completed");
     expect(answers[0]?.content?.trim().length ?? 0).toBeGreaterThan(0);
   });

@@ -9,12 +9,21 @@ import type {
 import { callCostUsd } from "./cost";
 import { extractJsonObject } from "./json";
 import {
+  hideModel,
   listGatewayModels,
+  modelPenalty,
+  noteModelResult,
   resolveGatewayModel,
+  verifiedBackup,
   type GatewayModel,
 } from "./models";
 import { parseModelRef } from "./providers";
-import { candidatesFor, FALLBACK_CODES, tierOf } from "./routing";
+import {
+  candidatesFor,
+  FALLBACK_CODES,
+  PROVIDER_WIDE_CODES,
+  tierOf,
+} from "./routing";
 import {
   completeGateway,
   streamGateway,
@@ -38,6 +47,11 @@ function toUsage(usage: GatewayUsage, model: GatewayModel | null): Usage {
 function codeOf(error: unknown) {
   const code = (error as { code?: unknown } | null)?.code;
   return typeof code === "string" ? code : "provider_error";
+}
+
+/** The service behind a reference ("openrouter" for "openrouter:x/y"). */
+function serviceOf(ref: string) {
+  return parseModelRef(ref)?.provider ?? ref;
 }
 
 function asMessages(messages: unknown[]): GatewayMessage[] {
@@ -98,8 +112,9 @@ export class GatewayProvider implements ModelProvider {
 
   /**
    * The model for a role, then the fallbacks: the given ones, else (with
-   * autoFallback) two listed models of the same class that cost the same
-   * kind of money (a free pin only falls back to free models).
+   * autoFallback) listed models that cost the same kind of money (a free pin
+   * only falls back to free models): the ones the runtime sync measured
+   * answering first, then the pin's class, two per service at most.
    */
   private async refsFor(role: ModelRole) {
     const primary = this.modelId(role);
@@ -110,13 +125,15 @@ export class GatewayProvider implements ModelProvider {
         const { models } = await listGatewayModels({
           fetchImpl: this.options.fetchImpl,
         });
-        return candidatesFor(
-          models.filter(
-            (model) => model.free === pinned.free && model.ref !== pinned.ref,
-          ),
-          tierOf(pinned),
-          { limit: 2 },
-        ).map((model) => model.ref);
+        const pool = models.filter(
+          (model) => model.free === pinned.free && model.ref !== pinned.ref,
+        );
+        return candidatesFor(pool, tierOf(pinned), {
+          limit: 3,
+          perProvider: 2,
+          penalty: (ref) => modelPenalty(ref),
+          lead: verifiedBackup(pool),
+        }).map((model) => model.ref);
       })().catch(() => []);
     }
     const extra = this.options.fallbackRefs ?? (await this.fallbacks) ?? [];
@@ -152,7 +169,9 @@ export class GatewayProvider implements ModelProvider {
     const { signal, done } = this.signalFor(input.requestId, input.signal);
     try {
       const refs = await this.refsFor(input.role);
+      const skipped = new Set<string>();
       for (const [index, ref] of refs.entries()) {
+        if (skipped.has(serviceOf(ref))) continue;
         let produced = false;
         try {
           for await (const event of streamGateway({
@@ -175,13 +194,15 @@ export class GatewayProvider implements ModelProvider {
           }
           return;
         } catch (error) {
-          const last = index === refs.length - 1;
-          if (
-            produced ||
-            last ||
-            signal.aborted ||
-            !FALLBACK_CODES.has(codeOf(error))
-          )
+          const code = codeOf(error);
+          if (!signal.aborted)
+            noteModelResult(ref, { ok: false, firstTokenMs: 0 });
+          if (code === "model_not_configured") hideModel(ref);
+          if (PROVIDER_WIDE_CODES.has(code)) skipped.add(serviceOf(ref));
+          const last = !refs
+            .slice(index + 1)
+            .some((next) => !skipped.has(serviceOf(next)));
+          if (produced || last || signal.aborted || !FALLBACK_CODES.has(code))
             throw error;
         }
       }
@@ -200,7 +221,9 @@ export class GatewayProvider implements ModelProvider {
     const { signal, done } = this.signalFor(input.requestId, input.signal);
     try {
       const refs = await this.refsFor(input.role);
+      const skipped = new Set<string>();
       for (const [index, ref] of refs.entries()) {
+        if (skipped.has(serviceOf(ref))) continue;
         try {
           const result = await completeGateway({
             ref,
@@ -223,9 +246,15 @@ export class GatewayProvider implements ModelProvider {
             usage: toUsage(result.usage, await this.model(ref)),
           };
         } catch (error) {
-          const last = index === refs.length - 1;
-          if (last || signal.aborted || !FALLBACK_CODES.has(codeOf(error)))
-            throw error;
+          const code = codeOf(error);
+          if (!signal.aborted)
+            noteModelResult(ref, { ok: false, firstTokenMs: 0 });
+          if (code === "model_not_configured") hideModel(ref);
+          if (PROVIDER_WIDE_CODES.has(code)) skipped.add(serviceOf(ref));
+          const last = !refs
+            .slice(index + 1)
+            .some((next) => !skipped.has(serviceOf(next)));
+          if (last || signal.aborted || !FALLBACK_CODES.has(code)) throw error;
         }
       }
       throw new ProviderError("No model answered", "provider_error");
