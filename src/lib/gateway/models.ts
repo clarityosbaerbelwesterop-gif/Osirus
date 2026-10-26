@@ -243,6 +243,7 @@ export function parseProviderModels(
 }
 
 const DEFAULT_BYTEZ_MODELS = [
+  "Qwen/Qwen3.8-27B",
   "Qwen/Qwen3-4B",
   "meta-llama/Llama-3.1-8B-Instruct",
   "microsoft/Phi-4-mini-instruct",

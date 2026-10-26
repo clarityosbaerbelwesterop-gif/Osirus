@@ -81,6 +81,10 @@ jobs:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       BYTEZ_API_KEY: ${{ secrets.BYTEZ_API_KEY }}
       LIGHTNING_AI_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+      # Optional web search APIs for the Agents chat (Wikipedia without them).
+      TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
+      EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
+      FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
       # Sign-ins that use every model without plan limits; a variable, not a secret.
       OSIRUS_OWNER_EMAILS: ${{ vars.OSIRUS_OWNER_EMAILS }}
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}

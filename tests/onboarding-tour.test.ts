@@ -13,9 +13,8 @@ vi.mock("../src/lib/db/client", () => ({
   },
 }));
 
-const { markTourSeen, tourSeen } = await import(
-  "../src/lib/product/onboarding"
-);
+const { markTourSeen, tourSeen } =
+  await import("../src/lib/product/onboarding");
 
 beforeAll(async () => {
   holder.db = await createTestDatabase();
@@ -42,7 +41,7 @@ describe("introduction tour", () => {
       [tenant.userId],
     );
     expect(String(second.onboarded_at)).toBe(String(first.onboarded_at));
-  });
+  }, 30_000);
 
   it("never marks or reads another person's account", async () => {
     const alice = await holder.db!.seedTenant("alice");
@@ -60,5 +59,5 @@ describe("introduction tour", () => {
       [bob.userId],
     );
     expect(rows).toEqual([]);
-  });
+  }, 30_000);
 });

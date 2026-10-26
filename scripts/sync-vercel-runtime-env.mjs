@@ -525,6 +525,11 @@ const variables = [
         },
       ]
     : []),
+  // Optional web search APIs; each is synced only when its secret exists.
+  ...["TAVILY_API_KEY", "EXA_API_KEY", "FIRECRAWL_API_KEY"]
+    .map((key) => [key, optionalSecret(process.env[key])])
+    .filter(([, value]) => Boolean(value))
+    .map(([key, value]) => ({ key, value, type: "sensitive" })),
   ...(ownerEmails
     ? [
         {
