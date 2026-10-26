@@ -5,6 +5,7 @@ import {
   hideModel,
   listGatewayModels,
   modelPenalty,
+  verifiedBackup,
   verifiedLead,
   type GatewayModel,
 } from "./models";
@@ -14,6 +15,7 @@ import {
   botWantsCoding,
   candidatesFor,
   FALLBACK_CODES,
+  PROVIDER_WIDE_CODES,
 } from "./routing";
 import { completeGateway, type GatewayMessage } from "./stream";
 import { estimateTokens, recordGatewayCall } from "./usage";
@@ -46,9 +48,10 @@ export async function botAnswer(input: {
   const tier = botTier(input.bot);
   const candidates: GatewayModel[] = candidatesFor(allowed, tier, {
     coding: botWantsCoding(input.bot),
-    limit: 3,
+    limit: 4,
+    perProvider: 2,
     penalty: (ref) => modelPenalty(ref),
-    lead: verifiedLead(allowed, tier),
+    lead: [...verifiedLead(allowed, tier), ...verifiedBackup(allowed)],
   });
   const messages: GatewayMessage[] = [
     {
@@ -61,7 +64,9 @@ export async function botAnswer(input: {
     { role: "user", content: input.content },
   ];
   let last = "provider_error";
+  const skipped = new Set<string>();
   for (const model of candidates) {
+    if (skipped.has(model.provider)) continue;
     const started = Date.now();
     try {
       const result = await completeGateway({ ref: model.ref, messages });
@@ -87,6 +92,7 @@ export async function botAnswer(input: {
     } catch (error) {
       last = codeOf(error);
       if (last === "model_not_configured") hideModel(model.ref);
+      if (PROVIDER_WIDE_CODES.has(last)) skipped.add(model.provider);
       if (!FALLBACK_CODES.has(last)) break;
     }
   }

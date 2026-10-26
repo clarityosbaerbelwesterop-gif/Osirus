@@ -3,6 +3,7 @@ import {
   familyRank,
   noteModelResult,
   resetGatewayModelCache,
+  verifiedBackup,
   verifiedLead,
   verifiedTopModels,
   type GatewayModel,
@@ -13,6 +14,7 @@ import {
   candidatesFor,
   classifyDifficulty,
   higherTier,
+  PROVIDER_WIDE_CODES,
   tierOf,
   wantsReasoning,
 } from "@/lib/gateway/routing";
@@ -211,5 +213,61 @@ describe("measured models lead", () => {
         (m) => m.reasoning,
       ),
     ).toBe(true);
+  });
+  it("backs every class with the measured models, ahead of unmeasured ones", () => {
+    const fast = MODELS.filter((m) => tierOf(m) === "fast");
+    const measured = MODELS.find((m) => tierOf(m) === "top")!;
+    process.env.OSIRUS_VERIFIED_TOP_MODELS = measured.ref;
+    expect(verifiedBackup(MODELS).map((m) => m.ref)).toEqual([measured.ref]);
+    const chain = candidatesFor(MODELS, "fast", {
+      lead: [fast[0], ...verifiedBackup(MODELS)],
+      limit: 3,
+    });
+    expect(chain.map((m) => m.ref).slice(0, 2)).toEqual([
+      fast[0].ref,
+      measured.ref,
+    ]);
+  });
+});
+
+describe("one service cannot use up the chain", () => {
+  // Live 2026-10-26: three free models of one rate-limited key led the chain,
+  // the fourth hung, and a new account's first "Hallo" got no answer.
+  const limited = ["a-4b:free", "b-3b:free", "c-1b:free"].map((id, i) =>
+    model(id, 40 + i, {
+      ref: `unorouter:${id}`,
+      provider: "unorouter",
+      free: true,
+    }),
+  );
+  const other = model("nvidia/nemotron-3-ultra-550b-a55b:free", 25, {
+    free: true,
+  });
+
+  it("takes at most perProvider models from one service", () => {
+    const chain = candidatesFor([...limited, other], "fast", {
+      lead: limited,
+      limit: 4,
+      perProvider: 2,
+    });
+    expect(chain.map((m) => m.provider)).toEqual([
+      "unorouter",
+      "unorouter",
+      "openrouter",
+    ]);
+    // Without the option nothing changes.
+    expect(candidatesFor([...limited, other], "fast")).toHaveLength(4);
+  });
+
+  it("treats limits, missing credit and refused keys as service-wide", () => {
+    for (const code of [
+      "rate_limited",
+      "insufficient_credit",
+      "credential_rejected",
+      "provider_not_configured",
+    ])
+      expect(PROVIDER_WIDE_CODES.has(code)).toBe(true);
+    expect(PROVIDER_WIDE_CODES.has("timeout")).toBe(false);
+    expect(PROVIDER_WIDE_CODES.has("model_not_configured")).toBe(false);
   });
 });

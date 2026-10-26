@@ -9,6 +9,7 @@ import {
   listGatewayModels,
   modelPenalty,
   noteModelResult,
+  verifiedBackup,
   verifiedLead,
   type GatewayModel,
 } from "@/lib/gateway/models";
@@ -19,6 +20,7 @@ import {
   classifyDifficulty,
   FALLBACK_CODES,
   higherTier,
+  PROVIDER_WIDE_CODES,
   tierOf,
   wantsReasoning,
 } from "@/lib/gateway/routing";
@@ -51,6 +53,9 @@ import {
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
+
+/** How long all attempts of one answer together may wait for the first word. */
+const FIRST_TOKEN_BUDGET_MS = 60_000;
 
 // No model field: outside Code, Osirus picks the model (routing.ts).
 const schema = z.object({
@@ -226,15 +231,19 @@ export async function POST(request: Request) {
   const tier = previous ? higherTier(tierOf(previous), asked) : asked;
   const thinks = !bot && tier === "top" && wantsReasoning(body.message);
   // The thread's model stays first; then the models the runtime sync measured
-  // answering correctly and fast (measured beats ranked); then the ranking.
+  // answering correctly and fast (measured beats ranked), this class's before
+  // the others; then the ranking. Two per service at most, so one limited key
+  // cannot use up every attempt.
   const candidates: GatewayModel[] = candidatesFor(allowed, tier, {
     coding: bot ? botWantsCoding(bot) : false,
     reasoning: thinks,
-    limit: 4,
+    limit: 5,
+    perProvider: 2,
     penalty: (ref) => modelPenalty(ref),
     lead: [
       ...(previous && tierOf(previous) === tier ? [previous] : []),
       ...verifiedLead(allowed, tier, { reasoning: thinks }),
+      ...verifiedBackup(allowed),
     ],
   });
 
@@ -340,25 +349,30 @@ export async function POST(request: Request) {
             send({ type: "text", text: text.slice(index, index + 48) });
           }
         } else {
-          // Next candidate when one fails before writing anything.
-          for (const [index, model] of candidates.entries()) {
+          // Next candidate when one fails before writing anything. A failure
+          // that holds for the whole service skips its other models, and all
+          // attempts together wait at most FIRST_TOKEN_BUDGET_MS for a word.
+          const deadline = Date.now() + FIRST_TOKEN_BUDGET_MS;
+          let queue = [...candidates];
+          while (queue.length) {
+            const model = queue.shift() as GatewayModel;
             chosen = model;
             let produced = false;
             const attemptStarted = Date.now();
             let firstTokenMs = 0;
-            const last = index === candidates.length - 1;
+            const last = queue.length === 0;
+            // A slow model gives way to the next one quickly; the last
+            // candidate gets what is left of the budget.
+            const patience = last ? 45_000 : model.reasoning ? 20_000 : 12_000;
             try {
               for await (const event of streamGateway({
                 ref: model.ref,
                 messages,
                 signal: request.signal,
-                // A slow model gives way to the next one quickly; the last
-                // candidate gets the full patience.
-                firstByteTimeoutMs: last
-                  ? 45_000
-                  : model.reasoning
-                    ? 20_000
-                    : 12_000,
+                firstByteTimeoutMs: Math.max(
+                  3_000,
+                  Math.min(patience, deadline - attemptStarted),
+                ),
               })) {
                 if (!firstTokenMs && event.type !== "usage")
                   firstTokenMs = Date.now() - attemptStarted;
@@ -401,8 +415,13 @@ export async function POST(request: Request) {
                   ok: false,
                   firstTokenMs: Date.now() - attemptStarted,
                 });
+              if (PROVIDER_WIDE_CODES.has(code))
+                queue = queue.filter(
+                  (next) => next.provider !== model.provider,
+                );
               const another =
-                index < candidates.length - 1 &&
+                queue.length > 0 &&
+                Date.now() < deadline - 1_000 &&
                 !request.signal.aborted &&
                 FALLBACK_CODES.has(code) &&
                 (!produced || !text.trim());

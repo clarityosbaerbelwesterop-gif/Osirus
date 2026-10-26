@@ -34,7 +34,7 @@ jobs:
       - run: npm run typecheck
       # Chromium and sympy before the unit tests: browser QA and the symbolic
       # compute provider are exercised for real there, not skipped.
-      - run: npx playwright install --with-deps chromium
+      - run: scripts/install-playwright.sh
       - run: python -m pip install --quiet sympy==1.14.0 numpy
       - run: npm test
       - run: npm run build

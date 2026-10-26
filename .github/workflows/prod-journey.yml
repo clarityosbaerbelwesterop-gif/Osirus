@@ -36,7 +36,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: scripts/install-playwright.sh
       - name: Run the journey against production
         env:
           # Public production origin. vars.NEXT_PUBLIC_SITE_URL overrides it.
