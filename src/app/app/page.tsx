@@ -28,7 +28,7 @@ export default async function AgentsPage({
       initialThread={thread}
       bots={bots
         .filter((bot) => bot.status === "active")
-        .map((bot) => ({ id: bot.id, name: bot.name, modelId: bot.model_id }))}
+        .map((bot) => ({ id: bot.id, name: bot.name }))}
       greetingName={firstName(session.user)}
       initialBotId={isUuid(params.bot) ? params.bot : null}
       initialPrompt={params.prompt?.slice(0, 8000) ?? null}

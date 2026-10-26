@@ -5,11 +5,20 @@ import { getAgent } from "@/lib/agents/store";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
 import { answerCacheKey, cachedAnswer, storeAnswer } from "@/lib/gateway/cache";
 import {
+  hideModel,
   listGatewayModels,
-  pickDefaultModel,
-  resolveGatewayModel,
   type GatewayModel,
 } from "@/lib/gateway/models";
+import {
+  botTier,
+  botWantsCoding,
+  candidatesFor,
+  classifyDifficulty,
+  FALLBACK_CODES,
+  higherTier,
+  tierOf,
+  wantsReasoning,
+} from "@/lib/gateway/routing";
 import { chatErrorMessage, chatSystemPrompt } from "@/lib/gateway/prompt";
 import { estimateTokens, recordGatewayCall } from "@/lib/gateway/usage";
 import {
@@ -35,10 +44,10 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export const maxDuration = 300;
 
+// No model field: outside Code, Osirus picks the model (routing.ts).
 const schema = z.object({
   sessionId: z.string().uuid().nullable().optional(),
   message: z.string().trim().min(1).max(32_000),
-  model: z.string().trim().min(3).max(240).nullable().optional(),
   botId: z.string().uuid().nullable().optional(),
   regenerate: z.boolean().optional().default(false),
 });
@@ -164,34 +173,45 @@ export async function POST(request: Request) {
   }
 
   const allowed = listing.models.filter((model) => modelAllowed(model, access));
-  const requestedRef = body.model ?? (bot ? bot.model_id : null);
-  let model: GatewayModel | null = null;
-  if (requestedRef) {
-    model = await resolveGatewayModel(requestedRef);
-    if (model && !modelAllowed(model, access)) {
-      return json(
-        {
-          error: "model_not_in_plan",
-          message:
-            "Dieses Modell ist im Free-Plan nicht enthalten. Wähle ein kostenloses Modell oder ein Abo.",
-        },
-        403,
-      );
-    }
-  }
-  model ??= pickDefaultModel(allowed);
-  if (!model) {
+  if (!allowed.length) {
     return json(
       {
         error: "no_models",
         message:
-          listing.providers.length === 0
-            ? "In dieser Umgebung ist kein Modell-Key hinterlegt (OPENROUTER_API_KEY, NVIDIA_API_KEY oder UNOROUTER_API_KEY_1)."
-            : "Die Modell-Anbieter antworten gerade nicht. Bitte gleich noch einmal versuchen.",
+          "Osirus ist gerade nicht erreichbar. Bitte gleich noch einmal versuchen.",
       },
       503,
     );
   }
+
+  const history = existing
+    ? await chatContext(identity, existing.id, 24)
+    : { turns: [], lastModelRef: null };
+  const previous = history.lastModelRef
+    ? (allowed.find((model) => model.ref === history.lastModelRef) ?? null)
+    : null;
+  // A bot answers on one model chosen by what it does; the plain chat on one
+  // chosen by how hard the thread is. A thread keeps its model and only moves
+  // up a class for a harder follow-up.
+  const wanted = bot
+    ? botTier(bot)
+    : classifyDifficulty({
+        message: body.message,
+        historyChars: history.turns.reduce(
+          (sum, turn) => sum + turn.content.length,
+          0,
+        ),
+      }).tier;
+  const tier = previous ? higherTier(tierOf(previous), wanted) : wanted;
+  const ranked = candidatesFor(allowed, tier, {
+    coding: bot ? botWantsCoding(bot) : false,
+    reasoning: !bot && tier === "top" && wantsReasoning(body.message),
+    limit: 4,
+  });
+  const candidates: GatewayModel[] =
+    previous && tierOf(previous) === tier
+      ? [previous, ...ranked.filter((model) => model.ref !== previous.ref)]
+      : ranked;
 
   const sessionId =
     existing?.id ??
@@ -199,19 +219,19 @@ export async function POST(request: Request) {
       title: body.message.replace(/\s+/g, " ").slice(0, 80),
       surface: bot ? "bot" : "ai",
     }));
-  const history = existing ? await chatContext(identity, sessionId, 24) : [];
   // Regenerate answers the last user turn again; the turn itself is not repeated.
-  const lastUser = [...history].reverse().find((turn) => turn.role === "user");
+  const turns = history.turns;
+  const lastUser = [...turns].reverse().find((turn) => turn.role === "user");
   const reuseTurn = body.regenerate && lastUser?.content === body.message;
   const context = reuseTurn
-    ? history.slice(0, history.lastIndexOf(lastUser!))
-    : history;
+    ? turns.slice(0, turns.lastIndexOf(lastUser!))
+    : turns;
   if (!reuseTurn) {
     await saveChatMessage(identity, {
       sessionId,
       role: "user",
       content: body.message,
-      metadata: { surface: "ai", model: model.ref, botId: bot?.id ?? null },
+      metadata: { surface: "ai", botId: bot?.id ?? null, tier },
     });
   }
 
@@ -221,7 +241,6 @@ export async function POST(request: Request) {
       content: chatSystemPrompt({
         botName: bot?.name ?? null,
         botPrompt: bot?.system_prompt ?? null,
-        modelName: model.name,
       }),
     },
     ...context,
@@ -229,11 +248,11 @@ export async function POST(request: Request) {
   ];
   const cacheKey = answerCacheKey({
     scope: identity.workspaceId,
-    ref: model.ref,
+    ref: candidates[0].ref,
     messages,
   });
   const hit = body.regenerate ? null : cachedAnswer(cacheKey);
-  const chosen = model;
+  let chosen = candidates[0];
   const started = Date.now();
 
   const stream = new ReadableStream<Uint8Array>({
@@ -256,11 +275,6 @@ export async function POST(request: Request) {
         title:
           existing?.title ?? body.message.replace(/\s+/g, " ").slice(0, 80),
         created: !existing,
-        model: {
-          ref: chosen.ref,
-          name: chosen.name,
-          providerLabel: chosen.providerLabel,
-        },
         cached: Boolean(hit),
       });
 
@@ -276,28 +290,50 @@ export async function POST(request: Request) {
             send({ type: "text", text: text.slice(index, index + 48) });
           }
         } else {
-          for await (const event of streamGateway({
-            ref: chosen.ref,
-            messages,
-            signal: request.signal,
-          })) {
-            if (event.type === "text") {
-              text += event.text;
-              send(event);
-            } else if (event.type === "reasoning") {
-              reasoning += event.text;
-              send(event);
-            } else {
-              usage = { ...usage, ...event.usage };
+          // Next candidate when one fails before writing anything.
+          for (const [index, model] of candidates.entries()) {
+            chosen = model;
+            let produced = false;
+            try {
+              for await (const event of streamGateway({
+                ref: model.ref,
+                messages,
+                signal: request.signal,
+              })) {
+                if (event.type === "text") {
+                  produced = true;
+                  text += event.text;
+                  send(event);
+                } else if (event.type === "reasoning") {
+                  produced = true;
+                  reasoning += event.text;
+                  send(event);
+                } else {
+                  usage = { ...usage, ...event.usage };
+                }
+              }
+              if (!text.trim()) {
+                throw Object.assign(
+                  new Error("The model returned an empty answer"),
+                  { code: "empty_response" },
+                );
+              }
+              break;
+            } catch (error) {
+              const code = refusalCode(error);
+              const another =
+                index < candidates.length - 1 &&
+                !request.signal.aborted &&
+                FALLBACK_CODES.has(code) &&
+                (!produced || !text.trim());
+              if (!another) throw error;
+              if (code === "model_not_configured") hideModel(model.ref);
+              if (reasoning && !text) {
+                reasoning = "";
+                send({ type: "reset" });
+              }
+              usage = {};
             }
-          }
-          if (!text.trim()) {
-            throw Object.assign(
-              new Error("The model returned an empty answer"),
-              {
-                code: "empty_response",
-              },
-            );
           }
           storeAnswer(cacheKey, { text, reasoning });
         }
@@ -311,7 +347,7 @@ export async function POST(request: Request) {
           send({
             type: "error",
             code: errorCode,
-            message: chatErrorMessage(errorCode, chosen),
+            message: chatErrorMessage(errorCode),
             retryAfterMs: retryAfterOf(error),
           });
         }
@@ -339,8 +375,7 @@ export async function POST(request: Request) {
             metadata: {
               surface: "ai",
               model: chosen.ref,
-              modelName: chosen.name,
-              provider: chosen.provider,
+              tier: tierOf(chosen),
               botId: bot?.id ?? null,
               reasoning: reasoning ? reasoning.slice(0, 60_000) : null,
               partial: status !== "completed",

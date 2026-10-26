@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     return json(
       {
         error: "model_not_allowed",
-        message: "That model is not on the UNOROUTER allowlist.",
+        message: "Dieses Modell wird nicht angeboten.",
       },
       400,
     );

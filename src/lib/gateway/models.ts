@@ -1,5 +1,7 @@
+import { createHmac } from "node:crypto";
 import { env } from "@/lib/env";
 import { catalogModel } from "@/lib/models/catalog";
+import { tierOf, type ModelTier } from "./routing";
 import {
   configuredProviders,
   formatModelRef,
@@ -422,26 +424,48 @@ export function resetGatewayModelCache() {
   hidden.clear();
 }
 
-/** What pickers receive: no prices beyond a "free" flag. */
-export type PublicModel = Pick<
-  GatewayModel,
-  | "ref"
-  | "name"
-  | "providerLabel"
-  | "provider"
-  | "vendor"
-  | "free"
-  | "reasoning"
-  | "contextLength"
->;
+/**
+ * The id a browser sees for a model: an HMAC of its reference, so the page
+ * never learns which service runs it. Stable across instances (same secret).
+ */
+export function publicModelId(ref: string) {
+  const secret =
+    env.OSIRUS_CONNECTOR_KEY ??
+    env.NEON_AUTH_COOKIE_SECRET ??
+    "osirus-public-model-id";
+  return `m_${createHmac("sha256", secret).update(ref).digest("base64url").slice(0, 16)}`;
+}
+
+/**
+ * A model chosen in the browser (public id) or by server code (reference).
+ * Null when it is not listed or not well formed.
+ */
+export async function resolveModelSelection(
+  value: string,
+  options?: { fetchImpl?: typeof fetch },
+): Promise<GatewayModel | null> {
+  if (value.startsWith("m_")) {
+    const { models } = await listGatewayModels(options);
+    return models.find((model) => publicModelId(model.ref) === value) ?? null;
+  }
+  return resolveGatewayModel(value, options);
+}
+
+/** What pickers receive: a name and a class, never the service behind it. */
+export type PublicModel = {
+  id: string;
+  name: string;
+  tier: ModelTier;
+  free: boolean;
+  reasoning: boolean;
+  contextLength: number | null;
+};
 
 export function publicModel(model: GatewayModel): PublicModel {
   return {
-    ref: model.ref,
+    id: publicModelId(model.ref),
     name: model.name,
-    providerLabel: model.providerLabel,
-    provider: model.provider,
-    vendor: model.vendor,
+    tier: tierOf(model),
     free: model.free,
     reasoning: model.reasoning,
     contextLength: model.contextLength,

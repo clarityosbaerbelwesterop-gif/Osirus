@@ -6,8 +6,15 @@ import type {
   Sampling,
   Usage,
 } from "@/lib/models/provider";
+import { callCostUsd } from "./cost";
 import { extractJsonObject } from "./json";
+import {
+  listGatewayModels,
+  resolveGatewayModel,
+  type GatewayModel,
+} from "./models";
 import { parseModelRef } from "./providers";
+import { candidatesFor, FALLBACK_CODES, tierOf } from "./routing";
 import {
   completeGateway,
   streamGateway,
@@ -19,12 +26,18 @@ import {
 // every role (or one per role), so Rouge Agent and Code can run on any
 // model a configured key can call.
 
-function toUsage(usage: GatewayUsage): Usage {
+/** Usage with the cost the person is charged (same rule as the chat). */
+function toUsage(usage: GatewayUsage, model: GatewayModel | null): Usage {
   return {
     inputTokens: usage.inputTokens,
     outputTokens: usage.outputTokens,
-    cost: usage.costUsd,
+    cost: model ? callCostUsd(model, usage) : usage.costUsd,
   };
+}
+
+function codeOf(error: unknown) {
+  const code = (error as { code?: unknown } | null)?.code;
+  return typeof code === "string" ? code : "provider_error";
 }
 
 function asMessages(messages: unknown[]): GatewayMessage[] {
@@ -47,6 +60,10 @@ export class GatewayProvider implements ModelProvider {
       /** Gateway reference used for every role without its own entry. */
       ref: string;
       roleRefs?: Partial<Record<ModelRole, string>>;
+      /** Tried in order when the model fails before producing output. */
+      fallbackRefs?: string[];
+      /** Without fallbackRefs: fall back to listed models of the same class. */
+      autoFallback?: boolean;
       fetchImpl?: typeof fetch;
     },
   ) {
@@ -61,6 +78,49 @@ export class GatewayProvider implements ModelProvider {
 
   modelId(role: ModelRole) {
     return this.options.roleRefs?.[role] ?? this.options.ref;
+  }
+
+  private readonly models = new Map<string, Promise<GatewayModel | null>>();
+
+  /** The listed model behind a reference (prices), once per reference. */
+  private model(ref: string) {
+    let found = this.models.get(ref);
+    if (!found) {
+      found = resolveGatewayModel(ref, {
+        fetchImpl: this.options.fetchImpl,
+      }).catch(() => null);
+      this.models.set(ref, found);
+    }
+    return found;
+  }
+
+  private fallbacks: Promise<string[]> | null = null;
+
+  /**
+   * The model for a role, then the fallbacks: the given ones, else (with
+   * autoFallback) two listed models of the same class that cost the same
+   * kind of money (a free pin only falls back to free models).
+   */
+  private async refsFor(role: ModelRole) {
+    const primary = this.modelId(role);
+    if (!this.options.fallbackRefs && this.options.autoFallback) {
+      this.fallbacks ??= (async () => {
+        const pinned = await this.model(this.options.ref);
+        if (!pinned) return [];
+        const { models } = await listGatewayModels({
+          fetchImpl: this.options.fetchImpl,
+        });
+        return candidatesFor(
+          models.filter(
+            (model) => model.free === pinned.free && model.ref !== pinned.ref,
+          ),
+          tierOf(pinned),
+          { limit: 2 },
+        ).map((model) => model.ref);
+      })().catch(() => []);
+    }
+    const extra = this.options.fallbackRefs ?? (await this.fallbacks) ?? [];
+    return [primary, ...extra.filter((ref) => ref !== primary)];
   }
 
   servedModel() {
@@ -91,18 +151,39 @@ export class GatewayProvider implements ModelProvider {
   }): AsyncIterable<ModelStreamEvent> {
     const { signal, done } = this.signalFor(input.requestId, input.signal);
     try {
-      for await (const event of streamGateway({
-        ref: this.modelId(input.role),
-        messages: asMessages(input.messages),
-        signal,
-        temperature: input.sampling?.temperature,
-        topP: input.sampling?.topP,
-        fetchImpl: this.options.fetchImpl,
-      })) {
-        // The runtime's stream carries answer text only; reasoning stays out.
-        if (event.type === "text") yield { type: "delta", text: event.text };
-        else if (event.type === "usage")
-          yield { type: "usage", usage: toUsage(event.usage) };
+      const refs = await this.refsFor(input.role);
+      for (const [index, ref] of refs.entries()) {
+        let produced = false;
+        try {
+          for await (const event of streamGateway({
+            ref,
+            messages: asMessages(input.messages),
+            signal,
+            temperature: input.sampling?.temperature,
+            topP: input.sampling?.topP,
+            fetchImpl: this.options.fetchImpl,
+          })) {
+            // The runtime's stream carries answer text only; reasoning stays out.
+            if (event.type === "text") {
+              produced = true;
+              yield { type: "delta", text: event.text };
+            } else if (event.type === "usage")
+              yield {
+                type: "usage",
+                usage: toUsage(event.usage, await this.model(ref)),
+              };
+          }
+          return;
+        } catch (error) {
+          const last = index === refs.length - 1;
+          if (
+            produced ||
+            last ||
+            signal.aborted ||
+            !FALLBACK_CODES.has(codeOf(error))
+          )
+            throw error;
+        }
       }
     } finally {
       done();
@@ -118,23 +199,36 @@ export class GatewayProvider implements ModelProvider {
   }) {
     const { signal, done } = this.signalFor(input.requestId, input.signal);
     try {
-      const result = await completeGateway({
-        ref: this.modelId(input.role),
-        messages: asMessages(input.messages),
-        signal,
-        temperature: input.sampling?.temperature,
-        topP: input.sampling?.topP,
-        fetchImpl: this.options.fetchImpl,
-      });
-      if (!result.text.trim()) {
-        throw new ProviderError(
-          "The model returned an empty answer",
-          "empty_response",
-          502,
-          true,
-        );
+      const refs = await this.refsFor(input.role);
+      for (const [index, ref] of refs.entries()) {
+        try {
+          const result = await completeGateway({
+            ref,
+            messages: asMessages(input.messages),
+            signal,
+            temperature: input.sampling?.temperature,
+            topP: input.sampling?.topP,
+            fetchImpl: this.options.fetchImpl,
+          });
+          if (!result.text.trim()) {
+            throw new ProviderError(
+              "The model returned an empty answer",
+              "empty_response",
+              502,
+              true,
+            );
+          }
+          return {
+            text: result.text,
+            usage: toUsage(result.usage, await this.model(ref)),
+          };
+        } catch (error) {
+          const last = index === refs.length - 1;
+          if (last || signal.aborted || !FALLBACK_CODES.has(codeOf(error)))
+            throw error;
+        }
       }
-      return { text: result.text, usage: toUsage(result.usage) };
+      throw new ProviderError("No model answered", "provider_error");
     } finally {
       done();
     }

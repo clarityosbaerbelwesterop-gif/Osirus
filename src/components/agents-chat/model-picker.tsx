@@ -11,12 +11,11 @@ import {
 } from "react";
 import { cx } from "../ui/cx";
 
+/** A model as the browser sees it: an opaque id, a name and a class. */
 export type PickerModel = {
-  ref: string;
+  id: string;
   name: string;
-  providerLabel: string;
-  provider: string;
-  vendor: string;
+  tier: "top" | "balanced" | "fast";
   free: boolean;
   reasoning: boolean;
   contextLength: number | null;
@@ -24,7 +23,11 @@ export type PickerModel = {
 
 type Group = { label: string; models: PickerModel[] };
 
-const FEATURED = 6;
+const TIER_LABELS: Array<[PickerModel["tier"], string]> = [
+  ["top", "Top"],
+  ["balanced", "Ausgewogen"],
+  ["fast", "Schnell"],
+];
 
 export function groupModels(
   models: readonly PickerModel[],
@@ -32,29 +35,14 @@ export function groupModels(
 ): Group[] {
   const needle = query.trim().toLowerCase();
   const matches = needle
-    ? models.filter((model) =>
-        `${model.name} ${model.vendor} ${model.providerLabel} ${model.ref}`
-          .toLowerCase()
-          .includes(needle),
-      )
+    ? models.filter((model) => model.name.toLowerCase().includes(needle))
     : models;
   if (needle)
     return matches.length ? [{ label: "Treffer", models: [...matches] }] : [];
-  const featured = matches.slice(0, FEATURED);
-  const rest = matches.slice(FEATURED);
-  const byProvider = new Map<string, PickerModel[]>();
-  for (const model of rest) {
-    const list = byProvider.get(model.providerLabel) ?? [];
-    list.push(model);
-    byProvider.set(model.providerLabel, list);
-  }
-  return [
-    ...(featured.length ? [{ label: "Empfohlen", models: featured }] : []),
-    ...[...byProvider.entries()].map(([label, list]) => ({
-      label,
-      models: list,
-    })),
-  ];
+  return TIER_LABELS.map(([tier, label]) => ({
+    label,
+    models: matches.filter((model) => model.tier === tier),
+  })).filter((group) => group.models.length > 0);
 }
 
 function contextLabel(tokens: number | null) {
@@ -66,7 +54,7 @@ function contextLabel(tokens: number | null) {
 export function ModelPicker(props: {
   models: readonly PickerModel[] | null;
   value: string | null;
-  onChange: (ref: string) => void;
+  onChange: (id: string) => void;
   disabled?: boolean;
   freeOnly?: boolean;
   error?: string | null;
@@ -79,7 +67,7 @@ export function ModelPicker(props: {
   const listId = useId();
 
   const selected =
-    props.models?.find((model) => model.ref === props.value) ?? null;
+    props.models?.find((model) => model.id === props.value) ?? null;
   const groups = useMemo(
     () => groupModels(props.models ?? [], query),
     [props.models, query],
@@ -96,8 +84,8 @@ export function ModelPicker(props: {
     return () => document.removeEventListener("pointerdown", onPointer);
   }, [open]);
 
-  const choose = (ref: string) => {
-    props.onChange(ref);
+  const choose = (id: string) => {
+    props.onChange(id);
     setOpen(false);
     setQuery("");
   };
@@ -115,7 +103,7 @@ export function ModelPicker(props: {
     } else if (event.key === "Enter") {
       event.preventDefault();
       const target = flat[cursor];
-      if (target) choose(target.ref);
+      if (target) choose(target.id);
     }
   };
 
@@ -139,9 +127,7 @@ export function ModelPicker(props: {
         aria-expanded={open}
         disabled={props.disabled || loading || empty}
         onClick={() => setOpen((value) => !value)}
-        title={
-          selected ? `${selected.name} · ${selected.providerLabel}` : undefined
-        }
+        title={selected?.name}
       >
         {selected?.reasoning ? (
           <Brain size={14} aria-hidden="true" />
@@ -202,11 +188,11 @@ export function ModelPicker(props: {
                     index += 1;
                     const position = index;
                     const active = position === cursor;
-                    const chosen = model.ref === props.value;
+                    const chosen = model.id === props.value;
                     return (
                       <button
                         type="button"
-                        key={model.ref}
+                        key={model.id}
                         id={`${listId}-${position}`}
                         role="option"
                         aria-selected={chosen}
@@ -216,16 +202,15 @@ export function ModelPicker(props: {
                           chosen && "mp-item-chosen",
                         )}
                         onMouseEnter={() => setCursor(position)}
-                        onClick={() => choose(model.ref)}
+                        onClick={() => choose(model.id)}
                       >
                         <span className="mp-item-main">
                           <span className="mp-item-name">{model.name}</span>
-                          <span className="mp-item-meta">
-                            {model.vendor} · {model.providerLabel}
-                            {contextLabel(model.contextLength)
-                              ? ` · ${contextLabel(model.contextLength)}`
-                              : ""}
-                          </span>
+                          {contextLabel(model.contextLength) ? (
+                            <span className="mp-item-meta">
+                              {contextLabel(model.contextLength)} Kontext
+                            </span>
+                          ) : null}
                         </span>
                         <span className="mp-badges">
                           {model.reasoning ? (

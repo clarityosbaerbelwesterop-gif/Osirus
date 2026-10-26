@@ -104,6 +104,13 @@ export const BILLING_CONFIG = {
    * and Neon. 0 until the owner sets it.
    */
   infraBufferUsd: 0,
+  /**
+   * What a call to a free model (":free", zero-priced, trial credits) counts
+   * against the 5-hour and weekly windows, in USD per million tokens. Free
+   * models still use shared capacity and finite trial credit, so they are
+   * metered like a cheap paid model instead of counting nothing.
+   */
+  freeModelShadowUsdPerMillion: { input: 0.1, output: 0.4 },
   windows: {
     fiveHourMs: 5 * 60 * 60 * 1000,
     weeklyMs: 7 * 24 * 60 * 60 * 1000,

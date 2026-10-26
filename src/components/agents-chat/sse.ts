@@ -6,10 +6,11 @@ export type ChatStreamEvent =
       sessionId: string;
       title: string;
       created: boolean;
-      model: { ref: string; name: string; providerLabel: string };
       cached: boolean;
     }
   | { type: "text"; text: string }
+  /** The answer starts over (another model took over before any text). */
+  | { type: "reset" }
   | { type: "reasoning"; text: string }
   | {
       type: "done";

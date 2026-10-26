@@ -4,8 +4,9 @@ import { serializeQuota } from "@/lib/billing/quota";
 import { guardWrite, json } from "@/lib/product/api";
 import { agentsMentioned } from "@/lib/agents/mentions";
 import { groupMembers, insertGroupMessage } from "@/lib/agents/store";
-import { completePinned } from "@/lib/models/pinned-call";
-import { queryAs } from "@/lib/db/client";
+import { botAnswer } from "@/lib/gateway/answer";
+import { chatErrorMessage } from "@/lib/gateway/prompt";
+import { loadProductSession } from "@/lib/product/session";
 import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 
 export const dynamic = "force-dynamic";
@@ -59,7 +60,7 @@ export async function POST(
       replyRule: "mentions-only",
       replies: [],
       message:
-        "Keine @Erwähnung. Es hat kein Agent geantwortet. Wer ohne Erwähnung spricht, ist noch nicht entschieden.",
+        "Keine @Erwähnung: Es antwortet nur, wer mit @Name angesprochen wird.",
     });
   }
   if (quotaEnforced()) {
@@ -88,51 +89,34 @@ export async function POST(
       .filter((member) => member.agent_id)
       .map((member) => [member.agent_id, member]),
   );
+  const session = await loadProductSession();
   const replies = [];
   for (const mention of mentioned) {
     const agent = byId.get(mention.id);
-    if (!agent?.model_id || agent.status !== "active") {
+    if (!agent || agent.status !== "active") {
       replies.push({
         agentId: mention.id,
         name: mention.name,
         status: "unavailable" as const,
-        message: "Bald verfügbar. Der Agent ist pausiert oder hat kein Modell.",
+        message: "Dieser Bot ist pausiert.",
       });
       continue;
     }
-    try {
-      const result = await completePinned({
-        modelId: agent.model_id,
-        userId: guard.identity.userId,
-        messages: [
-          ...(agent.system_prompt
-            ? [{ role: "system" as const, content: agent.system_prompt }]
-            : []),
-          { role: "user" as const, content: guard.body.content },
-        ],
-      });
-      await queryAs(
-        guard.identity.userId,
-        `insert into osirus.model_calls
-           (organization_id, workspace_id, provider, model, logical_role,
-            status, input_tokens, output_tokens, estimated_cost_usd,
-            completed_at, request_metadata)
-         values ($1::uuid, $2::uuid, 'unorouter', $3, 'STRONG', 'completed',
-                 $4, $5, $6, now(), $7::jsonb)`,
-        [
-          guard.identity.organizationId,
-          guard.identity.workspaceId,
-          result.modelId,
-          result.inputTokens ?? null,
-          result.outputTokens ?? null,
-          result.costUsd ?? null,
-          JSON.stringify({
-            purpose: "group_chat",
-            agentId: mention.id,
-            userId: guard.identity.userId,
-          }),
-        ],
-      );
+    const result = await botAnswer({
+      identity: guard.identity,
+      user: {
+        email: session?.user.email ?? null,
+        emailVerified: session?.user.emailVerified,
+      },
+      bot: {
+        id: mention.id,
+        name: agent.name ?? mention.name,
+        system_prompt: agent.system_prompt,
+      },
+      content: guard.body.content,
+      surface: "group_chat",
+    });
+    if ("text" in result) {
       await insertGroupMessage({
         identity: guard.identity,
         groupId: chatId,
@@ -140,31 +124,30 @@ export async function POST(
         agentId: mention.id,
         content: result.text.slice(0, 8000),
         status: "completed",
-        modelId: result.modelId,
+        modelId: "auto",
       });
       replies.push({
         agentId: mention.id,
         name: mention.name,
         status: "completed" as const,
-        modelId: result.modelId,
         text: result.text,
       });
-    } catch {
+    } else {
+      const message = chatErrorMessage(result.error);
       await insertGroupMessage({
         identity: guard.identity,
         groupId: chatId,
         role: "agent",
         agentId: mention.id,
-        content: "Bald verfügbar. Keine Antwort vom Modell.",
+        content: message,
         status: "unavailable",
-        modelId: agent.model_id,
+        modelId: "auto",
       });
       replies.push({
         agentId: mention.id,
         name: mention.name,
         status: "unavailable" as const,
-        modelId: agent.model_id,
-        message: "Bald verfügbar. Keine Antwort vom Modell.",
+        message,
       });
     }
   }

@@ -6,6 +6,7 @@ import { isRetiredProductModel } from "@/lib/models/catalog";
 import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
 import { resolveGatewayModel } from "@/lib/gateway/models";
 import { isGatewayRef } from "@/lib/gateway/providers";
+import { botTier } from "@/lib/gateway/routing";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -76,7 +77,14 @@ export async function PATCH(
     status: guard.body.status,
   });
   if (!agent) return json({ error: "not_found" }, 404);
-  return json({ agent });
+  return json({
+    agent: {
+      id: agent.id,
+      name: agent.name,
+      status: agent.status,
+      tier: botTier(agent),
+    },
+  });
 }
 
 export async function DELETE(

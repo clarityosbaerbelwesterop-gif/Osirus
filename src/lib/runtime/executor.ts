@@ -235,7 +235,7 @@ export async function planRuntimeRun(input: {
   const repository = new RuntimeRepository(input.identity.userId);
   const baseProvider: ModelProvider = input.pinnedModel
     ? isGatewayRef(input.pinnedModel)
-      ? new GatewayProvider({ ref: input.pinnedModel })
+      ? new GatewayProvider({ ref: input.pinnedModel, autoFallback: true })
       : new UnoRouterProvider({
           model: input.pinnedModel,
           fallback: false,

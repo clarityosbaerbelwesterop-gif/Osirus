@@ -65,12 +65,10 @@ export default async function FixturePage({
     {
       id: "11111111-1111-4111-8111-111111111111",
       name: "Ada",
-      modelId: "openrouter:openai/gpt-5",
     },
     {
       id: "22222222-2222-4222-8222-222222222222",
       name: "Research-Bot",
-      modelId: "nvidia:deepseek-ai/deepseek-r1",
     },
   ];
 
@@ -78,7 +76,7 @@ export default async function FixturePage({
     case "agents-empty":
       return (
         <AppShell data={shell}>
-          <AgentsChat initialThread={null} bots={bots} greetingName="Alex" />
+          <AgentsChat initialThread={null} bots={bots} greetingName="Bärbel" />
         </AppShell>
       );
     case "rouge-empty":
@@ -110,8 +108,6 @@ export default async function FixturePage({
                 {
                   id: "m2",
                   role: "assistant",
-                  modelName: "GPT-5",
-                  model: "openrouter:openai/gpt-5",
                   reasoning:
                     "Polling und Notify parallel betreiben, dann umschalten. Rückweg muss jederzeit möglich sein.",
                   content:
@@ -120,7 +116,7 @@ export default async function FixturePage({
               ],
             }}
             bots={bots}
-            greetingName="Alex"
+            greetingName="Bärbel"
           />
         </AppShell>
       );

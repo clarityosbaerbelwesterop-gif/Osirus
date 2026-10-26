@@ -1,10 +1,15 @@
 "use client";
 
-import { Globe, ShieldCheck, Terminal, Users, Zap } from "lucide-react";
+import {
+  Globe,
+  ShieldCheck,
+  Sparkles,
+  Terminal,
+  Users,
+  Zap,
+} from "lucide-react";
 import { useState, type ComponentProps } from "react";
 import { ChatHub } from "../chat/chat-hub";
-import { ModelPicker } from "../agents-chat/model-picker";
-import { useGatewayModels } from "../agents-chat/use-models";
 
 const CAPABILITIES = [
   {
@@ -87,13 +92,14 @@ type HubProps = Omit<
   | "titleFallback"
 >;
 
-/** The Rouge Agent: the agent runtime on the model chosen here. */
+/**
+ * The Rouge Agent: the agent runtime. Osirus picks one model per task, by how
+ * hard and how large it is, and keeps it for the whole run.
+ */
 export function RougeAgentSurface(
   props: HubProps & { initialPrompt?: string | null },
 ) {
   const { initialPrompt, ...hub } = props;
-  const { models, freeOnly, error, selected, choose } =
-    useGatewayModels("osirus.rouge.model");
   const [prefill, setPrefill] = useState(
     initialPrompt ? { text: initialPrompt, nonce: 1 } : null,
   );
@@ -102,7 +108,7 @@ export function RougeAgentSurface(
       {...hub}
       kind="agent"
       titleFallback="Rouge Agent"
-      agentModelRef={selected}
+      agentModelRef={null}
       prefill={prefill}
       emptySlot={
         <RougeHero
@@ -111,16 +117,13 @@ export function RougeAgentSurface(
       }
       accessory={
         <div className="ra-bar">
-          <span className="ra-bar-label">
-            <Zap size={14} aria-hidden="true" /> Arbeitet mit
+          <span
+            className="ac-auto"
+            title="Osirus wählt das Modell nach Schwierigkeit und Umfang der Aufgabe"
+          >
+            <Sparkles size={13} aria-hidden="true" /> Auto · ein Modell je
+            Auftrag
           </span>
-          <ModelPicker
-            models={models}
-            value={selected}
-            onChange={choose}
-            freeOnly={freeOnly}
-            error={error}
-          />
         </div>
       }
     />

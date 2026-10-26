@@ -7,12 +7,12 @@ import type { PickerModel } from "./model-picker";
 // this tab for ten minutes so pickers appear at once, and the remembered
 // choice per surface.
 
-const CACHE_KEY = "osirus.models.v2";
+const CACHE_KEY = "osirus.models.v3";
 const CACHE_MS = 10 * 60 * 1000;
 
 export type ModelsPayload = {
   models: PickerModel[];
-  defaultRef: string | null;
+  defaultId: string | null;
   freeOnly: boolean;
 };
 
@@ -62,14 +62,14 @@ export function useGatewayModels(storageKey: string) {
     const apply = (payload: ModelsPayload) => {
       setModels(payload.models);
       setFreeOnly(payload.freeOnly);
-      setError(payload.models.length ? null : "Kein Modell-Key hinterlegt");
+      setError(payload.models.length ? null : "Gerade kein Modell erreichbar");
       setSelected((current) => {
-        if (current && payload.models.some((model) => model.ref === current))
+        if (current && payload.models.some((model) => model.id === current))
           return current;
         const saved = remembered(storageKey);
-        if (saved && payload.models.some((model) => model.ref === saved))
+        if (saved && payload.models.some((model) => model.id === saved))
           return saved;
-        return payload.defaultRef;
+        return payload.defaultId;
       });
     };
     const cached = readCache();
@@ -90,10 +90,10 @@ export function useGatewayModels(storageKey: string) {
   }, [storageKey]);
 
   const choose = useCallback(
-    (ref: string) => {
-      setSelected(ref);
+    (id: string) => {
+      setSelected(id);
       try {
-        window.localStorage.setItem(storageKey, ref);
+        window.localStorage.setItem(storageKey, id);
       } catch {
         // private mode
       }

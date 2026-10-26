@@ -1,6 +1,7 @@
 import "server-only";
 import { queryAs } from "@/lib/db/client";
 import type { ProductIdentity } from "@/lib/auth/bootstrap";
+import { callCostUsd } from "./cost";
 import type { GatewayModel } from "./models";
 import type { GatewayUsage } from "./stream";
 
@@ -8,25 +9,7 @@ import type { GatewayUsage } from "./stream";
 // billing windows count such rows by request_metadata.userId, so chat
 // spends the same 5-hour and weekly budgets as a run.
 
-/** Used when a paid model publishes no price: deliberately not cheap. */
-const UNKNOWN_PRICE = { input: 3, output: 15 };
-
-export function estimateTokens(text: string) {
-  return Math.ceil(text.length / 4);
-}
-
-/** USD for one call: the provider's figure, else the list price, else a conservative estimate. */
-export function callCostUsd(model: GatewayModel, usage: GatewayUsage) {
-  if (typeof usage.costUsd === "number" && usage.costUsd >= 0)
-    return usage.costUsd;
-  if (model.free) return 0;
-  const input = model.inputPerMillionUsd ?? UNKNOWN_PRICE.input;
-  const output = model.outputPerMillionUsd ?? UNKNOWN_PRICE.output;
-  return (
-    ((usage.inputTokens ?? 0) * input + (usage.outputTokens ?? 0) * output) /
-    1_000_000
-  );
-}
+export { callCostUsd, estimateTokens } from "./cost";
 
 export async function recordGatewayCall(input: {
   identity: ProductIdentity;
@@ -61,7 +44,10 @@ export async function recordGatewayCall(input: {
         sessionId: input.sessionId,
         gateway: true,
       }),
-      JSON.stringify({ cached: Boolean(input.cached) }),
+      JSON.stringify({
+        cached: Boolean(input.cached),
+        providerCostUsd: input.usage.costUsd ?? null,
+      }),
       input.usage.inputTokens ?? null,
       input.usage.outputTokens ?? null,
       cost,

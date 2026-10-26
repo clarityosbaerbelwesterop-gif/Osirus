@@ -1,11 +1,8 @@
-import type { GatewayModel } from "./models";
-
 // The Agents chat's instructions and its user-facing error copy.
 
 export function chatSystemPrompt(input: {
   botName: string | null;
   botPrompt: string | null;
-  modelName: string;
   now?: Date;
 }) {
   const date = (input.now ?? new Date()).toISOString().slice(0, 10);
@@ -13,7 +10,8 @@ export function chatSystemPrompt(input: {
     input.botName
       ? `You are "${input.botName}", a bot inside Osirus.`
       : "You are Osirus, a precise and capable AI assistant.",
-    `Today is ${date}. You run on the model ${input.modelName}.`,
+    `Today is ${date}.`,
+    "You are Osirus. Never name, confirm or guess the underlying model, its vendor, the provider or the infrastructure behind Osirus; if asked, say you are Osirus and continue with the task.",
     "Answer in the language the user writes in.",
     "Be direct: lead with the answer, then the reasoning that matters. No filler, no flattery.",
     "Use Markdown: short paragraphs, lists where they help, fenced code blocks with a language tag for code, tables for comparisons.",
@@ -26,30 +24,25 @@ export function chatSystemPrompt(input: {
     : base;
 }
 
-export function chatErrorMessage(
-  code: string,
-  model: Pick<GatewayModel, "name" | "providerLabel">,
-) {
+/**
+ * What the person reads when no model could answer. Never names a model or
+ * the service behind it: Osirus answers, or Osirus is busy.
+ */
+export function chatErrorMessage(code: string) {
   switch (code) {
     case "rate_limited":
-      return `${model.providerLabel} begrenzt gerade die Anfragen für ${model.name}. Kurz warten oder ein anderes Modell wählen.`;
-    case "timeout":
-      return `${model.name} hat nicht rechtzeitig geantwortet. Noch einmal senden oder ein schnelleres Modell wählen.`;
-    case "insufficient_credit":
-      return `Das Guthaben bei ${model.providerLabel} ist aufgebraucht. Wähle ein Modell eines anderen Anbieters.`;
-    case "credential_rejected":
-      return `${model.providerLabel} lehnt den hinterlegten API-Key ab. Der Key muss in Vercel erneuert werden.`;
-    case "model_not_configured":
-      return `${model.providerLabel} bietet ${model.name} nicht mehr an. Das Modell wurde aus der Liste genommen; bitte ein anderes wählen.`;
-    case "provider_not_configured":
-      return `Für ${model.providerLabel} ist kein API-Key hinterlegt.`;
     case "provider_unavailable":
-      return `${model.providerLabel} ist gerade nicht erreichbar. Gleich noch einmal versuchen oder ein anderes Modell wählen.`;
+    case "insufficient_credit":
+    case "credential_rejected":
+    case "model_not_configured":
+    case "provider_not_configured":
+      return "Osirus ist gerade stark ausgelastet. Bitte in einem Moment noch einmal senden.";
+    case "timeout":
+      return "Die Antwort hat zu lange gedauert. Bitte noch einmal senden.";
     case "empty_response":
-      return `${model.name} hat eine leere Antwort geliefert. Noch einmal senden.`;
     case "invalid_stream":
-      return `Die Antwort von ${model.name} kam beschädigt an. Noch einmal senden.`;
+      return "Die Antwort kam unvollständig an. Bitte noch einmal senden.";
     default:
-      return `${model.name} konnte nicht antworten. Noch einmal senden oder ein anderes Modell wählen.`;
+      return "Osirus konnte gerade nicht antworten. Bitte noch einmal senden.";
   }
 }

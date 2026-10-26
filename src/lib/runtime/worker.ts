@@ -245,7 +245,7 @@ export async function executeClaimedStage(input: {
       : null;
   const baseProvider: ModelProvider = pinnedModel
     ? isGatewayRef(pinnedModel)
-      ? new GatewayProvider({ ref: pinnedModel })
+      ? new GatewayProvider({ ref: pinnedModel, autoFallback: true })
       : new UnoRouterProvider({
           model: pinnedModel,
           fallback: false,

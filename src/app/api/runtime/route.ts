@@ -13,12 +13,13 @@ import {
 import { parseEffort } from "@/lib/product/surfaces";
 import { isAllowedProductModel } from "@/lib/models/allowlist";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
-import {
-  listGatewayModels,
-  pickDefaultModel,
-  resolveGatewayModel,
-} from "@/lib/gateway/models";
+import { listGatewayModels, resolveModelSelection } from "@/lib/gateway/models";
 import { isGatewayRef } from "@/lib/gateway/providers";
+import {
+  candidatesFor,
+  classifyDifficulty,
+  higherTier,
+} from "@/lib/gateway/routing";
 import { env, serverKeys } from "@/lib/env";
 import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
 import { routeCapabilities } from "@/lib/runtime/router";
@@ -147,9 +148,12 @@ export async function POST(request: Request) {
   }
   let pinnedModel: string | undefined;
   const requestedModel = parsed.data.coding?.model ?? parsed.data.modelId ?? "";
-  if (requestedModel && isGatewayRef(requestedModel)) {
-    // Any model a configured key can call ("provider:model").
-    const model = await resolveGatewayModel(requestedModel);
+  if (
+    requestedModel &&
+    (requestedModel.startsWith("m_") || isGatewayRef(requestedModel))
+  ) {
+    // A model picked in Code (public id) or named by server code (reference).
+    const model = await resolveModelSelection(requestedModel);
     if (!model) {
       return Response.json(
         {
@@ -176,7 +180,7 @@ export async function POST(request: Request) {
       return Response.json(
         {
           error: "model_not_allowed",
-          message: "That model is not on the UNOROUTER allowlist.",
+          message: "Dieses Modell wird nicht angeboten.",
         },
         { status: 400 },
       );
@@ -196,9 +200,9 @@ export async function POST(request: Request) {
     if (!allowed.some((model) => model.id === modelId)) {
       return Response.json(
         {
-          error: "key_models_unknown",
+          error: "model_unavailable",
           message:
-            "Bald verfügbar. Which models this key can call is not known, so the run was not started on another model.",
+            "Dieses Modell ist gerade nicht verfügbar. Bitte ein anderes wählen.",
         },
         { status: 503 },
       );
@@ -207,19 +211,34 @@ export async function POST(request: Request) {
   }
   const surface = parsed.data.surface;
   if (!pinnedModel && (surface === "agent" || surface === "coding")) {
-    // Agent and coding runs default to the best model the person may call
-    // instead of the free pool, whose models often cannot follow the
-    // structured agent protocol.
+    // One model for the whole run. The Rouge Agent's is chosen by how hard
+    // and how large the task is (never below "balanced": weak models cannot
+    // follow the agent protocol); Code defaults to the strongest coding model.
     const listing = await listGatewayModels().catch(() => null);
-    const best = listing
-      ? pickDefaultModel(
-          listing.models.filter(
-            (model) =>
-              modelAllowed(model, access) && model.provider !== "unorouter",
-          ),
-        )
-      : null;
-    if (best) pinnedModel = best.ref;
+    if (listing) {
+      const allowed = listing.models.filter(
+        (model) =>
+          modelAllowed(model, access) && model.provider !== "unorouter",
+      );
+      const tier =
+        surface === "coding"
+          ? "top"
+          : higherTier(
+              "balanced",
+              classifyDifficulty({
+                message: parsed.data.objective,
+                attachments: parsed.data.attachmentIds?.length ?? 0,
+              }).tier,
+            );
+      const best = candidatesFor(
+        allowed.length
+          ? allowed
+          : listing.models.filter((model) => modelAllowed(model, access)),
+        tier,
+        { coding: surface === "coding", limit: 1 },
+      )[0];
+      if (best) pinnedModel = best.ref;
+    }
   }
   let coding = parsed.data.coding;
   if (surface === "coding" && coding) {

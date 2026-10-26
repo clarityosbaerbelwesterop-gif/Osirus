@@ -204,10 +204,11 @@ describe("POST /api/chat/stream", () => {
       ["user", "Hallo"],
       ["assistant", answer],
     ]);
-    expect(body.messages[1]).toMatchObject({
-      reasoning: "kurz nachdenken",
-      model: "openrouter:qwen/qwen3-235b-a22b:free",
-    });
+    expect(body.messages[1]).toMatchObject({ reasoning: "kurz nachdenken" });
+    // The browser never learns which model or service answered.
+    expect(body.messages[1]).not.toHaveProperty("model");
+    expect(JSON.stringify(body)).not.toMatch(/openrouter|qwen/i);
+    expect(JSON.stringify(events[0])).not.toMatch(/openrouter|qwen|model/i);
 
     const calls = await db.raw<{
       provider: string;
@@ -222,7 +223,9 @@ describe("POST /api/chat/stream", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]).toMatchObject({ provider: "openrouter", run_id: null });
     expect(calls[0].request_metadata.userId).toBe(tenant.userId);
-    expect(Number(calls[0].estimated_cost_usd)).toBe(0);
+    // A free model counts at the shadow price, so the windows move.
+    expect(Number(calls[0].estimated_cost_usd)).toBeGreaterThan(0);
+    expect(Number(calls[0].estimated_cost_usd)).toBeLessThan(0.001);
   });
 
   it("sends the thread as context and answers the same question from cache", async () => {
@@ -300,53 +303,79 @@ describe("POST /api/chat/stream", () => {
   });
 
   it("keeps the free plan on free models, and owners on every model", async () => {
-    const refused = await post({
-      message: "Hi",
-      model: "openrouter:openai/gpt-5",
+    const hard =
+      "Analysiere die Architektur unserer Datenbank-Migration und bewerte Sicherheit und Performance im Detail.";
+    const free = await post({ message: hard });
+    expect(free.status).toBe(200);
+    await free.text();
+    expect(chatCalls().at(-1)?.body).toMatchObject({
+      model: "qwen/qwen3-235b-a22b:free",
     });
-    expect(refused.status).toBe(403);
-    expect(await refused.json()).toMatchObject({ error: "model_not_in_plan" });
-    expect(chatCalls()).toHaveLength(0);
 
     const listed = (await (await getModels()).json()) as {
-      models: Array<{ ref: string }>;
+      models: Array<{ id: string; name: string; tier: string }>;
       freeOnly: boolean;
+      defaultId: string | null;
     };
     expect(listed.freeOnly).toBe(true);
-    expect(listed.models.map((m) => m.ref)).toEqual([
-      "openrouter:qwen/qwen3-235b-a22b:free",
-    ]);
+    expect(listed.models).toHaveLength(1);
+    expect(listed.models[0].id).toMatch(/^m_/);
+    expect(listed.defaultId).toBe(listed.models[0].id);
+    // Names and classes only: no service, no internal reference.
+    expect(JSON.stringify(listed)).not.toMatch(/openrouter|qwen\/|provider/i);
 
     process.env.OSIRUS_OWNER_EMAILS = "Chat@Example.test";
-    const allowed = await post({
-      message: "Hi",
-      model: "openrouter:openai/gpt-5",
-    });
+    const allowed = await post({ message: hard });
     expect(allowed.status).toBe(200);
     expect((await frames(allowed)).at(-1)).toMatchObject({ type: "done" });
+    expect(chatCalls().at(-1)?.body).toMatchObject({ model: "openai/gpt-5" });
     const owner = (await (await getModels()).json()) as {
-      models: Array<{ ref: string }>;
-      unlimited: boolean;
+      models: Array<{ id: string }>;
     };
-    expect(owner.unlimited).toBe(true);
     expect(owner.models).toHaveLength(2);
   });
 
   it("gives owner access only to a confirmed email", async () => {
     process.env.OSIRUS_OWNER_EMAILS = "chat@example.test";
+    const hard =
+      "Analysiere die Architektur und Sicherheit dieser Migration Schritt für Schritt.";
     state.user = { ...state.user!, emailVerified: false };
-    const refused = await post({
-      message: "Hi",
-      model: "openrouter:openai/gpt-5",
+    await (await post({ message: hard })).text();
+    expect(chatCalls().at(-1)?.body).toMatchObject({
+      model: "qwen/qwen3-235b-a22b:free",
     });
-    expect(refused.status).toBe(403);
     state.user = { ...state.user!, emailVerified: true };
-    const allowed = await post({
-      message: "Hi",
-      model: "openrouter:openai/gpt-5",
-    });
-    expect(allowed.status).toBe(200);
-    await allowed.text();
+    await (await post({ message: hard })).text();
+    expect(chatCalls().at(-1)?.body).toMatchObject({ model: "openai/gpt-5" });
+  });
+
+  it("answers with the next model when the first one fails before any text", async () => {
+    process.env.OSIRUS_OWNER_EMAILS = "chat@example.test";
+    const base = globalThis.fetch;
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const body = init?.body ? JSON.parse(String(init.body)) : null;
+        if (!url.endsWith("/models") && body?.model === "openai/gpt-5") {
+          return new Response("down", { status: 503 });
+        }
+        return base(input, init);
+      },
+    );
+    const events = await frames(
+      await post({
+        message:
+          "Analysiere die Architektur und Sicherheit dieser Migration Schritt für Schritt.",
+      }),
+    );
+    expect(events.at(-1)).toMatchObject({ type: "done" });
+    expect(
+      events
+        .filter((e) => e.type === "text")
+        .map((e) => e.text)
+        .join(""),
+    ).toBe(answer);
   });
 
   it("reports a provider refusal as an error frame and stores no answer", async () => {

@@ -10,13 +10,12 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export const CHAT_SURFACES = ["ai", "bot"] as const;
 
+/** One message as the browser receives it: never which model wrote it. */
 export type ChatMessage = {
   id: string;
   role: "user" | "assistant";
   content: string;
   createdAt: string;
-  model: string | null;
-  modelName: string | null;
   reasoning: string | null;
   botId: string | null;
   partial: boolean;
@@ -70,8 +69,6 @@ export function toChatMessage(row: MessageRow): ChatMessage | null {
     role: row.role,
     content: row.content,
     createdAt: new Date(row.created_at).toISOString(),
-    model: text(meta.model),
-    modelName: text(meta.modelName),
     reasoning: text(meta.reasoning),
     botId: text(meta.botId),
     partial: meta.partial === true,
@@ -116,7 +113,10 @@ export async function loadChatThread(
   };
 }
 
-/** The last turns of a thread as model context, oldest first. */
+/**
+ * The last turns of a thread as model context, oldest first, and the model
+ * that wrote its newest answer (a thread keeps its model).
+ */
 export async function chatContext(
   identity: ProductIdentity,
   sessionId: string,
@@ -131,12 +131,18 @@ export async function chatContext(
       limit $2`,
     [sessionId, Math.min(Math.max(limit, 1), 60)],
   );
-  return collapseRegenerations(
+  const lastModelRef =
+    rows
+      .filter((row) => row.role === "assistant")
+      .map((row) => text(row.metadata?.model))
+      .find(Boolean) ?? null;
+  const turns = collapseRegenerations(
     rows.reverse().map((row) => ({
       role: row.role as "user" | "assistant",
       content: row.content,
     })),
   );
+  return { turns, lastModelRef };
 }
 
 export async function createChatSession(

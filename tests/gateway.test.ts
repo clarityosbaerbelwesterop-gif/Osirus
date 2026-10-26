@@ -420,8 +420,12 @@ describe("structured output", () => {
 
   it("asks once more for the object when the first reply has none", async () => {
     process.env.OPENROUTER_API_KEY = "or-key";
-    const { impl, calls } = fakeFetch((_call, index) =>
-      sse([
+    let replies = 0;
+    const { impl, calls } = fakeFetch((call) => {
+      if (call.url.endsWith("/models"))
+        return Response.json({ data: [{ id: "a/b" }] });
+      const index = replies++;
+      return sse([
         {
           choices: [
             {
@@ -431,8 +435,8 @@ describe("structured output", () => {
             },
           ],
         },
-      ]),
-    );
+      ]);
+    });
     const provider = new GatewayProvider({
       ref: "openrouter:a/b",
       fetchImpl: impl,
@@ -444,9 +448,10 @@ describe("structured output", () => {
       validate: (value) => value as { plan: string },
     });
     expect(result.value).toEqual({ plan: "x" });
-    expect(calls).toHaveLength(2);
+    const chat = calls.filter((call) => call.url.endsWith("/chat/completions"));
+    expect(chat).toHaveLength(2);
     const repair = (
-      calls[1].body?.messages as Array<{ role: string; content: string }>
+      chat[1].body?.messages as Array<{ role: string; content: string }>
     ).at(-1);
     expect(repair?.content).toMatch(/exactly one JSON object/);
   });
@@ -515,9 +520,9 @@ describe("cache, threads and cost", () => {
           inputPerMillionUsd: null,
           outputPerMillionUsd: null,
         },
-        { inputTokens: 10 },
+        { inputTokens: 1_000_000, outputTokens: 1_000_000 },
       ),
-    ).toBe(0);
+    ).toBeCloseTo(0.5, 6);
     expect(
       callCostUsd(
         {

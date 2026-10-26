@@ -8,6 +8,7 @@ import {
   ChevronRight,
   Copy,
   RotateCcw,
+  Sparkles,
   Square,
   Zap,
 } from "lucide-react";
@@ -29,8 +30,6 @@ import { useShell, type SessionSummary } from "../shell/shell-context";
 import { OsirusMark } from "../shell/osirus-mark";
 import { TopBar } from "../shell/top-bar";
 import { cx } from "../ui/cx";
-import { ModelPicker } from "./model-picker";
-import { useGatewayModels } from "./use-models";
 import { readChatStream } from "./sse";
 
 export type AgentsChatMessage = {
@@ -38,8 +37,6 @@ export type AgentsChatMessage = {
   role: "user" | "assistant";
   content: string;
   createdAt?: string;
-  model?: string | null;
-  modelName?: string | null;
   reasoning?: string | null;
   botId?: string | null;
   partial?: boolean;
@@ -52,15 +49,13 @@ type UiMessage = AgentsChatMessage & {
   thinkingMs?: number | null;
 };
 
-export type AgentsBot = { id: string; name: string; modelId: string };
+export type AgentsBot = { id: string; name: string };
 
 type Thread = {
   sessionId: string;
   title: string;
   messages: AgentsChatMessage[];
 };
-
-const MODEL_KEY = "osirus.chat.model";
 
 const SUGGESTIONS = [
   "Erkläre mir ein Konzept so, dass ich es in 5 Minuten verstehe",
@@ -264,9 +259,6 @@ const MessageView = memo(function MessageView(props: {
               <Zap size={14} aria-hidden="true" />
               <span>Rouge Agent</span>
             </button>
-            {message.modelName ? (
-              <span className="ac-model-tag">{message.modelName}</span>
-            ) : null}
             {message.partial ? (
               <span className="ac-model-tag">abgebrochen</span>
             ) : null}
@@ -297,13 +289,6 @@ export function AgentsChat(props: {
   );
   const [input, setInput] = useState(props.initialPrompt ?? "");
   const [busy, setBusy] = useState(false);
-  const {
-    models,
-    freeOnly,
-    error: modelsError,
-    selected: modelRef,
-    choose: chooseModel,
-  } = useGatewayModels(MODEL_KEY);
   const [botId, setBotId] = useState<string | null>(
     props.bots.some((bot) => bot.id === props.initialBotId)
       ? (props.initialBotId ?? null)
@@ -462,7 +447,6 @@ export function AgentsChat(props: {
             content: "",
             streaming: true,
             botId: targetBot,
-            modelName: null,
           },
         ];
       });
@@ -505,7 +489,6 @@ export function AgentsChat(props: {
           body: JSON.stringify({
             sessionId,
             message: content,
-            model: targetBot ? null : modelRef,
             botId: targetBot,
             regenerate: Boolean(options.regenerate),
           }),
@@ -527,11 +510,6 @@ export function AgentsChat(props: {
           if (event.type === "start") {
             setSessionId(event.sessionId);
             setTitle(event.title);
-            patch((message) => ({
-              ...message,
-              model: event.model.ref,
-              modelName: event.model.name,
-            }));
             if (event.created) {
               window.history.replaceState(
                 null,
@@ -545,6 +523,11 @@ export function AgentsChat(props: {
               updatedAt: new Date().toISOString(),
               surface: targetBot ? "bot" : "ai",
             });
+          } else if (event.type === "reset") {
+            reasoning = "";
+            answer = "";
+            thinkingStartedAt = null;
+            schedule();
           } else if (event.type === "reasoning") {
             if (thinkingStartedAt === null) thinkingStartedAt = Date.now();
             reasoning += event.text;
@@ -608,7 +591,7 @@ export function AgentsChat(props: {
         abortRef.current = null;
       }
     },
-    [botId, busy, modelRef, props.bots, sessionId, upsertSession],
+    [botId, busy, props.bots, sessionId, upsertSession],
   );
 
   const stop = () => abortRef.current?.abort();
@@ -691,18 +674,13 @@ export function AgentsChat(props: {
         }}
       />
       <div className="ac-composer-bar">
-        {activeBot ? (
-          <span className="ac-bot-model">Modell des Bots</span>
-        ) : (
-          <ModelPicker
-            models={models}
-            value={modelRef}
-            onChange={chooseModel}
-            disabled={busy}
-            freeOnly={freeOnly}
-            error={modelsError}
-          />
-        )}
+        <span
+          className="ac-auto"
+          title="Osirus wählt für jede Aufgabe das passende Modell"
+        >
+          <Sparkles size={13} aria-hidden="true" />
+          {activeBot ? activeBot.name : "Auto"}
+        </span>
         <span className="ac-composer-spacer" />
         {busy ? (
           <button
@@ -717,7 +695,7 @@ export function AgentsChat(props: {
           <button
             type="submit"
             className="ac-send"
-            disabled={!input.trim() || (!activeBot && !modelRef)}
+            disabled={!input.trim()}
             aria-label="Senden"
           >
             <ArrowUp size={18} aria-hidden="true" />
@@ -782,8 +760,8 @@ export function AgentsChat(props: {
               </div>
             ) : (
               <Link href={"/app/agents" as Route} className="ac-bots-hint">
-                <Bot size={14} aria-hidden="true" /> Eigenen Bot mit Persona und
-                Modell anlegen
+                <Bot size={14} aria-hidden="true" /> Eigenen Bot mit Rolle und
+                Persona anlegen
               </Link>
             )}
           </div>
