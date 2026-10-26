@@ -30,7 +30,17 @@ export type ProviderSpec = {
   headers?: Record<string, string>;
   /** Every model of this provider costs the operator nothing per call. */
   freeByDefault?: boolean;
+  /** "raw": the key alone in Authorization (Bytez); else "Bearer <key>". */
+  authScheme?: "bearer" | "raw";
 };
+
+/** The Authorization header value for one key of a provider. */
+export function authorizationFor(
+  provider: Pick<ProviderSpec, "authScheme">,
+  key: string,
+) {
+  return provider.authScheme === "raw" ? key : `Bearer ${key}`;
+}
 
 const DEFAULTS: Record<ProviderId, string> = {
   openrouter: "https://openrouter.ai/api/v1/chat/completions",
@@ -162,6 +172,8 @@ export function configuredProviders(): ProviderSpec[] {
       "bytez",
       env.BYTEZ_BASE_URL ?? process.env.BYTEZ_BASE_URL,
       unique([env.BYTEZ_API_KEY, process.env.BYTEZ_API_KEY]),
+      // Bytez takes the key itself, without "Bearer".
+      { authScheme: "raw" },
     ),
   ];
   return all.filter((provider): provider is ProviderSpec => provider !== null);
