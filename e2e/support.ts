@@ -57,49 +57,39 @@ export type ApiLog = { method: string; path: string; body: unknown }[];
  * Answer the client calls of the fixture surfaces. Returns the list of write
  * requests the page made, so journeys can assert what was sent.
  */
-/** The model list the Agents, Rouge Agent and Code pickers receive. */
+/** The model list Code's picker receives: opaque ids, names and classes. */
 export const MODELS_FIXTURE = {
-  defaultRef: "openrouter:openai/gpt-5",
+  defaultId: "m_gpt5aaaaaaaaaaaaa",
   freeOnly: false,
-  unlimited: false,
-  providers: [],
   models: [
     {
-      ref: "openrouter:openai/gpt-5",
+      id: "m_gpt5aaaaaaaaaaaaa",
       name: "GPT-5",
-      providerLabel: "OpenRouter",
-      provider: "openrouter",
-      vendor: "OpenAI",
+      tier: "top",
       free: false,
       reasoning: true,
       contextLength: 400000,
     },
     {
-      ref: "openrouter:anthropic/claude-sonnet-4.5",
+      id: "m_sonnetaaaaaaaaaaa",
       name: "Claude Sonnet 4.5",
-      providerLabel: "OpenRouter",
-      provider: "openrouter",
-      vendor: "Anthropic",
+      tier: "top",
       free: false,
       reasoning: false,
       contextLength: 200000,
     },
     {
-      ref: "nvidia:deepseek-ai/deepseek-r1",
+      id: "m_r1aaaaaaaaaaaaaaa",
       name: "DeepSeek R1",
-      providerLabel: "NVIDIA",
-      provider: "nvidia",
-      vendor: "DeepSeek",
+      tier: "top",
       free: true,
       reasoning: true,
       contextLength: 128000,
     },
     {
-      ref: "nvidia:meta/llama-3.3-70b-instruct",
+      id: "m_llamaaaaaaaaaaaaa",
       name: "Llama 3.3 70B Instruct",
-      providerLabel: "NVIDIA",
-      provider: "nvidia",
-      vendor: "Meta",
+      tier: "balanced",
       free: true,
       reasoning: false,
       contextLength: 128000,
@@ -117,11 +107,6 @@ export function chatStreamBody(answer = "Hallo! Wie kann ich helfen?") {
       sessionId: CHAT_SESSION,
       title: "Hallo",
       created: true,
-      model: {
-        ref: "openrouter:openai/gpt-5",
-        name: "GPT-5",
-        providerLabel: "OpenRouter",
-      },
       cached: false,
     },
     { type: "reasoning", text: "Begrüßung, kurz antworten." },

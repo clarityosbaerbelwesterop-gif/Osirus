@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Osirus — Assistent, Work und autonome Agents",
   description:
-    "Osirus ist der präzise Workspace für KI-Agents, den autonomen Rouge Agent und Code: mit unabhängiger Prüfung und Freigabe vor jeder Aktion nach außen.",
+    "Osirus ist der präzise Workspace für KI-Agents, autonome Agents und Code: mit unabhängiger Prüfung und Freigabe vor jeder Aktion nach außen.",
   alternates: { canonical: "/" },
 };
 
@@ -36,7 +36,7 @@ export default async function HomePage() {
     operatingSystem: "Web",
     url: absoluteUrl("/"),
     description:
-      "Workspace für KI-Agents, Rouge Agent und Code mit unabhängiger Verifikation.",
+      "Workspace für KI-Agents, autonome Agents und Code mit unabhängiger Verifikation.",
   };
 
   return (
@@ -102,7 +102,7 @@ export default async function HomePage() {
             <h2 id="bots-title">Bots</h2>
             <p>
               Direkter Dialog mit klarem Kontext, mehrstufigem Caching und
-              präziser Modellwahl. Lege spezialisierte Bots mit festem Modell
+              präziser Modellwahl. Lege spezialisierte Bots mit eigener Rolle
               und eigener Systemanweisung an und bündele ihre Perspektiven.
             </p>
             <Link className="btn btn-secondary" href="/auth/sign-up">

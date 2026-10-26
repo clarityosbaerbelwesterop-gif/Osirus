@@ -506,8 +506,10 @@ test("agents address only the mentioned bot", async ({ page }) => {
   await mockApis(page);
   await openSurface(page, "agents");
   await expect(page.getByRole("button", { name: "Deploy" })).toHaveCount(0);
-  await expect(page.getByText("glm-5.3-flash")).toBeVisible();
-  await expect(page.getByText("claude-opus-5.5")).toBeVisible();
+  await expect(page.getByText("Ada", { exact: true }).first()).toBeVisible();
+  // A bot shows its role class, never a model id.
+  await expect(page.getByText("glm-5.3-flash")).toHaveCount(0);
+  await expect(page.getByText("claude-opus-5.5")).toHaveCount(0);
   const message = page.getByRole("textbox", { name: "Nachricht" });
   await message.fill("@Ada bitte kurz antworten");
   await expect(page.getByText("Antwortet: Ada")).toBeVisible();
@@ -519,7 +521,9 @@ test("agents: an answer streams in, thinking shows its time, the thread joins th
 }) => {
   const log = await mockApis(page);
   await openSurface(page, "agents-empty");
-  await expect(page.getByRole("button", { name: /GPT-5/ })).toBeVisible();
+  // Osirus picks the model: no picker, an "Auto" label.
+  await expect(page.getByText("Auto", { exact: true })).toBeVisible();
+  await expect(page.getByRole("button", { name: /GPT-5/ })).toHaveCount(0);
   const input = page.getByRole("textbox", { name: "Nachricht" });
   await input.fill("Hallo");
   await input.press("Enter");
@@ -531,24 +535,23 @@ test("agents: an answer streams in, thinking shows its time, the thread joins th
     page.getByRole("button", { name: "Antwort kopieren" }),
   ).toBeVisible();
   const sent = log.find((entry) => entry.path === "/api/chat/stream");
-  expect(sent?.body).toMatchObject({
-    message: "Hallo",
-    model: "openrouter:openai/gpt-5",
-    sessionId: null,
-  });
+  expect(sent?.body).toMatchObject({ message: "Hallo", sessionId: null });
+  expect(sent?.body).not.toHaveProperty("model");
   await expect(page.getByRole("link", { name: "Hallo" })).toBeVisible();
 });
 
-test("agents: the model picker searches, picks with the keyboard and remembers the choice", async ({
+test("code: the model picker searches, picks with the keyboard and remembers the choice", async ({
   page,
 }) => {
   await mockApis(page);
-  await openSurface(page, "agents-empty");
+  await openSurface(page, "coding");
   await page.getByRole("button", { name: /GPT-5/ }).click();
   const search = page.getByPlaceholder(/Modelle durchsuchen/);
   await expect(search).toBeFocused();
   await search.fill("llama");
-  await expect(page.getByRole("option")).toHaveCount(1);
+  await expect(
+    page.getByRole("listbox", { name: "Modelle" }).getByRole("option"),
+  ).toHaveCount(1);
   await search.press("Enter");
   await expect(
     page.getByRole("button", { name: /Llama 3\.3 70B Instruct/ }),
@@ -597,7 +600,7 @@ test("agents: an answer can go to the Rouge Agent as a task", async ({
   ).toContain("Aufgabe: Wie migriere ich eine Postgres Job-Queue");
 });
 
-test("rouge agent: a suggested task fills the composer and the run is pinned to the chosen model", async ({
+test("rouge agent: a suggested task fills the composer and Osirus picks the model", async ({
   page,
 }) => {
   await mockApis(page);
@@ -622,9 +625,6 @@ test("rouge agent: a suggested task fills the composer and the run is pinned to 
   await composer.press("Enter");
   await expect
     .poll(() => runBody)
-    .toMatchObject({
-      surface: "agent",
-      mode: "agent",
-      modelId: "openrouter:openai/gpt-5",
-    });
+    .toMatchObject({ surface: "agent", mode: "agent" });
+  expect(runBody).not.toHaveProperty("modelId");
 });
