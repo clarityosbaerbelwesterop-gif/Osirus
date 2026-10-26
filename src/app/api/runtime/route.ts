@@ -16,6 +16,7 @@ import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
 import {
   listGatewayModels,
   modelPenalty,
+  verifiedBackup,
   verifiedLead,
   resolveModelSelection,
 } from "@/lib/gateway/models";
@@ -242,7 +243,9 @@ export async function POST(request: Request) {
         coding: surface === "coding",
         limit: 1,
         penalty: (ref) => modelPenalty(ref),
-        lead: verifiedLead(pool, tier),
+        // Measured models first: a ranked guess may be one the service no
+        // longer serves, and a run pins its model for every step.
+        lead: [...verifiedLead(pool, tier), ...verifiedBackup(pool)],
       })[0];
       if (best) pinnedModel = best.ref;
     }

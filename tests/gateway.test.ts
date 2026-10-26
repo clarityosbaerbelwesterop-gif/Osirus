@@ -543,6 +543,97 @@ describe("structured output", () => {
   });
 });
 
+describe("pinned runs fall back like the chat", () => {
+  // Live 2026-10-26: a Rouge run pinned a ranked guess the service no longer
+  // served and failed in 4 s, while measured models were answering.
+  const OR_MODELS = "https://openrouter.ai/api/v1/models";
+  const NV_MODELS = "https://integrate.api.nvidia.com/v1/models";
+
+  afterEach(() => {
+    delete process.env.OSIRUS_VERIFIED_TOP_MODELS;
+  });
+
+  function answer(text: string) {
+    return sse([{ choices: [{ delta: { content: text } }] }]);
+  }
+
+  it("tries the measured models right after the pinned one", async () => {
+    process.env.OPENROUTER_API_KEY = "or-key";
+    process.env.NVIDIA_API_KEY = "nv-key";
+    process.env.OSIRUS_VERIFIED_TOP_MODELS =
+      "nvidia:nvidia/nemotron-3-ultra-550b-a55b";
+    const { impl, calls } = fakeFetch((call) => {
+      if (call.url === OR_MODELS)
+        return Response.json({
+          data: [
+            { id: "acme/gone-70b-pin:free" },
+            { id: "acme/other-70b-pin:free" },
+          ],
+        });
+      if (call.url === NV_MODELS)
+        return Response.json({
+          data: [{ id: "nvidia/nemotron-3-ultra-550b-a55b" }],
+        });
+      if (call.body?.model === "acme/gone-70b-pin:free")
+        return new Response("no such model", { status: 404 });
+      return answer(`from ${String(call.body?.model)}`);
+    });
+    const provider = new GatewayProvider({
+      ref: "openrouter:acme/gone-70b-pin:free",
+      autoFallback: true,
+      fetchImpl: impl,
+    });
+    const result = await provider.complete({
+      requestId: "pin-1",
+      role: "THINKING",
+      messages: [{ role: "user", content: "Hallo" }],
+    });
+    expect(result.text).toBe("from nvidia/nemotron-3-ultra-550b-a55b");
+    const chat = calls.filter((call) => call.url.endsWith("/chat/completions"));
+    expect(chat.map((call) => call.body?.model)).toEqual([
+      "acme/gone-70b-pin:free",
+      "nvidia/nemotron-3-ultra-550b-a55b",
+    ]);
+  });
+
+  it("leaves a rate-limited service for the rest of the call", async () => {
+    process.env.OPENROUTER_API_KEY = "or-key";
+    process.env.NVIDIA_API_KEY = "nv-key";
+    const { impl, calls } = fakeFetch((call) => {
+      if (call.url === OR_MODELS)
+        return Response.json({
+          data: [
+            { id: "acme/busy-70b-pin:free" },
+            { id: "acme/busy-70b-two:free" },
+            { id: "acme/busy-70b-three:free" },
+          ],
+        });
+      if (call.url === NV_MODELS)
+        return Response.json({ data: [{ id: "acme/steady-8b-nv" }] });
+      if (call.url.includes("openrouter"))
+        return new Response("busy", { status: 429 });
+      return answer("steady");
+    });
+    const provider = new GatewayProvider({
+      ref: "openrouter:acme/busy-70b-pin:free",
+      autoFallback: true,
+      fetchImpl: impl,
+    });
+    const events: string[] = [];
+    for await (const event of provider.stream({
+      requestId: "pin-2",
+      role: "THINKING",
+      messages: [{ role: "user", content: "Hallo" }],
+    }))
+      if (event.type === "delta") events.push(event.text);
+    expect(events.join("")).toBe("steady");
+    const chat = calls.filter((call) => call.url.endsWith("/chat/completions"));
+    expect(chat.filter((call) => call.url.includes("openrouter"))).toHaveLength(
+      1,
+    );
+  });
+});
+
 describe("cache, threads and cost", () => {
   it("answers the same conversation from cache, per workspace", () => {
     const messages = [{ role: "user" as const, content: "Hi" }];
