@@ -9,6 +9,7 @@ import {
   listGatewayModels,
   modelPenalty,
   noteModelResult,
+  verifiedFastModels,
   type GatewayModel,
 } from "@/lib/gateway/models";
 import {
@@ -211,10 +212,21 @@ export async function POST(request: Request) {
     limit: 4,
     penalty: (ref) => modelPenalty(ref),
   });
-  const candidates: GatewayModel[] =
-    previous && tierOf(previous) === tier
-      ? [previous, ...ranked.filter((model) => model.ref !== previous.ref)]
-      : ranked;
+  // The free models the runtime sync probed and found answering in about a
+  // second lead the everyday classes: measured beats ranked.
+  const verified =
+    tier === "top"
+      ? []
+      : verifiedFastModels(allowed).filter(
+          (model) => modelPenalty(model.ref) === 0,
+        );
+  const lead = previous && tierOf(previous) === tier ? [previous] : [];
+  const candidates: GatewayModel[] = [...lead, ...verified, ...ranked]
+    .filter(
+      (model, index, list) =>
+        list.findIndex((other) => other.ref === model.ref) === index,
+    )
+    .slice(0, 4);
 
   const sessionId =
     existing?.id ??
@@ -257,6 +269,12 @@ export async function POST(request: Request) {
   const hit = body.regenerate ? null : cachedAnswer(cacheKey);
   let chosen = candidates[0];
   const started = Date.now();
+  const attempts: Array<{
+    model: string;
+    ms: number;
+    firstTokenMs: number;
+    code: string;
+  }> = [];
 
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -334,9 +352,21 @@ export async function POST(request: Request) {
                 );
               }
               noteModelResult(model.ref, { ok: true, firstTokenMs });
+              attempts.push({
+                model: model.ref,
+                ms: Date.now() - attemptStarted,
+                firstTokenMs,
+                code: "ok",
+              });
               break;
             } catch (error) {
               const code = refusalCode(error);
+              attempts.push({
+                model: model.ref,
+                ms: Date.now() - attemptStarted,
+                firstTokenMs,
+                code,
+              });
               if (!request.signal.aborted)
                 noteModelResult(model.ref, {
                   ok: false,
@@ -386,6 +416,19 @@ export async function POST(request: Request) {
         costUsd: usage.costUsd,
       };
       const latencyMs = Date.now() - started;
+      // Operator log (Vercel only, never sent to the browser): which models
+      // were tried and how long each took, to tune routing from evidence.
+      console.info(
+        JSON.stringify({
+          event: "chat.answer",
+          tier,
+          bot: Boolean(bot),
+          cached: Boolean(hit),
+          status,
+          latencyMs,
+          attempts,
+        }),
+      );
       let messageId: string | null = null;
       try {
         if (text.trim()) {

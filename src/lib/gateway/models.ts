@@ -496,6 +496,24 @@ export type PublicModel = {
   contextLength: number | null;
 };
 
+/**
+ * The free models the runtime sync verified with a chat probe
+ * (OSIRUS_FREE_MODEL_PRIMARY/SECONDARY/TERTIARY), in that order, when they
+ * are among the given models.
+ */
+export function verifiedFastModels(models: readonly GatewayModel[]) {
+  const ids = [
+    env.OSIRUS_FREE_MODEL_PRIMARY,
+    env.OSIRUS_FREE_MODEL_SECONDARY,
+    env.OSIRUS_FREE_MODEL_TERTIARY,
+  ].filter((id): id is string => Boolean(id));
+  return ids
+    .map((id) =>
+      models.find((model) => model.provider === "unorouter" && model.id === id),
+    )
+    .filter((model): model is GatewayModel => Boolean(model));
+}
+
 /** One entry per model name (the best-ranked copy), as Code's picker lists them. */
 export function uniqueByName<T extends { name: string }>(models: readonly T[]) {
   const seen = new Set<string>();
