@@ -265,6 +265,8 @@ function bytezModels(provider: ProviderSpec) {
     ?.split(",")
     .map((id) => id.trim())
     .filter(Boolean);
+  // "none": the runtime sync found no Bytez model that answers.
+  if (ids?.length === 1 && ids[0] === "none") return [];
   return parseProviderModels(
     provider,
     (ids?.length ? ids : DEFAULT_BYTEZ_MODELS).map((id) => ({ id })),

@@ -170,8 +170,9 @@ it("finds the top-class models the keys can really use", async () => {
   if (process.env.GITHUB_ENV) {
     const lines = [
       `OSIRUS_UNFUNDED_PROVIDERS=${unfunded.join(",") || "none"}`,
-      ...(bytezServed.length
-        ? [`OSIRUS_BYTEZ_MODELS=${bytezServed.join(",")}`]
+      // Only when Bytez was asked: "none" keeps unserved models off the lists.
+      ...(bytezResults.length
+        ? [`OSIRUS_BYTEZ_MODELS=${bytezServed.join(",") || "none"}`]
         : []),
       ...(verified.length
         ? [`OSIRUS_VERIFIED_TOP_MODELS=${verified.join(",")}`]

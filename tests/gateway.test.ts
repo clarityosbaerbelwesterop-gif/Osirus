@@ -414,6 +414,24 @@ describe("streaming", () => {
     expect(after.models.map((m) => m.id)).toEqual(["qwen/qwen3-235b:free"]);
   });
 
+  it("offers no Bytez model when the sync found none that answers", async () => {
+    process.env.BYTEZ_API_KEY = "bz-key";
+    try {
+      const defaults = await listGatewayModels({
+        fetchImpl: fakeFetch(() => Response.json({ data: [] })).impl,
+      });
+      expect(defaults.models.some((m) => m.provider === "bytez")).toBe(true);
+      resetGatewayModelCache();
+      process.env.OSIRUS_BYTEZ_MODELS = "none";
+      const none = await listGatewayModels({
+        fetchImpl: fakeFetch(() => Response.json({ data: [] })).impl,
+      });
+      expect(none.models.filter((m) => m.provider === "bytez")).toEqual([]);
+    } finally {
+      delete process.env.OSIRUS_BYTEZ_MODELS;
+    }
+  });
+
   it("takes the measured unfunded providers from the runtime sync", async () => {
     process.env.OPENROUTER_API_KEY = "or-key";
     const listing = fakeFetch(() =>
