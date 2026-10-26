@@ -81,6 +81,8 @@ const schema = z.object({
   // (rk_...) over a full secret key.
   STRIPE_SECRET_KEY: z.string().min(1).optional(),
   STRIPE_WEBHOOK_SECRET: z.string().min(1).optional(),
+  /** Signing secret of the endpoint scripts/stripe-setup.mjs created. */
+  STRIPE_WEBHOOK_SECRET_MANAGED: z.string().min(1).optional(),
   STRIPE_PRICE_PRO: z.string().min(1).optional(),
   STRIPE_PRICE_DEVELOPER: z.string().min(1).optional(),
   STRIPE_PRICE_ULTRA_100: z.string().min(1).optional(),

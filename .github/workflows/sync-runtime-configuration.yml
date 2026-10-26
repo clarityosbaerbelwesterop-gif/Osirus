@@ -42,6 +42,11 @@ on:
         required: true
         type: boolean
         default: true
+      stripe:
+        description: Set up and check Stripe (prices, webhook, portal, live signature)
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -113,6 +118,13 @@ jobs:
         env:
           DATABASE_URL: ${{ env.DATABASE_URL || env.NEON_DATABASE_URL }}
         run: node scripts/apply-migrations.mjs
+      - name: Stripe (account, prices, webhook, portal)
+        # A report with fixes; a Stripe outage must not block the redeploy.
+        continue-on-error: true
+        if: github.event_name == 'workflow_dispatch' && inputs.stripe && env.STRIPE_SECRET_KEY != ''
+        env:
+          OSIRUS_PUBLIC_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}
+        run: node scripts/stripe-setup.mjs
       - name: Redeploy production
         # A push to main deploys through the Git integration already.
         if: github.event_name == 'workflow_dispatch' && inputs.redeploy && inputs.target != 'preview'

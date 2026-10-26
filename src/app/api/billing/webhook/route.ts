@@ -21,7 +21,13 @@ const MAX_BYTES = 512 * 1024;
  * checked against STRIPE_WEBHOOK_SECRET is the authentication.
  */
 export async function POST(request: Request) {
-  if (!env.STRIPE_SECRET_KEY || !env.STRIPE_WEBHOOK_SECRET)
+  // The dashboard endpoint's secret and the one scripts/stripe-setup.mjs
+  // created for its own endpoint; a delivery signed with either is genuine.
+  const secrets = [
+    env.STRIPE_WEBHOOK_SECRET,
+    env.STRIPE_WEBHOOK_SECRET_MANAGED,
+  ].filter((secret): secret is string => Boolean(secret));
+  if (!env.STRIPE_SECRET_KEY || secrets.length === 0)
     return Response.json({ error: "billing_not_configured" }, { status: 503 });
   const signature = request.headers.get("stripe-signature");
   if (!signature)
@@ -31,16 +37,17 @@ export async function POST(request: Request) {
     return Response.json({ error: "payload_too_large" }, { status: 413 });
 
   const client = stripe();
-  let event: Stripe.Event;
-  try {
-    event = client.webhooks.constructEvent(
-      payload,
-      signature,
-      env.STRIPE_WEBHOOK_SECRET,
-    );
-  } catch {
-    return Response.json({ error: "invalid_signature" }, { status: 400 });
+  let event: Stripe.Event | null = null;
+  for (const secret of secrets) {
+    try {
+      event = client.webhooks.constructEvent(payload, signature, secret);
+      break;
+    } catch {
+      // try the next secret
+    }
   }
+  if (!event)
+    return Response.json({ error: "invalid_signature" }, { status: 400 });
 
   try {
     const result = await handleStripeEvent(event, {
