@@ -56,6 +56,8 @@ const FAMILY_RANK: Array<[RegExp, number]> = [
   [/deepseek[-.]?(v3|r1|chat|reasoner)/i, 20],
   [/qwen3/i, 22],
   [/kimi[-.]?k2/i, 24],
+  // NVIDIA's frontier MoE (Nemotron 3 Ultra 550B and the older Ultra 253B).
+  [/nemotron[-.](\d+(\.\d+)?[-.])?ultra/i, 25],
   [/glm[-.]?(4\.[5-9]|5)/i, 26],
   [/gemini/i, 28],
   [/claude/i, 30],

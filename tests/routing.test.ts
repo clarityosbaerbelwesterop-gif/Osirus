@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  familyRank,
   noteModelResult,
   resetGatewayModelCache,
   verifiedLead,
@@ -146,6 +147,26 @@ describe("candidates", () => {
     const b = candidatesFor([...MODELS].reverse(), "top", { coding: true })[0]
       .ref;
     expect(a).toBe(b);
+  });
+});
+
+describe("frontier families", () => {
+  it("puts Nemotron Ultra in the top class, other Nemotrons below", () => {
+    expect(familyRank("nvidia/nemotron-3-ultra-550b-a55b:free")).toBeLessThan(
+      30,
+    );
+    expect(
+      tierOf({
+        id: "nvidia/nemotron-3-ultra-550b-a55b:free",
+        rank: familyRank("nvidia/nemotron-3-ultra-550b-a55b:free"),
+      }),
+    ).toBe("top");
+    expect(familyRank("nvidia/llama-3.1-nemotron-ultra-253b-v1")).toBeLessThan(
+      30,
+    );
+    expect(
+      familyRank("nvidia/nemotron-3.5-lightning:free"),
+    ).toBeGreaterThanOrEqual(30);
   });
 });
 
