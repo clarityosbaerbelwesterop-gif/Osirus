@@ -16,6 +16,7 @@ import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
 import {
   listGatewayModels,
   modelPenalty,
+  verifiedLead,
   resolveModelSelection,
 } from "@/lib/gateway/models";
 import { isGatewayRef } from "@/lib/gateway/providers";
@@ -234,17 +235,15 @@ export async function POST(request: Request) {
                 attachments: parsed.data.attachmentIds?.length ?? 0,
               }).tier,
             );
-      const best = candidatesFor(
-        allowed.length
-          ? allowed
-          : listing.models.filter((model) => modelAllowed(model, access)),
-        tier,
-        {
-          coding: surface === "coding",
-          limit: 1,
-          penalty: (ref) => modelPenalty(ref),
-        },
-      )[0];
+      const pool = allowed.length
+        ? allowed
+        : listing.models.filter((model) => modelAllowed(model, access));
+      const best = candidatesFor(pool, tier, {
+        coding: surface === "coding",
+        limit: 1,
+        penalty: (ref) => modelPenalty(ref),
+        lead: verifiedLead(pool, tier),
+      })[0];
       if (best) pinnedModel = best.ref;
     }
   }

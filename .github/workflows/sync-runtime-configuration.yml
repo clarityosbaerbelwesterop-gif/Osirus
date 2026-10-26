@@ -9,6 +9,7 @@ on:
       - scripts/lib/vercel-env.mjs
       - scripts/neon-sync.mjs
       - scripts/lib/neon.mjs
+      - evals/top-models.probe.ts
   workflow_dispatch:
     inputs:
       target:
@@ -65,7 +66,7 @@ jobs:
     # Never expose deployment credentials to arbitrary pull-request code.
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID != '' && vars.VERCEL_TEAM_ID || 'team_5KyyWAPW9vLU4EiaKaYZuhaG' }}
@@ -111,6 +112,16 @@ jobs:
         # A report, not a gate: the key sync must run even if Neon's API is down.
         continue-on-error: true
         run: node scripts/neon-sync.mjs
+      - name: Probe top-class models (real question per model)
+        # Measures which strong models the keys can really use; the sync stores
+        # the ones that answered correctly as OSIRUS_VERIFIED_TOP_MODELS. A
+        # report, not a gate: without a result the ranking alone decides.
+        continue-on-error: true
+        timeout-minutes: 8
+        env:
+          NODE_ENV: test
+          PROBE_OUT: ${{ runner.temp }}/probe-top-models.json
+        run: npx vitest run --config vitest.probe.config.ts --reporter=verbose
       - name: Synchronize GitHub runtime configuration to Vercel
         run: node scripts/sync-vercel-runtime-env.mjs
       - name: Pending migrations (dry run)

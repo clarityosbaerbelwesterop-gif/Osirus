@@ -514,6 +514,43 @@ export function verifiedFastModels(models: readonly GatewayModel[]) {
     .filter((model): model is GatewayModel => Boolean(model));
 }
 
+/**
+ * The top-class models the runtime sync verified with a real question
+ * (OSIRUS_VERIFIED_TOP_MODELS), in that order, when they are among the given
+ * models.
+ */
+export function verifiedTopModels(models: readonly GatewayModel[]) {
+  const refs = (
+    env.OSIRUS_VERIFIED_TOP_MODELS ??
+    process.env.OSIRUS_VERIFIED_TOP_MODELS ??
+    ""
+  )
+    .split(",")
+    .map((ref) => ref.trim())
+    .filter(Boolean);
+  return refs
+    .map((ref) => models.find((model) => model.ref === ref))
+    .filter((model): model is GatewayModel => Boolean(model));
+}
+
+/**
+ * The measured models that lead a class: the probed top models for "top",
+ * the probed fast free ones otherwise. One that failed or was slow recently
+ * steps back into the ranked list; `reasoning` keeps only thinking models.
+ */
+export function verifiedLead(
+  models: readonly GatewayModel[],
+  tier: ModelTier,
+  options: { reasoning?: boolean } = {},
+) {
+  const verified =
+    tier === "top" ? verifiedTopModels(models) : verifiedFastModels(models);
+  return verified.filter(
+    (model) =>
+      modelPenalty(model.ref) === 0 && (!options.reasoning || model.reasoning),
+  );
+}
+
 /** One entry per model name (the best-ranked copy), as Code's picker lists them. */
 export function uniqueByName<T extends { name: string }>(models: readonly T[]) {
   const seen = new Set<string>();

@@ -397,6 +397,18 @@ const variables = [
   ]
     .filter(([, value]) => Boolean(value))
     .map(([key, value]) => ({ key, value, type: "plain" })),
+  // Top-class models that answered the probe step correctly and in time.
+  ...(/^[a-z]+:\S+(,[a-z]+:\S+)*$/.test(
+    process.env.OSIRUS_VERIFIED_TOP_MODELS ?? "",
+  )
+    ? [
+        {
+          key: "OSIRUS_VERIFIED_TOP_MODELS",
+          value: process.env.OSIRUS_VERIFIED_TOP_MODELS,
+          type: "plain",
+        },
+      ]
+    : []),
   ...(roleModel === "grok-4.6"
     ? [
         {

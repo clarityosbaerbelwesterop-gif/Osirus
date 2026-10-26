@@ -9,7 +9,7 @@ import {
   listGatewayModels,
   modelPenalty,
   noteModelResult,
-  verifiedFastModels,
+  verifiedLead,
   type GatewayModel,
 } from "@/lib/gateway/models";
 import {
@@ -206,27 +206,19 @@ export async function POST(request: Request) {
         ),
       }).tier;
   const tier = previous ? higherTier(tierOf(previous), wanted) : wanted;
-  const ranked = candidatesFor(allowed, tier, {
+  const thinks = !bot && tier === "top" && wantsReasoning(body.message);
+  // The thread's model stays first; then the models the runtime sync measured
+  // answering correctly and fast (measured beats ranked); then the ranking.
+  const candidates: GatewayModel[] = candidatesFor(allowed, tier, {
     coding: bot ? botWantsCoding(bot) : false,
-    reasoning: !bot && tier === "top" && wantsReasoning(body.message),
+    reasoning: thinks,
     limit: 4,
     penalty: (ref) => modelPenalty(ref),
+    lead: [
+      ...(previous && tierOf(previous) === tier ? [previous] : []),
+      ...verifiedLead(allowed, tier, { reasoning: thinks }),
+    ],
   });
-  // The free models the runtime sync probed and found answering in about a
-  // second lead the everyday classes: measured beats ranked.
-  const verified =
-    tier === "top"
-      ? []
-      : verifiedFastModels(allowed).filter(
-          (model) => modelPenalty(model.ref) === 0,
-        );
-  const lead = previous && tierOf(previous) === tier ? [previous] : [];
-  const candidates: GatewayModel[] = [...lead, ...verified, ...ranked]
-    .filter(
-      (model, index, list) =>
-        list.findIndex((other) => other.ref === model.ref) === index,
-    )
-    .slice(0, 4);
 
   const sessionId =
     existing?.id ??

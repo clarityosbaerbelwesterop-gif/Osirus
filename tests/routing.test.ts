@@ -1,5 +1,11 @@
-import { describe, expect, it } from "vitest";
-import type { GatewayModel } from "@/lib/gateway/models";
+import { afterEach, describe, expect, it } from "vitest";
+import {
+  noteModelResult,
+  resetGatewayModelCache,
+  verifiedLead,
+  verifiedTopModels,
+  type GatewayModel,
+} from "@/lib/gateway/models";
 import {
   botTier,
   botWantsCoding,
@@ -140,5 +146,49 @@ describe("candidates", () => {
     const b = candidatesFor([...MODELS].reverse(), "top", { coding: true })[0]
       .ref;
     expect(a).toBe(b);
+  });
+});
+
+describe("measured models lead", () => {
+  afterEach(() => {
+    delete process.env.OSIRUS_VERIFIED_TOP_MODELS;
+    resetGatewayModelCache();
+  });
+
+  it("puts lead models first, once, and keeps the limit", () => {
+    const lead = MODELS.filter((m) => tierOf(m) === "balanced").slice(0, 1);
+    const list = candidatesFor(MODELS, "top", { lead, limit: 3 });
+    expect(list[0].ref).toBe(lead[0].ref);
+    expect(list).toHaveLength(3);
+    expect(new Set(list.map((m) => m.ref)).size).toBe(3);
+  });
+
+  it("leads the top class with the probed top models, in probe order", () => {
+    const top = MODELS.filter((m) => tierOf(m) === "top");
+    const [a, b] = [top.at(-1)!, top[0]];
+    process.env.OSIRUS_VERIFIED_TOP_MODELS = `${a.ref}, openrouter:gone/model ,${b.ref}`;
+    expect(verifiedTopModels(MODELS).map((m) => m.ref)).toEqual([a.ref, b.ref]);
+    expect(verifiedLead(MODELS, "top").map((m) => m.ref)).toEqual([
+      a.ref,
+      b.ref,
+    ]);
+    expect(
+      candidatesFor(MODELS, "top", { lead: verifiedLead(MODELS, "top") })[0]
+        .ref,
+    ).toBe(a.ref);
+  });
+
+  it("drops a probed model that failed since, and non-thinkers for proofs", () => {
+    const top = MODELS.filter((m) => tierOf(m) === "top");
+    process.env.OSIRUS_VERIFIED_TOP_MODELS = top.map((m) => m.ref).join(",");
+    noteModelResult(top[0].ref, { ok: false, firstTokenMs: 0 });
+    expect(verifiedLead(MODELS, "top").map((m) => m.ref)).not.toContain(
+      top[0].ref,
+    );
+    expect(
+      verifiedLead(MODELS, "top", { reasoning: true }).every(
+        (m) => m.reasoning,
+      ),
+    ).toBe(true);
   });
 });
