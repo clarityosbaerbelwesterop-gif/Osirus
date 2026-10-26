@@ -250,6 +250,16 @@ const DEFAULT_BYTEZ_MODELS = [
   "google/gemma-3-4b-it",
 ];
 
+/**
+ * Bytez models the runtime sync tries with a real question; those that answer
+ * become OSIRUS_BYTEZ_MODELS, so the lists only offer what Bytez serves.
+ */
+export const BYTEZ_CANDIDATES = [
+  ...DEFAULT_BYTEZ_MODELS,
+  "Qwen/Qwen3.8-27B-FP8",
+  "Qwen/Qwen3.8-Flash-Next",
+];
+
 function bytezModels(provider: ProviderSpec) {
   const ids = (env.OSIRUS_BYTEZ_MODELS ?? process.env.OSIRUS_BYTEZ_MODELS)
     ?.split(",")

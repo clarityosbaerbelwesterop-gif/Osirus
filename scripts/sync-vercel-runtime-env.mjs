@@ -155,7 +155,17 @@ for (const probe of probes)
   console.log(
     `Chat probe ${probe.id}: HTTP ${probe.status} ${probe.category} (${probe.latencyMs} ms)`,
   );
-const [freePrimary, freeSecondary, freeTertiary] = verifiedTiers;
+// Only an answer proves a model works. When every probe was rate limited
+// (often right after another probe run), the tiers verified last time stay
+// in Vercel instead of being replaced by unverified list order.
+const freeTiersAnswered = probes.some((probe) => probe.ok);
+if (probes.length && !freeTiersAnswered)
+  console.log(
+    "Notice: no free model answered (rate limited); keeping the free tiers verified last time.",
+  );
+const [freePrimary, freeSecondary, freeTertiary] = freeTiersAnswered
+  ? verifiedTiers
+  : [];
 console.log(
   `Model policy: ${modelPolicy}; roles: ${roleModel}; free tiers: ${
     [freePrimary, freeSecondary, freeTertiary].filter(Boolean).join(", ") ||
@@ -405,6 +415,16 @@ const variables = [
         {
           key: "OSIRUS_VERIFIED_TOP_MODELS",
           value: process.env.OSIRUS_VERIFIED_TOP_MODELS,
+          type: "plain",
+        },
+      ]
+    : []),
+  // Bytez models that answered the probe (Bytez is too large to list).
+  ...(/^[\w.\-/]+(,[\w.\-/]+)*$/.test(process.env.OSIRUS_BYTEZ_MODELS ?? "")
+    ? [
+        {
+          key: "OSIRUS_BYTEZ_MODELS",
+          value: process.env.OSIRUS_BYTEZ_MODELS,
           type: "plain",
         },
       ]

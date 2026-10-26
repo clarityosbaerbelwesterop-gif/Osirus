@@ -1,6 +1,12 @@
 import { appendFileSync, writeFileSync } from "node:fs";
 import { expect, it } from "vitest";
-import { listGatewayModels, type GatewayModel } from "@/lib/gateway/models";
+import {
+  BYTEZ_CANDIDATES,
+  listGatewayModels,
+  parseProviderModels,
+  type GatewayModel,
+} from "@/lib/gateway/models";
+import { providerById } from "@/lib/gateway/providers";
 import { candidatesFor, tierOf } from "@/lib/gateway/routing";
 import { completeGateway } from "@/lib/gateway/stream";
 
@@ -15,7 +21,9 @@ import { completeGateway } from "@/lib/gateway/stream";
 
 const QUESTION =
   "Ein Lager hat 17 Regale mit je 23 Kisten. Wie viele Kisten sind es? Antworte nur mit der Zahl.";
-const FREE_PER_PROVIDER = 6;
+// Few free calls per provider: the runtime sync probes the same free pool
+// right after this and must not find it rate limited.
+const FREE_PER_PROVIDER = 4;
 const PAID_PER_PROVIDER = 2;
 const CONCURRENCY = 6;
 const TIMEOUT_MS = 40_000;
@@ -95,9 +103,10 @@ it("finds the top-class models the keys can really use", async () => {
     console.log(
       `provider ${provider.id}: ${provider.ok ? "listed" : "list unreadable"}, ${provider.models} chat models`,
     );
+  // Bytez is probed below from its candidate list.
   const picked = pick(
     models,
-    providers.map((provider) => provider.id),
+    providers.map((provider) => provider.id).filter((id) => id !== "bytez"),
   );
   console.log(`probing ${picked.length} top-class models`);
 
@@ -113,16 +122,39 @@ it("finds the top-class models the keys can really use", async () => {
       `${row.correct ? "PASS " : "FAIL "} ${row.ref} (${row.free ? "free" : "paid"}${row.reasoning ? ", thinks" : ""}) ${row.ms} ms ${row.outcome}`,
     );
 
-  const verified = results
+  // Bytez hosts too many models to list: every candidate gets the question,
+  // and only those that answer are offered.
+  const bytez = providerById("bytez");
+  const bytezResults = bytez
+    ? await Promise.all(
+        parseProviderModels(
+          bytez,
+          BYTEZ_CANDIDATES.map((id) => ({ id })),
+        ).map(probe),
+      )
+    : [];
+  for (const row of bytezResults)
+    console.log(
+      `${row.correct ? "PASS " : "FAIL "} ${row.ref} ${row.ms} ms ${row.outcome}`,
+    );
+  const bytezServed = bytezResults
+    .filter((row) => row.correct)
+    .map((row) => row.ref.slice("bytez:".length));
+
+  const verified = [
+    ...results,
+    ...bytezResults.filter(
+      (row) => tierOf({ id: row.ref, rank: row.rank }) === "top",
+    ),
+  ]
     .filter((row) => row.correct && row.ms <= MAX_MS)
     .sort((a, b) => a.rank - b.rank || a.ms - b.ms)
     .slice(0, KEEP)
     .map((row) => row.ref);
-  const unfunded = [...new Set(results.map((row) => row.provider))].filter(
+  const all = [...results, ...bytezResults];
+  const unfunded = [...new Set(all.map((row) => row.provider))].filter(
     (provider) => {
-      const paid = results.filter(
-        (row) => row.provider === provider && !row.free,
-      );
+      const paid = all.filter((row) => row.provider === provider && !row.free);
       return (
         paid.length > 0 &&
         paid.every((row) => row.outcome === "insufficient_credit")
@@ -131,13 +163,16 @@ it("finds the top-class models the keys can really use", async () => {
   );
   writeFileSync(
     process.env.PROBE_OUT ?? "probe-top-models.json",
-    JSON.stringify({ verified, unfunded, results }, null, 2),
+    JSON.stringify({ verified, unfunded, results: all }, null, 2),
   );
   console.log(`verified top models: ${verified.join(", ") || "none"}`);
   console.log(`paid models without credit: ${unfunded.join(", ") || "none"}`);
   if (process.env.GITHUB_ENV) {
     const lines = [
       `OSIRUS_UNFUNDED_PROVIDERS=${unfunded.join(",") || "none"}`,
+      ...(bytezServed.length
+        ? [`OSIRUS_BYTEZ_MODELS=${bytezServed.join(",")}`]
+        : []),
       ...(verified.length
         ? [`OSIRUS_VERIFIED_TOP_MODELS=${verified.join(",")}`]
         : []),
