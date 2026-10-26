@@ -7,6 +7,8 @@ on:
       - .github/workflows/sync-runtime-configuration.yml
       - scripts/sync-vercel-runtime-env.mjs
       - scripts/lib/vercel-env.mjs
+      - scripts/neon-sync.mjs
+      - scripts/lib/neon.mjs
   workflow_dispatch:
     inputs:
       target:
@@ -30,6 +32,16 @@ on:
         required: true
         type: boolean
         default: false
+      migrate:
+        description: Apply pending db/migrations to the Neon production database
+        required: true
+        type: boolean
+        default: true
+      redeploy:
+        description: Redeploy production so the synced keys take effect
+        required: true
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -58,6 +70,10 @@ jobs:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       BYTEZ_API_KEY: ${{ secrets.BYTEZ_API_KEY }}
       LIGHTNING_AI_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+      # Sign-ins that use every model without plan limits; a variable, not a secret.
+      OSIRUS_OWNER_EMAILS: ${{ vars.OSIRUS_OWNER_EMAILS }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID != '' && vars.NEON_PROJECT_ID || 'super-voice-69875601' }}
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
       STRIPE_PRICE_PRO: ${{ secrets.STRIPE_PRICE_PRO }}
@@ -81,5 +97,21 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Check Neon (region, schema)
+        run: node scripts/neon-sync.mjs
       - name: Synchronize GitHub runtime configuration to Vercel
         run: node scripts/sync-vercel-runtime-env.mjs
+      - name: Pending migrations (dry run)
+        if: env.DATABASE_URL != '' || env.NEON_DATABASE_URL != ''
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL || env.NEON_DATABASE_URL }}
+        run: node scripts/apply-migrations.mjs --dry-run
+      - name: Apply migrations
+        if: github.event_name == 'workflow_dispatch' && inputs.migrate && (env.DATABASE_URL != '' || env.NEON_DATABASE_URL != '')
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL || env.NEON_DATABASE_URL }}
+        run: node scripts/apply-migrations.mjs
+      - name: Redeploy production
+        # A push to main deploys through the Git integration already.
+        if: github.event_name == 'workflow_dispatch' && inputs.redeploy && inputs.target != 'preview'
+        run: node scripts/vercel-redeploy.mjs

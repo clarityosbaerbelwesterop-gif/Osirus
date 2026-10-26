@@ -211,6 +211,9 @@ if (bytezKey) {
 }
 
 const lightningKey = optionalSecret(process.env.LIGHTNING_AI_API_KEY);
+// Sign-ins that use every model without the free plan's limits (the
+// operator's own keys). A repository variable, not a secret.
+const ownerEmails = optionalSecret(process.env.OSIRUS_OWNER_EMAILS);
 if (lightningKey) {
   console.log("LIGHTNING_AI_API_KEY is present and will be synced to Vercel.");
 }
@@ -498,6 +501,15 @@ const variables = [
         },
       ]
     : []),
+  ...(ownerEmails
+    ? [
+        {
+          key: "OSIRUS_OWNER_EMAILS",
+          value: ownerEmails,
+          type: "encrypted",
+        },
+      ]
+    : []),
   ...(stripeSecretKey
     ? [
         {
@@ -547,10 +559,24 @@ const afterResponse = await vercelRequest(
 );
 const afterSync = Array.isArray(afterResponse.envs) ? afterResponse.envs : [];
 const verificationFailures = [];
+// Every provider and billing key that was sent must now be readable by
+// the deployment, not only the UNOROUTER pool.
+const sentOptionalKeys = [
+  ["NVIDIA_API_KEY", nvidiaKey],
+  ["OPENROUTER_API_KEY", openRouterKey],
+  ["BYTEZ_API_KEY", bytezKey],
+  ["LIGHTNING_AI_API_KEY", lightningKey],
+  ["OSIRUS_OWNER_EMAILS", ownerEmails],
+  ["STRIPE_SECRET_KEY", stripeSecretKey],
+  ["STRIPE_WEBHOOK_SECRET", stripeWebhookSecret],
+]
+  .filter(([, value]) => Boolean(value))
+  .map(([key]) => key);
 for (const key of [
   ...UNOROUTER_KEY_NAMES,
   ...MODEL_ROLE_KEYS,
   "OSIRUS_MODEL_POLICY",
+  ...sentOptionalKeys,
 ]) {
   const missing = uncoveredTargets(afterSync, key, targets, syncGitBranch);
   const stale = staleTargets(
