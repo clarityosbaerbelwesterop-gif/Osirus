@@ -1314,3 +1314,21 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/*
+ * Reduced motion, everywhere: entrance animations finish at once and wait
+ * for no delay, so nothing sits half-faded (and below contrast) for anyone
+ * who asked the system for less motion. Loaded last, so it wins.
+ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-delay: 0ms !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-delay: 0ms !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}
