@@ -47,6 +47,11 @@ on:
         required: true
         type: boolean
         default: true
+      public_production:
+        description: Narrow Vercel Deployment Protection to previews when it blocks production
+        required: true
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -118,6 +123,12 @@ jobs:
         env:
           DATABASE_URL: ${{ env.DATABASE_URL || env.NEON_DATABASE_URL }}
         run: node scripts/apply-migrations.mjs
+      - name: Production reachable (Deployment Protection)
+        continue-on-error: true
+        env:
+          OSIRUS_PUBLIC_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}
+          OSIRUS_PUBLIC_PRODUCTION: ${{ inputs.public_production && 'true' || 'false' }}
+        run: node scripts/vercel-protection.mjs
       - name: Stripe (account, prices, webhook, portal)
         # A report with fixes; a Stripe outage must not block the redeploy.
         continue-on-error: true

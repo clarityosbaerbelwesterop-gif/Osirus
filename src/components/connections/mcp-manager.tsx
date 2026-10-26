@@ -57,6 +57,38 @@ type RegistryResult = {
   localOnly: boolean;
 };
 
+/**
+ * Well-known remote MCP servers. One click fills the form; "Add and test"
+ * still checks the server and lists its tools for review.
+ */
+const QUICK_START = [
+  {
+    name: "GitHub",
+    url: "https://api.githubcopilot.com/mcp/",
+    token: "GitHub Personal Access Token",
+  },
+  {
+    name: "Neon",
+    url: "https://mcp.neon.tech/mcp",
+    token: "Neon API Key",
+  },
+  {
+    name: "Cloudflare Docs",
+    url: "https://docs.mcp.cloudflare.com/mcp",
+    token: null,
+  },
+  {
+    name: "Context7 (Docs)",
+    url: "https://mcp.context7.com/mcp",
+    token: null,
+  },
+  {
+    name: "DeepWiki",
+    url: "https://mcp.deepwiki.com/mcp",
+    token: null,
+  },
+] as const;
+
 function AddServerForm({
   onDone,
   onCancel,
@@ -73,6 +105,7 @@ function AddServerForm({
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState<RegistryResult[] | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [tokenHint, setTokenHint] = useState<string | null>(null);
 
   const search = async () => {
     setSearching(true);
@@ -125,6 +158,29 @@ function AddServerForm({
         </span>
       </div>
       <div className="stack">
+        <div>
+          <p className="field-label">Schnellstart</p>
+          <div className="row row-wrap" aria-label="Bekannte MCP-Server">
+            {QUICK_START.map((server) => (
+              <button
+                key={server.name}
+                type="button"
+                className="btn btn-sm btn-secondary"
+                onClick={() => {
+                  setName(server.name);
+                  setUrl(server.url);
+                  setTokenHint(server.token);
+                }}
+              >
+                {server.name}
+              </button>
+            ))}
+          </div>
+          <p className="subtle">
+            Vercel und Supabase verbindest du unten per Token, GitHub für Code
+            über die GitHub-Verbindung.
+          </p>
+        </div>
         <div className="row row-wrap">
           <Field
             label="Find in the MCP Registry"
@@ -221,7 +277,7 @@ function AddServerForm({
         )}
       </Field>
       <Field
-        label="Bearer token (optional)"
+        label={tokenHint ? `${tokenHint}` : "Bearer token (optional)"}
         hint="Stored encrypted. Never shown again and never given to the model."
         error={error}
       >

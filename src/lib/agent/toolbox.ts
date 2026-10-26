@@ -161,21 +161,23 @@ export async function buildToolbox(
   // MCP tools the workspace reviewed and enabled. Always external and high
   // risk, so every call goes through the approval gate. Skipped for injected
   // stores (the arena), which run without a database.
-  // Connectors (MCP and platform tokens) are offered only to a coding run.
-  // Chat, agent, and bot do not receive them, and a missing grant is not
-  // described as if the tools had been used.
+  // Connectors (MCP and platform tokens) are offered to Code and to the
+  // Rouge Agent. The plain chat and bots do not receive them, and a missing
+  // grant is not described as if the tools had been used.
   if (!runtime.stores) {
-    let codingRun = false;
+    let connectorRun = false;
     try {
       const { codingGrantFromRunInput } = await import("../product/surfaces");
       const input = await context.runtime.repository.getRunInput?.(
         context.work.runId,
       );
-      codingRun = Boolean(codingGrantFromRunInput(input));
+      connectorRun =
+        Boolean(codingGrantFromRunInput(input)) ||
+        (input as { surface?: unknown } | null)?.surface === "agent";
     } catch {
-      codingRun = false;
+      connectorRun = false;
     }
-    if (codingRun) {
+    if (connectorRun) {
       try {
         const { mcpToolsForWorkspace } =
           await import("../connectors/mcp-store");
