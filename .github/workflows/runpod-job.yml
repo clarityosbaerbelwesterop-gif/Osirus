@@ -36,7 +36,7 @@ jobs:
   pod:
     runs-on: ubuntu-latest
     environment: RUNPOD
-    timeout-minutes: 350          # Notbremse; Warten endet spaetestens 15 min davor
+    timeout-minutes: 350 # Notbremse; Warten endet spaetestens 15 min davor
     outputs:
       detached: ${{ steps.wait.outputs.detached }}
       run_id: ${{ steps.run.outputs.run_id }}
@@ -45,20 +45,20 @@ jobs:
       status_id: ${{ steps.pod.outputs.status_id }}
       deadline: ${{ steps.pod.outputs.deadline }}
     env:
-      BUDGET_CAP: "5.00"          # feste Obergrenze pro Job in USD
+      BUDGET_CAP: "5.00" # feste Obergrenze pro Job in USD
       MAX_MINUTES: "300"
-      HARD_MAX_CPU_PRICE: "2.00"  # USD/h; teurerer Pod wird sofort geloescht
-      GPU_BUDGET_CAP: "110.00"    # feste Obergrenze pro GPU-Job in USD
-      LONG_BUDGET_CAP: "460.00"   # Langlauf (hours=N): Obergrenze in USD (Owner: hoechstens 300-400 EUR)
+      HARD_MAX_CPU_PRICE: "2.00" # USD/h; teurerer Pod wird sofort geloescht
+      GPU_BUDGET_CAP: "110.00" # feste Obergrenze pro GPU-Job in USD
+      LONG_BUDGET_CAP: "460.00" # Langlauf (hours=N): Obergrenze in USD (Owner: hoechstens 300-400 EUR)
       LONG_MAX_HOURS: "24"
-      HARD_MAX_GPU_PRICE: "9.00"  # USD/h je GPU
-      HARD_MAX_GW_PRICE: "3.00"   # USD/h fuer den Gateway-Pod (gpu=.../any)
-      GW_GPUS: "RTX PRO 6000|L40S|RTX 5090|RTX 4090|RTX A6000|A40|L4"  # Gateway, wenn keine CPU frei ist
-      LOCAL_GB: "400"             # lokale Platte des Trainings-Pods bei gpu=.../any
-      GPU_MAX_MINUTES: "300"      # GPU-Pod hoechstens 5 h; der GitHub-Job endet nach 350 min
-      STOCK_WAIT_MIN: "45"        # so lange wird auf freie GPUs gewartet (kostet nichts)
+      HARD_MAX_GPU_PRICE: "9.00" # USD/h je GPU
+      HARD_MAX_GW_PRICE: "3.00" # USD/h fuer den Gateway-Pod (gpu=.../any)
+      GW_GPUS: "RTX PRO 6000|L40S|RTX 5090|RTX 4090|RTX A6000|A40|L4" # Gateway, wenn keine CPU frei ist
+      LOCAL_GB: "400" # lokale Platte des Trainings-Pods bei gpu=.../any
+      GPU_MAX_MINUTES: "300" # GPU-Pod hoechstens 5 h; der GitHub-Job endet nach 350 min
+      STOCK_WAIT_MIN: "45" # so lange wird auf freie GPUs gewartet (kostet nichts)
       JOB_MAX_MIN: "350"
-      CPU_FLAVORS: '["cpu3c","cpu3g","cpu5c","cpu5g"]'  # RunPod waehlt eine verfuegbare Familie
+      CPU_FLAVORS: '["cpu3c","cpu3g","cpu5c","cpu5g"]' # RunPod waehlt eine verfuegbare Familie
       IMAGE: "runpod/base@sha256:e6eb5a38bd3b321f41e7c584334c9ebc15e1e529574c7f2c866d148990cfb817"
       BRANCH: claude/gitops-multi-model-finetuning-ort4m9
       REPO67: clarityosbaerbelwesterop-gif/67
@@ -466,7 +466,7 @@ jobs:
 
       - name: Ergebnis als Artefakt
         if: always() && steps.run.outputs.job != 'account'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: job-${{ steps.run.outputs.run_id }}
           path: out/
@@ -567,7 +567,7 @@ jobs:
 
       - name: Status als Artefakt
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: job-${{ needs.pod.outputs.run_id }}-watch-1
           path: out/
@@ -620,7 +620,7 @@ jobs:
 
       - name: Status als Artefakt
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: job-${{ needs.pod.outputs.run_id }}-watch-2
           path: out/
@@ -673,7 +673,7 @@ jobs:
 
       - name: Status als Artefakt
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: job-${{ needs.pod.outputs.run_id }}-watch-3
           path: out/
@@ -726,7 +726,7 @@ jobs:
 
       - name: Status als Artefakt
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: job-${{ needs.pod.outputs.run_id }}-watch-4
           path: out/

@@ -11,11 +11,6 @@ import {
   codingToolsNeeded,
   routeCodingEffort,
 } from "@/lib/product/effort-router";
-import {
-  NVIDIA_TOP_MODELS,
-  PRODUCT_MODEL_ALLOWLIST,
-} from "@/config/recommendations";
-import { productModelOrDefault } from "@/lib/models/allowlist";
 import { draftAfterSurfaceChange, type EffortId } from "@/lib/product/surfaces";
 import type { RunSnapshot } from "@/lib/runtime/types";
 import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
@@ -29,6 +24,9 @@ import { TopBar } from "../shell/top-bar";
 import { Badge } from "../ui/badge";
 import { EffortField } from "./effort-field";
 import { EffortMotion } from "./effort-motion";
+import { Code2, GitBranch, ShieldCheck, Wand2 } from "lucide-react";
+import { ModelPicker } from "../agents-chat/model-picker";
+import { useGatewayModels } from "../agents-chat/use-models";
 
 type Repo = {
   owner: string;
@@ -65,12 +63,14 @@ export function CodingSurface(props: {
   const [repoKey, setRepoKey] = useState("");
   const [branches, setBranches] = useState<string[] | null>(null);
   const [branch, setBranch] = useState("");
-  const [model, setModel] = useState(() =>
-    props.initialModel &&
-    (PRODUCT_MODEL_ALLOWLIST as readonly string[]).includes(props.initialModel)
-      ? productModelOrDefault(props.initialModel)
-      : NVIDIA_TOP_MODELS[0],
-  );
+  // Every model a configured key can call; the choice is remembered here.
+  const {
+    models: gatewayModels,
+    freeOnly,
+    error: modelsError,
+    selected: model,
+    choose: setModel,
+  } = useGatewayModels("osirus.code.model");
   const [chosen, setChosen] = useState<EffortId | null>(
     props.initialEffortChosen ? props.initialEffort : null,
   );
@@ -261,7 +261,7 @@ export function CodingSurface(props: {
           effort: chosen,
           effortChosen: chosen !== null,
           permission,
-          model,
+          ...(model ? { model } : {}),
         },
       }),
     }).catch(() => null);
@@ -360,7 +360,7 @@ export function CodingSurface(props: {
     <div className="chat-page">
       <div className="chat-column">
         <TopBar
-          title="Coding"
+          title="Code"
           status={
             paused ? (
               <Badge tone="warning">Paused</Badge>
@@ -391,8 +391,27 @@ export function CodingSurface(props: {
                 }
               />
             ) : (
-              <div className="home home-calm">
-                <p className="home-title">Coding</p>
+              <div className="code-hero">
+                <div className="code-hero-icon" aria-hidden="true">
+                  <Code2 size={26} />
+                </div>
+                <h1 className="code-hero-title">Code</h1>
+                <p className="code-hero-sub">
+                  Repository und Branch wählen, Aufgabe beschreiben. Osirus
+                  ändert den Code in einer Sandbox, führt die Tests aus und
+                  zeigt dir den Diff, bevor etwas zurückgeschrieben wird.
+                </p>
+                <ol className="code-steps">
+                  <li style={{ ["--d" as string]: "0ms" }}>
+                    <GitBranch size={15} aria-hidden="true" /> Repository wählen
+                  </li>
+                  <li style={{ ["--d" as string]: "60ms" }}>
+                    <Wand2 size={15} aria-hidden="true" /> Aufgabe beschreiben
+                  </li>
+                  <li style={{ ["--d" as string]: "120ms" }}>
+                    <ShieldCheck size={15} aria-hidden="true" /> Diff prüfen
+                  </li>
+                </ol>
               </div>
             )}
             <EffortMotion
@@ -410,150 +429,146 @@ export function CodingSurface(props: {
             ) : null}
           </div>
         </div>
-        <form
-          className="composer"
-          onSubmit={(event) => {
-            event.preventDefault();
-            const slash = codingSlash(task);
-            if (slash) {
-              if (slash === "pause") void control("pause");
-              else if (slash === "resume") void control("resume");
-              else if (slash === "accept-edits")
-                void setPermission("accept-edits");
-              else if (slash === "ask") void setPermission("ask");
-              else setFailure("That is not a command.");
-              if (slash !== "unknown") setFailure(null);
-              setTask("");
-              return;
-            }
-            void start();
-          }}
-        >
-          {failure ? (
-            <p className="composer-error" role="alert">
-              {failure}
-            </p>
-          ) : null}
-          <div className="coding-picks">
-            <label>
-              Repository
-              <select
-                aria-label="Repository"
-                value={repoKey}
-                disabled={running || paused || !repos?.length}
-                onChange={(event) => {
-                  setFailure(repos?.length ? null : failure);
-                  setBranches(null);
-                  setBranch("");
-                  setRepoKey(event.target.value);
-                }}
-              >
-                <option value="">Choose a repository</option>
-                {repos?.map((repo) => (
-                  <option
-                    key={`${repo.owner}/${repo.name}`}
-                    value={`${repo.owner}/${repo.name}`}
-                  >
-                    {repo.owner}/{repo.name}
-                  </option>
-                ))}
-              </select>
+        <div className="code-dock">
+          <form
+            className="code-composer"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const slash = codingSlash(task);
+              if (slash) {
+                if (slash === "pause") void control("pause");
+                else if (slash === "resume") void control("resume");
+                else if (slash === "accept-edits")
+                  void setPermission("accept-edits");
+                else if (slash === "ask") void setPermission("ask");
+                else setFailure("That is not a command.");
+                if (slash !== "unknown") setFailure(null);
+                setTask("");
+                return;
+              }
+              void start();
+            }}
+          >
+            {failure ? (
+              <p className="composer-error" role="alert">
+                {failure}
+              </p>
+            ) : null}
+            <div className="coding-picks">
+              <label>
+                Repository
+                <select
+                  aria-label="Repository"
+                  value={repoKey}
+                  disabled={running || paused || !repos?.length}
+                  onChange={(event) => {
+                    setFailure(repos?.length ? null : failure);
+                    setBranches(null);
+                    setBranch("");
+                    setRepoKey(event.target.value);
+                  }}
+                >
+                  <option value="">Repository wählen</option>
+                  {repos?.map((repo) => (
+                    <option
+                      key={`${repo.owner}/${repo.name}`}
+                      value={`${repo.owner}/${repo.name}`}
+                    >
+                      {repo.owner}/{repo.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Branch
+                <select
+                  aria-label="Branch"
+                  value={branch}
+                  disabled={running || paused || !branches?.length}
+                  onChange={(event) => {
+                    setFailure(null);
+                    setBranch(event.target.value);
+                  }}
+                >
+                  <option value="">Branch wählen</option>
+                  {branches?.map((name) => (
+                    <option key={name} value={name}>
+                      {name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <div className="coding-model">
+                <span className="coding-model-label">Modell</span>
+                <ModelPicker
+                  models={gatewayModels}
+                  value={model}
+                  onChange={setModel}
+                  disabled={running || paused}
+                  freeOnly={freeOnly}
+                  error={modelsError}
+                />
+              </div>
+              {running || paused ? null : (
+                <EffortField
+                  chosen={chosen}
+                  suggestion={task.trim() ? suggestion : null}
+                  onChoose={setChosen}
+                />
+              )}
+            </div>
+            <label className="sr-only" htmlFor="coding-task">
+              Aufgabe
             </label>
-            <label>
-              Branch
-              <select
-                aria-label="Branch"
-                value={branch}
-                disabled={running || paused || !branches?.length}
-                onChange={(event) => {
-                  setFailure(null);
-                  setBranch(event.target.value);
-                }}
-              >
-                <option value="">Choose a branch</option>
-                {branches?.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Model
-              <select
-                aria-label="Model"
-                value={model}
-                disabled={running || paused}
-                onChange={(event) =>
-                  setModel(productModelOrDefault(event.target.value))
+            <textarea
+              id="coding-task"
+              className="composer-input"
+              value={task}
+              rows={2}
+              placeholder="Was soll sich ändern?"
+              onChange={(event) => setTask(event.target.value)}
+            />
+            <div className="composer-bar">
+              <button
+                type="button"
+                className="btn btn-sm"
+                aria-pressed={permission === "accept-edits"}
+                onClick={() =>
+                  void setPermission(
+                    permission === "accept-edits" ? "ask" : "accept-edits",
+                  )
                 }
               >
-                {NVIDIA_TOP_MODELS.map((id) => (
-                  <option key={id} value={id}>
-                    {id}
-                  </option>
-                ))}
-              </select>
-            </label>
-            {running || paused ? null : (
-              <EffortField
-                chosen={chosen}
-                suggestion={task.trim() ? suggestion : null}
-                onChoose={setChosen}
-              />
-            )}
-          </div>
-          <label className="sr-only" htmlFor="coding-task">
-            Task
-          </label>
-          <textarea
-            id="coding-task"
-            className="composer-input"
-            value={task}
-            rows={2}
-            placeholder="What should change?"
-            onChange={(event) => setTask(event.target.value)}
-          />
-          <div className="composer-bar">
-            <button
-              type="button"
-              className="btn btn-sm"
-              aria-pressed={permission === "accept-edits"}
-              onClick={() =>
-                void setPermission(
-                  permission === "accept-edits" ? "ask" : "accept-edits",
-                )
-              }
-            >
-              Accept edits
-            </button>
-            {running ? (
-              <button
-                type="button"
-                className="btn btn-sm"
-                onClick={() => void control("pause")}
-              >
-                Pause
+                Änderungen ohne Rückfrage
               </button>
-            ) : null}
-            {paused ? (
+              {running ? (
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => void control("pause")}
+                >
+                  Pausieren
+                </button>
+              ) : null}
+              {paused ? (
+                <button
+                  type="button"
+                  className="btn btn-sm"
+                  onClick={() => void control("resume")}
+                >
+                  Fortsetzen
+                </button>
+              ) : null}
               <button
-                type="button"
-                className="btn btn-sm"
-                onClick={() => void control("resume")}
+                type="submit"
+                className="btn btn-sm btn-primary"
+                disabled={!canStart}
               >
-                Resume
+                Starten
               </button>
-            ) : null}
-            <button
-              type="submit"
-              className="btn btn-sm btn-primary"
-              disabled={!canStart}
-            >
-              Start
-            </button>
-          </div>
-        </form>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );

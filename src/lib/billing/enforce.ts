@@ -11,6 +11,7 @@ import {
 } from "./config";
 import { effectivePlan, quotaStatus, type QuotaStatus } from "./quota";
 import { currentSubscription, usageSince } from "./store";
+import { isOwnerUser } from "../gateway/owners";
 
 // Server-side quota enforcement. Every model call made for a user goes
 // through quotaGuardedProvider, which checks the user's 5-hour and weekly
@@ -143,8 +144,10 @@ function assertFreeModel(
   const id = provider.modelId(role);
   // Verified free-pool models (:free) consume zero paid credit and are the
   // default unpinned pool in free-first mode. Curated Top NVIDIA models are
-  // also permitted on the default product allowlist.
+  // also permitted on the default product allowlist, and so is every model
+  // the gateway reaches through NVIDIA (trial credits, no per-call price).
   if (id.endsWith(":free")) return;
+  if (id.startsWith("nvidia:")) return;
   if (limits === BILLING_CONFIG.freePlanLimits && isNvidiaTopModelId(id)) {
     return;
   }
@@ -175,6 +178,8 @@ export function quotaGuardedProvider(
   limits: FreePlanLimits = BILLING_CONFIG.freePlanLimits,
 ): ModelProvider {
   const guard = async (role: ModelRole) => {
+    // The operator's own sign-ins (OSIRUS_OWNER_EMAILS) are not metered.
+    if (await isOwnerUser(userId)) return;
     const status = await assertQuota(userId, check);
     if (status.plan === "free") assertFreeModel(provider, role, limits);
   };

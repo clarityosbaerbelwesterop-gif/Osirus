@@ -26,6 +26,17 @@ const schema = z.object({
   OPENROUTER_API_KEY: z.string().min(1).optional(),
   BYTEZ_BASE_URL: z.string().url().optional(),
   BYTEZ_API_KEY: z.string().min(1).optional(),
+  // Comma-separated Bytez model ids offered in the pickers (Bytez hosts too
+  // many models to list them all).
+  OSIRUS_BYTEZ_MODELS: z.string().min(1).max(4000).optional(),
+  LIGHTNING_BASE_URL: z.string().url().optional(),
+  LIGHTNING_AI_API_KEY: z.string().min(1).optional(),
+  // Model gateway default for Agents chat: "provider:model". Unset: the best
+  // listed model of the configured providers.
+  OSIRUS_DEFAULT_CHAT_MODEL: z.string().min(3).max(240).optional(),
+  // Comma-separated sign-in emails that use every listed model without the
+  // free plan's model lock or the usage windows (the operator's own keys).
+  OSIRUS_OWNER_EMAILS: z.string().min(3).max(2000).optional(),
   LAB_FALLBACK_MODEL_ROUGE: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_QUASNIR: z.string().min(1).optional(),
   LAB_FALLBACK_MODEL_DARUS: z.string().min(1).optional(),

@@ -210,6 +210,11 @@ if (bytezKey) {
   console.log("BYTEZ_API_KEY is present and will be synced to Vercel.");
 }
 
+const lightningKey = optionalSecret(process.env.LIGHTNING_AI_API_KEY);
+if (lightningKey) {
+  console.log("LIGHTNING_AI_API_KEY is present and will be synced to Vercel.");
+}
+
 // Resolve or provision Stripe plans & prices when STRIPE_SECRET_KEY is configured.
 const stripeSecretKey = optionalSecret(process.env.STRIPE_SECRET_KEY);
 const stripeWebhookSecret = optionalSecret(process.env.STRIPE_WEBHOOK_SECRET);
@@ -480,6 +485,15 @@ const variables = [
         {
           key: "BYTEZ_API_KEY",
           value: bytezKey,
+          type: "sensitive",
+        },
+      ]
+    : []),
+  ...(lightningKey
+    ? [
+        {
+          key: "LIGHTNING_AI_API_KEY",
+          value: lightningKey,
           type: "sensitive",
         },
       ]

@@ -8,7 +8,13 @@ import {
 import { auth, requireAuthConfiguration } from "../auth/server";
 
 export type ProductSession = {
-  user: { id: string; email: string | null; name: string | null };
+  user: {
+    id: string;
+    email: string | null;
+    name: string | null;
+    /** False only when the auth provider says the address is unconfirmed. */
+    emailVerified?: boolean;
+  };
   identity: ProductIdentity;
 };
 
@@ -20,10 +26,12 @@ export const loadAuthUser = cache(async () => {
   requireAuthConfiguration();
   const { data: session } = await auth.getSession();
   if (!session?.user) return null;
+  const verified = (session.user as { emailVerified?: unknown }).emailVerified;
   return {
     id: session.user.id,
     email: session.user.email ?? null,
     name: session.user.name ?? null,
+    emailVerified: typeof verified === "boolean" ? verified : undefined,
   };
 });
 

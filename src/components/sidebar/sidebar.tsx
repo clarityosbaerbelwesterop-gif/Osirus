@@ -7,11 +7,9 @@ import {
   Gauge,
   Bot,
   Code2,
-  Layers,
-  Users,
   Inbox,
   MessageSquare,
-  Sparkles,
+  Zap,
   PanelLeftClose,
   PanelLeftOpen,
   Pencil,
@@ -32,9 +30,10 @@ import { useMemo, useRef, useState } from "react";
 import { SIDEBAR_COOKIE, writePreference } from "@/lib/ui/preferences";
 import { OsirusMark } from "../shell/osirus-mark";
 import {
-  sessionsForSurface,
+  navAreaForPath,
+  sessionsForArea,
   surfacePath,
-  type SessionSurface,
+  type NavArea,
 } from "@/lib/product/surfaces";
 import { useShell, type SessionSummary } from "../shell/shell-context";
 import { QuotaBarsLive } from "../motion/quota-bars";
@@ -51,15 +50,13 @@ type NavItem = {
 };
 
 const SURFACES: NavItem[] = [
-  { href: "/app" as Route, label: "Chat", icon: MessageSquare },
-  { href: "/app/bots" as Route, label: "Bot", icon: Bot },
-  { href: "/app/work" as Route, label: "Work", icon: Layers },
-  { href: "/app/agents" as Route, label: "Agents", icon: Users },
-  { href: "/app/agent" as Route, label: "Agent", icon: Sparkles },
-  { href: "/app/coding" as Route, label: "Coding", icon: Code2 },
+  { href: "/app" as Route, label: "Agents", icon: MessageSquare },
+  { href: "/app/agent" as Route, label: "Rouge Agent", icon: Zap },
+  { href: "/app/coding" as Route, label: "Code", icon: Code2 },
 ];
 
 const PRIMARY: NavItem[] = [
+  { href: "/app/agents" as Route, label: "Bots", icon: Bot },
   { href: "/app/inbox" as Route, label: "Inbox", icon: Inbox, count: "inbox" },
   {
     href: "/app/approvals" as Route,
@@ -270,7 +267,7 @@ function SessionLink({
   );
 }
 
-function ArchivedSessions({ surface }: { surface: SessionSurface | null }) {
+function ArchivedSessions({ area }: { area: NavArea | null }) {
   const shell = useShell();
   const [open, setOpen] = useState(false);
   const [sessions, setSessions] = useState<SessionSummary[] | null>(null);
@@ -294,7 +291,7 @@ function ArchivedSessions({ surface }: { surface: SessionSurface | null }) {
     else setSessions(previous);
   };
 
-  const visible = sessions ? sessionsForSurface(sessions, surface) : null;
+  const visible = sessions ? sessionsForArea(sessions, area) : null;
 
   return (
     <section aria-labelledby="archived-heading">
@@ -362,21 +359,10 @@ export function SidebarContent({
   const [search, setSearch] = useState("");
 
   const pathname = usePathname() ?? "";
-  const listSurface =
-    pathname === "/app"
-      ? "ai"
-      : pathname.startsWith("/app/agent")
-        ? "agent"
-        : pathname.startsWith("/app/bots")
-          ? "bot"
-          : pathname.startsWith("/app/coding")
-            ? "coding"
-            : pathname.startsWith("/app/work")
-              ? "work"
-              : null;
+  const area = navAreaForPath(pathname);
   const { pinned, recent } = useMemo(() => {
     const needle = search.trim().toLowerCase();
-    const scoped = sessionsForSurface(shell.sessions, listSurface);
+    const scoped = sessionsForArea(shell.sessions, area);
     const matches = needle
       ? scoped.filter((item) => item.title.toLowerCase().includes(needle))
       : scoped;
@@ -384,20 +370,18 @@ export function SidebarContent({
       pinned: matches.filter((item) => item.pinnedAt),
       recent: matches.filter((item) => !item.pinnedAt).slice(0, 40),
     };
-  }, [listSurface, search, shell.sessions]);
+  }, [area, search, shell.sessions]);
 
   const newTask = () => {
     onNavigate?.();
     if (shell.chat) shell.chat.newTask();
     else {
       const path =
-        listSurface === "agent"
+        area === "rouge"
           ? "/app/agent?new=1"
-          : listSurface === "bot"
-            ? "/app/bots?new=1"
-            : listSurface === "coding"
-              ? "/app/coding?new=1"
-              : "/app?new=1";
+          : area === "code"
+            ? "/app/coding?new=1"
+            : "/app";
       router.push(path as Route);
     }
   };
@@ -458,7 +442,11 @@ export function SidebarContent({
             disabled={shell.chat?.running}
           >
             <Plus size={16} aria-hidden="true" />
-            New task
+            {area === "rouge"
+              ? "Neuer Auftrag"
+              : area === "code"
+                ? "Neue Code-Aufgabe"
+                : "Neuer Chat"}
           </button>
           <label className="sidebar-search">
             <Search size={15} aria-hidden="true" />
@@ -556,7 +544,7 @@ export function SidebarContent({
               </p>
             )}
           </section>
-          <ArchivedSessions surface={listSurface} />
+          <ArchivedSessions area={area} />
         </div>
       )}
 

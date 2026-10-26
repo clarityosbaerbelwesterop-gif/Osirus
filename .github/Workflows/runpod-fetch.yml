@@ -19,11 +19,11 @@ jobs:
   pod:
     runs-on: ubuntu-latest
     environment: RUNPOD
-    timeout-minutes: 45           # Notbremse; Warten endet spaetestens 8 min davor
+    timeout-minutes: 45 # Notbremse; Warten endet spaetestens 8 min davor
     env:
-      BUDGET_CAP: "3.00"          # feste Obergrenze pro Fetch in USD
-      MAX_MINUTES: "30"           # feste Obergrenze Laufzeit
-      HARD_MAX_CPU_PRICE: "1.00"  # USD/h, Pod mit hoeherem costPerHr wird sofort geloescht
+      BUDGET_CAP: "3.00" # feste Obergrenze pro Fetch in USD
+      MAX_MINUTES: "30" # feste Obergrenze Laufzeit
+      HARD_MAX_CPU_PRICE: "1.00" # USD/h, Pod mit hoeherem costPerHr wird sofort geloescht
       JOB_MAX_MIN: "45"
       CPU_FLAVOR: "cpu3c"
       VCPU: "2"
@@ -139,7 +139,7 @@ jobs:
           echo "Kein Endpunkt nach 10 min -> Abbruch"; exit 1
 
       - name: Endpunkt als Artefakt (nur Chiffretext)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: endpoint-age
           path: endpoint.age

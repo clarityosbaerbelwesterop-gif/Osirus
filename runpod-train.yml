@@ -19,16 +19,16 @@ jobs:
   pod:
     runs-on: ubuntu-latest
     environment: RUNPOD
-    timeout-minutes: 200          # Notbremse ueber dem berechneten Limit (max 180)
+    timeout-minutes: 200 # Notbremse ueber dem berechneten Limit (max 180)
     env:
-      BUDGET_USD: "15"            # bewusst in USD < 15 EUR
+      BUDGET_USD: "15" # bewusst in USD < 15 EUR
       RESERVE: "0.20"
-      HARD_MAX_GPU_PRICE: "8.00"  # feste Obergrenze, RUN darf nicht darueber
+      HARD_MAX_GPU_PRICE: "8.00" # feste Obergrenze, RUN darf nicht darueber
       GPU_COUNT: "1"
       MAX_MINUTES: "180"
-      IMAGE: "runpod/base@sha256:e6eb5a38bd3b321f41e7c584334c9ebc15e1e529574c7f2c866d148990cfb817"  # 1.4.0-cuda1281-ubuntu2404 (CPython 3.12, x86_64)
+      IMAGE: "runpod/base@sha256:e6eb5a38bd3b321f41e7c584334c9ebc15e1e529574c7f2c866d148990cfb817" # 1.4.0-cuda1281-ubuntu2404 (CPython 3.12, x86_64)
       BRANCH: claude/gitops-multi-model-finetuning-ort4m9
-      VOLUME_MOUNT: "/vol"        # Mountpunkt des Network Volumes im Pod (Container-Disk bleibt /workspace)
+      VOLUME_MOUNT: "/vol" # Mountpunkt des Network Volumes im Pod (Container-Disk bleibt /workspace)
     steps:
       - name: Ein-Zeilen-Auftrag lesen (nur RUN, kein Checkout)
         id: run
@@ -192,7 +192,7 @@ jobs:
           echo "Kein Endpunkt nach 18 min -> Abbruch"; exit 1
 
       - name: Endpunkt als Artefakt (v4, sofort per REST abrufbar, nur Chiffretext)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4.6.2
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: endpoint-age
           path: endpoint.age

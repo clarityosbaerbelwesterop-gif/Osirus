@@ -495,7 +495,8 @@ test("work recommends a model, a reviewer and sub-agents", async ({ page }) => {
   await expect(
     page.getByText(/Platzhalter PLACEHOLDER_EXECUTOR_S/),
   ).toBeVisible();
-  await expect(page.getByText("ROUGE")).toHaveCount(0);
+  // No retired model name in the studio ("Rouge Agent" in the navigation is the product area).
+  await expect(page.getByText("ROUGE", { exact: true })).toHaveCount(0);
   const count = page.getByRole("spinbutton", { name: "Anzahl Subagents" });
   await count.fill("1");
   await expect(page.getByText("eigene Wahl")).toBeVisible();
@@ -511,4 +512,119 @@ test("agents address only the mentioned bot", async ({ page }) => {
   await message.fill("@Ada bitte kurz antworten");
   await expect(page.getByText("Antwortet: Ada")).toBeVisible();
   await expect(page.getByText("Antwortet: Bea")).toHaveCount(0);
+});
+
+test("agents: an answer streams in, thinking shows its time, the thread joins the sidebar", async ({
+  page,
+}) => {
+  const log = await mockApis(page);
+  await openSurface(page, "agents-empty");
+  await expect(page.getByRole("button", { name: /GPT-5/ })).toBeVisible();
+  const input = page.getByRole("textbox", { name: "Nachricht" });
+  await input.fill("Hallo");
+  await input.press("Enter");
+  await expect(page.getByText("Hallo! Wie kann ich helfen?")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: /Gedacht für|Gedankengang/ }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Antwort kopieren" }),
+  ).toBeVisible();
+  const sent = log.find((entry) => entry.path === "/api/chat/stream");
+  expect(sent?.body).toMatchObject({
+    message: "Hallo",
+    model: "openrouter:openai/gpt-5",
+    sessionId: null,
+  });
+  await expect(page.getByRole("link", { name: "Hallo" })).toBeVisible();
+});
+
+test("agents: the model picker searches, picks with the keyboard and remembers the choice", async ({
+  page,
+}) => {
+  await mockApis(page);
+  await openSurface(page, "agents-empty");
+  await page.getByRole("button", { name: /GPT-5/ }).click();
+  const search = page.getByPlaceholder(/Modelle durchsuchen/);
+  await expect(search).toBeFocused();
+  await search.fill("llama");
+  await expect(page.getByRole("option")).toHaveCount(1);
+  await search.press("Enter");
+  await expect(
+    page.getByRole("button", { name: /Llama 3\.3 70B Instruct/ }),
+  ).toBeVisible();
+  await page.reload();
+  await expect(
+    page.getByRole("button", { name: /Llama 3\.3 70B Instruct/ }),
+  ).toBeVisible();
+});
+
+test("agents: a refused message explains why and offers a retry", async ({
+  page,
+}) => {
+  await mockApis(page);
+  await page.route("**/api/chat/stream", (route) =>
+    route.fulfill({
+      status: 403,
+      contentType: "application/json",
+      body: JSON.stringify({
+        error: "model_not_in_plan",
+        message: "Dieses Modell ist im Free-Plan nicht enthalten.",
+      }),
+    }),
+  );
+  await openSurface(page, "agents-empty");
+  const input = page.getByRole("textbox", { name: "Nachricht" });
+  await input.fill("Hallo");
+  await input.press("Enter");
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Free-Plan" }),
+  ).toContainText("nicht enthalten");
+  await expect(
+    page.getByRole("button", { name: "Erneut versuchen" }),
+  ).toBeVisible();
+});
+
+test("agents: an answer can go to the Rouge Agent as a task", async ({
+  page,
+}) => {
+  await mockApis(page);
+  await openSurface(page, "agents-thread");
+  await page.getByRole("button", { name: "Rouge Agent" }).last().click();
+  await page.waitForURL(/\/app\/agent\?new=1&prompt=/);
+  expect(
+    decodeURIComponent(new URL(page.url()).searchParams.get("prompt") ?? ""),
+  ).toContain("Aufgabe: Wie migriere ich eine Postgres Job-Queue");
+});
+
+test("rouge agent: a suggested task fills the composer and the run is pinned to the chosen model", async ({
+  page,
+}) => {
+  await mockApis(page);
+  let runBody: unknown = null;
+  await page.route("**/api/runtime", (route) => {
+    runBody = route.request().postDataJSON();
+    return route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: "",
+    });
+  });
+  await openSurface(page, "rouge-empty");
+  await expect(
+    page.getByRole("heading", { name: "Rouge Agent", level: 2 }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: /Plane eine Datenbank-Migration/ })
+    .click();
+  const composer = page.getByRole("textbox", { name: "Message Osirus" });
+  await expect(composer).toHaveValue(/Plane eine Datenbank-Migration/);
+  await composer.press("Enter");
+  await expect
+    .poll(() => runBody)
+    .toMatchObject({
+      surface: "agent",
+      mode: "agent",
+      modelId: "openrouter:openai/gpt-5",
+    });
 });

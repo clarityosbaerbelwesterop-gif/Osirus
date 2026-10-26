@@ -61,15 +61,20 @@ export async function bootstrapProductIdentity(user: {
   email?: string | null;
   name?: string | null;
 }): Promise<ProductIdentity> {
-  await ensureOsirusUser(user);
-
-  const existing = await queryAs<WorkspaceRow>(
+  // Steady state is one read: the membership with the stored user row. The
+  // user row is written only when it is missing or its email or name changed.
+  const existing = await queryAs<
+    WorkspaceRow & { email: string | null; display_name: string | null }
+  >(
     user.id,
     `select wm.organization_id,
             wm.workspace_id,
-            w.name as workspace_name
+            w.name as workspace_name,
+            u.email,
+            u.display_name
        from osirus.workspace_memberships wm
        join osirus.workspaces w on w.id = wm.workspace_id
+       left join osirus.users u on u.id = wm.user_id
       where wm.user_id = $1::uuid
       order by wm.created_at
       limit 1`,
@@ -77,6 +82,13 @@ export async function bootstrapProductIdentity(user: {
   );
 
   if (existing[0]) {
+    const row = existing[0];
+    if (
+      (user.email && row.email !== user.email) ||
+      (user.name && row.display_name !== user.name)
+    ) {
+      await ensureOsirusUser(user);
+    }
     return {
       userId: user.id,
       organizationId: existing[0].organization_id,
@@ -84,6 +96,8 @@ export async function bootstrapProductIdentity(user: {
       workspaceName: existing[0].workspace_name,
     };
   }
+
+  await ensureOsirusUser(user);
 
   const organizationId = randomUUID();
   const workspaceId = randomUUID();

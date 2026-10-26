@@ -57,6 +57,7 @@ jobs:
       NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       BYTEZ_API_KEY: ${{ secrets.BYTEZ_API_KEY }}
+      LIGHTNING_AI_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
       STRIPE_PRICE_PRO: ${{ secrets.STRIPE_PRICE_PRO }}

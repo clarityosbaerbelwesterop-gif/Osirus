@@ -25,6 +25,9 @@ export const SURFACES = [
   "intelligence",
   "work",
   "agents",
+  "agents-empty",
+  "agents-thread",
+  "rouge-empty",
 ] as const;
 export type Surface = (typeof SURFACES)[number];
 
@@ -54,6 +57,85 @@ export type ApiLog = { method: string; path: string; body: unknown }[];
  * Answer the client calls of the fixture surfaces. Returns the list of write
  * requests the page made, so journeys can assert what was sent.
  */
+/** The model list the Agents, Rouge Agent and Code pickers receive. */
+export const MODELS_FIXTURE = {
+  defaultRef: "openrouter:openai/gpt-5",
+  freeOnly: false,
+  unlimited: false,
+  providers: [],
+  models: [
+    {
+      ref: "openrouter:openai/gpt-5",
+      name: "GPT-5",
+      providerLabel: "OpenRouter",
+      provider: "openrouter",
+      vendor: "OpenAI",
+      free: false,
+      reasoning: true,
+      contextLength: 400000,
+    },
+    {
+      ref: "openrouter:anthropic/claude-sonnet-4.5",
+      name: "Claude Sonnet 4.5",
+      providerLabel: "OpenRouter",
+      provider: "openrouter",
+      vendor: "Anthropic",
+      free: false,
+      reasoning: false,
+      contextLength: 200000,
+    },
+    {
+      ref: "nvidia:deepseek-ai/deepseek-r1",
+      name: "DeepSeek R1",
+      providerLabel: "NVIDIA",
+      provider: "nvidia",
+      vendor: "DeepSeek",
+      free: true,
+      reasoning: true,
+      contextLength: 128000,
+    },
+    {
+      ref: "nvidia:meta/llama-3.3-70b-instruct",
+      name: "Llama 3.3 70B Instruct",
+      providerLabel: "NVIDIA",
+      provider: "nvidia",
+      vendor: "Meta",
+      free: true,
+      reasoning: false,
+      contextLength: 128000,
+    },
+  ],
+};
+
+export const CHAT_SESSION = "5f6a7b8c-9d0e-4f1a-8b2c-3d4e5f6a7b8c";
+
+/** A complete Agents answer as server-sent events. */
+export function chatStreamBody(answer = "Hallo! Wie kann ich helfen?") {
+  const frames = [
+    {
+      type: "start",
+      sessionId: CHAT_SESSION,
+      title: "Hallo",
+      created: true,
+      model: {
+        ref: "openrouter:openai/gpt-5",
+        name: "GPT-5",
+        providerLabel: "OpenRouter",
+      },
+      cached: false,
+    },
+    { type: "reasoning", text: "Begrüßung, kurz antworten." },
+    { type: "text", text: answer.slice(0, 7) },
+    { type: "text", text: answer.slice(7) },
+    {
+      type: "done",
+      messageId: "6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d",
+      latencyMs: 420,
+    },
+  ];
+  return frames.map((frame) => `data: ${JSON.stringify(frame)}\n\n`).join("");
+}
+
 export async function mockApis(
   page: Page,
   options: { runSnapshot?: () => RunSnapshot | null } = {},
@@ -84,6 +166,15 @@ export async function mockApis(
     },
   ]);
   await page.route("**/api/health", (route) => json(route, HEALTHY));
+  await page.route("**/api/models", (route) => json(route, MODELS_FIXTURE));
+  await page.route("**/api/chat/stream", (route) => {
+    record(route);
+    return route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: chatStreamBody(),
+    });
+  });
   await page.route("**/api/connectors/github/repos", (route) => {
     record(route);
     return json(route, {

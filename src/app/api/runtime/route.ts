@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
-import { quotaEnforced, quotaStatusFor } from "@/lib/billing/enforce";
+import { quotaEnforced } from "@/lib/billing/enforce";
 import { serializeQuota } from "@/lib/billing/quota";
 import { executeRuntimeRun, prepareRuntimeRun } from "@/lib/runtime/executor";
 import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
@@ -12,6 +12,13 @@ import {
 } from "@/lib/product/effort-router";
 import { parseEffort } from "@/lib/product/surfaces";
 import { isAllowedProductModel } from "@/lib/models/allowlist";
+import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
+import {
+  listGatewayModels,
+  pickDefaultModel,
+  resolveGatewayModel,
+} from "@/lib/gateway/models";
+import { isGatewayRef } from "@/lib/gateway/providers";
 import { env, serverKeys } from "@/lib/env";
 import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
 import { routeCapabilities } from "@/lib/runtime/router";
@@ -110,8 +117,15 @@ export async function POST(request: Request) {
   }
   // Billing: refuse up front when the user has no plan or a spent window,
   // telling them when it refills. The model calls are guarded again inside.
-  if (quotaEnforced()) {
-    const quota = await quotaStatusFor(identity.userId);
+  // Owner emails (OSIRUS_OWNER_EMAILS) run on the operator's keys unmetered.
+  const verified = (session.user as { emailVerified?: unknown }).emailVerified;
+  const access = await modelAccessFor({
+    userId: identity.userId,
+    email: session.user.email ?? null,
+    emailVerified: typeof verified === "boolean" ? verified : undefined,
+  });
+  if (quotaEnforced() && access.quota) {
+    const quota = access.quota;
     if (!quota.allowed) {
       const noPlan = quota.reason === "no_subscription";
       return Response.json(
@@ -132,8 +146,32 @@ export async function POST(request: Request) {
     }
   }
   let pinnedModel: string | undefined;
-  if (parsed.data.coding?.model || parsed.data.modelId) {
-    const requested = parsed.data.coding?.model ?? parsed.data.modelId ?? "";
+  const requestedModel = parsed.data.coding?.model ?? parsed.data.modelId ?? "";
+  if (requestedModel && isGatewayRef(requestedModel)) {
+    // Any model a configured key can call ("provider:model").
+    const model = await resolveGatewayModel(requestedModel);
+    if (!model) {
+      return Response.json(
+        {
+          error: "model_unavailable",
+          message:
+            "Dieses Modell ist gerade nicht verfügbar. Bitte ein anderes wählen.",
+        },
+        { status: 400 },
+      );
+    }
+    if (!modelAllowed(model, access)) {
+      return Response.json(
+        {
+          error: "model_not_in_plan",
+          message: publicRuntimeErrorMessage({ code: "model_not_in_plan" }),
+        },
+        { status: 403 },
+      );
+    }
+    pinnedModel = model.ref;
+  } else if (requestedModel) {
+    const requested = requestedModel;
     if (!isAllowedProductModel(requested)) {
       return Response.json(
         {
@@ -168,6 +206,21 @@ export async function POST(request: Request) {
     pinnedModel = modelId;
   }
   const surface = parsed.data.surface;
+  if (!pinnedModel && (surface === "agent" || surface === "coding")) {
+    // Agent and coding runs default to the best model the person may call
+    // instead of the free pool, whose models often cannot follow the
+    // structured agent protocol.
+    const listing = await listGatewayModels().catch(() => null);
+    const best = listing
+      ? pickDefaultModel(
+          listing.models.filter(
+            (model) =>
+              modelAllowed(model, access) && model.provider !== "unorouter",
+          ),
+        )
+      : null;
+    if (best) pinnedModel = best.ref;
+  }
   let coding = parsed.data.coding;
   if (surface === "coding" && coding) {
     const chosen = coding.effortChosen ? parseEffort(coding.effort) : null;

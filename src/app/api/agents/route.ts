@@ -4,6 +4,8 @@ import { apiIdentity, guardWrite, json } from "@/lib/product/api";
 import { createAgent, listAgents } from "@/lib/agents/store";
 import { isRetiredProductModel } from "@/lib/models/catalog";
 import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
+import { resolveGatewayModel } from "@/lib/gateway/models";
+import { isGatewayRef } from "@/lib/gateway/providers";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -54,6 +56,25 @@ export async function POST(request: Request) {
       },
       400,
     );
+  }
+  if (isGatewayRef(guard.body.modelId)) {
+    if (!(await resolveGatewayModel(guard.body.modelId))) {
+      return json(
+        {
+          error: "model_not_on_key",
+          message: "Dieses Modell ist gerade nicht verfügbar.",
+        },
+        400,
+      );
+    }
+    const agent = await createAgent({
+      identity: guard.identity,
+      name: guard.body.name,
+      systemPrompt: guard.body.systemPrompt,
+      modelId: guard.body.modelId,
+    });
+    if (!agent) return json({ error: "not_created" }, 409);
+    return json({ agent }, 201);
   }
   const keyModels = await allowedModelIds();
   if (keyModels.availability !== "ready") {
