@@ -80,6 +80,8 @@ type UiMessage = AgentsChatMessage & {
   error?: string | null;
   thinkingStartedAt?: number | null;
   thinkingMs?: number | null;
+  /** Reading the web before the answer starts. */
+  searching?: boolean;
 };
 
 export type AgentsBot = { id: string; name: string };
@@ -236,11 +238,16 @@ const MessageView = memo(function MessageView(props: {
           <div
             className="ac-waiting"
             role="status"
-            aria-label="Osirus schreibt"
+            aria-label={
+              message.searching ? "Osirus sucht im Web" : "Osirus schreibt"
+            }
           >
             <i />
             <i />
             <i />
+            {message.searching ? (
+              <span className="ac-searching">Sucht im Web …</span>
+            ) : null}
           </div>
         ) : null}
         {message.content ? (
@@ -596,6 +603,7 @@ export function AgentsChat(props: {
             content: "",
             streaming: true,
             botId: targetBot,
+            searching: web || /\bhttps?:\/\//i.test(content),
           },
         ];
       });
@@ -679,17 +687,21 @@ export function AgentsChat(props: {
             });
           } else if (event.type === "sources") {
             const sources = event.sources;
-            patch((message) => ({ ...message, sources }));
+            patch((message) => ({ ...message, sources, searching: false }));
           } else if (event.type === "reset") {
             reasoning = "";
             answer = "";
             thinkingStartedAt = null;
             schedule();
           } else if (event.type === "reasoning") {
-            if (thinkingStartedAt === null) thinkingStartedAt = Date.now();
+            if (thinkingStartedAt === null) {
+              thinkingStartedAt = Date.now();
+              patch((message) => ({ ...message, searching: false }));
+            }
             reasoning += event.text;
             schedule();
           } else if (event.type === "text") {
+            if (!answer) patch((message) => ({ ...message, searching: false }));
             if (thinkingStartedAt !== null && thinkingMs === null) {
               thinkingMs = Date.now() - thinkingStartedAt;
             }

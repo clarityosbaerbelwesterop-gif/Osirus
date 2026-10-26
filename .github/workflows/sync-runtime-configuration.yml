@@ -155,3 +155,14 @@ jobs:
         # A push to main deploys through the Git integration already.
         if: github.event_name == 'workflow_dispatch' && inputs.redeploy && inputs.target != 'preview'
         run: node scripts/vercel-redeploy.mjs
+      - name: Model probe summary
+        # The probe's result again, last in the log: which models answered.
+        if: always()
+        continue-on-error: true
+        env:
+          PROBE_OUT: ${{ runner.temp }}/probe-top-models.json
+        run: >-
+          node -e "const r = require(process.env.PROBE_OUT);
+          console.log('verified top: ' + (r.verified.join(', ') || 'none'));
+          console.log('paid without credit: ' + (r.unfunded.join(', ') || 'none'));
+          for (const x of r.results) console.log((x.correct ? 'PASS ' : 'FAIL ') + x.ref + ' ' + x.ms + ' ms ' + x.outcome);"
