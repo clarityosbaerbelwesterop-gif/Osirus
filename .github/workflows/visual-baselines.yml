@@ -28,7 +28,7 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
-      - run: npx playwright install --with-deps chromium
+      - run: scripts/install-playwright.sh
       - run: npm run build
       - run: npx playwright test --project=visual --update-snapshots=all
       - uses: actions/upload-artifact@v4
