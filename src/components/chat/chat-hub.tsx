@@ -53,6 +53,7 @@ import {
   type ComposerHandle,
 } from "../composer/composer";
 import { RunCard } from "../run-status/run-card";
+import { notifyUsage } from "../motion/quota-bars";
 import { useShell, type SessionSummary } from "../shell/shell-context";
 import { TopBar } from "../shell/top-bar";
 import { Badge } from "../ui/badge";
@@ -271,7 +272,10 @@ export function ChatHub(props: {
     setSessionId(next.run.sessionId);
     setActiveRunId(terminalStatuses.has(next.run.status) ? null : next.run.id);
     setRunning(!terminalStatuses.has(next.run.status));
-    if (terminalStatuses.has(next.run.status)) setCancelling(false);
+    if (terminalStatuses.has(next.run.status)) {
+      setCancelling(false);
+      notifyUsage();
+    }
     setMessages(next.messages);
     setActivities(
       next.events

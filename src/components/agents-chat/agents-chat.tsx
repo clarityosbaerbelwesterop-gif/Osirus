@@ -27,6 +27,7 @@ import {
 } from "react";
 import { Markdown } from "../chat/markdown";
 import { useShell, type SessionSummary } from "../shell/shell-context";
+import { notifyUsage } from "../motion/quota-bars";
 import { OsirusMark } from "../shell/osirus-mark";
 import { TopBar } from "../shell/top-bar";
 import { cx } from "../ui/cx";
@@ -589,6 +590,7 @@ export function AgentsChat(props: {
         );
         setBusy(false);
         abortRef.current = null;
+        notifyUsage();
       }
     },
     [botId, busy, props.bots, sessionId, upsertSession],

@@ -41,11 +41,15 @@ export function GitHubSignInButton({
         errorCallbackURL: "/auth/sign-in",
       });
       if (result.error) {
-        setError("GitHub sign-in could not be started. Please try again.");
+        setError(
+          "Die Anmeldung mit GitHub konnte nicht starten. Bitte erneut versuchen.",
+        );
         setPending(false);
       }
     } catch {
-      setError("GitHub sign-in could not be started. Please try again.");
+      setError(
+        "Die Anmeldung mit GitHub konnte nicht starten. Bitte erneut versuchen.",
+      );
       setPending(false);
     }
   }
@@ -64,7 +68,7 @@ export function GitHubSignInButton({
         onClick={signInWithGitHub}
       >
         <GithubMark />
-        {pending ? "Redirecting to GitHub…" : "Continue with GitHub"}
+        {pending ? "Weiter zu GitHub…" : "Weiter mit GitHub"}
       </button>
       {error ? (
         <p aria-live="polite" className="form-error">

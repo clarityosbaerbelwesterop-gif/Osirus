@@ -1,12 +1,19 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { useActionState } from "react";
 import { GitHubSignInButton } from "@/components/auth/github-sign-in-button";
 import { OsirusMark } from "@/components/shell/osirus-mark";
 import { signInWithEmail } from "./actions";
 
-export function SignInForm({ oauthError }: { oauthError: string | null }) {
+export function SignInForm({
+  oauthError,
+  notice,
+}: {
+  oauthError: string | null;
+  notice?: string | null;
+}) {
   const [state, action, pending] = useActionState(signInWithEmail, null);
 
   return (
@@ -16,19 +23,24 @@ export function SignInForm({ oauthError }: { oauthError: string | null }) {
           <OsirusMark size={24} />
           Osirus
         </p>
-        <h1>Sign in</h1>
-        <p className="auth-lede">Continue into your Osirus workspace.</p>
+        <h1>Anmelden</h1>
+        <p className="auth-lede">Weiter in deinen Osirus-Workspace.</p>
+        {notice ? (
+          <p className="form-notice" role="status">
+            {notice}
+          </p>
+        ) : null}
         {oauthError ? (
           <p className="form-error" role="alert">
             {oauthError}
           </p>
         ) : null}
         <label>
-          Email
+          E-Mail
           <input name="email" type="email" autoComplete="email" required />
         </label>
         <label>
-          Password
+          Passwort
           <input
             name="password"
             type="password"
@@ -46,11 +58,16 @@ export function SignInForm({ oauthError }: { oauthError: string | null }) {
           className="btn btn-primary auth-submit"
           disabled={pending}
         >
-          {pending ? "Signing in…" : "Sign in"}
+          {pending ? "Anmelden…" : "Anmelden"}
         </button>
+        <p className="auth-forgot">
+          <Link href={"/auth/forgot-password" as Route}>
+            Passwort vergessen?
+          </Link>
+        </p>
         <GitHubSignInButton />
         <p className="auth-footer">
-          New to Osirus? <Link href="/auth/sign-up">Create an account</Link>
+          Neu bei Osirus? <Link href="/auth/sign-up">Konto erstellen</Link>
         </p>
       </form>
     </main>

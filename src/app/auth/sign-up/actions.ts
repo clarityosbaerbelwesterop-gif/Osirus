@@ -3,6 +3,7 @@
 import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 import { LEGAL_ERROR } from "@/app/legal/operator";
+import { authAttemptAllowed } from "../rate";
 import type { AuthActionState } from "../sign-in/actions";
 
 export async function assertSignupLegal(input: {
@@ -33,32 +34,28 @@ export async function signUpWithEmail(
   if (!name || !email || password.length < 8) {
     return {
       error:
-        "Name, email, and a password of at least 8 characters are required.",
+        "Name, E-Mail und ein Passwort mit mindestens 8 Zeichen sind erforderlich.",
     };
   }
 
   requireAuthConfiguration();
 
-  if (process.env.DATABASE_URL) {
-    try {
-      const { enforceRateLimit, RateLimitError } =
-        await import("@/lib/security/rate-limit");
-      await enforceRateLimit({
-        subject: `auth.signup:${email.toLowerCase().slice(0, 120)}`,
-        route: "auth.signup",
-        limit: 6,
-      });
-    } catch (error) {
-      if (error instanceof Error && error.name === "RateLimitError") {
-        return { error: "Too many sign-up attempts. Please wait a minute." };
-      }
-    }
+  if (
+    !(await authAttemptAllowed({
+      route: "auth.signup",
+      email,
+      perAddress: 6,
+      perNetwork: 12,
+    }))
+  ) {
+    return { error: "Zu viele Registrierungen. Bitte eine Minute warten." };
   }
 
   const result = await auth.signUp.email({ name, email, password });
   if (result.error) {
     return {
-      error: "Unable to create account with these details. Please try again.",
+      error:
+        "Mit diesen Angaben konnte kein Konto angelegt werden. Ist die E-Mail schon registriert? Dann bitte anmelden.",
     };
   }
 

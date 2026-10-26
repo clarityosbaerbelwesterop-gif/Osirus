@@ -566,6 +566,11 @@ export function SidebarContent({
               <span className="truncate">
                 {shell.user.name ?? shell.user.email ?? "Account"}
               </span>
+              {shell.user.name && shell.user.email ? (
+                <span className="truncate account-email">
+                  {shell.user.email}
+                </span>
+              ) : null}
               <SystemStatus />
             </span>
           )}

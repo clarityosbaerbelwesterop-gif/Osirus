@@ -22,5 +22,14 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   const params = await searchParams;
   const oauthError = oauthErrorMessage(params.error);
   if (!oauthError && (await signedIn())) redirect("/app");
-  return <SignInForm oauthError={oauthError} />;
+  return (
+    <SignInForm
+      oauthError={oauthError}
+      notice={
+        params.reset === "1"
+          ? "Passwort gespeichert. Bitte mit dem neuen Passwort anmelden."
+          : null
+      }
+    />
+  );
 }

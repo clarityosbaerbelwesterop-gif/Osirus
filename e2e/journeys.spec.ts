@@ -54,7 +54,7 @@ test("1. sign in, new chat, normal question, streamed answer", async ({
 }) => {
   // Sign-in is the real page; the session behind it is not available in CI.
   await page.goto("/auth/sign-in");
-  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Anmelden" })).toBeVisible();
 
   let finished = false;
   await mockApis(page, {

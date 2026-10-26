@@ -52,8 +52,8 @@ describe("sign-up legal acceptance", () => {
     expect(html).toContain('href="/legal/eula"');
     expect(html).toContain("Ich habe die");
     expect(html).toContain('href="/legal/privacy"');
-    expect(html).toContain("Create account");
-    expect(html).toContain("Continue with GitHub");
+    expect(html).toContain("Konto erstellen");
+    expect(html).toContain("Weiter mit GitHub");
     const disabled = html.match(/disabled=""/g) ?? [];
     expect(disabled.length).toBeGreaterThanOrEqual(2);
     expect(html).not.toContain('checked=""');
