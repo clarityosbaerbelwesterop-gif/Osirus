@@ -536,3 +536,42 @@ describe("cache, threads and cost", () => {
     ).toBe(3);
   });
 });
+
+describe("model hygiene", () => {
+  it("keeps embedding, OCR, music and router entries out of the chat list", async () => {
+    const { isChatModelId } = await import("@/lib/gateway/models");
+    for (const id of [
+      "voyage-4-large",
+      "nvidia/nvclip",
+      "google/lyria-3-pro-preview",
+      "nvidia/nemotron-parse",
+      "openrouter/auto-router",
+      "free-models-router",
+      "nvidia/vila",
+    ]) {
+      expect(isChatModelId(id)).toBe(false);
+    }
+    for (const id of [
+      "nvidia/nemotron-3.5-lightning",
+      "qwen/qwen3-coder-plus",
+      "deepseek-ai/deepseek-r1",
+    ]) {
+      expect(isChatModelId(id)).toBe(true);
+    }
+  });
+
+  it("lists one entry per model name and pushes slow or failing models back", async () => {
+    const { uniqueByName, noteModelResult, modelPenalty } =
+      await import("@/lib/gateway/models");
+    expect(
+      uniqueByName([{ name: "GLM 5.3" }, { name: "GLM-5.3" }, { name: "X" }]),
+    ).toEqual([{ name: "GLM 5.3" }, { name: "X" }]);
+    const now = Date.now();
+    noteModelResult("p:slow", { ok: true, firstTokenMs: 20_000 }, now);
+    noteModelResult("p:bad", { ok: false, firstTokenMs: 12_000 }, now);
+    expect(modelPenalty("p:slow", now)).toBe(20);
+    expect(modelPenalty("p:bad", now)).toBe(20);
+    expect(modelPenalty("p:new", now)).toBe(0);
+    expect(modelPenalty("p:bad", now + 11 * 60 * 1000)).toBe(0);
+  });
+});

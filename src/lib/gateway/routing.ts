@@ -104,7 +104,13 @@ const CODING_MODEL =
 export function candidatesFor(
   models: readonly GatewayModel[],
   tier: ModelTier,
-  options: { coding?: boolean; reasoning?: boolean; limit?: number } = {},
+  options: {
+    coding?: boolean;
+    reasoning?: boolean;
+    limit?: number;
+    /** Extra rank for a model, e.g. recent failures or slowness. */
+    penalty?: (ref: string) => number;
+  } = {},
 ): GatewayModel[] {
   const order: ModelTier[] =
     tier === "top"
@@ -118,7 +124,7 @@ export function candidatesFor(
     // Thinking models are slow; outside "reasoning" they go after the rest.
     if (model.reasoning && !options.reasoning) value += 8;
     if (options.reasoning && model.reasoning) value -= 30;
-    return value;
+    return value + (options.penalty?.(model.ref) ?? 0);
   };
   const out: GatewayModel[] = [];
   for (const wanted of order) {

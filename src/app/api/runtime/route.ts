@@ -13,7 +13,11 @@ import {
 import { parseEffort } from "@/lib/product/surfaces";
 import { isAllowedProductModel } from "@/lib/models/allowlist";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
-import { listGatewayModels, resolveModelSelection } from "@/lib/gateway/models";
+import {
+  listGatewayModels,
+  modelPenalty,
+  resolveModelSelection,
+} from "@/lib/gateway/models";
 import { isGatewayRef } from "@/lib/gateway/providers";
 import {
   candidatesFor,
@@ -235,7 +239,11 @@ export async function POST(request: Request) {
           ? allowed
           : listing.models.filter((model) => modelAllowed(model, access)),
         tier,
-        { coding: surface === "coding", limit: 1 },
+        {
+          coding: surface === "coding",
+          limit: 1,
+          penalty: (ref) => modelPenalty(ref),
+        },
       )[0];
       if (best) pinnedModel = best.ref;
     }
