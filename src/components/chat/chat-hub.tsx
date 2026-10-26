@@ -8,6 +8,7 @@ import {
   useRef,
   useState,
   useSyncExternalStore,
+  type ReactNode,
 } from "react";
 import type {
   ModelCallSummary,
@@ -52,6 +53,7 @@ import {
   type ComposerHandle,
 } from "../composer/composer";
 import { RunCard } from "../run-status/run-card";
+import { notifyUsage } from "../motion/quota-bars";
 import { useShell, type SessionSummary } from "../shell/shell-context";
 import { TopBar } from "../shell/top-bar";
 import { Badge } from "../ui/badge";
@@ -148,6 +150,16 @@ export function ChatHub(props: {
   kind?: "ai" | "agent" | "bot";
   /** Set by the chat page when the free tier is on and its quota is empty. */
   freeQuotaEmpty?: boolean;
+  /** Rouge Agent: the gateway model ("provider:model") the run is pinned to. */
+  agentModelRef?: string | null;
+  /** Shown above the composer (the Rouge Agent's model and options). */
+  accessory?: ReactNode;
+  /** Replaces the empty-state home. */
+  emptySlot?: ReactNode;
+  /** Puts text into the composer; a new nonce applies it again. */
+  prefill?: { text: string; nonce: number } | null;
+  /** The page title before the conversation has one. */
+  titleFallback?: string;
 }) {
   const shell = useShell();
   const { upsertSession, bindChat } = shell;
@@ -159,7 +171,15 @@ export function ChatHub(props: {
   const [snapshot, setSnapshot] = useState<RunSnapshot | null>(
     props.initialSnapshot ?? null,
   );
-  const [objective, setObjective] = useState("");
+  const [objective, setObjective] = useState(props.prefill?.text ?? "");
+  // A new prefill (another nonce) replaces the draft once, during render.
+  const [prefillApplied, setPrefillApplied] = useState(
+    props.prefill?.nonce ?? null,
+  );
+  if (props.prefill && props.prefill.nonce !== prefillApplied) {
+    setPrefillApplied(props.prefill.nonce);
+    setObjective(props.prefill.text);
+  }
   const surface: SessionSurface =
     props.kind === "agent" ? "agent" : props.kind === "bot" ? "bot" : "ai";
   const [seenSurface, setSeenSurface] = useState(surface);
@@ -252,7 +272,10 @@ export function ChatHub(props: {
     setSessionId(next.run.sessionId);
     setActiveRunId(terminalStatuses.has(next.run.status) ? null : next.run.id);
     setRunning(!terminalStatuses.has(next.run.status));
-    if (terminalStatuses.has(next.run.status)) setCancelling(false);
+    if (terminalStatuses.has(next.run.status)) {
+      setCancelling(false);
+      notifyUsage();
+    }
     setMessages(next.messages);
     setActivities(
       next.events
@@ -507,7 +530,13 @@ export function ChatHub(props: {
                   sessionId,
                   regenerate,
                   ...(props.kind === "agent"
-                    ? { mode: "agent" as const, surface: "agent" as const }
+                    ? {
+                        mode: "agent" as const,
+                        surface: "agent" as const,
+                        ...(props.agentModelRef
+                          ? { modelId: props.agentModelRef }
+                          : {}),
+                      }
                     : props.kind === "ai"
                       ? { surface: "ai" as const }
                       : {}),
@@ -605,6 +634,7 @@ export function ChatHub(props: {
       shell.sessions,
       upsertSession,
       props.kind,
+      props.agentModelRef,
       surface,
       threadPath,
     ],
@@ -723,7 +753,7 @@ export function ChatHub(props: {
     (messages.length
       ? "Conversation"
       : props.kind === "agent"
-        ? "Agent"
+        ? (props.titleFallback ?? "Agent")
         : props.kind === "bot"
           ? "Bot"
           : props.kind === "ai"
@@ -785,7 +815,7 @@ export function ChatHub(props: {
                   <p className="home-title">Bot</p>
                 </div>
               ) : (
-                <ChatHome />
+                (props.emptySlot ?? <ChatHome />)
               )
             ) : (
               <MessageList
@@ -823,6 +853,7 @@ export function ChatHub(props: {
             <div ref={streamEnd} />
           </div>
         </div>
+        {props.accessory}
         <Composer
           ref={composer}
           value={objective}

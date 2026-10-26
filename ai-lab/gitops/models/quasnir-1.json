@@ -1,0 +1,77 @@
+{
+  "kind": "qlora-adapter",
+  "id": "quasnir-1",
+  "displayName": "Quasnir",
+  "role": "code-security",
+  "base": {
+    "upstreamId": "google/gemma-3-27b-it",
+    "revision": "unpinned",
+    "parametersB": 27,
+    "license": {
+      "license": "gemma-terms-of-use",
+      "review": "pending",
+      "evidence": null
+    }
+  },
+  "datasets": [
+    {
+      "id": "golden-tokens",
+      "uri": "pipeline:golden-tokens",
+      "revision": "from-state",
+      "license": {
+        "license": "teacher-terms (see pipelines/golden-tokens.json)",
+        "review": "pending",
+        "evidence": null
+      }
+    }
+  ],
+  "hyperparameters": {
+    "rank": 32,
+    "alpha": 64,
+    "dropout": 0.05,
+    "targetModules": ".*language_model.*\\.(q_proj|k_proj|v_proj|o_proj|gate_proj|up_proj|down_proj)",
+    "quantization": "nf4",
+    "doubleQuant": true,
+    "computeDtype": "bfloat16",
+    "learningRate": 0.0001,
+    "epochs": 3,
+    "maxSeqLength": 4096,
+    "microBatchSize": 1,
+    "gradientAccumulation": 16,
+    "warmupRatio": 0.03,
+    "lrScheduler": "cosine",
+    "gradientCheckpointing": true,
+    "seed": 1337
+  },
+  "compute": {
+    "provider": "runpod",
+    "profileId": "a100-80gb",
+    "gpuCount": 1,
+    "maxRuntimeHours": 10
+  },
+  "evals": {
+    "suites": [
+      {
+        "id": "humaneval",
+        "harness": "lm-eval",
+        "task": "humaneval",
+        "metric": "pass_at_k,create_test",
+        "limit": null,
+        "unsafeCode": true
+      },
+      {
+        "id": "mbpp",
+        "harness": "lm-eval",
+        "task": "mbpp",
+        "metric": "pass_at_1,none",
+        "limit": null,
+        "unsafeCode": true
+      }
+    ],
+    "gates": [
+      { "suite": "humaneval", "min": 0.3 },
+      { "suite": "mbpp", "min": 0.3 }
+    ]
+  },
+  "publish": { "hubRepo": "change-me-hf-org/quasnir-1-qlora", "private": true }
+}

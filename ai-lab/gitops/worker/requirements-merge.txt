@@ -1,0 +1,15 @@
+# Isolated MergeKit environment (/opt/mergekit). mergekit 0.1.4 pins click,
+# pydantic, tqdm and accelerate versions that conflict with the runpod SDK, so
+# it gets its own venv. transformers stays on 4.x, the line mergekit 0.1.4
+# was released against. The venv sees the global site-packages, so the pinned
+# torch below is the one already installed for training (no second copy).
+# Resolved together with pip on 2026-10-05.
+mergekit==0.1.4
+transformers==4.57.6
+accelerate==1.6.0
+huggingface_hub==0.36.2
+peft==0.21.2
+pydantic==2.10.6
+safetensors==0.5.3
+tokenizers==0.22.2
+torch==2.14.1

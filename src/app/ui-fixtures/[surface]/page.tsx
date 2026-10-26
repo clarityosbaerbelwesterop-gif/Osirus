@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { AgentsStudio } from "@/components/agents/agents-studio";
+import { AgentsChat } from "@/components/agents-chat/agents-chat";
+import { RougeAgentSurface } from "@/components/rouge/rouge-agent-surface";
 import { ChatHub } from "@/components/chat/chat-hub";
 import { WorkStudio } from "@/components/work/work-studio";
 import { CodingSurface } from "@/components/coding/coding-surface";
@@ -59,7 +61,65 @@ export default async function FixturePage({
     </AppShell>
   );
 
+  const bots = [
+    {
+      id: "11111111-1111-4111-8111-111111111111",
+      name: "Ada",
+    },
+    {
+      id: "22222222-2222-4222-8222-222222222222",
+      name: "Research-Bot",
+    },
+  ];
+
   switch (surface) {
+    case "agents-empty":
+      return (
+        <AppShell data={shell}>
+          <AgentsChat initialThread={null} bots={bots} greetingName="Bärbel" />
+        </AppShell>
+      );
+    case "rouge-empty":
+      return (
+        <AppShell data={shell}>
+          <RougeAgentSurface
+            workspaceName={shell.workspaceName}
+            initialSessionId={null}
+            initialMessages={[]}
+            initialRunId={null}
+            initialSnapshotRunId={null}
+          />
+        </AppShell>
+      );
+    case "agents-thread":
+      return (
+        <AppShell data={shell}>
+          <AgentsChat
+            initialThread={{
+              sessionId: "33333333-3333-4333-8333-333333333333",
+              title: "Postgres Job-Queue migrieren",
+              messages: [
+                {
+                  id: "m1",
+                  role: "user",
+                  content:
+                    "Wie migriere ich eine Postgres Job-Queue von Polling auf LISTEN/NOTIFY, ohne Jobs zu verlieren?",
+                },
+                {
+                  id: "m2",
+                  role: "assistant",
+                  reasoning:
+                    "Polling und Notify parallel betreiben, dann umschalten. Rückweg muss jederzeit möglich sein.",
+                  content:
+                    "**Kurz:** Beide Wege parallel betreiben, dann umschalten. Jeder Schritt ist umkehrbar.\n\n1. **Trigger anlegen**, der bei `INSERT` ein `NOTIFY jobs` sendet.\n2. **Worker hören zu** und pollen weiter alle 30 s als Sicherheitsnetz.\n3. **Polling-Intervall erhöhen**, sobald die Latenz stabil ist.\n\n```sql\ncreate function notify_job() returns trigger as $$\nbegin\n  perform pg_notify('jobs', new.id::text);\n  return new;\nend $$ language plpgsql;\n```\n\n| Schritt | Risiko | Rückweg |\n| --- | --- | --- |\n| Trigger | gering | `drop trigger` |\n| Listener | gering | Polling bleibt aktiv |",
+                },
+              ],
+            }}
+            bots={bots}
+            greetingName="Bärbel"
+          />
+        </AppShell>
+      );
     case "work":
       return (
         <AppShell data={shell}>

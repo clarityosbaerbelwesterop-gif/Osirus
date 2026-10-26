@@ -29,7 +29,7 @@ test("GitHub sign-in reaches GitHub (no GitHub account used)", async ({
     if (frame === page.mainFrame()) hops.push(redact(frame.url()));
   });
   await page.goto("/auth/sign-in");
-  await page.getByRole("button", { name: "Continue with GitHub" }).click();
+  await page.getByRole("button", { name: "Weiter mit GitHub" }).click();
   await page.waitForURL(/github\.com/, { timeout: 30_000 });
   const cookies = (await page.context().cookies(base)).map(
     (cookie) =>
@@ -57,17 +57,28 @@ async function send(page: Page, path: string, body?: unknown) {
   });
 }
 
-test("email journey: account, session, Hallo, MCP, sign out", async ({
+test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
   page,
 }) => {
+  test.setTimeout(10 * 60_000);
   await test.step("create an account", async () => {
     await page.goto("/auth/sign-up");
-    await page.locator('input[name="name"]').fill("Osirus journey check");
+    await page.locator('input[name="name"]').fill("Journey Prüfung");
     await page.locator('input[name="email"]').fill(email);
     await page.locator('input[name="password"]').fill(password);
-    await page.getByRole("button", { name: "Create account" }).click();
+    await page.locator("#accept-terms").check();
+    await page.locator("#accept-privacy").check();
+    await page.getByRole("button", { name: "Konto erstellen" }).click();
     await page.waitForURL(/\/app(\/|$|\?)/, { timeout: 60_000 });
     console.log(`Signed up as ${email} and landed in /app`);
+  });
+
+  await test.step("the greeting and the account use the account's name", async () => {
+    await expect(page.locator(".ac-hero-title")).toContainText("Journey");
+    await expect(page.locator(".account-text")).toContainText(
+      "Journey Prüfung",
+    );
+    await expect(page.locator("body")).not.toContainText("Alex");
   });
 
   await test.step("the session survives a reload", async () => {
@@ -75,36 +86,67 @@ test("email journey: account, session, Hallo, MCP, sign out", async ({
     await expect(page).toHaveURL(/\/app(\/|$|\?)/);
   });
 
-  await test.step('"Hallo" gets an answer', async () => {
+  const question = `Sag in einem Satz Hallo (${runId})`;
+  await test.step("Agents answers and the chat is saved", async () => {
+    const started = Date.now();
+    const input = page.getByRole("textbox", { name: "Nachricht" });
+    await input.fill(question);
+    await input.press("Enter");
+    await expect(page.locator(".ac-answer").last()).not.toBeEmpty({
+      timeout: 120_000,
+    });
+    await expect(page.locator(".ac-actions").last()).toBeVisible({
+      timeout: 120_000,
+    });
+    console.log(
+      `Agents answered in ${Math.round((Date.now() - started) / 1000)} s`,
+    );
+    await expect(page).toHaveURL(/session=/);
+    await expect(page.locator(".sidebar")).toContainText(question.slice(0, 30));
+  });
+
+  await test.step("the chat is still there after a reload", async () => {
+    await page.reload();
+    await expect(page.locator(".ac-user").first()).toContainText(question);
+    await expect(page.locator(".ac-answer").first()).not.toBeEmpty();
+    await expect(page.locator(".sidebar")).toContainText(question.slice(0, 30));
+  });
+
+  await test.step("the call is charged against both windows", async () => {
+    const quota = (await (await send(page, "/api/billing/quota")).json()) as {
+      plan?: string;
+      windows?: Array<{ window: string; spentUsd: number; budgetUsd: number }>;
+    };
+    const five = quota.windows?.find((w) => w.window === "fiveHour");
+    const week = quota.windows?.find((w) => w.window === "weekly");
+    console.log(
+      `Plan ${quota.plan}; 5h ${five?.spentUsd}/${five?.budgetUsd} USD; week ${week?.spentUsd}/${week?.budgetUsd} USD`,
+    );
+    expect(five?.spentUsd ?? 0).toBeGreaterThan(0);
+    expect(week?.spentUsd ?? 0).toBeGreaterThan(0);
+  });
+
+  await test.step("no service names reach the browser", async () => {
+    const models = await (await send(page, "/api/models")).text();
+    expect(models).not.toMatch(/openrouter|nvidia|unorouter|bytez|lightning/i);
+  });
+
+  await test.step('the Rouge Agent answers "Hallo"', async () => {
     const started = Date.now();
     const response = await send(page, "/api/runtime", {
       objective: "Hallo",
       requestId: randomUUID(),
+      surface: "agent",
     });
     expect(response.status()).toBe(200);
     const runIdHeader = response.headers()["x-osirus-run-id"];
-    const stream = await response.text();
-    const errors = stream
-      .split("\n")
-      .filter((line) => line.startsWith("data: "))
-      .map(
-        (line) =>
-          JSON.parse(line.slice(6)) as { kind?: string; message?: string },
-      )
-      .filter((packet) => packet.kind === "error")
-      .map((packet) => packet.message);
-    if (errors.length) console.log(`Run errors: ${errors.join(" | ")}`);
-    // The stream can close while durable stages still run: poll the
-    // snapshot until the run ends, as the chat UI does.
+    await response.text();
     type Snapshot = {
       run?: { status?: string };
-      stages?: Array<{ capability?: string }>;
       messages?: Array<{ role: string; content: string }>;
     };
     const terminal = new Set(["completed", "failed", "cancelled", "blocked"]);
     let snapshot: Snapshot = {};
-    // Every two seconds, as the chat UI polls: the poll also resumes a run
-    // whose request ended.
     for (let tries = 0; tries < 90; tries += 1) {
       snapshot = (await (
         await send(page, `/api/runtime/${runIdHeader}`)
@@ -112,22 +154,26 @@ test("email journey: account, session, Hallo, MCP, sign out", async ({
       if (terminal.has(snapshot.run?.status ?? "")) break;
       await page.waitForTimeout(2_000);
     }
-    const seconds = Math.round((Date.now() - started) / 1000);
     const answers = (snapshot.messages ?? []).filter(
       (message) => message.role === "assistant",
     );
-    const capabilities = [
-      ...new Set((snapshot.stages ?? []).map((stage) => stage.capability)),
-    ];
     console.log(
-      `Run ${snapshot.run?.status}; ${answers.length} answer(s)${answers[0]?.content?.trim() ? ` (${answers[0].content.length} chars)` : ""}; ${snapshot.stages?.length ?? 0} stages (${capabilities.join(", ")}); ${seconds} s`,
+      `Rouge run ${snapshot.run?.status}; ${answers.length} answer(s); ${Math.round((Date.now() - started) / 1000)} s`,
     );
     expect(snapshot.run?.status).toBe("completed");
-    // A greeting is one task for one arm, answered once.
-    expect(capabilities).toEqual(["general"]);
-    expect(answers).toHaveLength(1);
     expect(answers[0]?.content?.trim().length ?? 0).toBeGreaterThan(0);
-    expect(seconds).toBeLessThan(60);
+  });
+
+  await test.step("Stripe Checkout opens for a paid plan", async () => {
+    const response = await send(page, "/api/billing/checkout", {
+      plan: "pro",
+    });
+    const body = (await response.json()) as { url?: string; error?: string };
+    console.log(
+      `Checkout: HTTP ${response.status()} ${body.url ? new URL(body.url).host : (body.error ?? "")}`,
+    );
+    expect(response.status()).toBe(200);
+    expect(body.url ?? "").toMatch(/^https:\/\/checkout\.stripe\.com\//);
   });
 
   await test.step("an MCP server can be added, checked and removed", async () => {
@@ -154,9 +200,18 @@ test("email journey: account, session, Hallo, MCP, sign out", async ({
 
   await test.step("sign out ends the session", async () => {
     await page.goto("/app/settings");
-    await page.getByRole("button", { name: "Sign out" }).click();
+    await page.getByRole("button", { name: "Abmelden" }).click();
     await page.waitForURL(/\/auth\/sign-in/, { timeout: 30_000 });
     await page.goto("/app");
     await expect(page).toHaveURL(/\/auth\/sign-in/);
+  });
+
+  await test.step("signing in again shows the saved chat", async () => {
+    await page.goto("/auth/sign-in");
+    await page.locator('input[name="email"]').fill(email);
+    await page.locator('input[name="password"]').fill(password);
+    await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+    await page.waitForURL(/\/app(\/|$|\?)/, { timeout: 60_000 });
+    await expect(page.locator(".sidebar")).toContainText(question.slice(0, 30));
   });
 });

@@ -253,11 +253,13 @@ export const Composer = forwardRef<
           }}
           placeholder={
             props.running
-              ? "Osirus is working…"
+              ? chrome === "agent"
+                ? "Der Rouge Agent arbeitet …"
+                : "Osirus is working…"
               : chrome === "chat"
                 ? "Message"
                 : chrome === "agent"
-                  ? "Message Osirus"
+                  ? "Beschreibe das Ziel – der Rouge Agent erledigt den Rest …"
                   : "Describe what you want done…"
           }
           disabled={props.running}
@@ -359,7 +361,9 @@ export const Composer = forwardRef<
           </div>
           <div className="composer-controls">
             <span id="composer-hint" className="composer-hint">
-              Enter to send · Shift+Enter for a new line
+              {chrome === "agent"
+                ? "Enter startet · Shift+Enter neue Zeile"
+                : "Enter to send · Shift+Enter for a new line"}
             </span>
             {props.running ? (
               <button
@@ -396,7 +400,9 @@ export const Composer = forwardRef<
           </button>
         ) : null}
         <span className="composer-disclaimer">
-          Osirus can make mistakes. Check important results.
+          {chrome === "agent"
+            ? "Osirus kann Fehler machen. Wichtige Ergebnisse prüfen."
+            : "Osirus can make mistakes. Check important results."}
         </span>
       </div>
     </div>

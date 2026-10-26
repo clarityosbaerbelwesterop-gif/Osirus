@@ -52,7 +52,9 @@ describe("product model allowlist", () => {
     expect(turns).not.toContain('z.enum(["rouge"');
     expect(hub).toContain("DEFAULT_PRODUCT_MODEL_ID");
     expect(hub).not.toContain('return "rouge"');
-    expect(coding).toContain("PRODUCT_MODEL_ALLOWLIST");
+    // Code offers the gateway's listed models; /api/runtime resolves the
+    // chosen reference against the same list before it pins a run.
+    expect(coding).toContain("useGatewayModels");
     expect(coding).not.toContain('"rouge"');
   });
 });

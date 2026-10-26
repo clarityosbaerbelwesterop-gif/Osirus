@@ -16,3 +16,6 @@ test-results-prod
 ai-lab/var/
 *.pkl
 *.pickle
+
+# Python bytecode from the GitOps worker tests.
+__pycache__/

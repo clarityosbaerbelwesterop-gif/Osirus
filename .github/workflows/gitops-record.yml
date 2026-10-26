@@ -1,0 +1,57 @@
+name: GitOps record
+
+# Turns a measured run record into a pull request against state/runs/.
+# Sources: the worker's repository_dispatch callback (event gitops-run-finished,
+# client_payload {"record": {...}}) and the swarm job (workflow_call).
+# Merging the pull request is the acceptance step; records are append-only.
+# Requires "Allow GitHub Actions to create and approve pull requests".
+
+on:
+  repository_dispatch:
+    types: [gitops-run-finished]
+  workflow_call:
+    inputs:
+      record:
+        description: Run record JSON
+        required: true
+        type: string
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  record:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      RECORD_JSON: ${{ inputs.record || toJSON(github.event.client_payload) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - id: record
+        run: |
+          printf '%s' "$RECORD_JSON" > "$RUNNER_TEMP/record.json"
+          npx vite-node ai-lab/gitops/cli.ts record "$RUNNER_TEMP/record.json"
+      - name: Open the state pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ steps.record.outputs.run_id }}
+          JOB_ID: ${{ steps.record.outputs.job_id }}
+          STATUS: ${{ steps.record.outputs.status }}
+        run: |
+          branch="gitops/state/$RUN_ID"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$branch"
+          git add "ai-lab/gitops/state/runs/$RUN_ID.json"
+          git commit -m "gitops: record $JOB_ID $STATUS ($RUN_ID)"
+          git push origin "$branch"
+          gh pr create --base "${{ github.event.repository.default_branch }}" --head "$branch" \
+            --title "gitops: $JOB_ID $STATUS ($RUN_ID)" \
+            --body "Measured run record from the GitOps worker. Merging accepts it into the control-plane state." \
+            || echo "::warning::Branch $branch pushed; open the pull request manually (Actions may not create PRs in this repository)."

@@ -1,0 +1,5 @@
+s2-run2-fetch
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIFW1HdGTNPVFaO1QranymoLIzK2mrf6lPvb12soQKOYC box-s2-run2-fetch
+volume=3qlkuqnr1u
+dc=US-NC-2
+budget=3.00

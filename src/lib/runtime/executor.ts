@@ -8,6 +8,9 @@ import { analyseTask } from "../arms/thinking";
 import type { ArmId, RuntimeIdentity, TaskAnalysis } from "../arms/types";
 import { freeRoleModels } from "../models/free";
 import { UnoRouterProvider } from "../models/unorouter";
+import type { ModelProvider } from "../models/provider";
+import { GatewayProvider } from "../gateway/provider";
+import { isGatewayRef } from "../gateway/providers";
 import { recordingProvider } from "../models/recording";
 import { resolveProductPolicy } from "../strategy/resolve";
 import {
@@ -230,12 +233,14 @@ export async function planRuntimeRun(input: {
   pinnedModel?: string;
 }) {
   const repository = new RuntimeRepository(input.identity.userId);
-  const baseProvider = input.pinnedModel
-    ? new UnoRouterProvider({
-        model: input.pinnedModel,
-        fallback: false,
-        priority: "P0",
-      })
+  const baseProvider: ModelProvider = input.pinnedModel
+    ? isGatewayRef(input.pinnedModel)
+      ? new GatewayProvider({ ref: input.pinnedModel, autoFallback: true })
+      : new UnoRouterProvider({
+          model: input.pinnedModel,
+          fallback: false,
+          priority: "P0",
+        })
     : input.policy?.model
       ? new UnoRouterProvider({
           model: input.policy.model,

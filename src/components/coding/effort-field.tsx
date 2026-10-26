@@ -12,9 +12,9 @@ export function EffortField(props: {
   const suggested = !props.chosen && props.suggestion ? props.suggestion : null;
   return (
     <label>
-      Effort
+      Aufwand
       <select
-        aria-label="Effort"
+        aria-label="Aufwand"
         value={props.chosen ?? suggested ?? ""}
         data-chosen={props.chosen ? "true" : "false"}
         data-suggested={suggested ? "true" : "false"}

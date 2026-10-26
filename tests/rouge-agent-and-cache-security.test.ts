@@ -322,8 +322,8 @@ describe("Security hardening regressions (RT2-06, RT2-09)", () => {
 
     const r1 = await signInWithEmail(null, f1);
     const r2 = await signInWithEmail(null, f2);
-    expect(r1).toEqual({ error: "Invalid email or password." });
-    expect(r2).toEqual({ error: "Invalid email or password." });
+    expect(r1).toEqual({ error: "E-Mail oder Passwort ist falsch." });
+    expect(r2).toEqual(r1);
   });
 
   it("coerces non-strict model JSON decisions so agent loops do not fail with invalid_json", () => {

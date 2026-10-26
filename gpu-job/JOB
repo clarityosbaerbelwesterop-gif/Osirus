@@ -1,0 +1,7 @@
+train-final-a
+job=train-final
+sha=6e57c943685e930a7119d2170a061d69c0c98431
+volume=3qlkuqnr1u
+budget=400.00
+gpu=B200x2@8.00/any
+hours=22

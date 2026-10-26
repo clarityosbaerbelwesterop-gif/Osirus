@@ -20,20 +20,20 @@ export function SignUpForm() {
           <OsirusMark size={24} />
           Osirus
         </p>
-        <h1>Create account</h1>
+        <h1>Konto erstellen</h1>
         <p className="auth-lede">
-          Your personal workspace is ready after your first sign-in.
+          Dein persönlicher Workspace ist nach der ersten Anmeldung bereit.
         </p>
         <label>
           Name
           <input name="name" type="text" autoComplete="name" required />
         </label>
         <label>
-          Email
+          E-Mail
           <input name="email" type="email" autoComplete="email" required />
         </label>
         <label>
-          Password
+          Passwort (mind. 8 Zeichen)
           <input
             name="password"
             type="password"
@@ -78,7 +78,7 @@ export function SignUpForm() {
           className="btn btn-primary auth-submit"
           disabled={pending || !accepted}
         >
-          {pending ? "Creating…" : "Create account"}
+          {pending ? "Wird erstellt…" : "Konto erstellen"}
         </button>
         <GitHubSignInButton
           disabled={!accepted}
@@ -88,7 +88,7 @@ export function SignUpForm() {
           }}
         />
         <p className="auth-footer">
-          Already registered? <Link href="/auth/sign-in">Sign in</Link>
+          Schon registriert? <Link href="/auth/sign-in">Anmelden</Link>
         </p>
       </form>
     </main>

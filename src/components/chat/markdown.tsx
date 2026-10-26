@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Copy } from "lucide-react";
-import { memo, useRef, useState, type ComponentProps } from "react";
+import { memo, useEffect, useRef, useState, type ComponentProps } from "react";
 import ReactMarkdown, {
   defaultUrlTransform,
   type Components,
@@ -113,19 +113,86 @@ function urlTransform(url: string) {
   return defaultUrlTransform(url);
 }
 
+/**
+ * Math as models write it: \(...\) and \[...\] become $...$ and $$...$$.
+ * A dollar before an amount ("$5 and $10") stays a dollar sign. Code is
+ * left untouched.
+ */
+export function prepareMath(source: string) {
+  return source
+    .split(/(```[\s\S]*?(?:```|$)|`[^`\n]*`)/g)
+    .map((part, index) =>
+      index % 2 === 1
+        ? part
+        : part
+            .replace(/\\\[([\s\S]+?)\\\]/g, (_, math: string) => `$$${math}$$`)
+            .replace(/\\\(([\s\S]+?)\\\)/g, (_, math: string) => `$${math}$`)
+            .replace(
+              /(^|[^\\$])\$(\d[\d.,]*)(?=\s|$|[.,;:!?)\]/-])/gm,
+              "$1\\$$$2",
+            ),
+    )
+    .join("");
+}
+
+/** True when the text has something KaTeX would render. */
+export function hasMath(source: string) {
+  return /\$[^$\n]+\$|\$\$|\\\(|\\\[/.test(source);
+}
+
+type MathPlugins = {
+  remark: NonNullable<ComponentProps<typeof ReactMarkdown>["remarkPlugins"]>;
+  rehype: NonNullable<ComponentProps<typeof ReactMarkdown>["rehypePlugins"]>;
+};
+
+// KaTeX (about 60 KB) is loaded only once an answer contains math.
+let mathPlugins: MathPlugins | null = null;
+let mathLoading: Promise<MathPlugins> | null = null;
+
+function loadMath() {
+  mathLoading ??= Promise.all([
+    import("remark-math"),
+    import("rehype-katex"),
+    import("katex/dist/katex.min.css"),
+  ]).then(([remarkMath, rehypeKatex]) => {
+    mathPlugins = {
+      remark: [remarkGfm, remarkMath.default],
+      rehype: [[rehypeKatex.default, { throwOnError: false, strict: false }]],
+    };
+    return mathPlugins;
+  });
+  return mathLoading;
+}
+
+const plainPlugins = [remarkGfm];
+
 export const Markdown = memo(function Markdown({
   content,
 }: {
   content: string;
 }) {
+  const wantsMath = hasMath(content);
+  const [plugins, setPlugins] = useState<MathPlugins | null>(mathPlugins);
+  useEffect(() => {
+    if (!wantsMath || plugins) return;
+    let alive = true;
+    void loadMath().then((loaded) => {
+      if (alive) setPlugins(loaded);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [plugins, wantsMath]);
+  const math = wantsMath ? plugins : null;
   return (
     <div className="md">
       <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
+        remarkPlugins={math ? math.remark : plainPlugins}
+        rehypePlugins={math ? math.rehype : undefined}
         components={components}
         urlTransform={urlTransform}
       >
-        {content}
+        {math ? prepareMath(content) : content}
       </ReactMarkdown>
     </div>
   );

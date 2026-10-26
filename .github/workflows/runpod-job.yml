@@ -1,0 +1,761 @@
+name: RunPod job (CPU, ohne SSH)
+
+# Startet NUR, wenn sich gpu-job/JOB auf dem Trainings-Branch aendert. Jeder Lauf wartet auf die Freigabe
+# des Owners im Environment RUNPOD (Required reviewers).
+# Immer zuerst: laufende Pods und Volumes lesen (ohne Kontostand, ohne env, ohne IPs; das Log ist oeffentlich).
+# job=account: nur das, kein Pod.
+# Sonst: CPU-Pod mit dem Network Volume unter /workspace. Der Pod laedt Repo 67 genau beim Commit aus JOB
+# (er muss auf dem Trainings-Branch von 67 liegen) und fuehrt nur jobs/<job>.sh aus der Liste unten aus.
+# gpu=...@X.XX/any (Owner-Freigabe 21.10.2026): der Trainings-Pod darf in jedem Rechenzentrum mit freien GPUs laufen.
+# Er hat dann eine lokale Platte unter /workspace; ein kleiner Gateway-Pod im Rechenzentrum des Volumes
+# (jobs/volgw.py, Port 8001/tcp, Einmal-Token) liefert ihm das 1B und nimmt die Ergebnisse auf (jobs/volsync.py).
+# Beide Pods werden immer geloescht.
+# Langlauf (Owner-Auftrag 22.10.2026): JOB-Zeile 7 hours=N (6-24) bei gpu=.../any. Beide Pods pruefen beim Start, ob
+# sie sich mit ihrem eigenen, auf den Pod beschraenkten RunPod-Schluessel selbst beenden koennen (67 jobs/pod_guard.sh).
+# Nur dann laeuft der Job ueber das 6-h-Limit dieses GitHub-Jobs hinaus: der Trainings-Pod endet 10 min nach dem Job
+# oder spaetestens an seiner Deadline, der Gateway-Pod, sobald runs/<run_id>/DONE.json auf dem Volume liegt, oder an
+# seiner Deadline. Die Jobs watch-1..4 verfolgen den oeffentlichen, bereinigten Status (ohne Token und Logs),
+# cleanup loescht am Ende alles, was noch laeuft (braucht wieder die Freigabe). Ohne Selbstbeendigung bricht der Job
+# auf dem Pod sofort ab und die Pods werden wie immer geloescht.
+# Ergebnisse (result.json, log.txt) holt der Runner ueber den RunPod-HTTP-Proxy mit einem Einmal-Token.
+# Danach wird der Pod immer geloescht, Volumes nie. Kein SSH, kein Schluessel auf dem Pod, keine Gewichte
+# auf dem Runner.
+on:
+  push:
+    branches: [claude/gitops-multi-model-finetuning-ort4m9]
+    paths: [gpu-job/JOB]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: runpod
+  cancel-in-progress: false
+
+jobs:
+  pod:
+    runs-on: ubuntu-latest
+    environment: RUNPOD
+    timeout-minutes: 350 # Notbremse; Warten endet spaetestens 15 min davor
+    outputs:
+      detached: ${{ steps.wait.outputs.detached }}
+      run_id: ${{ steps.run.outputs.run_id }}
+      pod_id: ${{ steps.pod.outputs.id }}
+      gw_id: ${{ steps.gw.outputs.id }}
+      status_id: ${{ steps.pod.outputs.status_id }}
+      deadline: ${{ steps.pod.outputs.deadline }}
+    env:
+      BUDGET_CAP: "5.00" # feste Obergrenze pro Job in USD
+      MAX_MINUTES: "300"
+      HARD_MAX_CPU_PRICE: "2.00" # USD/h; teurerer Pod wird sofort geloescht
+      GPU_BUDGET_CAP: "110.00" # feste Obergrenze pro GPU-Job in USD
+      LONG_BUDGET_CAP: "460.00" # Langlauf (hours=N): Obergrenze in USD (Owner: hoechstens 300-400 EUR)
+      LONG_MAX_HOURS: "24"
+      HARD_MAX_GPU_PRICE: "9.00" # USD/h je GPU
+      HARD_MAX_GW_PRICE: "3.00" # USD/h fuer den Gateway-Pod (gpu=.../any)
+      GW_GPUS: "RTX PRO 6000|L40S|RTX 5090|RTX 4090|RTX A6000|A40|L4" # Gateway, wenn keine CPU frei ist
+      LOCAL_GB: "400" # lokale Platte des Trainings-Pods bei gpu=.../any
+      GPU_MAX_MINUTES: "300" # GPU-Pod hoechstens 5 h; der GitHub-Job endet nach 350 min
+      STOCK_WAIT_MIN: "45" # so lange wird auf freie GPUs gewartet (kostet nichts)
+      JOB_MAX_MIN: "350"
+      CPU_FLAVORS: '["cpu3c","cpu3g","cpu5c","cpu5g"]' # RunPod waehlt eine verfuegbare Familie
+      IMAGE: "runpod/base@sha256:e6eb5a38bd3b321f41e7c584334c9ebc15e1e529574c7f2c866d148990cfb817"
+      BRANCH: claude/gitops-multi-model-finetuning-ort4m9
+      REPO67: clarityosbaerbelwesterop-gif/67
+      MOUNT: /workspace
+    steps:
+      - name: Auftrag lesen (nur JOB, kein Checkout)
+        id: run
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          echo "JOB_T0=$(date +%s)" >> "$GITHUB_ENV"
+          gh api "repos/${{ github.repository }}/contents/gpu-job/JOB?ref=${{ github.sha }}" \
+            -H "Accept: application/vnd.github.raw" > JOB
+          # JOB: Z1 run_id, Z2 job=<name>, Z3 sha=<40 hex|->, Z4 volume=<id|->, Z5 budget=N.NN,
+          #      Z6 vcpu=N (CPU-Jobs) oder gpu=<TYP[|TYP..]>x<1|2>@<max USD/h je GPU>[/any] (train-*, eval-*;
+          #         TYP aus B300 B200 H200 H100 A100 L40S, z. B. gpu=B200x2@8.00/any)
+          RUN_ID=$(sed -n 1p JOB); J=$(sed -n 2p JOB); S=$(sed -n 3p JOB); V=$(sed -n 4p JOB); B=$(sed -n 5p JOB); C=$(sed -n 6p JOB)
+          [[ "$RUN_ID" =~ ^[a-z0-9-]{4,40}$ ]] || { echo "bad run_id"; exit 1; }
+          [[ "$J" =~ ^job=(account|inventory|bench-1b|grow-10b|scan|train-1|train-final|eval-1|eval-qwen)$ ]] || { echo "job nicht in der Liste"; exit 1; }; JOBN="${BASH_REMATCH[1]}"
+          [[ "$S" =~ ^sha=([0-9a-f]{40}|-)$ ]] || { echo "bad sha"; exit 1; }; SHA="${BASH_REMATCH[1]}"
+          [[ "$V" =~ ^volume=([a-z0-9-]{3,40}|-)$ ]] || { echo "bad volume"; exit 1; }; VOL="${BASH_REMATCH[1]}"
+          [[ "$B" =~ ^budget=([0-9]{1,3}\.[0-9]{2})$ ]] || { echo "bad budget"; exit 1; }; BUD="${BASH_REMATCH[1]}"
+          MODE=cpu; VCPU=2; GTYPES=""; GCOUNT=0; GMAX=0; CAP=$BUDGET_CAP; PLACE=volume
+          if [[ "$JOBN" == train-* || "$JOBN" == eval-* ]]; then
+            [[ "$C" =~ ^gpu=((B300|B200|H200|H100|A100|L40S)(\|(B300|B200|H200|H100|A100|L40S))*)x([12])@([0-9]\.[0-9]{2})(/any)?$ ]] || { echo "bad gpu"; exit 1; }
+            MODE=gpu; GTYPES="${BASH_REMATCH[1]//|/ }"; GCOUNT="${BASH_REMATCH[5]}"; GMAX="${BASH_REMATCH[6]}"; CAP=$GPU_BUDGET_CAP
+            [ -z "${BASH_REMATCH[7]}" ] || PLACE=any
+            python3 -c "import sys; sys.exit(0 if 0<float('$GMAX')<=float('$HARD_MAX_GPU_PRICE') else 1)" || { echo "gpu-Preis ueber $HARD_MAX_GPU_PRICE"; exit 1; }
+          else
+            [[ "$C" =~ ^vcpu=(2|4|8|16|32)$ ]] || { echo "bad vcpu"; exit 1; }; VCPU="${BASH_REMATCH[1]}"
+          fi
+          L7=$(sed -n 7p JOB | tr -d '[:space:]'); LONG=0; HOURS=0
+          if [ -n "$L7" ]; then  # Z7 hours=N: Langlauf, nur GPU mit /any
+            [[ "$L7" =~ ^hours=([0-9]{1,2})$ ]] || { echo "bad hours"; exit 1; }; HOURS="${BASH_REMATCH[1]}"
+            [ "$MODE" = gpu ] && [ "$PLACE" = any ] || { echo "hours=N nur mit gpu=.../any"; exit 1; }
+            [ "$HOURS" -ge 6 ] && [ "$HOURS" -le "$LONG_MAX_HOURS" ] || { echo "hours 6-$LONG_MAX_HOURS"; exit 1; }
+            LONG=1; CAP=$LONG_BUDGET_CAP
+          fi
+          [ -z "$(sed -n '8,$p' JOB | tr -d '[:space:]')" ] || { echo "JOB hat zu viele Zeilen"; exit 1; }
+          if [ "$JOBN" != account ]; then
+            [ "$SHA" != - ] && [ "$VOL" != - ] || { echo "sha und volume noetig"; exit 1; }
+            python3 -c "import sys; sys.exit(0 if 0<float('$BUD')<=float('$CAP') else 1)" || { echo "budget ueber $CAP"; exit 1; }
+          fi
+          { echo "run_id=$RUN_ID"; echo "job=$JOBN"; echo "sha=$SHA"; echo "volume=$VOL"; echo "budget=$BUD"; echo "vcpu=$VCPU"
+            echo "mode=$MODE"; echo "gpu_types=$GTYPES"; echo "gpu_count=$GCOUNT"; echo "gpu_max=$GMAX"; echo "place=$PLACE"
+            echo "long=$LONG"; echo "hours=$HOURS"; } >> "$GITHUB_OUTPUT"
+          echo "Job $RUN_ID: $JOBN @ ${SHA:0:12}, Volume $VOL, Budget $BUD USD, $MODE: ${GTYPES:-$VCPU vCPU} x$GCOUNT <= $GMAX USD/h je GPU, Ort: $PLACE"
+          [ "$LONG" = 1 ] && echo "Langlauf: hoechstens $HOURS h, die Pods beenden sich selbst (sonst Abbruch nach wenigen Minuten)"
+
+      - name: Pods und Volumes lesen (nur lesen, ohne env und IPs)
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+        run: |
+          set -euo pipefail
+          arr='if type=="array" then . else (.pods // .networkVolumes // .data // []) end'
+          curl -fsS https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+            | jq "[$arr | .[] | {id, name, desiredStatus, costPerHr, gpuCount, vcpuCount, imageName, networkVolumeId,
+                   lastStartedAt, dataCenterId: (.machine.dataCenterId? // .dataCenterId? // null),
+                   gpu: (.machine.gpuTypeId? // .gpu.id? // null)}]" > pods.json
+          curl -fsS https://rest.runpod.io/v1/networkvolumes -H "Authorization: Bearer $RUNPOD_API_KEY" \
+            | jq "[$arr | .[] | {id, name, size, dataCenterId}]" > volumes.json
+          echo "== Pods =="; jq -c '.[]' pods.json
+          echo "Laufende Pods: $(jq '[.[] | select(.desiredStatus=="RUNNING")] | length' pods.json), zusammen $(jq '[.[] | select(.desiredStatus=="RUNNING") | (.costPerHr // 0)] | add // 0' pods.json) USD/h"
+          echo "== Volumes =="; jq -c '.[]' volumes.json
+          # GPU-Bestand und Preise in den Rechenzentren der Volumes (nur lesen)
+          for dc in $(jq -r '[.[].dataCenterId] | unique | .[]' volumes.json); do
+            for n in 1 2; do
+              q=$(jq -n --arg dc "$dc" --argjson n "$n" '{query:"query($i:GpuLowestPriceInput){gpuTypes{id displayName memoryInGb lowestPrice(input:$i){uninterruptablePrice stockStatus}}}",
+                     variables:{i:{gpuCount:$n, dataCenterId:$dc, secureCloud:true}}}')
+              curl -sS -X POST https://api.runpod.io/graphql -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" -d "$q" \
+                | jq -c --arg dc "$dc" --argjson n "$n" '(.errors // empty | {graphql_errors: [.[].message]}),
+                    (.data.gpuTypes // [] | .[] | select(.displayName | test("B300|B200|H200|H100|A100|L40S|RTX 5090|RTX PRO 6000"))
+                     | {dc: $dc, gpus: $n, id, name: .displayName, gb: .memoryInGb, usd_h: .lowestPrice.uninterruptablePrice, stock: .lowestPrice.stockStatus})' || true
+            done
+          done
+          # dazu: Bestand ueber alle Rechenzentren (fuer gpu=.../any)
+          q='{"query":"query($i:GpuLowestPriceInput){gpuTypes{id displayName lowestPrice(input:$i){uninterruptablePrice stockStatus}}}","variables":{"i":{"gpuCount":2,"secureCloud":true}}}'
+          curl -sS -X POST https://api.runpod.io/graphql -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" -d "$q" \
+            | jq -c '.data.gpuTypes // [] | .[] | select(.displayName | test("B300|B200|H200|H100|A100|L40S")) | {dc: "alle", gpus: 2, name: .displayName,
+                     usd_h: .lowestPrice.uninterruptablePrice, stock: .lowestPrice.stockStatus}' || true
+
+      - name: Commit in 67 pruefen (muss auf dem Trainings-Branch liegen)
+        if: steps.run.outputs.job != 'account'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SHA: ${{ steps.run.outputs.sha }}
+        run: |
+          set -euo pipefail
+          st=$(gh api "repos/$REPO67/compare/$SHA...$BRANCH" --jq .status)
+          case "$st" in ahead|identical) echo "Commit $SHA liegt auf $BRANCH ($st)";; *) echo "Commit nicht auf $BRANCH ($st)"; exit 1;; esac
+
+      - name: Volume pruefen
+        if: steps.run.outputs.job != 'account'
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          VOL: ${{ steps.run.outputs.volume }}
+        run: |
+          set -euo pipefail
+          vdc=$(curl -fsS "https://rest.runpod.io/v1/networkvolumes/$VOL" -H "Authorization: Bearer $RUNPOD_API_KEY" | jq -r '.dataCenterId // empty')
+          [ -n "$vdc" ] || { echo "Volume $VOL nicht gefunden -> kein Pod"; exit 1; }
+          echo "Volume $VOL in $vdc"
+
+      - name: Gateway-Pod im Rechenzentrum des Volumes (nur gpu=.../any)
+        id: gw
+        if: steps.run.outputs.job != 'account' && steps.run.outputs.place == 'any'
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
+          SHA: ${{ steps.run.outputs.sha }}
+          VOL: ${{ steps.run.outputs.volume }}
+          LONG: ${{ steps.run.outputs.long }}
+          HOURS: ${{ steps.run.outputs.hours }}
+        run: |
+          set -euo pipefail
+          GWTOK=$(openssl rand -hex 16); echo "::add-mask::$GWTOK"
+          # Langlauf: der Gateway-Pod endet, sobald runs/<run_id>/DONE.json auf dem Volume liegt (+5 min), spaetestens
+          # 60 min nach der spaetesten Deadline des Trainings-Pods
+          GW_DEADLINE=$(( JOB_T0 + (HOURS * 60 + STOCK_WAIT_MIN + 60) * 60 ))
+          BOOT=$(cat <<'EOF'
+          set -u
+          mkdir -p /root/67
+          if curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$SHA" | tar xz -C /root/67 --strip-components=1; then
+            cd /root/67
+            if [ "${LONG:-0}" = 1 ]; then
+              mkdir -p "/workspace/runs/$RUN_ID"
+              bash jobs/pod_guard.sh check > "/workspace/runs/$RUN_ID/gw-selfterm.json" 2>/dev/null
+              bash jobs/pod_guard.sh watch "$GW_DEADLINE" "/workspace/runs/$RUN_ID/DONE.json" 300 >> /root/guard.log 2>&1 &
+            fi
+            python3 jobs/volgw.py --root /workspace --port 8001
+          fi
+          sleep infinity
+          EOF
+          )
+          mk() {
+            jq -n --arg rid "$RUN_ID" --arg img "$IMAGE" --arg v "$VOL" --arg mp "$MOUNT" --arg sha "$SHA" --arg repo "$REPO67" \
+              --arg tok "$GWTOK" --arg boot "$BOOT" --argjson hw "$1" --arg long "$LONG" --arg gwdl "$GW_DEADLINE" \
+              '{name:("quasnir-gw-"+$rid), imageName:$img, cloudType:"SECURE", networkVolumeId:$v, volumeMountPath:$mp,
+                ports:["8001/tcp"], interruptible:false,
+                env:{SHA:$sha, REPO:$repo, GW_TOKEN:$tok, LONG:$long, RUN_ID:$rid, GW_DEADLINE:$gwdl},
+                dockerStartCmd:["bash","-c",$boot]} + $hw'
+          }
+          try() {
+            code=$(curl -sS -o /tmp/gw.json -w '%{http_code}' -X POST https://rest.runpod.io/v1/pods \
+              -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" -d "$1") || code=000
+            [ "${code:0:1}" = 2 ] && return 0
+            echo "Gateway ($2): HTTP $code"; jq -c 'del(.env?, .publicIp?, .portMappings?, .dockerStartCmd?)' /tmp/gw.json 2>/dev/null | head -c 1000; echo
+            return 1
+          }
+          # zuerst CPU (billig), dann eine kleine GPU; immer im Rechenzentrum des Volumes (folgt aus networkVolumeId)
+          got=""
+          for vc in 4 2; do
+            hw=$(jq -n --argjson fl "$CPU_FLAVORS" --argjson vc "$vc" '{computeType:"CPU", cpuFlavorIds:$fl, vcpuCount:$vc, containerDiskInGb:20}')
+            try "$(mk "$hw")" "$vc vCPU" && { got="$vc vCPU"; break; }
+          done
+          if [ -z "$got" ]; then
+            ids=$(curl -fsS -X POST https://api.runpod.io/graphql -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" \
+                  -d '{"query":"query{gpuTypes{id displayName}}"}' | jq -c '[.data.gpuTypes[] | {id, displayName}]')
+            IFS='|' read -ra types <<<"$GW_GPUS"
+            for t in "${types[@]}"; do
+              gid=$(jq -r --arg t "$t" '[.[] | select(.displayName == $t or .id == ("NVIDIA " + $t) or .id == ("NVIDIA GeForce " + $t))][0].id // empty' <<<"$ids")
+              [ -n "$gid" ] || continue
+              hw=$(jq -n --arg g "$gid" '{computeType:"GPU", gpuTypeIds:[$g], gpuCount:1, containerDiskInGb:20}')
+              try "$(mk "$hw")" "1 x $gid" && { got="1 x $gid"; break; }
+            done
+          fi
+          id=""; [ -n "$got" ] && id=$(jq -r '.id // empty' /tmp/gw.json 2>/dev/null || true)
+          echo "id=$id" >> "$GITHUB_OUTPUT"      # sofort, damit Cleanup immer greift
+          [ -n "$id" ] || { echo "kein Gateway-Pod im Rechenzentrum des Volumes"; exit 1; }
+          price=$(jq -r '.costPerHr // empty' /tmp/gw.json)
+          python3 -c "import sys; p=float('${price:-0}'); sys.exit(0 if 0 < p <= float('$HARD_MAX_GW_PRICE') else 1)" \
+            || { echo "Gateway-Preis ${price:-?}/h ueber $HARD_MAX_GW_PRICE"; exit 1; }
+          echo "price=$price" >> "$GITHUB_OUTPUT"
+          echo "Gateway $id ($got), Preis/h: $price; warte auf Adresse und Dienst"
+          # oeffentliche Adresse (IP und Port bleiben aus dem Log) und Gesundheitscheck, hoechstens 12 min
+          end=$(( $(date +%s) + 720 )); url=""
+          while [ "$(date +%s)" -lt "$end" ]; do
+            curl -fsS "https://rest.runpod.io/v1/pods/$id" -H "Authorization: Bearer $RUNPOD_API_KEY" > /tmp/gwp.json 2>/dev/null || true
+            ip=$(jq -r '.publicIp // empty' /tmp/gwp.json 2>/dev/null || true)
+            port=$(jq -r '(.portMappings // {})["8001"] // empty' /tmp/gwp.json 2>/dev/null || true)
+            if [ -n "$ip" ] && [ -n "$port" ]; then
+              echo "::add-mask::$ip"; echo "::add-mask::$port"
+              if curl -fsS -m 10 "http://$ip:$port/$GWTOK/health" > /tmp/health.json 2>/dev/null; then url="http://$ip:$port/$GWTOK"; break; fi
+            fi
+            sleep 15
+          done
+          [ -n "$url" ] || { echo "Gateway antwortet nicht"; exit 1; }
+          echo "::add-mask::$url"; echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "Gateway bereit, frei auf dem Volume: $(( $(jq -r .free /tmp/health.json) / 1000000000 )) GB"
+
+      - name: Pod anlegen (CPU oder GPU)
+        id: pod
+        if: steps.run.outputs.job != 'account'
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
+          JOBN: ${{ steps.run.outputs.job }}
+          SHA: ${{ steps.run.outputs.sha }}
+          VOL: ${{ steps.run.outputs.volume }}
+          VCPU: ${{ steps.run.outputs.vcpu }}
+          MODE: ${{ steps.run.outputs.mode }}
+          GTYPES: ${{ steps.run.outputs.gpu_types }}
+          GCOUNT: ${{ steps.run.outputs.gpu_count }}
+          GMAX: ${{ steps.run.outputs.gpu_max }}
+          BUDGET: ${{ steps.run.outputs.budget }}
+          PLACE: ${{ steps.run.outputs.place }}
+          GW_URL: ${{ steps.gw.outputs.url }}
+          GW_PRICE: ${{ steps.gw.outputs.price }}
+          LONG: ${{ steps.run.outputs.long }}
+          HOURS: ${{ steps.run.outputs.hours }}
+        run: |
+          set -euo pipefail
+          [ "$PLACE" != any ] || [ -n "$GW_URL" ] || { echo "kein Gateway -> kein Trainings-Pod"; exit 1; }
+          TOKEN=$(openssl rand -hex 16); echo "::add-mask::$TOKEN"; echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+          # Langlauf: oeffentlicher, bereinigter Status unter /status-<id> (nur result.json, exit_code, selfterm.json)
+          STATUS_ID=$(openssl rand -hex 8); echo "status_id=$STATUS_ID" >> "$GITHUB_OUTPUT"
+          SHORT_DEADLINE=$(( JOB_T0 + (JOB_MAX_MIN - 25) * 60 ))
+          BOOT=$(cat <<'EOF'
+          set -u
+          ln -sfn /workspace /vol 2>/dev/null || true
+          O="/srv/out/$TOKEN"; mkdir -p "$O" /root/67
+          cat > /srv/serve.py <<'PY'
+          import http.server, os
+          class H(http.server.SimpleHTTPRequestHandler):
+              def list_directory(self, path):
+                  self.send_error(404)
+              def log_message(self, *a):
+                  pass
+          os.chdir("/srv/out")
+          http.server.ThreadingHTTPServer(("0.0.0.0", 8000), H).serve_forever()
+          PY
+          python3 /srv/serve.py &
+          if curl -fsSL "https://codeload.github.com/$REPO/tar.gz/$SHA" | tar xz -C /root/67 --strip-components=1 \
+             && [ -f "/root/67/jobs/$JOB.sh" ]; then
+            cd /root/67
+            if [ "${LONG:-0}" = 1 ]; then
+              # Langlauf nur, wenn beide Pods sich selbst beenden koennen; sonst gilt die kurze Deadline
+              SELFTERM_OK=0
+              bash jobs/pod_guard.sh check > /tmp/self.json 2>/dev/null
+              python3 jobs/volsync.py pull "runs/$RUN_ID/gw-selfterm.json" --root /tmp/gwst > /dev/null 2>&1
+              if python3 -c "import json,sys; sys.exit(0 if all(json.load(open(f)).get('ok') for f in sys.argv[1:]) else 1)" \
+                   /tmp/self.json "/tmp/gwst/runs/$RUN_ID/gw-selfterm.json" 2>/dev/null; then
+                SELFTERM_OK=1
+                bash jobs/pod_guard.sh watch $(( POD_DEADLINE + 600 )) "$O/exit_code" 600 >> /srv/guard.log 2>&1 &
+              else
+                POD_DEADLINE=$SHORT_DEADLINE
+              fi
+              export SELFTERM_OK POD_DEADLINE
+              python3 - "$SELFTERM_OK" /tmp/self.json "/tmp/gwst/runs/$RUN_ID/gw-selfterm.json" > "$O/selfterm.json" <<'PY'
+          import json, sys
+          def rd(f):
+              try:
+                  return json.load(open(f))
+              except Exception:
+                  return None
+          print(json.dumps({"long": int(sys.argv[1]), "pod": rd(sys.argv[2]), "gateway": rd(sys.argv[3])}))
+          PY
+              REDACT="$TOKEN $GW ${GW##*/}" bash jobs/pod_guard.sh publish "$O" "/srv/out/status-$STATUS_ID" >> /srv/guard.log 2>&1 &
+            fi
+            bash "jobs/$JOB.sh" "$O" > "$O/log.txt" 2>&1; echo $? > "$O/exit_code"
+          else
+            echo 99 > "$O/exit_code"
+          fi
+          sleep infinity
+          EOF
+          )
+          # Laufzeit des Pods steht vor dem Anlegen fest: CPU nach MAX_MINUTES, GPU nach Budget und Preisgrenze.
+          if [ "$MODE" = gpu ]; then
+            MAXM=$GPU_MAX_MINUTES; [ "$LONG" = 1 ] && MAXM=$(( HOURS * 60 ))
+            MIN=$(python3 -c "print(min(int('$MAXM'), int(float('$BUDGET')*0.9/(float('$GMAX')*int('$GCOUNT')+float('${GW_PRICE:-0}'))*60)))")
+          else
+            MIN=$MAX_MINUTES
+          fi
+          DEADLINE=$(( $(date +%s) + (MIN - 5) * 60 ))   # der Job auf dem Pod endet 5 min vor dem Runner
+          [ "$MODE" = gpu ] || echo "minutes=$MIN" >> "$GITHUB_OUTPUT"   # GPU: nach dem Anlegen
+          mk() {  # $1 = JSON mit den hardware-abhaengigen Feldern
+            jq -n --arg rid "$RUN_ID" --arg img "$IMAGE" --arg v "$VOL" --arg mp "$MOUNT" --arg job "$JOBN" --arg sha "$SHA" \
+              --arg tok "$TOKEN" --arg repo "$REPO67" --arg boot "$BOOT" --arg dl "$DEADLINE" --argjson hw "$1" \
+              --arg place "$PLACE" --arg gw "$GW_URL" --argjson lgb "$LOCAL_GB" \
+              --arg long "$LONG" --arg sid "$STATUS_ID" --arg sdl "$SHORT_DEADLINE" \
+              '{name:("quasnir-job-"+$rid), imageName:$img, cloudType:"SECURE", volumeMountPath:$mp,
+                ports:["8000/http"], interruptible:false,
+                env:({JOB:$job, SHA:$sha, TOKEN:$tok, REPO:$repo, RUN_ID:$rid, POD_DEADLINE:$dl, LONG:$long,
+                      STATUS_ID:$sid, SHORT_DEADLINE:$sdl} + (if $place == "any" then {GW:$gw} else {} end)),
+                dockerStartCmd:["bash","-c",$boot]}
+               + (if $place == "any" then {volumeInGb:$lgb} else {networkVolumeId:$v} end) + $hw'
+          }
+          try() {  # $1 = body; true wenn angelegt
+            code=$(curl -sS -o /tmp/pod.json -w '%{http_code}' -X POST https://rest.runpod.io/v1/pods \
+              -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" -d "$1") || code=000
+            resp=$(cat /tmp/pod.json 2>/dev/null || true)
+            [ "${code:0:1}" = 2 ] && return 0
+            echo "Pod anlegen ($2): HTTP $code"
+            { jq -c 'del(.env?, .publicIp?, .portMappings?, .dockerStartCmd?)' <<<"$resp" 2>/dev/null || printf '%s' "$resp" | sed "s/$TOKEN/***/g"; } | head -c 2000; echo
+            return 1
+          }
+          resp=""
+          if [ "$MODE" = gpu ]; then
+            # GPU-Typen in der Reihenfolge aus JOB; die RunPod-IDs kommen aus der API. Ist keiner frei, alle 5 min
+            # erneut versuchen, hoechstens STOCK_WAIT_MIN lang. Laufzeit und Deadline werden vor jedem Versuch neu
+            # berechnet, damit der Pod immer vor dem Joblimit fertig ist.
+            ids=$(curl -fsS -X POST https://api.runpod.io/graphql -H "Authorization: Bearer $RUNPOD_API_KEY" -H "Content-Type: application/json" \
+                  -d '{"query":"query{gpuTypes{id displayName}}"}' | jq -c '[.data.gpuTypes[] | {id, displayName}]')
+            PLAN=$MIN; got=""; wait_end=$(( $(date +%s) + STOCK_WAIT_MIN * 60 ))
+            while :; do
+              left=$(( (JOB_T0 + (JOB_MAX_MIN - 20) * 60 - $(date +%s)) / 60 ))
+              [ "$LONG" = 1 ] && left=$PLAN   # Langlauf: der Pod endet selbst, nicht mit diesem GitHub-Job
+              MIN=$(( left < PLAN ? left : PLAN ))
+              [ "$MIN" -ge 60 ] || { echo "weniger als 60 min Joblaufzeit uebrig -> kein Pod"; break; }
+              DEADLINE=$(( $(date +%s) + (MIN - 5) * 60 ))
+              for t in $GTYPES; do
+                gid=$(jq -r --arg t "$t" '[.[] | select((.displayName + " " + .id) | test("\\b" + $t + "\\b"))][0].id // empty' <<<"$ids")
+                [ -n "$gid" ] || { echo "GPU-Typ $t bei RunPod nicht gefunden"; continue; }
+                hw=$(jq -n --arg g "$gid" --argjson n "$GCOUNT" '{computeType:"GPU", gpuTypeIds:[$g], gpuCount:$n, containerDiskInGb:80}')
+                try "$(mk "$hw")" "$GCOUNT x $gid" && { echo "Angefragt: $GCOUNT x $gid"; got=1; break; }
+              done
+              [ -n "$got" ] && break
+              grep -qi "no instances\|no longer any instances" /tmp/pod.json || break   # anderer Fehler: nicht warten
+              [ "$(date +%s)" -lt "$wait_end" ] || { echo "nach $STOCK_WAIT_MIN min weiter kein Bestand"; break; }
+              echo "kein Bestand fuer $GTYPES, neuer Versuch in 5 min"; sleep 300
+            done
+            echo "minutes=$MIN" >> "$GITHUB_OUTPUT"
+          else
+            # Kein Bestand in der gewuenschten Groesse: alle CPU-Familien anbieten, dann halbieren (bis 2 vCPU).
+            vc=$VCPU
+            while :; do
+              hw=$(jq -n --argjson fl "$CPU_FLAVORS" --argjson vc "$vc" '{computeType:"CPU", cpuFlavorIds:$fl, vcpuCount:$vc, containerDiskInGb:20}')
+              try "$(mk "$hw")" "$vc vCPU" && break
+              grep -q "no longer any instances available" /tmp/pod.json && [ "$vc" -gt 2 ] || break
+              vc=$(( vc / 2 )); echo "kein Bestand, neuer Versuch mit $vc vCPU"
+            done
+            echo "Angefragt: $vc vCPU aus $CPU_FLAVORS"
+          fi
+          id=$(jq -r .id <<<"$resp" 2>/dev/null || true)
+          echo "id=$id" >> "$GITHUB_OUTPUT"      # sofort, damit Cleanup immer greift
+          price=$(jq -r '.costPerHr // empty' <<<"$resp" 2>/dev/null || true)
+          [ -n "$id" ] && [ "$id" != null ] || { echo "Pod-Start fehlgeschlagen"; exit 1; }
+          echo "price=$price" >> "$GITHUB_OUTPUT"
+          echo "deadline=$DEADLINE" >> "$GITHUB_OUTPUT"
+          echo "Pod $id, Preis/h: $price, Laufzeit hoechstens $MIN min"
+
+      - name: Preis-Check und Limit
+        id: limit
+        if: steps.run.outputs.job != 'account'
+        env:
+          PRICE: ${{ steps.pod.outputs.price }}
+          RUN_BUDGET: ${{ steps.run.outputs.budget }}
+          MODE: ${{ steps.run.outputs.mode }}
+          GCOUNT: ${{ steps.run.outputs.gpu_count }}
+          GMAX: ${{ steps.run.outputs.gpu_max }}
+          PLANNED: ${{ steps.pod.outputs.minutes }}
+          GW_PRICE: ${{ steps.gw.outputs.price }}
+        run: |
+          set -euo pipefail
+          [[ "$PRICE" =~ ^[0-9]{1,3}(\.[0-9]{1,12})?$ ]] || { echo "Preis fehlt/keine Zahl -> Abbruch"; exit 1; }
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import os
+          p, gpu = float(os.environ["PRICE"]), os.environ["MODE"] == "gpu"
+          cap = float(os.environ["GMAX"]) * int(os.environ["GCOUNT"]) if gpu else float(os.environ["HARD_MAX_CPU_PRICE"])
+          if p <= 0 or p > cap: raise SystemExit(f"Preis {p}/h ueber Grenze {cap}")
+          gw = float(os.environ.get("GW_PRICE") or 0)
+          m = min(int(float(os.environ["RUN_BUDGET"]) * (0.9 if gpu else 0.8) / (p + gw) * 60), int(os.environ["PLANNED"]))
+          if m <= 0: raise SystemExit("Budget reicht nicht")
+          print(f"minutes={m}")
+          PY
+          tail -1 "$GITHUB_OUTPUT"
+
+      - name: Warten auf Ergebnis oder hartes Limit
+        id: wait
+        if: steps.run.outputs.job != 'account'
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          POD: ${{ steps.pod.outputs.id }}
+          TOKEN: ${{ steps.pod.outputs.token }}
+          MINUTES: ${{ steps.limit.outputs.minutes }}
+          LONG: ${{ steps.run.outputs.long }}
+        run: |
+          set -euo pipefail
+          end=$(( $(date +%s) + MINUTES*60 ))
+          hard=$(( JOB_T0 + (JOB_MAX_MIN - 15)*60 ))
+          if [ "$end" -gt "$hard" ]; then end=$hard; echo "Warten gekuerzt auf Joblimit - 15 min"; fi
+          url="https://$POD-8000.proxy.runpod.net/$TOKEN"
+          mkdir -p out; finished=0
+          while [ "$(date +%s)" -lt "$end" ]; do
+            c=$(curl -sS -o out/exit_code -w '%{http_code}' "$url/exit_code" || echo 000)
+            [ "$c" = 200 ] && { finished=1; echo "Job beendet, Exit-Code $(cat out/exit_code)"; break; }
+            c=$(curl -sS -o /dev/null -w '%{http_code}' "https://rest.runpod.io/v1/pods/$POD" -H "Authorization: Bearer $RUNPOD_API_KEY" || echo 000)
+            [ "$c" = 404 ] && { echo "Pod existiert nicht mehr"; break; }
+            sleep 30
+          done
+          [ "$finished" = 1 ] || rm -f out/exit_code
+          for f in result.json log.txt selfterm.json; do
+            curl -fsS -o "out/$f" "$url/$f" || rm -f "out/$f"
+          done
+          if [ -f out/result.json ]; then echo "== result.json =="; head -c 200000 out/result.json; echo; fi
+          if [ -f out/log.txt ]; then echo "== log.txt (Ende) =="; tail -n 80 out/log.txt; fi
+          # Langlauf: laeuft der Job noch und koennen sich beide Pods selbst beenden, laeuft er ohne diesen Runner weiter
+          if [ "$LONG" = 1 ] && [ "$finished" = 0 ] \
+             && python3 -c "import json,sys; sys.exit(0 if json.load(open('out/selfterm.json')).get('long') == 1 else 1)" 2>/dev/null; then
+            echo "detached=true" >> "$GITHUB_OUTPUT"
+            echo "Langlauf geht weiter: die Pods beenden sich selbst; watch-1..4 verfolgen den Status, cleanup prueft am Ende."
+            exit 0
+          fi
+          [ -f out/exit_code ] && [ "$(cat out/exit_code)" = 0 ] || { echo "::error::Job ohne Exit-Code 0"; exit 1; }
+
+      - name: Ergebnis als Artefakt
+        if: always() && steps.run.outputs.job != 'account'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: job-${{ steps.run.outputs.run_id }}
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14
+
+      - name: Pod loeschen (immer, ausser im laufenden Langlauf; nur /pods/<id>, nie Volumes)
+        if: always() && steps.run.outputs.job != 'account' && steps.wait.outputs.detached != 'true'
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          POD: ${{ steps.pod.outputs.id }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
+        run: |
+          if [ -z "$POD" ] || [ "$POD" = null ]; then
+            [ -n "$RUN_ID" ] || { echo "::error::keine RUN_ID - kein Namensabgleich, bitte manuell pruefen"; exit 1; }
+            POD=$(curl -fsS https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+                  | jq -r --arg n "quasnir-job-$RUN_ID" '[.[] | select(.name==$n) | .id] | join(" ")' || true)
+            [ -n "$POD" ] || { echo "kein Pod angelegt"; exit 0; }
+          fi
+          for P in $POD; do POD=$P
+          for i in 1 2 3 4 5; do
+            c=$(curl -sS -o /tmp/del.body -w '%{http_code}' -X DELETE "https://rest.runpod.io/v1/pods/$POD" \
+              -H "Authorization: Bearer $RUNPOD_API_KEY" || echo 000)
+            case $c in 2*) echo "Pod geloescht (HTTP $c)"; continue 2;; 404) echo "Pod war schon weg"; continue 2;; esac
+            echo "http=$c"; head -c 2000 /tmp/del.body; echo
+            sleep 10
+          done
+          echo "::error::Pod $POD konnte nicht geloescht werden – sofort manuell stoppen"; exit 1
+          done
+
+      - name: Gateway-Pod loeschen (immer, ausser im laufenden Langlauf; nur /pods/<id>, nie Volumes)
+        if: always() && steps.run.outputs.job != 'account' && steps.run.outputs.place == 'any' && steps.wait.outputs.detached != 'true'
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          POD: ${{ steps.gw.outputs.id }}
+          RUN_ID: ${{ steps.run.outputs.run_id }}
+        run: |
+          if [ -z "$POD" ] || [ "$POD" = null ]; then
+            [ -n "$RUN_ID" ] || { echo "::error::keine RUN_ID - kein Namensabgleich, bitte manuell pruefen"; exit 1; }
+            POD=$(curl -fsS https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+                  | jq -r --arg n "quasnir-gw-$RUN_ID" '[.[] | select(.name==$n) | .id] | join(" ")' || true)
+            [ -n "$POD" ] || { echo "kein Gateway-Pod angelegt"; exit 0; }
+          fi
+          for P in $POD; do POD=$P
+          for i in 1 2 3 4 5; do
+            c=$(curl -sS -o /tmp/del.body -w '%{http_code}' -X DELETE "https://rest.runpod.io/v1/pods/$POD" \
+              -H "Authorization: Bearer $RUNPOD_API_KEY" || echo 000)
+            case $c in 2*) echo "Gateway-Pod geloescht (HTTP $c)"; continue 2;; 404) echo "Gateway-Pod war schon weg"; continue 2;; esac
+            echo "http=$c"; head -c 2000 /tmp/del.body; echo
+            sleep 10
+          done
+          echo "::error::Gateway-Pod $POD konnte nicht geloescht werden – sofort manuell stoppen"; exit 1
+          done
+
+  # Langlauf: Status beobachten (oeffentlicher, bereinigter Status des Pods; kein Schluessel, keine Freigabe noetig)
+  watch-1:
+    needs: pod
+    if: needs.pod.outputs.detached == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    outputs:
+      done: ${{ steps.w.outputs.done }}
+    steps:
+      - name: Status des Langlaufs verfolgen (Teil 1)
+        id: w
+        env:
+          POD: ${{ needs.pod.outputs.pod_id }}
+          SID: ${{ needs.pod.outputs.status_id }}
+          DEADLINE: ${{ needs.pod.outputs.deadline }}
+        run: |
+          set -uo pipefail
+          url="https://$POD-8000.proxy.runpod.net/status-$SID"
+          end=$(( $(date +%s) + 330 * 60 )); last=""; miss=0; mkdir -p out
+          echo "done=false" >> "$GITHUB_OUTPUT"
+          while [ "$(date +%s)" -lt "$end" ]; do
+            if ! curl -fsS -m 30 -o out/new.json "$url/result.json" 2>/dev/null; then
+              miss=$(( miss + 1 ))
+              # 30 min ohne Antwort, nachdem es schon Status gab: der Pod hat sich beendet
+              if [ "$miss" -ge 6 ] && [ -f out/result.json ]; then
+                echo "Pod antwortet seit 30 min nicht mehr"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+              fi
+            else
+              miss=0; mv out/new.json out/result.json
+              now=$(python3 -c "import json; r=json.load(open('out/result.json'))['phases']; print(' '.join(f'{k}={v.get(\"status\")}' for k, v in r.items()))" 2>/dev/null || true)
+              [ "$now" != "$last" ] && { echo "[$(date -u +%H:%M)] $now"; last=$now; }
+            fi
+            if curl -fsS -m 30 -o out/exit_code "$url/exit_code" 2>/dev/null; then
+              echo "Job beendet, Exit-Code $(cat out/exit_code)"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+            fi
+            rm -f out/exit_code
+            if [ "$(date +%s)" -gt $(( DEADLINE + 1800 )) ]; then
+              echo "Deadline des Pods + 30 min vorbei"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+            fi
+            sleep 300
+          done
+          [ -f out/result.json ] && { echo "== result.json =="; head -c 200000 out/result.json; echo; }
+          true
+
+      - name: Status als Artefakt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: job-${{ needs.pod.outputs.run_id }}-watch-1
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Langlauf: Status beobachten (oeffentlicher, bereinigter Status des Pods; kein Schluessel, keine Freigabe noetig)
+  watch-2:
+    needs: [pod, watch-1]
+    if: always() && needs.pod.outputs.detached == 'true' && needs.watch-1.result == 'success' && needs.watch-1.outputs.done != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    outputs:
+      done: ${{ steps.w.outputs.done }}
+    steps:
+      - name: Status des Langlaufs verfolgen (Teil 2)
+        id: w
+        env:
+          POD: ${{ needs.pod.outputs.pod_id }}
+          SID: ${{ needs.pod.outputs.status_id }}
+          DEADLINE: ${{ needs.pod.outputs.deadline }}
+        run: |
+          set -uo pipefail
+          url="https://$POD-8000.proxy.runpod.net/status-$SID"
+          end=$(( $(date +%s) + 330 * 60 )); last=""; miss=0; mkdir -p out
+          echo "done=false" >> "$GITHUB_OUTPUT"
+          while [ "$(date +%s)" -lt "$end" ]; do
+            if ! curl -fsS -m 30 -o out/new.json "$url/result.json" 2>/dev/null; then
+              miss=$(( miss + 1 ))
+              # 30 min ohne Antwort, nachdem es schon Status gab: der Pod hat sich beendet
+              if [ "$miss" -ge 6 ] && [ -f out/result.json ]; then
+                echo "Pod antwortet seit 30 min nicht mehr"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+              fi
+            else
+              miss=0; mv out/new.json out/result.json
+              now=$(python3 -c "import json; r=json.load(open('out/result.json'))['phases']; print(' '.join(f'{k}={v.get(\"status\")}' for k, v in r.items()))" 2>/dev/null || true)
+              [ "$now" != "$last" ] && { echo "[$(date -u +%H:%M)] $now"; last=$now; }
+            fi
+            if curl -fsS -m 30 -o out/exit_code "$url/exit_code" 2>/dev/null; then
+              echo "Job beendet, Exit-Code $(cat out/exit_code)"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+            fi
+            rm -f out/exit_code
+            if [ "$(date +%s)" -gt $(( DEADLINE + 1800 )) ]; then
+              echo "Deadline des Pods + 30 min vorbei"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+            fi
+            sleep 300
+          done
+          [ -f out/result.json ] && { echo "== result.json =="; head -c 200000 out/result.json; echo; }
+          true
+
+      - name: Status als Artefakt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: job-${{ needs.pod.outputs.run_id }}-watch-2
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Langlauf: Status beobachten (oeffentlicher, bereinigter Status des Pods; kein Schluessel, keine Freigabe noetig)
+  watch-3:
+    needs: [pod, watch-2]
+    if: always() && needs.pod.outputs.detached == 'true' && needs.watch-2.result == 'success' && needs.watch-2.outputs.done != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    outputs:
+      done: ${{ steps.w.outputs.done }}
+    steps:
+      - name: Status des Langlaufs verfolgen (Teil 3)
+        id: w
+        env:
+          POD: ${{ needs.pod.outputs.pod_id }}
+          SID: ${{ needs.pod.outputs.status_id }}
+          DEADLINE: ${{ needs.pod.outputs.deadline }}
+        run: |
+          set -uo pipefail
+          url="https://$POD-8000.proxy.runpod.net/status-$SID"
+          end=$(( $(date +%s) + 330 * 60 )); last=""; miss=0; mkdir -p out
+          echo "done=false" >> "$GITHUB_OUTPUT"
+          while [ "$(date +%s)" -lt "$end" ]; do
+            if ! curl -fsS -m 30 -o out/new.json "$url/result.json" 2>/dev/null; then
+              miss=$(( miss + 1 ))
+              # 30 min ohne Antwort, nachdem es schon Status gab: der Pod hat sich beendet
+              if [ "$miss" -ge 6 ] && [ -f out/result.json ]; then
+                echo "Pod antwortet seit 30 min nicht mehr"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+              fi
+            else
+              miss=0; mv out/new.json out/result.json
+              now=$(python3 -c "import json; r=json.load(open('out/result.json'))['phases']; print(' '.join(f'{k}={v.get(\"status\")}' for k, v in r.items()))" 2>/dev/null || true)
+              [ "$now" != "$last" ] && { echo "[$(date -u +%H:%M)] $now"; last=$now; }
+            fi
+            if curl -fsS -m 30 -o out/exit_code "$url/exit_code" 2>/dev/null; then
+              echo "Job beendet, Exit-Code $(cat out/exit_code)"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+            fi
+            rm -f out/exit_code
+            if [ "$(date +%s)" -gt $(( DEADLINE + 1800 )) ]; then
+              echo "Deadline des Pods + 30 min vorbei"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+            fi
+            sleep 300
+          done
+          [ -f out/result.json ] && { echo "== result.json =="; head -c 200000 out/result.json; echo; }
+          true
+
+      - name: Status als Artefakt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: job-${{ needs.pod.outputs.run_id }}-watch-3
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Langlauf: Status beobachten (oeffentlicher, bereinigter Status des Pods; kein Schluessel, keine Freigabe noetig)
+  watch-4:
+    needs: [pod, watch-3]
+    if: always() && needs.pod.outputs.detached == 'true' && needs.watch-3.result == 'success' && needs.watch-3.outputs.done != 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 345
+    outputs:
+      done: ${{ steps.w.outputs.done }}
+    steps:
+      - name: Status des Langlaufs verfolgen (Teil 4)
+        id: w
+        env:
+          POD: ${{ needs.pod.outputs.pod_id }}
+          SID: ${{ needs.pod.outputs.status_id }}
+          DEADLINE: ${{ needs.pod.outputs.deadline }}
+        run: |
+          set -uo pipefail
+          url="https://$POD-8000.proxy.runpod.net/status-$SID"
+          end=$(( $(date +%s) + 330 * 60 )); last=""; miss=0; mkdir -p out
+          echo "done=false" >> "$GITHUB_OUTPUT"
+          while [ "$(date +%s)" -lt "$end" ]; do
+            if ! curl -fsS -m 30 -o out/new.json "$url/result.json" 2>/dev/null; then
+              miss=$(( miss + 1 ))
+              # 30 min ohne Antwort, nachdem es schon Status gab: der Pod hat sich beendet
+              if [ "$miss" -ge 6 ] && [ -f out/result.json ]; then
+                echo "Pod antwortet seit 30 min nicht mehr"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+              fi
+            else
+              miss=0; mv out/new.json out/result.json
+              now=$(python3 -c "import json; r=json.load(open('out/result.json'))['phases']; print(' '.join(f'{k}={v.get(\"status\")}' for k, v in r.items()))" 2>/dev/null || true)
+              [ "$now" != "$last" ] && { echo "[$(date -u +%H:%M)] $now"; last=$now; }
+            fi
+            if curl -fsS -m 30 -o out/exit_code "$url/exit_code" 2>/dev/null; then
+              echo "Job beendet, Exit-Code $(cat out/exit_code)"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+            fi
+            rm -f out/exit_code
+            if [ "$(date +%s)" -gt $(( DEADLINE + 1800 )) ]; then
+              echo "Deadline des Pods + 30 min vorbei"; echo "done=true" >> "$GITHUB_OUTPUT"; break
+            fi
+            sleep 300
+          done
+          [ -f out/result.json ] && { echo "== result.json =="; head -c 200000 out/result.json; echo; }
+          true
+
+      - name: Status als Artefakt
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: job-${{ needs.pod.outputs.run_id }}-watch-4
+          path: out/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # Langlauf: zum Schluss alles loeschen, was noch laeuft (beide Pods sollten sich schon selbst beendet haben)
+  cleanup:
+    needs: [pod, watch-1, watch-2, watch-3, watch-4]
+    if: always() && needs.pod.outputs.detached == 'true'
+    runs-on: ubuntu-latest
+    environment: RUNPOD
+    timeout-minutes: 30
+    steps:
+      - name: Pods des Laufs loeschen, falls noch vorhanden (nur /pods/<id>, nie Volumes)
+        env:
+          RUNPOD_API_KEY: ${{ secrets.RUNPOD_API_KEY }}
+          RUN_ID: ${{ needs.pod.outputs.run_id }}
+        run: |
+          set -uo pipefail
+          [[ "$RUN_ID" =~ ^[a-z0-9-]{4,40}$ ]] || { echo "::error::keine RUN_ID"; exit 1; }
+          ids=$(curl -fsS https://rest.runpod.io/v1/pods -H "Authorization: Bearer $RUNPOD_API_KEY" \
+                | jq -r --arg a "quasnir-job-$RUN_ID" --arg b "quasnir-gw-$RUN_ID" \
+                  '[(if type=="array" then . else (.pods // .data // []) end)[] | select(.name==$a or .name==$b) | .id] | join(" ")') \
+            || { echo "::error::Pods nicht lesbar - bitte in RunPod pruefen"; exit 1; }
+          [ -n "$ids" ] || { echo "Beide Pods haben sich selbst beendet."; exit 0; }
+          bad=0
+          for P in $ids; do
+            c=$(curl -sS -o /dev/null -w '%{http_code}' -X DELETE "https://rest.runpod.io/v1/pods/$P" -H "Authorization: Bearer $RUNPOD_API_KEY" || echo 000)
+            case $c in 2*|404) echo "Pod $P geloescht (HTTP $c)";; *) echo "::error::Pod $P nicht geloescht (HTTP $c)"; bad=1;; esac
+          done
+          exit $bad

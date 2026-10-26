@@ -4,6 +4,9 @@ import { guardAction, guardWrite, json } from "@/lib/product/api";
 import { deleteAgent, updateAgent } from "@/lib/agents/store";
 import { isRetiredProductModel } from "@/lib/models/catalog";
 import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
+import { resolveGatewayModel } from "@/lib/gateway/models";
+import { isGatewayRef } from "@/lib/gateway/providers";
+import { botTier } from "@/lib/gateway/routing";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -30,7 +33,11 @@ export async function PATCH(
     maxBytes: 12_000,
   });
   if (!guard.ok) return guard.response;
-  if (guard.body.modelId) {
+  if (guard.body.modelId && isGatewayRef(guard.body.modelId)) {
+    if (!(await resolveGatewayModel(guard.body.modelId))) {
+      return json({ error: "model_not_on_key" }, 400);
+    }
+  } else if (guard.body.modelId) {
     if (isRetiredProductModel(guard.body.modelId)) {
       return json({ error: "retired_model" }, 400);
     }
@@ -70,7 +77,14 @@ export async function PATCH(
     status: guard.body.status,
   });
   if (!agent) return json({ error: "not_found" }, 404);
-  return json({ agent });
+  return json({
+    agent: {
+      id: agent.id,
+      name: agent.name,
+      status: agent.status,
+      tier: botTier(agent),
+    },
+  });
 }
 
 export async function DELETE(

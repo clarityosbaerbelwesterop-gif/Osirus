@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { PlanSection } from "@/components/settings/plan-offer";
+import { ProfileName } from "@/components/settings/profile-name";
 import { isFreeTierEnabled } from "@/app/free-tier";
 import { requireProductSession } from "@/lib/product/session";
 import { signOut } from "../actions";
@@ -19,20 +20,22 @@ export default async function AccountSettings() {
         <dl className="settings-rows">
           <div>
             <dt>Name</dt>
-            <dd>{user.name ?? "Not set"}</dd>
+            <dd>
+              <ProfileName name={user.name} />
+            </dd>
           </div>
           <div>
-            <dt>Email</dt>
-            <dd>{user.email ?? "Not set"}</dd>
+            <dt>E-Mail</dt>
+            <dd>{user.email ?? "Nicht gesetzt"}</dd>
           </div>
           <div>
-            <dt>Sign-in</dt>
-            <dd>Managed by Neon Auth (email or GitHub)</dd>
+            <dt>Anmeldung</dt>
+            <dd>E-Mail oder GitHub</dd>
           </div>
         </dl>
         <form action={signOut}>
           <button type="submit" className="btn btn-secondary">
-            Sign out
+            Abmelden
           </button>
         </form>
       </section>

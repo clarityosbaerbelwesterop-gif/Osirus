@@ -1,0 +1,6 @@
+# GitOps control plane: owner decisions (gate, authorizations, budgets,
+# manifests, accepted run records) need the owner's review.
+/ai-lab/gitops/control-plane.json @clarityosbaerbelwesterop-gif
+/ai-lab/gitops/compute/ @clarityosbaerbelwesterop-gif
+/ai-lab/gitops/models/ @clarityosbaerbelwesterop-gif
+/ai-lab/gitops/state/ @clarityosbaerbelwesterop-gif

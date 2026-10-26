@@ -117,6 +117,20 @@ if (!dryRun) await ensureLedger();
 const applied = await appliedMigrations();
 const migrations = loadMigrations();
 
+// An empty ledger on a database that already has the osirus tables means the
+// ledger is unreadable (row security hides it from a role without BYPASSRLS),
+// not that nothing was applied. Re-running every migration would be wrong.
+if (applied.size === 0) {
+  const [probe] = await sql.query(
+    "SELECT to_regclass('osirus.users') IS NOT NULL AS present",
+  );
+  if (probe?.present) {
+    throw new Error(
+      "osirus tables exist but the migration ledger reads empty: use the database owner role (BYPASSRLS), not osirus_app.",
+    );
+  }
+}
+
 let appliedCount = 0;
 let skippedCount = 0;
 

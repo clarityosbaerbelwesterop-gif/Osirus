@@ -99,11 +99,11 @@ export function surfacePath(surface: SessionSurface) {
     case "agent":
       return "/app/agent";
     case "bot":
-      return "/app/bots";
+      return "/app";
     case "coding":
       return "/app/coding";
     case "work":
-      return "/app/work";
+      return "/app/agent";
     default:
       return "/app";
   }
@@ -119,6 +119,33 @@ export function sessionsForSurface<T extends { surface?: string | null }>(
 ): T[] {
   const wanted = surface ?? "ai";
   return sessions.filter((item) => (item.surface || "ai") === wanted);
+}
+
+/** The three product areas in the navigation and the thread surfaces each lists. */
+export const NAV_AREAS = {
+  agents: ["ai", "bot"],
+  rouge: ["agent", "work"],
+  code: ["coding"],
+} as const satisfies Record<string, readonly SessionSurface[]>;
+
+export type NavArea = keyof typeof NAV_AREAS;
+
+export function navAreaForPath(pathname: string): NavArea | null {
+  if (pathname === "/app" || pathname.startsWith("/app/bots")) return "agents";
+  if (pathname.startsWith("/app/agent") && !pathname.startsWith("/app/agents"))
+    return "rouge";
+  if (pathname.startsWith("/app/work")) return "rouge";
+  if (pathname.startsWith("/app/coding")) return "code";
+  return null;
+}
+
+/** Conversations listed beside one area; no area lists the chats. */
+export function sessionsForArea<T extends { surface?: string | null }>(
+  sessions: readonly T[],
+  area: NavArea | null,
+): T[] {
+  const wanted: readonly string[] = NAV_AREAS[area ?? "agents"];
+  return sessions.filter((item) => wanted.includes(item.surface || "ai"));
 }
 
 /** Switching Chat to Coding must not keep the previous line in the composer. */

@@ -2,11 +2,11 @@ import { expect, test } from "@playwright/test";
 
 test("renders authentication entry point", async ({ page }) => {
   await page.goto("/auth/sign-in");
-  await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
-  await expect(page.getByLabel("Email")).toBeVisible();
-  await expect(page.getByLabel("Password")).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Anmelden" })).toBeVisible();
+  await expect(page.getByLabel("E-Mail")).toBeVisible();
+  await expect(page.getByLabel("Passwort")).toBeVisible();
   await expect(
-    page.getByRole("button", { name: "Continue with GitHub" }),
+    page.getByRole("button", { name: "Weiter mit GitHub" }),
   ).toBeVisible();
 });
 

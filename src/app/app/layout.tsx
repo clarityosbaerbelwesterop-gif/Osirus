@@ -30,8 +30,11 @@ export default async function ProductLayout({
   // EULA, and privacy versions are stored. The OAuth request itself is unchanged.
   const authUser = await loadAuthUser();
   if (!authUser) redirect("/auth/sign-in");
-  await ensureOsirusUser(authUser);
-  if (!(await consentIsCurrent(authUser.id))) redirect("/consent");
+  const [, consented] = await Promise.all([
+    ensureOsirusUser(authUser),
+    consentIsCurrent(authUser.id),
+  ]);
+  if (!consented) redirect("/consent");
   const { user, identity } = await requireProductSession();
   const repository = new RuntimeRepository(identity.userId);
   const [sessions, counts, isAdmin, jar] = await Promise.all([

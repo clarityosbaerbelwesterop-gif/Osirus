@@ -8,6 +8,10 @@ import {
   MemoryList,
 } from "@/components/settings/memory-list";
 import { ModelStatusTable } from "@/components/settings/model-status";
+import { ProviderStatusTable } from "@/components/settings/provider-status";
+import { isOwnerEmail } from "@/lib/gateway/access";
+import { listGatewayModels } from "@/lib/gateway/models";
+import { PROVIDER_IDS, providerLabel } from "@/lib/gateway/providers";
 import { AgentBehaviorSettings } from "@/components/settings/agent-behavior";
 import { SecurityEventList } from "@/components/settings/security-events";
 import { Badge } from "@/components/ui/badge";
@@ -76,7 +80,7 @@ export default async function SettingsSection({
 }) {
   const { section } = await params;
   if (!TITLES[section]) notFound();
-  const { identity } = await requireProductSession();
+  const { identity, user } = await requireProductSession();
 
   switch (section) {
     case "workspace": {
@@ -156,16 +160,61 @@ export default async function SettingsSection({
       );
     }
     case "models": {
+      // Which services run the models is operator knowledge: only owner
+      // sign-ins (OSIRUS_OWNER_EMAILS) see providers, keys and model ids.
+      if (!isOwnerEmail(user.email, user.emailVerified)) {
+        return (
+          <Group
+            id="models"
+            title="Modelle"
+            lede="Osirus wählt für Agents, Bots und den Rouge Agent automatisch das passende Modell: nach Schwierigkeit und Umfang der Aufgabe und nach der Rolle eines Bots. In Code wählst du das Modell selbst."
+          >
+            <p className="subtle">
+              Dein Verbrauch steht unter Usage und in der Seitenleiste.
+            </p>
+          </Group>
+        );
+      }
       const admin = await isOrganizationAdmin(identity);
-      const roles = await modelStatus(identity, admin);
+      const [roles, listing] = await Promise.all([
+        modelStatus(identity, admin),
+        listGatewayModels(),
+      ]);
+      const ENV_VARS: Record<string, string> = {
+        openrouter: "OPENROUTER_API_KEY",
+        nvidia: "NVIDIA_API_KEY",
+        unorouter: "UNOROUTER_API_KEY_1",
+        lightning: "LIGHTNING_AI_API_KEY",
+        bytez: "BYTEZ_API_KEY",
+      };
+      const providerRows = PROVIDER_IDS.map((id) => {
+        const status = listing.providers.find((provider) => provider.id === id);
+        return {
+          id,
+          label: providerLabel(id),
+          envVar: ENV_VARS[id],
+          configured: Boolean(status),
+          ok: Boolean(status?.ok),
+          models: status?.models ?? 0,
+        };
+      });
       return (
-        <Group
-          id="models"
-          title="Models"
-          lede="Status from the model calls this workspace made in the last 24 hours. Models come from UNOROUTER. Osirus does not switch to a different model when one fails. Own models are not offered."
-        >
-          <ModelStatusTable roles={roles} />
-        </Group>
+        <>
+          <Group
+            id="providers"
+            title="Anbieter"
+            lede={`${listing.models.length} Chat-Modelle von allen Anbietern, deren Key in dieser Umgebung gesetzt ist. Ein Anbieter ohne Key erscheint nirgends im Produkt.`}
+          >
+            <ProviderStatusTable rows={providerRows} />
+          </Group>
+          <Group
+            id="models"
+            title="Models"
+            lede="Status from the model calls this workspace made in the last 24 hours. Osirus does not switch to a different model when one fails."
+          >
+            <ModelStatusTable roles={roles} />
+          </Group>
+        </>
       );
     }
     case "memory": {

@@ -10,7 +10,7 @@ const PAGES = [
   ["/legal/eula", "Endnutzer-Lizenz"],
   ["/legal/cookies", "Cookie-Hinweis"],
   ["/legal/impressum", "Impressum"],
-  ["/auth/sign-up", "Create account"],
+  ["/auth/sign-up", "Konto erstellen"],
   ["/gibt-es-nicht", "Diese Seite gibt es nicht"],
 ] as const;
 
@@ -54,8 +54,8 @@ test("sign-up buttons stay disabled until both legal boxes are checked", async (
   page,
 }) => {
   await page.goto("/auth/sign-up");
-  const create = page.getByRole("button", { name: "Create account" });
-  const github = page.getByRole("button", { name: "Continue with GitHub" });
+  const create = page.getByRole("button", { name: "Konto erstellen" });
+  const github = page.getByRole("button", { name: "Weiter mit GitHub" });
   await expect(create).toBeDisabled();
   await expect(github).toBeDisabled();
   await page.getByLabel(/Ich akzeptiere die AGB/).check();

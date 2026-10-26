@@ -16,7 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Osirus — Assistent, Work und autonome Agents",
   description:
-    "Osirus ist der präzise Workspace für KI-Assistenz, mehrstufige Work-Aufträge mit unabhängiger Prüfung und spezialisierte Agents über UNOROUTER und NVIDIA.",
+    "Osirus ist der präzise Workspace für KI-Agents, autonome Agents und Code: mit unabhängiger Prüfung und Freigabe vor jeder Aktion nach außen.",
   alternates: { canonical: "/" },
 };
 
@@ -36,7 +36,7 @@ export default async function HomePage() {
     operatingSystem: "Web",
     url: absoluteUrl("/"),
     description:
-      "Workspace für Assistent, Work und Agents mit unabhängiger Verifikation über UNOROUTER und NVIDIA.",
+      "Workspace für KI-Agents, autonome Agents und Code mit unabhängiger Verifikation.",
   };
 
   return (
@@ -76,8 +76,8 @@ export default async function HomePage() {
           <p className="landing-copy">
             Osirus verbindet fokussierte KI-Assistenz, orchestrierte
             Work-Aufträge mit getrenntem Prüfermodell und dauerhafte Agents in
-            einer ruhigen, verifizierbaren Arbeitsumgebung. Modelle werden über
-            UNOROUTER und NVIDIA angebunden; jede Aktion nach außen wartet auf
+            einer ruhigen, verifizierbaren Arbeitsumgebung. Osirus wählt für
+            jede Aufgabe das passende Modell; jede Aktion nach außen wartet auf
             deine explizite Freigabe.
             {freeTier
               ? " Zum Einstieg steht ein begrenztes kostenloses Kontingent bereit."
@@ -102,7 +102,7 @@ export default async function HomePage() {
             <h2 id="bots-title">Bots</h2>
             <p>
               Direkter Dialog mit klarem Kontext, mehrstufigem Caching und
-              präziser Modellwahl. Lege spezialisierte Bots mit festem Modell
+              präziser Modellwahl. Lege spezialisierte Bots mit eigener Rolle
               und eigener Systemanweisung an und bündele ihre Perspektiven.
             </p>
             <Link className="btn btn-secondary" href="/auth/sign-up">

@@ -1,0 +1,53 @@
+name: Stripe setup
+
+# Makes Stripe ready for Osirus and proves it (scripts/stripe-setup.mjs):
+# account status, the four monthly EUR prices, the webhook endpoint at
+# /api/billing/webhook with every handled event, the Customer Portal, and a
+# signed test delivery to the live webhook. Secrets are never printed.
+on:
+  workflow_dispatch:
+    inputs:
+      create_webhook:
+        description: Create the webhook endpoint when none points at Osirus
+        required: true
+        type: boolean
+        default: true
+      redeploy:
+        description: Redeploy production afterwards (needed when a secret was stored)
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: osirus-runtime-configuration
+  cancel-in-progress: false
+
+jobs:
+  stripe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID != '' && vars.VERCEL_TEAM_ID || 'team_5KyyWAPW9vLU4EiaKaYZuhaG' }}
+      VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID != '' && vars.VERCEL_PROJECT_ID || 'prj_fuwXsDnXAfGE4fl4Offo0xBBnZP7' }}
+      OSIRUS_PUBLIC_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}
+      OSIRUS_STRIPE_CREATE_WEBHOOK: ${{ inputs.create_webhook && 'true' || 'false' }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Set up and check Stripe
+        run: node scripts/stripe-setup.mjs
+      - name: Redeploy production
+        if: inputs.redeploy
+        run: node scripts/vercel-redeploy.mjs

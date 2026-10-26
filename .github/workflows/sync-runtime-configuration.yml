@@ -7,6 +7,8 @@ on:
       - .github/workflows/sync-runtime-configuration.yml
       - scripts/sync-vercel-runtime-env.mjs
       - scripts/lib/vercel-env.mjs
+      - scripts/neon-sync.mjs
+      - scripts/lib/neon.mjs
   workflow_dispatch:
     inputs:
       target:
@@ -27,6 +29,26 @@ on:
         type: string
       rotate_auth_cookie_secret:
         description: Rotate the shared Neon Auth cookie secret (invalidates sessions)
+        required: true
+        type: boolean
+        default: false
+      migrate:
+        description: Apply pending db/migrations to the Neon production database
+        required: true
+        type: boolean
+        default: true
+      redeploy:
+        description: Redeploy production so the synced keys take effect
+        required: true
+        type: boolean
+        default: true
+      stripe:
+        description: Set up and check Stripe (prices, webhook, portal, live signature)
+        required: true
+        type: boolean
+        default: true
+      public_production:
+        description: Narrow Vercel Deployment Protection to previews when it blocks production
         required: true
         type: boolean
         default: false
@@ -57,6 +79,11 @@ jobs:
       NVIDIA_API_KEY: ${{ secrets.NVIDIA_API_KEY }}
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       BYTEZ_API_KEY: ${{ secrets.BYTEZ_API_KEY }}
+      LIGHTNING_AI_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+      # Sign-ins that use every model without plan limits; a variable, not a secret.
+      OSIRUS_OWNER_EMAILS: ${{ vars.OSIRUS_OWNER_EMAILS }}
+      NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
+      NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID != '' && vars.NEON_PROJECT_ID || 'super-voice-69875601' }}
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
       STRIPE_WEBHOOK_SECRET: ${{ secrets.STRIPE_WEBHOOK_SECRET }}
       STRIPE_PRICE_PRO: ${{ secrets.STRIPE_PRICE_PRO }}
@@ -80,5 +107,36 @@ jobs:
           node-version: 24
           cache: npm
       - run: npm ci
+      - name: Check Neon (region, schema)
+        # A report, not a gate: the key sync must run even if Neon's API is down.
+        continue-on-error: true
+        run: node scripts/neon-sync.mjs
       - name: Synchronize GitHub runtime configuration to Vercel
         run: node scripts/sync-vercel-runtime-env.mjs
+      - name: Pending migrations (dry run)
+        if: env.DATABASE_URL != '' || env.NEON_DATABASE_URL != ''
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL || env.NEON_DATABASE_URL }}
+        run: node scripts/apply-migrations.mjs --dry-run
+      - name: Apply migrations
+        if: github.event_name == 'workflow_dispatch' && inputs.migrate && (env.DATABASE_URL != '' || env.NEON_DATABASE_URL != '')
+        env:
+          DATABASE_URL: ${{ env.DATABASE_URL || env.NEON_DATABASE_URL }}
+        run: node scripts/apply-migrations.mjs
+      - name: Production reachable (Deployment Protection)
+        continue-on-error: true
+        env:
+          OSIRUS_PUBLIC_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}
+          OSIRUS_PUBLIC_PRODUCTION: ${{ inputs.public_production && 'true' || 'false' }}
+        run: node scripts/vercel-protection.mjs
+      - name: Stripe (account, prices, webhook, portal)
+        # A report with fixes; a Stripe outage must not block the redeploy.
+        continue-on-error: true
+        if: github.event_name == 'workflow_dispatch' && inputs.stripe && env.STRIPE_SECRET_KEY != ''
+        env:
+          OSIRUS_PUBLIC_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}
+        run: node scripts/stripe-setup.mjs
+      - name: Redeploy production
+        # A push to main deploys through the Git integration already.
+        if: github.event_name == 'workflow_dispatch' && inputs.redeploy && inputs.target != 'preview'
+        run: node scripts/vercel-redeploy.mjs

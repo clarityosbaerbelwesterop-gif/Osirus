@@ -1,0 +1,8 @@
+{
+  "strategy": "mcts",
+  "maxRollouts": 64,
+  "maxDepth": 8,
+  "branching": 4,
+  "exploration": 1.0,
+  "prmAggregation": "min"
+}

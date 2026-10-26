@@ -11,6 +11,9 @@ import { MemoryOS } from "../memory/os";
 import { providerRefusalOf, refusalDelaySeconds } from "../models/provider";
 import { freeRoleModels } from "../models/free";
 import { UnoRouterProvider } from "../models/unorouter";
+import type { ModelProvider } from "../models/provider";
+import { GatewayProvider } from "../gateway/provider";
+import { isGatewayRef } from "../gateway/providers";
 import type { Verdict } from "../verification/engine";
 import {
   checkpointStageBudget,
@@ -240,12 +243,14 @@ export async function executeClaimedStage(input: {
     typeof work.stageInput.pinnedModel === "string"
       ? work.stageInput.pinnedModel
       : null;
-  const baseProvider = pinnedModel
-    ? new UnoRouterProvider({
-        model: pinnedModel,
-        fallback: false,
-        priority: "P0",
-      })
+  const baseProvider: ModelProvider = pinnedModel
+    ? isGatewayRef(pinnedModel)
+      ? new GatewayProvider({ ref: pinnedModel, autoFallback: true })
+      : new UnoRouterProvider({
+          model: pinnedModel,
+          fallback: false,
+          priority: "P0",
+        })
     : stagePolicy.model
       ? new UnoRouterProvider({
           model: stagePolicy.model,

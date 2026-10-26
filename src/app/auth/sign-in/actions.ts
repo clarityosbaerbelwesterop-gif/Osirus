@@ -1,10 +1,10 @@
 "use server";
 
 import { auth, requireAuthConfiguration } from "@/lib/auth/server";
-import { enforceRateLimit, RateLimitError } from "@/lib/security/rate-limit";
 import { redirect } from "next/navigation";
+import { authAttemptAllowed } from "../rate";
 
-export type AuthActionState = { error: string } | null;
+export type AuthActionState = { error?: string; notice?: string } | null;
 
 export async function signInWithEmail(
   _previous: AuthActionState,
@@ -16,25 +16,23 @@ export async function signInWithEmail(
     .toLowerCase();
   const password = String(formData.get("password") ?? "");
 
-  if (!email || !password) return { error: "Email and password are required." };
+  if (!email || !password)
+    return { error: "E-Mail und Passwort sind erforderlich." };
 
-  if (process.env.DATABASE_URL) {
-    try {
-      await enforceRateLimit({
-        subject: `auth.signin:${email.slice(0, 120)}`,
-        route: "auth.signin",
-        limit: 10,
-      });
-    } catch (error) {
-      if (error instanceof RateLimitError) {
-        return { error: "Too many sign-in attempts. Please wait a minute." };
-      }
-    }
+  if (
+    !(await authAttemptAllowed({
+      route: "auth.signin",
+      email,
+      perAddress: 10,
+      perNetwork: 30,
+    }))
+  ) {
+    return { error: "Zu viele Anmeldeversuche. Bitte eine Minute warten." };
   }
 
   const { error } = await auth.signIn.email({ email, password });
-  // Uniform error message to prevent account-enumeration oracle (RT2-09).
-  if (error) return { error: "Invalid email or password." };
+  // One message for every failure: no hint whether the address exists.
+  if (error) return { error: "E-Mail oder Passwort ist falsch." };
 
   redirect("/app");
 }

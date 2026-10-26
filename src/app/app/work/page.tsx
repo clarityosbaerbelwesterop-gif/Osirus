@@ -1,21 +1,7 @@
-import { PageFrame } from "@/components/shell/page-frame";
-import { WorkStudio } from "@/components/work/work-studio";
-import { requireProductSession } from "@/lib/product/session";
-import { listNvidiaTopModels } from "@/lib/models/key-models";
+import type { Route } from "next";
+import { redirect } from "next/navigation";
 
-export const dynamic = "force-dynamic";
-
+// Work (model, reviewer and sub-agents for one task) is part of the Rouge Agent.
 export default async function WorkPage() {
-  await requireProductSession();
-  const models = await listNvidiaTopModels();
-  return (
-    <PageFrame
-      title="Work"
-      lede="Zuerst die Aufgabe. Danach empfiehlt Osirus Modell, Prüfer und Subagents."
-    >
-      <WorkStudio
-        models={models.availability === "ready" ? models.models : []}
-      />
-    </PageFrame>
-  );
+  redirect("/app/agent" as Route);
 }

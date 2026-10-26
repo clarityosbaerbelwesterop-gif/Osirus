@@ -1,0 +1,80 @@
+{
+  "kind": "synthetic-data",
+  "id": "golden-tokens",
+  "teachers": [
+    {
+      "id": "qwen-coder-selfhosted",
+      "model": "Qwen/Qwen2.5-Coder-32B-Instruct",
+      "endpointRef": "TEACHER_BASE_URL",
+      "apiKeyRef": "TEACHER_API_KEY",
+      "outputsMayTrainModels": {
+        "license": "apache-2.0 (open weights, self-hosted)",
+        "review": "pending",
+        "evidence": null
+      }
+    }
+  ],
+  "agents": [
+    {
+      "role": "author",
+      "count": 4,
+      "instructions": "Write a realistic Python task with a precise specification (inputs, outputs, error behaviour) and a correct, idiomatic solution."
+    },
+    {
+      "role": "secure-coder",
+      "count": 4,
+      "instructions": "Write a task whose correct solution must defend against the named weakness class. Tests must prove that hostile inputs are rejected and benign inputs still work."
+    },
+    {
+      "role": "code-reviewer",
+      "count": 2,
+      "instructions": "Write a task that shows a short vulnerable or buggy Python function and asks for a fixed version. Tests must fail on the original defect and pass on the fix."
+    }
+  ],
+  "topics": [
+    "input validation and parsing (CWE-20)",
+    "path traversal (CWE-22)",
+    "OS command injection avoidance (CWE-78)",
+    "SQL injection avoidance with sqlite3 parameters (CWE-89)",
+    "integer and boundary handling (CWE-190)",
+    "safe deserialization (CWE-502)",
+    "cryptographic hygiene with hashlib, hmac and secrets (CWE-327)",
+    "regular expression denial of service (CWE-1333)",
+    "algorithms and data structures",
+    "text processing",
+    "concurrency with threading and queue",
+    "date and time arithmetic"
+  ],
+  "tasksPerAgent": 50,
+  "concurrency": 8,
+  "maxTeacherRequests": 600,
+  "verification": {
+    "sandbox": {
+      "image": "python:3.12-slim@sha256:02108f5d322dd89f1c9e552442c25acb0543dfdbc455693a5599624f20d9155d",
+      "timeoutSeconds": 20,
+      "memoryMb": 256,
+      "cpus": 1,
+      "pidsLimit": 64
+    },
+    "prm": {
+      "required": true,
+      "endpointRef": "PRM_URL",
+      "apiKeyRef": "PRM_API_KEY",
+      "threshold": 0.7,
+      "aggregation": "min"
+    }
+  },
+  "dedup": { "jaccardThreshold": 0.8 },
+  "decontamination": {
+    "ngramSize": 13,
+    "evalSources": [
+      "hf-rows:openai/openai_humaneval:openai_humaneval:test",
+      "hf-rows:google-research-datasets/mbpp:full:test",
+      "hf-rows:openai/gsm8k:main:test"
+    ]
+  },
+  "publish": {
+    "hubRepo": "change-me-hf-org/osirus-golden-tokens",
+    "private": true
+  }
+}

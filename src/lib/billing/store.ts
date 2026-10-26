@@ -72,11 +72,18 @@ export async function usageSince(
                   mc.run_id is null
                   and (
                     mc.request_metadata->>'userId' = $1::text
-                    or exists (
-                      select 1
-                        from osirus.workspace_memberships wm
-                       where wm.workspace_id = mc.workspace_id
-                         and wm.user_id = $1::uuid
+                    -- Older rows carry no user: they count for the members
+                    -- of their workspace. A row naming another user never
+                    -- counts here, so a shared workspace does not charge one
+                    -- member for another's calls.
+                    or (
+                      mc.request_metadata->>'userId' is null
+                      and exists (
+                        select 1
+                          from osirus.workspace_memberships wm
+                         where wm.workspace_id = mc.workspace_id
+                           and wm.user_id = $1::uuid
+                      )
                     )
                   )
                 )

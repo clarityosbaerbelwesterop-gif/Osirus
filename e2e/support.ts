@@ -25,6 +25,9 @@ export const SURFACES = [
   "intelligence",
   "work",
   "agents",
+  "agents-empty",
+  "agents-thread",
+  "rouge-empty",
 ] as const;
 export type Surface = (typeof SURFACES)[number];
 
@@ -54,6 +57,70 @@ export type ApiLog = { method: string; path: string; body: unknown }[];
  * Answer the client calls of the fixture surfaces. Returns the list of write
  * requests the page made, so journeys can assert what was sent.
  */
+/** The model list Code's picker receives: opaque ids, names and classes. */
+export const MODELS_FIXTURE = {
+  defaultId: "m_gpt5aaaaaaaaaaaaa",
+  freeOnly: false,
+  models: [
+    {
+      id: "m_gpt5aaaaaaaaaaaaa",
+      name: "GPT-5",
+      tier: "top",
+      free: false,
+      reasoning: true,
+      contextLength: 400000,
+    },
+    {
+      id: "m_sonnetaaaaaaaaaaa",
+      name: "Claude Sonnet 4.5",
+      tier: "top",
+      free: false,
+      reasoning: false,
+      contextLength: 200000,
+    },
+    {
+      id: "m_r1aaaaaaaaaaaaaaa",
+      name: "DeepSeek R1",
+      tier: "top",
+      free: true,
+      reasoning: true,
+      contextLength: 128000,
+    },
+    {
+      id: "m_llamaaaaaaaaaaaaa",
+      name: "Llama 3.3 70B Instruct",
+      tier: "balanced",
+      free: true,
+      reasoning: false,
+      contextLength: 128000,
+    },
+  ],
+};
+
+export const CHAT_SESSION = "5f6a7b8c-9d0e-4f1a-8b2c-3d4e5f6a7b8c";
+
+/** A complete Agents answer as server-sent events. */
+export function chatStreamBody(answer = "Hallo! Wie kann ich helfen?") {
+  const frames = [
+    {
+      type: "start",
+      sessionId: CHAT_SESSION,
+      title: "Hallo",
+      created: true,
+      cached: false,
+    },
+    { type: "reasoning", text: "Begrüßung, kurz antworten." },
+    { type: "text", text: answer.slice(0, 7) },
+    { type: "text", text: answer.slice(7) },
+    {
+      type: "done",
+      messageId: "6a7b8c9d-0e1f-4a2b-8c3d-4e5f6a7b8c9d",
+      latencyMs: 420,
+    },
+  ];
+  return frames.map((frame) => `data: ${JSON.stringify(frame)}\n\n`).join("");
+}
+
 export async function mockApis(
   page: Page,
   options: { runSnapshot?: () => RunSnapshot | null } = {},
@@ -84,6 +151,15 @@ export async function mockApis(
     },
   ]);
   await page.route("**/api/health", (route) => json(route, HEALTHY));
+  await page.route("**/api/models", (route) => json(route, MODELS_FIXTURE));
+  await page.route("**/api/chat/stream", (route) => {
+    record(route);
+    return route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: chatStreamBody(),
+    });
+  });
   await page.route("**/api/connectors/github/repos", (route) => {
     record(route);
     return json(route, {
