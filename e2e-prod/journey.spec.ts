@@ -289,12 +289,18 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     const response = await send(page, "/api/billing/checkout", {
       plan: "pro",
     });
-    const body = (await response.json()) as { url?: string; error?: string };
+    const body = (await response.json()) as {
+      url?: string;
+      error?: string;
+      trialDays?: number | null;
+    };
     console.log(
-      `Checkout: HTTP ${response.status()} ${body.url ? new URL(body.url).host : (body.error ?? "")}`,
+      `Checkout: HTTP ${response.status()} ${body.url ? new URL(body.url).host : (body.error ?? "")}; trial ${body.trialDays ?? 0} days`,
     );
     expect(response.status()).toBe(200);
     expect(body.url ?? "").toMatch(/^https:\/\/checkout\.stripe\.com\//);
+    // A new account's first Pro subscription starts with the promised trial.
+    expect(body.trialDays).toBe(7);
   });
 
   await test.step("an MCP server can be added, checked and removed", async () => {
