@@ -37,6 +37,9 @@ jobs:
           cache: npm
       - run: npm ci
       - run: scripts/install-playwright.sh
+        env:
+          # No screenshot comparisons here: the runner image's fonts will do.
+          PLAYWRIGHT_DEPS: skip
       - name: Run the journey against production
         env:
           # Public production origin. vars.NEXT_PUBLIC_SITE_URL overrides it.
