@@ -1,7 +1,12 @@
 import "server-only";
 import type { ProductIdentity } from "@/lib/auth/bootstrap";
 import { modelAccessFor, modelAllowed } from "./access";
-import { hideModel, listGatewayModels, type GatewayModel } from "./models";
+import {
+  hideModel,
+  listGatewayModels,
+  modelPenalty,
+  type GatewayModel,
+} from "./models";
 import { chatSystemPrompt } from "./prompt";
 import {
   botTier,
@@ -39,7 +44,11 @@ export async function botAnswer(input: {
   const candidates: GatewayModel[] = candidatesFor(
     listing.models.filter((model) => modelAllowed(model, access)),
     botTier(input.bot),
-    { coding: botWantsCoding(input.bot), limit: 3 },
+    {
+      coding: botWantsCoding(input.bot),
+      limit: 3,
+      penalty: (ref) => modelPenalty(ref),
+    },
   );
   const messages: GatewayMessage[] = [
     {

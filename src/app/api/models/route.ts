@@ -4,6 +4,7 @@ import {
   listGatewayModels,
   publicModel,
   publicModelId,
+  uniqueByName,
 } from "@/lib/gateway/models";
 import { candidatesFor } from "@/lib/gateway/routing";
 import { loadProductSession } from "@/lib/product/session";
@@ -30,7 +31,7 @@ export async function GET() {
   const allowed = listing.models.filter((model) => modelAllowed(model, access));
   const best = candidatesFor(allowed, "top", { coding: true, limit: 1 })[0];
   return json({
-    models: allowed.map(publicModel),
+    models: uniqueByName(allowed).map(publicModel),
     defaultId: best ? publicModelId(best.ref) : null,
     freeOnly: access.freeOnly,
   });

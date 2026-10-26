@@ -41,7 +41,7 @@ const LIST_TIMEOUT_MS = 6000;
 const HIDE_MS = 60 * 60 * 1000;
 
 const NON_CHAT =
-  /(embed|rerank|whisper|\btts\b|text-to-speech|speech|\basr\b|audio|transcri|stable-diffusion|sdxl|\bsd3|flux|dall-?e|imagen|image-gen|\bclip\b|moderation|guard|safety|parakeet|canary|riva|fastpitch|paligemma|kosmos|deplot|\bocr\b|bge-|\be5-|gte-|retriever|reward|cosmos|video|segment|detect|depth|upscal|inpaint|controlnet|nv-yolox|grounding-dino|ai-synthetic|tokenizer)/i;
+  /(embed|rerank|whisper|\btts\b|text-to-speech|speech|\basr\b|audio|transcri|stable-diffusion|sdxl|\bsd3|flux|dall-?e|imagen|image-gen|\bclip\b|nvclip|moderation|guard|safety|parakeet|canary|riva|fastpitch|paligemma|kosmos|deplot|\bocr\b|bge-|\be5-|gte-|retriever|reward|cosmos|video|segment|detect|depth|upscal|inpaint|controlnet|nv-yolox|grounding-dino|ai-synthetic|tokenizer|voyage|lyria|music|[-/]parse\b|nemotron-parse|\bvila\b|\bneva\b|fuyu|diffusion|calibration|apnea|router\b|-router|auto-router)/i;
 
 const REASONING =
   /(\br1\b|-r1|reasoner|thinking|\bo1\b|\bo3\b|\bo4\b|qwq|grok-4|gpt-5|-think|magistral|nemotron-ultra|nemotron-super|deepseek-v3\.1|kimi-k2-thinking|qwen3-235b|phi-4-reasoning)/i;
@@ -266,6 +266,40 @@ const cache = new Map<ProviderId, CacheEntry>();
 const inflight = new Map<ProviderId, Promise<CacheEntry>>();
 const hidden = new Map<string, number>();
 
+// How each model behaved lately on this instance: failures and time to the
+// first token. Routing puts slow or failing models behind the others.
+const HEALTH_MS = 10 * 60 * 1000;
+const health = new Map<string, { at: number; ok: boolean; ms: number }[]>();
+
+export function noteModelResult(
+  ref: string,
+  result: { ok: boolean; firstTokenMs: number },
+  now = Date.now(),
+) {
+  const list = (health.get(ref) ?? []).filter(
+    (row) => now - row.at < HEALTH_MS,
+  );
+  list.push({ at: now, ok: result.ok, ms: result.firstTokenMs });
+  health.set(ref, list.slice(-12));
+}
+
+/** Rank penalty for a model that failed or answered slowly in the last minutes. */
+export function modelPenalty(ref: string, now = Date.now()) {
+  const list = (health.get(ref) ?? []).filter(
+    (row) => now - row.at < HEALTH_MS,
+  );
+  if (!list.length) return 0;
+  const failures = list.filter((row) => !row.ok).length;
+  const ok = list.filter((row) => row.ok);
+  const average = ok.length
+    ? ok.reduce((sum, row) => sum + row.ms, 0) / ok.length
+    : 0;
+  return (
+    Math.min(failures, 3) * 20 +
+    (average > 15_000 ? 20 : average > 8_000 ? 10 : 0)
+  );
+}
+
 async function fetchList(
   provider: ProviderSpec,
   fetchImpl: typeof fetch,
@@ -422,6 +456,7 @@ export function resetGatewayModelCache() {
   cache.clear();
   inflight.clear();
   hidden.clear();
+  health.clear();
 }
 
 /**
@@ -460,6 +495,17 @@ export type PublicModel = {
   reasoning: boolean;
   contextLength: number | null;
 };
+
+/** One entry per model name (the best-ranked copy), as Code's picker lists them. */
+export function uniqueByName<T extends { name: string }>(models: readonly T[]) {
+  const seen = new Set<string>();
+  return models.filter((model) => {
+    const key = model.name.toLowerCase().replace(/[^a-z0-9.]+/g, "");
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
 
 export function publicModel(model: GatewayModel): PublicModel {
   return {

@@ -128,7 +128,11 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
 
   await test.step("no service names reach the browser", async () => {
     const models = await (await send(page, "/api/models")).text();
-    expect(models).not.toMatch(/openrouter|nvidia|unorouter|bytez|lightning/i);
+    // Service names and internal references, not model names (a model may
+    // be called "... Lightning").
+    expect(models).not.toMatch(
+      /openrouter|unorouter|bytez|lightning ai|"provider|"ref"|nvidia:|openrouter:/i,
+    );
   });
 
   await test.step('the Rouge Agent answers "Hallo"', async () => {

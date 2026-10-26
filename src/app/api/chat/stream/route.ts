@@ -7,6 +7,8 @@ import { answerCacheKey, cachedAnswer, storeAnswer } from "@/lib/gateway/cache";
 import {
   hideModel,
   listGatewayModels,
+  modelPenalty,
+  noteModelResult,
   type GatewayModel,
 } from "@/lib/gateway/models";
 import {
@@ -207,6 +209,7 @@ export async function POST(request: Request) {
     coding: bot ? botWantsCoding(bot) : false,
     reasoning: !bot && tier === "top" && wantsReasoning(body.message),
     limit: 4,
+    penalty: (ref) => modelPenalty(ref),
   });
   const candidates: GatewayModel[] =
     previous && tierOf(previous) === tier
@@ -294,12 +297,24 @@ export async function POST(request: Request) {
           for (const [index, model] of candidates.entries()) {
             chosen = model;
             let produced = false;
+            const attemptStarted = Date.now();
+            let firstTokenMs = 0;
+            const last = index === candidates.length - 1;
             try {
               for await (const event of streamGateway({
                 ref: model.ref,
                 messages,
                 signal: request.signal,
+                // A slow model gives way to the next one quickly; the last
+                // candidate gets the full patience.
+                firstByteTimeoutMs: last
+                  ? 45_000
+                  : model.reasoning
+                    ? 20_000
+                    : 12_000,
               })) {
+                if (!firstTokenMs && event.type !== "usage")
+                  firstTokenMs = Date.now() - attemptStarted;
                 if (event.type === "text") {
                   produced = true;
                   text += event.text;
@@ -318,9 +333,15 @@ export async function POST(request: Request) {
                   { code: "empty_response" },
                 );
               }
+              noteModelResult(model.ref, { ok: true, firstTokenMs });
               break;
             } catch (error) {
               const code = refusalCode(error);
+              if (!request.signal.aborted)
+                noteModelResult(model.ref, {
+                  ok: false,
+                  firstTokenMs: Date.now() - attemptStarted,
+                });
               const another =
                 index < candidates.length - 1 &&
                 !request.signal.aborted &&
