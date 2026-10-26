@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
-import { PlanSection } from "@/components/settings/plan-offer";
+import {
+  PlanSection,
+  type CurrentPlanInfo,
+} from "@/components/settings/plan-offer";
 import { ProfileName } from "@/components/settings/profile-name";
-import { isFreeTierEnabled } from "@/app/free-tier";
+import { ReplayTour } from "@/components/settings/replay-tour";
+import { BILLING_CONFIG } from "@/lib/billing/config";
+import { effectivePlan } from "@/lib/billing/quota";
+import { currentSubscription, customerIdFor } from "@/lib/billing/store";
 import { requireProductSession } from "@/lib/product/session";
 import { signOut } from "../actions";
 
@@ -10,6 +16,21 @@ export const metadata: Metadata = { title: "Account" };
 
 export default async function AccountSettings() {
   const { user } = await requireProductSession();
+  const [subscription, customer] = await Promise.all([
+    currentSubscription(user.id).catch(() => null),
+    customerIdFor(user.id).catch(() => null),
+  ]);
+  const plan = effectivePlan(subscription);
+  const current: CurrentPlanInfo = {
+    label: plan ? BILLING_CONFIG.plans[plan].label : null,
+    status: subscription?.status ?? null,
+    periodEnd: subscription?.current_period_end
+      ? new Date(subscription.current_period_end).toISOString()
+      : null,
+    cancelAtPeriodEnd: Boolean(subscription?.cancel_at_period_end),
+    trialEligible: !subscription,
+    canManage: Boolean(customer && subscription),
+  };
   return (
     <>
       <section
@@ -33,13 +54,16 @@ export default async function AccountSettings() {
             <dd>E-Mail oder GitHub</dd>
           </div>
         </dl>
-        <form action={signOut}>
-          <button type="submit" className="btn btn-secondary">
-            Abmelden
-          </button>
-        </form>
+        <div className="settings-actions">
+          <ReplayTour />
+          <form action={signOut}>
+            <button type="submit" className="btn btn-secondary">
+              Abmelden
+            </button>
+          </form>
+        </div>
       </section>
-      <PlanSection freeTier={isFreeTierEnabled()} />
+      <PlanSection current={current} />
     </>
   );
 }

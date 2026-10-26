@@ -433,6 +433,7 @@ describe("durable pulse runner", () => {
 });
 
 describe("the unified pulse suite", () => {
+  // Loads every suite module: slow when the whole test run shares the CPU.
   it("brings every capability suite into one catalog", async () => {
     const specs = await pulseCatalog();
     const rows = coverage(specs, CAPABILITY_LANES);
@@ -457,7 +458,7 @@ describe("the unified pulse suite", () => {
       ).length,
     ).toBeGreaterThanOrEqual(4);
     expect(new Set(specs.map((entry) => entry.id)).size).toBe(specs.length);
-  });
+  }, 30_000);
 
   it("rotates what each cycle samples and keeps every family", async () => {
     const specs = (await pulseCatalog()).filter(

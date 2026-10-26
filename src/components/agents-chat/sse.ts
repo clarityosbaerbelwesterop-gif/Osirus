@@ -9,6 +9,11 @@ export type ChatStreamEvent =
       cached: boolean;
     }
   | { type: "text"; text: string }
+  /** Web sources the answer may cite as [n]. */
+  | {
+      type: "sources";
+      sources: Array<{ n: number; title: string; url: string; domain: string }>;
+    }
   /** The answer starts over (another model took over before any text). */
   | { type: "reset" }
   | { type: "reasoning"; text: string }

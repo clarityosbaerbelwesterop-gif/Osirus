@@ -23,7 +23,7 @@ export default async function RougeAgentPage({
 
   return (
     <RougeAgentSurface
-      key={`agent:${state.sessionId ?? "new"}`}
+      key={`agent:${state.sessionId ?? `new:${params.prompt ?? ""}`}`}
       workspaceName={identity.workspaceName}
       initialSessionId={state.sessionId}
       initialMessages={state.messages}

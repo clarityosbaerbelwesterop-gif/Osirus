@@ -5,6 +5,7 @@ import {
   hideModel,
   listGatewayModels,
   modelPenalty,
+  verifiedLead,
   type GatewayModel,
 } from "./models";
 import { chatSystemPrompt } from "./prompt";
@@ -41,15 +42,14 @@ export async function botAnswer(input: {
     }),
     listGatewayModels(),
   ]);
-  const candidates: GatewayModel[] = candidatesFor(
-    listing.models.filter((model) => modelAllowed(model, access)),
-    botTier(input.bot),
-    {
-      coding: botWantsCoding(input.bot),
-      limit: 3,
-      penalty: (ref) => modelPenalty(ref),
-    },
-  );
+  const allowed = listing.models.filter((model) => modelAllowed(model, access));
+  const tier = botTier(input.bot);
+  const candidates: GatewayModel[] = candidatesFor(allowed, tier, {
+    coding: botWantsCoding(input.bot),
+    limit: 3,
+    penalty: (ref) => modelPenalty(ref),
+    lead: verifiedLead(allowed, tier),
+  });
   const messages: GatewayMessage[] = [
     {
       role: "system",

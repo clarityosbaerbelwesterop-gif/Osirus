@@ -7,6 +7,11 @@ name: Provider diagnostics
 # between keys). Keys are read from secrets and never printed.
 on:
   workflow_dispatch:
+    inputs:
+      only_bytez:
+        description: Only the Bytez check (no UnoRouter calls)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -23,14 +28,20 @@ jobs:
       UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
       UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
       UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
+      BYTEZ_API_KEY: ${{ secrets.BYTEZ_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
       - name: Measure keys (allowed fields only)
+        if: ${{ !inputs.only_bytez }}
         run: node scripts/provider-diagnostics.mjs
+      - name: Bytez (auth format, Qwen 3.8)
+        continue-on-error: true
+        run: node scripts/bytez-diagnostics.mjs
       - uses: actions/upload-artifact@v4
+        if: ${{ !inputs.only_bytez }}
         with:
           name: provider-diagnostics
           path: |

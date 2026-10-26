@@ -155,7 +155,17 @@ for (const probe of probes)
   console.log(
     `Chat probe ${probe.id}: HTTP ${probe.status} ${probe.category} (${probe.latencyMs} ms)`,
   );
-const [freePrimary, freeSecondary, freeTertiary] = verifiedTiers;
+// Only an answer proves a model works. When every probe was rate limited
+// (often right after another probe run), the tiers verified last time stay
+// in Vercel instead of being replaced by unverified list order.
+const freeTiersAnswered = probes.some((probe) => probe.ok);
+if (probes.length && !freeTiersAnswered)
+  console.log(
+    "Notice: no free model answered (rate limited); keeping the free tiers verified last time.",
+  );
+const [freePrimary, freeSecondary, freeTertiary] = freeTiersAnswered
+  ? verifiedTiers
+  : [];
 console.log(
   `Model policy: ${modelPolicy}; roles: ${roleModel}; free tiers: ${
     [freePrimary, freeSecondary, freeTertiary].filter(Boolean).join(", ") ||
@@ -397,6 +407,40 @@ const variables = [
   ]
     .filter(([, value]) => Boolean(value))
     .map(([key, value]) => ({ key, value, type: "plain" })),
+  // Top-class models that answered the probe step correctly and in time.
+  ...(/^[a-z]+:\S+(,[a-z]+:\S+)*$/.test(
+    process.env.OSIRUS_VERIFIED_TOP_MODELS ?? "",
+  )
+    ? [
+        {
+          key: "OSIRUS_VERIFIED_TOP_MODELS",
+          value: process.env.OSIRUS_VERIFIED_TOP_MODELS,
+          type: "plain",
+        },
+      ]
+    : []),
+  // Bytez models that answered the probe (Bytez is too large to list).
+  ...(/^[\w.\-/]+(,[\w.\-/]+)*$/.test(process.env.OSIRUS_BYTEZ_MODELS ?? "")
+    ? [
+        {
+          key: "OSIRUS_BYTEZ_MODELS",
+          value: process.env.OSIRUS_BYTEZ_MODELS,
+          type: "plain",
+        },
+      ]
+    : []),
+  // Providers whose paid models the probe found refused for missing credit.
+  ...(/^(none|[a-z]+(,[a-z]+)*)$/.test(
+    process.env.OSIRUS_UNFUNDED_PROVIDERS ?? "",
+  )
+    ? [
+        {
+          key: "OSIRUS_UNFUNDED_PROVIDERS",
+          value: process.env.OSIRUS_UNFUNDED_PROVIDERS,
+          type: "plain",
+        },
+      ]
+    : []),
   ...(roleModel === "grok-4.6"
     ? [
         {
@@ -501,6 +545,11 @@ const variables = [
         },
       ]
     : []),
+  // Optional web search APIs; each is synced only when its secret exists.
+  ...["TAVILY_API_KEY", "EXA_API_KEY", "FIRECRAWL_API_KEY"]
+    .map((key) => [key, optionalSecret(process.env[key])])
+    .filter(([, value]) => Boolean(value))
+    .map(([key, value]) => ({ key, value, type: "sensitive" })),
   ...(ownerEmails
     ? [
         {

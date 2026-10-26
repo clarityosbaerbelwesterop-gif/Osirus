@@ -7,9 +7,14 @@ import {
   Check,
   ChevronRight,
   Copy,
+  FileText,
+  Globe,
+  Loader2,
+  Paperclip,
   RotateCcw,
   Sparkles,
   Square,
+  X,
   Zap,
 } from "lucide-react";
 import type { Route } from "next";
@@ -31,6 +36,7 @@ import { notifyUsage } from "../motion/quota-bars";
 import { OsirusMark } from "../shell/osirus-mark";
 import { TopBar } from "../shell/top-bar";
 import { cx } from "../ui/cx";
+import { ShareDialog } from "./share-dialog";
 import { readChatStream } from "./sse";
 
 export type AgentsChatMessage = {
@@ -41,13 +47,41 @@ export type AgentsChatMessage = {
   reasoning?: string | null;
   botId?: string | null;
   partial?: boolean;
+  /** Web sources the answer cites as [n]. */
+  sources?: Array<{ n: number; title: string; url: string; domain: string }>;
+  /** Files sent with a question. */
+  attachments?: Array<{ id: string; filename: string }>;
 };
+
+/** A file picked for the next message: uploading, ready, or refused. */
+type PendingFile = {
+  key: string;
+  filename: string;
+  id: string | null;
+  state: "uploading" | "ready" | "error";
+  note: string | null;
+};
+
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const FILE_TYPES =
+  ".pdf,.txt,.md,.markdown,.csv,.json,.log,.yaml,.yml,.xml,.html,.js,.jsx,.ts,.tsx,.py,.go,.rs,.java,.rb,.php,.c,.cpp,.h,.cs,.swift,.kt,.sql,.sh";
+
+function uploadError(status: number, code: string | undefined) {
+  if (status === 413 || code === "too_large") return "Größer als 10 MB.";
+  if (status === 415 || code === "unsupported_type")
+    return "Dateityp wird nicht unterstützt.";
+  if (status === 402) return "Speicher deines Plans ist voll.";
+  if (status === 429) return "Zu viele Uploads. Kurz warten.";
+  return "Upload fehlgeschlagen.";
+}
 
 type UiMessage = AgentsChatMessage & {
   streaming?: boolean;
   error?: string | null;
   thinkingStartedAt?: number | null;
   thinkingMs?: number | null;
+  /** Reading the web before the answer starts. */
+  searching?: boolean;
 };
 
 export type AgentsBot = { id: string; name: string };
@@ -161,6 +195,16 @@ const MessageView = memo(function MessageView(props: {
   if (message.role === "user") {
     return (
       <div className="ac-row ac-row-user">
+        {message.attachments?.length ? (
+          <ul className="ac-sent-files" aria-label="Angehängte Dateien">
+            {message.attachments.map((file) => (
+              <li key={file.id} className="ac-file">
+                <FileText size={13} aria-hidden="true" />
+                <span>{file.filename}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
         <div className="ac-user">{message.content}</div>
       </div>
     );
@@ -194,11 +238,16 @@ const MessageView = memo(function MessageView(props: {
           <div
             className="ac-waiting"
             role="status"
-            aria-label="Osirus schreibt"
+            aria-label={
+              message.searching ? "Osirus sucht im Web" : "Osirus schreibt"
+            }
           >
             <i />
             <i />
             <i />
+            {message.searching ? (
+              <span className="ac-searching">Sucht im Web …</span>
+            ) : null}
           </div>
         ) : null}
         {message.content ? (
@@ -210,6 +259,25 @@ const MessageView = memo(function MessageView(props: {
           >
             <Markdown content={message.content} />
           </div>
+        ) : null}
+        {message.sources?.length ? (
+          <section className="ac-sources" aria-label="Quellen">
+            <p className="ac-sources-title">Quellen</p>
+            <ol>
+              {message.sources.map((source) => (
+                <li key={source.n} value={source.n}>
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    <span className="ac-source-title">{source.title}</span>
+                    <span className="ac-source-domain">{source.domain}</span>
+                  </a>
+                </li>
+              ))}
+            </ol>
+          </section>
         ) : null}
         {message.error ? (
           <div className="ac-error" role="alert">
@@ -296,6 +364,11 @@ export function AgentsChat(props: {
       : null,
   );
   const [atBottom, setAtBottom] = useState(true);
+  const [web, setWeb] = useState(false);
+  const [files, setFiles] = useState<PendingFile[]>([]);
+  const [dragging, setDragging] = useState(false);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const uploading = files.some((file) => file.state === "uploading");
   // The greeting follows the reader's clock, known only after hydration.
   const hour = useSyncExternalStore(subscribeNever, localHour, serverHour);
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -345,6 +418,7 @@ export function AgentsChat(props: {
     setMessages([]);
     setTitle(null);
     setInput("");
+    setFiles([]);
     setBusy(false);
     window.history.replaceState(null, "", "/app");
     textareaRef.current?.focus();
@@ -364,6 +438,7 @@ export function AgentsChat(props: {
       }
       abortRef.current?.abort();
       setBusy(false);
+      setFiles([]);
       setSessionId(session.id);
       setMessages([]);
       setTitle(session.title);
@@ -404,10 +479,86 @@ export function AgentsChat(props: {
     if (!props.initialThread) textareaRef.current?.focus();
   }, [props.initialThread]);
 
+  const upload = useCallback(
+    async (picked: File[]) => {
+      const entries = picked.slice(0, 8).map((file, index) => ({
+        file,
+        key: `${Date.now()}-${index}-${file.name}`,
+      }));
+      setFiles((current) => [
+        ...current,
+        ...entries.map(({ file, key }) => ({
+          key,
+          filename: file.name,
+          id: null,
+          state:
+            file.size > MAX_FILE_BYTES
+              ? ("error" as const)
+              : ("uploading" as const),
+          note: file.size > MAX_FILE_BYTES ? uploadError(413, undefined) : null,
+        })),
+      ]);
+      await Promise.all(
+        entries
+          .filter(({ file }) => file.size <= MAX_FILE_BYTES)
+          .map(async ({ file, key }) => {
+            const form = new FormData();
+            form.append("file", file);
+            if (sessionId) form.append("sessionId", sessionId);
+            const response = await fetch("/api/attachments", {
+              method: "POST",
+              body: form,
+            }).catch(() => null);
+            const body = (await response?.json().catch(() => null)) as {
+              attachment?: { id: string; status: string; note: string | null };
+              error?: string;
+            } | null;
+            setFiles((current) =>
+              current.map((entry) =>
+                entry.key !== key
+                  ? entry
+                  : response?.ok && body?.attachment
+                    ? {
+                        ...entry,
+                        id: body.attachment.id,
+                        state:
+                          body.attachment.status === "parsed"
+                            ? "ready"
+                            : "error",
+                        note:
+                          body.attachment.status === "parsed"
+                            ? null
+                            : "Inhalt konnte nicht gelesen werden.",
+                      }
+                    : {
+                        ...entry,
+                        state: "error",
+                        note: uploadError(response?.status ?? 0, body?.error),
+                      },
+              ),
+            );
+          }),
+      );
+    },
+    [sessionId],
+  );
+
+  const removeFile = (key: string) => {
+    const entry = files.find((file) => file.key === key);
+    setFiles((current) => current.filter((file) => file.key !== key));
+    if (entry?.id)
+      void fetch(`/api/attachments/${entry.id}`, { method: "DELETE" }).catch(
+        () => undefined,
+      );
+  };
+
   const send = useCallback(
     async (text: string, options: { regenerate?: boolean } = {}) => {
       const trimmed = text.trim();
-      if (!trimmed || busy) return;
+      if (!trimmed || busy || uploading) return;
+      const ready = options.regenerate
+        ? []
+        : files.filter((file) => file.state === "ready" && file.id);
       // "@Botname message" talks to that bot for this message.
       let targetBot = botId;
       let content = trimmed;
@@ -438,6 +589,10 @@ export function AgentsChat(props: {
                 id: `user-${Date.now()}`,
                 role: "user" as const,
                 content: trimmed,
+                attachments: ready.map((file) => ({
+                  id: file.id!,
+                  filename: file.filename,
+                })),
               },
             ];
         return [
@@ -448,10 +603,14 @@ export function AgentsChat(props: {
             content: "",
             streaming: true,
             botId: targetBot,
+            searching: web || /\bhttps?:\/\//i.test(content),
           },
         ];
       });
-      if (!options.regenerate) setInput("");
+      if (!options.regenerate) {
+        setInput("");
+        setFiles([]);
+      }
 
       const patch = (update: (message: UiMessage) => UiMessage) =>
         setMessages((current) =>
@@ -492,6 +651,8 @@ export function AgentsChat(props: {
             message: content,
             botId: targetBot,
             regenerate: Boolean(options.regenerate),
+            web,
+            attachmentIds: ready.map((file) => file.id),
           }),
           signal: controller.signal,
         });
@@ -524,16 +685,23 @@ export function AgentsChat(props: {
               updatedAt: new Date().toISOString(),
               surface: targetBot ? "bot" : "ai",
             });
+          } else if (event.type === "sources") {
+            const sources = event.sources;
+            patch((message) => ({ ...message, sources, searching: false }));
           } else if (event.type === "reset") {
             reasoning = "";
             answer = "";
             thinkingStartedAt = null;
             schedule();
           } else if (event.type === "reasoning") {
-            if (thinkingStartedAt === null) thinkingStartedAt = Date.now();
+            if (thinkingStartedAt === null) {
+              thinkingStartedAt = Date.now();
+              patch((message) => ({ ...message, searching: false }));
+            }
             reasoning += event.text;
             schedule();
           } else if (event.type === "text") {
+            if (!answer) patch((message) => ({ ...message, searching: false }));
             if (thinkingStartedAt !== null && thinkingMs === null) {
               thinkingMs = Date.now() - thinkingStartedAt;
             }
@@ -593,7 +761,7 @@ export function AgentsChat(props: {
         notifyUsage();
       }
     },
-    [botId, busy, props.bots, sessionId, upsertSession],
+    [botId, busy, files, props.bots, sessionId, upsertSession, uploading, web],
   );
 
   const stop = () => abortRef.current?.abort();
@@ -626,10 +794,26 @@ export function AgentsChat(props: {
 
   const composer = (
     <form
-      className={cx("ac-composer", busy && "ac-composer-busy")}
+      className={cx(
+        "ac-composer",
+        busy && "ac-composer-busy",
+        dragging && "ac-composer-drop",
+      )}
       onSubmit={(event) => {
         event.preventDefault();
         void send(input);
+      }}
+      onDragOver={(event) => {
+        if (!event.dataTransfer.types.includes("Files")) return;
+        event.preventDefault();
+        setDragging(true);
+      }}
+      onDragLeave={() => setDragging(false)}
+      onDrop={(event) => {
+        if (!event.dataTransfer.files.length) return;
+        event.preventDefault();
+        setDragging(false);
+        void upload([...event.dataTransfer.files]);
       }}
     >
       {activeBot ? (
@@ -647,6 +831,38 @@ export function AgentsChat(props: {
             ×
           </button>
         </div>
+      ) : null}
+      {files.length ? (
+        <ul className="ac-files" aria-label="Dateien für die nächste Nachricht">
+          {files.map((file) => (
+            <li
+              key={file.key}
+              className={cx(
+                "ac-file",
+                file.state === "error" && "ac-file-error",
+              )}
+              title={file.note ?? undefined}
+            >
+              {file.state === "uploading" ? (
+                <Loader2 size={13} className="ac-spin" aria-hidden="true" />
+              ) : (
+                <FileText size={13} aria-hidden="true" />
+              )}
+              <span>{file.filename}</span>
+              {file.note ? (
+                <span className="ac-file-note">{file.note}</span>
+              ) : null}
+              <button
+                type="button"
+                className="ac-file-remove"
+                onClick={() => removeFile(file.key)}
+                aria-label={`${file.filename} entfernen`}
+              >
+                <X size={12} aria-hidden="true" />
+              </button>
+            </li>
+          ))}
+        </ul>
       ) : null}
       <textarea
         ref={textareaRef}
@@ -676,6 +892,37 @@ export function AgentsChat(props: {
         }}
       />
       <div className="ac-composer-bar">
+        <input
+          ref={fileRef}
+          type="file"
+          multiple
+          accept={FILE_TYPES}
+          hidden
+          onChange={(event) => {
+            const picked = [...(event.target.files ?? [])];
+            event.target.value = "";
+            if (picked.length) void upload(picked);
+          }}
+        />
+        <button
+          type="button"
+          className="ac-tool"
+          onClick={() => fileRef.current?.click()}
+          aria-label="Datei anhängen"
+          title="Datei anhängen (PDF, Text, CSV, Code)"
+        >
+          <Paperclip size={16} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          className={cx("ac-tool", web && "ac-tool-on")}
+          onClick={() => setWeb((value) => !value)}
+          aria-pressed={web}
+          title="Für die Antwort im Web suchen und Quellen nennen"
+        >
+          <Globe size={16} aria-hidden="true" />
+          <span>Web</span>
+        </button>
         <span
           className="ac-auto"
           title="Osirus wählt für jede Aufgabe das passende Modell"
@@ -697,7 +944,7 @@ export function AgentsChat(props: {
           <button
             type="submit"
             className="ac-send"
-            disabled={!input.trim()}
+            disabled={!input.trim() || uploading}
             aria-label="Senden"
           >
             <ArrowUp size={18} aria-hidden="true" />
@@ -709,7 +956,15 @@ export function AgentsChat(props: {
 
   return (
     <div className={cx("ac", empty && "ac-empty")}>
-      <TopBar title={title ?? "Agents"} titleAs="p" />
+      <TopBar
+        title={title ?? "Agents"}
+        titleAs="p"
+        actions={
+          sessionId && !busy && messages.length ? (
+            <ShareDialog sessionId={sessionId} />
+          ) : null
+        }
+      />
       <div className="ac-scroll" ref={scrollRef} onScroll={onScroll}>
         {empty ? (
           <div className="ac-hero">

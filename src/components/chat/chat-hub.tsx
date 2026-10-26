@@ -150,6 +150,8 @@ export function ChatHub(props: {
   kind?: "ai" | "agent" | "bot";
   /** Set by the chat page when the free tier is on and its quota is empty. */
   freeQuotaEmpty?: boolean;
+  /** When the spent free quota refills (ISO), if known. */
+  freeQuotaAvailableAt?: string | null;
   /** Rouge Agent: the gateway model ("provider:model") the run is pinned to. */
   agentModelRef?: string | null;
   /** Shown above the composer (the Rouge Agent's model and options). */
@@ -808,7 +810,11 @@ export function ChatHub(props: {
           }}
         >
           <div className="chat-content" ref={content}>
-            {props.freeQuotaEmpty ? <FreeQuotaPanel /> : null}
+            {props.freeQuotaEmpty ? (
+              <FreeQuotaPanel
+                availableAt={props.freeQuotaAvailableAt ?? null}
+              />
+            ) : null}
             {empty ? (
               props.kind === "bot" ? (
                 <div className="home home-calm">

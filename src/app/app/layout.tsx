@@ -5,6 +5,7 @@ import { AppShell } from "@/components/shell/app-shell";
 import { ensureOsirusUser } from "@/lib/auth/bootstrap";
 import { consentIsCurrent } from "@/lib/legal/store";
 import { RuntimeRepository } from "@/lib/runtime/repository";
+import { tourSeen } from "@/lib/product/onboarding";
 import { loadAuthUser, requireProductSession } from "@/lib/product/session";
 import { isOrganizationAdmin, shellCounts } from "@/lib/product/shell";
 import {
@@ -37,11 +38,13 @@ export default async function ProductLayout({
   if (!consented) redirect("/consent");
   const { user, identity } = await requireProductSession();
   const repository = new RuntimeRepository(identity.userId);
-  const [sessions, counts, isAdmin, jar] = await Promise.all([
+  const [sessions, counts, isAdmin, jar, seen] = await Promise.all([
     repository.listWorkspaceSessions(identity.workspaceId),
     shellCounts(identity),
     isOrganizationAdmin(identity),
     cookies(),
+    // A failed read must not lock the app behind the tour: treat it as seen.
+    tourSeen(identity.userId).catch(() => true),
   ]);
   return (
     <AppShell
@@ -53,6 +56,7 @@ export default async function ProductLayout({
         isAdmin,
         sidebar: parseSidebar(jar.get(SIDEBAR_COOKIE)?.value),
         theme: parseTheme(jar.get(THEME_COOKIE)?.value),
+        tour: { open: !seen },
       }}
     >
       {children}

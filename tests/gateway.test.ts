@@ -374,6 +374,92 @@ describe("streaming", () => {
     expect(after.models.map((m) => m.id)).toEqual(["x/here"]);
   });
 
+  it("stops offering paid models of a provider without credit", async () => {
+    process.env.OPENROUTER_API_KEY = "or-key";
+    const listing = fakeFetch(() =>
+      Response.json({
+        data: [
+          {
+            id: "anthropic/claude-opus-4.1",
+            pricing: { prompt: "0.000015", completion: "0.000075" },
+          },
+          {
+            id: "openai/gpt-5",
+            pricing: { prompt: "0.00000125", completion: "0.00001" },
+          },
+          {
+            id: "qwen/qwen3-235b:free",
+            pricing: { prompt: "0", completion: "0" },
+          },
+        ],
+      }),
+    );
+    const before = await listGatewayModels({ fetchImpl: listing.impl });
+    expect(before.models).toHaveLength(3);
+    const broke = fakeFetch(
+      () =>
+        new Response('{"error":{"message":"Insufficient credits"}}', {
+          status: 402,
+        }),
+    );
+    await expect(
+      completeGateway({
+        ref: "openrouter:anthropic/claude-opus-4.1",
+        messages: [],
+        fetchImpl: broke.impl,
+      }),
+    ).rejects.toMatchObject({ code: "insufficient_credit" });
+    const after = await listGatewayModels({ fetchImpl: listing.impl });
+    // Every paid model of the provider goes; the free one stays.
+    expect(after.models.map((m) => m.id)).toEqual(["qwen/qwen3-235b:free"]);
+  });
+
+  it("offers no Bytez model when the sync found none that answers", async () => {
+    process.env.BYTEZ_API_KEY = "bz-key";
+    try {
+      const defaults = await listGatewayModels({
+        fetchImpl: fakeFetch(() => Response.json({ data: [] })).impl,
+      });
+      expect(defaults.models.some((m) => m.provider === "bytez")).toBe(true);
+      resetGatewayModelCache();
+      process.env.OSIRUS_BYTEZ_MODELS = "none";
+      const none = await listGatewayModels({
+        fetchImpl: fakeFetch(() => Response.json({ data: [] })).impl,
+      });
+      expect(none.models.filter((m) => m.provider === "bytez")).toEqual([]);
+    } finally {
+      delete process.env.OSIRUS_BYTEZ_MODELS;
+    }
+  });
+
+  it("takes the measured unfunded providers from the runtime sync", async () => {
+    process.env.OPENROUTER_API_KEY = "or-key";
+    const listing = fakeFetch(() =>
+      Response.json({
+        data: [
+          {
+            id: "openai/gpt-5",
+            pricing: { prompt: "0.00000125", completion: "0.00001" },
+          },
+          {
+            id: "qwen/qwen3-235b:free",
+            pricing: { prompt: "0", completion: "0" },
+          },
+        ],
+      }),
+    );
+    try {
+      process.env.OSIRUS_UNFUNDED_PROVIDERS = "nvidia,openrouter";
+      const blocked = await listGatewayModels({ fetchImpl: listing.impl });
+      expect(blocked.models.map((m) => m.free)).toEqual([true]);
+      process.env.OSIRUS_UNFUNDED_PROVIDERS = "none";
+      const funded = await listGatewayModels({ fetchImpl: listing.impl });
+      expect(funded.models).toHaveLength(2);
+    } finally {
+      delete process.env.OSIRUS_UNFUNDED_PROVIDERS;
+    }
+  });
+
   it("reports a provider error sent inside the stream", async () => {
     process.env.OPENROUTER_API_KEY = "or-key";
     const { impl } = fakeFetch(() =>

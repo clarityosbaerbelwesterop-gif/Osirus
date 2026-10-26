@@ -628,3 +628,184 @@ test("rouge agent: a suggested task fills the composer and Osirus picks the mode
     .toMatchObject({ surface: "agent", mode: "agent" });
   expect(runBody).not.toHaveProperty("modelId");
 });
+
+test("tour: a new account is walked through every part and can start a first task", async ({
+  page,
+}) => {
+  await mockApis(page);
+  await openSurface(page, "tour");
+  const tour = page.getByRole("dialog");
+  await expect(tour).toBeVisible();
+  await expect(
+    tour.getByRole("heading", { name: "Willkommen bei Osirus, Bärbel" }),
+  ).toBeVisible();
+  await expect(tour.getByText("Schritt 1 von 8")).toBeVisible();
+  // Focus is inside the dialog, and the keyboard drives it.
+  await expect(tour.getByRole("button", { name: "Los geht's" })).toBeVisible();
+  await tour.getByRole("button", { name: "Los geht's" }).click();
+  const titles = [
+    "Agents: einfach fragen",
+    "Bots: deine Spezialisten",
+    "Rouge Agent: erledigt Aufgaben",
+    "Code: dein Entwickler",
+    "Verbindungen: deine Werkzeuge",
+    "Kontingent, Pläne und Sicherheit",
+    "Leg los",
+  ];
+  for (const [index, title] of titles.entries()) {
+    await expect(tour.getByRole("heading", { name: title })).toBeVisible();
+    await expect(tour.getByText(`Schritt ${index + 2} von 8`)).toBeVisible();
+    if (index < titles.length - 1)
+      await tour.getByRole("button", { name: "Weiter" }).click();
+  }
+  // Back works, and the last step offers real first tasks.
+  await tour.getByRole("button", { name: "Zurück" }).click();
+  await expect(
+    tour.getByRole("heading", { name: "Kontingent, Pläne und Sicherheit" }),
+  ).toBeVisible();
+  await tour.getByRole("button", { name: "Weiter" }).click();
+  const ask = tour.getByRole("link", { name: /Eine Frage stellen/ });
+  await expect(ask).toHaveAttribute("href", /^\/app\?prompt=/);
+  await expect(
+    tour.getByRole("link", { name: /Eine Aufgabe übergeben/ }),
+  ).toHaveAttribute("href", /^\/app\/agent\?new=1&prompt=/);
+  await tour.getByRole("button", { name: "Fertig" }).click();
+  await expect(tour).toBeHidden();
+});
+
+test("tour: skipping closes it and Escape does too after a replay", async ({
+  page,
+}) => {
+  await mockApis(page);
+  await openSurface(page, "tour");
+  const tour = page.getByRole("dialog");
+  await tour.getByRole("button", { name: "Überspringen" }).click();
+  await expect(tour).toBeHidden();
+  await page.evaluate(() => window.dispatchEvent(new Event("osirus:tour")));
+  await expect(tour).toBeVisible();
+  await expect(tour.getByText("Schritt 1 von 8")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(tour).toBeHidden();
+});
+
+test("agents: a file and the web go with the question, and the answer lists its sources", async ({
+  page,
+}) => {
+  const log = await mockApis(page);
+  await page.route("**/api/attachments", (route) =>
+    route.fulfill({
+      status: 201,
+      json: {
+        attachment: {
+          id: "7b8c9d0e-1f2a-4b3c-9d4e-5f6a7b8c9d0e",
+          status: "parsed",
+          note: null,
+        },
+      },
+    }),
+  );
+  await page.route("**/api/chat/stream", (route) => {
+    log.push({
+      method: "POST",
+      path: "/api/chat/stream",
+      body: route.request().postDataJSON(),
+    });
+    const frames = [
+      {
+        type: "start",
+        sessionId: "8c9d0e1f-2a3b-4c4d-8e5f-6a7b8c9d0e1f",
+        title: "Einwohner",
+        created: true,
+        cached: false,
+      },
+      {
+        type: "sources",
+        sources: [
+          {
+            n: 1,
+            title: "Einwohner Berlin",
+            url: "https://www.statistik-berlin.de/einwohner",
+            domain: "statistik-berlin.de",
+          },
+        ],
+      },
+      { type: "text", text: "Berlin hat rund 3,88 Millionen Einwohner [1]." },
+      { type: "done", messageId: null, latencyMs: 900 },
+    ];
+    return route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      body: frames.map((f) => `data: ${JSON.stringify(f)}\n\n`).join(""),
+    });
+  });
+  await openSurface(page, "agents-empty");
+  await page.getByRole("button", { name: "Datei anhängen" }).click();
+  await page.locator('input[type="file"]').setInputFiles({
+    name: "staedte.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from("Stadt,Einwohner\nBerlin,3878100\n"),
+  });
+  const files = page.getByRole("list", {
+    name: "Dateien für die nächste Nachricht",
+  });
+  await expect(files.getByText("staedte.csv")).toBeVisible();
+  const web = page.getByRole("button", { name: "Web" });
+  await web.click();
+  await expect(web).toHaveAttribute("aria-pressed", "true");
+  const input = page.getByRole("textbox", { name: "Nachricht" });
+  await input.fill("Wie viele Einwohner hat Berlin?");
+  await input.press("Enter");
+  await expect(page.getByText(/rund 3,88 Millionen/)).toBeVisible();
+  const sources = page.getByRole("region", { name: "Quellen" });
+  await expect(
+    sources.getByRole("link", { name: /Einwohner Berlin/ }),
+  ).toHaveAttribute("href", "https://www.statistik-berlin.de/einwohner");
+  await expect(
+    page
+      .getByRole("list", { name: "Angehängte Dateien" })
+      .getByText("staedte.csv"),
+  ).toBeVisible();
+  const sent = log.find((entry) => entry.path === "/api/chat/stream");
+  expect(sent?.body).toMatchObject({
+    web: true,
+    attachmentIds: ["7b8c9d0e-1f2a-4b3c-9d4e-5f6a7b8c9d0e"],
+  });
+  await expect(files).toHaveCount(0);
+});
+
+test("agents: a chat is shared as a read-only link and can be turned off", async ({
+  page,
+  context,
+}) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await mockApis(page);
+  let shared = false;
+  const url = "https://osirus.test/s/AbCdEfGhIjKlMnOpQrStUvWxYz012345";
+  await page.route("**/api/chat/threads/*/share", (route) => {
+    const method = route.request().method();
+    if (method === "POST") shared = true;
+    if (method === "DELETE") shared = false;
+    return route.fulfill({
+      status: method === "POST" ? 201 : 200,
+      json: shared
+        ? { shared: true, url, sharedAt: "2026-10-26T15:00:00.000Z" }
+        : { shared: false },
+    });
+  });
+  await openSurface(page, "agents-thread");
+  await page.getByRole("button", { name: "Chat teilen" }).click();
+  const dialog = page.getByRole("dialog", { name: "Chat teilen" });
+  await expect(dialog.getByText(/Spätere Nachrichten/)).toBeVisible();
+  await dialog
+    .getByRole("button", { name: "Link erstellen und kopieren" })
+    .click();
+  await expect(
+    dialog.getByRole("textbox", { name: "Link zum geteilten Chat" }),
+  ).toHaveValue(url);
+  await expect(dialog.getByRole("button", { name: "Kopiert" })).toBeVisible();
+  expect(await page.evaluate(() => navigator.clipboard.readText())).toBe(url);
+  await dialog.getByRole("button", { name: "Link deaktivieren" }).click();
+  await expect(
+    dialog.getByRole("button", { name: "Link erstellen und kopieren" }),
+  ).toBeVisible();
+});

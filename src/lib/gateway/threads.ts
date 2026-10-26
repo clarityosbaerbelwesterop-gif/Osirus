@@ -19,6 +19,10 @@ export type ChatMessage = {
   reasoning: string | null;
   botId: string | null;
   partial: boolean;
+  /** Web sources an answer cites as [n]. */
+  sources?: Array<{ n: number; title: string; url: string; domain: string }>;
+  /** Files sent with a question. */
+  attachments?: Array<{ id: string; filename: string }>;
 };
 
 export function isUuid(value: string | null | undefined): value is string {
@@ -72,6 +76,16 @@ export function toChatMessage(row: MessageRow): ChatMessage | null {
     reasoning: text(meta.reasoning),
     botId: text(meta.botId),
     partial: meta.partial === true,
+    ...(Array.isArray(meta.sources) && meta.sources.length
+      ? { sources: meta.sources as NonNullable<ChatMessage["sources"]> }
+      : {}),
+    ...(Array.isArray(meta.attachments) && meta.attachments.length
+      ? {
+          attachments: meta.attachments as NonNullable<
+            ChatMessage["attachments"]
+          >,
+        }
+      : {}),
   };
 }
 

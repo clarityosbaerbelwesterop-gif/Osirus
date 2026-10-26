@@ -97,9 +97,9 @@ const CODING_MODEL =
   /(coder|codestral|devstral|claude|gpt-5|qwen3|kimi|glm-(4\.[5-9]|5)|deepseek-(v3|r1|chat)|grok-(4|code))/i;
 
 /**
- * The models to try for a class, best first: the class itself, then the next
- * stronger, then the weaker. `prefer` moves coding or reasoning models to
- * the front within each class.
+ * The models to try for a class, best first: `lead` (measured or already in
+ * use), then the class itself, the next stronger, the weaker. `coding` and
+ * `reasoning` move those models to the front within each class.
  */
 export function candidatesFor(
   models: readonly GatewayModel[],
@@ -110,6 +110,8 @@ export function candidatesFor(
     limit?: number;
     /** Extra rank for a model, e.g. recent failures or slowness. */
     penalty?: (ref: string) => number;
+    /** Tried first, in this order. */
+    lead?: readonly GatewayModel[];
   } = {},
 ): GatewayModel[] {
   const order: ModelTier[] =
@@ -126,7 +128,7 @@ export function candidatesFor(
     if (options.reasoning && model.reasoning) value -= 30;
     return value + (options.penalty?.(model.ref) ?? 0);
   };
-  const out: GatewayModel[] = [];
+  const out: GatewayModel[] = [...(options.lead ?? [])];
   for (const wanted of order) {
     out.push(
       ...models
@@ -134,7 +136,11 @@ export function candidatesFor(
         .sort((a, b) => score(a) - score(b) || a.ref.localeCompare(b.ref)),
     );
   }
-  return out.slice(0, options.limit ?? out.length);
+  const unique = out.filter(
+    (model, index) =>
+      out.findIndex((other) => other.ref === model.ref) === index,
+  );
+  return unique.slice(0, options.limit ?? unique.length);
 }
 
 /** Error codes after which the next candidate is tried (before any text). */

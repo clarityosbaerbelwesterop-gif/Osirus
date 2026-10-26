@@ -9,7 +9,7 @@ import {
   listGatewayModels,
   modelPenalty,
   noteModelResult,
-  verifiedFastModels,
+  verifiedLead,
   type GatewayModel,
 } from "@/lib/gateway/models";
 import {
@@ -35,6 +35,11 @@ import {
   createChatSession,
   saveChatMessage,
 } from "@/lib/gateway/threads";
+import {
+  fileMaterial,
+  materialPrompt,
+  webMaterial,
+} from "@/lib/gateway/material";
 import { loadProductSession } from "@/lib/product/session";
 import { hasSameOrigin, readJsonBody } from "@/lib/security/request";
 import {
@@ -53,6 +58,10 @@ const schema = z.object({
   message: z.string().trim().min(1).max(32_000),
   botId: z.string().uuid().nullable().optional(),
   regenerate: z.boolean().optional().default(false),
+  /** Search the web for this message (links in it are always read). */
+  web: z.boolean().optional().default(false),
+  /** Files uploaded for this message (POST /api/attachments). */
+  attachmentIds: z.array(z.string().uuid()).max(8).optional().default([]),
 });
 
 function json(body: unknown, status: number, headers?: Record<string, string>) {
@@ -187,6 +196,12 @@ export async function POST(request: Request) {
     );
   }
 
+  // The web lookup runs while the thread loads; it has its own time budget.
+  const webPending = webMaterial({
+    message: body.message,
+    search: body.web,
+    signal: request.signal,
+  });
   const history = existing
     ? await chatContext(identity, existing.id, 24)
     : { turns: [], lastModelRef: null };
@@ -204,29 +219,24 @@ export async function POST(request: Request) {
           (sum, turn) => sum + turn.content.length,
           0,
         ),
+        attachments: body.attachmentIds.length,
       }).tier;
-  const tier = previous ? higherTier(tierOf(previous), wanted) : wanted;
-  const ranked = candidatesFor(allowed, tier, {
+  // Reading web sources well needs at least the everyday class.
+  const asked = body.web ? higherTier(wanted, "balanced") : wanted;
+  const tier = previous ? higherTier(tierOf(previous), asked) : asked;
+  const thinks = !bot && tier === "top" && wantsReasoning(body.message);
+  // The thread's model stays first; then the models the runtime sync measured
+  // answering correctly and fast (measured beats ranked); then the ranking.
+  const candidates: GatewayModel[] = candidatesFor(allowed, tier, {
     coding: bot ? botWantsCoding(bot) : false,
-    reasoning: !bot && tier === "top" && wantsReasoning(body.message),
+    reasoning: thinks,
     limit: 4,
     penalty: (ref) => modelPenalty(ref),
+    lead: [
+      ...(previous && tierOf(previous) === tier ? [previous] : []),
+      ...verifiedLead(allowed, tier, { reasoning: thinks }),
+    ],
   });
-  // The free models the runtime sync probed and found answering in about a
-  // second lead the everyday classes: measured beats ranked.
-  const verified =
-    tier === "top"
-      ? []
-      : verifiedFastModels(allowed).filter(
-          (model) => modelPenalty(model.ref) === 0,
-        );
-  const lead = previous && tierOf(previous) === tier ? [previous] : [];
-  const candidates: GatewayModel[] = [...lead, ...verified, ...ranked]
-    .filter(
-      (model, index, list) =>
-        list.findIndex((other) => other.ref === model.ref) === index,
-    )
-    .slice(0, 4);
 
   const sessionId =
     existing?.id ??
@@ -241,22 +251,39 @@ export async function POST(request: Request) {
   const context = reuseTurn
     ? turns.slice(0, turns.lastIndexOf(lastUser!))
     : turns;
+  const [web, files] = await Promise.all([
+    webPending,
+    fileMaterial(identity, {
+      sessionId,
+      newIds: body.attachmentIds,
+      message: body.message,
+    }).catch(() => ({ files: [], passages: [] })),
+  ]);
+  const material = materialPrompt({ web, passages: files.passages });
   if (!reuseTurn) {
+    const sent = new Set(body.attachmentIds);
     await saveChatMessage(identity, {
       sessionId,
       role: "user",
       content: body.message,
-      metadata: { surface: "ai", botId: bot?.id ?? null, tier },
+      metadata: {
+        surface: "ai",
+        botId: bot?.id ?? null,
+        tier,
+        web: body.web || undefined,
+        attachments: files.files.filter((file) => sent.has(file.id)),
+      },
     });
   }
 
   const messages: GatewayMessage[] = [
     {
       role: "system",
-      content: chatSystemPrompt({
-        botName: bot?.name ?? null,
-        botPrompt: bot?.system_prompt ?? null,
-      }),
+      content:
+        chatSystemPrompt({
+          botName: bot?.name ?? null,
+          botPrompt: bot?.system_prompt ?? null,
+        }) + material.prompt,
     },
     ...context,
     { role: "user", content: body.message },
@@ -298,6 +325,8 @@ export async function POST(request: Request) {
         created: !existing,
         cached: Boolean(hit),
       });
+      if (material.sources.length)
+        send({ type: "sources", sources: material.sources });
 
       let status: "completed" | "failed" | "cancelled" = "completed";
       let errorCode: string | null = null;
@@ -445,6 +474,7 @@ export async function POST(request: Request) {
               partial: status !== "completed",
               latencyMs,
               cached: Boolean(hit),
+              sources: material.sources.length ? material.sources : undefined,
             },
           });
           messageId = saved.id;

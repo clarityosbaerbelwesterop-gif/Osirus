@@ -61,8 +61,24 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Dateien.</strong> Dateien, die du hochlädst, werden zum
-          Weiterverwenden im eigenen Workspace in Text überführt.
-          Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
+          Weiterverwenden im eigenen Workspace in Text überführt. Passende
+          Auszüge gehen mit deinen Fragen im selben Chat an das antwortende
+          Modell. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
+        </li>
+        <li>
+          <strong>Websuche und Links.</strong> Schaltest du im Chat die Websuche
+          ein, sendet Osirus aus deiner Nachricht abgeleitete Suchbegriffe an
+          einen Suchdienst und ruft die gefundenen Seiten ab; Links in deiner
+          Nachricht werden abgerufen, um sie zu lesen. Rechtsgrundlage: Art. 6
+          Abs. 1 lit. b DSGVO.
+        </li>
+        <li>
+          <strong>Geteilte Chats.</strong> Erstellst du einen Teilen-Link, kann
+          jede Person mit diesem Link die Fragen und Antworten des Chats bis zum
+          Zeitpunkt des Teilens lesen, bis du den Link deaktivierst. Dateien,
+          Denkschritte und spätere Nachrichten werden nicht geteilt. Geteilte
+          Seiten sind von Suchmaschinen ausgeschlossen. Rechtsgrundlage: Art. 6
+          Abs. 1 lit. b DSGVO.
         </li>
         <li>
           <strong>Modellaufrufe und Kontingente.</strong> Rolle, Modellkennung,
@@ -106,16 +122,25 @@ export default function PrivacyPage() {
           erforderlichen Daten. Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO.
         </li>
         <li>
-          <strong>UNOROUTER und NVIDIA Corporation</strong> — Inhalte, die du
-          zur Beantwortung oder Prüfung sendest, werden über die konfigurierten
-          API-Schnittstellen von UNOROUTER bzw. NVIDIA NIM verarbeitet.
+          <strong>Modellanbieter</strong> — Inhalte, die du zur Beantwortung
+          oder Prüfung sendest (Nachrichten, Dateiauszüge, Webquellen), werden
+          über die API-Schnittstellen von UNOROUTER, OpenRouter, Inc., NVIDIA
+          Corporation (NIM), Bytez, Inc. und Lightning AI, Inc. verarbeitet, je
+          nachdem, welches Modell eine Anfrage beantwortet.
         </li>
         <li>
-          <strong>Anthropic, PBC und OpenAI, L.L.C.</strong> — UNOROUTER kann
-          Anfragen je nach gewähltem Modell an diese oder weitere im Katalog
-          ausgewiesene Modellanbieter weiterleiten. Sende keine besonderen
-          Kategorien personenbezogener Daten (Art. 9 DSGVO), die du diesen
-          Empfängern nicht anvertrauen möchtest.
+          <strong>Weitere Modellanbieter</strong> — UNOROUTER und OpenRouter
+          leiten Anfragen je nach Modell an dessen Anbieter weiter, etwa
+          Anthropic, PBC, OpenAI, L.L.C., Google LLC, Alibaba Cloud (Qwen),
+          Moonshot AI oder DeepSeek. Sende keine besonderen Kategorien
+          personenbezogener Daten (Art. 9 DSGVO), die du diesen Empfängern nicht
+          anvertrauen möchtest.
+        </li>
+        <li>
+          <strong>Suchdienste</strong> — bei eingeschalteter Websuche Wikimedia
+          Foundation, Inc. (Wikipedia) und, soweit eingerichtet, Tavily, Exa
+          oder Firecrawl; bei Links in deiner Nachricht der Betreiber der
+          jeweiligen Seite.
         </li>
       </ul>
 
@@ -191,6 +216,7 @@ export default function PrivacyPage() {
       </p>
 
       <h2>11. Stand und Änderung</h2>
+      <p>Stand: 26. Oktober 2026.</p>
       <p>
         Wenn sich die Verarbeitung ändert, aktualisieren wir diese
         Datenschutzerklärung. Die jeweils veröffentlichte Fassung ist die

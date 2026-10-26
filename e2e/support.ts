@@ -28,6 +28,7 @@ export const SURFACES = [
   "agents-empty",
   "agents-thread",
   "rouge-empty",
+  "tour",
 ] as const;
 export type Surface = (typeof SURFACES)[number];
 

@@ -73,6 +73,31 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     console.log(`Signed up as ${email} and landed in /app`);
   });
 
+  await test.step("a new account gets the introduction, once", async () => {
+    const tour = page.getByRole("dialog");
+    await expect(
+      tour.getByRole("heading", { name: "Willkommen bei Osirus, Journey" }),
+    ).toBeVisible({ timeout: 30_000 });
+    await tour.getByRole("button", { name: "Los geht's" }).click();
+    for (let step = 2; step < 8; step++)
+      await tour.getByRole("button", { name: "Weiter" }).click();
+    await expect(tour.getByRole("heading", { name: "Leg los" })).toBeVisible();
+    // The server action that records it on the account.
+    const recorded = page.waitForResponse(
+      (response) =>
+        response.request().method() === "POST" &&
+        Boolean(response.request().headers()["next-action"]),
+    );
+    await tour.getByRole("button", { name: "Fertig" }).click();
+    await expect(tour).toBeHidden();
+    expect((await recorded).ok()).toBe(true);
+    // Recorded on the account: a reload does not open it again.
+    await page.reload();
+    await expect(page.locator(".ac-hero-title")).toBeVisible();
+    await expect(page.getByRole("dialog")).toHaveCount(0);
+    console.log("Introduction shown once and recorded");
+  });
+
   await test.step("the greeting and the account use the account's name", async () => {
     await expect(page.locator(".ac-hero-title")).toContainText("Journey");
     await expect(page.locator(".account-text")).toContainText(
@@ -126,6 +151,84 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     expect(week?.spentUsd ?? 0).toBeGreaterThan(0);
   });
 
+  const streamFrames = async (body: unknown) => {
+    const response = await send(page, "/api/chat/stream", body);
+    expect(response.status()).toBe(200);
+    return (await response.text())
+      .split("\n\n")
+      .filter((chunk) => chunk.startsWith("data: "))
+      .map((chunk) => JSON.parse(chunk.slice(6)) as Record<string, unknown>);
+  };
+
+  let fileSession = "";
+  await test.step("an attached file is read for the answer", async () => {
+    const upload = await page.request.post("/api/attachments", {
+      headers: { origin: base },
+      multipart: {
+        file: {
+          name: "staedte.csv",
+          mimeType: "text/csv",
+          buffer: Buffer.from("Stadt,Einwohner\nMoers,104000\n"),
+        },
+      },
+    });
+    expect(upload.status()).toBe(201);
+    const { attachment } = (await upload.json()) as {
+      attachment: { id: string; status: string };
+    };
+    expect(attachment.status).toBe("parsed");
+    const started = Date.now();
+    const frames = await streamFrames({
+      message: "Wie viele Einwohner hat Moers laut der Datei? Nur die Zahl.",
+      attachmentIds: [attachment.id],
+    });
+    const text = frames
+      .filter((f) => f.type === "text")
+      .map((f) => f.text)
+      .join("");
+    console.log(
+      `File answer in ${Math.round((Date.now() - started) / 1000)} s: ${/104[.,\s]?000/.test(text) ? "uses the file" : "does not quote the number"}`,
+    );
+    expect(frames.at(-1)?.type).toBe("done");
+    expect(text).toMatch(/104[.,\s]?000/);
+    fileSession = String(frames[0]?.sessionId ?? "");
+  });
+
+  await test.step("web search answers with numbered sources", async () => {
+    const started = Date.now();
+    const frames = await streamFrames({
+      message: "Wer war Konrad Adenauer? Zwei Sätze.",
+      web: true,
+    });
+    const sources = frames.find((f) => f.type === "sources")?.sources as
+      Array<{ url: string }> | undefined;
+    console.log(
+      `Web answer in ${Math.round((Date.now() - started) / 1000)} s with ${sources?.length ?? 0} source(s)`,
+    );
+    expect(frames.at(-1)?.type).toBe("done");
+    expect(sources?.length ?? 0).toBeGreaterThan(0);
+  });
+
+  await test.step("a chat is shared read-only and the link can be ended", async () => {
+    expect(fileSession).toMatch(/^[0-9a-f-]{36}$/);
+    const shared = (await (
+      await send(page, `/api/chat/threads/${fileSession}/share`, {})
+    ).json()) as { shared: boolean; url: string };
+    expect(shared.shared).toBe(true);
+    const path = new URL(shared.url).pathname;
+    const view = await page.request.get(path);
+    expect(view.status()).toBe(200);
+    const html = await view.text();
+    expect(html).toContain("Wie viele Einwohner hat Moers");
+    // Questions and answers only: no file contents, models or services.
+    expect(html).not.toMatch(/openrouter|unorouter|bytez|nvidia:/i);
+    await page.request.delete(`/api/chat/threads/${fileSession}/share`, {
+      headers: { origin: base },
+    });
+    expect((await page.request.get(path)).status()).toBe(404);
+    console.log("Share link created, read and ended");
+  });
+
   await test.step("no service names reach the browser", async () => {
     const models = await (await send(page, "/api/models")).text();
     // Service names and internal references, not model names (a model may
@@ -168,7 +271,12 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     expect(answers[0]?.content?.trim().length ?? 0).toBeGreaterThan(0);
   });
 
+  // Scheduled runs skip it: every checkout creates a live Stripe customer.
   await test.step("Stripe Checkout opens for a paid plan", async () => {
+    if (process.env.JOURNEY_CHECKOUT === "false") {
+      console.log("Checkout skipped on this run");
+      return;
+    }
     const response = await send(page, "/api/billing/checkout", {
       plan: "pro",
     });

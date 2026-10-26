@@ -3,7 +3,7 @@ import {
   keyFailoverAllowed,
   ProviderError,
 } from "@/lib/models/unorouter";
-import { hideModel } from "./models";
+import { hideModel, noteNoCredit } from "./models";
 import {
   formatModelRef,
   parseModelRef,
@@ -260,6 +260,9 @@ async function openStream(
       }
       if (failure.code === "model_not_configured") {
         hideModel(formatModelRef({ provider: provider.id, model }));
+      }
+      if (failure.code === "insufficient_credit") {
+        noteNoCredit(formatModelRef({ provider: provider.id, model }));
       }
       if (!keyFailoverAllowed(failure) || last) throw failure;
       lastError = failure;

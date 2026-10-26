@@ -115,6 +115,8 @@ export const BILLING_CONFIG = {
     fiveHourMs: 5 * 60 * 60 * 1000,
     weeklyMs: 7 * 24 * 60 * 60 * 1000,
   },
+  /** Free days before the first charge of a first-ever Pro subscription. */
+  proTrialDays: 7,
   /** Stripe subscription statuses that grant the plan's budgets. */
   entitledStatuses: ["active", "trialing"] as readonly string[],
   plans: {

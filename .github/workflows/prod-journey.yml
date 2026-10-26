@@ -2,11 +2,19 @@ name: Production journey
 
 # The issue #26 merge gate, run against the live deployment: sign-in and
 # session, "Hallo" answered, MCP add/check/remove, sign-out, plus how far
-# "Continue with GitHub" gets without a GitHub account. Manual only. Each run
-# creates one throwaway account (journey-<run id>@example.com); nothing secret
-# is logged.
+# "Continue with GitHub" gets without a GitHub account. Daily at 06:17 UTC
+# and on demand. Each run creates one throwaway account
+# (journey-<run id>@example.com); nothing secret is logged. Scheduled runs
+# skip Stripe Checkout, which would create a live customer each day.
 on:
+  schedule:
+    - cron: "17 6 * * *"
   workflow_dispatch:
+    inputs:
+      checkout:
+        description: Also open a live Stripe Checkout (creates a Stripe customer)
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -34,6 +42,7 @@ jobs:
           # Public production origin. vars.NEXT_PUBLIC_SITE_URL overrides it.
           # osirus.vercel.app is a different product and must not be used.
           PROD_BASE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}
+          JOURNEY_CHECKOUT: ${{ github.event_name == 'workflow_dispatch' && inputs.checkout && 'true' || 'false' }}
         run: npx playwright test --config playwright.prod.config.ts
       - uses: actions/upload-artifact@v4
         if: failure()

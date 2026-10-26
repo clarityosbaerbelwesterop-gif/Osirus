@@ -16,6 +16,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
         <Link href="/legal/terms">AGB</Link>
         <Link href="/legal/eula">EULA</Link>
         <Link href="/legal/cookies">Cookies</Link>
+        <Link href="/sicherheit">Sicherheit</Link>
       </footer>
     </main>
   );

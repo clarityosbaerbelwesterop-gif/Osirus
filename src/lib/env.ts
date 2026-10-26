@@ -63,6 +63,12 @@ const schema = z.object({
   OSIRUS_FREE_MODEL_PRIMARY: z.string().min(1).optional(),
   OSIRUS_FREE_MODEL_SECONDARY: z.string().min(1).optional(),
   OSIRUS_FREE_MODEL_TERTIARY: z.string().min(1).optional(),
+  // Comma-separated "provider:model" refs that answered the sync's top-class
+  // probe correctly; they lead the top class.
+  OSIRUS_VERIFIED_TOP_MODELS: z.string().min(3).max(2000).optional(),
+  // Comma-separated providers whose paid models the probe found refused for
+  // missing credit ("none": all funded); their paid models are not offered.
+  OSIRUS_UNFUNDED_PROVIDERS: z.string().min(1).max(200).optional(),
   // Rouge 1 (M56): the foundation core. Unset means grok-4.6. A different
   // core is a migration decision made on evaluations, never a silent switch.
   ROUGE_CORE_MODEL: z.string().min(1).max(120).optional(),
@@ -91,7 +97,12 @@ const schema = z.object({
   OSIRUS_PUBLIC_URL: z.string().url().optional(),
 });
 
-export const env = schema.parse(process.env);
+// An empty line in a .env file (KEY=) means "not set", not an invalid value.
+export const env = schema.parse(
+  Object.fromEntries(
+    Object.entries(process.env).filter(([, value]) => value !== ""),
+  ),
+);
 
 export const nvidiaKeys = () =>
   [

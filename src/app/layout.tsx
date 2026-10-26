@@ -9,21 +9,21 @@ export const metadata: Metadata = {
   metadataBase: publicSiteUrl(),
   title: { default: "Osirus", template: "%s · Osirus" },
   description:
-    "Osirus: KI-Agents, autonome Agents und Code in einem Workspace. Jede Aktion nach außen wartet auf deine Freigabe.",
+    "Osirus: dein KI-Team für Chat, autonome Aufgaben und Code. Jede Aktion nach außen wartet auf deine Freigabe.",
   robots: { index: true, follow: true },
   openGraph: {
     type: "website",
     siteName: "Osirus",
-    title: "Osirus — Bots, Work und Agents",
+    title: "Osirus — Dein KI-Team mit Freigabeknopf",
     description:
-      "KI-Agents, autonome Agents und Code in einem Workspace, mit Freigabe vor jeder Aktion nach außen.",
+      "Antworten mit Quellen, autonome Aufgaben und Code in einem Workspace, mit Freigabe vor jeder Aktion nach außen. Gehostet in der EU.",
     url: "/",
   },
   twitter: {
     card: "summary",
-    title: "Osirus — Bots, Work und Agents",
+    title: "Osirus — Dein KI-Team mit Freigabeknopf",
     description:
-      "KI-Agents, autonome Agents und Code in einem Workspace, mit Freigabe vor jeder Aktion nach außen.",
+      "Antworten mit Quellen, autonome Aufgaben und Code in einem Workspace, mit Freigabe vor jeder Aktion nach außen. Gehostet in der EU.",
   },
 };
 

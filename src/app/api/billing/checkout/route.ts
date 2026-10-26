@@ -71,6 +71,22 @@ export async function POST(request: Request) {
       });
   }
 
+  // Pro starts with a free week, once per person: only a customer without
+  // any earlier subscription (in any state) gets it.
+  const firstSubscription =
+    !existingCustomer ||
+    (
+      await client.subscriptions.list({
+        customer: existingCustomer,
+        status: "all",
+        limit: 1,
+      })
+    ).data.length === 0;
+  const trialDays =
+    guard.body.plan === "pro" && firstSubscription
+      ? BILLING_CONFIG.proTrialDays
+      : 0;
+
   const base = origin(request);
   const checkout = await client.checkout.sessions.create({
     mode: "subscription",
@@ -83,12 +99,15 @@ export async function POST(request: Request) {
     billing_address_collection: "required",
     customer_update: { address: "auto", name: "auto" },
     tax_id_collection: { enabled: true },
-    subscription_data: { metadata: { userId, plan: guard.body.plan } },
+    subscription_data: {
+      metadata: { userId, plan: guard.body.plan },
+      ...(trialDays ? { trial_period_days: trialDays } : {}),
+    },
     metadata: { userId, plan: guard.body.plan },
     success_url: `${base}/app?billing=success&session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/app?billing=cancelled`,
     integration_identifier: integrationIdentifier(),
   });
   if (!checkout.url) return json({ error: "checkout_unavailable" }, 502);
-  return json({ url: checkout.url });
+  return json({ url: checkout.url, trialDays });
 }

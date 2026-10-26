@@ -243,10 +243,21 @@ export function parseProviderModels(
 }
 
 const DEFAULT_BYTEZ_MODELS = [
+  "Qwen/Qwen3.8-27B",
   "Qwen/Qwen3-4B",
   "meta-llama/Llama-3.1-8B-Instruct",
   "microsoft/Phi-4-mini-instruct",
   "google/gemma-3-4b-it",
+];
+
+/**
+ * Bytez models the runtime sync tries with a real question; those that answer
+ * become OSIRUS_BYTEZ_MODELS, so the lists only offer what Bytez serves.
+ */
+export const BYTEZ_CANDIDATES = [
+  ...DEFAULT_BYTEZ_MODELS,
+  "Qwen/Qwen3.8-27B-FP8",
+  "Qwen/Qwen3.8-Flash-Next",
 ];
 
 function bytezModels(provider: ProviderSpec) {
@@ -254,6 +265,8 @@ function bytezModels(provider: ProviderSpec) {
     ?.split(",")
     .map((id) => id.trim())
     .filter(Boolean);
+  // "none": the runtime sync found no Bytez model that answers.
+  if (ids?.length === 1 && ids[0] === "none") return [];
   return parseProviderModels(
     provider,
     (ids?.length ? ids : DEFAULT_BYTEZ_MODELS).map((id) => ({ id })),
@@ -265,6 +278,8 @@ type CacheEntry = { at: number; models: GatewayModel[]; ok: boolean };
 const cache = new Map<ProviderId, CacheEntry>();
 const inflight = new Map<ProviderId, Promise<CacheEntry>>();
 const hidden = new Map<string, number>();
+// Providers that refused a paid model for missing credit, until when.
+const unfunded = new Map<ProviderId, number>();
 
 // How each model behaved lately on this instance: failures and time to the
 // first token. Routing puts slow or failing models behind the others.
@@ -387,7 +402,9 @@ export async function listGatewayModels(options?: {
   const models: GatewayModel[] = [];
   const status: ProviderStatus[] = [];
   providers.forEach((provider, index) => {
+    const paidBlocked = noCredit(provider.id, now);
     const list = lists[index].models.filter((model) => {
+      if (paidBlocked && !model.free) return false;
       const until = hidden.get(model.ref);
       return !until || until < now;
     });
@@ -428,6 +445,38 @@ export async function resolveGatewayModel(
   return parseProviderModels(spec, [{ id: parsed.model }])[0] ?? null;
 }
 
+/**
+ * Providers without credit for paid models: measured by the runtime sync
+ * (OSIRUS_UNFUNDED_PROVIDERS, "none" when all are funded) or refused here
+ * within the last hour. Their paid models are not offered; free ones stay.
+ */
+function noCredit(provider: ProviderId, now: number) {
+  const until = unfunded.get(provider);
+  if (until && until > now) return true;
+  const measured =
+    env.OSIRUS_UNFUNDED_PROVIDERS ?? process.env.OSIRUS_UNFUNDED_PROVIDERS;
+  return Boolean(
+    measured
+      ?.split(",")
+      .map((id) => id.trim())
+      .includes(provider),
+  );
+}
+
+/**
+ * A call was refused for missing credit: a paid model takes its provider's
+ * paid models off the lists for an hour, a free one is hidden by itself.
+ */
+export function noteNoCredit(ref: string, now = Date.now()) {
+  const parsed = parseModelRef(ref);
+  if (!parsed) return;
+  const listed = cache
+    .get(parsed.provider)
+    ?.models.find((model) => model.ref === ref);
+  if (listed?.free) hideModel(ref, now);
+  else unfunded.set(parsed.provider, now + HIDE_MS);
+}
+
 /** Hide a model the provider said does not exist (404), for an hour. */
 export function hideModel(ref: string, now = Date.now()) {
   hidden.set(ref, now + HIDE_MS);
@@ -457,6 +506,7 @@ export function resetGatewayModelCache() {
   inflight.clear();
   hidden.clear();
   health.clear();
+  unfunded.clear();
 }
 
 /**
@@ -512,6 +562,43 @@ export function verifiedFastModels(models: readonly GatewayModel[]) {
       models.find((model) => model.provider === "unorouter" && model.id === id),
     )
     .filter((model): model is GatewayModel => Boolean(model));
+}
+
+/**
+ * The top-class models the runtime sync verified with a real question
+ * (OSIRUS_VERIFIED_TOP_MODELS), in that order, when they are among the given
+ * models.
+ */
+export function verifiedTopModels(models: readonly GatewayModel[]) {
+  const refs = (
+    env.OSIRUS_VERIFIED_TOP_MODELS ??
+    process.env.OSIRUS_VERIFIED_TOP_MODELS ??
+    ""
+  )
+    .split(",")
+    .map((ref) => ref.trim())
+    .filter(Boolean);
+  return refs
+    .map((ref) => models.find((model) => model.ref === ref))
+    .filter((model): model is GatewayModel => Boolean(model));
+}
+
+/**
+ * The measured models that lead a class: the probed top models for "top",
+ * the probed fast free ones otherwise. One that failed or was slow recently
+ * steps back into the ranked list; `reasoning` keeps only thinking models.
+ */
+export function verifiedLead(
+  models: readonly GatewayModel[],
+  tier: ModelTier,
+  options: { reasoning?: boolean } = {},
+) {
+  const verified =
+    tier === "top" ? verifiedTopModels(models) : verifiedFastModels(models);
+  return verified.filter(
+    (model) =>
+      modelPenalty(model.ref) === 0 && (!options.reasoning || model.reasoning),
+  );
 }
 
 /** One entry per model name (the best-ranked copy), as Code's picker lists them. */
