@@ -5,7 +5,6 @@ import {
 } from "@/lib/models/unorouter";
 import { hideModel, noteNoCredit } from "./models";
 import {
-  authorizationFor,
   formatModelRef,
   parseModelRef,
   providerById,
@@ -226,7 +225,7 @@ async function openStream(
         response = await fetchImpl(provider.chatUrl, {
           method: "POST",
           headers: {
-            Authorization: authorizationFor(provider, provider.keys[index]),
+            Authorization: `Bearer ${provider.keys[index]}`,
             "Content-Type": "application/json",
             Accept: "text/event-stream",
             ...provider.headers,

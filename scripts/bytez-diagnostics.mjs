@@ -9,14 +9,13 @@ if (!key) {
 }
 
 const CHAT = "https://api.bytez.com/models/v2/openai/v1/chat/completions";
-const LIST = "https://api.bytez.com/models/v2/list/models";
 const FORMATS = {
   bearer: `Bearer ${key}`,
   key: `Key ${key}`,
   raw: key,
 };
-const excerpt = (text) =>
-  text.replaceAll(key, "***").replace(/\s+/g, " ").slice(0, 160);
+const excerpt = (text, max = 220) =>
+  text.replaceAll(key, "***").replace(/\s+/g, " ").slice(0, max);
 
 async function call(url, init) {
   try {
@@ -24,18 +23,17 @@ async function call(url, init) {
       ...init,
       signal: AbortSignal.timeout(30_000),
     });
-    return { status: response.status, body: excerpt(await response.text()) };
+    const text = await response.text();
+    // Catalog lists are searched for model ids, so keep more of them.
+    return { status: response.status, body: excerpt(text, 200_000) };
   } catch (error) {
     return { status: 0, body: String(error?.message ?? error) };
   }
 }
 
+// The OpenAI-compatible endpoint with every auth format.
 for (const [name, authorization] of Object.entries(FORMATS)) {
-  const list = await call(`${LIST}?task=chat`, {
-    headers: { Authorization: authorization },
-  });
-  console.log(`list  ${name}: HTTP ${list.status} ${list.body.slice(0, 80)}`);
-  for (const model of ["Qwen/Qwen3-4B", "Qwen/Qwen3.8-27B"]) {
+  for (const model of ["Qwen/Qwen3-4B", "qwen/qwen3-4b", "Qwen/Qwen3.8-27B"]) {
     const chat = await call(CHAT, {
       method: "POST",
       headers: {
@@ -49,22 +47,43 @@ for (const [name, authorization] of Object.entries(FORMATS)) {
         stream: false,
       }),
     });
-    console.log(`chat  ${name} ${model}: HTTP ${chat.status} ${chat.body}`);
+    console.log(
+      `openai ${name} ${model}: HTTP ${chat.status} ${chat.body.slice(0, 220)}`,
+    );
   }
 }
 
-// Qwen 3.8 ids Bytez lists for chat, with whichever format lists.
-for (const authorization of Object.values(FORMATS)) {
-  const response = await fetch(`${LIST}?task=chat`, {
-    headers: { Authorization: authorization },
-    signal: AbortSignal.timeout(30_000),
-  }).catch(() => null);
-  if (!response?.ok) continue;
-  const data = await response.json().catch(() => null);
-  const rows = Array.isArray(data) ? data : (data?.output ?? data?.data ?? []);
-  const ids = rows
-    .map((row) => (typeof row === "string" ? row : (row?.modelId ?? row?.id)))
-    .filter((id) => typeof id === "string" && /qwen3\.8/i.test(id));
-  console.log(`Qwen 3.8 chat models listed: ${ids.join(", ") || "none"}`);
-  break;
+// Bytez's own model endpoint: /models/v2/<model id>.
+for (const [name, authorization] of Object.entries(FORMATS)) {
+  for (const model of ["Qwen/Qwen3-4B", "Qwen/Qwen3.8-27B"]) {
+    const native = await call(`https://api.bytez.com/models/v2/${model}`, {
+      method: "POST",
+      headers: {
+        Authorization: authorization,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "Antworte nur mit OK." }],
+        stream: false,
+        params: { max_new_tokens: 8 },
+      }),
+    });
+    console.log(
+      `native ${name} ${model}: HTTP ${native.status} ${native.body.slice(0, 220)}`,
+    );
+  }
+}
+
+// The catalog, in the forms its API may take.
+for (const url of [
+  "https://api.bytez.com/models/v2/list/models",
+  "https://api.bytez.com/models/v2/list/models?task=text-generation",
+  "https://api.bytez.com/models/v2/list/models?task=chat",
+  "https://api.bytez.com/models/v2/openai/v1/models",
+]) {
+  const list = await call(url, { headers: { Authorization: FORMATS.key } });
+  const qwen = list.body.match(/Qwen\/Qwen3\.8[\w.-]*/gi) ?? [];
+  console.log(
+    `list ${url.replace("https://api.bytez.com", "")}: HTTP ${list.status} ${qwen.length ? `Qwen 3.8: ${[...new Set(qwen)].join(", ")}` : list.body.slice(0, 100)}`,
+  );
 }

@@ -3,7 +3,6 @@ import { env } from "@/lib/env";
 import { catalogModel } from "@/lib/models/catalog";
 import { tierOf, type ModelTier } from "./routing";
 import {
-  authorizationFor,
   configuredProviders,
   formatModelRef,
   parseModelRef,
@@ -330,7 +329,7 @@ async function fetchList(
     try {
       const response = await fetchImpl(provider.modelsUrl, {
         headers: {
-          Authorization: authorizationFor(provider, key),
+          Authorization: `Bearer ${key}`,
           Accept: "application/json",
           ...provider.headers,
         },
