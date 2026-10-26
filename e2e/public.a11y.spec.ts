@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 const TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 const PAGES = [
-  ["/", "Bots, Work und"],
+  ["/", "Dein KI-Team mit"],
   ["/legal/privacy", "Datenschutzerklärung"],
   ["/legal/terms", "Allgemeine Geschäftsbedingungen"],
   ["/legal/eula", "Endnutzer-Lizenz"],
