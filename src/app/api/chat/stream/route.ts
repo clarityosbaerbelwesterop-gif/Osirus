@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 import { serializeQuota } from "@/lib/billing/quota";
-import { getAgent } from "@/lib/agents/store";
+import { botRecollectionTurns, getAgent } from "@/lib/agents/store";
+import { recollectionPrompt } from "@/lib/agents/recollection";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
 import { answerCacheKey, cachedAnswer, storeAnswer } from "@/lib/gateway/cache";
 import {
@@ -260,13 +261,17 @@ export async function POST(request: Request) {
   const context = reuseTurn
     ? turns.slice(0, turns.lastIndexOf(lastUser!))
     : turns;
-  const [web, files] = await Promise.all([
+  const [web, files, recalled] = await Promise.all([
     webPending,
     fileMaterial(identity, {
       sessionId,
       newIds: body.attachmentIds,
       message: body.message,
     }).catch(() => ({ files: [], passages: [] })),
+    // A bot remembers its earlier conversations with this person.
+    bot
+      ? botRecollectionTurns(identity, bot.id, sessionId).catch(() => [])
+      : Promise.resolve([]),
   ]);
   const material = materialPrompt({ web, passages: files.passages });
   if (!reuseTurn) {
@@ -292,7 +297,9 @@ export async function POST(request: Request) {
         chatSystemPrompt({
           botName: bot?.name ?? null,
           botPrompt: bot?.system_prompt ?? null,
-        }) + material.prompt,
+        }) +
+        (bot ? (recollectionPrompt(bot.name, recalled) ?? "") : "") +
+        material.prompt,
     },
     ...context,
     { role: "user", content: body.message },

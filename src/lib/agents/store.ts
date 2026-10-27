@@ -366,3 +366,41 @@ export async function listBotConversations(
     updatedAt: new Date(row.updated_at).toISOString(),
   }));
 }
+
+/**
+ * The newest turns from this bot's other conversations, oldest first, for
+ * its memory (lib/agents/recollection.ts). Only the asking person's own
+ * threads count, so teammates never see each other's chats; archived ones
+ * are forgotten.
+ */
+export async function botRecollectionTurns(
+  identity: ProductIdentity,
+  agentId: string,
+  excludeSessionId: string | null,
+) {
+  const rows = await queryAs<{
+    title: string;
+    role: "user" | "assistant";
+    content: string;
+  }>(
+    identity.userId,
+    `select title, role, content from (
+       select s.title, m.role, m.content, m.created_at
+         from osirus.messages m
+         join osirus.sessions s on s.id = m.session_id
+        where s.workspace_id = $1::uuid and s.archived_at is null
+          and s.created_by = $4::uuid and s.surface = 'bot'
+          and m.metadata->>'botId' = $2
+          and m.role in ('user', 'assistant')
+          and ($3::uuid is null or s.id <> $3::uuid)
+        order by m.created_at desc
+        limit 16
+     ) recent order by created_at asc`,
+    [identity.workspaceId, agentId, excludeSessionId, identity.userId],
+  );
+  return rows.map((row) => ({
+    sessionTitle: row.title,
+    role: row.role,
+    content: row.content,
+  }));
+}
