@@ -6,12 +6,13 @@ import {
   hasAnyValue,
   MODEL_ROLE_KEYS,
   optionalSecret,
-  outdatedRows,
   parseModelPolicy,
+  planEnvironmentSync,
   probeChatModel,
   rankFreeModels,
   resolveRoleModel,
   staleTargets,
+  SYNC_COMMENT,
   UNOROUTER_KEY_NAMES,
   parseTargetList,
   uncoveredTargets,
@@ -245,35 +246,104 @@ describe("free-model-first runtime policy (M49)", () => {
     ]);
   });
 
-  it("finds the older duplicate rows the upsert left behind", () => {
+  it("updates the newest row, removes this sync's older duplicates, creates what is missing", () => {
+    const managed = { comment: SYNC_COMMENT };
     const rows: VercelEnvironmentRow[] = [
-      { id: "new", key: "OSIRUS_X", target: ["production"], updatedAt: 2000 },
-      { id: "old", key: "OSIRUS_X", target: ["production"], updatedAt: 500 },
-      // Also preview, which this sync does not cover: left alone.
+      // Three production rows of one key, as Vercel's upsert left them.
+      {
+        id: "p1",
+        key: "KEY_A",
+        target: ["production"],
+        updatedAt: 100,
+        ...managed,
+      },
+      {
+        id: "p3",
+        key: "KEY_A",
+        target: ["production"],
+        updatedAt: 300,
+        ...managed,
+      },
+      {
+        id: "p2",
+        key: "KEY_A",
+        target: ["production"],
+        updatedAt: 200,
+        ...managed,
+      },
+      // Someone else's row of the same key: kept.
+      {
+        id: "own",
+        key: "KEY_A",
+        target: ["production"],
+        updatedAt: 50,
+        comment: "by hand",
+      },
+      // Other targets and branch-pinned rows: untouched.
+      {
+        id: "dev",
+        key: "KEY_A",
+        target: ["development"],
+        updatedAt: 400,
+        ...managed,
+      },
+      {
+        id: "pin",
+        key: "KEY_A",
+        target: ["production"],
+        gitBranch: "x",
+        updatedAt: 500,
+        ...managed,
+      },
       {
         id: "wide",
-        key: "OSIRUS_X",
+        key: "KEY_A",
         target: ["production", "preview"],
-        updatedAt: 500,
+        updatedAt: 10,
+        ...managed,
       },
-      // Another branch's pinned row: left alone.
       {
-        id: "pinned",
-        key: "OSIRUS_X",
-        target: ["preview"],
-        gitBranch: "feature-x",
-        updatedAt: 500,
+        id: "b",
+        key: "KEY_B",
+        target: ["production"],
+        updatedAt: 1,
+        ...managed,
       },
-      { id: "other", key: "OSIRUS_Y", target: ["production"], updatedAt: 500 },
     ];
-    expect(
-      outdatedRows(rows, "OSIRUS_X", ["production"], 1000).map((row) => row.id),
-    ).toEqual(["old"]);
-    expect(
-      outdatedRows(rows, "OSIRUS_X", ["preview", "production"], 1000).map(
-        (row) => row.id,
-      ),
-    ).toEqual(["old", "wide"]);
+    const variable = (key: string) => ({
+      key,
+      value: "v",
+      type: "plain",
+      target: ["production"],
+      comment: SYNC_COMMENT,
+    });
+    const plan = planEnvironmentSync(
+      rows,
+      [variable("KEY_A"), variable("KEY_B"), variable("KEY_C")],
+      ["production"],
+    );
+    expect(plan.update.map((entry) => entry.row.id)).toEqual(["p3", "b"]);
+    expect(plan.remove.map((row) => row.id)).toEqual(["p2", "p1"]);
+    expect(plan.create).toEqual([
+      { ...variable("KEY_C"), target: ["production"] },
+    ]);
+    // Syncing both targets: the shared row is an older duplicate too, and a
+    // missing preview row is created on its own.
+    const both = planEnvironmentSync(
+      rows,
+      [variable("KEY_B")],
+      ["preview", "production"],
+    );
+    expect(both.update.map((entry) => entry.row.id)).toEqual(["b"]);
+    expect(both.create.map((entry) => entry.target)).toEqual([["preview"]]);
+    // The shared row is the only preview row of KEY_A: updated, not removed.
+    const shared = planEnvironmentSync(
+      rows,
+      [variable("KEY_A")],
+      ["preview", "production"],
+    );
+    expect(shared.update.map((entry) => entry.row.id)).toEqual(["wide", "p3"]);
+    expect(shared.remove.map((row) => row.id)).toEqual(["p2", "p1"]);
   });
 });
 

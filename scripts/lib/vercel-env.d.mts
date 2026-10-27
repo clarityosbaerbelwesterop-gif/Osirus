@@ -4,6 +4,9 @@ export type VercelEnvironmentRow = {
   target?: string | string[];
   gitBranch?: string | null;
   updatedAt?: number;
+  createdAt?: number;
+  comment?: string | null;
+  type?: string;
 };
 
 export function environmentTargets(environment: VercelEnvironmentRow): string[];
@@ -88,13 +91,25 @@ export function staleTargets(
   gitBranch?: string,
 ): string[];
 
-export function outdatedRows(
+export const SYNC_COMMENT: string;
+
+export type SyncVariable = {
+  key: string;
+  value: string;
+  type: string;
+  target: string[];
+  comment: string;
+};
+
+export function planEnvironmentSync(
   environments: VercelEnvironmentRow[],
-  key: string,
+  variables: SyncVariable[],
   targets: string[],
-  sinceMs: number,
-  gitBranch?: string,
-): VercelEnvironmentRow[];
+): {
+  update: { row: VercelEnvironmentRow; variable: SyncVariable }[];
+  remove: VercelEnvironmentRow[];
+  create: SyncVariable[];
+};
 
 export function branchPinnedRows(
   environments: VercelEnvironmentRow[],

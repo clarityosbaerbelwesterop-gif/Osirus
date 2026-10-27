@@ -6,13 +6,14 @@ import {
   hasAnyValue,
   MODEL_ROLE_KEYS,
   optionalSecret,
-  outdatedRows,
   parseModelPolicy,
+  planEnvironmentSync,
   parseTargetList,
   probeChatModel,
   rankFreeModels,
   resolveRoleModel,
   staleTargets,
+  SYNC_COMMENT,
   UNOROUTER_KEY_NAMES,
   uncoveredTargets,
   verifiedFreeTiers,
@@ -612,50 +613,52 @@ const variables = [
 ].map((variable) => ({
   ...variable,
   target: targets,
-  comment: "Managed by Osirus GitHub Actions runtime configuration sync",
+  comment: SYNC_COMMENT,
 }));
 
 const syncStartedAt = Date.now() - 60_000; // tolerate clock skew
-const upsertQuery = new URLSearchParams({ teamId, upsert: "true" });
-await vercelRequest(
-  `/v10/projects/${encodeURIComponent(projectId)}/env?${upsertQuery}`,
-  {
-    method: "POST",
-    body: JSON.stringify(variables),
-  },
-);
-
-// Older duplicate rows of a synced key get the same value, so every row of
-// it agrees whichever one a deployment reads. Nothing is deleted.
-const upsertedResponse = await vercelRequest(
+// Row by row instead of Vercel's upsert, which added a new production row on
+// every sync and then refused edits to the duplicated keys (lib/vercel-env
+// planEnvironmentSync). Names and counts are printed, never values.
+const currentResponse = await vercelRequest(
   `/v10/projects/${encodeURIComponent(projectId)}/env?${query}`,
 );
-const upserted = Array.isArray(upsertedResponse.envs)
-  ? upsertedResponse.envs
-  : [];
-for (const variable of variables) {
-  for (const row of outdatedRows(
-    upserted,
-    variable.key,
-    targets,
-    syncStartedAt,
-    syncGitBranch,
-  )) {
-    await vercelRequest(
-      `/v9/projects/${encodeURIComponent(projectId)}/env/${encodeURIComponent(row.id)}?${query}`,
-      {
-        method: "PATCH",
-        body: JSON.stringify({
-          value: variable.value,
-          comment: variable.comment,
-        }),
-      },
-    );
-    console.log(
-      `${variable.key}: aligned an older ${[row.target].flat().join("+")} row`,
+const plan = planEnvironmentSync(
+  Array.isArray(currentResponse.envs) ? currentResponse.envs : [],
+  variables,
+  targets,
+);
+const upsertQuery = new URLSearchParams({ teamId, upsert: "true" });
+const rowPath = (row) =>
+  `/v9/projects/${encodeURIComponent(projectId)}/env/${encodeURIComponent(row.id)}?${query}`;
+for (const row of plan.remove)
+  await vercelRequest(rowPath(row), { method: "DELETE" });
+for (const { row, variable } of plan.update) {
+  try {
+    await vercelRequest(rowPath(row), {
+      method: "PATCH",
+      body: JSON.stringify({
+        value: variable.value,
+        comment: variable.comment,
+      }),
+    });
+  } catch (error) {
+    throw new Error(
+      `${variable.key}: Vercel refused the update (${error instanceof Error ? error.message : String(error)}); a second ${[row.target].flat().join("+")} row this sync did not write may exist`,
     );
   }
 }
+// Keys without a row; upsert stays as the fallback for a row the listing
+// did not return.
+if (plan.create.length)
+  await vercelRequest(
+    `/v10/projects/${encodeURIComponent(projectId)}/env?${upsertQuery}`,
+    { method: "POST", body: JSON.stringify(plan.create) },
+  );
+const removedKeys = [...new Set(plan.remove.map((row) => row.key))];
+console.log(
+  `Vercel rows: ${plan.update.length} updated, ${plan.create.length} created, ${plan.remove.length} older duplicates removed${removedKeys.length ? ` (${removedKeys.join(", ")})` : ""}.`,
+);
 
 // Verify from Vercel itself -- names, targets and timestamps only, never
 // values -- that all three keys and every model role now cover every
