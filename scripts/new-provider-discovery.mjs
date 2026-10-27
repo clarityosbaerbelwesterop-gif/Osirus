@@ -24,6 +24,27 @@ const PROVIDERS = [
   {
     name: "shortapi",
     key: process.env.SHORTAPI_API_KEY,
+    catalog: [
+      "https://api.shortapi.ai/api/pricing",
+      "https://api.shortapi.ai/api/models",
+      "https://api.shortapi.ai/v1/model/list",
+      "https://api.shortapi.ai/api/v1/models",
+      "https://api.shortapi.ai/models",
+    ],
+    guess: [
+      "gpt-5",
+      "gpt-5-mini",
+      "gpt-4.1-mini",
+      "claude-sonnet-4-5",
+      "claude-opus-5-5",
+      "gemini-2.5-flash",
+      "gemini-3-flash",
+      "deepseek-chat",
+      "deepseek-v4-flash",
+      "glm-5.3",
+      "kimi-k2.6",
+      "grok-4.5",
+    ],
     bases: [
       "https://api.shortapi.ai/v1",
       "https://shortapi.ai/v1",
@@ -98,8 +119,10 @@ function modelIds(text) {
         : Array.isArray(body?.models)
           ? body.models
           : [];
+    const chatOnly = list.some((m) => typeof m === "object" && m?.type);
     return {
       ids: list
+        .filter((m) => !chatOnly || m?.type === "chat")
         .map((m) =>
           typeof m === "string" ? m : (m?.id ?? m?.name ?? m?.model),
         )
@@ -237,6 +260,24 @@ for (const provider of PROVIDERS) {
       break;
     }
   }
+  for (const url of provider.catalog ?? []) {
+    const r = await request(url, key, {}, 30_000);
+    const names = [
+      ...new Set(
+        (
+          r.text.match(/"(model_name|model|id|name)"\s*:\s*"([^"]{2,80})"/g) ??
+          []
+        ).map((m) => m.replace(/^.*:\s*"/, "").replace(/"$/, "")),
+      ),
+    ];
+    console.log(
+      `catalog ${url}: HTTP ${r.status}, ${names.length} names${names.length ? `: ${names.slice(0, 80).join(", ")}` : `: ${clean(r.text, key, 140)}`}`,
+    );
+    if (r.status === 200 && names.length > 3 && !ids.length) {
+      ids = names;
+      base = provider.bases[0];
+    }
+  }
   if (!base) {
     // No list: is the key accepted at all? One chat call with a guessed model.
     for (const candidate of provider.bases) {
@@ -259,17 +300,41 @@ for (const provider of PROVIDERS) {
     `base ${base}; ${ids.length} models, ${top.length} top-class chat models`,
   );
   console.log(`top: ${top.slice(0, 60).join(", ")}`);
-  const candidates = ids.length ? pickCandidates(ids) : (provider.guess ?? []);
+  // DISCOVERY_ALL=1: every chat model the key lists (what works without a
+  // deposit); otherwise the strongest few.
+  const candidates = !ids.length
+    ? (provider.guess ?? [])
+    : process.env.DISCOVERY_ALL
+      ? ids.filter((id) => !NOT_CHAT.test(id)).slice(0, 90)
+      : pickCandidates(ids);
   const passed = [];
-  for (const model of candidates) {
-    const r = await ask(base, key, model);
-    const verdict =
-      r.status === 200 && r.correct && r.ms <= 30_000 ? "PASS" : "FAIL";
-    console.log(
-      `${verdict} ${model}: HTTP ${r.status} ${r.ms} ms ${r.correct ? "answered 391" : clean(r.answer || r.text, key, 160)}${r.usage ? ` usage ${JSON.stringify(r.usage).slice(0, 120)}` : ""}`,
-    );
-    if (verdict === "PASS") passed.push({ model, ms: r.ms });
-  }
+  const refusals = new Map();
+  const queue = [...candidates];
+  await Promise.all(
+    Array.from({ length: 4 }, async () => {
+      for (let model = queue.shift(); model; model = queue.shift()) {
+        const r = await ask(base, key, model);
+        const verdict =
+          r.status === 200 && r.correct && r.ms <= 30_000 ? "PASS" : "FAIL";
+        if (
+          verdict === "PASS" ||
+          r.status === 200 ||
+          !process.env.DISCOVERY_ALL
+        )
+          console.log(
+            `${verdict} ${model}: HTTP ${r.status} ${r.ms} ms ${r.correct ? "answered 391" : clean(r.answer || r.text, key, 160)}${r.usage ? ` usage ${JSON.stringify(r.usage).slice(0, 120)}` : ""}`,
+          );
+        else {
+          // Refusals grouped by reason, so 80 lines become a few.
+          const reason = `HTTP ${r.status} ${clean(r.text, key, 90).replace(/\(?(tid|request id)[^)]*\)?/gi, "")}`;
+          refusals.set(reason, [...(refusals.get(reason) ?? []), model]);
+        }
+        if (verdict === "PASS") passed.push({ model, ms: r.ms });
+      }
+    }),
+  );
+  for (const [reason, models] of refusals)
+    console.log(`REFUSED ${models.length}x ${reason}: ${models.join(", ")}`);
   if (passed.length) {
     const fastest = [...passed].sort((a, b) => a.ms - b.ms)[0];
     console.log(

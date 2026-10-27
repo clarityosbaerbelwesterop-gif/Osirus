@@ -45,6 +45,9 @@ jobs:
           node-version: 24
       - name: New providers (base URL, models, real question, streaming)
         if: ${{ inputs.new_providers }}
+        env:
+          # Every chat model each key lists: which ones answer without a deposit.
+          DISCOVERY_ALL: "1"
         run: node scripts/new-provider-discovery.mjs
       - name: Measure keys (allowed fields only)
         if: ${{ !inputs.only_bytez && !inputs.new_providers }}
