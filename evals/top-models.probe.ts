@@ -2,6 +2,7 @@ import { appendFileSync, writeFileSync } from "node:fs";
 import { expect, it } from "vitest";
 import {
   BYTEZ_CANDIDATES,
+  GATED_SEEDS,
   listGatewayModels,
   parseProviderModels,
   type GatewayModel,
@@ -17,10 +18,29 @@ import { completeGateway } from "@/lib/gateway/stream";
 //   OSIRUS_VERIFIED_TOP_MODELS  answered correctly and in time, best first
 //   OSIRUS_UNFUNDED_PROVIDERS   every probed paid model refused for missing
 //                               credit ("none" when no provider is)
+//   OSIRUS_SERVED_MODELS        models of the gated gateways (Kunya, B.AI,
+//                               AIHubMix, ShortAPI) that answered both
+//                               questions; only these are offered
 // Prints model ids and timings, never keys.
 
 const QUESTION =
   "Ein Lager hat 17 Regale mit je 23 Kisten. Wie viele Kisten sind es? Antworte nur mit der Zahl.";
+// The second question for the gated gateways: a common trap for weak models.
+const TRAP =
+  "Welche Zahl ist größer: 9.11 oder 9.9? Antworte nur mit der größeren Zahl.";
+const checks: Record<string, (answer: string) => boolean> = {
+  [QUESTION]: (answer: string) => /\b391\b/.test(answer),
+  [TRAP]: (answer: string) =>
+    /\b9[.,]9\b/.test(answer) && !/\b9[.,]11\b/.test(answer.slice(-40)),
+};
+// Gated gateways rate-limit bursts (Kunya: about 14 calls in two minutes):
+// one call at a time, a pause between calls, a capped number per gateway.
+const GATED_PER_PROVIDER = 8;
+const GATED_GAP_MS = 3_000;
+const GATED_RETRY_MS = 25_000;
+// Verified top models kept: the strongest paid ones and, for the free plan,
+// the strongest free ones.
+const KEEP_FREE = 4;
 // Free calls per provider. UnoRouter gets few: the runtime sync probes the
 // same free pool right after this and must not find it rate limited.
 const FREE_PER_PROVIDER = 6;
@@ -45,7 +65,10 @@ type Result = {
   outcome: string;
 };
 
-async function probe(model: GatewayModel): Promise<Result> {
+async function probe(
+  model: GatewayModel,
+  question: string = QUESTION,
+): Promise<Result> {
   const started = Date.now();
   const base = {
     ref: model.ref,
@@ -57,7 +80,7 @@ async function probe(model: GatewayModel): Promise<Result> {
   try {
     const { text } = await completeGateway({
       ref: model.ref,
-      messages: [{ role: "user", content: QUESTION }],
+      messages: [{ role: "user", content: question }],
       maxTokens: 1024,
       signal: AbortSignal.timeout(TIMEOUT_MS),
       firstByteTimeoutMs: 30_000,
@@ -66,7 +89,7 @@ async function probe(model: GatewayModel): Promise<Result> {
     const answer = text.trim();
     return {
       ...base,
-      correct: /\b391\b/.test(answer),
+      correct: checks[question](answer),
       ms: Date.now() - started,
       outcome: answer ? "answered" : "empty",
     };
@@ -79,6 +102,52 @@ async function probe(model: GatewayModel): Promise<Result> {
       outcome: typeof code === "string" ? code : "error",
     };
   }
+}
+
+const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
+
+/**
+ * A gated gateway: its seeds, then its strongest listed models, one at a
+ * time, both questions each. Stops at a missing balance (the whole account
+ * is unfunded) or at a second rate limit in a row (measured another time).
+ */
+async function probeGated(provider: string, own: GatewayModel[]) {
+  const seeds = (GATED_SEEDS[provider as keyof typeof GATED_SEEDS] ?? [])
+    .map((id) => own.find((model) => model.id === id))
+    .filter((model): model is GatewayModel => Boolean(model));
+  const ranked = candidatesFor(own, "top", { limit: GATED_PER_PROVIDER });
+  const queue = [
+    ...seeds,
+    ...ranked.filter((model) => !seeds.includes(model)),
+  ].slice(0, GATED_PER_PROVIDER);
+  const results: Result[] = [];
+  let limited = 0;
+  for (const model of queue) {
+    let first = await probe(model);
+    if (first.outcome === "rate_limited") {
+      await sleep(GATED_RETRY_MS);
+      first = await probe(model);
+    }
+    if (first.outcome === "rate_limited") {
+      limited += 1;
+      results.push(first);
+      if (limited >= 2) break;
+      continue;
+    }
+    limited = 0;
+    if (first.correct) {
+      await sleep(GATED_GAP_MS);
+      const second = await probe(model, TRAP);
+      results.push({
+        ...first,
+        correct: second.correct,
+        outcome: second.correct ? first.outcome : `trap ${second.outcome}`,
+      });
+    } else results.push(first);
+    if (first.outcome === "insufficient_credit") break;
+    await sleep(GATED_GAP_MS);
+  }
+  return results;
 }
 
 /** Per provider: its best free and its best paid top-class models. */
@@ -117,10 +186,15 @@ it("finds the top-class models the keys can really use", async () => {
     console.log(
       `provider ${provider.id}: ${provider.ok ? "listed" : "list unreadable"}, ${provider.models} chat models`,
     );
-  // Bytez is probed below from its candidate list.
+  // Bytez and the gated gateways are probed below, on their own terms.
+  const gatedIds = providers
+    .map((provider) => provider.id)
+    .filter((id) => providerById(id)?.gated);
   const picked = pick(
     models,
-    providers.map((provider) => provider.id).filter((id) => id !== "bytez"),
+    providers
+      .map((provider) => provider.id)
+      .filter((id) => id !== "bytez" && !gatedIds.includes(id)),
   );
   console.log(`probing ${picked.length} top-class models`);
 
@@ -128,7 +202,7 @@ it("finds the top-class models the keys can really use", async () => {
   for (let index = 0; index < picked.length; index += CONCURRENCY)
     results.push(
       ...(await Promise.all(
-        picked.slice(index, index + CONCURRENCY).map(probe),
+        picked.slice(index, index + CONCURRENCY).map((model) => probe(model)),
       )),
     );
   for (const row of results)
@@ -144,7 +218,7 @@ it("finds the top-class models the keys can really use", async () => {
         parseProviderModels(
           bytez,
           BYTEZ_CANDIDATES.map((id) => ({ id })),
-        ).map(probe),
+        ).map((model) => probe(model)),
       )
     : [];
   for (const row of bytezResults)
@@ -155,13 +229,39 @@ it("finds the top-class models the keys can really use", async () => {
     .filter((row) => row.correct)
     .map((row) => row.ref.slice("bytez:".length));
 
-  const verified = [...results, ...bytezResults]
+  // The gated gateways: their whole lists, measured or not.
+  const unserved = gatedIds.length
+    ? (await listGatewayModels({ unserved: true })).models
+    : [];
+  const gatedResults: Result[] = [];
+  for (const id of gatedIds) {
+    const rows = await probeGated(
+      id,
+      unserved.filter((model) => model.provider === id),
+    );
+    for (const row of rows)
+      console.log(
+        `${row.correct ? "PASS " : "FAIL "} ${row.ref} (gated, ${tierOf({ id: row.ref, rank: row.rank })}) ${row.ms} ms ${row.outcome}`,
+      );
+    gatedResults.push(...rows);
+  }
+  const served = gatedResults
+    .filter((row) => row.correct && row.ms <= MAX_MS)
+    .map((row) => row.ref);
+
+  const top = [...results, ...bytezResults, ...gatedResults]
     .filter((row) => tierOf({ id: row.ref, rank: row.rank }) === "top")
     .filter((row) => row.correct && row.ms <= MAX_MS)
+    .sort((a, b) => a.rank - b.rank || a.ms - b.ms);
+  // The strongest paid ones, and the strongest free ones so the free plan
+  // keeps a measured lead of its own.
+  const verified = [
+    ...top.filter((row) => !row.free).slice(0, KEEP),
+    ...top.filter((row) => row.free).slice(0, KEEP_FREE),
+  ]
     .sort((a, b) => a.rank - b.rank || a.ms - b.ms)
-    .slice(0, KEEP)
     .map((row) => row.ref);
-  const all = [...results, ...bytezResults];
+  const all = [...results, ...bytezResults, ...gatedResults];
   const unfunded = [...new Set(all.map((row) => row.provider))].filter(
     (provider) => {
       const paid = all.filter((row) => row.provider === provider && !row.free);
@@ -176,6 +276,7 @@ it("finds the top-class models the keys can really use", async () => {
     JSON.stringify({ verified, unfunded, results: all }, null, 2),
   );
   console.log(`verified top models: ${verified.join(", ") || "none"}`);
+  console.log(`served gated models: ${served.join(", ") || "none"}`);
   console.log(`paid models without credit: ${unfunded.join(", ") || "none"}`);
   if (process.env.GITHUB_ENV) {
     const lines = [
@@ -186,6 +287,13 @@ it("finds the top-class models the keys can really use", async () => {
         : []),
       ...(verified.length
         ? [`OSIRUS_VERIFIED_TOP_MODELS=${verified.join(",")}`]
+        : []),
+      // Only when a gated gateway was asked and none was rate limited out:
+      // a measurement cut short keeps the last list.
+      ...(gatedIds.length &&
+      (served.length ||
+        !gatedResults.some((row) => row.outcome === "rate_limited"))
+        ? [`OSIRUS_SERVED_MODELS=${served.join(",") || "none"}`]
         : []),
     ];
     appendFileSync(process.env.GITHUB_ENV, `${lines.join("\n")}\n`);

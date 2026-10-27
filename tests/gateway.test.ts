@@ -1,4 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { classifyFailure } from "@/lib/models/unorouter";
+import { tierOf } from "@/lib/gateway/routing";
 import { extractJsonObject } from "@/lib/gateway/json";
 import {
   familyRank,
@@ -20,6 +22,7 @@ import { GatewayProvider } from "@/lib/gateway/provider";
 import {
   ThinkSplitter,
   completeGateway,
+  normalizeGatewayUsage,
   streamGateway,
 } from "@/lib/gateway/stream";
 import {
@@ -36,6 +39,11 @@ const KEYS = [
   "NVIDIA_API_KEY",
   "UNOROUTER_API_KEY",
   "BYTEZ_API_KEY",
+  "KUNYA_API_KEY",
+  "BAI_API_KEY",
+  "AIHUBMIX_API_KEY",
+  "SHORTAPI_API_KEY",
+  "OSIRUS_SERVED_MODELS",
 ];
 const saved: Record<string, string | undefined> = {};
 
@@ -631,6 +639,122 @@ describe("pinned runs fall back like the chat", () => {
     expect(chat.filter((call) => call.url.includes("openrouter"))).toHaveLength(
       1,
     );
+  });
+});
+
+describe("gated gateways", () => {
+  // Live 2026-10-27: Kunya lists 219 models (chat, image, live audio), most
+  // behind a plan; B.AI, AIHubMix and ShortAPI need a deposit. Only what the
+  // runtime sync measured answering may reach a picker.
+  const KUNYA_MODELS = "https://kunya.ai/api/v1/models";
+  const SHORTAPI_LIST = "https://api.shortapi.ai/v1/model/list";
+
+  function lists() {
+    return fakeFetch((call) => {
+      if (call.url === KUNYA_MODELS)
+        return Response.json({
+          data: [
+            { id: "claude-sonnet-5-5", type: "chat" },
+            { id: "claude-opus-5-5", type: "chat" },
+            { id: "gpt-6-luna", type: "chat" },
+            { id: "midjourney-v8.1", type: "image" },
+            { id: "gemini-3.8-live", type: "live" },
+          ],
+        });
+      if (call.url === SHORTAPI_LIST)
+        return Response.json({
+          data: [
+            { id: "6a0439", model: "anthropic/claude-opus-4.7" },
+            { id: "69e8ab", model: "openai/gpt-image-2/text-to-image" },
+          ],
+        });
+      return new Response("not found", { status: 404 });
+    });
+  }
+
+  it("offers only the models the runtime sync measured", async () => {
+    process.env.KUNYA_API_KEY = "kunya-key";
+    process.env.SHORTAPI_API_KEY = "short-key";
+    process.env.OSIRUS_SERVED_MODELS =
+      "kunya:claude-sonnet-5-5,kunya:gpt-6-luna";
+    const { impl } = lists();
+    const { models } = await listGatewayModels({ fetchImpl: impl });
+    expect(models.map((m) => m.ref).sort()).toEqual([
+      "kunya:claude-sonnet-5-5",
+      "kunya:gpt-6-luna",
+    ]);
+    // The probe sees the whole chat list: no image or live-audio entries,
+    // ShortAPI by its callable model name.
+    const all = await listGatewayModels({ fetchImpl: impl, unserved: true });
+    expect(all.models.map((m) => m.ref).sort()).toEqual([
+      "kunya:claude-opus-5-5",
+      "kunya:claude-sonnet-5-5",
+      "kunya:gpt-6-luna",
+      "shortapi:anthropic/claude-opus-4.7",
+    ]);
+  });
+
+  it("offers none of them before the sync has measured", async () => {
+    process.env.KUNYA_API_KEY = "kunya-key";
+    const { impl } = lists();
+    const { models } = await listGatewayModels({ fetchImpl: impl });
+    expect(models).toHaveLength(0);
+    process.env.OSIRUS_SERVED_MODELS = "none";
+    resetGatewayModelCache();
+    expect(
+      (await listGatewayModels({ fetchImpl: lists().impl })).models,
+    ).toHaveLength(0);
+  });
+
+  it("tells a model behind a plan from an account without balance", async () => {
+    const code = async (status: number, body: string) =>
+      (await classifyFailure(new Response(body, { status }))).code;
+    // One model needs a plan or deposit: the others of the account answer.
+    expect(
+      await code(
+        403,
+        '{"error":{"message":"GPT-6.1 Sol requires Starter or higher. Upgrade or purchase credits to unlock this model."}}',
+      ),
+    ).toBe("model_not_configured");
+    expect(
+      await code(
+        403,
+        '{"error":{"code":"access_denied","message":"Access restricted. Deposit required to unlock premium models."}}',
+      ),
+    ).toBe("model_not_configured");
+    // The whole account has no balance.
+    expect(
+      await code(
+        403,
+        '{"error":{"message":"Your account balance is insufficient. Please recharge your account to continue using the API."}}',
+      ),
+    ).toBe("insufficient_credit");
+    expect(
+      await code(
+        402,
+        '{"error":{"message":"Insufficient credit. Please purchase more credits or use a different model."}}',
+      ),
+    ).toBe("insufficient_credit");
+  });
+
+  it("records the cost the gateway charged", () => {
+    expect(
+      normalizeGatewayUsage({
+        prompt_tokens: 423,
+        completion_tokens: 4,
+        charged_cost_usd: 0.001976,
+      }).costUsd,
+    ).toBe(0.001976);
+  });
+
+  it("ranks the new families", () => {
+    const tier = (id: string) => tierOf({ id, rank: familyRank(id) });
+    expect(tier("claude-sonnet-5-5")).toBe("top");
+    expect(tier("gpt-5.4")).toBe("top");
+    expect(tier("deepseek-v4-pro")).toBe("top");
+    expect(familyRank("gpt-6-astra")).toBeLessThan(familyRank("gpt-5.4"));
+    // Luna is the small variant (priced like one).
+    expect(tier("gpt-6-luna")).toBe("fast");
   });
 });
 

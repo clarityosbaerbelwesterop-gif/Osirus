@@ -66,7 +66,7 @@ jobs:
     # Never expose deployment credentials to arbitrary pull-request code.
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID != '' && vars.VERCEL_TEAM_ID || 'team_5KyyWAPW9vLU4EiaKaYZuhaG' }}
@@ -126,7 +126,8 @@ jobs:
         # the ones that answered correctly as OSIRUS_VERIFIED_TOP_MODELS. A
         # report, not a gate: without a result the ranking alone decides.
         continue-on-error: true
-        timeout-minutes: 8
+        # Gated gateways are probed one call at a time (their rate limits).
+        timeout-minutes: 12
         env:
           NODE_ENV: test
           PROBE_OUT: ${{ runner.temp }}/probe-top-models.json

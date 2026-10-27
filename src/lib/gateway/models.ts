@@ -54,7 +54,7 @@ const FAMILY_RANK: Array<[RegExp, number]> = [
   [/gemini[-.]?(3|2\.5)[-.]?pro/i, 14],
   [/grok-4/i, 16],
   [/\bo3\b|\bo4\b/i, 18],
-  [/deepseek[-.]?(v3|r1|chat|reasoner)/i, 20],
+  [/deepseek[-.]?(v3|v4|r1|chat|reasoner)/i, 20],
   [/qwen3/i, 22],
   [/kimi[-.]?k2/i, 24],
   // NVIDIA's frontier MoE (Nemotron 3 Ultra 550B and the older Ultra 253B).
@@ -457,6 +457,30 @@ export async function resolveGatewayModel(
   if (!status || status.ok || !spec) return null;
   return parseProviderModels(spec, [{ id: parsed.model }])[0] ?? null;
 }
+
+/**
+ * Where the runtime sync's probe starts on the gated gateways: the models
+ * measured answering on 2026-10-27 (Kunya) and the strongest ones the other
+ * accounts list but need a deposit or plan for. The probe tries these first,
+ * then a few more from each list.
+ */
+export const GATED_SEEDS: Partial<Record<ProviderId, string[]>> = {
+  kunya: [
+    "claude-sonnet-5-5",
+    "gpt-5.4",
+    "gemini-3.1-pro",
+    "grok-4.7",
+    "deepseek-v4-pro",
+    "gpt-6-luna",
+  ],
+  bai: ["claude-sonnet-5.5", "gpt-5.5", "qwen3.8-27b", "kimi-k3.1-pro"],
+  aihubmix: ["claude-opus-5-5", "gpt-6.1-sol", "kimi-k3.1-pro-highspeed"],
+  shortapi: [
+    "anthropic/claude-opus-4.7",
+    "openai/gpt-5.5",
+    "deepseek/deepseek-v4-pro",
+  ],
+};
 
 /**
  * Models of gated providers the runtime sync measured answering
