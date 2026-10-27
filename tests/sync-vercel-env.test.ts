@@ -6,6 +6,7 @@ import {
   hasAnyValue,
   MODEL_ROLE_KEYS,
   optionalSecret,
+  outdatedRows,
   parseModelPolicy,
   probeChatModel,
   rankFreeModels,
@@ -242,6 +243,37 @@ describe("free-model-first runtime policy (M49)", () => {
     expect(branchPinnedRows(rows, "OSIRUS_MODEL_STRONG")).toEqual([
       "feature-x",
     ]);
+  });
+
+  it("finds the older duplicate rows the upsert left behind", () => {
+    const rows: VercelEnvironmentRow[] = [
+      { id: "new", key: "OSIRUS_X", target: ["production"], updatedAt: 2000 },
+      { id: "old", key: "OSIRUS_X", target: ["production"], updatedAt: 500 },
+      // Also preview, which this sync does not cover: left alone.
+      {
+        id: "wide",
+        key: "OSIRUS_X",
+        target: ["production", "preview"],
+        updatedAt: 500,
+      },
+      // Another branch's pinned row: left alone.
+      {
+        id: "pinned",
+        key: "OSIRUS_X",
+        target: ["preview"],
+        gitBranch: "feature-x",
+        updatedAt: 500,
+      },
+      { id: "other", key: "OSIRUS_Y", target: ["production"], updatedAt: 500 },
+    ];
+    expect(
+      outdatedRows(rows, "OSIRUS_X", ["production"], 1000).map((row) => row.id),
+    ).toEqual(["old"]);
+    expect(
+      outdatedRows(rows, "OSIRUS_X", ["preview", "production"], 1000).map(
+        (row) => row.id,
+      ),
+    ).toEqual(["old", "wide"]);
   });
 });
 
