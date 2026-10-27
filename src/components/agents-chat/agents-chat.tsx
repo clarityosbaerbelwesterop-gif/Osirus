@@ -10,10 +10,13 @@ import {
   FileText,
   Globe,
   Loader2,
+  Mic,
   Paperclip,
   RotateCcw,
   Sparkles,
   Square,
+  Volume2,
+  VolumeX,
   X,
   Zap,
 } from "lucide-react";
@@ -30,6 +33,9 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { sessionHref } from "@/lib/product/surfaces";
+import { BotOrb, type OrbState } from "../bots/bot-orb";
+import { useVoice } from "../bots/use-voice";
 import { Markdown } from "../chat/markdown";
 import { useShell, type SessionSummary } from "../shell/shell-context";
 import { notifyUsage } from "../motion/quota-bars";
@@ -85,6 +91,19 @@ type UiMessage = AgentsChatMessage & {
 };
 
 export type AgentsBot = { id: string; name: string };
+
+/** A bot's own room: the chat is locked to that bot. */
+export type AgentsRoom = {
+  bot: AgentsBot;
+  role: string | null;
+  conversations: { id: string; title: string; updatedAt: string }[];
+};
+
+const ROOM_SUGGESTIONS = [
+  "Stell dich kurz vor: Was kannst du für mich tun?",
+  "Hilf mir, meinen Tag zu planen",
+  "Fass mir die wichtigsten Punkte zu einem Thema zusammen",
+];
 
 type Thread = {
   sessionId: string;
@@ -185,6 +204,7 @@ const Thinking = memo(function Thinking(props: {
 const MessageView = memo(function MessageView(props: {
   message: UiMessage;
   botName: string | null;
+  botSeed: string | null;
   isLast: boolean;
   busy: boolean;
   onRegenerate: () => void;
@@ -222,7 +242,23 @@ const MessageView = memo(function MessageView(props: {
   return (
     <div className="ac-row ac-row-assistant">
       <div className="ac-avatar" aria-hidden="true">
-        {props.botName ? <Bot size={16} /> : <OsirusMark />}
+        {props.botSeed ? (
+          <BotOrb
+            seed={props.botSeed}
+            size={24}
+            state={
+              message.streaming
+                ? message.content
+                  ? "speaking"
+                  : "thinking"
+                : "idle"
+            }
+          />
+        ) : props.botName ? (
+          <Bot size={16} />
+        ) : (
+          <OsirusMark />
+        )}
       </div>
       <div className="ac-assistant">
         {props.botName ? <p className="ac-bot-name">{props.botName}</p> : null}
@@ -344,8 +380,12 @@ export function AgentsChat(props: {
   greetingName: string | null;
   initialBotId?: string | null;
   initialPrompt?: string | null;
+  /** Set on a bot's own page: the chat talks only to this bot. */
+  room?: AgentsRoom | null;
 }) {
   const { bindChat, upsertSession } = useShell();
+  const room = props.room ?? null;
+  const basePath = room ? `/app/agents/${room.bot.id}` : "/app";
   const router = useRouter();
   const [sessionId, setSessionId] = useState<string | null>(
     props.initialThread?.sessionId ?? null,
@@ -359,10 +399,22 @@ export function AgentsChat(props: {
   const [input, setInput] = useState(props.initialPrompt ?? "");
   const [busy, setBusy] = useState(false);
   const [botId, setBotId] = useState<string | null>(
-    props.bots.some((bot) => bot.id === props.initialBotId)
-      ? (props.initialBotId ?? null)
-      : null,
+    room
+      ? room.bot.id
+      : props.bots.some((bot) => bot.id === props.initialBotId)
+        ? (props.initialBotId ?? null)
+        : null,
   );
+  const [readAloud, setReadAloud] = useState(false);
+  const readAloudRef = useRef(false);
+  const sendRef = useRef<(text: string) => void>(() => undefined);
+  const voice = useVoice((text, final) => {
+    setInput(text);
+    // Talking to a bot that answers aloud is a conversation: a finished
+    // sentence is sent at once.
+    if (final && text && readAloudRef.current) sendRef.current(text);
+  });
+  const speak = voice.speak;
   const [atBottom, setAtBottom] = useState(true);
   const [web, setWeb] = useState(false);
   const [files, setFiles] = useState<PendingFile[]>([]);
@@ -380,7 +432,11 @@ export function AgentsChat(props: {
     () => new Map(props.bots.map((bot) => [bot.id, bot])),
     [props.bots],
   );
-  const activeBot = botId ? (botsById.get(botId) ?? null) : null;
+  const activeBot = room
+    ? room.bot
+    : botId
+      ? (botsById.get(botId) ?? null)
+      : null;
 
   // Keep the newest text in view while it streams, unless the reader scrolled up.
   useLayoutEffect(() => {
@@ -420,12 +476,23 @@ export function AgentsChat(props: {
     setInput("");
     setFiles([]);
     setBusy(false);
-    window.history.replaceState(null, "", "/app");
+    window.history.replaceState(null, "", basePath);
     textareaRef.current?.focus();
-  }, []);
+  }, [basePath]);
 
   const openThread = useCallback(
     async (session: SessionSummary) => {
+      const roomBot = room?.bot.id ?? null;
+      // A bot's thread opens in that bot's room, a plain chat outside one.
+      if (
+        (session.surface === "bot" &&
+          session.botId &&
+          session.botId !== roomBot) ||
+        (roomBot && session.surface !== "bot")
+      ) {
+        router.push(sessionHref(session) as Route);
+        return;
+      }
       if (
         session.surface &&
         session.surface !== "ai" &&
@@ -442,7 +509,11 @@ export function AgentsChat(props: {
       setSessionId(session.id);
       setMessages([]);
       setTitle(session.title);
-      window.history.replaceState(null, "", `/app?session=${session.id}`);
+      window.history.replaceState(
+        null,
+        "",
+        `${basePath}?session=${session.id}`,
+      );
       const response = await fetch(`/api/chat/threads/${session.id}`, {
         cache: "no-store",
       }).catch(() => null);
@@ -461,7 +532,7 @@ export function AgentsChat(props: {
       stickRef.current = true;
       setMessages(thread.messages);
     },
-    [router],
+    [basePath, room, router],
   );
 
   useEffect(() => {
@@ -562,7 +633,9 @@ export function AgentsChat(props: {
       // "@Botname message" talks to that bot for this message.
       let targetBot = botId;
       let content = trimmed;
-      const mention = trimmed.match(/^@([^\s].{0,79}?)\s+([\s\S]+)$/);
+      const mention = room
+        ? null
+        : trimmed.match(/^@([^\s].{0,79}?)\s+([\s\S]+)$/);
       if (mention) {
         const hit = props.bots.find(
           (bot) => mention[1].toLowerCase() === bot.name.toLowerCase(),
@@ -676,7 +749,7 @@ export function AgentsChat(props: {
               window.history.replaceState(
                 null,
                 "",
-                `/app?session=${event.sessionId}`,
+                `${basePath}?session=${event.sessionId}`,
               );
             }
             upsertSession({
@@ -684,6 +757,7 @@ export function AgentsChat(props: {
               title: event.title,
               updatedAt: new Date().toISOString(),
               surface: targetBot ? "bot" : "ai",
+              botId: targetBot,
             });
           } else if (event.type === "sources") {
             const sources = event.sources;
@@ -729,6 +803,7 @@ export function AgentsChat(props: {
                 thinkingMs ??
                 (thinkingStartedAt ? doneAt - thinkingStartedAt : null),
             }));
+            if (readAloudRef.current && answer) speak(answer);
           }
         }
         if (!settled && !controller.signal.aborted) {
@@ -761,8 +836,42 @@ export function AgentsChat(props: {
         notifyUsage();
       }
     },
-    [botId, busy, files, props.bots, sessionId, upsertSession, uploading, web],
+    [
+      basePath,
+      botId,
+      busy,
+      files,
+      props.bots,
+      room,
+      sessionId,
+      speak,
+      upsertSession,
+      uploading,
+      web,
+    ],
   );
+
+  useEffect(() => {
+    sendRef.current = (text: string) => void send(text);
+  }, [send]);
+
+  const toggleReadAloud = () => {
+    const next = !readAloud;
+    readAloudRef.current = next;
+    setReadAloud(next);
+    if (!next) voice.hush();
+  };
+
+  const streamingText = messages.some(
+    (message) => message.streaming && message.content,
+  );
+  const orbState: OrbState = voice.listening
+    ? "listening"
+    : voice.speaking || streamingText
+      ? "speaking"
+      : busy
+        ? "thinking"
+        : "idle";
 
   const stop = () => abortRef.current?.abort();
 
@@ -816,7 +925,7 @@ export function AgentsChat(props: {
         void upload([...event.dataTransfer.files]);
       }}
     >
-      {activeBot ? (
+      {activeBot && !room ? (
         <div className="ac-bot-active">
           <Bot size={14} aria-hidden="true" />
           <span>
@@ -870,9 +979,11 @@ export function AgentsChat(props: {
         value={input}
         rows={1}
         placeholder={
-          activeBot
-            ? `Nachricht an ${activeBot.name}`
-            : "Frag Osirus irgendetwas …"
+          voice.listening
+            ? "Ich höre zu …"
+            : activeBot
+              ? `Nachricht an ${activeBot.name}`
+              : "Frag Osirus irgendetwas …"
         }
         aria-label="Nachricht"
         onChange={(event) => setInput(event.target.value)}
@@ -918,18 +1029,52 @@ export function AgentsChat(props: {
           className={cx("ac-tool", web && "ac-tool-on")}
           onClick={() => setWeb((value) => !value)}
           aria-pressed={web}
+          aria-label="Web"
           title="Für die Antwort im Web suchen und Quellen nennen"
         >
           <Globe size={16} aria-hidden="true" />
           <span>Web</span>
         </button>
-        <span
-          className="ac-auto"
-          title="Osirus wählt für jede Aufgabe das passende Modell"
-        >
-          <Sparkles size={13} aria-hidden="true" />
-          {activeBot ? activeBot.name : "Auto"}
-        </span>
+        {voice.dictation ? (
+          <button
+            type="button"
+            className={cx("ac-tool", voice.listening && "ac-tool-on")}
+            onClick={() =>
+              voice.listening ? voice.stopListening() : voice.listen()
+            }
+            aria-pressed={voice.listening}
+            aria-label={voice.listening ? "Diktat beenden" : "Diktieren"}
+            title="Diktieren über die Spracherkennung deines Browsers"
+          >
+            <Mic size={16} aria-hidden="true" />
+          </button>
+        ) : null}
+        {room && voice.speech ? (
+          <button
+            type="button"
+            className={cx("ac-tool", readAloud && "ac-tool-on")}
+            onClick={toggleReadAloud}
+            aria-pressed={readAloud}
+            aria-label="Vorlesen"
+            title={`${room.bot.name} antwortet laut; ein gesprochener Satz wird gleich gesendet`}
+          >
+            {readAloud ? (
+              <Volume2 size={16} aria-hidden="true" />
+            ) : (
+              <VolumeX size={16} aria-hidden="true" />
+            )}
+            <span>Vorlesen</span>
+          </button>
+        ) : null}
+        {room ? null : (
+          <span
+            className="ac-auto"
+            title="Osirus wählt für jede Aufgabe das passende Modell"
+          >
+            <Sparkles size={13} aria-hidden="true" />
+            {activeBot ? activeBot.name : "Auto"}
+          </span>
+        )}
         <span className="ac-composer-spacer" />
         {busy ? (
           <button
@@ -957,7 +1102,7 @@ export function AgentsChat(props: {
   return (
     <div className={cx("ac", empty && "ac-empty")}>
       <TopBar
-        title={title ?? "Agents"}
+        title={title ?? (room ? room.bot.name : "Agents")}
         titleAs="p"
         actions={
           sessionId && !busy && messages.length ? (
@@ -966,7 +1111,63 @@ export function AgentsChat(props: {
         }
       />
       <div className="ac-scroll" ref={scrollRef} onScroll={onScroll}>
-        {empty ? (
+        {empty && room ? (
+          <div className="ac-hero room-hero">
+            <BotOrb
+              seed={room.bot.id}
+              size={96}
+              state={orbState}
+              className="room-hero-orb"
+            />
+            <h1 className="ac-hero-title">{room.bot.name}</h1>
+            <p className="ac-hero-sub">
+              {room.role ?? "Dein Bot"}
+              {props.greetingName
+                ? ` · bereit für dich, ${props.greetingName}`
+                : ""}
+            </p>
+            {composer}
+            <div className="ac-suggestions">
+              {ROOM_SUGGESTIONS.map((suggestion, index) => (
+                <button
+                  key={suggestion}
+                  type="button"
+                  className="ac-chip"
+                  style={{ ["--d" as string]: `${index * 50}ms` }}
+                  onClick={() => {
+                    setInput(suggestion);
+                    textareaRef.current?.focus();
+                  }}
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+            {room.conversations.length ? (
+              <nav className="room-history" aria-label="Eure Unterhaltungen">
+                <p className="overline">Eure Unterhaltungen</p>
+                <ul>
+                  {room.conversations.slice(0, 8).map((conversation) => (
+                    <li key={conversation.id}>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          void openThread({
+                            ...conversation,
+                            surface: "bot",
+                            botId: room.bot.id,
+                          })
+                        }
+                      >
+                        <span className="truncate">{conversation.title}</span>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </nav>
+            ) : null}
+          </div>
+        ) : empty ? (
           <div className="ac-hero">
             <div className="ac-hero-mark" aria-hidden="true">
               <OsirusMark />
@@ -1005,7 +1206,7 @@ export function AgentsChat(props: {
                     aria-pressed={bot.id === botId}
                     onClick={() => setBotId(bot.id === botId ? null : bot.id)}
                   >
-                    <Bot size={14} aria-hidden="true" /> {bot.name}
+                    <BotOrb seed={bot.id} size={16} /> {bot.name}
                   </button>
                 ))}
                 <Link
@@ -1024,15 +1225,26 @@ export function AgentsChat(props: {
           </div>
         ) : (
           <div className="ac-thread" aria-live="polite">
+            {room ? (
+              <div className="room-strip">
+                <BotOrb seed={room.bot.id} size={30} state={orbState} />
+                <span className="room-strip-name">{room.bot.name}</span>
+                {room.role ? (
+                  <span className="room-strip-role">{room.role}</span>
+                ) : null}
+              </div>
+            ) : null}
             {messages.map((message, index) => (
               <MessageView
                 key={message.id}
                 message={message}
                 botName={
                   message.botId
-                    ? (botsById.get(message.botId)?.name ?? "Bot")
+                    ? (botsById.get(message.botId)?.name ??
+                      (room?.bot.id === message.botId ? room.bot.name : "Bot"))
                     : null
                 }
+                botSeed={message.botId ?? null}
                 isLast={index === lastIndex}
                 busy={busy}
                 onRegenerate={regenerate}

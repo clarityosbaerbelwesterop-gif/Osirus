@@ -109,6 +109,17 @@ export function surfacePath(surface: SessionSurface) {
   }
 }
 
+/** Where a listed conversation opens: a bot's thread in that bot's room. */
+export function sessionHref(session: {
+  id: string;
+  surface?: SessionSurface | null;
+  botId?: string | null;
+}) {
+  if (session.surface === "bot" && session.botId)
+    return `/app/agents/${session.botId}?session=${session.id}`;
+  return `${surfacePath(session.surface ?? "ai")}?session=${session.id}`;
+}
+
 /**
  * Conversations beside one surface. A coding thread is not a chat thread.
  * A row with no surface is an old chat, not an agent or coding thread.

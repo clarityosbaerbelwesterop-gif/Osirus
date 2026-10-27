@@ -34,6 +34,8 @@ export async function botAnswer(input: {
   user: { email: string | null; emailVerified?: boolean };
   bot: { id: string; name: string; system_prompt: string | null };
   content: string;
+  /** Earlier turns of a group chat, as one block the bot reads first. */
+  context?: string | null;
   surface: string;
 }): Promise<{ text: string } | { error: string }> {
   const [access, listing] = await Promise.all([
@@ -56,10 +58,14 @@ export async function botAnswer(input: {
   const messages: GatewayMessage[] = [
     {
       role: "system",
-      content: chatSystemPrompt({
-        botName: input.bot.name,
-        botPrompt: input.bot.system_prompt,
-      }),
+      content:
+        chatSystemPrompt({
+          botName: input.bot.name,
+          botPrompt: input.bot.system_prompt,
+        }) +
+        (input.context
+          ? `\n\nDu bist Teil eines Gruppenchats. Antworte als ${input.bot.name} auf die letzte Nachricht; beziehe dich, wo es hilft, auf das bisher Gesagte.\n\n${input.context}`
+          : ""),
     },
     { role: "user", content: input.content },
   ];

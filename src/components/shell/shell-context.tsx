@@ -16,6 +16,8 @@ export type SessionSummary = {
   updatedAt: string;
   pinnedAt?: string | null;
   surface?: "ai" | "agent" | "bot" | "coding" | "work";
+  /** The bot a bot thread talks to: it opens in that bot's room. */
+  botId?: string | null;
 };
 
 /** What the chat page lends the sidebar while it is mounted. */

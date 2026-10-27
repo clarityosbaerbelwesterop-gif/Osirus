@@ -6,7 +6,7 @@ import { useActionState } from "react";
 import { OsirusMark } from "@/components/shell/osirus-mark";
 import { requestReset } from "./actions";
 
-export function ForgotPasswordForm() {
+export function ForgotPasswordForm({ email }: { email?: string | null }) {
   const [state, action, pending] = useActionState(requestReset, null);
   return (
     <main className="auth-page">
@@ -21,7 +21,13 @@ export function ForgotPasswordForm() {
         </p>
         <label>
           E-Mail
-          <input name="email" type="email" autoComplete="email" required />
+          <input
+            name="email"
+            type="email"
+            autoComplete="email"
+            defaultValue={email ?? undefined}
+            required
+          />
         </label>
         {state?.error ? (
           <p className="form-error" role="alert">
