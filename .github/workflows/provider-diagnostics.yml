@@ -12,6 +12,14 @@ on:
         description: Only the Bytez check (no UnoRouter calls)
         type: boolean
         default: false
+      new_providers:
+        description: Only the newly added keys (AIHubMix, B.AI, Kunya, ShortAPI, Anakin)
+        type: boolean
+        default: false
+      plan:
+        description: 'Optional JSON {"provider": ["model", ...]}: these models one at a time, two questions each'
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -23,25 +31,38 @@ concurrency:
 jobs:
   diagnose:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     env:
       UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
       UNOROUTER_API_KEY_2: ${{ secrets.UNOROUTER_API_KEY_2 }}
       UNOROUTER_API_KEY_3: ${{ secrets.UNOROUTER_API_KEY_3 }}
       BYTEZ_API_KEY: ${{ secrets.BYTEZ_API_KEY }}
+      AIHUBMIX_API_KEY: ${{ secrets.AIHUBMIX_API_KEY }}
+      BAI_API_KEY: ${{ secrets.BAI_API_KEY }}
+      KUNYA_API_KEY: ${{ secrets.KUNYA_API_KEY }}
+      SHORTAPI_API_KEY: ${{ secrets.SHORTAPI_API_KEY }}
+      ANAKIN_API_KEY: ${{ secrets.ANAKIN_API_KEY }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 24
+      - name: New providers (base URL, models, real question, streaming)
+        if: ${{ inputs.new_providers }}
+        env:
+          # Every chat model each key lists: which ones answer without a deposit.
+          DISCOVERY_ALL: ${{ inputs.plan == '' && '1' || '' }}
+          DISCOVERY_PLAN: ${{ inputs.plan }}
+        run: node scripts/new-provider-discovery.mjs
       - name: Measure keys (allowed fields only)
-        if: ${{ !inputs.only_bytez }}
+        if: ${{ !inputs.only_bytez && !inputs.new_providers }}
         run: node scripts/provider-diagnostics.mjs
       - name: Bytez (auth format, Qwen 3.8)
+        if: ${{ !inputs.new_providers }}
         continue-on-error: true
         run: node scripts/bytez-diagnostics.mjs
       - uses: actions/upload-artifact@v4
-        if: ${{ !inputs.only_bytez }}
+        if: ${{ !inputs.only_bytez && !inputs.new_providers }}
         with:
           name: provider-diagnostics
           path: |

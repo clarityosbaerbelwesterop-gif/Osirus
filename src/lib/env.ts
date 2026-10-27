@@ -31,6 +31,18 @@ const schema = z.object({
   OSIRUS_BYTEZ_MODELS: z.string().min(1).max(4000).optional(),
   LIGHTNING_BASE_URL: z.string().url().optional(),
   LIGHTNING_AI_API_KEY: z.string().min(1).optional(),
+  // Model gateways whose lists include models the account cannot use (plan or
+  // deposit required): only the models the runtime sync measured answering
+  // are offered (OSIRUS_SERVED_MODELS, "provider:model" references).
+  KUNYA_BASE_URL: z.string().url().optional(),
+  KUNYA_API_KEY: z.string().min(1).optional(),
+  BAI_BASE_URL: z.string().url().optional(),
+  BAI_API_KEY: z.string().min(1).optional(),
+  AIHUBMIX_BASE_URL: z.string().url().optional(),
+  AIHUBMIX_API_KEY: z.string().min(1).optional(),
+  SHORTAPI_BASE_URL: z.string().url().optional(),
+  SHORTAPI_API_KEY: z.string().min(1).optional(),
+  OSIRUS_SERVED_MODELS: z.string().min(1).max(8000).optional(),
   // Model gateway default for Agents chat: "provider:model". Unset: the best
   // listed model of the configured providers.
   OSIRUS_DEFAULT_CHAT_MODEL: z.string().min(3).max(240).optional(),

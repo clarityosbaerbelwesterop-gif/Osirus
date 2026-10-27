@@ -41,7 +41,7 @@ const LIST_TIMEOUT_MS = 6000;
 const HIDE_MS = 60 * 60 * 1000;
 
 const NON_CHAT =
-  /(embed|rerank|whisper|\btts\b|text-to-speech|speech|\basr\b|audio|transcri|stable-diffusion|sdxl|\bsd3|flux|dall-?e|imagen|image-gen|\bclip\b|nvclip|moderation|guard|safety|parakeet|canary|riva|fastpitch|paligemma|kosmos|deplot|\bocr\b|bge-|\be5-|gte-|retriever|reward|cosmos|video|segment|detect|depth|upscal|inpaint|controlnet|nv-yolox|grounding-dino|ai-synthetic|tokenizer|voyage|lyria|music|[-/]parse\b|nemotron-parse|\bvila\b|\bneva\b|fuyu|diffusion|calibration|apnea|router\b|-router|auto-router)/i;
+  /(embed|rerank|whisper|\btts\b|text-to-speech|speech|\basr\b|audio|transcri|stable-diffusion|sdxl|\bsd3|flux|dall-?e|imagen|image-gen|\bclip\b|nvclip|moderation|guard|safety|parakeet|canary|riva|fastpitch|paligemma|kosmos|deplot|\bocr\b|bge-|\be5-|gte-|retriever|reward|cosmos|video|segment|detect|depth|upscal|inpaint|controlnet|nv-yolox|grounding-dino|ai-synthetic|tokenizer|voyage|lyria|music|[-/]parse\b|nemotron-parse|\bvila\b|\bneva\b|fuyu|diffusion|calibration|apnea|router\b|-router|auto-router|gpt-image|text-to-image|image-to-image)/i;
 
 const REASONING =
   /(\br1\b|-r1|reasoner|thinking|\bo1\b|\bo3\b|\bo4\b|qwq|grok-4|gpt-5|-think|magistral|nemotron-ultra|nemotron-super|deepseek-v3\.1|kimi-k2-thinking|qwen3-235b|phi-4-reasoning)/i;
@@ -49,11 +49,12 @@ const REASONING =
 /** Ordered families: earlier is ranked higher in pickers and defaults. */
 const FAMILY_RANK: Array<[RegExp, number]> = [
   [/claude[-.]?(opus|sonnet)[-.]?4|claude-(opus|sonnet)/i, 10],
+  [/gpt-6/i, 11],
   [/gpt-5/i, 12],
   [/gemini[-.]?(3|2\.5)[-.]?pro/i, 14],
   [/grok-4/i, 16],
   [/\bo3\b|\bo4\b/i, 18],
-  [/deepseek[-.]?(v3|r1|chat|reasoner)/i, 20],
+  [/deepseek[-.]?(v3|v4|r1|chat|reasoner)/i, 20],
   [/qwen3/i, 22],
   [/kimi[-.]?k2/i, 24],
   // NVIDIA's frontier MoE (Nemotron 3 Ultra 550B and the older Ultra 253B).
@@ -187,7 +188,12 @@ export function parseProviderModels(
   const seen = new Set<string>();
   const models: GatewayModel[] = [];
   for (const entry of entries(body)) {
-    const id = typeof entry.id === "string" ? entry.id.trim() : "";
+    // Lists that mix kinds (chat, image, live audio) name the kind.
+    if (typeof entry.type === "string" && entry.type !== "chat") continue;
+    // ShortAPI's catalog: an opaque id, the callable name in "model".
+    const field =
+      provider.id === "shortapi" ? (entry.model ?? entry.name) : entry.id;
+    const id = typeof field === "string" ? field.trim() : "";
     if (!id || seen.has(id) || id.length > 200) continue;
     seen.add(id);
     if (!isChatModelId(id) || !textOutput(entry)) continue;
@@ -220,7 +226,7 @@ export function parseProviderModels(
     const rank =
       familyRank(id) +
       (free ? 1 : 0) +
-      (/(mini|nano|small|lite|flash|8b|7b|3b|1b|instruct-1b)/i.test(id)
+      (/(mini|nano|small|lite|flash|luna|8b|7b|3b|1b|instruct-1b)/i.test(id)
         ? 4
         : 0);
     models.push({
@@ -394,6 +400,8 @@ export type ProviderStatus = {
 export async function listGatewayModels(options?: {
   fetchImpl?: typeof fetch;
   now?: number;
+  /** Gated providers' whole lists, measured or not (the runtime sync's probe). */
+  unserved?: boolean;
 }): Promise<{ models: GatewayModel[]; providers: ProviderStatus[] }> {
   const now = options?.now ?? Date.now();
   const fetchImpl = options?.fetchImpl ?? fetch;
@@ -403,9 +411,12 @@ export async function listGatewayModels(options?: {
   );
   const models: GatewayModel[] = [];
   const status: ProviderStatus[] = [];
+  const served = servedModels();
   providers.forEach((provider, index) => {
     const paidBlocked = noCredit(provider.id, now);
     const list = lists[index].models.filter((model) => {
+      if (provider.gated && !options?.unserved && !served.has(model.ref))
+        return false;
       if (paidBlocked && !model.free) return false;
       const until = hidden.get(model.ref);
       return !until || until < now;
@@ -445,6 +456,44 @@ export async function resolveGatewayModel(
   const spec = providerById(parsed.provider);
   if (!status || status.ok || !spec) return null;
   return parseProviderModels(spec, [{ id: parsed.model }])[0] ?? null;
+}
+
+/**
+ * Where the runtime sync's probe starts on the gated gateways: the models
+ * measured answering on 2026-10-27 (Kunya) and the strongest ones the other
+ * accounts list but need a deposit or plan for. The probe tries these first,
+ * then a few more from each list.
+ */
+export const GATED_SEEDS: Partial<Record<ProviderId, string[]>> = {
+  kunya: [
+    "claude-sonnet-5-5",
+    "gpt-5.4",
+    "gemini-3.1-pro",
+    "grok-4.7",
+    "deepseek-v4-pro",
+    "gpt-6-luna",
+  ],
+  bai: ["claude-sonnet-5.5", "gpt-5.5", "qwen3.8-27b", "kimi-k3.1-pro"],
+  aihubmix: ["claude-opus-5-5", "gpt-6.1-sol", "kimi-k3.1-pro-highspeed"],
+  shortapi: [
+    "anthropic/claude-opus-4.7",
+    "openai/gpt-5.5",
+    "deepseek/deepseek-v4-pro",
+  ],
+};
+
+/**
+ * Models of gated providers the runtime sync measured answering
+ * (OSIRUS_SERVED_MODELS, "provider:model" references; "none" or unset: none).
+ */
+export function servedModels() {
+  const raw = env.OSIRUS_SERVED_MODELS ?? process.env.OSIRUS_SERVED_MODELS;
+  return new Set(
+    (raw ?? "")
+      .split(",")
+      .map((ref) => ref.trim())
+      .filter((ref) => ref && ref !== "none"),
+  );
 }
 
 /**

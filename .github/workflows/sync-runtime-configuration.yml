@@ -66,7 +66,7 @@ jobs:
     # Never expose deployment credentials to arbitrary pull-request code.
     if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     env:
       VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
       VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID != '' && vars.VERCEL_TEAM_ID || 'team_5KyyWAPW9vLU4EiaKaYZuhaG' }}
@@ -81,6 +81,11 @@ jobs:
       OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
       BYTEZ_API_KEY: ${{ secrets.BYTEZ_API_KEY }}
       LIGHTNING_AI_API_KEY: ${{ secrets.LIGHTNING_AI_API_KEY }}
+      # Model gateways: only the models the probe measured answering are offered.
+      KUNYA_API_KEY: ${{ secrets.KUNYA_API_KEY }}
+      BAI_API_KEY: ${{ secrets.BAI_API_KEY }}
+      AIHUBMIX_API_KEY: ${{ secrets.AIHUBMIX_API_KEY }}
+      SHORTAPI_API_KEY: ${{ secrets.SHORTAPI_API_KEY }}
       # Optional web search APIs for the Agents chat (Wikipedia without them).
       TAVILY_API_KEY: ${{ secrets.TAVILY_API_KEY }}
       EXA_API_KEY: ${{ secrets.EXA_API_KEY }}
@@ -121,7 +126,8 @@ jobs:
         # the ones that answered correctly as OSIRUS_VERIFIED_TOP_MODELS. A
         # report, not a gate: without a result the ranking alone decides.
         continue-on-error: true
-        timeout-minutes: 8
+        # Gated gateways are probed one call at a time (their rate limits).
+        timeout-minutes: 12
         env:
           NODE_ENV: test
           PROBE_OUT: ${{ runner.temp }}/probe-top-models.json

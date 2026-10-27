@@ -81,7 +81,8 @@ export function normalizeGatewayUsage(raw: unknown): GatewayUsage {
   return {
     inputTokens: num(usage.prompt_tokens) ?? num(usage.input_tokens),
     outputTokens: num(usage.completion_tokens) ?? num(usage.output_tokens),
-    costUsd: num(usage.cost) ?? num(usage.total_cost),
+    costUsd:
+      num(usage.cost) ?? num(usage.total_cost) ?? num(usage.charged_cost_usd),
   };
 }
 

@@ -125,16 +125,17 @@ export default function PrivacyPage() {
           <strong>Modellanbieter</strong> — Inhalte, die du zur Beantwortung
           oder Prüfung sendest (Nachrichten, Dateiauszüge, Webquellen), werden
           über die API-Schnittstellen von UNOROUTER, OpenRouter, Inc., NVIDIA
-          Corporation (NIM), Bytez, Inc. und Lightning AI, Inc. verarbeitet, je
-          nachdem, welches Modell eine Anfrage beantwortet.
+          Corporation (NIM), Bytez, Inc., Lightning AI, Inc., Kunya AI, B.AI,
+          AIHubMix und ShortAPI verarbeitet, je nachdem, welches Modell eine
+          Anfrage beantwortet.
         </li>
         <li>
-          <strong>Weitere Modellanbieter</strong> — UNOROUTER und OpenRouter
-          leiten Anfragen je nach Modell an dessen Anbieter weiter, etwa
-          Anthropic, PBC, OpenAI, L.L.C., Google LLC, Alibaba Cloud (Qwen),
-          Moonshot AI oder DeepSeek. Sende keine besonderen Kategorien
-          personenbezogener Daten (Art. 9 DSGVO), die du diesen Empfängern nicht
-          anvertrauen möchtest.
+          <strong>Weitere Modellanbieter</strong> — UNOROUTER, OpenRouter, Kunya
+          AI, B.AI, AIHubMix und ShortAPI leiten Anfragen je nach Modell an
+          dessen Anbieter weiter, etwa Anthropic, PBC, OpenAI, L.L.C., Google
+          LLC, xAI Corp., Alibaba Cloud (Qwen), Moonshot AI oder DeepSeek. Sende
+          keine besonderen Kategorien personenbezogener Daten (Art. 9 DSGVO),
+          die du diesen Empfängern nicht anvertrauen möchtest.
         </li>
         <li>
           <strong>Suchdienste</strong> — bei eingeschalteter Websuche Wikimedia

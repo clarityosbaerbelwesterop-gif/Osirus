@@ -221,6 +221,16 @@ if (bytezKey) {
 }
 
 const lightningKey = optionalSecret(process.env.LIGHTNING_AI_API_KEY);
+// Model gateways whose served models the probe measures (OSIRUS_SERVED_MODELS).
+const GATEWAY_KEYS = [
+  "KUNYA_API_KEY",
+  "BAI_API_KEY",
+  "AIHUBMIX_API_KEY",
+  "SHORTAPI_API_KEY",
+];
+for (const key of GATEWAY_KEYS)
+  if (optionalSecret(process.env[key]))
+    console.log(`${key} is present and will be synced to Vercel.`);
 // Sign-ins that use every model without the free plan's limits (the
 // operator's own keys). A repository variable, not a secret.
 const ownerEmails = optionalSecret(process.env.OSIRUS_OWNER_EMAILS);
@@ -419,6 +429,19 @@ const variables = [
         },
       ]
     : []),
+  // Models of the gated gateways (Kunya, B.AI, AIHubMix, ShortAPI) that
+  // answered the probe; only these are offered. "none" keeps all of them off.
+  ...(/^(none|[a-z]+:[\w.\-/:]+(,[a-z]+:[\w.\-/:]+)*)$/.test(
+    process.env.OSIRUS_SERVED_MODELS ?? "",
+  )
+    ? [
+        {
+          key: "OSIRUS_SERVED_MODELS",
+          value: process.env.OSIRUS_SERVED_MODELS,
+          type: "plain",
+        },
+      ]
+    : []),
   // Bytez models that answered the probe (Bytez is too large to list).
   ...(/^[\w.\-/]+(,[\w.\-/]+)*$/.test(process.env.OSIRUS_BYTEZ_MODELS ?? "")
     ? [
@@ -545,8 +568,9 @@ const variables = [
         },
       ]
     : []),
-  // Optional web search APIs; each is synced only when its secret exists.
-  ...["TAVILY_API_KEY", "EXA_API_KEY", "FIRECRAWL_API_KEY"]
+  // Optional model gateways and web search APIs; each is synced only when
+  // its secret exists.
+  ...[...GATEWAY_KEYS, "TAVILY_API_KEY", "EXA_API_KEY", "FIRECRAWL_API_KEY"]
     .map((key) => [key, optionalSecret(process.env[key])])
     .filter(([, value]) => Boolean(value))
     .map(([key, value]) => ({ key, value, type: "sensitive" })),
@@ -615,6 +639,7 @@ const sentOptionalKeys = [
   ["OPENROUTER_API_KEY", openRouterKey],
   ["BYTEZ_API_KEY", bytezKey],
   ["LIGHTNING_AI_API_KEY", lightningKey],
+  ...GATEWAY_KEYS.map((key) => [key, optionalSecret(process.env[key])]),
   ["OSIRUS_OWNER_EMAILS", ownerEmails],
   ["STRIPE_SECRET_KEY", stripeSecretKey],
   ["STRIPE_WEBHOOK_SECRET", stripeWebhookSecret],

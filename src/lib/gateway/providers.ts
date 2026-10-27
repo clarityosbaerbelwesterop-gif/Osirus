@@ -14,6 +14,10 @@ export const PROVIDER_IDS = [
   "unorouter",
   "lightning",
   "bytez",
+  "kunya",
+  "bai",
+  "aihubmix",
+  "shortapi",
 ] as const;
 
 export type ProviderId = (typeof PROVIDER_IDS)[number];
@@ -30,6 +34,12 @@ export type ProviderSpec = {
   headers?: Record<string, string>;
   /** Every model of this provider costs the operator nothing per call. */
   freeByDefault?: boolean;
+  /**
+   * The list includes models this account cannot use (a plan or deposit is
+   * required): only the models the runtime sync measured answering are
+   * offered (OSIRUS_SERVED_MODELS).
+   */
+  gated?: boolean;
 };
 
 const DEFAULTS: Record<ProviderId, string> = {
@@ -38,6 +48,10 @@ const DEFAULTS: Record<ProviderId, string> = {
   unorouter: "https://api.unorouter.com/v1/chat/completions",
   lightning: "https://lightning.ai/api/v1/chat/completions",
   bytez: "https://api.bytez.com/models/v2/openai/v1/chat/completions",
+  kunya: "https://kunya.ai/api/v1/chat/completions",
+  bai: "https://api.b.ai/v1/chat/completions",
+  aihubmix: "https://aihubmix.com/v1/chat/completions",
+  shortapi: "https://api.shortapi.ai/v1/chat/completions",
 };
 
 const LABELS: Record<ProviderId, string> = {
@@ -46,6 +60,10 @@ const LABELS: Record<ProviderId, string> = {
   unorouter: "UnoRouter",
   lightning: "Lightning AI",
   bytez: "Bytez",
+  kunya: "Kunya",
+  bai: "B.AI",
+  aihubmix: "AIHubMix",
+  shortapi: "ShortAPI",
 };
 
 /** "https://host/v1" or ".../v1/chat/completions" -> the chat completions URL. */
@@ -162,6 +180,34 @@ export function configuredProviders(): ProviderSpec[] {
       "bytez",
       env.BYTEZ_BASE_URL ?? process.env.BYTEZ_BASE_URL,
       unique([env.BYTEZ_API_KEY, process.env.BYTEZ_API_KEY]),
+    ),
+    spec(
+      "kunya",
+      env.KUNYA_BASE_URL ?? process.env.KUNYA_BASE_URL,
+      unique([env.KUNYA_API_KEY, process.env.KUNYA_API_KEY]),
+      { gated: true },
+    ),
+    spec(
+      "bai",
+      env.BAI_BASE_URL ?? process.env.BAI_BASE_URL,
+      unique([env.BAI_API_KEY, process.env.BAI_API_KEY]),
+      { gated: true },
+    ),
+    spec(
+      "aihubmix",
+      env.AIHUBMIX_BASE_URL ?? process.env.AIHUBMIX_BASE_URL,
+      unique([env.AIHUBMIX_API_KEY, process.env.AIHUBMIX_API_KEY]),
+      { gated: true },
+    ),
+    spec(
+      "shortapi",
+      env.SHORTAPI_BASE_URL ?? process.env.SHORTAPI_BASE_URL,
+      unique([env.SHORTAPI_API_KEY, process.env.SHORTAPI_API_KEY]),
+      // No /models list: its catalog lives at /v1/model/list.
+      {
+        gated: true,
+        modelsUrl: "https://api.shortapi.ai/v1/model/list",
+      },
     ),
   ];
   return all.filter((provider): provider is ProviderSpec => provider !== null);
