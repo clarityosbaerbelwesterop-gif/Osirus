@@ -114,7 +114,10 @@ const BRANDS: Record<string, string> = {
 };
 
 export function prettyModelName(id: string) {
-  const base = (id.split("/").pop() ?? id).replace(/:free$/i, "");
+  const base = (id.split("/").pop() ?? id)
+    .replace(/:free$/i, "")
+    // Versions written with a dash ("sonnet-5-5", "claude-3-5"): 5.5, 3.5.
+    .replace(/(^|[-_])(\d{1,2})-(\d{1,2})(?=$|[-_])/g, "$1$2.$3");
   return base
     .split(/[-_\s]+/)
     .filter(Boolean)
@@ -160,10 +163,16 @@ type RawEntry = Record<string, unknown>;
 
 function entries(body: unknown): RawEntry[] {
   if (Array.isArray(body)) return body.filter(isObject);
-  if (isObject(body) && Array.isArray(body.data))
-    return body.data.filter(isObject);
-  if (isObject(body) && Array.isArray(body.models))
-    return body.models.filter(isObject);
+  if (!isObject(body)) return [];
+  for (const key of ["data", "models", "list", "items", "result"]) {
+    const value = body[key];
+    if (Array.isArray(value)) return value.filter(isObject);
+    // One level down, e.g. { data: { list: [...] } }.
+    if (isObject(value)) {
+      const inner = entries(value);
+      if (inner.length) return inner;
+    }
+  }
   return [];
 }
 
@@ -192,7 +201,9 @@ export function parseProviderModels(
     if (typeof entry.type === "string" && entry.type !== "chat") continue;
     // ShortAPI's catalog: an opaque id, the callable name in "model".
     const field =
-      provider.id === "shortapi" ? (entry.model ?? entry.name) : entry.id;
+      provider.id === "shortapi"
+        ? (entry.model ?? entry.model_name ?? entry.name)
+        : entry.id;
     const id = typeof field === "string" ? field.trim() : "";
     if (!id || seen.has(id) || id.length > 200) continue;
     seen.add(id);
@@ -281,7 +292,13 @@ function bytezModels(provider: ProviderSpec) {
   );
 }
 
-type CacheEntry = { at: number; models: GatewayModel[]; ok: boolean };
+type CacheEntry = {
+  at: number;
+  models: GatewayModel[];
+  ok: boolean;
+  /** The list's HTTP status when it could not be read (diagnostics). */
+  status?: number;
+};
 
 const cache = new Map<ProviderId, CacheEntry>();
 const inflight = new Map<ProviderId, Promise<CacheEntry>>();
@@ -335,6 +352,7 @@ async function fetchList(
       ok: provider.id === "bytez",
     };
   }
+  let status: number | undefined;
   for (const key of provider.keys) {
     try {
       const response = await fetchImpl(provider.modelsUrl, {
@@ -346,6 +364,7 @@ async function fetchList(
         cache: "no-store",
         signal: AbortSignal.timeout(LIST_TIMEOUT_MS),
       });
+      status = response.status;
       if (!response.ok) continue;
       const models = parseProviderModels(provider, await response.json());
       return { at: now, models, ok: true };
@@ -353,7 +372,26 @@ async function fetchList(
       // next key
     }
   }
-  return { at: now, models: [], ok: false };
+  return { at: now, models: [], ok: false, status };
+}
+
+/**
+ * A gated provider's measured models, without a list call: only these are
+ * offered, so the list (and its rate limit) is needed by the probe alone.
+ */
+function servedEntry(provider: ProviderSpec, now: number): CacheEntry {
+  const prefix = `${provider.id}:`;
+  const ids = [...servedModels()]
+    .filter((ref) => ref.startsWith(prefix))
+    .map((ref) => ref.slice(prefix.length));
+  return {
+    at: now,
+    models: parseProviderModels(
+      provider,
+      ids.map((id) => (provider.id === "shortapi" ? { model: id } : { id })),
+    ),
+    ok: true,
+  };
 }
 
 async function providerModels(
@@ -394,6 +432,8 @@ export type ProviderStatus = {
   label: string;
   ok: boolean;
   models: number;
+  /** The list's HTTP status when it could not be read. */
+  status?: number;
 };
 
 /** Every chat model the configured keys can call, best first. */
@@ -407,7 +447,11 @@ export async function listGatewayModels(options?: {
   const fetchImpl = options?.fetchImpl ?? fetch;
   const providers = configuredProviders();
   const lists = await Promise.all(
-    providers.map((provider) => providerModels(provider, fetchImpl, now)),
+    providers.map((provider) =>
+      provider.gated && !options?.unserved
+        ? servedEntry(provider, now)
+        : providerModels(provider, fetchImpl, now),
+    ),
   );
   const models: GatewayModel[] = [];
   const status: ProviderStatus[] = [];
@@ -427,6 +471,7 @@ export async function listGatewayModels(options?: {
       label: provider.label,
       ok: lists[index].ok,
       models: list.length,
+      ...(lists[index].status ? { status: lists[index].status } : {}),
     });
   });
   models.sort(
