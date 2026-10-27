@@ -297,26 +297,62 @@ export function staleTargets(environments, key, targets, sinceMs, gitBranch) {
   );
 }
 
+/** The comment on every row this sync writes. */
+export const SYNC_COMMENT =
+  "Managed by Osirus GitHub Actions runtime configuration sync";
+
+const newestFirst = (a, b) =>
+  Number(b.updatedAt ?? 0) - Number(a.updatedAt ?? 0) ||
+  Number(b.createdAt ?? 0) - Number(a.createdAt ?? 0);
+
 /**
- * Rows of `key` the sync did not update since `sinceMs`, among those that
- * apply only to synced targets: older duplicates Vercel's upsert left behind
- * (two production rows of one key, with different values, were seen). Which
- * of them a deployment reads is undefined, so they get the synced value too.
+ * How to write `variables` to `targets` row by row, without Vercel's upsert:
+ * it added a new production row on every sync (sensitive keys included)
+ * instead of updating the one there, and Vercel refuses edits to a key while
+ * two rows of it share a target.
+ *   update  the newest general row of a key and target gets the value
+ *   remove  older general rows of it that this sync wrote (SYNC_COMMENT),
+ *           only within the synced targets; their values live in GitHub
+ *   create  a key with no row for a target, one row per target
+ * Branch-pinned rows and rows of other targets stay as they are.
  */
-export function outdatedRows(environments, key, targets, sinceMs, gitBranch) {
-  return environments.filter((environment) => {
-    const rowTargets = environmentTargets(environment);
-    return (
-      Boolean(environment.id) &&
-      Number(environment.updatedAt ?? 0) < sinceMs &&
-      rowTargets.length > 0 &&
-      rowTargets.every(
-        (target) =>
-          targets.includes(target) &&
-          environmentApplies(environment, key, target, gitBranch),
-      )
-    );
-  });
+export function planEnvironmentSync(environments, variables, targets) {
+  const update = [];
+  const remove = [];
+  const create = [];
+  const planned = new Set();
+  for (const variable of variables) {
+    for (const target of targets) {
+      const rows = environments
+        .filter(
+          (row) =>
+            row.key === variable.key &&
+            !row.gitBranch &&
+            environmentTargets(row).includes(target),
+        )
+        .sort(newestFirst);
+      if (!rows.length) {
+        create.push({ ...variable, target: [target] });
+        continue;
+      }
+      const [keep, ...older] = rows;
+      if (!planned.has(keep.id)) {
+        planned.add(keep.id);
+        update.push({ row: keep, variable });
+      }
+      for (const row of older) {
+        if (
+          planned.has(row.id) ||
+          row.comment !== SYNC_COMMENT ||
+          !environmentTargets(row).every((other) => targets.includes(other))
+        )
+          continue;
+        planned.add(row.id);
+        remove.push(row);
+      }
+    }
+  }
+  return { update, remove, create };
 }
 
 /** Branch-pinned preview rows for `key`: they override the general row. */
