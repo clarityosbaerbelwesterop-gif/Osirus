@@ -283,20 +283,20 @@ it("finds the top-class models the keys can really use", async () => {
   console.log(`served gated models: ${served.join(", ") || "none"}`);
   console.log(`paid models without credit: ${unfunded.join(", ") || "none"}`);
   if (process.env.GITHUB_ENV) {
+    // A gated gateway cut short by its rate limit (Kunya's hourly limit,
+    // after an earlier sync in the same hour) keeps the last full lists:
+    // part of a measurement would drop models that answered before.
+    const cutShort = gatedResults.some((row) => row.outcome === "rate_limited");
     const lines = [
       `OSIRUS_UNFUNDED_PROVIDERS=${unfunded.join(",") || "none"}`,
       // Only when Bytez was asked: "none" keeps unserved models off the lists.
       ...(bytezResults.length
         ? [`OSIRUS_BYTEZ_MODELS=${bytezServed.join(",") || "none"}`]
         : []),
-      ...(verified.length
+      ...(verified.length && !cutShort
         ? [`OSIRUS_VERIFIED_TOP_MODELS=${verified.join(",")}`]
         : []),
-      // Only when a gated gateway was asked and none was rate limited out:
-      // a measurement cut short keeps the last list.
-      ...(gatedIds.length &&
-      (served.length ||
-        !gatedResults.some((row) => row.outcome === "rate_limited"))
+      ...(gatedIds.length && !cutShort
         ? [`OSIRUS_SERVED_MODELS=${served.join(",") || "none"}`]
         : []),
     ];
