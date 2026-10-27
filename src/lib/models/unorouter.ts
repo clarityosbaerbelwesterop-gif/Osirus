@@ -87,11 +87,20 @@ export async function classifyFailure(response: Response) {
   const credentialFailure = status === 401 || status === 403;
   const rateLimited = status === 429;
   const body = (await response.text()).slice(0, 500);
+  // One model behind a plan or a deposit ("requires Starter or higher",
+  // "Deposit required to unlock premium models"): a fact about that model,
+  // not the account. Its other models still answer.
+  const planGated =
+    !rateLimited &&
+    /requires? (starter|pro|plus|premium|a paid plan|an upgrade)|or higher\. upgrade|deposit required|unlock (this|premium) models?/i.test(
+      body,
+    );
   // A refused paid request (no balance, exhausted quota) is its own
   // category so it can be reported as such; it is never retried on another
   // key.
   const noCredit =
     !rateLimited &&
+    !planGated &&
     (status === 402 ||
       /insufficient|balance|credit|quota exceeded|billing|payment required/i.test(
         body,
@@ -99,10 +108,11 @@ export async function classifyFailure(response: Response) {
   // A model the provider does not serve is a configuration fact about that
   // model.
   const unknownModel =
-    !rateLimited &&
-    !noCredit &&
-    (status === 404 ||
-      /model[^\n]{0,40}not[^\n]{0,20}(found|exist)/i.test(body));
+    planGated ||
+    (!rateLimited &&
+      !noCredit &&
+      (status === 404 ||
+        /model[^\n]{0,40}not[^\n]{0,20}(found|exist)/i.test(body)));
   return new ProviderError(
     body || `Provider request failed with ${status}`,
     rateLimited

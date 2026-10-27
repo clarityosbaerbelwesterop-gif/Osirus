@@ -17,7 +17,7 @@ export function higherTier(a: ModelTier, b: ModelTier): ModelTier {
 }
 
 const SMALL =
-  /(mini|nano|small|lite|flash|haiku|tiny|\b[1-9](\.\d)?b\b|[-_/][1-9](\.\d)?b\b|-8b|-7b|-3b|-1b|e2b|e4b)/i;
+  /(mini|nano|small|lite|flash|haiku|tiny|luna|\b[1-9](\.\d)?b\b|[-_/][1-9](\.\d)?b\b|-8b|-7b|-3b|-1b|e2b|e4b)/i;
 
 /** The class a listed model belongs to. */
 export function tierOf(model: Pick<GatewayModel, "id" | "rank">): ModelTier {
