@@ -16,6 +16,10 @@ on:
         description: Only the newly added keys (AIHubMix, B.AI, Kunya, ShortAPI, Anakin)
         type: boolean
         default: false
+      plan:
+        description: 'Optional JSON {"provider": ["model", ...]}: these models one at a time, two questions each'
+        type: string
+        default: ""
 
 permissions:
   contents: read
@@ -47,7 +51,8 @@ jobs:
         if: ${{ inputs.new_providers }}
         env:
           # Every chat model each key lists: which ones answer without a deposit.
-          DISCOVERY_ALL: "1"
+          DISCOVERY_ALL: ${{ inputs.plan == '' && '1' || '' }}
+          DISCOVERY_PLAN: ${{ inputs.plan }}
         run: node scripts/new-provider-discovery.mjs
       - name: Measure keys (allowed fields only)
         if: ${{ !inputs.only_bytez && !inputs.new_providers }}

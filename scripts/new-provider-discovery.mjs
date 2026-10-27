@@ -59,6 +59,8 @@ const PROVIDERS = [
   },
 ];
 
+const TRAP =
+  "Welche Zahl ist größer: 9.11 oder 9.9? Antworte nur mit der größeren Zahl.";
 const QUESTION =
   "Ein Lager hat 17 Regale mit je 23 Kisten. Wie viele Kisten sind es insgesamt? Antworte mit der Zahl.";
 const TOP =
@@ -165,12 +167,12 @@ function pickCandidates(ids, limit = 5) {
   );
 }
 
-async function ask(base, key, model) {
+async function ask(base, key, model, question = QUESTION) {
   const r = await request(`${base}/chat/completions`, key, {
     method: "POST",
     body: JSON.stringify({
       model,
-      messages: [{ role: "user", content: QUESTION }],
+      messages: [{ role: "user", content: question }],
       max_tokens: 400,
       stream: false,
     }),
@@ -182,7 +184,10 @@ async function ask(base, key, model) {
     answer = body?.choices?.[0]?.message?.content ?? "";
     usage = body?.usage ?? null;
   } catch {}
-  const correct = /\b391\b/.test(answer);
+  const correct =
+    question === QUESTION
+      ? /\b391\b/.test(answer)
+      : /\b9[.,]9\b/.test(answer) && !/\b9[.,]11\b/.test(answer.slice(-40));
   return { ...r, answer, usage, correct };
 }
 
@@ -238,6 +243,11 @@ async function streamTest(base, key, model) {
 const summary = [];
 for (const provider of PROVIDERS) {
   const { name, key } = provider;
+  if (
+    process.env.DISCOVERY_PLAN &&
+    !JSON.parse(process.env.DISCOVERY_PLAN)[name]
+  )
+    continue;
   console.log(`\n=== ${name} ===`);
   if (!key?.trim()) {
     console.log("no key in this run");
@@ -302,6 +312,43 @@ for (const provider of PROVIDERS) {
   console.log(`top: ${top.slice(0, 60).join(", ")}`);
   // DISCOVERY_ALL=1: every chat model the key lists (what works without a
   // deposit); otherwise the strongest few.
+  const plan = JSON.parse(process.env.DISCOVERY_PLAN || "{}")[name];
+  if (plan) {
+    const gap = Number(process.env.DISCOVERY_GAP_MS || 3000);
+    const passed = [];
+    for (const model of plan) {
+      let first = await ask(base, key, model);
+      if (first.status === 429) {
+        await new Promise((r) => setTimeout(r, 20_000));
+        first = await ask(base, key, model);
+      }
+      let second = null;
+      if (first.status === 200 && first.correct) {
+        await new Promise((r) => setTimeout(r, gap));
+        second = await ask(base, key, model, TRAP);
+      }
+      const ok =
+        first.status === 200 &&
+        first.correct &&
+        second?.correct &&
+        first.ms <= 30_000;
+      console.log(
+        `${ok ? "PASS" : "FAIL"} ${model}: q1 HTTP ${first.status} ${first.ms} ms ${first.correct ? "391" : clean(first.answer || first.text, key, 120)}${second ? ` | q2 HTTP ${second.status} ${second.ms} ms ${second.correct ? "9.9" : clean(second.answer || second.text, key, 80)}` : ""}${first.usage?.charged_cost_usd !== undefined ? ` | cost ${first.usage.charged_cost_usd} USD` : ""}`,
+      );
+      if (ok) passed.push({ model, ms: first.ms });
+      await new Promise((r) => setTimeout(r, gap));
+    }
+    if (passed.length) {
+      const fastest = [...passed].sort((a, b) => a.ms - b.ms)[0];
+      console.log(
+        `stream ${fastest.model}: ${await streamTest(base, key, fastest.model)}`,
+      );
+    }
+    summary.push(
+      `${name}: passed ${passed.map((p) => `${p.model} (${p.ms} ms)`).join(", ") || "none"}`,
+    );
+    continue;
+  }
   const candidates = !ids.length
     ? (provider.guess ?? [])
     : process.env.DISCOVERY_ALL
