@@ -40,3 +40,8 @@ export function agentsMentioned(
   }
   return kept;
 }
+
+/** "@alle" (or "@all") asks every bot of the group. */
+export function everyoneMentioned(content: string) {
+  return /(^|\s)@(alle|all)(?=$|[\s.,!?;:])/i.test(content);
+}

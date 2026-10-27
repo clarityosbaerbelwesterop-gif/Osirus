@@ -18,6 +18,12 @@ async function signedIn() {
   }
 }
 
+/** A plausible address from ?email=, else nothing. */
+function prefilledEmail(value: string | string[] | undefined) {
+  const email = typeof value === "string" ? value.trim() : "";
+  return email.length <= 320 && /^[^\s@]+@[^\s@]+$/.test(email) ? email : null;
+}
+
 export default async function SignInPage({ searchParams }: SignInPageProps) {
   const params = await searchParams;
   const oauthError = oauthErrorMessage(params.error);
@@ -25,6 +31,7 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   return (
     <SignInForm
       oauthError={oauthError}
+      email={prefilledEmail(params.email)}
       notice={
         params.reset === "1"
           ? "Passwort gespeichert. Bitte mit dem neuen Passwort anmelden."

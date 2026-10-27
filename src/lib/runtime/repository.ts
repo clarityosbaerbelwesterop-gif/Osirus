@@ -62,6 +62,8 @@ export type WorkspaceSession = {
   updatedAt: string;
   pinnedAt: string | null;
   surface?: "ai" | "agent" | "bot" | "coding" | "work";
+  /** The bot a bot thread talks to, so it opens in that bot's room. */
+  botId?: string | null;
 };
 
 function mapEvent(row: EventRow): RuntimeEvent {
@@ -227,6 +229,7 @@ export class RuntimeRepository {
   async listWorkspaceSessions(
     workspaceId: string,
     surface?: "ai" | "agent" | "bot" | "coding" | "work",
+    limit = 100,
   ): Promise<WorkspaceSession[]> {
     const sessions = await queryAs<{
       id: string;
@@ -234,15 +237,22 @@ export class RuntimeRepository {
       updated_at: string | Date;
       pinned_at: string | Date | null;
       surface: "ai" | "agent" | "bot" | "coding" | "work";
+      bot_id: string | null;
     }>(
       this.actorId,
-      `select id, title, updated_at, pinned_at, surface
-         from osirus.sessions
-        where workspace_id = $1::uuid and archived_at is null
-          and ($2::text is null or surface = $2)
-        order by pinned_at desc nulls last, updated_at desc
-        limit 100`,
-      [workspaceId, surface ?? null],
+      `select s.id, s.title, s.updated_at, s.pinned_at, s.surface,
+              case when s.surface = 'bot' then (
+                select m.metadata->>'botId' from osirus.messages m
+                 where m.session_id = s.id and m.metadata->>'botId' is not null
+                 order by m.created_at desc
+                 limit 1
+              ) end as bot_id
+         from osirus.sessions s
+        where s.workspace_id = $1::uuid and s.archived_at is null
+          and ($2::text is null or s.surface = $2)
+        order by s.pinned_at desc nulls last, s.updated_at desc
+        limit $3`,
+      [workspaceId, surface ?? null, Math.min(Math.max(limit, 1), 500)],
     );
     return sessions.map((session) => ({
       id: session.id,
@@ -252,6 +262,7 @@ export class RuntimeRepository {
         ? new Date(session.pinned_at).toISOString()
         : null,
       surface: session.surface,
+      botId: session.bot_id ?? null,
     }));
   }
 

@@ -94,3 +94,45 @@ describe("sign-up legal acceptance", () => {
     });
   });
 });
+
+describe("sign-up failures", () => {
+  beforeEach(() => email.mockClear());
+
+  it("names an existing account and keeps what was typed", async () => {
+    email.mockResolvedValueOnce({
+      error: { code: "USER_ALREADY_EXISTS", status: 422 },
+    } as never);
+    const result = await signUpWithEmail(
+      null,
+      form({
+        name: "Ada",
+        email: "ada@example.com",
+        password: "long-enough",
+        acceptTerms: "on",
+        acceptPrivacy: "on",
+      }),
+    );
+    expect(result?.exists).toBe(true);
+    expect(result?.error).toMatch(/schon ein Konto/);
+    expect(result?.values).toEqual({ name: "Ada", email: "ada@example.com" });
+    const html = renderToStaticMarkup(createElement(SignUpForm, {}));
+    expect(html).not.toContain("Zur Anmeldung");
+  });
+
+  it("tells a breached password apart from an existing account", async () => {
+    const { signUpFailure } = await import("../src/app/auth/sign-up/actions");
+    await expect(
+      signUpFailure({ code: "PASSWORD_COMPROMISED", status: 400 }),
+    ).resolves.toMatchObject({ exists: false, message: /Datenleck/ });
+    await expect(
+      signUpFailure({ code: "INVALID_EMAIL", status: 400 }),
+    ).resolves.toMatchObject({ exists: false, message: /ungültig/ });
+    await expect(
+      signUpFailure({ message: "User already exists" }),
+    ).resolves.toMatchObject({ exists: true });
+    await expect(signUpFailure({ code: "SOMETHING" })).resolves.toMatchObject({
+      exists: false,
+      message: /erneut/,
+    });
+  });
+});

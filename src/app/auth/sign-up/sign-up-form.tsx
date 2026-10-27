@@ -1,5 +1,6 @@
 "use client";
 
+import type { Route } from "next";
 import Link from "next/link";
 import { useState } from "react";
 import { useActionState } from "react";
@@ -26,11 +27,23 @@ export function SignUpForm() {
         </p>
         <label>
           Name
-          <input name="name" type="text" autoComplete="name" required />
+          <input
+            name="name"
+            type="text"
+            autoComplete="name"
+            defaultValue={state?.values?.name}
+            required
+          />
         </label>
         <label>
           E-Mail
-          <input name="email" type="email" autoComplete="email" required />
+          <input
+            name="email"
+            type="email"
+            autoComplete="email"
+            defaultValue={state?.values?.email}
+            required
+          />
         </label>
         <label>
           Passwort (mind. 8 Zeichen)
@@ -69,9 +82,27 @@ export function SignUpForm() {
           </label>
         </div>
         {state?.error ? (
-          <p className="form-error" role="alert">
-            {state.error}
-          </p>
+          <div className="form-error" role="alert">
+            <p>{state.error}</p>
+            {state.exists ? (
+              <p className="form-error-actions">
+                <Link
+                  href={
+                    `/auth/sign-in?email=${encodeURIComponent(state.values?.email ?? "")}` as Route
+                  }
+                >
+                  Zur Anmeldung
+                </Link>
+                <Link
+                  href={
+                    `/auth/forgot-password?email=${encodeURIComponent(state.values?.email ?? "")}` as Route
+                  }
+                >
+                  Passwort zurücksetzen
+                </Link>
+              </p>
+            ) : null}
+          </div>
         ) : null}
         <button
           type="submit"

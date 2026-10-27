@@ -4,7 +4,14 @@ import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { redirect } from "next/navigation";
 import { authAttemptAllowed } from "../rate";
 
-export type AuthActionState = { error?: string; notice?: string } | null;
+export type AuthActionState = {
+  error?: string;
+  notice?: string;
+  /** Sign-up: the address already has an account (password or GitHub). */
+  exists?: boolean;
+  /** Sign-up: what was typed, so a failed attempt keeps it (never the password). */
+  values?: { name: string; email: string };
+} | null;
 
 export async function signInWithEmail(
   _previous: AuthActionState,

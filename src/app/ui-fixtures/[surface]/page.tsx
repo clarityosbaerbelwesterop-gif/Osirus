@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { AgentsStudio } from "@/components/agents/agents-studio";
 import { AgentsChat } from "@/components/agents-chat/agents-chat";
+import { BotsHub } from "@/components/bots/bots-hub";
+import { GroupRoom } from "@/components/bots/group-room";
+import { HistoryBrowser } from "@/components/bots/history-browser";
 import { RougeAgentSurface } from "@/components/rouge/rouge-agent-surface";
 import { ChatHub } from "@/components/chat/chat-hub";
 import { WorkStudio } from "@/components/work/work-studio";
@@ -22,6 +24,7 @@ import { approvalView } from "@/lib/ui/approval-view";
 import { recommendWork } from "@/lib/work/recommend";
 import { fixturesEnabled } from "@/lib/ui/fixtures-flag";
 import {
+  ago,
   approvalsFixture,
   automationsFixture,
   codingRunFixture,
@@ -139,22 +142,145 @@ export default async function FixturePage({
       return (
         <AppShell data={shell}>
           <PageFrame
-            title="Agents"
-            lede="Bots mit eigenem Modell und Gruppenchats. Deploy gibt es nicht."
+            title="Bots"
+            lede="Dein Team aus Spezialisten. Jeder Bot hat seinen eigenen Raum."
           >
-            <AgentsStudio
-              initialAgents={[
+            <BotsHub
+              bots={[
                 {
-                  id: "11111111-1111-4111-8111-111111111111",
+                  id: bots[0].id,
                   name: "Ada",
-                  modelId: "glm-5.3-flash",
                   status: "active",
+                  role: "Software Engineer",
+                  tier: "top",
                 },
                 {
-                  id: "22222222-2222-4222-8222-222222222222",
+                  id: bots[1].id,
                   name: "Bea",
-                  modelId: "claude-opus-5.5",
                   status: "active",
+                  role: "Research Analyst",
+                  tier: "top",
+                },
+              ]}
+              groups={[
+                {
+                  id: "44444444-4444-4444-8444-444444444444",
+                  title: "Launch-Team",
+                  updatedAt: ago(3_600_000),
+                  members: [
+                    { id: bots[0].id, name: "Ada" },
+                    { id: bots[1].id, name: "Bea" },
+                  ],
+                  messageCount: 3,
+                  last: {
+                    role: "agent",
+                    agentId: bots[1].id,
+                    content: "Drei Wettbewerber, eine klare Lücke.",
+                  },
+                },
+              ]}
+            />
+          </PageFrame>
+        </AppShell>
+      );
+    case "agents-room":
+      return (
+        <AppShell data={shell}>
+          <AgentsChat
+            initialThread={null}
+            bots={bots}
+            greetingName="Bärbel"
+            room={{
+              bot: bots[0],
+              role: "Software Engineer",
+              conversations: [
+                {
+                  id: "55555555-5555-4555-8555-555555555555",
+                  title: "Code-Review für den Checkout",
+                  updatedAt: ago(7_200_000),
+                },
+              ],
+            }}
+          />
+        </AppShell>
+      );
+    case "agents-group":
+      return (
+        <AppShell data={shell}>
+          <GroupRoom
+            group={{
+              id: "44444444-4444-4444-8444-444444444444",
+              title: "Launch-Team",
+              members: [
+                { id: bots[0].id, name: "Ada" },
+                { id: bots[1].id, name: "Bea" },
+              ],
+            }}
+            initialMessages={[
+              {
+                id: "g1",
+                role: "user",
+                agentId: null,
+                content: "@Bea wer sind unsere Wettbewerber?",
+                status: "stored",
+                createdAt: ago(600_000),
+              },
+              {
+                id: "g2",
+                role: "agent",
+                agentId: bots[1].id,
+                content: "Drei Wettbewerber, eine klare Lücke: **Freigaben**.",
+                status: "completed",
+                createdAt: ago(590_000),
+              },
+            ]}
+          />
+        </AppShell>
+      );
+    case "history":
+      return (
+        <AppShell data={shell}>
+          <PageFrame
+            title="Verlauf"
+            lede="Alles, was du mit Osirus besprochen hast."
+          >
+            <HistoryBrowser
+              entries={[
+                {
+                  id: "h1",
+                  title: "Postgres Job-Queue migrieren",
+                  updatedAt: ago(300_000),
+                  kind: "chat",
+                  href: "/app?session=h1",
+                  seeds: [],
+                  detail: null,
+                },
+                {
+                  id: "h2",
+                  title: "Code-Review für den Checkout",
+                  updatedAt: ago(7_200_000),
+                  kind: "bot",
+                  href: `/app/agents/${bots[0].id}?session=h2`,
+                  seeds: [bots[0].id],
+                  detail: "Ada",
+                },
+                {
+                  id: "44444444-4444-4444-8444-444444444444",
+                  title: "Launch-Team",
+                  updatedAt: ago(90_000_000),
+                  kind: "group",
+                  href: "/app/agents/groups/44444444-4444-4444-8444-444444444444",
+                  seeds: [bots[0].id, bots[1].id],
+                  detail: "Ada, Bea",
+                },
+                {
+                  id: "h4",
+                  title: "Release-Notes schreiben",
+                  updatedAt: ago(400_000_000),
+                  kind: "rouge",
+                  href: "/app/agent?session=h4",
+                  seeds: [],
+                  detail: null,
                 },
               ]}
             />

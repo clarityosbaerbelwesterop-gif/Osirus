@@ -14,6 +14,61 @@ export async function assertSignupLegal(input: {
   return null;
 }
 
+type SignUpError = { code?: unknown; message?: unknown; status?: unknown };
+
+/**
+ * Why Neon Auth refused an account, in words a person can act on. Only the
+ * code and status are read; the address itself is never logged.
+ */
+export async function signUpFailure(
+  error: SignUpError,
+): Promise<{ message: string; exists: boolean; code: string }> {
+  const code = typeof error.code === "string" ? error.code.toUpperCase() : "";
+  const text = `${code} ${typeof error.message === "string" ? error.message : ""}`;
+  if (/COMPROMISED|pwned|breach/i.test(text))
+    return {
+      code: code || "PASSWORD_COMPROMISED",
+      exists: false,
+      message:
+        "Dieses Passwort ist aus einem bekannten Datenleck bekannt. Bitte wähle ein anderes.",
+    };
+  if (/PASSWORD_TOO_SHORT/i.test(text))
+    return {
+      code,
+      exists: false,
+      message: "Das Passwort ist zu kurz: mindestens 8 Zeichen.",
+    };
+  if (/PASSWORD_TOO_LONG/i.test(text))
+    return {
+      code,
+      exists: false,
+      message: "Das Passwort ist zu lang: höchstens 128 Zeichen.",
+    };
+  if (/INVALID_EMAIL/i.test(text))
+    return {
+      code,
+      exists: false,
+      message:
+        "Diese E-Mail-Adresse ist ungültig. Bitte prüfe die Schreibweise.",
+    };
+  if (
+    /ALREADY_EXISTS|already exists|already registered/i.test(text) ||
+    error.status === 422
+  )
+    return {
+      code: code || "USER_ALREADY_EXISTS",
+      exists: true,
+      message:
+        "Für diese E-Mail gibt es schon ein Konto. Melde dich an, mit Passwort oder über GitHub, falls du dich so registriert hast. Passwort vergessen? Du kannst es zurücksetzen.",
+    };
+  return {
+    code: code || "UNKNOWN",
+    exists: false,
+    message:
+      "Das Konto konnte gerade nicht angelegt werden. Bitte versuche es in einer Minute erneut.",
+  };
+}
+
 function legalAccepted(formData: FormData) {
   return (
     formData.get("acceptTerms") === "on" &&
@@ -28,13 +83,15 @@ export async function signUpWithEmail(
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const values = { name: name.slice(0, 120), email: email.slice(0, 320) };
 
-  if (!legalAccepted(formData)) return { error: LEGAL_ERROR };
+  if (!legalAccepted(formData)) return { error: LEGAL_ERROR, values };
 
   if (!name || !email || password.length < 8) {
     return {
       error:
         "Name, E-Mail und ein Passwort mit mindestens 8 Zeichen sind erforderlich.",
+      values,
     };
   }
 
@@ -48,15 +105,17 @@ export async function signUpWithEmail(
       perNetwork: 12,
     }))
   ) {
-    return { error: "Zu viele Registrierungen. Bitte eine Minute warten." };
+    return {
+      error: "Zu viele Registrierungen. Bitte eine Minute warten.",
+      values,
+    };
   }
 
   const result = await auth.signUp.email({ name, email, password });
   if (result.error) {
-    return {
-      error:
-        "Mit diesen Angaben konnte kein Konto angelegt werden. Ist die E-Mail schon registriert? Dann bitte anmelden.",
-    };
+    const failure = await signUpFailure(result.error as SignUpError);
+    console.warn(`auth.signup refused: ${failure.code}`);
+    return { error: failure.message, exists: failure.exists, values };
   }
 
   const createdUser = (

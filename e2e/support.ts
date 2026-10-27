@@ -27,6 +27,9 @@ export const SURFACES = [
   "agents",
   "agents-empty",
   "agents-thread",
+  "agents-room",
+  "agents-group",
+  "history",
   "rouge-empty",
   "tour",
 ] as const;
@@ -223,6 +226,49 @@ export async function mockApis(
   await page.route("**/api/sessions/**", (route) => {
     record(route);
     return json(route, { ok: true });
+  });
+  await page.route("**/api/group-chats/*/messages", (route) => {
+    record(route);
+    if (route.request().method() === "GET")
+      return json(route, { messages: [] });
+    const body = route.request().postDataJSON() as { content?: string };
+    const asksBea = /@(Bea|alle)\b/i.test(body.content ?? "");
+    return json(route, {
+      replyRule: "mentions-only",
+      replies: asksBea
+        ? [
+            {
+              agentId: "22222222-2222-4222-8222-222222222222",
+              name: "Bea",
+              status: "completed",
+              text: "Gern: zuerst die Freigaben.",
+            },
+          ]
+        : [],
+    });
+  });
+  await page.route("**/api/group-chats", (route) => {
+    record(route);
+    return json(
+      route,
+      { chat: { id: "66666666-6666-4666-8666-666666666666", title: "Team" } },
+      201,
+    );
+  });
+  await page.route("**/api/agents", (route) => {
+    record(route);
+    return json(
+      route,
+      {
+        agent: {
+          id: "77777777-7777-4777-8777-777777777777",
+          name: "Cleo",
+          status: "active",
+          tier: "balanced",
+        },
+      },
+      201,
+    );
   });
   for (const pattern of [
     "**/api/mcp/**",

@@ -5,6 +5,7 @@ import {
   ArchiveRestore,
   ChevronRight,
   Gauge,
+  History,
   Bot,
   Code2,
   Inbox,
@@ -26,15 +27,16 @@ import {
 import type { Route } from "next";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { SIDEBAR_COOKIE, writePreference } from "@/lib/ui/preferences";
 import { OsirusMark } from "../shell/osirus-mark";
 import {
   navAreaForPath,
+  sessionHref,
   sessionsForArea,
-  surfacePath,
   type NavArea,
 } from "@/lib/product/surfaces";
+import { groupSessions } from "@/lib/product/session-groups";
 import { useShell, type SessionSummary } from "../shell/shell-context";
 import { QuotaBarsLive } from "../motion/quota-bars";
 import { SystemStatus } from "./system-status";
@@ -53,10 +55,12 @@ const SURFACES: NavItem[] = [
   { href: "/app" as Route, label: "Agents", icon: MessageSquare },
   { href: "/app/agent" as Route, label: "Rouge Agent", icon: Zap },
   { href: "/app/coding" as Route, label: "Code", icon: Code2 },
+  { href: "/app/agents" as Route, label: "Bots", icon: Bot },
 ];
 
+// The workspace tools sit below the history, compact, so the conversations
+// stay in view on a phone.
 const PRIMARY: NavItem[] = [
-  { href: "/app/agents" as Route, label: "Bots", icon: Bot },
   { href: "/app/inbox" as Route, label: "Inbox", icon: Inbox, count: "inbox" },
   {
     href: "/app/approvals" as Route,
@@ -215,10 +219,7 @@ function SessionLink({
   return (
     <li className={cx("session-row", active && "session-row-active")}>
       <Link
-        href={{
-          pathname: surfacePath(session.surface ?? "ai") as Route,
-          query: { session: session.id },
-        }}
+        href={sessionHref(session) as Route}
         className="session-link"
         aria-current={active ? "page" : undefined}
         aria-disabled={locked || undefined}
@@ -310,7 +311,7 @@ function ArchivedSessions({ area }: { area: NavArea | null }) {
             open && "sidebar-disclosure-icon-open",
           )}
         />
-        <span className="nav-label">Archived</span>
+        <span className="nav-label">Archiviert</span>
         {visible?.length ? (
           <span className="count" aria-label={`${visible.length} archived`}>
             {visible.length > 99 ? "99+" : visible.length}
@@ -339,13 +340,22 @@ function ArchivedSessions({ area }: { area: NavArea | null }) {
           </ul>
         ) : (
           <p className="sidebar-empty">
-            {visible ? "No archived conversations." : "Loading…"}
+            {visible ? "Nichts archiviert." : "Lädt…"}
           </p>
         )
       ) : null}
     </section>
   );
 }
+
+// The reader's calendar day, known only after hydration; the server lists
+// the history without day groups.
+const subscribeNever = () => () => undefined;
+const today = () => {
+  const now = new Date();
+  return new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
+};
+const noDay = () => null;
 
 export function SidebarContent({
   collapsed = false,
@@ -360,17 +370,23 @@ export function SidebarContent({
 
   const pathname = usePathname() ?? "";
   const area = navAreaForPath(pathname);
-  const { pinned, recent } = useMemo(() => {
+  const day = useSyncExternalStore(subscribeNever, today, noDay);
+  const { pinned, recent, groups } = useMemo(() => {
     const needle = search.trim().toLowerCase();
     const scoped = sessionsForArea(shell.sessions, area);
     const matches = needle
       ? scoped.filter((item) => item.title.toLowerCase().includes(needle))
       : scoped;
+    const recent = matches.filter((item) => !item.pinnedAt).slice(0, 60);
     return {
       pinned: matches.filter((item) => item.pinnedAt),
-      recent: matches.filter((item) => !item.pinnedAt).slice(0, 40),
+      recent,
+      groups:
+        day === null
+          ? [{ id: "recent", label: "Verlauf", items: recent }]
+          : groupSessions(recent, new Date(day)),
     };
-  }, [area, search, shell.sessions]);
+  }, [area, day, search, shell.sessions]);
 
   const newTask = () => {
     onNavigate?.();
@@ -450,12 +466,12 @@ export function SidebarContent({
           </button>
           <label className="sidebar-search">
             <Search size={15} aria-hidden="true" />
-            <span className="sr-only">Search conversations</span>
+            <span className="sr-only">Verlauf durchsuchen</span>
             <input
               type="search"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search conversations"
+              placeholder="Verlauf durchsuchen"
             />
           </label>
         </div>
@@ -474,32 +490,6 @@ export function SidebarContent({
             </li>
           ))}
         </ul>
-        <ul>
-          {PRIMARY.map((item) => (
-            <li key={item.href}>
-              <NavLink
-                item={item}
-                collapsed={collapsed}
-                count={count(item)}
-                onNavigate={onNavigate}
-              />
-            </li>
-          ))}
-        </ul>
-        <ul>
-          {CONFIGURE.filter((item) => !item.admin || shell.isAdmin).map(
-            (item) => (
-              <li key={item.href}>
-                <NavLink
-                  item={item}
-                  collapsed={collapsed}
-                  count={count(item)}
-                  onNavigate={onNavigate}
-                />
-              </li>
-            ),
-          )}
-        </ul>
       </nav>
 
       {collapsed ? (
@@ -509,7 +499,7 @@ export function SidebarContent({
           {pinned.length ? (
             <section aria-labelledby="pinned-heading">
               <h2 className="sidebar-heading overline" id="pinned-heading">
-                Pinned
+                Angeheftet
               </h2>
               <ul className="session-list">
                 {pinned.map((session) => (
@@ -522,31 +512,75 @@ export function SidebarContent({
               </ul>
             </section>
           ) : null}
-          <section aria-labelledby="recent-heading">
-            <h2 className="sidebar-heading overline" id="recent-heading">
-              Recent
-            </h2>
-            {recent.length ? (
-              <ul className="session-list">
-                {recent.map((session) => (
-                  <SessionLink
-                    key={session.id}
-                    session={session}
-                    onNavigate={onNavigate}
-                  />
-                ))}
-              </ul>
-            ) : (
+          {recent.length ? (
+            groups.map((group) => (
+              <section
+                key={group.id}
+                aria-labelledby={`history-${group.id}-heading`}
+              >
+                <h2
+                  className="sidebar-heading overline"
+                  id={`history-${group.id}-heading`}
+                >
+                  {group.label}
+                </h2>
+                <ul className="session-list">
+                  {group.items.map((session) => (
+                    <SessionLink
+                      key={session.id}
+                      session={session}
+                      onNavigate={onNavigate}
+                    />
+                  ))}
+                </ul>
+              </section>
+            ))
+          ) : (
+            <section aria-labelledby="history-empty-heading">
+              <h2
+                className="sidebar-heading overline"
+                id="history-empty-heading"
+              >
+                Verlauf
+              </h2>
               <p className="sidebar-empty">
                 {search
-                  ? "No matching conversations."
-                  : "No conversations yet."}
+                  ? "Kein Verlauf passt zur Suche."
+                  : "Noch kein Verlauf in diesem Bereich."}
               </p>
-            )}
-          </section>
+            </section>
+          )}
+          <Link
+            href={"/app/history" as Route}
+            className="sidebar-all-history"
+            onClick={onNavigate}
+          >
+            <History size={15} aria-hidden="true" />
+            Alle Verläufe
+          </Link>
           <ArchivedSessions area={area} />
         </div>
       )}
+
+      <nav
+        className={cx("sidebar-tools", collapsed && "sidebar-tools-collapsed")}
+        aria-label="Workspace"
+      >
+        <ul>
+          {[...PRIMARY, ...CONFIGURE]
+            .filter((item) => !item.admin || shell.isAdmin)
+            .map((item) => (
+              <li key={item.href}>
+                <NavLink
+                  item={item}
+                  collapsed={collapsed}
+                  count={count(item)}
+                  onNavigate={onNavigate}
+                />
+              </li>
+            ))}
+        </ul>
+      </nav>
 
       <div className="sidebar-footer">
         {collapsed ? null : <QuotaBarsLive />}

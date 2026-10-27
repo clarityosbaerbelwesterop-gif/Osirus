@@ -10,9 +10,12 @@ import { signInWithEmail } from "./actions";
 export function SignInForm({
   oauthError,
   notice,
+  email,
 }: {
   oauthError: string | null;
   notice?: string | null;
+  /** Prefilled from a sign-up that found an existing account. */
+  email?: string | null;
 }) {
   const [state, action, pending] = useActionState(signInWithEmail, null);
 
@@ -37,7 +40,13 @@ export function SignInForm({
         ) : null}
         <label>
           E-Mail
-          <input name="email" type="email" autoComplete="email" required />
+          <input
+            name="email"
+            type="email"
+            autoComplete="email"
+            defaultValue={email ?? undefined}
+            required
+          />
         </label>
         <label>
           Passwort

@@ -502,18 +502,100 @@ test("work recommends a model, a reviewer and sub-agents", async ({ page }) => {
   await expect(page.getByText("eigene Wahl")).toBeVisible();
 });
 
-test("agents address only the mentioned bot", async ({ page }) => {
+test("bots: the team shows each bot's role, never its model, and opens its room", async ({
+  page,
+}) => {
   await mockApis(page);
   await openSurface(page, "agents");
   await expect(page.getByRole("button", { name: "Deploy" })).toHaveCount(0);
   await expect(page.getByText("Ada", { exact: true }).first()).toBeVisible();
-  // A bot shows its role class, never a model id.
+  await expect(page.getByText("Software Engineer")).toBeVisible();
   await expect(page.getByText("glm-5.3-flash")).toHaveCount(0);
-  await expect(page.getByText("claude-opus-5.5")).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Mit Ada chatten" }),
+  ).toHaveAttribute("href", "/app/agents/11111111-1111-4111-8111-111111111111");
+  // A group chat stays and is listed with its last message.
+  const group = page.getByRole("link", { name: /Launch-Team/ });
+  await expect(group).toHaveAttribute(
+    "href",
+    "/app/agents/groups/44444444-4444-4444-8444-444444444444",
+  );
+  await expect(group).toContainText("Drei Wettbewerber");
+});
+
+test("bots: a new group chat is created with the picked bots and opens", async ({
+  page,
+}) => {
+  const log = await mockApis(page);
+  await openSurface(page, "agents");
+  await page.getByRole("button", { name: "Neuer Gruppenchat" }).click();
+  await page.getByRole("button", { name: "Bea", pressed: true }).click();
+  await page.getByRole("button", { name: "Gruppenchat öffnen" }).click();
+  await page.waitForURL(/\/app\/agents\/groups\/66666666-/);
+  const sent = log.find((entry) => entry.path === "/api/group-chats");
+  expect(sent?.body).toMatchObject({
+    title: "Team",
+    agentIds: ["11111111-1111-4111-8111-111111111111"],
+  });
+});
+
+test("bots: a bot's room talks only to that bot and keeps its conversations", async ({
+  page,
+}) => {
+  const log = await mockApis(page);
+  await openSurface(page, "agents-room");
+  await expect(page.getByRole("heading", { name: "Ada" })).toBeVisible();
+  await expect(page.getByText(/Software Engineer/).first()).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Code-Review für den Checkout" }),
+  ).toBeVisible();
+  const input = page.getByRole("textbox", { name: "Nachricht" });
+  await expect(input).toHaveAttribute("placeholder", "Nachricht an Ada");
+  await input.fill("Hallo");
+  await input.press("Enter");
+  await expect(page.getByText("Hallo! Wie kann ich helfen?")).toBeVisible();
+  const sent = log.find((entry) => entry.path === "/api/chat/stream");
+  expect(sent?.body).toMatchObject({
+    message: "Hallo",
+    botId: "11111111-1111-4111-8111-111111111111",
+  });
+  await expect(page).toHaveURL(
+    /\/app\/agents\/11111111-1111-4111-8111-111111111111\?session=/,
+  );
+});
+
+test("bots: a group chat keeps its thread; @Name and @alle choose who answers", async ({
+  page,
+}) => {
+  const log = await mockApis(page);
+  await openSurface(page, "agents-group");
+  await expect(
+    page.getByText("Drei Wettbewerber, eine klare Lücke"),
+  ).toBeVisible();
   const message = page.getByRole("textbox", { name: "Nachricht" });
   await message.fill("@Ada bitte kurz antworten");
   await expect(page.getByText("Antwortet: Ada")).toBeVisible();
-  await expect(page.getByText("Antwortet: Bea")).toHaveCount(0);
+  await expect(page.getByText("Antwortet: Ada, Bea")).toHaveCount(0);
+  await message.fill("@alle wie starten wir?");
+  await expect(page.getByText("Antwortet: Ada, Bea")).toBeVisible();
+  await message.press("Enter");
+  await expect(page.getByText("Gern: zuerst die Freigaben.")).toBeVisible();
+  const sent = log.find((entry) => entry.path.endsWith("/messages"));
+  expect(sent?.body).toEqual({ content: "@alle wie starten wir?" });
+});
+
+test("history: every area is listed and can be filtered", async ({ page }) => {
+  await mockApis(page);
+  await openSurface(page, "history");
+  await expect(page.getByRole("link", { name: /Launch-Team/ })).toBeVisible();
+  await page.getByRole("button", { name: /^Rouge Agent/ }).click();
+  await expect(
+    page.getByRole("link", { name: /Release-Notes schreiben/ }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: /Launch-Team/ })).toHaveCount(0);
+  await expect(
+    page.getByRole("link", { name: "Alle Verläufe" }).first(),
+  ).toBeVisible();
 });
 
 test("agents: an answer streams in, thinking shows its time, the thread joins the sidebar", async ({

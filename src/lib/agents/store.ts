@@ -196,3 +196,211 @@ export async function insertGroupMessage(input: {
   );
   return rows[0]?.id ?? null;
 }
+
+export type GroupChatSummary = {
+  id: string;
+  title: string;
+  updatedAt: string;
+  members: { id: string; name: string }[];
+  messageCount: number;
+  last: {
+    role: "user" | "agent";
+    agentId: string | null;
+    content: string;
+  } | null;
+};
+
+type GroupChatRow = {
+  id: string;
+  title: string;
+  last_at: string | Date;
+  message_count: number | string;
+  members: { id: string; name: string }[] | null;
+  last_role: "user" | "agent" | null;
+  last_agent: string | null;
+  last_content: string | null;
+};
+
+const GROUP_SUMMARY_SQL = `
+  select g.id, g.title,
+         greatest(g.updated_at, coalesce(l.created_at, g.updated_at)) as last_at,
+         (select count(*) from osirus.group_chat_messages c
+           where c.group_chat_id = g.id) as message_count,
+         coalesce((select json_agg(json_build_object('id', a.id, 'name', a.name)
+                                   order by a.name)
+                     from osirus.group_chat_members m
+                     join osirus.agents a on a.id = m.agent_id
+                    where m.group_chat_id = g.id), '[]'::json) as members,
+         l.author_role as last_role, l.agent_id as last_agent,
+         l.content as last_content
+    from osirus.group_chats g
+    left join lateral (
+      select x.author_role, x.agent_id, x.content, x.created_at
+        from osirus.group_chat_messages x
+       where x.group_chat_id = g.id
+       order by x.created_at desc
+       limit 1
+    ) l on true
+   where g.workspace_id = $1::uuid`;
+
+function toGroupSummary(row: GroupChatRow): GroupChatSummary {
+  return {
+    id: row.id,
+    title: row.title,
+    updatedAt: new Date(row.last_at).toISOString(),
+    members: row.members ?? [],
+    messageCount: Number(row.message_count) || 0,
+    last:
+      row.last_role && row.last_content
+        ? {
+            role: row.last_role,
+            agentId: row.last_agent,
+            content: row.last_content.slice(0, 200),
+          }
+        : null,
+  };
+}
+
+/** The workspace's group chats, most recently active first. */
+export async function listGroupChats(identity: ProductIdentity) {
+  const rows = await queryAs<GroupChatRow>(
+    identity.userId,
+    `${GROUP_SUMMARY_SQL}
+   order by last_at desc
+   limit 100`,
+    [identity.workspaceId],
+  );
+  return rows.map(toGroupSummary);
+}
+
+export async function getGroupChat(identity: ProductIdentity, id: string) {
+  const rows = await queryAs<GroupChatRow>(
+    identity.userId,
+    `${GROUP_SUMMARY_SQL} and g.id = $2::uuid`,
+    [identity.workspaceId, id],
+  );
+  return rows[0] ? toGroupSummary(rows[0]) : null;
+}
+
+export type GroupMessage = {
+  id: string;
+  role: "user" | "agent";
+  agentId: string | null;
+  content: string;
+  status: "stored" | "completed" | "unavailable" | "failed";
+  createdAt: string;
+};
+
+/** A group chat's messages, oldest first (the newest 300). */
+export async function listGroupMessages(
+  identity: ProductIdentity,
+  groupId: string,
+): Promise<GroupMessage[]> {
+  const rows = await queryAs<{
+    id: string;
+    author_role: "user" | "agent";
+    agent_id: string | null;
+    content: string;
+    status: GroupMessage["status"];
+    created_at: string | Date;
+  }>(
+    identity.userId,
+    `select * from (
+       select m.id, m.author_role, m.agent_id, m.content, m.status, m.created_at
+         from osirus.group_chat_messages m
+         join osirus.group_chats g on g.id = m.group_chat_id
+        where m.group_chat_id = $1::uuid and g.workspace_id = $2::uuid
+        order by m.created_at desc
+        limit 300
+     ) recent order by created_at asc`,
+    [groupId, identity.workspaceId],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    role: row.author_role,
+    agentId: row.agent_id,
+    content: row.content,
+    status: row.status,
+    createdAt: new Date(row.created_at).toISOString(),
+  }));
+}
+
+/** Marks a group chat as active now, for the order of the lists. */
+export async function touchGroupChat(identity: ProductIdentity, id: string) {
+  await queryAs(
+    identity.userId,
+    `update osirus.group_chats set updated_at = now()
+      where id = $1::uuid and workspace_id = $2::uuid`,
+    [id, identity.workspaceId],
+  );
+}
+
+export type BotConversation = { id: string; title: string; updatedAt: string };
+
+/** One bot's own conversations (chat threads its answers are in). */
+export async function listBotConversations(
+  identity: ProductIdentity,
+  agentId: string,
+): Promise<BotConversation[]> {
+  const rows = await queryAs<{
+    id: string;
+    title: string;
+    updated_at: string | Date;
+  }>(
+    identity.userId,
+    `select s.id, s.title, s.updated_at
+       from osirus.sessions s
+      where s.workspace_id = $1::uuid and s.archived_at is null
+        and s.surface = 'bot'
+        and exists (
+          select 1 from osirus.messages m
+           where m.session_id = s.id and m.metadata->>'botId' = $2
+        )
+      order by s.updated_at desc
+      limit 30`,
+    [identity.workspaceId, agentId],
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    title: row.title,
+    updatedAt: new Date(row.updated_at).toISOString(),
+  }));
+}
+
+/**
+ * The newest turns from this bot's other conversations, oldest first, for
+ * its memory (lib/agents/recollection.ts). Only the asking person's own
+ * threads count, so teammates never see each other's chats; archived ones
+ * are forgotten.
+ */
+export async function botRecollectionTurns(
+  identity: ProductIdentity,
+  agentId: string,
+  excludeSessionId: string | null,
+) {
+  const rows = await queryAs<{
+    title: string;
+    role: "user" | "assistant";
+    content: string;
+  }>(
+    identity.userId,
+    `select title, role, content from (
+       select s.title, m.role, m.content, m.created_at
+         from osirus.messages m
+         join osirus.sessions s on s.id = m.session_id
+        where s.workspace_id = $1::uuid and s.archived_at is null
+          and s.created_by = $4::uuid and s.surface = 'bot'
+          and m.metadata->>'botId' = $2
+          and m.role in ('user', 'assistant')
+          and ($3::uuid is null or s.id <> $3::uuid)
+        order by m.created_at desc
+        limit 16
+     ) recent order by created_at asc`,
+    [identity.workspaceId, agentId, excludeSessionId, identity.userId],
+  );
+  return rows.map((row) => ({
+    sessionTitle: row.title,
+    role: row.role,
+    content: row.content,
+  }));
+}

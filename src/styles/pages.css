@@ -495,6 +495,18 @@
   font-size: var(--text-sm);
 }
 
+.form-error > p {
+  margin: 0;
+}
+
+.form-error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-4);
+  margin-top: var(--space-2) !important;
+  font-weight: var(--weight-medium);
+}
+
 .form-notice {
   color: var(--color-success, var(--color-text));
   font-size: var(--text-sm);

@@ -1248,3 +1248,8 @@ export function intelligenceLabFixture(): LabView {
     ],
   };
 }
+
+/** An ISO time `ms` before now, for fixture rows. */
+export function ago(ms: number) {
+  return new Date(Date.now() - ms).toISOString();
+}

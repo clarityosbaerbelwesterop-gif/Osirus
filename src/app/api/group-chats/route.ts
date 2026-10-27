@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { guardWrite, json } from "@/lib/product/api";
-import { createGroupChat } from "@/lib/agents/store";
+import { apiIdentity, guardWrite, json } from "@/lib/product/api";
+import { createGroupChat, listGroupChats } from "@/lib/agents/store";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -9,6 +9,13 @@ const schema = z.object({
   title: z.string().trim().min(1).max(120),
   agentIds: z.array(z.string().uuid()).min(1).max(12),
 });
+
+/** The workspace's group chats, most recently active first. */
+export async function GET() {
+  const identity = await apiIdentity();
+  if (!identity) return json({ error: "unauthorized" }, 401);
+  return json({ chats: await listGroupChats(identity) });
+}
 
 export async function POST(request: Request) {
   const guard = await guardWrite(request, {
