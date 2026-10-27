@@ -663,10 +663,13 @@ describe("gated gateways", () => {
         });
       if (call.url === SHORTAPI_LIST)
         return Response.json({
-          data: [
-            { id: "6a0439", model: "anthropic/claude-opus-4.7" },
-            { id: "69e8ab", model: "openai/gpt-image-2/text-to-image" },
-          ],
+          code: 0,
+          data: {
+            list: [
+              { id: "6a0439", model_name: "anthropic/claude-opus-4.7" },
+              { id: "69e8ab", model_name: "openai/gpt-image-2/text-to-image" },
+            ],
+          },
         });
       return new Response("not found", { status: 404 });
     });
@@ -677,12 +680,16 @@ describe("gated gateways", () => {
     process.env.SHORTAPI_API_KEY = "short-key";
     process.env.OSIRUS_SERVED_MODELS =
       "kunya:claude-sonnet-5-5,kunya:gpt-6-luna";
-    const { impl } = lists();
+    const { impl, calls } = lists();
     const { models } = await listGatewayModels({ fetchImpl: impl });
     expect(models.map((m) => m.ref).sort()).toEqual([
       "kunya:claude-sonnet-5-5",
       "kunya:gpt-6-luna",
     ]);
+    // Served models need no list call (Kunya's free plan allows about 20
+    // calls an hour), and read like the vendor writes them.
+    expect(calls.filter((call) => call.url === KUNYA_MODELS)).toHaveLength(0);
+    expect(models.map((m) => m.name)).toContain("Claude Sonnet 5.5");
     // The probe sees the whole chat list: no image or live-audio entries,
     // ShortAPI by its callable model name.
     const all = await listGatewayModels({ fetchImpl: impl, unserved: true });

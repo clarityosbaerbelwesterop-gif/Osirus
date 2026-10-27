@@ -33,11 +33,12 @@ const checks: Record<string, (answer: string) => boolean> = {
   [TRAP]: (answer: string) =>
     /\b9[.,]9\b/.test(answer) && !/\b9[.,]11\b/.test(answer.slice(-40)),
 };
-// Gated gateways rate-limit bursts (Kunya: about 14 calls in two minutes):
-// one call at a time, a pause between calls, a capped number per gateway.
+// Gated gateways rate-limit hard (Kunya's free plan: about 20 calls an hour,
+// then "retry_after": 3600): one call at a time with a pause, a capped
+// number per gateway, the seeds (measured before) with one question and new
+// candidates with both, and a stop at the first rate limit.
 const GATED_PER_PROVIDER = 8;
 const GATED_GAP_MS = 3_000;
-const GATED_RETRY_MS = 25_000;
 // Verified top models kept: the strongest paid ones and, for the free plan,
 // the strongest free ones.
 const KEEP_FREE = 4;
@@ -108,8 +109,8 @@ const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms));
 
 /**
  * A gated gateway: its seeds, then its strongest listed models, one at a
- * time, both questions each. Stops at a missing balance (the whole account
- * is unfunded) or at a second rate limit in a row (measured another time).
+ * time. Stops at a missing balance (the whole account is unfunded) or at a
+ * rate limit (measured another time; the last list stays).
  */
 async function probeGated(provider: string, own: GatewayModel[]) {
   const seeds = (GATED_SEEDS[provider as keyof typeof GATED_SEEDS] ?? [])
@@ -121,21 +122,14 @@ async function probeGated(provider: string, own: GatewayModel[]) {
     ...ranked.filter((model) => !seeds.includes(model)),
   ].slice(0, GATED_PER_PROVIDER);
   const results: Result[] = [];
-  let limited = 0;
   for (const model of queue) {
-    let first = await probe(model);
+    const first = await probe(model);
     if (first.outcome === "rate_limited") {
-      await sleep(GATED_RETRY_MS);
-      first = await probe(model);
-    }
-    if (first.outcome === "rate_limited") {
-      limited += 1;
       results.push(first);
-      if (limited >= 2) break;
-      continue;
+      break;
     }
-    limited = 0;
-    if (first.correct) {
+    if (first.correct && seeds.includes(model)) results.push(first);
+    else if (first.correct) {
       await sleep(GATED_GAP_MS);
       const second = await probe(model, TRAP);
       results.push({
@@ -184,7 +178,7 @@ it("finds the top-class models the keys can really use", async () => {
   const { models, providers } = await listGatewayModels();
   for (const provider of providers)
     console.log(
-      `provider ${provider.id}: ${provider.ok ? "listed" : "list unreadable"}, ${provider.models} chat models`,
+      `provider ${provider.id}: ${provider.ok ? "listed" : `list unreadable${provider.status ? ` (HTTP ${provider.status})` : ""}`}, ${provider.models} chat models`,
     );
   // Bytez and the gated gateways are probed below, on their own terms.
   const gatedIds = providers
@@ -235,10 +229,20 @@ it("finds the top-class models the keys can really use", async () => {
     : [];
   const gatedResults: Result[] = [];
   for (const id of gatedIds) {
-    const rows = await probeGated(
-      id,
-      unserved.filter((model) => model.provider === id),
-    );
+    const listed = unserved.filter((model) => model.provider === id);
+    const spec = providerById(id);
+    // An unreadable list (a rate limit on it, say): the seeds still get asked.
+    const seeds = GATED_SEEDS[id as keyof typeof GATED_SEEDS] ?? [];
+    const own =
+      listed.length || !spec
+        ? listed
+        : parseProviderModels(
+            spec,
+            seeds.map((seed) =>
+              id === "shortapi" ? { model: seed } : { id: seed },
+            ),
+          );
+    const rows = await probeGated(id, own);
     for (const row of rows)
       console.log(
         `${row.correct ? "PASS " : "FAIL "} ${row.ref} (gated, ${tierOf({ id: row.ref, rank: row.rank })}) ${row.ms} ms ${row.outcome}`,
