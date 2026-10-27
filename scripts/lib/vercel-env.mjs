@@ -297,6 +297,28 @@ export function staleTargets(environments, key, targets, sinceMs, gitBranch) {
   );
 }
 
+/**
+ * Rows of `key` the sync did not update since `sinceMs`, among those that
+ * apply only to synced targets: older duplicates Vercel's upsert left behind
+ * (two production rows of one key, with different values, were seen). Which
+ * of them a deployment reads is undefined, so they get the synced value too.
+ */
+export function outdatedRows(environments, key, targets, sinceMs, gitBranch) {
+  return environments.filter((environment) => {
+    const rowTargets = environmentTargets(environment);
+    return (
+      Boolean(environment.id) &&
+      Number(environment.updatedAt ?? 0) < sinceMs &&
+      rowTargets.length > 0 &&
+      rowTargets.every(
+        (target) =>
+          targets.includes(target) &&
+          environmentApplies(environment, key, target, gitBranch),
+      )
+    );
+  });
+}
+
 /** Branch-pinned preview rows for `key`: they override the general row. */
 export function branchPinnedRows(environments, key) {
   return environments

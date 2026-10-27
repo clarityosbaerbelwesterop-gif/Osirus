@@ -1,4 +1,5 @@
 export type VercelEnvironmentRow = {
+  id?: string;
   key: string;
   target?: string | string[];
   gitBranch?: string | null;
@@ -86,6 +87,14 @@ export function staleTargets(
   sinceMs: number,
   gitBranch?: string,
 ): string[];
+
+export function outdatedRows(
+  environments: VercelEnvironmentRow[],
+  key: string,
+  targets: string[],
+  sinceMs: number,
+  gitBranch?: string,
+): VercelEnvironmentRow[];
 
 export function branchPinnedRows(
   environments: VercelEnvironmentRow[],

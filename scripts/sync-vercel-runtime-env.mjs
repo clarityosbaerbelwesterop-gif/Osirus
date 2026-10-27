@@ -6,6 +6,7 @@ import {
   hasAnyValue,
   MODEL_ROLE_KEYS,
   optionalSecret,
+  outdatedRows,
   parseModelPolicy,
   parseTargetList,
   probeChatModel,
@@ -623,6 +624,38 @@ await vercelRequest(
     body: JSON.stringify(variables),
   },
 );
+
+// Older duplicate rows of a synced key get the same value, so every row of
+// it agrees whichever one a deployment reads. Nothing is deleted.
+const upsertedResponse = await vercelRequest(
+  `/v10/projects/${encodeURIComponent(projectId)}/env?${query}`,
+);
+const upserted = Array.isArray(upsertedResponse.envs)
+  ? upsertedResponse.envs
+  : [];
+for (const variable of variables) {
+  for (const row of outdatedRows(
+    upserted,
+    variable.key,
+    targets,
+    syncStartedAt,
+    syncGitBranch,
+  )) {
+    await vercelRequest(
+      `/v9/projects/${encodeURIComponent(projectId)}/env/${encodeURIComponent(row.id)}?${query}`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({
+          value: variable.value,
+          comment: variable.comment,
+        }),
+      },
+    );
+    console.log(
+      `${variable.key}: aligned an older ${[row.target].flat().join("+")} row`,
+    );
+  }
+}
 
 // Verify from Vercel itself -- names, targets and timestamps only, never
 // values -- that all three keys and every model role now cover every
