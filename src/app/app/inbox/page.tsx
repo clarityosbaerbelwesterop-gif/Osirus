@@ -6,6 +6,10 @@ import { listApprovals } from "@/lib/product/approvals";
 import { listNotifications } from "@/lib/product/notifications";
 import { requireProductSession } from "@/lib/product/session";
 import { approvalView } from "@/lib/ui/approval-view";
+import {
+  parseSessionSurface,
+  sessionHref as surfaceSessionHref,
+} from "@/lib/product/surfaces";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Inbox" };
@@ -15,16 +19,16 @@ type Tab = "needs-you" | "completed" | "failed" | "updates";
 const TABS: Array<{ id: Tab; label: string; empty: string }> = [
   {
     id: "needs-you",
-    label: "Needs you",
-    empty: "Nothing needs you right now.",
+    label: "Wartet auf dich",
+    empty: "Gerade wartet nichts auf dich.",
   },
   {
     id: "completed",
-    label: "Completed",
-    empty: "No completed automations yet.",
+    label: "Erledigt",
+    empty: "Noch keine erledigten Automationen.",
   },
-  { id: "failed", label: "Failed", empty: "Nothing failed." },
-  { id: "updates", label: "Updates", empty: "No updates." },
+  { id: "failed", label: "Fehlgeschlagen", empty: "Nichts fehlgeschlagen." },
+  { id: "updates", label: "Neuigkeiten", empty: "Keine Neuigkeiten." },
 ];
 
 export default async function InboxPage({
@@ -42,8 +46,15 @@ export default async function InboxPage({
     listApprovals(identity, "pending", 50),
   ]);
 
-  const sessionHref = (sessionId: string | null) =>
-    sessionId ? `/app?session=${sessionId}` : null;
+  // A Code or Rouge Agent run opens on its own page, where its approval
+  // card is; a plain link to /app would open the chat instead.
+  const sessionHref = (sessionId: string | null, surface?: unknown) =>
+    sessionId
+      ? surfaceSessionHref({
+          id: sessionId,
+          surface: parseSessionSurface(surface),
+        })
+      : null;
 
   // Pending approvals are live state, not notifications: they leave the list
   // the moment they are decided or expire.
@@ -52,9 +63,10 @@ export default async function InboxPage({
     return {
       id: `approval:${view.id}`,
       kind: "approval_pending",
-      title: `Approve: ${view.title}`,
-      body: row.objective ? `For “${row.objective}”` : view.scope,
-      href: sessionHref(row.session_id) ?? "/app/approvals",
+      title: `Freigabe: ${view.title}`,
+      body: row.objective ? `Für „${row.objective}“` : view.scope,
+      href:
+        sessionHref(row.session_id, row.session_surface) ?? "/app/approvals",
       read: false,
       createdAt: view.createdAt ?? new Date().toISOString(),
     };
@@ -67,7 +79,7 @@ export default async function InboxPage({
     href:
       n.kind === "connector_expired"
         ? "/app/connections"
-        : (sessionHref(n.sessionId) ??
+        : (sessionHref(n.sessionId, n.sessionSurface) ??
           (n.automationId ? "/app/automations" : null)),
     read: n.read,
     createdAt: n.createdAt,
@@ -110,9 +122,9 @@ export default async function InboxPage({
   return (
     <PageFrame
       title="Inbox"
-      lede="Only what needs you or finished while you were away. Routine progress stays in each conversation."
+      lede="Nur, was auf dich wartet oder fertig wurde, während du weg warst. Der laufende Fortschritt bleibt in der jeweiligen Unterhaltung."
     >
-      <nav className="filter-tabs" aria-label="Inbox sections">
+      <nav className="filter-tabs" aria-label="Bereiche der Inbox">
         {TABS.map((item) => (
           <Link
             key={item.id}
