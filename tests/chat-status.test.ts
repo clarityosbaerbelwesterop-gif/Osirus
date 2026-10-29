@@ -59,15 +59,17 @@ function view(overrides: Partial<RunView> = {}): RunView {
 
 describe("chat run status", () => {
   it("uses only the five customer states", () => {
-    expect(chatRunPresentation("created").label).toBe("Starting");
-    expect(chatRunPresentation("queued").label).toBe("Starting");
-    expect(chatRunPresentation("running").label).toBe("Working");
-    expect(chatRunPresentation("planning").label).toBe("Working");
-    expect(chatRunPresentation("verifying").label).toBe("Working");
-    expect(chatRunPresentation("waiting_for_approval").label).toBe("Needs you");
-    expect(chatRunPresentation("completed").label).toBe("Done");
-    expect(chatRunPresentation("failed").label).toBe("Couldn't finish");
-    expect(chatRunPresentation("cancelled").label).toBe("Couldn't finish");
+    expect(chatRunPresentation("created").label).toBe("Startet");
+    expect(chatRunPresentation("queued").label).toBe("Startet");
+    expect(chatRunPresentation("running").label).toBe("Arbeitet");
+    expect(chatRunPresentation("planning").label).toBe("Arbeitet");
+    expect(chatRunPresentation("verifying").label).toBe("Arbeitet");
+    expect(chatRunPresentation("waiting_for_approval").label).toBe(
+      "Wartet auf dich",
+    );
+    expect(chatRunPresentation("completed").label).toBe("Fertig");
+    expect(chatRunPresentation("failed").label).toBe("Nicht abgeschlossen");
+    expect(chatRunPresentation("cancelled").label).toBe("Nicht abgeschlossen");
   });
 
   it("uses the honest failure sentence and not a stage name", () => {
@@ -97,7 +99,7 @@ describe("RunCard while a run is in progress", () => {
         onOpenWorkbench: () => undefined,
       }),
     );
-    expect(html).toContain(">Working<");
+    expect(html).toContain(">Arbeitet<");
     expect(html).toContain('role="status"');
     expect(html).not.toContain("1 of 7");
     expect(html).not.toContain("run-progress");
@@ -122,7 +124,7 @@ describe("RunCard while a run is in progress", () => {
         onOpenWorkbench: null,
       }),
     );
-    expect(html).toContain("Couldn&#x27;t finish");
+    expect(html).toContain("Nicht abgeschlossen");
     expect(html).toContain("This step ran out of time.");
     expect(html).not.toContain("Ground the objective:");
   });

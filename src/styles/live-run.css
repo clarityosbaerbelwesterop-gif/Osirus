@@ -1,0 +1,169 @@
+/*
+ * The live run (Rouge Agent and Code): the surface's orb, the step it is on,
+ * and a short feed of what it just did. Warm for the Rouge Agent, cool for
+ * Code. Motion stops under reduced motion.
+ */
+
+.live-run {
+  --live-a: hsl(350 85% 60%);
+  --live-b: hsl(286 70% 62%);
+  position: relative;
+  display: grid;
+  gap: 10px;
+  margin-top: var(--space-2);
+  padding: 14px 16px 16px;
+  overflow: hidden;
+  border: 1px solid color-mix(in oklab, var(--live-a) 22%, var(--color-border));
+  border-radius: 16px;
+  background:
+    radial-gradient(
+      120% 140% at 0% 0%,
+      color-mix(in oklab, var(--live-a) 9%, transparent),
+      transparent 60%
+    ),
+    var(--color-surface);
+}
+
+.live-run[data-kind="coding"] {
+  --live-a: hsl(192 85% 52%);
+  --live-b: hsl(228 80% 64%);
+}
+
+.live-run[data-waiting="true"] {
+  --live-a: hsl(38 92% 55%);
+  --live-b: hsl(18 90% 60%);
+}
+
+.live-run-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.live-run-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.live-run-now {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: var(--color-text);
+  font-weight: 560;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  background: linear-gradient(
+      100deg,
+      var(--color-text) 0%,
+      var(--color-text) 40%,
+      color-mix(in oklab, var(--live-a) 70%, var(--color-text)) 50%,
+      var(--color-text) 60%,
+      var(--color-text) 100%
+    )
+    0 0 / 250% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation:
+    live-shimmer 2.6s linear infinite,
+    live-in 360ms var(--ease-out) both;
+}
+
+.live-run-meta {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.live-run-feed {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0 0 0 46px;
+  list-style: none;
+}
+
+.live-run-feed li {
+  position: relative;
+  padding-left: 14px;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: 1.4;
+  opacity: calc(1 - var(--age, 0) * 0.22);
+  animation: live-in 420ms var(--ease-out) both;
+}
+
+.live-run-feed li::before {
+  content: "";
+  position: absolute;
+  top: 0.55em;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--live-a) 55%, var(--color-text-muted));
+}
+
+.live-run-sheen {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(
+      90deg,
+      transparent 0%,
+      var(--live-a) 35%,
+      var(--live-b) 65%,
+      transparent 100%
+    )
+    0 0 / 45% 100% no-repeat;
+  animation: live-sheen 1.9s var(--ease-in-out, ease-in-out) infinite;
+}
+
+.live-run[data-waiting="true"] .live-run-sheen {
+  animation-duration: 3.2s;
+}
+
+@keyframes live-shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -150% 0;
+  }
+}
+
+@keyframes live-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+}
+
+@keyframes live-sheen {
+  from {
+    background-position: -60% 0;
+  }
+  to {
+    background-position: 160% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-run-now,
+  .live-run-feed li,
+  .live-run-sheen {
+    animation: none;
+  }
+  .live-run-now {
+    background: none;
+    -webkit-text-fill-color: currentColor;
+  }
+}

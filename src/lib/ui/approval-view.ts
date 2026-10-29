@@ -46,11 +46,11 @@ const TARGET_KEYS = [
 ];
 
 const STATUS_LABEL: Record<ApprovalView["status"], string> = {
-  requested: "Waiting for you",
-  approved: "Approved",
-  rejected: "Rejected",
-  expired: "Expired",
-  cancelled: "Cancelled",
+  requested: "Wartet auf dich",
+  approved: "Freigegeben",
+  rejected: "Abgelehnt",
+  expired: "Abgelaufen",
+  cancelled: "Abgebrochen",
 };
 
 function flatten(

@@ -49,9 +49,12 @@ export function ApprovalCard({
     if (response?.ok) onDecided();
     else if (response?.status === 404)
       setError(
-        "This request is no longer open. It may have expired or been decided already.",
+        "Diese Anfrage ist nicht mehr offen. Sie ist abgelaufen oder wurde schon entschieden.",
       );
-    else setError("Your decision was not recorded. Try again.");
+    else
+      setError(
+        "Deine Entscheidung wurde nicht gespeichert. Bitte versuche es noch einmal.",
+      );
   };
 
   const [target, setTarget] = useState(approval.intent?.target ?? "");
@@ -104,11 +107,21 @@ export function ApprovalCard({
           <footer className="approval-actions">
             <button
               type="button"
+              className="btn btn-sm btn-secondary"
+              disabled={busy !== null}
+              onClick={() => void decide("rejected")}
+            >
+              <X size={14} aria-hidden="true" />
+              {busy === "rejected" ? "Wird abgelehnt …" : "Ablehnen"}
+            </button>
+            <button
+              type="button"
               className="btn btn-sm btn-primary"
               disabled={busy !== null || !target.trim()}
               onClick={yes}
             >
-              Yes
+              <Check size={14} aria-hidden="true" />
+              {busy === "approved" ? "Wird erlaubt …" : "Erlauben"}
             </button>
           </footer>
         ) : null}
@@ -130,7 +143,7 @@ export function ApprovalCard({
       disabled={busy !== null}
     >
       <Check size={14} aria-hidden="true" />
-      {busy === "approved" ? "Approving…" : "Approve"}
+      {busy === "approved" ? "Wird freigegeben …" : "Freigeben"}
     </button>
   );
 
@@ -152,7 +165,7 @@ export function ApprovalCard({
         )}
         <div className="approval-heading">
           <p className="overline">
-            {approval.decidable ? "Approval needed" : approval.statusLabel}
+            {approval.decidable ? "Freigabe nötig" : approval.statusLabel}
           </p>
           <h3 id={`approval-title-${approval.id}`}>{approval.title}</h3>
         </div>
@@ -162,18 +175,18 @@ export function ApprovalCard({
       <dl className="approval-facts">
         {approval.why ? (
           <div>
-            <dt>Why</dt>
+            <dt>Warum</dt>
             <dd>{approval.why}</dd>
           </div>
         ) : null}
         {approval.target ? (
           <div>
-            <dt>Target</dt>
+            <dt>Ziel</dt>
             <dd className="wrap-anywhere mono">{approval.target}</dd>
           </div>
         ) : null}
         <div>
-          <dt>Scope</dt>
+          <dt>Umfang</dt>
           <dd>{approval.scope}</dd>
         </div>
       </dl>
@@ -182,7 +195,7 @@ export function ApprovalCard({
         <details className="disclosure">
           <summary>
             <ChevronRight size={14} aria-hidden="true" className="chevron" />
-            Exact input ({approval.details.length})
+            Genaue Eingabe ({approval.details.length})
           </summary>
           <dl className="approval-details">
             {approval.details.map((detail, index) => (
@@ -200,7 +213,7 @@ export function ApprovalCard({
           <span className="subtle approval-expiry">
             {approval.expiresAt ? (
               <>
-                Expires <RelativeTime value={approval.expiresAt} />
+                Läuft ab <RelativeTime value={approval.expiresAt} />
               </>
             ) : null}
           </span>
@@ -211,22 +224,22 @@ export function ApprovalCard({
             onClick={() => void decide("rejected")}
           >
             <X size={14} aria-hidden="true" />
-            {busy === "rejected" ? "Rejecting…" : "Reject"}
+            {busy === "rejected" ? "Wird abgelehnt …" : "Ablehnen"}
           </button>
           {highRisk ? (
             <ConfirmDialog
               trigger={approveButton}
-              title={`Approve: ${approval.title}?`}
+              title={`${approval.title} freigeben?`}
               description={
                 <>
                   <p>{approval.scope}.</p>
                   {approval.target ? (
-                    <p className="wrap-anywhere">Target: {approval.target}</p>
+                    <p className="wrap-anywhere">Ziel: {approval.target}</p>
                   ) : null}
-                  <p>This approval covers this exact input only.</p>
+                  <p>Die Freigabe gilt nur für genau diese Eingabe.</p>
                 </>
               }
-              confirmLabel="Approve and continue"
+              confirmLabel="Freigeben und fortfahren"
               tone="primary"
               onConfirm={() => void decide("approved")}
             />
@@ -238,7 +251,7 @@ export function ApprovalCard({
               onClick={() => void decide("approved")}
             >
               <Check size={14} aria-hidden="true" />
-              {busy === "approved" ? "Approving…" : "Approve"}
+              {busy === "approved" ? "Wird freigegeben …" : "Freigeben"}
             </button>
           )}
         </footer>

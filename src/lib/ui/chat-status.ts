@@ -6,7 +6,7 @@ import type { Tone } from "./labels";
  */
 
 export type ChatRunLabel =
-  "Starting" | "Working" | "Needs you" | "Done" | "Couldn't finish";
+  "Startet" | "Arbeitet" | "Wartet auf dich" | "Fertig" | "Nicht abgeschlossen";
 
 export function chatRunPresentation(status: string | null | undefined): {
   label: ChatRunLabel;
@@ -16,26 +16,30 @@ export function chatRunPresentation(status: string | null | undefined): {
   switch (status) {
     case "created":
     case "queued":
-      return { label: "Starting", tone: "accent", line: "Starting" };
+      return { label: "Startet", tone: "accent", line: "Startet …" };
     case "waiting_for_approval":
       return {
-        label: "Needs you",
+        label: "Wartet auf dich",
         tone: "warning",
-        line: "Waiting for your approval.",
+        line: "Wartet auf deine Freigabe.",
       };
     case "blocked":
-      return { label: "Needs you", tone: "warning", line: "Waiting for you." };
+      return {
+        label: "Wartet auf dich",
+        tone: "warning",
+        line: "Wartet auf dich.",
+      };
     case "completed":
-      return { label: "Done", tone: "success", line: "Done" };
+      return { label: "Fertig", tone: "success", line: "Fertig" };
     case "failed":
     case "cancelled":
       return {
-        label: "Couldn't finish",
+        label: "Nicht abgeschlossen",
         tone: "danger",
-        line: "Couldn't finish",
+        line: "Konnte nicht abgeschlossen werden.",
       };
     default:
-      return { label: "Working", tone: "accent", line: "Working" };
+      return { label: "Arbeitet", tone: "accent", line: "Arbeitet …" };
   }
 }
 

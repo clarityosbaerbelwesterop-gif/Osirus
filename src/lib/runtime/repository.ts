@@ -1411,6 +1411,58 @@ export class RuntimeRepository {
     return rows[0] ?? null;
   }
 
+  /**
+   * Release stages parked on an approval nobody can decide any more.
+   *
+   * The gate files an approval as soon as a tool asks, but the stage parks
+   * only when its slice ends, often seconds later. A decision taken in that
+   * gap found no waiting stage to release, and the stage then parked on an
+   * approval that was already decided: "Needs you" with nothing to approve,
+   * for good. The same holds for a request that expired undecided. Such a
+   * stage goes back to blocked; its next claim asks the gate again, which
+   * answers the decision or files a fresh request.
+   */
+  async releaseDecidedApprovalWaits(runId: string) {
+    const rows = await queryAs<{ id: string }>(
+      this.actorId,
+      `with released as (
+         update osirus.run_stages s
+            set status = 'blocked',
+                runnable_after = null
+          where s.run_id = $1::uuid
+            and s.status = 'waiting'
+            and coalesce(s.output->>'waitingOn', 'approval') = 'approval'
+            and not exists (
+              select 1
+                from osirus.approvals a
+               where a.stage_id = s.id
+                 and a.status = 'requested'
+                 and (a.expires_at is null or a.expires_at > now())
+            )
+          returning s.id
+       ), resumed as (
+         update osirus.runs r
+            set status = 'running'
+          where r.id = $1::uuid
+            and r.status = 'waiting_for_approval'
+            and exists (select 1 from released)
+            and not exists (
+              select 1
+                from osirus.run_stages s
+               where s.run_id = r.id
+                 and s.status = 'waiting'
+                 and coalesce(s.output->>'waitingOn', 'approval')
+                     in ('approval', 'human')
+                 and s.id not in (select id from released)
+            )
+          returning r.id
+       )
+       select id from released`,
+      [runId],
+    );
+    return rows.length;
+  }
+
   /** Coding-surface permission only. Other surfaces are not updated. */
   async setCodingPermission(runId: string, permission: "ask" | "accept-edits") {
     const rows = await queryAs<{ id: string }>(

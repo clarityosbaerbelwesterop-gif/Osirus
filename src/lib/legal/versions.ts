@@ -11,9 +11,9 @@ export const LEGAL_DOCUMENTS = ["terms", "eula", "privacy"] as const;
 export type LegalDocument = (typeof LEGAL_DOCUMENTS)[number];
 
 export const LEGAL_VERSIONS: Record<LegalDocument, string> = {
-  terms: "2026-10-24",
-  eula: "2026-10-24",
-  privacy: "2026-10-27",
+  terms: "2026-10-29",
+  eula: "2026-10-29",
+  privacy: "2026-10-29",
 };
 
 export type AcceptanceRow = {

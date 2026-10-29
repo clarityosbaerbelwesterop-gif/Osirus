@@ -44,7 +44,10 @@ describe("cookies page", () => {
     expect(html).toContain("1 Jahr");
     expect(html).toContain("SameSite=Lax");
     expect(html).toContain("HttpOnly");
-    // No Web Storage is used anywhere in src/; the page must say so.
+    // The page lists the Web Storage keys the app uses (Code model choice,
+    // model list cache).
+    expect(html).toContain("osirus.code.model");
+    expect(html).toContain("osirus.models.v3");
     expect(html).toContain("localStorage");
     expect(html).toContain("sessionStorage");
     expect(html).toContain("osirus-consent");

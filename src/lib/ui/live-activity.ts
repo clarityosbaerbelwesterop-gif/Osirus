@@ -57,7 +57,7 @@ export function liveAgentPills(input: {
   return pills;
 }
 
-const WORKING = new Set(["Starting", "Working"]);
+const WORKING = new Set(["Startet", "Arbeitet"]);
 
 /**
  * Motion only while the run is actually working. Needs you, done, and

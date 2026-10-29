@@ -62,6 +62,22 @@ export async function GET(
     throw error;
   }
 
+  if (
+    snapshot.run.status === "waiting_for_approval" &&
+    !snapshot.run.pausedAt &&
+    !snapshot.run.cancelRequested &&
+    !snapshot.approvals.some((row) => row.status === "requested")
+  ) {
+    // Waiting on an approval that is already decided (or expired): release
+    // the stage so this poll drives it instead of showing "Needs you" with
+    // nothing to approve.
+    const released = await repository
+      .releaseDecidedApprovalWaits(parsed.data.runId)
+      .catch(() => 0);
+    if (released > 0)
+      snapshot = await repository.getSnapshot(parsed.data.runId);
+  }
+
   const nudge = pollNudge(snapshot);
   const crossSite =
     request.headers.get("sec-fetch-site")?.toLowerCase() === "cross-site";

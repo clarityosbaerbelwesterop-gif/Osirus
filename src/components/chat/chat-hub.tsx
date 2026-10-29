@@ -32,7 +32,7 @@ import { DEFAULT_PRODUCT_MODEL_ID } from "@/config/recommendations";
 import { productModelOrDefault } from "@/lib/models/allowlist";
 import { isSessionId, shouldApplyRunSnapshot } from "@/lib/ui/snapshot-gate";
 import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
-import { liveAgentPills, showWorkingMotion } from "@/lib/ui/live-activity";
+import { liveAgentPills } from "@/lib/ui/live-activity";
 import { chatSlash } from "@/lib/coding/intent";
 import { botRuntimeBody } from "@/lib/product/bot-run";
 import {
@@ -40,7 +40,7 @@ import {
   type SessionSurface,
 } from "@/lib/product/surfaces";
 import { FreeQuotaPanel } from "../settings/plan-offer";
-import { WorkingMotion } from "./working-motion";
+import { LiveRunStarting } from "../run-status/live-run";
 import { deriveRunView, TERMINAL } from "@/lib/ui/run-view";
 import {
   autoOpenWorkbench,
@@ -838,24 +838,11 @@ export function ChatHub(props: {
                       onOpenWorkbench={() => setWorkbenchOpen(true)}
                     />
                   ) : running ? (
-                    <p className="run-now subtle" role="status">
-                      Starting
-                    </p>
+                    <LiveRunStarting kind="agent" />
                   ) : null
                 }
               />
             )}
-            <WorkingMotion
-              active={
-                !props.screenshotLayout &&
-                showWorkingMotion({
-                  label:
-                    chatStatus?.label ??
-                    (running && !liveView ? "Starting" : null),
-                  paused: Boolean(snapshot?.run.pausedAt),
-                })
-              }
-            />
             <div ref={streamEnd} />
           </div>
         </div>

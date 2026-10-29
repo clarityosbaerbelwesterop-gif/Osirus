@@ -12,7 +12,13 @@ export const dynamic = "force-dynamic";
 export default async function CodingPage({
   searchParams,
 }: {
-  searchParams: Promise<{ session?: string; new?: string }>;
+  searchParams: Promise<{
+    session?: string;
+    new?: string;
+    repo?: string;
+    branch?: string;
+    task?: string;
+  }>;
 }) {
   const { identity } = await requireProductSession();
   const params = await searchParams;
@@ -48,6 +54,15 @@ export default async function CodingPage({
       initialModel={selection?.model ?? null}
       initialPermission={
         control.permission === "accept-edits" ? "accept-edits" : "ask"
+      }
+      handoff={
+        params.repo || params.task
+          ? {
+              repo: params.repo?.slice(0, 200) ?? null,
+              branch: params.branch?.slice(0, 200) ?? null,
+              task: params.task?.slice(0, 1500) ?? null,
+            }
+          : null
       }
       freeQuotaEmpty={freeQuotaEmpty}
       freeQuotaAvailableAt={quota?.availableAt?.toISOString() ?? null}

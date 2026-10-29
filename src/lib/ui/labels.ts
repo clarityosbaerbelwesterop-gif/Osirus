@@ -7,32 +7,32 @@
 export type Tone = "neutral" | "accent" | "success" | "warning" | "danger";
 
 const ARM_LABEL: Record<string, string> = {
-  general: "General",
-  thinking: "Analysis",
-  coding: "Coding",
-  research: "Research",
-  math_science: "Math & science",
-  building: "Building",
+  general: "Allgemein",
+  thinking: "Analyse",
+  coding: "Code",
+  research: "Recherche",
+  math_science: "Mathematik & Naturwissenschaft",
+  building: "Bauen",
 };
 
 export function armLabel(armId: string | null | undefined) {
-  if (!armId) return "General";
+  if (!armId) return "Allgemein";
   return ARM_LABEL[armId] ?? humanize(armId);
 }
 
 const RUN_STATUS: Record<string, { label: string; tone: Tone }> = {
-  created: { label: "Starting", tone: "accent" },
-  planning: { label: "Planning", tone: "accent" },
-  queued: { label: "Queued", tone: "neutral" },
-  running: { label: "Working", tone: "accent" },
-  waiting_for_approval: { label: "Needs your approval", tone: "warning" },
-  verifying: { label: "Verifying", tone: "accent" },
-  repairing: { label: "Repairing", tone: "accent" },
-  blocked: { label: "Waiting", tone: "warning" },
-  cancelling: { label: "Cancelling", tone: "neutral" },
-  cancelled: { label: "Cancelled", tone: "neutral" },
-  failed: { label: "Failed", tone: "danger" },
-  completed: { label: "Completed", tone: "success" },
+  created: { label: "Startet", tone: "accent" },
+  planning: { label: "Plant", tone: "accent" },
+  queued: { label: "In der Warteschlange", tone: "neutral" },
+  running: { label: "Arbeitet", tone: "accent" },
+  waiting_for_approval: { label: "Wartet auf deine Freigabe", tone: "warning" },
+  verifying: { label: "Prüft", tone: "accent" },
+  repairing: { label: "Bessert nach", tone: "accent" },
+  blocked: { label: "Wartet", tone: "warning" },
+  cancelling: { label: "Wird abgebrochen", tone: "neutral" },
+  cancelled: { label: "Abgebrochen", tone: "neutral" },
+  failed: { label: "Fehlgeschlagen", tone: "danger" },
+  completed: { label: "Fertig", tone: "success" },
 };
 
 export function runStatus(status: string | null | undefined) {
@@ -68,13 +68,81 @@ export function stageState(status: string | null | undefined): StageState {
 }
 
 export const STAGE_STATE_LABEL: Record<StageState, string> = {
-  pending: "Pending",
-  running: "In progress",
-  waiting: "Waiting",
-  done: "Done",
-  failed: "Failed",
-  skipped: "Skipped",
+  pending: "Ausstehend",
+  running: "Läuft",
+  waiting: "Wartet",
+  done: "Erledigt",
+  failed: "Fehlgeschlagen",
+  skipped: "Übersprungen",
 };
+
+const STAGE_LABEL: Record<string, string> = {
+  "Ground the objective": "Ziel verstehen",
+  "Understand objective": "Ziel verstehen",
+  "Retrieve internal context": "Kontext abrufen",
+  "Retrieve relevant context": "Kontext abrufen",
+  "Select skills": "Fähigkeiten wählen",
+  "Select progressive skills": "Fähigkeiten wählen",
+  "Plan execution": "Vorgehen planen",
+  "Prepare execution plan": "Vorgehen planen",
+  "Model the task and plan it": "Aufgabe erfassen und planen",
+  "Ground the coding task": "Code-Aufgabe verstehen",
+  "Ground coding task": "Code-Aufgabe verstehen",
+  "Open the coding workspace": "Arbeitsumgebung öffnen",
+  "Produce the answer": "Antwort erarbeiten",
+  "Execute response": "Antwort erarbeiten",
+  "Verify the result": "Ergebnis prüfen",
+  "Verify response contract": "Ergebnis prüfen",
+  "Verify the analysis": "Analyse prüfen",
+  "Verify against the acceptance contract": "Gegen die Anforderungen prüfen",
+  "Verify against the acceptance contract again":
+    "Erneut gegen die Anforderungen prüfen",
+  "Run the repository's checks": "Prüfungen des Repositorys ausführen",
+  "Save and stop the workspace": "Arbeitsumgebung sichern und schließen",
+  "Preview and browser QA": "Vorschau und Browser-Test",
+  "Present the analysis": "Analyse aufbereiten",
+  "Analyse the task": "Aufgabe analysieren",
+  "Parse the problem": "Problem erfassen",
+  "Parse math or science problem": "Problem erfassen",
+  "Formalize the problem": "Problem formalisieren",
+  "Design the deliverable": "Ergebnis entwerfen",
+  "Decompose research question": "Forschungsfrage zerlegen",
+  "Inspect data objective": "Datenziel prüfen",
+  "Understand computer-use objective": "Ziel im Browser verstehen",
+  "Understand multimodal objective": "Ziel verstehen",
+};
+
+const ACTIVITY_LABEL: Record<string, string> = {
+  Planning: "Plant den Lauf",
+  "Planned the run": "Lauf geplant",
+  "Planned the research": "Recherche geplant",
+  "Selected capabilities": "Fähigkeiten ausgewählt",
+  "Selected skills": "Vorgehen ausgewählt",
+  "Searched memory": "Gedächtnis durchsucht",
+  "Task analysed": "Aufgabe analysiert",
+  "Calling model": "Fragt das Modell",
+  "Model response received": "Antwort des Modells erhalten",
+  "Answer ready": "Antwort steht",
+  "A critic reviewed the answer": "Ein Prüfer hat die Antwort gegengelesen",
+  Completed: "Fertig",
+  Failed: "Fehlgeschlagen",
+  Cancelled: "Abgebrochen",
+  "Waiting for approval": "Wartet auf Freigabe",
+};
+
+/** A runtime activity line in the person's language; free text stays. */
+export function activityLabel(summary: string) {
+  const known = ACTIVITY_LABEL[summary];
+  if (known) return known;
+  const workspace = summary.match(/^Workspace ready with (.+)$/);
+  if (workspace) return `Arbeitsumgebung bereit: ${workspace[1]}`;
+  return summary;
+}
+
+/** A stage name as a person reads it; unknown names stay as written. */
+export function stageLabel(name: string) {
+  return STAGE_LABEL[name] ?? name;
+}
 
 const VERDICT: Record<string, { label: string; tone: Tone }> = {
   verified: { label: "Verified", tone: "success" },
@@ -93,33 +161,43 @@ export function verdict(status: string | null | undefined) {
 }
 
 const TOOL_LABEL: Record<string, string> = {
-  "git.deliver": "Push a branch to GitHub",
-  "attachments.search": "Search the attached files",
-  "computer.inspect": "Use the app in a browser",
-  "world.query": "Look up what this workspace knows",
-  "vercel.deployments": "List Vercel deployments",
-  "neon.projects": "List Neon projects",
-  "supabase.projects": "List Supabase projects",
-  "sandbox.preview": "Start a preview server",
-  "sandbox.write": "Write a file in the sandbox",
-  "sandbox.read": "Read a file in the sandbox",
-  "sandbox.list": "List sandbox files",
-  "compute.run": "Run a computation",
-  "data.analyze": "Analyze data",
-  "research.search": "Search the web",
-  "research.read": "Read a web page",
-  "research.sources": "List sources",
-  "workspace.tree": "List repository files",
-  "workspace.read": "Read a repository file",
-  "workspace.search": "Search the repository",
-  "workspace.write": "Write a repository file",
-  "workspace.replace": "Edit a repository file",
-  "workspace.delete": "Delete a repository file",
-  "workspace.rename": "Rename a repository file",
-  "workspace.diff": "Show the changes",
-  "workspace.commands": "List the repository's commands",
-  "workspace.run": "Run a command",
-  "workspace.analyze_failure": "Analyze a failing check",
+  "git.deliver": "Branch zu GitHub pushen",
+  "attachments.search": "Angehängte Dateien durchsuchen",
+  "computer.inspect": "App im Browser bedienen",
+  "world.query": "Wissen des Workspace abfragen",
+  "vercel.deployments": "Vercel-Deployments auflisten",
+  "neon.projects": "Neon-Projekte auflisten",
+  "supabase.projects": "Supabase-Projekte auflisten",
+  "sandbox.preview": "Vorschau-Server starten",
+  "sandbox.write": "Datei in der Sandbox schreiben",
+  "sandbox.read": "Datei in der Sandbox lesen",
+  "sandbox.list": "Dateien der Sandbox auflisten",
+  "compute.run": "Berechnung ausführen",
+  "data.analyze": "Daten analysieren",
+  "research.search": "Im Web suchen",
+  "research.read": "Webseite lesen",
+  "research.sources": "Quellen auflisten",
+  "workspace.tree": "Dateien des Repositorys auflisten",
+  "workspace.read": "Datei im Repository lesen",
+  "workspace.search": "Repository durchsuchen",
+  "workspace.write": "Datei im Repository schreiben",
+  "workspace.replace": "Datei im Repository bearbeiten",
+  "workspace.delete": "Datei im Repository löschen",
+  "workspace.rename": "Datei im Repository umbenennen",
+  "workspace.diff": "Änderungen anzeigen",
+  "workspace.commands": "Befehle des Repositorys auflisten",
+  "workspace.run": "Befehl ausführen",
+  "workspace.analyze_failure": "Fehlgeschlagene Prüfung analysieren",
+  "github.repos": "GitHub-Repositories auflisten",
+  "github.repo": "GitHub-Repository ansehen",
+  "github.file": "Datei auf GitHub lesen",
+  "github.repo.create": "GitHub-Repository anlegen",
+  "github.file.write": "Datei auf GitHub schreiben",
+  "github.pull_request": "Pull Request öffnen",
+  "github.issue": "Issue anlegen",
+  "bots.list": "Bots des Workspace auflisten",
+  "bots.ask": "Einen Bot fragen",
+  "code.handoff": "Aufgabe an Code übergeben",
 };
 
 export function toolLabel(toolId: string | null | undefined, title?: string) {
@@ -134,20 +212,20 @@ export function toolLabel(toolId: string | null | undefined, title?: string) {
 }
 
 const EFFECT_LABEL: Record<string, string> = {
-  read: "Reads data only",
-  write: "Changes files inside the isolated sandbox",
-  external: "Acts outside Osirus, on a system you connected",
+  read: "Liest nur Daten",
+  write: "Ändert Dateien in der abgeschotteten Sandbox",
+  external: "Wirkt außerhalb von Osirus, auf einem verbundenen System",
 };
 
 export function effectLabel(effect: string | null | undefined) {
-  return EFFECT_LABEL[effect ?? ""] ?? "Effect not declared";
+  return EFFECT_LABEL[effect ?? ""] ?? "Wirkung nicht angegeben";
 }
 
 const RISK: Record<string, { label: string; tone: Tone }> = {
-  low: { label: "Low risk", tone: "neutral" },
-  medium: { label: "Medium risk", tone: "warning" },
-  high: { label: "High risk", tone: "danger" },
-  critical: { label: "Critical risk", tone: "danger" },
+  low: { label: "Geringes Risiko", tone: "neutral" },
+  medium: { label: "Mittleres Risiko", tone: "warning" },
+  high: { label: "Hohes Risiko", tone: "danger" },
+  critical: { label: "Kritisches Risiko", tone: "danger" },
 };
 
 export function risk(level: string | null | undefined) {
@@ -172,7 +250,9 @@ export function failureMessage(
   if (byClass?.provider) return byClass.message;
   const byError = classifyFailureText(lastError ?? "");
   if (byError?.provider) return byError.message;
-  return byClass?.message ?? byError?.message ?? "This step failed.";
+  return (
+    byClass?.message ?? byError?.message ?? "Dieser Schritt ist fehlgeschlagen."
+  );
 }
 
 function classifyFailureText(
@@ -191,24 +271,24 @@ function providerFailureText(raw: string): string | null {
   // "Primary x: insufficient_credit / Fallback y: rate_limited" ends in a
   // transient failure and must be described as one.
   if (/capacity_deferred/.test(text))
-    return "Model capacity is reserved for interactive requests right now. This work resumes automatically.";
+    return "Die Modellkapazität ist gerade für direkte Anfragen reserviert. Diese Arbeit geht automatisch weiter.";
   if (/rate_limit|rate limited|rate-limit|\b429\b/.test(text))
-    return "The model provider is limiting requests right now. The run waits and retries automatically; you can also try again in a few minutes.";
+    return "Der Modellanbieter drosselt gerade die Anfragen. Der Lauf wartet und versucht es automatisch erneut; du kannst es auch in ein paar Minuten noch einmal probieren.";
   if (
     /provider_unavailable|bad_response_status_code|unavailable|\b503\b|\b502\b/.test(
       text,
     )
   )
-    return "The model provider is temporarily unavailable. The run can be retried; no work was lost.";
+    return "Der Modellanbieter ist vorübergehend nicht erreichbar. Der Lauf kann wiederholt werden; es ging keine Arbeit verloren.";
   // A permanent refusal says the provider will not serve this deployment at
   // all until something changes on the account: the message must not claim a
   // temporary outage will fix it (OSIRUS-01).
   if (/insufficient_credit|balance|credit|\b402\b|quota exceeded/.test(text))
-    return "The model provider declined the request because the account's free quota or credit is exhausted. This is not a temporary outage and no work was lost: the run can be retried once provider access is restored. If you keep seeing this, contact the operator.";
+    return "Der Modellanbieter hat die Anfrage abgelehnt, weil das Kontingent oder Guthaben des Kontos aufgebraucht ist. Das ist keine vorübergehende Störung, und es ging keine Arbeit verloren: Der Lauf kann wiederholt werden, sobald der Zugang wieder besteht. Wenn das öfter passiert, wende dich an den Betreiber.";
   if (/credential_rejected|unauthorized|\b401\b|\b403\b/.test(text))
-    return "The model provider rejected the deployment's credentials. This needs an operator to fix; retrying will not help.";
+    return "Der Modellanbieter hat die Zugangsdaten abgelehnt. Das muss der Betreiber beheben; ein neuer Versuch hilft nicht.";
   if (/model_not_configured|provider_not_configured/.test(text))
-    return "The model runtime is missing a configuration value. This needs an operator to fix; retrying will not help.";
+    return "Der Modellumgebung fehlt eine Einstellung. Das muss der Betreiber beheben; ein neuer Versuch hilft nicht.";
   return null;
 }
 
@@ -216,15 +296,15 @@ function genericFailureText(raw: string): string | null {
   const text = raw.toLowerCase();
   if (!text.trim()) return null;
   if (/timeout|timed out|wall_clock/.test(text))
-    return "This step ran out of time.";
-  if (/budget/.test(text)) return "This run reached its budget.";
+    return "Für diesen Schritt hat die Zeit nicht gereicht.";
+  if (/budget/.test(text)) return "Dieser Lauf hat sein Budget erreicht.";
   if (/approval_rejected|rejected/.test(text))
-    return "An action was rejected, so this step stopped.";
+    return "Eine Aktion wurde abgelehnt, deshalb hat dieser Schritt angehalten.";
   if (/agent_loop_exhausted|bound_reached/.test(text))
-    return "Osirus could not finish this step within its limits.";
+    return "Osirus konnte diesen Schritt nicht innerhalb seiner Grenzen abschließen.";
   if (/action_left_task|task_left/.test(text))
-    return "The coding run stopped because an action left the task.";
-  if (/cancel/.test(text)) return "This step was cancelled.";
+    return "Die Code-Aufgabe hat angehalten, weil eine Aktion die Aufgabe verlassen hat.";
+  if (/cancel/.test(text)) return "Dieser Schritt wurde abgebrochen.";
   return null;
 }
 
@@ -254,15 +334,16 @@ export function relativeTime(iso: string | null | undefined, now = Date.now()) {
   const seconds = Math.round((now - at) / 1000);
   if (seconds < 0) {
     const ahead = -seconds;
-    if (ahead < 60) return "in under a minute";
-    if (ahead < 3600) return `in ${Math.round(ahead / 60)}m`;
-    if (ahead < 86_400) return `in ${Math.round(ahead / 3600)}h`;
-    return `in ${Math.round(ahead / 86_400)}d`;
+    if (ahead < 60) return "in unter einer Minute";
+    if (ahead < 3600) return `in ${Math.round(ahead / 60)} Min.`;
+    if (ahead < 86_400) return `in ${Math.round(ahead / 3600)} Std.`;
+    return `in ${Math.round(ahead / 86_400)} Tagen`;
   }
-  if (seconds < 45) return "just now";
-  if (seconds < 3600) return `${Math.max(1, Math.round(seconds / 60))}m ago`;
-  if (seconds < 86_400) return `${Math.round(seconds / 3600)}h ago`;
-  if (seconds < 7 * 86_400) return `${Math.round(seconds / 86_400)}d ago`;
+  if (seconds < 45) return "gerade eben";
+  if (seconds < 3600)
+    return `vor ${Math.max(1, Math.round(seconds / 60))} Min.`;
+  if (seconds < 86_400) return `vor ${Math.round(seconds / 3600)} Std.`;
+  if (seconds < 7 * 86_400) return `vor ${Math.round(seconds / 86_400)} Tagen`;
   return new Date(at).toISOString().slice(0, 10);
 }
 
