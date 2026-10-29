@@ -25,6 +25,7 @@ export default function NotFound() {
           <Link href="/legal/impressum">Impressum</Link>
           <Link href="/legal/privacy">Datenschutz</Link>
           <Link href="/legal/terms">AGB</Link>
+          <Link href="/kuendigen">Verträge hier kündigen</Link>
         </div>
       </section>
     </main>

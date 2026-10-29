@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import "@fontsource-variable/inter";
 import "./globals.css";
 import { parseTheme, THEME_COOKIE } from "@/lib/ui/preferences";
-import { publicSiteUrl } from "./site-url";
+import { publicSiteUrl, searchVerification } from "./site-url";
 
 export const metadata: Metadata = {
   metadataBase: publicSiteUrl(),
@@ -11,6 +11,7 @@ export const metadata: Metadata = {
   description:
     "Osirus: dein KI-Team für Chat, autonome Aufgaben und Code. Jede Aktion nach außen wartet auf deine Freigabe.",
   robots: { index: true, follow: true },
+  verification: searchVerification(),
   openGraph: {
     type: "website",
     siteName: "Osirus",

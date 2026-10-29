@@ -3,4 +3,5 @@ export type NotificationKind =
   | "automation_completed"
   | "automation_failed"
   | "run_blocked"
-  | "connector_expired";
+  | "connector_expired"
+  | "cancellation_received";

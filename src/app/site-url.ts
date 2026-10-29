@@ -23,3 +23,15 @@ export function publicSiteUrl(): URL {
 export function absoluteUrl(path: string): string {
   return new URL(path, publicSiteUrl()).toString();
 }
+
+/**
+ * Search Console ownership as a meta tag, from GOOGLE_SITE_VERIFICATION (the
+ * token Google shows for the "HTML tag" method). Unset: no tag; verifying the
+ * domain by DNS needs none.
+ */
+export function searchVerification(
+  token = process.env.GOOGLE_SITE_VERIFICATION,
+): { google: string } | undefined {
+  const value = token?.trim();
+  return value && /^[\w-]{10,100}$/.test(value) ? { google: value } : undefined;
+}

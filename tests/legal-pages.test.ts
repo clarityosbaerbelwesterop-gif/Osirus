@@ -118,5 +118,23 @@ describe("legal pages", () => {
     expect(html).toContain('href="/legal/terms"');
     expect(html).toContain('href="/legal/eula"');
     expect(html).toContain('href="/legal/cookies"');
+    // § 312k BGB: the cancellation button sits on every legal page.
+    expect(html).toContain('href="/kuendigen"');
+    expect(html).toContain("Verträge hier kündigen");
+  });
+
+  it("terms name the cancellation page and § 312k BGB", () => {
+    const html = render(TermsPage);
+    expect(html).toContain('href="/kuendigen"');
+    expect(html).toContain("Verträge hier kündigen");
+    expect(html).toContain("§ 312k BGB");
+  });
+
+  it("privacy explains what the cancellation page stores and for how long", () => {
+    const html = render(PrivacyPage);
+    expect(html).toContain("Kündigungsseite");
+    expect(html).toContain("§ 312k BGB");
+    expect(html).toContain("E-Mail-Versanddienstleister");
+    expect(html).toContain("§§ 195, 199 BGB");
   });
 });

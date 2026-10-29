@@ -48,6 +48,22 @@ test("GitHub sign-in reaches GitHub (no GitHub account used)", async ({
   );
 });
 
+test("cancellation button: from the landing page to the form, without sign-in", async ({
+  page,
+}) => {
+  // Only opens the page; a real declaration is never sent from here.
+  await page.goto("/");
+  await page.getByRole("link", { name: "Verträge hier kündigen" }).click();
+  await page.waitForURL(/\/kuendigen$/);
+  await expect(
+    page.getByRole("heading", { name: "Verträge hier kündigen" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("Vor- und Nachname")).toBeVisible();
+  await expect(
+    page.getByRole("button", { name: "Jetzt kündigen" }),
+  ).toBeEnabled();
+});
+
 async function send(page: Page, path: string, body?: unknown) {
   return page.request.fetch(path, {
     method: body === undefined ? "GET" : "POST",

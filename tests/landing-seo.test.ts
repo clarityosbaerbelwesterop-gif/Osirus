@@ -30,6 +30,7 @@ import { metadata as authMetadata } from "../src/app/auth/layout";
 import { metadata as rootMetadata } from "../src/app/layout";
 import HomePage from "../src/app/page";
 import robots from "../src/app/robots";
+import { searchVerification } from "../src/app/site-url";
 import sitemap from "../src/app/sitemap";
 
 describe("landing page", () => {
@@ -57,6 +58,8 @@ describe("landing page", () => {
     expect(html).toContain('href="/legal/impressum"');
     expect(html).toContain('href="/legal/privacy"');
     expect(html).toContain('href="/legal/terms"');
+    // § 312k BGB: the cancellation button on the landing page.
+    expect(html).toContain('href="/kuendigen"');
     expect(html).toContain('href="/legal/eula"');
     expect(html).toContain('href="/legal/cookies"');
     expect(html).not.toContain('href="#preise"');
@@ -102,6 +105,15 @@ describe("seo surface", () => {
     expect(String(robots().sitemap)).not.toContain("osirus.vercel.app");
   });
 
+  it("adds the Search Console tag only for a well-formed token", () => {
+    expect(searchVerification(undefined)).toBeUndefined();
+    expect(searchVerification("  ")).toBeUndefined();
+    expect(searchVerification('"><script>')).toBeUndefined();
+    expect(searchVerification(" AbC-123_xyz-TOKEN ")).toEqual({
+      google: "AbC-123_xyz-TOKEN",
+    });
+  });
+
   it("sitemap lists the landing page and the legal pages", () => {
     const urls = sitemap().map((entry) => entry.url);
     expect(urls).toEqual([
@@ -112,6 +124,7 @@ describe("seo surface", () => {
       "https://osirus-ai.vercel.app/legal/terms",
       "https://osirus-ai.vercel.app/legal/eula",
       "https://osirus-ai.vercel.app/legal/cookies",
+      "https://osirus-ai.vercel.app/kuendigen",
     ]);
     expect(urls.join("")).not.toContain("osirus.vercel.app");
   });

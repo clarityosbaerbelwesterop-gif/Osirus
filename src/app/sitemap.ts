@@ -9,6 +9,7 @@ const PATHS = [
   "/legal/terms",
   "/legal/eula",
   "/legal/cookies",
+  "/kuendigen",
 ] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
