@@ -9,6 +9,7 @@ import {
   verdict,
   type StageState,
   type Tone,
+  stageLabel,
 } from "./labels";
 import { iso, list, num, obj, str } from "./records";
 
@@ -93,7 +94,7 @@ export function deriveRunView(
     const verdictInfo = verdictStatus ? verdict(verdictStatus) : null;
     return {
       id,
-      name: str(stage, "name") ?? "Step",
+      name: stageLabel(str(stage, "name") ?? "Schritt"),
       state,
       stateLabel: STAGE_STATE_LABEL[state],
       durationMs: state === "pending" ? null : duration(stage, now),
@@ -178,7 +179,7 @@ export type ResumeSummary = {
 /** What changed while the person was away: finished steps and open asks. */
 export function resumeSummary(view: RunView): ResumeSummary {
   const attention = [
-    ...view.pendingApprovals.map((approval) => `Approval: ${approval.title}`),
+    ...view.pendingApprovals.map((approval) => `Freigabe: ${approval.title}`),
     ...(view.failure ? [view.failure.message] : []),
   ];
   return {

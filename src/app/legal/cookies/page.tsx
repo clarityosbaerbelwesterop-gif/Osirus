@@ -13,9 +13,9 @@ export default function CookiesPage() {
     <article className="legal-body" lang="de">
       <h1>Cookie-Hinweis</h1>
       <p>
-        Diese Seite listet sämtliche Cookies von Osirus, ihren Zweck, die
-        Rechtsgrundlage und die Speicherdauer. Sie ergänzt die{" "}
-        <Link href="/legal/privacy">Datenschutzerklärung</Link>.
+        Diese Seite listet sämtliche Cookies und Speicherungen im Browser, die
+        Osirus nutzt, mit Zweck, Rechtsgrundlage und Speicherdauer. Sie ergänzt
+        die <Link href="/legal/privacy">Datenschutzerklärung</Link>.
       </p>
 
       <h2>1. Verantwortliche</h2>
@@ -85,14 +85,62 @@ export default function CookiesPage() {
           </tbody>
         </table>
       </div>
+
+      <h2>3. Speicher im Browser (localStorage, sessionStorage)</h2>
+      <div className="table-wrap" tabIndex={0} aria-label="Browser-Speicher">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Art</th>
+              <th>Zweck</th>
+              <th>Grundlage</th>
+              <th>Dauer</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>osirus.code.model</td>
+              <td>localStorage</td>
+              <td>
+                Das Modell, das du in Code gewählt hast, nur wenn du eines
+                wählst.
+              </td>
+              <td>§ 25 Abs. 2 Nr. 2 TDDDG</td>
+              <td>bis du es änderst oder den Browserspeicher löschst</td>
+            </tr>
+            <tr>
+              <td>osirus.models.v3</td>
+              <td>sessionStorage</td>
+              <td>
+                Kurzzeitige Kopie der Liste verfügbarer Modelle, damit die
+                Auswahl nicht bei jedem Seitenwechsel neu geladen wird. Enthält
+                keine personenbezogenen Daten.
+              </td>
+              <td>§ 25 Abs. 2 Nr. 2 TDDDG</td>
+              <td>bis zum Schließen des Tabs</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
       <p>
-        Die Anwendung nutzt kein localStorage und kein sessionStorage. Analyse-
-        oder Marketing-Cookies gibt es nicht. Sollten jemals optionale Cookies
-        hinzukommen, werden sie erst nach vorheriger Einwilligung („Nur
-        notwendige“ / „Alle akzeptieren“) gemäß § 25 Abs. 1 TDDDG gesetzt.
+        Analyse- oder Marketing-Cookies und vergleichbare Technologien gibt es
+        nicht, ebenso keine Einbindung von Werbe- oder Tracking-Diensten
+        Dritter. Sollten jemals optionale Speicherungen hinzukommen, werden sie
+        erst nach vorheriger Einwilligung („Nur notwendige“ / „Alle
+        akzeptieren“) gemäß § 25 Abs. 1 TDDDG gesetzt.
       </p>
 
-      <h2>3. Rechtsgrundlage ohne Banner-Belästigung</h2>
+      <h2>4. Mikrofon</h2>
+      <p>
+        Für das Diktieren fragt dein Browser nach der Erlaubnis, das Mikrofon zu
+        nutzen. Diese Erlaubnis verwaltet dein Browser; Osirus speichert sie
+        nicht. Du kannst sie in den Einstellungen deines Browsers jederzeit
+        entziehen. Einzelheiten zur Verarbeitung stehen in Abschnitt 11 der{" "}
+        <Link href="/legal/privacy">Datenschutzerklärung</Link>.
+      </p>
+
+      <h2>5. Rechtsgrundlage ohne Banner-Belästigung</h2>
       <p>
         Da Osirus ausschließlich technisch notwendige bzw. ausdrücklich vom
         Nutzer angeforderte Präferenz-Cookies nach § 25 Abs. 2 TDDDG einsetzt,
@@ -101,12 +149,15 @@ export default function CookiesPage() {
         optionalen Drittanbieter-Cookies.
       </p>
 
-      <h2>4. Löschen</h2>
+      <h2>6. Löschen</h2>
       <p>
-        Cookies lassen sich jederzeit in den Browsereinstellungen löschen oder
-        sperren. Ohne das Sitzungs-Cookie ist keine Anmeldung möglich. Ohne die
-        Präferenz-Cookies gelten die Voreinstellungen.
+        Cookies und den Browserspeicher kannst du jederzeit in den
+        Browsereinstellungen löschen oder sperren. Ohne das Sitzungs-Cookie ist
+        keine Anmeldung möglich. Ohne die Präferenzen gelten die
+        Voreinstellungen.
       </p>
+
+      <p>Stand: 29. Oktober 2026.</p>
     </article>
   );
 }

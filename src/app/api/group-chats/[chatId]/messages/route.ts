@@ -10,6 +10,7 @@ import {
   touchGroupChat,
 } from "@/lib/agents/store";
 import { botAnswer } from "@/lib/gateway/answer";
+import { repositoryMaterial } from "@/lib/gateway/repo-material";
 import { chatErrorMessage } from "@/lib/gateway/prompt";
 import { loadProductSession } from "@/lib/product/session";
 import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
@@ -92,10 +93,17 @@ export async function POST(
         ? `Nutzer: ${message.content}`
         : `${nameOf.get(message.agentId ?? "") ?? "Bot"}: ${message.content}`,
     );
+  // A repository the message names is read once for every bot that answers.
+  let repositories = "";
   const groupContext = () =>
-    turns.length
-      ? `Gruppenchat mit ${named.map((agent) => agent.name).join(", ")}. Bisheriger Verlauf:\n\n${turns.join("\n\n").slice(-12_000)}`
-      : null;
+    [
+      turns.length
+        ? `Gruppenchat mit ${named.map((agent) => agent.name).join(", ")}. Bisheriger Verlauf:\n\n${turns.join("\n\n").slice(-12_000)}`
+        : "",
+      repositories.trim(),
+    ]
+      .filter(Boolean)
+      .join("\n\n") || null;
   if (mentioned.length === 0) {
     return json({
       replyRule: "mentions-only",
@@ -125,6 +133,10 @@ export async function POST(
       );
     }
   }
+  repositories = await repositoryMaterial(
+    guard.identity,
+    guard.body.content,
+  ).catch(() => "");
   const byId = new Map(
     members
       .filter((member) => member.agent_id)

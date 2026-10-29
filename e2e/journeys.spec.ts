@@ -216,25 +216,27 @@ test("4. external write: approval card, approve, the run resumes", async ({
   await openSurface(page, "chat-active");
 
   const card = page
-    .getByRole("article", { name: /Push a branch to GitHub/ })
+    .getByRole("article", { name: /Branch zu GitHub pushen/ })
     .first();
   await expect(card).toBeVisible();
-  await expect(card.getByText("High risk")).toBeVisible();
+  await expect(card.getByText("Hohes Risiko")).toBeVisible();
   await expect(
     card.getByText("https://github.com/osirus-demo/stats-lib").first(),
   ).toBeVisible();
 
-  await card.getByRole("button", { name: "Approve" }).click();
+  await card.getByRole("button", { name: "Freigeben" }).click();
   const confirm = page.getByRole("alertdialog");
   await expect(confirm).toBeVisible();
   decided = true;
-  await confirm.getByRole("button", { name: "Approve and continue" }).click();
+  await confirm
+    .getByRole("button", { name: "Freigeben und fortfahren" })
+    .click();
 
   await expect(
     page.getByText("it now averages the two middle values"),
   ).toBeVisible();
   await expect(
-    page.getByRole("article", { name: /Push a branch to GitHub/ }),
+    page.getByRole("article", { name: /Branch zu GitHub pushen/ }),
   ).toHaveCount(0);
   const decision = log.find((entry) => entry.path.includes("/approvals/"));
   expect(decision?.path).toBe(
@@ -890,4 +892,33 @@ test("agents: a chat is shared as a read-only link and can be turned off", async
   await expect(
     dialog.getByRole("button", { name: "Link erstellen und kopieren" }),
   ).toBeVisible();
+});
+
+test("live runs: the Rouge Agent and Code show their orb, the current step and what they just did", async ({
+  page,
+}) => {
+  await mockApis(page);
+  await page.goto("/ui-fixtures/live-runs");
+  const runs = page.locator(".live-run");
+  await expect(runs).toHaveCount(2);
+  const rouge = runs.nth(0);
+  await expect(rouge).toHaveAttribute("data-kind", "agent");
+  await expect(rouge.locator(".orb")).toHaveCount(1);
+  await expect(rouge.getByRole("status")).toHaveText(
+    "Denise nach dem Deployment gefragt",
+  );
+  await expect(
+    rouge.getByText("Florian nach dem Datenmodell gefragt"),
+  ).toBeVisible();
+  await expect(rouge.getByText(/Rouge Agent · seit/)).toBeVisible();
+  const code = runs.nth(1);
+  await expect(code).toHaveAttribute("data-kind", "coding");
+  await expect(code.getByRole("status")).toHaveText(
+    "Fehlenden Test für gerade Längen geschrieben",
+  );
+  // Fixed runtime lines read in German, not as internal event names.
+  await expect(
+    code.getByText("Arbeitsumgebung bereit: osirus-demo/stats-lib"),
+  ).toBeVisible();
+  await expect(page.locator(".effort-motion")).toHaveCount(0);
 });

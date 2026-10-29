@@ -66,11 +66,12 @@ describe("the one coding action", () => {
     expect(html).toContain("diff-add");
     expect(html).toContain("-return false;");
     expect(html).toContain("+return true;");
-    expect(html).toContain(">Yes<");
-    expect(html).not.toContain("Approval needed");
-    expect(html).not.toContain("Reject");
-    expect(html).not.toContain("Low risk");
-    expect(html).not.toContain("Exact input");
+    // One line, a yes and a no; no risk badge, no input dump.
+    expect(html).toContain("Erlauben");
+    expect(html).toContain("Ablehnen");
+    expect(html).not.toContain("Freigabe nötig");
+    expect(html).not.toContain("Geringes Risiko");
+    expect(html).not.toContain("Genaue Eingabe");
     expect(html).not.toContain("<details");
   });
 
@@ -85,9 +86,12 @@ describe("the one coding action", () => {
     expect(action?.text).toBe("schreibt");
   });
 
-  it("asks before a read, an edit, and a command, and lets edits pass", () => {
+  it("asks before an edit and a command, never before a read, and lets edits pass", () => {
     expect(
       codingIntentDecision({ permission: "ask", toolId: "workspace.read" }),
+    ).toBeNull();
+    expect(
+      codingIntentDecision({ permission: "ask", toolId: "workspace.write" }),
     ).toBe("ask");
     expect(
       codingIntentDecision({ permission: "ask", toolId: "workspace.run" }),
@@ -101,7 +105,7 @@ describe("the one coding action", () => {
     expect(
       codingIntentDecision({
         permission: "accept-edits",
-        toolId: "workspace.read",
+        toolId: "workspace.run",
       }),
     ).toBe("ask");
     expect(
@@ -142,12 +146,12 @@ describe("slash commands that already exist", () => {
 
 describe("working motion", () => {
   it("shows only while the run is actually working", () => {
-    expect(showWorkingMotion({ label: "Working" })).toBe(true);
-    expect(showWorkingMotion({ label: "Starting" })).toBe(true);
-    expect(showWorkingMotion({ label: "Needs you" })).toBe(false);
-    expect(showWorkingMotion({ label: "Done" })).toBe(false);
-    expect(showWorkingMotion({ label: "Couldn't finish" })).toBe(false);
-    expect(showWorkingMotion({ label: "Working", paused: true })).toBe(false);
+    expect(showWorkingMotion({ label: "Arbeitet" })).toBe(true);
+    expect(showWorkingMotion({ label: "Startet" })).toBe(true);
+    expect(showWorkingMotion({ label: "Wartet auf dich" })).toBe(false);
+    expect(showWorkingMotion({ label: "Fertig" })).toBe(false);
+    expect(showWorkingMotion({ label: "Nicht abgeschlossen" })).toBe(false);
+    expect(showWorkingMotion({ label: "Arbeitet", paused: true })).toBe(false);
     expect(
       renderToStaticMarkup(createElement(WorkingMotion, { active: false })),
     ).toBe("");

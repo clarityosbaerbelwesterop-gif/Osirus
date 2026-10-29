@@ -477,7 +477,7 @@ describe("honest fallback error reporting", () => {
         `provider_${error!.code}`,
         describeFailureReport(error!.report as never),
       ),
-    ).toContain("limiting requests");
+    ).toContain("drosselt gerade die Anfragen");
     // Operator metadata carries both failures and no credential.
     const metadata = JSON.stringify(failureMetadata(error));
     expect(metadata).toContain("insufficient_credit");

@@ -34,7 +34,9 @@ import {
   modelStatusFixture,
   researchRunFixture,
   shellFixture,
+  liveRunFixture,
 } from "../fixtures";
+import { LiveRunsFixture } from "../live-runs";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -302,6 +304,14 @@ export default async function FixturePage({
             initialRunId={null}
             initialEffort={null}
             initialModel={null}
+          />
+        </AppShell>
+      );
+    case "live-runs":
+      return (
+        <AppShell data={shell}>
+          <LiveRunsFixture
+            snapshots={[liveRunFixture("agent"), liveRunFixture("coding")]}
           />
         </AppShell>
       );

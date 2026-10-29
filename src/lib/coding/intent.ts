@@ -20,8 +20,9 @@ export type IntendedAction = {
 
 const DIFF_CAP = 24;
 
+// Reading the sandbox copy of the person's own repository never asks: a
+// review or audit reads hundreds of files, and a read changes nothing.
 const WATCHED = new Set([
-  "workspace.read",
   "workspace.write",
   "workspace.replace",
   "workspace.delete",
@@ -63,7 +64,7 @@ export function passesOnAcceptEdits(toolId: string | null | undefined) {
 }
 
 /**
- * Ask before a file read, a file edit, or a command on a coding run.
+ * Ask before a file edit, a delete or a command on a coding run; reads pass.
  * Accept-edits lets a file write or replace through. It does not loosen a deny.
  */
 export function codingIntentDecision(input: {

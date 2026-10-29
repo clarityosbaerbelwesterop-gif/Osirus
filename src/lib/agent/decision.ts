@@ -226,5 +226,5 @@ export const DECISION_FORMAT = [
   '  "hypothesisIds": ["only for VERIFY: hypothesis ids this evidence bears on"],',
   '  "evidenceRelation": "supports|contradicts|falsifies, only for VERIFY"',
   "}",
-  "The summary is shown to the user. State the action; do not narrate reasoning.",
+  "The summary is shown to the user as live activity: write it in the language of the objective (German for a German objective), state the action, do not narrate reasoning.",
 ].join("\n");

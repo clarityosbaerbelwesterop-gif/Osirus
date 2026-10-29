@@ -29,8 +29,8 @@ const CAPABILITIES = [
   },
   {
     icon: Users,
-    title: "Zusammenarbeit",
-    text: "Übernimmt Aufträge aus Agents und gibt Code an Code weiter.",
+    title: "Team & Repos",
+    text: "Fragt deine Bots, liest deine GitHub-Repos, schreibt mit Freigabe und übergibt Aufgaben an Code.",
   },
 ];
 
@@ -39,6 +39,7 @@ const TASKS = [
   "Rechne durch, ab welcher Nutzerzahl sich ein eigener GPU-Server gegenüber der Cloud lohnt.",
   "Plane eine Datenbank-Migration mit Rückweg für jeden Schritt.",
   "Baue eine Landingpage mit Anmeldeformular und Bestätigung.",
+  "Finde meine leeren GitHub-Repos und frag meine Bots, wofür wir eines davon nutzen.",
 ];
 
 function RougeHero(props: { onPick: (task: string) => void }) {

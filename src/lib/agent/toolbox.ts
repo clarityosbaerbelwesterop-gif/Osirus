@@ -166,16 +166,42 @@ export async function buildToolbox(
   // grant is not described as if the tools had been used.
   if (!runtime.stores) {
     let connectorRun = false;
+    let agentRun = false;
     try {
       const { codingGrantFromRunInput } = await import("../product/surfaces");
       const input = await context.runtime.repository.getRunInput?.(
         context.work.runId,
       );
-      connectorRun =
-        Boolean(codingGrantFromRunInput(input)) ||
-        (input as { surface?: unknown } | null)?.surface === "agent";
+      agentRun = (input as { surface?: unknown } | null)?.surface === "agent";
+      connectorRun = Boolean(codingGrantFromRunInput(input)) || agentRun;
     } catch {
       connectorRun = false;
+    }
+    if (connectorRun) {
+      // The person's own GitHub grant: reads for both, writes behind the
+      // approval gate.
+      try {
+        const { githubToolsForWorkspace } =
+          await import("../connectors/github-tools");
+        for (const tool of await githubToolsForWorkspace(identity)) {
+          if (!registry.has(tool.id)) registry.register(tool);
+        }
+      } catch {
+        // No GitHub grant this run.
+      }
+    }
+    if (agentRun) {
+      // The Rouge Agent works with the workspace's bots and hands repository
+      // work to Code.
+      try {
+        const { collaborationTools } =
+          await import("../agents/collaboration-tools");
+        for (const tool of collaborationTools(identity)) {
+          if (!registry.has(tool.id)) registry.register(tool);
+        }
+      } catch {
+        // Collaboration tools unavailable this run.
+      }
     }
     if (connectorRun) {
       try {

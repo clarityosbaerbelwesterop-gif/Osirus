@@ -3,6 +3,7 @@ import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 import { serializeQuota } from "@/lib/billing/quota";
 import { botRecollectionTurns, getAgent } from "@/lib/agents/store";
 import { recollectionPrompt } from "@/lib/agents/recollection";
+import { repositoryMaterial } from "@/lib/gateway/repo-material";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
 import { answerCacheKey, cachedAnswer, storeAnswer } from "@/lib/gateway/cache";
 import {
@@ -261,7 +262,7 @@ export async function POST(request: Request) {
   const context = reuseTurn
     ? turns.slice(0, turns.lastIndexOf(lastUser!))
     : turns;
-  const [web, files, recalled] = await Promise.all([
+  const [web, files, recalled, repositories] = await Promise.all([
     webPending,
     fileMaterial(identity, {
       sessionId,
@@ -272,6 +273,8 @@ export async function POST(request: Request) {
     bot
       ? botRecollectionTurns(identity, bot.id, sessionId).catch(() => [])
       : Promise.resolve([]),
+    // A repository the message names is read through the person's grant.
+    repositoryMaterial(identity, body.message).catch(() => ""),
   ]);
   const material = materialPrompt({ web, passages: files.passages });
   if (!reuseTurn) {
@@ -299,7 +302,8 @@ export async function POST(request: Request) {
           botPrompt: bot?.system_prompt ?? null,
         }) +
         (bot ? (recollectionPrompt(bot.name, recalled) ?? "") : "") +
-        material.prompt,
+        material.prompt +
+        repositories,
     },
     ...context,
     { role: "user", content: body.message },

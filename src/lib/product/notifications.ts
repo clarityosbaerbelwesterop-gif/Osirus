@@ -17,6 +17,8 @@ export type NotificationView = {
   automationId: string | null;
   approvalId: string | null;
   sessionId: string | null;
+  /** The surface the run's conversation lives on, to link to the right page. */
+  sessionSurface: string | null;
   read: boolean;
   createdAt: string;
 };
@@ -75,14 +77,17 @@ export async function listNotifications(
     automation_id: string | null;
     approval_id: string | null;
     session_id: string | null;
+    session_surface: string | null;
     read_at: Date | string | null;
     created_at: Date | string;
   }>(
     recipient.userId,
     `select n.id, n.kind, n.title, n.body, n.run_id, n.automation_id,
-            n.approval_id, r.session_id, n.read_at, n.created_at
+            n.approval_id, r.session_id, s.surface as session_surface,
+            n.read_at, n.created_at
        from osirus.notifications n
        left join osirus.runs r on r.id = n.run_id
+       left join osirus.sessions s on s.id = r.session_id
       where n.user_id = $1::uuid and n.workspace_id = $2::uuid
       order by n.created_at desc
       limit $3`,
@@ -101,6 +106,7 @@ export async function listNotifications(
     automationId: row.automation_id,
     approvalId: row.approval_id,
     sessionId: row.session_id,
+    sessionSurface: row.session_surface ?? null,
     read: Boolean(row.read_at),
     createdAt: new Date(row.created_at).toISOString(),
   }));

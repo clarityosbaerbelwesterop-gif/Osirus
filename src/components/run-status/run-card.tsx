@@ -8,6 +8,7 @@ import { resumeSummary } from "@/lib/ui/run-view";
 import { ApprovalCard } from "../approvals/approval-card";
 import { Badge } from "../ui/badge";
 import { StatusIcon } from "../ui/status-icon";
+import { LiveRun } from "./live-run";
 
 /**
  * The run, inline in the conversation. While it is in progress the chat
@@ -52,7 +53,7 @@ export function RunCard({
           </Badge>
           {(!view.live || legacyLive) && view.totalCount ? (
             <span className="subtle tabular">
-              {view.doneCount} of {view.totalCount} steps
+              {view.doneCount} von {view.totalCount} Schritten
             </span>
           ) : null}
         </div>
@@ -72,7 +73,7 @@ export function RunCard({
         <div
           className="run-progress"
           role="progressbar"
-          aria-label="Steps completed"
+          aria-label="Erledigte Schritte"
           aria-valuemin={0}
           aria-valuemax={view.totalCount}
           aria-valuenow={view.doneCount}
@@ -84,9 +85,7 @@ export function RunCard({
       ) : null}
 
       {view.live && !legacyLive ? (
-        <p className="run-now" role="status">
-          {statusLine}
-        </p>
+        <LiveRun view={view} line={statusLine} />
       ) : null}
 
       {(
@@ -95,22 +94,22 @@ export function RunCard({
           : !view.live && resumed && summary.attention.length
       ) ? (
         <div className="run-resume">
-          <p className="overline">Since you were last here</p>
+          <p className="overline">Seit deinem letzten Besuch</p>
           {legacyLive && summary.completed.length ? (
             <p>
-              <span className="subtle">Completed: </span>
+              <span className="subtle">Erledigt: </span>
               {summary.completed.join(" · ")}
             </p>
           ) : null}
           {legacyLive && summary.inProgress ? (
             <p>
-              <span className="subtle">Now: </span>
+              <span className="subtle">Jetzt: </span>
               {summary.inProgress}
             </p>
           ) : null}
           {summary.attention.length ? (
             <p>
-              <span className="subtle">Needs you: </span>
+              <span className="subtle">Wartet auf dich: </span>
               {summary.attention.join(" · ")}
             </p>
           ) : null}
@@ -122,10 +121,10 @@ export function RunCard({
           <summary>
             <ChevronRight size={14} aria-hidden="true" className="chevron" />
             {legacyLive
-              ? "Steps"
+              ? "Schritte"
               : view.live
                 ? "Details"
-                : `Steps (${view.totalCount})`}
+                : `Schritte (${view.totalCount})`}
           </summary>
           <ol className="run-steps">
             {view.stages.map((stage) => {
@@ -192,7 +191,7 @@ export function RunCard({
         <details className="disclosure">
           <summary>
             <ChevronRight size={14} aria-hidden="true" className="chevron" />
-            Activity ({view.evidence.length})
+            Verlauf ({view.evidence.length})
           </summary>
           <ol className="run-evidence">
             {view.evidence.map((item) => (

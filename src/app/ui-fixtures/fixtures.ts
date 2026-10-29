@@ -1253,3 +1253,48 @@ export function intelligenceLabFixture(): LabView {
 export function ago(ms: number) {
   return new Date(Date.now() - ms).toISOString();
 }
+
+/** A run at work, for the live activity of the Rouge Agent and Code. */
+export function liveRunFixture(kind: "agent" | "coding"): RunSnapshot {
+  const base = codingRunFixture("active");
+  const now = Date.now();
+  const run = base.run.id;
+  const steps: Array<[string, string, number]> =
+    kind === "coding"
+      ? [
+          ["capability.selected", "Selected capabilities", 3.2],
+          [
+            "workspace.opened",
+            "Workspace ready with osirus-demo/stats-lib",
+            2.6,
+          ],
+          ["agent.step", "Repository-Struktur erkundet", 2.1],
+          ["agent.step", "src/median.ts gelesen", 1.4],
+          ["agent.step", "Fehlenden Test für gerade Längen geschrieben", 0.4],
+        ]
+      : [
+          ["planning", "Planning", 2.4],
+          ["agent.step", "Leere GitHub-Repositories gesucht", 1.9],
+          ["agent.step", "Florian nach dem Datenmodell gefragt", 1.1],
+          ["agent.step", "Denise nach dem Deployment gefragt", 0.3],
+        ];
+  return {
+    ...base,
+    run: {
+      ...base.run,
+      status: "running",
+      armId: kind === "coding" ? "coding" : "general",
+      objective:
+        kind === "coding"
+          ? base.run.objective
+          : "Finde ein leeres Repo und plane mit Florian und Denise die Datenbank.",
+    },
+    approvals: [],
+    stages: base.stages.map((row) =>
+      row.id === "s-deliver" ? { ...row, status: "running" } : row,
+    ),
+    events: steps.map(([type, summary, min], index) =>
+      event(run, index + 1, type, summary, minutes(min, now)),
+    ),
+  };
+}

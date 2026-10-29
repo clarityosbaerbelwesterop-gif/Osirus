@@ -66,14 +66,14 @@ describe("labels", () => {
     expect(formatDuration(450)).toBe("450ms");
     expect(formatDuration(12_000)).toBe("12s");
     expect(formatDuration(125_000)).toBe("2m 5s");
-    expect(relativeTime(at(3), NOW)).toBe("3m ago");
+    expect(relativeTime(at(3), NOW)).toBe("vor 3 Min.");
     expect(relativeTime(new Date(NOW + 30 * 60_000).toISOString(), NOW)).toBe(
-      "in 30m",
+      "in 30 Min.",
     );
   });
 
   it("names tools in plain language, including MCP tools", () => {
-    expect(toolLabel("git.deliver")).toBe("Push a branch to GitHub");
+    expect(toolLabel("git.deliver")).toBe("Branch zu GitHub pushen");
     expect(toolLabel("mcp:docs-1a2b3c/search_pages")).toContain("MCP");
   });
 
@@ -82,11 +82,13 @@ describe("labels", () => {
       "provider_error",
       '{"error":"insufficient balance for key sk-abc"}',
     );
-    expect(credit).toContain("free quota or credit is exhausted");
+    expect(credit).toContain(
+      "Kontingent oder Guthaben des Kontos aufgebraucht",
+    );
     expect(credit).not.toContain("sk-abc");
-    expect(credit).not.toContain("temporarily unavailable");
+    expect(credit).not.toContain("vorübergehend nicht erreichbar");
     expect(failureMessage("agent_loop_exhausted", "rate limited")).toContain(
-      "limiting requests",
+      "drosselt gerade die Anfragen",
     );
   });
 
@@ -94,22 +96,22 @@ describe("labels", () => {
     // Quota exhaustion is permanent until the account changes; it must not
     // be worded as a temporary outage.
     const credit = failureMessage("provider_insufficient_credit");
-    expect(credit).toContain("quota or credit is exhausted");
-    expect(credit).not.toMatch(/temporarily/i);
+    expect(credit).toContain("Kontingent oder Guthaben");
+    expect(credit).not.toMatch(/vorübergehend nicht erreichbar/i);
     // Credentials and configuration are operator problems.
     expect(failureMessage("provider_credential_rejected")).toContain(
-      "operator",
+      "Betreiber",
     );
     expect(failureMessage("provider_model_not_configured")).toContain(
-      "operator",
+      "Betreiber",
     );
     // A real outage keeps the honest temporary wording.
     expect(failureMessage("provider_provider_unavailable")).toContain(
-      "temporarily unavailable",
+      "vorübergehend nicht erreichbar",
     );
     // Rate limiting is a wait, not a death.
     expect(failureMessage("provider_rate_limited")).toContain(
-      "waits and retries",
+      "wartet und versucht es automatisch erneut",
     );
   });
 });
@@ -141,10 +143,10 @@ describe("approval view", () => {
 
   it("shows what, why, target, scope and risk without JSON", () => {
     const view = approvalView(row, NOW);
-    expect(view.title).toBe("Push a branch to GitHub");
+    expect(view.title).toBe("Branch zu GitHub pushen");
     expect(view.why).toBe("Push the fix and open a pull request.");
     expect(view.target).toBe("https://github.com/o/r");
-    expect(view.scope).toContain("outside Osirus");
+    expect(view.scope).toContain("außerhalb von Osirus");
     expect(view.riskTone).toBe("danger");
     expect(view.decidable).toBe(true);
     const text = JSON.stringify(view.details);
@@ -257,7 +259,7 @@ describe("run view", () => {
     const summary = resumeSummary(view);
     expect(summary.completed).toEqual(["Plan"]);
     expect(summary.inProgress).toBe("Change the code");
-    expect(summary.attention).toEqual(["Approval: Push a branch to GitHub"]);
+    expect(summary.attention).toEqual(["Freigabe: Branch zu GitHub pushen"]);
   });
 
   it("explains a failed run from the attempt's failure class", () => {
@@ -277,7 +279,7 @@ describe("run view", () => {
       NOW,
     );
     expect(view.failure?.stage).toBe("Answer");
-    expect(view.failure?.message).toContain("limiting requests");
+    expect(view.failure?.message).toContain("drosselt gerade die Anfragen");
   });
 });
 

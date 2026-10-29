@@ -23,13 +23,16 @@ export function BotOrb({
   size = 32,
   state = "idle",
   className,
+  hues,
 }: {
   seed: string;
   size?: number;
   state?: OrbState;
   className?: string;
+  /** Fixed colours for a surface's own orb (Rouge Agent, Code). */
+  hues?: [number, number, number];
 }) {
-  const [h1, h2, h3] = orbHues(seed);
+  const [h1, h2, h3] = hues ?? orbHues(seed);
   return (
     <span
       className={cx("orb", `orb-${state}`, className)}

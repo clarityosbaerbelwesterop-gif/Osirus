@@ -7,6 +7,7 @@ export type ApprovalFilter = "pending" | "approved" | "rejected" | "expired";
 export type ApprovalRow = Record<string, unknown> & {
   run_id: string;
   session_id: string | null;
+  session_surface?: string | null;
   objective: string | null;
 };
 
@@ -28,9 +29,11 @@ export async function listApprovals(
     identity.userId,
     `select a.id, a.run_id, a.stage_id, a.action, a.risk, a.status, a.request,
             a.decided_at, a.expires_at, a.created_at,
-            r.session_id, left(r.objective, 200) as objective
+            r.session_id, s.surface as session_surface,
+            left(r.objective, 200) as objective
        from osirus.approvals a
        join osirus.runs r on r.id = a.run_id
+       left join osirus.sessions s on s.id = r.session_id
       where a.workspace_id = $1::uuid and ${where}
       order by a.created_at desc
       limit $2`,

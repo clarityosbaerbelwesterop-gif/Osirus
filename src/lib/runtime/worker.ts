@@ -679,6 +679,21 @@ async function finalizeRunCore(input: {
     };
   }
 
+  // An approval decided while its stage was still running would otherwise
+  // leave the stage parked on nothing a person can decide.
+  if (progress.waitingHuman > 0) {
+    const released = await repository
+      .releaseDecidedApprovalWaits(input.runId)
+      .catch(() => 0);
+    if (released > 0)
+      return {
+        status: "running",
+        reason: "approval_already_decided",
+        settled: progress.settled,
+        total: progress.total,
+      };
+  }
+
   // M40: only a person makes the run "waiting for approval". A run parked
   // on CI, a deployment, an event or the clock is still running; it simply
   // has nothing claimable until its wait ends.

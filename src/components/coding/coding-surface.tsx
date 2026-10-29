@@ -14,16 +14,15 @@ import {
 import { draftAfterSurfaceChange, type EffortId } from "@/lib/product/surfaces";
 import type { RunSnapshot } from "@/lib/runtime/types";
 import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
-import { showWorkingMotion } from "@/lib/ui/live-activity";
 import { deriveRunView } from "@/lib/ui/run-view";
 import { MessageList, type ChatMessage } from "../chat/message-list";
 import { FreeQuotaPanel } from "../settings/plan-offer";
 import { RunCard } from "../run-status/run-card";
+import { LiveRunStarting } from "../run-status/live-run";
 import { useShell } from "../shell/shell-context";
 import { TopBar } from "../shell/top-bar";
 import { Badge } from "../ui/badge";
 import { EffortField } from "./effort-field";
-import { EffortMotion } from "./effort-motion";
 import { Code2, GitBranch, ShieldCheck, Wand2 } from "lucide-react";
 import { ModelPicker } from "../agents-chat/model-picker";
 import { useGatewayModels } from "../agents-chat/use-models";
@@ -50,6 +49,12 @@ export function CodingSurface(props: {
   initialPaused?: boolean;
   initialModel?: string | null;
   initialPermission?: CodingPermission;
+  /** A task the Rouge Agent handed over: repository, branch and text. */
+  handoff?: {
+    repo: string | null;
+    branch: string | null;
+    task: string | null;
+  } | null;
   /** Set by the work page when the free tier is on and its quota is empty. */
   freeQuotaEmpty?: boolean;
   /** When the spent free quota refills (ISO), if known. */
@@ -60,11 +65,13 @@ export function CodingSurface(props: {
   const [messages, setMessages] = useState<ChatMessage[]>(
     props.initialMessages,
   );
-  const [task, setTask] = useState("");
+  const [task, setTask] = useState(props.handoff?.task ?? "");
   const [repos, setRepos] = useState<Repo[] | null>(null);
   const [repoKey, setRepoKey] = useState("");
   const [branches, setBranches] = useState<string[] | null>(null);
   const [branch, setBranch] = useState("");
+  const handoffRepo = props.handoff?.repo?.toLowerCase() ?? null;
+  const handoffBranch = props.handoff?.branch ?? null;
   // Every model a configured key can call; the choice is remembered here.
   const {
     models: gatewayModels,
@@ -84,7 +91,7 @@ export function CodingSurface(props: {
   const [running, setRunning] = useState(
     Boolean(props.initialRunId) && !props.initialPaused,
   );
-  const [activeEffort, setActiveEffort] = useState<EffortId | null>(
+  const [, setActiveEffort] = useState<EffortId | null>(
     props.initialRunId ? props.initialEffort : null,
   );
   const [snapshot, setSnapshot] = useState<RunSnapshot | null>(null);
@@ -117,21 +124,30 @@ export function CodingSurface(props: {
         };
         if (!response.ok || !body.ok || !body.repositories) {
           setRepos([]);
-          setFailure(body.message ?? "Repositories could not be listed.");
+          setFailure(
+            body.message ?? "Repositories konnten nicht geladen werden.",
+          );
           return;
         }
         setRepos(body.repositories);
         if (body.repositories.length === 0) {
-          setFailure("The connected grant has no repositories.");
+          setFailure("Für diese Verbindung ist kein Repository freigegeben.");
         }
+        const handed = handoffRepo
+          ? body.repositories.find(
+              (repo) =>
+                `${repo.owner}/${repo.name}`.toLowerCase() === handoffRepo,
+            )
+          : null;
+        if (handed) setRepoKey(`${handed.owner}/${handed.name}`);
       })
       .catch(() => {
         if (controller.signal.aborted) return;
         setRepos([]);
-        setFailure("Repositories could not be listed.");
+        setFailure("Repositories konnten nicht geladen werden.");
       });
     return () => controller.abort();
-  }, []);
+  }, [handoffRepo]);
 
   useEffect(() => {
     if (!repoKey) return;
@@ -150,23 +166,27 @@ export function CodingSurface(props: {
         };
         if (!response.ok || !body.ok || !body.branches) {
           setBranches([]);
-          setFailure(body.message ?? "Branches could not be listed.");
+          setFailure(body.message ?? "Branches konnten nicht geladen werden.");
           return;
         }
         setBranches(body.branches);
         if (body.branches.length === 0) {
-          setFailure("That repository has no branches.");
+          setFailure(
+            "Dieses Repository hat noch keinen Branch. Lege zuerst einen ersten Commit an, etwa über den Rouge Agent.",
+          );
         } else {
           setFailure(null);
+          if (handoffBranch && body.branches.includes(handoffBranch))
+            setBranch(handoffBranch);
         }
       })
       .catch(() => {
         if (controller.signal.aborted) return;
         setBranches([]);
-        setFailure("Branches could not be listed.");
+        setFailure("Branches konnten nicht geladen werden.");
       });
     return () => controller.abort();
-  }, [repoKey]);
+  }, [repoKey, handoffBranch]);
 
   const refresh = useCallback(async (id: string) => {
     const response = await fetch(`/api/runtime/${id}`, {
@@ -220,7 +240,7 @@ export function CodingSurface(props: {
     return () => document.removeEventListener("click", onClick, true);
   }, [runId, running]);
 
-  const taskText = task.trim() || "Work in the selected repository.";
+  const taskText = task.trim() || "Arbeite im gewählten Repository.";
   const suggestion = routeCodingEffort({
     chosen: null,
     task: taskText,
@@ -233,9 +253,7 @@ export function CodingSurface(props: {
       (item) => `${item.owner}/${item.name}` === repoKey,
     );
     if (!repo || !branch || failure || !branches?.includes(branch)) {
-      setFailure(
-        failure ?? "Choose a repository and a branch before starting.",
-      );
+      setFailure(failure ?? "Wähle zuerst ein Repository und einen Branch.");
       setRunning(false);
       setActiveEffort(null);
       return;
@@ -243,7 +261,7 @@ export function CodingSurface(props: {
     const requestId = crypto.randomUUID();
     const repository = `https://github.com/${repo.owner}/${repo.name}`;
     const objective = [
-      task.trim() || "Work in the selected repository.",
+      task.trim() || "Arbeite im gewählten Repository.",
       repository,
       branch,
     ].join("\n");
@@ -271,7 +289,7 @@ export function CodingSurface(props: {
       const body = (await response?.json().catch(() => ({}))) as {
         message?: string;
       };
-      setFailure(body.message ?? "The coding run did not start.");
+      setFailure(body.message ?? "Die Code-Aufgabe konnte nicht starten.");
       setRunning(false);
       setActiveEffort(null);
       return;
@@ -279,7 +297,7 @@ export function CodingSurface(props: {
     const started = response.headers.get("X-Osirus-Run-Id");
     const startedSession = response.headers.get("X-Osirus-Session-Id");
     if (!started) {
-      setFailure("The coding run did not start.");
+      setFailure("Die Code-Aufgabe konnte nicht starten.");
       setRunning(false);
       setActiveEffort(null);
       return;
@@ -288,6 +306,8 @@ export function CodingSurface(props: {
     setRunning(true);
     setActiveEffort(chosen ?? suggestion);
     setRunId(started);
+    // The task now lives in the thread above; the field is free for the next.
+    setTask("");
     if (startedSession) {
       setSessionId(startedSession);
       shell.upsertSession({
@@ -365,7 +385,7 @@ export function CodingSurface(props: {
           title="Code"
           status={
             paused ? (
-              <Badge tone="warning">Paused</Badge>
+              <Badge tone="warning">Pausiert</Badge>
             ) : status ? (
               <Badge tone={status.tone}>{status.label}</Badge>
             ) : null
@@ -420,13 +440,7 @@ export function CodingSurface(props: {
                 </ol>
               </div>
             )}
-            <EffortMotion
-              effort={activeEffort}
-              active={showWorkingMotion({
-                label: status?.label ?? (running ? "Starting" : null),
-                paused,
-              })}
-            />
+            {running && !view ? <LiveRunStarting kind="coding" /> : null}
             {status ? (
               <p className="sr-only" role="status">
                 {status.label}.{" "}
@@ -447,7 +461,7 @@ export function CodingSurface(props: {
                 else if (slash === "accept-edits")
                   void setPermission("accept-edits");
                 else if (slash === "ask") void setPermission("ask");
-                else setFailure("That is not a command.");
+                else setFailure("Diesen Befehl gibt es nicht.");
                 if (slash !== "unknown") setFailure(null);
                 setTask("");
                 return;
