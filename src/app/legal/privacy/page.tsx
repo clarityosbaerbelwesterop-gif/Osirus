@@ -36,7 +36,7 @@ export default function PrivacyPage() {
         <li>Sprachfunktionen (Diktieren und Vorlesen)</li>
         <li>Geteilte Chats</li>
         <li>Automationen und Benachrichtigungen</li>
-        <li>Abonnements, Testphase und Zahlung</li>
+        <li>Abonnements, Testphase, Zahlung und Kündigung</li>
         <li>Kontingente und Nutzungsdaten</li>
         <li>Sicherheit und Missbrauchsabwehr</li>
         <li>Cookies und Speicher im Browser</li>
@@ -314,7 +314,7 @@ export default function PrivacyPage() {
         Art. 6 Abs. 1 lit. b DSGVO.
       </p>
 
-      <h2>14. Abonnements, Testphase und Zahlung</h2>
+      <h2>14. Abonnements, Testphase, Zahlung und Kündigung</h2>
       <p>
         Für kostenpflichtige Abonnements nutzen wir Stripe. Im Checkout gibst du
         deine Zahlungsdaten direkt bei Stripe ein; Osirus erhält sie nicht,
@@ -325,6 +325,21 @@ export default function PrivacyPage() {
         Abs. 1 lit. b DSGVO, für Rechnungs- und Buchungsdaten Art. 6 Abs. 1 lit.
         c DSGVO in Verbindung mit § 147 AO und § 257 HGB. Stripe ist für die
         Zahlungsabwicklung teils eigenständig verantwortlich.
+      </p>
+      <p>
+        Kündigst du über die Kündigungsseite, speichern wir deine Erklärung so,
+        wie sie eingegangen ist: Name, E-Mail-Adresse, Vertrag, freiwillig eine
+        Kunden- oder Rechnungsnummer, Art der Kündigung, bei einer
+        außerordentlichen Kündigung den Grund, den gewünschten Zeitpunkt sowie
+        Datum und Uhrzeit des Eingangs. Wir ordnen die Kündigung anhand der
+        Anmeldung oder der E-Mail-Adresse deinem Konto und Abonnement zu, setzen
+        das Vertragsende bei Stripe und schicken dir die Bestätigung per E-Mail;
+        ist die angegebene Adresse nicht die deines Kontos, geht die Bestätigung
+        zusätzlich an die Kontoadresse. Zur Abwehr von Missbrauch speichern wir
+        außerdem einen gekürzten Hashwert deiner IP-Adresse, aus dem sich die
+        Adresse nicht zurückrechnen lässt. Rechtsgrundlage ist Art. 6 Abs. 1
+        lit. b und c DSGVO in Verbindung mit § 312k BGB, für den Hashwert Art. 6
+        Abs. 1 lit. f DSGVO (Schutz vor missbräuchlichen Kündigungen).
       </p>
 
       <h2>15. Kontingente und Nutzungsdaten</h2>
@@ -375,6 +390,11 @@ export default function PrivacyPage() {
           <strong>Stripe Payments Europe, Ltd.</strong> und{" "}
           <strong>Stripe, Inc.</strong>: Zahlungsabwicklung, Checkout und
           Kundenportal.
+        </li>
+        <li>
+          <strong>E-Mail-Versanddienstleister:</strong> Versand von
+          Kündigungsbestätigungen und anderen Mitteilungen, die wir dir senden
+          müssen. Auftragsverarbeitung nach Art. 28 DSGVO.
         </li>
         <li>
           <strong>Modellanbieter:</strong> Inhalte, die zur Beantwortung oder
@@ -448,6 +468,11 @@ export default function PrivacyPage() {
           wir, solange dein Konto besteht, weil sie für Abrechnung,
           Nachvollziehbarkeit und Sicherheit gebraucht werden; mit dem Konto
           werden sie gelöscht, soweit keine Aufbewahrungspflicht besteht.
+        </li>
+        <li>
+          Kündigungserklärungen und ihre Bestätigungen bewahren wir als Nachweis
+          bis zum Ablauf der regelmäßigen Verjährungsfrist auf, also drei Jahre
+          ab dem Ende des Jahres, in dem der Vertrag endet (§§ 195, 199 BGB).
         </li>
         <li>Sandboxes für Code bestehen nur für die Dauer eines Auftrags.</li>
         <li>

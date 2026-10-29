@@ -119,3 +119,5 @@ export function branchPinnedRows(
 export function parseTargetList(value: string | undefined): string[];
 
 export function optionalSecret(value: string | undefined): string | undefined;
+
+export function publicSiteOrigin(value: string | undefined): string | undefined;

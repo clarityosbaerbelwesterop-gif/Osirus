@@ -3,6 +3,7 @@
 import {
   CheckCircle2,
   CircleAlert,
+  FileX,
   Inbox,
   PlugZap,
   ShieldAlert,
@@ -34,6 +35,7 @@ const ICON: Record<InboxItem["kind"], { icon: LucideIcon; tone: string }> = {
   automation_failed: { icon: CircleAlert, tone: "tone-danger" },
   run_blocked: { icon: CircleAlert, tone: "tone-danger" },
   connector_expired: { icon: PlugZap, tone: "tone-warning" },
+  cancellation_received: { icon: FileX, tone: "tone-warning" },
 };
 
 export function InboxView({

@@ -92,7 +92,9 @@ export default async function InboxPage({
         .filter(
           (n) =>
             !n.read &&
-            (n.kind === "run_blocked" || n.kind === "connector_expired"),
+            (n.kind === "run_blocked" ||
+              n.kind === "connector_expired" ||
+              n.kind === "cancellation_received"),
         )
         .map(toItem),
     ],
@@ -104,7 +106,10 @@ export default async function InboxPage({
       .map(toItem),
     updates: notifications
       .filter(
-        (n) => n.kind === "connector_expired" || n.kind === "approval_needed",
+        (n) =>
+          n.kind === "connector_expired" ||
+          n.kind === "approval_needed" ||
+          n.kind === "cancellation_received",
       )
       .map(toItem),
   };

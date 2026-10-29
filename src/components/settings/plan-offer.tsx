@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { PLANS, PRICE_TAX_NOTE } from "@/components/marketing/plans";
 import { QuotaBarsLive } from "@/components/motion/quota-bars";
 import {
@@ -66,7 +67,12 @@ export function CurrentPlan({ current }: { current: CurrentPlanInfo }) {
         Aktueller Plan: <strong>{label ?? "Kein Plan aktiv"}</strong>
         {detail ? ` · ${detail}` : ""}
       </p>
-      {current.canManage ? <ManageSubscriptionButton /> : null}
+      <div className="plan-current-actions">
+        {current.canManage ? <ManageSubscriptionButton /> : null}
+        <Link className="plan-cancel-link" href="/kuendigen">
+          Verträge hier kündigen
+        </Link>
+      </div>
     </div>
   );
 }

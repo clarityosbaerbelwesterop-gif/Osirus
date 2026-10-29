@@ -107,6 +107,11 @@ const schema = z.object({
   STRIPE_PRICE_ULTRA_200: z.string().min(1).optional(),
   // Public origin for Checkout/Portal return URLs. Unset: the request origin.
   OSIRUS_PUBLIC_URL: z.string().url().optional(),
+  // Transactional e-mail (cancellation confirmations) through Resend. Unset:
+  // no e-mail is sent and the confirmation page is the only copy.
+  RESEND_API_KEY: z.string().min(1).optional(),
+  /** Sender, e.g. "Osirus <kuendigung@example.de>", on a domain verified at Resend. */
+  OSIRUS_MAIL_FROM: z.string().min(3).max(200).optional(),
 });
 
 // An empty line in a .env file (KEY=) means "not set", not an invalid value.

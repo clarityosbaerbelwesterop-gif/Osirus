@@ -226,6 +226,7 @@ export default async function HomePage() {
         <Link href="/legal/eula">EULA</Link>
         <Link href="/legal/cookies">Cookies</Link>
         <Link href="/sicherheit">Sicherheit</Link>
+        <Link href="/kuendigen">Verträge hier kündigen</Link>
       </footer>
     </main>
   );

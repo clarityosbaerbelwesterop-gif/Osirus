@@ -252,12 +252,17 @@ export default function TermsPage() {
         Ende der laufenden Periode möglich.
       </p>
       <p>
-        (2) Du kündigst in der Anwendung unter Einstellungen über das
+        (2) Du kündigst über die Schaltfläche „Verträge hier kündigen“ auf
+        unserer Website (<Link href="/kuendigen">Kündigungsseite</Link>, ohne
+        Anmeldung erreichbar), in der Anwendung unter Einstellungen über das
         Kundenportal, per E-Mail an{" "}
         <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a> oder in
-        Textform an die oben genannte Anschrift. Nach dem Ende der Periode gilt
-        wieder das kostenlose Kontingent; dein Konto und deine Inhalte bleiben
-        erhalten.
+        Textform an die oben genannte Anschrift. Eine Kündigung über die
+        Kündigungsseite bestätigen wir dir sofort mit Datum und Uhrzeit des
+        Eingangs und dem Zeitpunkt, zu dem der Vertrag endet (§ 312k BGB).
+        Nennst du keinen Zeitpunkt, wirkt die Kündigung zum nächstmöglichen
+        Termin. Nach dem Ende der Periode gilt wieder das kostenlose Kontingent;
+        dein Konto und deine Inhalte bleiben erhalten.
       </p>
       <p>
         (3) Das kostenlose Nutzungsverhältnis kannst du jederzeit beenden, indem
