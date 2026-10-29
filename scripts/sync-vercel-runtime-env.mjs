@@ -10,6 +10,7 @@ import {
   planEnvironmentSync,
   parseTargetList,
   probeChatModel,
+  publicSiteOrigin,
   rankFreeModels,
   resolveRoleModel,
   staleTargets,
@@ -236,6 +237,27 @@ for (const key of GATEWAY_KEYS)
 // Sign-ins that use every model without the free plan's limits (the
 // operator's own keys). A repository variable, not a secret.
 const ownerEmails = optionalSecret(process.env.OSIRUS_OWNER_EMAILS);
+// The public origin (custom domain) for canonical URLs, sitemap, Stripe and
+// e-mail links; the Search Console token; the sender for confirmations.
+// Repository variables, except the Resend key.
+const siteOrigin = publicSiteOrigin(process.env.NEXT_PUBLIC_SITE_URL);
+if (optionalSecret(process.env.NEXT_PUBLIC_SITE_URL) && !siteOrigin)
+  throw new Error(
+    "NEXT_PUBLIC_SITE_URL must be an https origin such as https://osirus.example",
+  );
+const siteVariables = [
+  ["NEXT_PUBLIC_SITE_URL", siteOrigin, "plain"],
+  ["OSIRUS_PUBLIC_URL", siteOrigin, "plain"],
+  [
+    "GOOGLE_SITE_VERIFICATION",
+    optionalSecret(process.env.GOOGLE_SITE_VERIFICATION),
+    "plain",
+  ],
+  ["OSIRUS_MAIL_FROM", optionalSecret(process.env.OSIRUS_MAIL_FROM), "plain"],
+  ["RESEND_API_KEY", optionalSecret(process.env.RESEND_API_KEY), "sensitive"],
+].filter(([, value]) => Boolean(value));
+for (const [key] of siteVariables)
+  console.log(`${key} is present and will be synced to Vercel.`);
 if (lightningKey) {
   console.log("LIGHTNING_AI_API_KEY is present and will be synced to Vercel.");
 }
@@ -585,6 +607,7 @@ const variables = [
         },
       ]
     : []),
+  ...siteVariables.map(([key, value, type]) => ({ key, value, type })),
   ...(stripeSecretKey
     ? [
         {
@@ -677,6 +700,7 @@ const sentOptionalKeys = [
   ["LIGHTNING_AI_API_KEY", lightningKey],
   ...GATEWAY_KEYS.map((key) => [key, optionalSecret(process.env[key])]),
   ["OSIRUS_OWNER_EMAILS", ownerEmails],
+  ...siteVariables.map(([key, value]) => [key, value]),
   ["STRIPE_SECRET_KEY", stripeSecretKey],
   ["STRIPE_WEBHOOK_SECRET", stripeWebhookSecret],
 ]

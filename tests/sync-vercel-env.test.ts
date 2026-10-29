@@ -9,6 +9,7 @@ import {
   parseModelPolicy,
   planEnvironmentSync,
   probeChatModel,
+  publicSiteOrigin,
   rankFreeModels,
   resolveRoleModel,
   staleTargets,
@@ -537,5 +538,24 @@ describe("free chat tiers without the catalog", () => {
       ok: false,
       category: "empty",
     });
+  });
+});
+
+describe("public site origin", () => {
+  it("accepts an https origin and drops a path", () => {
+    expect(publicSiteOrigin("https://osirus.example/")).toBe(
+      "https://osirus.example",
+    );
+    expect(publicSiteOrigin(" https://www.osirus.example/app ")).toBe(
+      "https://www.osirus.example",
+    );
+  });
+
+  it("refuses blanks, http, malformed values and the old host", () => {
+    expect(publicSiteOrigin(undefined)).toBeUndefined();
+    expect(publicSiteOrigin("")).toBeUndefined();
+    expect(publicSiteOrigin("http://osirus.example")).toBeUndefined();
+    expect(publicSiteOrigin("osirus.example")).toBeUndefined();
+    expect(publicSiteOrigin("https://osirus.vercel.app")).toBeUndefined();
   });
 });

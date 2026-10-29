@@ -386,3 +386,21 @@ export function optionalSecret(value) {
   const trimmed = value?.trim();
   return trimmed ? trimmed : undefined;
 }
+
+/**
+ * The public site origin (a custom domain) from the NEXT_PUBLIC_SITE_URL
+ * repository variable: an https origin without path, or undefined. The old
+ * osirus.vercel.app host is refused, as the app itself refuses it.
+ */
+export function publicSiteOrigin(value) {
+  const raw = optionalSecret(value);
+  if (!raw) return undefined;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:" || url.hostname === "osirus.vercel.app")
+      return undefined;
+    return url.origin;
+  } catch {
+    return undefined;
+  }
+}

@@ -92,6 +92,12 @@ jobs:
       FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
       # Sign-ins that use every model without plan limits; a variable, not a secret.
       OSIRUS_OWNER_EMAILS: ${{ vars.OSIRUS_OWNER_EMAILS }}
+      # Custom domain, Search Console and cancellation e-mails (variables,
+      # except the Resend key). Unset: the defaults stay.
+      NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL }}
+      GOOGLE_SITE_VERIFICATION: ${{ vars.GOOGLE_SITE_VERIFICATION }}
+      OSIRUS_MAIL_FROM: ${{ vars.OSIRUS_MAIL_FROM }}
+      RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
       NEON_API_KEY: ${{ secrets.NEON_API_KEY }}
       NEON_PROJECT_ID: ${{ vars.NEON_PROJECT_ID != '' && vars.NEON_PROJECT_ID || 'super-voice-69875601' }}
       STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
