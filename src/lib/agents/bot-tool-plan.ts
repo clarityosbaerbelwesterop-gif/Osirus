@@ -122,3 +122,17 @@ export function parseToolPlan(
       : "Werkzeug nutzen, um die Frage zu beantworten.";
   return { toolId, arguments: args, reason };
 }
+
+/** A failed call, said so the person understands it. */
+export function toolErrorText(error: unknown) {
+  const message = error instanceof Error ? error.message : "tool_failed";
+  if (message.includes("response_too_large"))
+    return "Die Antwort des Werkzeugs war zu groß (über 8 MB). Frag gezielter, etwa nach einem Teil.";
+  if (/timeout|aborted/i.test(message))
+    return "Das Werkzeug hat nicht rechtzeitig geantwortet.";
+  if (message.startsWith("mcp_unauthorized"))
+    return "Der MCP-Server hat den Zugang abgelehnt. Prüfe den Token unter Verbindungen.";
+  if (message === "invalid_input")
+    return "Die Eingabe passte nicht zum Werkzeug.";
+  return message.slice(0, 240);
+}

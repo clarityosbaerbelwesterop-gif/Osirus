@@ -365,7 +365,7 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     expect(created.status()).toBe(201);
     const bot = ((await created.json()) as { agent: { id: string } }).agent;
     const message =
-      "Nutze DeepWiki: Worum geht es im Repository facebook/react? Ein Satz.";
+      "Nutze DeepWiki und frag: Wofür ist das Repository sindresorhus/ky da? Ein Satz.";
     const planned = await streamFrames({ message, botId: bot.id });
     const request = planned.find((frame) => frame.type === "tool_request") as
       | { messageId: string; request: { label: string; status: string } }
