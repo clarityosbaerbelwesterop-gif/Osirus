@@ -24,16 +24,23 @@ type CatalogEntry = { id: string; title: string; summary: string };
 
 const DESCRIPTION_CHARS = 240;
 
-/** The planner prompt: the tools by id, one decision as JSON. */
+/** Short ids the planner answers with: "t1", "t2", ... in catalog order. */
+export function toolAlias(index: number) {
+  return `t${index + 1}`;
+}
+
+/** The planner prompt: the tools by short id, one decision as JSON. */
 export function toolPlanMessages(input: {
   botName: string;
   message: string;
   tools: CatalogEntry[];
 }) {
+  // Short ids, because a model copying a long namespaced id back tends to
+  // change it, and a changed id is no tool at all.
   const list = input.tools
     .map(
-      (tool) =>
-        `- ${tool.id} (${tool.title}): ${tool.summary.replace(/\s+/g, " ").slice(0, DESCRIPTION_CHARS)}`,
+      (tool, index) =>
+        `- ${toolAlias(index)}: ${tool.title} — ${tool.summary.replace(/\s+/g, " ").slice(0, DESCRIPTION_CHARS)}`,
     )
     .join("\n");
   return [
@@ -43,7 +50,7 @@ export function toolPlanMessages(input: {
         `You decide whether the bot "${input.botName}" needs one of the person's connected tools to answer their message.`,
         "Use a tool only when the message asks for something only that tool can provide or do (data in that service, an action there). Small talk, opinions, writing and general knowledge need no tool.",
         "Reply with one JSON object and nothing else:",
-        '{"tool": "<tool id from the list>" | null, "arguments": { ... }, "reason": "<one short German sentence: what the call does>"}',
+        '{"tool": "<short id from the list, e.g. t1>" | null, "arguments": { ... }, "reason": "<one short German sentence: what the call does>"}',
         "Arguments must be the tool's own parameters, filled from the message. When a required value is unknown, use null for tool.",
         "Available tools:",
         list,
@@ -94,8 +101,14 @@ export function parseToolPlan(
   const value = firstJsonObject(text);
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const row = value as Record<string, unknown>;
-  const toolId = typeof row.tool === "string" ? row.tool.trim() : "";
-  if (!toolId || !toolIds.includes(toolId)) return null;
+  const named = typeof row.tool === "string" ? row.tool.trim() : "";
+  const alias = /^t(\d{1,3})$/i.exec(named);
+  const toolId = alias
+    ? (toolIds[Number(alias[1]) - 1] ?? "")
+    : toolIds.includes(named)
+      ? named
+      : "";
+  if (!toolId) return null;
   const args =
     row.arguments &&
     typeof row.arguments === "object" &&

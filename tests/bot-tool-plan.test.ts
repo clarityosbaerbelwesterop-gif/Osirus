@@ -50,13 +50,27 @@ describe("bot tool planning", () => {
     expect(plan?.arguments).toEqual({ title: 'Fix {braces} in "parser"' });
   });
 
-  it("lists every tool by id for the planner and keeps the message as the user turn", () => {
+  it("takes a short id from the planner and maps it to the catalog", () => {
+    expect(
+      parseToolPlan(
+        '{"tool": "t2", "arguments": {"title": "Bug"}, "reason": "Issue anlegen."}',
+        tools,
+      )?.toolId,
+    ).toBe("mcp.abc123.create_issue");
+    expect(
+      parseToolPlan('{"tool": "T1", "arguments": {}}', tools)?.toolId,
+    ).toBe("mcp.abc123.list_issues");
+    expect(parseToolPlan('{"tool": "t9", "arguments": {}}', tools)).toBeNull();
+  });
+
+  it("lists every tool by short id for the planner and keeps the message as the user turn", () => {
     const messages = toolPlanMessages({
       botName: "Lena",
       message: "Welche Issues sind offen?",
       tools: tools.map((id) => ({ id, title: id, summary: "GitHub issues" })),
     });
-    expect(messages[0]!.content).toContain("mcp.abc123.list_issues");
+    expect(messages[0]!.content).toContain("- t1: mcp.abc123.list_issues");
+    expect(messages[0]!.content).toContain("- t2: mcp.abc123.create_issue");
     expect(messages[0]!.content).toContain('"tool"');
     expect(messages[1]).toEqual({
       role: "user",

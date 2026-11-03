@@ -106,13 +106,18 @@ const WITHHELD = [
 
 const ROW_LIMIT = 20_000;
 
+/**
+ * One table's rows as JSON, filtered by exactly one parameter: the user id
+ * for "self" and "user", the workspace id for "workspace". (Postgres rejects
+ * a statement that is handed a parameter it never uses.)
+ */
 export function exportStatement(entry: (typeof EXPORT_TABLES)[number]) {
   const where =
     entry.scope === "self"
       ? "t.id = $1::uuid"
       : entry.scope === "user"
         ? "t.user_id = $1::uuid"
-        : "t.workspace_id = $2::uuid";
+        : "t.workspace_id = $1::uuid";
   const strip = WITHHELD.map((column) => ` - '${column}'`).join("");
   return `select coalesce(jsonb_agg(row_json), '[]'::jsonb) as rows
             from (select to_jsonb(t)${strip} as row_json
@@ -130,11 +135,16 @@ export async function exportAccountData(identity: ProductIdentity) {
       const rows = await queryAs<{ rows: unknown[] }>(
         identity.userId,
         exportStatement(entry),
-        [identity.userId, identity.workspaceId],
+        [entry.scope === "workspace" ? identity.workspaceId : identity.userId],
       );
       data[entry.key] = rows[0]?.rows ?? [];
-    } catch {
+    } catch (error) {
       // A table this deployment does not have yet; say so instead of failing.
+      console.warn(
+        "account.export table skipped",
+        entry.table,
+        error instanceof Error ? error.message.slice(0, 160) : "unknown",
+      );
       skipped.push(entry.key);
     }
   }
