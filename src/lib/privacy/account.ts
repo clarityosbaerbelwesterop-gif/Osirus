@@ -20,25 +20,75 @@ const EXPORT_TABLES: Array<{
   order?: string;
 }> = [
   { key: "profile", table: "users", scope: "self" },
-  { key: "conversations", table: "sessions", scope: "workspace", order: "created_at" },
-  { key: "messages", table: "messages", scope: "workspace", order: "created_at" },
+  {
+    key: "conversations",
+    table: "sessions",
+    scope: "workspace",
+    order: "created_at",
+  },
+  {
+    key: "messages",
+    table: "messages",
+    scope: "workspace",
+    order: "created_at",
+  },
   { key: "runs", table: "runs", scope: "workspace", order: "created_at" },
-  { key: "artifacts", table: "artifacts", scope: "workspace", order: "created_at" },
-  { key: "approvals", table: "approvals", scope: "workspace", order: "created_at" },
+  {
+    key: "artifacts",
+    table: "artifacts",
+    scope: "workspace",
+    order: "created_at",
+  },
+  {
+    key: "approvals",
+    table: "approvals",
+    scope: "workspace",
+    order: "created_at",
+  },
   { key: "bots", table: "agents", scope: "workspace", order: "created_at" },
-  { key: "groupChats", table: "group_chats", scope: "workspace", order: "created_at" },
-  { key: "groupChatMessages", table: "group_chat_messages", scope: "workspace", order: "created_at" },
-  { key: "memory", table: "memory_items", scope: "workspace", order: "created_at" },
+  {
+    key: "groupChats",
+    table: "group_chats",
+    scope: "workspace",
+    order: "created_at",
+  },
+  {
+    key: "groupChatMessages",
+    table: "group_chat_messages",
+    scope: "workspace",
+    order: "created_at",
+  },
+  {
+    key: "memory",
+    table: "memory_items",
+    scope: "workspace",
+    order: "created_at",
+  },
   { key: "memoryEntities", table: "memory_entities", scope: "workspace" },
   { key: "memorySummaries", table: "memory_summaries", scope: "workspace" },
-  { key: "files", table: "attachments", scope: "workspace", order: "created_at" },
+  {
+    key: "files",
+    table: "attachments",
+    scope: "workspace",
+    order: "created_at",
+  },
   { key: "fileText", table: "attachment_chunks", scope: "workspace" },
   { key: "sharedLinks", table: "chat_shares", scope: "workspace" },
   { key: "automations", table: "automations", scope: "workspace" },
   { key: "connections", table: "connector_installations", scope: "workspace" },
   { key: "mcpServers", table: "mcp_servers", scope: "workspace" },
-  { key: "modelUsage", table: "model_calls", scope: "workspace", order: "created_at" },
-  { key: "notifications", table: "notifications", scope: "user", order: "created_at" },
+  {
+    key: "modelUsage",
+    table: "model_calls",
+    scope: "workspace",
+    order: "created_at",
+  },
+  {
+    key: "notifications",
+    table: "notifications",
+    scope: "user",
+    order: "created_at",
+  },
   { key: "legalAcceptances", table: "legal_acceptances", scope: "user" },
   { key: "subscriptions", table: "billing_subscriptions", scope: "user" },
   { key: "billingCustomer", table: "billing_customers", scope: "user" },
@@ -125,7 +175,7 @@ export async function deleteAccount(
   );
   const paid = Boolean(
     subscription?.plan &&
-      BILLING_CONFIG.entitledStatuses.includes(subscription.status),
+    BILLING_CONFIG.entitledStatuses.includes(subscription.status),
   );
   if (paid) {
     if (!options.endSubscription)

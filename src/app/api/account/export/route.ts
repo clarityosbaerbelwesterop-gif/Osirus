@@ -1,9 +1,6 @@
 import { apiIdentity, json } from "@/lib/product/api";
 import { exportAccountData } from "@/lib/privacy/account";
-import {
-  enforceRateLimit,
-  RateLimitError,
-} from "@/lib/security/rate-limit";
+import { enforceRateLimit, RateLimitError } from "@/lib/security/rate-limit";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -22,7 +19,10 @@ export async function GET() {
   } catch (error) {
     if (error instanceof RateLimitError)
       return json(
-        { error: "rate_limited", message: "Bitte in einer Minute erneut versuchen." },
+        {
+          error: "rate_limited",
+          message: "Bitte in einer Minute erneut versuchen.",
+        },
         429,
       );
   }

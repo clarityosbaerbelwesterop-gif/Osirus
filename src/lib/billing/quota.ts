@@ -222,7 +222,9 @@ export function quotaMessageDe(status: QuotaStatus): string {
     window.window === "fiveHour" ? "5-Stunden-Kontingent" : "Wochenkontingent",
   );
   const label =
-    names.length > 1 ? "5-Stunden- und Wochenkontingent" : (names[0] ?? "Kontingent");
+    names.length > 1
+      ? "5-Stunden- und Wochenkontingent"
+      : (names[0] ?? "Kontingent");
   const at = status.availableAt;
   const sameDay =
     status.retryAfterMs < 20 * 60 * 60 * 1000 &&
@@ -247,6 +249,8 @@ export function quotaMessageDe(status: QuotaStatus): string {
         }),
   }).format(at);
   return `Dein ${label} ist aufgebraucht. Es füllt sich von selbst wieder auf: ab ${when} Uhr kannst du weiterarbeiten.${
-    status.upgradeAvailable ? " Mit einem größeren Plan geht es sofort weiter." : ""
+    status.upgradeAvailable
+      ? " Mit einem größeren Plan geht es sofort weiter."
+      : ""
   }`;
 }

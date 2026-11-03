@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { parseToolPlan, toolPlanMessages } from "../src/lib/agents/bot-tool-plan";
+import {
+  parseToolPlan,
+  toolPlanMessages,
+} from "../src/lib/agents/bot-tool-plan";
 
 vi.mock("server-only", () => ({}));
 const { collapseRegenerations } = await import("../src/lib/gateway/threads");
@@ -21,12 +24,19 @@ describe("bot tool planning", () => {
 
   it("means no tool for null, unknown ids, broken JSON or oversized input", () => {
     expect(parseToolPlan('{"tool": null}', tools)).toBeNull();
-    expect(parseToolPlan('{"tool": "mcp.other.delete_all", "arguments": {}}', tools)).toBeNull();
-    expect(parseToolPlan('{"tool": "mcp.abc123.list_issues", "arguments": ', tools)).toBeNull();
+    expect(
+      parseToolPlan('{"tool": "mcp.other.delete_all", "arguments": {}}', tools),
+    ).toBeNull();
+    expect(
+      parseToolPlan('{"tool": "mcp.abc123.list_issues", "arguments": ', tools),
+    ).toBeNull();
     expect(parseToolPlan("Keine Werkzeuge nötig.", tools)).toBeNull();
     expect(
       parseToolPlan(
-        JSON.stringify({ tool: tools[0], arguments: { body: "x".repeat(9_000) } }),
+        JSON.stringify({
+          tool: tools[0],
+          arguments: { body: "x".repeat(9_000) },
+        }),
         tools,
       ),
     ).toBeNull();
@@ -48,7 +58,10 @@ describe("bot tool planning", () => {
     });
     expect(messages[0]!.content).toContain("mcp.abc123.list_issues");
     expect(messages[0]!.content).toContain('"tool"');
-    expect(messages[1]).toEqual({ role: "user", content: "Welche Issues sind offen?" });
+    expect(messages[1]).toEqual({
+      role: "user",
+      content: "Welche Issues sind offen?",
+    });
   });
 });
 
@@ -60,6 +73,12 @@ describe("thread collapse", () => {
       { role: "assistant" },
     ];
     expect(collapseRegenerations(thread)).toHaveLength(3);
-    expect(collapseRegenerations([{ role: "user" }, { role: "assistant" }, { role: "assistant" }])).toHaveLength(2);
+    expect(
+      collapseRegenerations([
+        { role: "user" },
+        { role: "assistant" },
+        { role: "assistant" },
+      ]),
+    ).toHaveLength(2);
   });
 });

@@ -42,7 +42,10 @@ export async function DELETE(request: Request) {
   } catch (error) {
     if (error instanceof AccountDeletionBlocked)
       return json({ error: error.code, message: error.message }, 409);
-    console.error("account.delete failed", error instanceof Error ? error.message : "unknown");
+    console.error(
+      "account.delete failed",
+      error instanceof Error ? error.message : "unknown",
+    );
     return json(
       {
         error: "delete_failed",

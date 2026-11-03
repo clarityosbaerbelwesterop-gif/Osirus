@@ -31,14 +31,20 @@ describe("connection isolation", () => {
 
   it("the Vercel token is read only in CI mode, never by the deployed app", () => {
     const sandbox = readFileSync("src/lib/sandbox/index.ts", "utf8");
-    const reads = sandbox.split("\n").filter((line) => line.includes("process.env.VERCEL_TOKEN"));
+    const reads = sandbox
+      .split("\n")
+      .filter((line) => line.includes("process.env.VERCEL_TOKEN"));
     expect(reads).toHaveLength(1);
-    expect(sandbox).toContain('process.env.OSIRUS_SANDBOX_CREDENTIALS !== "ci"');
+    expect(sandbox).toContain(
+      'process.env.OSIRUS_SANDBOX_CREDENTIALS !== "ci"',
+    );
   });
 
   it("GitHub credentials are looked up by the caller's own workspace", () => {
     const github = readFileSync("src/lib/connectors/github.ts", "utf8");
-    expect(github).toContain("where i.organization_id = $1 and i.workspace_id = $2");
+    expect(github).toContain(
+      "where i.organization_id = $1 and i.workspace_id = $2",
+    );
     expect(github).toContain("queryAs<InstallationRow>(\n    identity.userId,");
   });
 });

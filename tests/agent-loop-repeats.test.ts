@@ -34,7 +34,9 @@ function tools(counter: { create: number; read: number; flaky: number }) {
       inputSchema: z.object({ name: z.string() }),
       run: async () => {
         counter.create += 1;
-        throw new Error("github_422: Repository creation failed.: name already exists on this account");
+        throw new Error(
+          "github_422: Repository creation failed.: name already exists on this account",
+        );
       },
     })
     .register({
@@ -106,7 +108,11 @@ describe("agent loop: identical calls", () => {
       create,
       create,
       create,
-      { action: "FINISH", summary: "Fertig", answer: "Repo existiert bereits." },
+      {
+        action: "FINISH",
+        summary: "Fertig",
+        answer: "Repo existiert bereits.",
+      },
     ]);
     const result = await runAgentLoop({
       objective: "Lege das Repo Goal an",
@@ -120,7 +126,9 @@ describe("agent loop: identical calls", () => {
     // One identical retry, then never again: two calls, not fifty.
     expect(counter.create).toBe(2);
     expect(result.status).toBe("finished");
-    expect(result.state.steps.filter((step) => step.detail === "repeated_call")).toHaveLength(2);
+    expect(
+      result.state.steps.filter((step) => step.detail === "repeated_call"),
+    ).toHaveLength(2);
     expect(prompts[3]).toContain("already failed 2 times");
     // The reason GitHub gave reaches the model, not just a status code.
     expect(prompts[1]).toContain("name already exists");

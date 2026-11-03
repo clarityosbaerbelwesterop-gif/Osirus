@@ -53,8 +53,7 @@ export async function planBotToolCall(input: {
         inputTokens:
           result.usage.inputTokens ??
           estimateTokens(messages.map((entry) => entry.content).join("\n")),
-        outputTokens:
-          result.usage.outputTokens ?? estimateTokens(result.text),
+        outputTokens: result.usage.outputTokens ?? estimateTokens(result.text),
       },
       latencyMs: Date.now() - started,
     }).catch(() => undefined);

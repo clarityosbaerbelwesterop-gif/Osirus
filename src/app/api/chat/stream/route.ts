@@ -333,8 +333,7 @@ export async function POST(request: Request) {
             type: "start",
             sessionId,
             title:
-              existing?.title ??
-              body.message.replace(/\s+/g, " ").slice(0, 80),
+              existing?.title ?? body.message.replace(/\s+/g, " ").slice(0, 80),
             created: !existing,
             cached: false,
           },

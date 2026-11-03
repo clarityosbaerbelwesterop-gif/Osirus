@@ -92,7 +92,9 @@ function ToolRequestCard(props: {
       <p className="ac-tool-title">
         <Wrench size={14} aria-hidden="true" /> {request.label}
       </p>
-      {request.reason ? <p className="ac-tool-reason">{request.reason}</p> : null}
+      {request.reason ? (
+        <p className="ac-tool-reason">{request.reason}</p>
+      ) : null}
       {args !== "{}" ? <pre className="ac-tool-args">{args}</pre> : null}
       {request.status === "pending" ? (
         <div className="ac-tool-actions">
@@ -114,9 +116,14 @@ function ToolRequestCard(props: {
           </button>
         </div>
       ) : (
-        <p className={cx("ac-tool-status", `ac-tool-${request.status}`)} role="status">
+        <p
+          className={cx("ac-tool-status", `ac-tool-${request.status}`)}
+          role="status"
+        >
           {TOOL_STATUS[request.status]}
-          {request.status === "failed" && request.error ? `: ${request.error}` : ""}
+          {request.status === "failed" && request.error
+            ? `: ${request.error}`
+            : ""}
         </p>
       )}
     </section>
@@ -730,21 +737,21 @@ export function AgentsChat(props: {
         const base = options.toolMessageId
           ? current
           : options.regenerate
-          ? last?.role === "assistant"
-            ? current.slice(0, -1)
-            : current
-          : [
-              ...current,
-              {
-                id: `user-${Date.now()}`,
-                role: "user" as const,
-                content: trimmed,
-                attachments: ready.map((file) => ({
-                  id: file.id!,
-                  filename: file.filename,
-                })),
-              },
-            ];
+            ? last?.role === "assistant"
+              ? current.slice(0, -1)
+              : current
+            : [
+                ...current,
+                {
+                  id: `user-${Date.now()}`,
+                  role: "user" as const,
+                  content: trimmed,
+                  attachments: ready.map((file) => ({
+                    id: file.id!,
+                    filename: file.filename,
+                  })),
+                },
+              ];
         return [
           ...base,
           {
@@ -976,7 +983,10 @@ export function AgentsChat(props: {
       setMessages((current) =>
         current.map((message) =>
           message.id === messageId && message.toolRequest
-            ? { ...message, toolRequest: { ...message.toolRequest, ...request } }
+            ? {
+                ...message,
+                toolRequest: { ...message.toolRequest, ...request },
+              }
             : message,
         ),
       );
@@ -994,7 +1004,8 @@ export function AgentsChat(props: {
       if (!response.ok || !body?.request) {
         mark({
           status: "failed",
-          error: body?.message ?? "Die Freigabe konnte nicht gespeichert werden.",
+          error:
+            body?.message ?? "Die Freigabe konnte nicht gespeichert werden.",
         });
         return;
       }
@@ -1004,7 +1015,10 @@ export function AgentsChat(props: {
       return;
     }
     if (question)
-      void send(question.content, { regenerate: true, toolMessageId: messageId });
+      void send(question.content, {
+        regenerate: true,
+        toolMessageId: messageId,
+      });
   };
 
   const handoff = (answer: string) => {

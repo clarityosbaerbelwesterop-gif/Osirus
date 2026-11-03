@@ -18,10 +18,14 @@ describe("quota refill over time", () => {
   it("the 5-hour window is blocked while spent and free again after five hours", () => {
     const calls = [{ at: t0, costUsd: five }];
     expect(quotaStatus({ plan, calls, now: at(HOUR) }).allowed).toBe(false);
-    expect(quotaStatus({ plan, calls, now: at(5 * HOUR - 1000) }).allowed).toBe(false);
+    expect(quotaStatus({ plan, calls, now: at(5 * HOUR - 1000) }).allowed).toBe(
+      false,
+    );
     const after = quotaStatus({ plan, calls, now: at(5 * HOUR + 1000) });
     expect(after.allowed).toBe(true);
-    expect(after.windows.find((w) => w.window === "fiveHour")!.spentUsd).toBe(0);
+    expect(after.windows.find((w) => w.window === "fiveHour")!.spentUsd).toBe(
+      0,
+    );
   });
 
   it("the weekly window refills after seven days, even with the 5-hour window free", () => {
@@ -35,14 +39,26 @@ describe("quota refill over time", () => {
     const last = (count - 1) * 6 * HOUR;
     const blocked = quotaStatus({ plan, calls, now: at(last + 6 * HOUR) });
     expect(blocked.allowed).toBe(false);
-    expect(blocked.windows.find((w) => w.window === "weekly")!.exhausted).toBe(true);
-    expect(blocked.windows.find((w) => w.window === "fiveHour")!.exhausted).toBe(false);
+    expect(blocked.windows.find((w) => w.window === "weekly")!.exhausted).toBe(
+      true,
+    );
+    expect(
+      blocked.windows.find((w) => w.window === "fiveHour")!.exhausted,
+    ).toBe(false);
     // Usable again at the reported moment, not before.
     const refill = blocked.availableAt!.getTime();
-    expect(quotaStatus({ plan, calls, now: new Date(refill - 1000) }).allowed).toBe(false);
-    expect(quotaStatus({ plan, calls, now: new Date(refill + 1000) }).allowed).toBe(true);
+    expect(
+      quotaStatus({ plan, calls, now: new Date(refill - 1000) }).allowed,
+    ).toBe(false);
+    expect(
+      quotaStatus({ plan, calls, now: new Date(refill + 1000) }).allowed,
+    ).toBe(true);
     // Fully empty once the newest call is a week old.
-    const full = quotaStatus({ plan, calls, now: at(last + 7 * 24 * HOUR + 1000) });
+    const full = quotaStatus({
+      plan,
+      calls,
+      now: at(last + 7 * 24 * HOUR + 1000),
+    });
     expect(full.windows.every((w) => w.spentUsd === 0)).toBe(true);
   });
 

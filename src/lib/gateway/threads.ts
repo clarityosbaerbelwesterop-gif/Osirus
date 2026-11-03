@@ -102,7 +102,9 @@ export function toChatMessage(row: MessageRow): ChatMessage | null {
 }
 
 /** The stored request without its tool output, which stays on the server. */
-function toolRequestView(value: object): NonNullable<ChatMessage["toolRequest"]> {
+function toolRequestView(
+  value: object,
+): NonNullable<ChatMessage["toolRequest"]> {
   const row = value as Record<string, unknown>;
   const status = String(row.status ?? "pending");
   return {

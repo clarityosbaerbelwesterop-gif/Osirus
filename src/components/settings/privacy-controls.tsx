@@ -50,11 +50,15 @@ export function PrivacyControls() {
         <h3 className="field-label">Deine Daten herunterladen</h3>
         <p className="muted">
           Eine Kopie aller Daten, die Osirus zu dir speichert: Profil, Chats,
-          Bots, Läufe, Gedächtnis, Dateien (Text), Verbindungen ohne Tokens,
-          Abo und Nutzung. Als JSON-Datei (Art. 15 und 20 DSGVO).
+          Bots, Läufe, Gedächtnis, Dateien (Text), Verbindungen ohne Tokens, Abo
+          und Nutzung. Als JSON-Datei (Art. 15 und 20 DSGVO).
         </p>
         <div>
-          <a className="btn btn-secondary btn-sm" href="/api/account/export" download>
+          <a
+            className="btn btn-secondary btn-sm"
+            href="/api/account/export"
+            download
+          >
             <Download size={14} aria-hidden="true" /> Daten herunterladen
           </a>
         </div>
