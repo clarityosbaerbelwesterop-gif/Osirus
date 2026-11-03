@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
   parseToolPlan,
+  toolErrorText,
   toolPlanMessages,
 } from "../src/lib/agents/bot-tool-plan";
 
@@ -76,6 +77,21 @@ describe("bot tool planning", () => {
       role: "user",
       content: "Welche Issues sind offen?",
     });
+  });
+});
+
+describe("tool errors the person reads", () => {
+  it("names an oversized answer, a timeout and a refused token in German", () => {
+    expect(
+      toolErrorText(new Error("outbound_blocked:response_too_large")),
+    ).toContain("zu groß");
+    expect(
+      toolErrorText(new Error("The operation was aborted due to timeout")),
+    ).toContain("rechtzeitig");
+    expect(toolErrorText(new Error("mcp_unauthorized:401"))).toContain("Token");
+    expect(toolErrorText(new Error("mcp_tool_error: x"))).toBe(
+      "mcp_tool_error: x",
+    );
   });
 });
 

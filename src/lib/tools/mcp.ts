@@ -197,6 +197,9 @@ export function parseRpcResponse(
   return payload.result;
 }
 
+/** Largest tool answer read from an MCP server. */
+const TOOL_RESULT_BYTES = 8_000_000;
+
 async function rpc(input: {
   server: McpServer;
   method: string;
@@ -210,6 +213,10 @@ async function rpc(input: {
   const response = await outboundFetch(input.server.url, {
     method: "POST",
     signal: input.signal,
+    // A tool's answer can be a whole document (a repository wiki, a log);
+    // it is cut to what a prompt holds afterwards, so allow more than the
+    // 1 MB every other outbound read gets. Handshakes keep the default.
+    ...(input.method === "tools/call" ? { maxBytes: TOOL_RESULT_BYTES } : {}),
     headers: {
       "content-type": "application/json",
       accept: "application/json, text/event-stream",

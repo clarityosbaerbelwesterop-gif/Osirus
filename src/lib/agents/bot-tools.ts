@@ -5,6 +5,7 @@ import { queryAs } from "../db/client";
 import { asPromptContext, type ToolDefinition } from "../tools/registry";
 import {
   parseToolPlan,
+  toolErrorText,
   toolPlanMessages,
   type BotToolRequest,
   type PlannedCall,
@@ -162,10 +163,7 @@ export async function decideToolRequest(
       finished = {
         ...request,
         status: "failed",
-        error: (error instanceof Error ? error.message : "tool_failed").slice(
-          0,
-          240,
-        ),
+        error: toolErrorText(error),
       };
     }
   }
