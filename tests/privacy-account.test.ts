@@ -45,7 +45,8 @@ describe("data export (Art. 15/20)", () => {
     });
     expect(sql).toContain("- 'credential_reference'");
     expect(sql).toContain("- 'embedding'");
-    expect(sql).toContain("t.workspace_id = $2::uuid");
+    expect(sql).toContain("t.workspace_id = $1::uuid");
+    expect(sql).not.toContain("$2");
     expect(
       exportStatement({ key: "profile", table: "users", scope: "self" }),
     ).toContain("t.id = $1::uuid");
@@ -70,9 +71,13 @@ describe("data export (Art. 15/20)", () => {
         "connections",
       ]),
     );
-    expect(calls.every((call) => call.params[0] === identity.userId)).toBe(
-      true,
-    );
+    // Exactly one parameter per statement, the one it filters by.
+    expect(calls.every((call) => call.params.length === 1)).toBe(true);
+    const byTable = (table: string) =>
+      calls.find((call) => call.text.includes(`osirus.${table} t`))!.params[0];
+    expect(byTable("users")).toBe(identity.userId);
+    expect(byTable("messages")).toBe(identity.workspaceId);
+    expect(byTable("billing_subscriptions")).toBe(identity.userId);
   });
 });
 

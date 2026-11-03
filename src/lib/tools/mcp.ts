@@ -448,7 +448,11 @@ export function toolFromDiscovery(input: {
   return {
     id: input.tool.id,
     title: `${input.tool.serverId}: ${input.tool.remoteName}`,
-    summary: input.tool.description,
+    // The input schema is an open record, so the parameter names (already
+    // sanitized at discovery) are the only place a model learns what to pass.
+    summary: input.tool.parameters.length
+      ? `${input.tool.description} Parameters: ${input.tool.parameters.join(", ")}.`
+      : input.tool.description,
     trust: "mcp",
     // Not negotiable by the server. Both values force the approval gate.
     effect: "external",

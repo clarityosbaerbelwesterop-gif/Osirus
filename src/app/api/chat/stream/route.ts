@@ -313,7 +313,7 @@ export async function POST(request: Request) {
       const planned = await planBotToolCall({
         identity,
         sessionId,
-        model: candidates[0],
+        models: candidates,
         botName: bot.name,
         message: body.message,
         catalog,
