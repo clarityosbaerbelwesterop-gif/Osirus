@@ -8,6 +8,7 @@ import {
   Palette,
   Plug,
   Shield,
+  ShieldCheck,
   SlidersHorizontal,
   User,
   type LucideIcon,
@@ -28,6 +29,7 @@ const SECTIONS: Array<{ href: string; label: string; icon: LucideIcon }> = [
     icon: SlidersHorizontal,
   },
   { href: "/app/settings/security", label: "Security", icon: Shield },
+  { href: "/app/settings/privacy", label: "Datenschutz", icon: ShieldCheck },
   { href: "/app/settings/usage", label: "Usage", icon: Gauge },
   { href: "/app/settings/appearance", label: "Appearance", icon: Palette },
 ];

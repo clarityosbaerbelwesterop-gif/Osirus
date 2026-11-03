@@ -23,6 +23,15 @@ export type ChatMessage = {
   sources?: Array<{ n: number; title: string; url: string; domain: string }>;
   /** Files sent with a question. */
   attachments?: Array<{ id: string; filename: string }>;
+  /** A bot's request to use one MCP tool, and what became of it. */
+  toolRequest?: {
+    id: string;
+    label: string;
+    arguments: Record<string, unknown>;
+    reason: string;
+    status: "pending" | "running" | "done" | "failed" | "denied";
+    error: string | null;
+  };
 };
 
 export function isUuid(value: string | null | undefined): value is string {
@@ -86,6 +95,30 @@ export function toChatMessage(row: MessageRow): ChatMessage | null {
           >,
         }
       : {}),
+    ...(meta.toolRequest && typeof meta.toolRequest === "object"
+      ? { toolRequest: toolRequestView(meta.toolRequest) }
+      : {}),
+  };
+}
+
+/** The stored request without its tool output, which stays on the server. */
+function toolRequestView(
+  value: object,
+): NonNullable<ChatMessage["toolRequest"]> {
+  const row = value as Record<string, unknown>;
+  const status = String(row.status ?? "pending");
+  return {
+    id: String(row.id ?? ""),
+    label: String(row.label ?? "Werkzeug").slice(0, 160),
+    arguments:
+      row.arguments && typeof row.arguments === "object"
+        ? (row.arguments as Record<string, unknown>)
+        : {},
+    reason: String(row.reason ?? "").slice(0, 200),
+    status: (["pending", "running", "done", "failed", "denied"].includes(status)
+      ? status
+      : "pending") as NonNullable<ChatMessage["toolRequest"]>["status"],
+    error: typeof row.error === "string" ? row.error.slice(0, 240) : null,
   };
 }
 
@@ -93,12 +126,15 @@ export function toChatMessage(row: MessageRow): ChatMessage | null {
  * "Regenerate" stores a second answer after the same question. Only the
  * newest answer of a run of assistant messages is shown and sent as context.
  */
-export function collapseRegenerations<T extends { role: string }>(
-  messages: readonly T[],
-) {
+export function collapseRegenerations<
+  T extends { role: string; toolRequest?: unknown },
+>(messages: readonly T[]) {
+  // A bot's tool request is its own step, not an earlier draft: it stays.
   return messages.filter(
     (message, index) =>
-      message.role !== "assistant" || messages[index + 1]?.role !== "assistant",
+      message.role !== "assistant" ||
+      Boolean(message.toolRequest) ||
+      messages[index + 1]?.role !== "assistant",
   );
 }
 

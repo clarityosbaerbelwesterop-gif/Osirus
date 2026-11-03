@@ -16,6 +16,19 @@ export type ChatStreamEvent =
     }
   /** The answer starts over (another model took over before any text). */
   | { type: "reset" }
+  /** A bot asks to use one of the person's MCP tools; nothing has run yet. */
+  | {
+      type: "tool_request";
+      messageId: string;
+      request: {
+        id: string;
+        label: string;
+        arguments: Record<string, unknown>;
+        reason: string;
+        status: "pending" | "running" | "done" | "failed" | "denied";
+        error: string | null;
+      };
+    }
   | { type: "reasoning"; text: string }
   | {
       type: "done";

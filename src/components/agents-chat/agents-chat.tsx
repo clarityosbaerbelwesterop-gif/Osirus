@@ -17,6 +17,7 @@ import {
   Square,
   Volume2,
   VolumeX,
+  Wrench,
   X,
   Zap,
 } from "lucide-react";
@@ -57,7 +58,77 @@ export type AgentsChatMessage = {
   sources?: Array<{ n: number; title: string; url: string; domain: string }>;
   /** Files sent with a question. */
   attachments?: Array<{ id: string; filename: string }>;
+  /** A bot asks to use one of the person's MCP tools. */
+  toolRequest?: ToolRequestView;
 };
+
+export type ToolRequestView = {
+  id: string;
+  label: string;
+  arguments: Record<string, unknown>;
+  reason: string;
+  status: "pending" | "running" | "done" | "failed" | "denied";
+  error: string | null;
+};
+
+const TOOL_STATUS: Record<ToolRequestView["status"], string> = {
+  pending: "Wartet auf deine Freigabe",
+  running: "Läuft …",
+  done: "Ausgeführt",
+  failed: "Fehlgeschlagen",
+  denied: "Abgelehnt",
+};
+
+/** The card a bot shows instead of text when it wants to use a tool. */
+function ToolRequestCard(props: {
+  request: ToolRequestView;
+  disabled: boolean;
+  onDecide: (approve: boolean) => void;
+}) {
+  const { request } = props;
+  const args = JSON.stringify(request.arguments, null, 2);
+  return (
+    <section className="ac-tool" aria-label="Werkzeug-Anfrage">
+      <p className="ac-tool-title">
+        <Wrench size={14} aria-hidden="true" /> {request.label}
+      </p>
+      {request.reason ? (
+        <p className="ac-tool-reason">{request.reason}</p>
+      ) : null}
+      {args !== "{}" ? <pre className="ac-tool-args">{args}</pre> : null}
+      {request.status === "pending" ? (
+        <div className="ac-tool-actions">
+          <button
+            type="button"
+            className="ac-tool-approve"
+            disabled={props.disabled}
+            onClick={() => props.onDecide(true)}
+          >
+            Freigeben
+          </button>
+          <button
+            type="button"
+            className="ac-tool-deny"
+            disabled={props.disabled}
+            onClick={() => props.onDecide(false)}
+          >
+            Ablehnen
+          </button>
+        </div>
+      ) : (
+        <p
+          className={cx("ac-tool-status", `ac-tool-${request.status}`)}
+          role="status"
+        >
+          {TOOL_STATUS[request.status]}
+          {request.status === "failed" && request.error
+            ? `: ${request.error}`
+            : ""}
+        </p>
+      )}
+    </section>
+  );
+}
 
 /** A file picked for the next message: uploading, ready, or refused. */
 type PendingFile = {
@@ -209,6 +280,7 @@ const MessageView = memo(function MessageView(props: {
   busy: boolean;
   onRegenerate: () => void;
   onHandoff: (text: string) => void;
+  onToolDecision: (messageId: string, approve: boolean) => void;
 }) {
   const { message } = props;
   const [copied, setCopied] = useState(false);
@@ -286,7 +358,13 @@ const MessageView = memo(function MessageView(props: {
             ) : null}
           </div>
         ) : null}
-        {message.content ? (
+        {message.toolRequest ? (
+          <ToolRequestCard
+            request={message.toolRequest}
+            disabled={props.busy || message.id.startsWith("pending-")}
+            onDecide={(approve) => props.onToolDecision(message.id, approve)}
+          />
+        ) : message.content ? (
           <div
             className={cx(
               "ac-answer",
@@ -329,7 +407,7 @@ const MessageView = memo(function MessageView(props: {
             ) : null}
           </div>
         ) : null}
-        {!message.streaming && message.content ? (
+        {!message.streaming && message.content && !message.toolRequest ? (
           <div className="ac-actions">
             <button
               type="button"
@@ -624,7 +702,10 @@ export function AgentsChat(props: {
   };
 
   const send = useCallback(
-    async (text: string, options: { regenerate?: boolean } = {}) => {
+    async (
+      text: string,
+      options: { regenerate?: boolean; toolMessageId?: string } = {},
+    ) => {
       const trimmed = text.trim();
       if (!trimmed || busy || uploading) return;
       const ready = options.regenerate
@@ -652,22 +733,25 @@ export function AgentsChat(props: {
       const assistantId = `pending-${Date.now()}`;
       setMessages((current) => {
         const last = current[current.length - 1];
-        const base = options.regenerate
-          ? last?.role === "assistant"
-            ? current.slice(0, -1)
-            : current
-          : [
-              ...current,
-              {
-                id: `user-${Date.now()}`,
-                role: "user" as const,
-                content: trimmed,
-                attachments: ready.map((file) => ({
-                  id: file.id!,
-                  filename: file.filename,
-                })),
-              },
-            ];
+        // After a tool decision the card stays and the answer follows it.
+        const base = options.toolMessageId
+          ? current
+          : options.regenerate
+            ? last?.role === "assistant"
+              ? current.slice(0, -1)
+              : current
+            : [
+                ...current,
+                {
+                  id: `user-${Date.now()}`,
+                  role: "user" as const,
+                  content: trimmed,
+                  attachments: ready.map((file) => ({
+                    id: file.id!,
+                    filename: file.filename,
+                  })),
+                },
+              ];
         return [
           ...base,
           {
@@ -724,6 +808,7 @@ export function AgentsChat(props: {
             message: content,
             botId: targetBot,
             regenerate: Boolean(options.regenerate),
+            toolMessageId: options.toolMessageId ?? null,
             web,
             attachmentIds: ready.map((file) => file.id),
           }),
@@ -759,6 +844,9 @@ export function AgentsChat(props: {
               surface: targetBot ? "bot" : "ai",
               botId: targetBot,
             });
+          } else if (event.type === "tool_request") {
+            const request = event.request;
+            patch((message) => ({ ...message, toolRequest: request }));
           } else if (event.type === "sources") {
             const sources = event.sources;
             patch((message) => ({ ...message, sources, searching: false }));
@@ -880,6 +968,57 @@ export function AgentsChat(props: {
       .reverse()
       .find((message) => message.role === "user");
     if (lastUser) void send(lastUser.content, { regenerate: true });
+  };
+
+  // The person decides a bot's tool request; approved or not, the bot then
+  // answers the same question with what came of it.
+  const decideTool = async (messageId: string, approve: boolean) => {
+    if (busy || !sessionId) return;
+    const index = messages.findIndex((message) => message.id === messageId);
+    const question = messages
+      .slice(0, Math.max(0, index))
+      .reverse()
+      .find((message) => message.role === "user");
+    const mark = (request: Partial<ToolRequestView>) =>
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === messageId && message.toolRequest
+            ? {
+                ...message,
+                toolRequest: { ...message.toolRequest, ...request },
+              }
+            : message,
+        ),
+      );
+    mark({ status: approve ? "running" : "denied" });
+    try {
+      const response = await fetch("/api/chat/tool", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessionId, messageId, approve }),
+      });
+      const body = (await response.json().catch(() => null)) as {
+        request?: ToolRequestView;
+        message?: string;
+      } | null;
+      if (!response.ok || !body?.request) {
+        mark({
+          status: "failed",
+          error:
+            body?.message ?? "Die Freigabe konnte nicht gespeichert werden.",
+        });
+        return;
+      }
+      mark(body.request);
+    } catch {
+      mark({ status: "failed", error: "Keine Verbindung." });
+      return;
+    }
+    if (question)
+      void send(question.content, {
+        regenerate: true,
+        toolMessageId: messageId,
+      });
   };
 
   const handoff = (answer: string) => {
@@ -1249,6 +1388,7 @@ export function AgentsChat(props: {
                 busy={busy}
                 onRegenerate={regenerate}
                 onHandoff={handoff}
+                onToolDecision={decideTool}
               />
             ))}
           </div>

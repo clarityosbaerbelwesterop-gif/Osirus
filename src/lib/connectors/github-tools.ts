@@ -72,12 +72,37 @@ async function call(
   return { status: response.status, ok: response.ok, body };
 }
 
+/** GitHub's message plus its per-field reasons ("name already exists on this account"). */
+export function githubErrorText(body: unknown) {
+  const row =
+    body && typeof body === "object" ? (body as Record<string, unknown>) : {};
+  const message = typeof row.message === "string" ? row.message : "";
+  const reasons = Array.isArray(row.errors)
+    ? row.errors
+        .map((entry) =>
+          typeof entry === "string"
+            ? entry
+            : entry && typeof entry === "object"
+              ? String(
+                  (entry as Record<string, unknown>).message ??
+                    (entry as Record<string, unknown>).code ??
+                    "",
+                )
+              : "",
+        )
+        .filter(Boolean)
+    : [];
+  return [message, ...reasons].filter(Boolean).join(": ").slice(0, 240);
+}
+
 function fail(status: number, body: unknown): never {
-  const message =
-    body && typeof body === "object" && "message" in body
-      ? String((body as { message?: unknown }).message ?? "").slice(0, 160)
-      : "";
+  const message = githubErrorText(body);
   throw new Error(`github_${status}${message ? `: ${message}` : ""}`);
+}
+
+/** GitHub's answer when the account already has a repository of that name. */
+export function repositoryAlreadyExists(status: number, body: unknown) {
+  return status === 422 && /already exists/i.test(githubErrorText(body));
 }
 
 const record = (value: unknown) =>
@@ -350,6 +375,27 @@ export async function githubToolsForWorkspace(
             auto_init: args.initialize ?? false,
           },
         });
+        if (!result.ok && repositoryAlreadyExists(result.status, result.body)) {
+          // Creating is idempotent: the repository is there, so the step's
+          // goal is met. Hand back the existing one instead of an error the
+          // agent would retry; nothing on GitHub changes.
+          const owner = await call(await read(), "/user");
+          const login = text(record(owner.body).login);
+          const existing = login
+            ? await call(
+                await read(),
+                `/repos/${encodeURIComponent(login)}/${encodeURIComponent(args.name)}`,
+              )
+            : null;
+          if (existing?.ok) {
+            return {
+              ...repoSummary(existing.body),
+              url: text(record(existing.body).html_url),
+              alreadyExisted: true,
+              note: "The repository already existed under the connected account; nothing was created. Continue working in it.",
+            };
+          }
+        }
         if (!result.ok) fail(result.status, result.body);
         return {
           ...repoSummary(result.body),

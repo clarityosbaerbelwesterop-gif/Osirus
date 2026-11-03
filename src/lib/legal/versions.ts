@@ -13,7 +13,7 @@ export type LegalDocument = (typeof LEGAL_DOCUMENTS)[number];
 export const LEGAL_VERSIONS: Record<LegalDocument, string> = {
   terms: "2026-10-29",
   eula: "2026-10-29",
-  privacy: "2026-10-29",
+  privacy: "2026-11-03",
 };
 
 export type AcceptanceRow = {

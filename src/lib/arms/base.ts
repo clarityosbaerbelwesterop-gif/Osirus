@@ -1090,6 +1090,23 @@ export abstract class BaseArm implements AgentArm {
         resume: {},
       };
     }
+    if (
+      result.status === "failed" &&
+      result.reason === "aborted" &&
+      sliceDeadlineAbort(signal)
+    ) {
+      // The slice ran out of time in the middle of a step (the request's own
+      // deadline), not the work. Everything the loop did stays: the next
+      // slice continues from here instead of starting over and redoing steps
+      // that already changed something (a repository created, files written).
+      // A lost lease writes nothing, so this cannot outlive a reclaimed stage.
+      context.state.loopState = result.state;
+      return {
+        kind: "PROGRESS",
+        output: { steps: result.state.steps.length },
+        resume: {},
+      };
+    }
     if (result.refusal) {
       // The provider refused, not the model: keep the loop where it was and
       // either wait out a transient refusal or fail with its real cause.
@@ -1816,3 +1833,27 @@ export abstract class BaseArm implements AgentArm {
 }
 
 export { defineNode };
+
+/**
+ * Aborts that mean "this slice's time is up", not "stop the work": the
+ * request, poll or background budget ran out while a step was in flight.
+ * A cancellation, a pause or a lost lease is none of these.
+ */
+const SLICE_DEADLINES = new Set([
+  "continuation_budget_reached",
+  "background_budget",
+  "runtime_finished",
+  "request_aborted",
+]);
+
+export function sliceDeadlineAbort(signal: AbortSignal | undefined) {
+  if (!signal?.aborted) return false;
+  const reason = signal.reason;
+  const message =
+    reason instanceof Error
+      ? reason.message
+      : typeof reason === "string"
+        ? reason
+        : "";
+  return SLICE_DEADLINES.has(message);
+}

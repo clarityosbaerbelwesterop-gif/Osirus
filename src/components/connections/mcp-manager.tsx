@@ -87,6 +87,35 @@ const QUICK_START = [
     url: "https://mcp.deepwiki.com/mcp",
     token: null,
   },
+  // Official vendor endpoints as listed in the MCP Registry
+  // (com.stripe/mcp, co.huggingface/hf-mcp-server, com.supabase/mcp,
+  // app.linear/linear, ai.exa/exa). Servers that only offer OAuth sign-in
+  // (Notion, Sentry) are left out: Osirus connects by token.
+  {
+    name: "Stripe",
+    url: "https://mcp.stripe.com",
+    token: "Stripe Restricted Key (rk_…)",
+  },
+  {
+    name: "Hugging Face",
+    url: "https://huggingface.co/mcp",
+    token: "Hugging Face Token (hf_…), optional",
+  },
+  {
+    name: "Supabase",
+    url: "https://mcp.supabase.com/mcp",
+    token: "Supabase Personal Access Token",
+  },
+  {
+    name: "Linear",
+    url: "https://mcp.linear.app/mcp",
+    token: "Linear API Key",
+  },
+  {
+    name: "Exa (Websuche)",
+    url: "https://mcp.exa.ai/mcp",
+    token: null,
+  },
 ] as const;
 
 function AddServerForm({

@@ -14,6 +14,7 @@ import { listGatewayModels } from "@/lib/gateway/models";
 import { PROVIDER_IDS, providerLabel } from "@/lib/gateway/providers";
 import { AgentBehaviorSettings } from "@/components/settings/agent-behavior";
 import { SecurityEventList } from "@/components/settings/security-events";
+import { PrivacyControls } from "@/components/settings/privacy-controls";
 import { Badge } from "@/components/ui/badge";
 import { githubConnectorStatus } from "@/lib/connectors/github";
 import { listMcpServers } from "@/lib/connectors/mcp-store";
@@ -38,6 +39,7 @@ const TITLES: Record<string, string> = {
   memory: "Memory",
   agent: "Agent behavior",
   security: "Security",
+  privacy: "Datenschutz",
   usage: "Usage",
   appearance: "Appearance",
 };
@@ -352,6 +354,20 @@ export default async function SettingsSection({
         </Group>
       );
     }
+    case "privacy":
+      return (
+        <Group
+          id="privacy"
+          title="Datenschutz"
+          lede="Deine Rechte nach DSGVO, ohne Formular und ohne Wartezeit."
+        >
+          <PrivacyControls />
+          <p className="muted">
+            Details:{" "}
+            <Link href={"/legal/privacy" as Route}>Datenschutzerklärung</Link>
+          </p>
+        </Group>
+      );
     case "appearance":
       return (
         <Group id="appearance" title="Appearance">

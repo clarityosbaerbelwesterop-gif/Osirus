@@ -139,7 +139,80 @@ export type LoopState = {
   pendingCall?: { toolId: string; input: unknown; summary: string };
   /** Present after the loop has started. Older checkpoints may omit it. */
   kernel?: TaskKernel;
+  /**
+   * Every tool call this loop actually made, keyed by tool and exact input.
+   * An identical call that already failed, or a change that already
+   * happened, is not made again: the model is told what happened instead.
+   * Older checkpoints omit it.
+   */
+  callLog?: Record<string, CallRecord>;
 };
+
+export type CallRecord = {
+  toolId: string;
+  ok: boolean;
+  /** Step index of the most recent identical call. */
+  step: number;
+  count: number;
+  error?: string;
+};
+
+/** Identical attempts at a failing call before the loop stops making it. */
+const IDENTICAL_FAILED_ATTEMPTS = 2;
+
+/** Identical reads allowed before the loop says the answer is already there. */
+const IDENTICAL_READS = 3;
+
+function stableJson(value: unknown): string {
+  if (Array.isArray(value)) return `[${value.map(stableJson).join(",")}]`;
+  if (value && typeof value === "object") {
+    const entries = Object.entries(value as Record<string, unknown>)
+      .filter(([, entry]) => entry !== undefined)
+      .sort(([a], [b]) => a.localeCompare(b));
+    return `{${entries.map(([key, entry]) => `${JSON.stringify(key)}:${stableJson(entry)}`).join(",")}}`;
+  }
+  return JSON.stringify(value ?? null);
+}
+
+/** Tool id plus a short FNV-1a hash of the exact input; small enough to checkpoint. */
+export function callSignature(toolId: string, toolInput: unknown) {
+  const text = stableJson(toolInput ?? {});
+  let hash = 0x811c9dc5;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return `${toolId}#${(hash >>> 0).toString(16)}:${text.length}`;
+}
+
+/**
+ * Whether an identical call may run again, and if not, what the model is told.
+ * A failed call fails the same way when repeated; a change (anything but a
+ * read) that already happened must not happen twice; a read may repeat a few
+ * times, since what it reads can change (a CI status, a deployment).
+ */
+export function repeatedCallNote(
+  prior: CallRecord | undefined,
+  effect: string | undefined,
+): string | null {
+  if (!prior) return null;
+  if (!prior.ok) {
+    // One identical retry is allowed: a failure can be passing (a timeout,
+    // an outage, a race). A second identical failure is not passing, and a
+    // third attempt would only fail the same way again.
+    if (prior.count < IDENTICAL_FAILED_ATTEMPTS) return null;
+    return `This exact ${prior.toolId} call already failed ${prior.count} times, last at step ${prior.step + 1}${
+      prior.error ? ` (${prior.error.slice(0, 200)})` : ""
+    }. It was not made again: an identical call fails the same way. Change the input, use another tool, or say in the answer what blocks this step.`;
+  }
+  if (effect !== "read") {
+    return `This exact ${prior.toolId} call already succeeded at step ${prior.step + 1}; it was not made again. Its result is in the observations. Continue with the next step instead of repeating it.`;
+  }
+  if (prior.count >= IDENTICAL_READS) {
+    return `This exact ${prior.toolId} read already ran ${prior.count} times; its result is in the observations. Use it and move on.`;
+  }
+  return null;
+}
 
 export type LoopResult = {
   status: LoopStatus;
@@ -509,7 +582,7 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
         await record(
           {
             action: "RESPOND",
-            summary: "The model provider refused the request",
+            summary: "Der Modellanbieter hat die Anfrage abgelehnt",
             outcome: "error",
             detail: `provider:${refusal.code}`,
           },
@@ -529,13 +602,13 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
       state.observations.push(
         observe(
           "loop.correction",
-          `The previous reply could not be used (${message}). Reply with one valid JSON decision.`,
+          `The previous reply could not be used (${message}). Reply with one valid JSON decision. Keep it short: a reply that is too long is cut off and is no longer valid JSON. Write a long document as several smaller files (one tool call each, at most about 6,000 characters of content per call), and do not repeat steps that already succeeded.`,
         ),
       );
       await record(
         {
           action: "RESPOND",
-          summary: "Model reply was not a valid decision",
+          summary: "Antwort des Modells war unbrauchbar, neuer Versuch",
           outcome: "error",
           detail: message,
         },
@@ -634,6 +707,43 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
       }
 
       case "USE_TOOL": {
+        const signature = callSignature(
+          decision.toolId!,
+          decision.toolInput ?? {},
+        );
+        const repeated = repeatedCallNote(
+          state.callLog?.[signature],
+          input.tools.describe(input.toolContext.armId, [decision.toolId!])[0]
+            ?.effect,
+        );
+        if (repeated) {
+          consecutiveFailures += 1;
+          state.observations.push(observe("loop.repeated_call", repeated));
+          await record(
+            {
+              action: "USE_TOOL",
+              summary: decision.summary,
+              toolId: decision.toolId,
+              outcome: "error",
+              detail: "repeated_call",
+            },
+            stepStartedAt,
+          );
+          continue;
+        }
+        const noteCall = (ok: boolean, error?: string) => {
+          const prior = state.callLog?.[signature];
+          state.callLog = {
+            ...(state.callLog ?? {}),
+            [signature]: {
+              toolId: decision.toolId!,
+              ok,
+              step: state.steps.length,
+              count: (prior?.count ?? 0) + 1,
+              ...(error ? { error: error.slice(0, 240) } : {}),
+            },
+          };
+        };
         if (state.toolCalls >= bound(input, "maxToolCalls")) {
           consecutiveFailures += 1;
           state.observations.push(
@@ -721,6 +831,7 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
               state.disclosedSchemas[tool.id] = tool.schema;
             }
           }
+          noteCall(false, reason);
           state.observations.push(
             observe(`${decision.toolId}.refused`, reason),
           );
@@ -736,6 +847,7 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
           );
           continue;
         }
+        noteCall(result.ok, result.ok ? undefined : result.error);
         state.observations.push(asPromptContext(result));
         await input.hooks?.onToolResult?.({
           toolId: decision.toolId!,
