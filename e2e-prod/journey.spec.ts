@@ -335,6 +335,76 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     expect(added.status()).toBe(200);
     expect(body.result?.ok).toBe(true);
     expect(body.result?.toolCount ?? 0).toBeGreaterThan(0);
+
+    // A bot proposes one of these tools, the person approves the exact
+    // call, and the answer uses its result.
+    const servers = (await (await send(page, "/api/mcp/servers")).json()) as {
+      servers: Array<{ id: string; tools: Array<{ id: string; name: string }> }>;
+    };
+    const tools = servers.servers.find((server) => server.id === body.id)?.tools ?? [];
+    for (const tool of tools) {
+      const patched = await page.request.fetch(
+        `/api/mcp/servers/${body.id}/tools/${tool.id}`,
+        {
+          method: "PATCH",
+          headers: { origin: base, "content-type": "application/json" },
+          data: JSON.stringify({ enabled: true }),
+        },
+      );
+      expect(patched.status()).toBe(200);
+    }
+    const created = await send(page, "/api/agents", {
+      name: `Doku ${runId}`.slice(0, 80),
+      systemPrompt: "Du beantwortest Fragen zu GitHub-Repositories mit DeepWiki.",
+    });
+    expect(created.status()).toBe(201);
+    const bot = ((await created.json()) as { agent: { id: string } }).agent;
+    const message =
+      "Nutze DeepWiki: Worum geht es im Repository facebook/react? Ein Satz.";
+    const planned = await streamFrames({ message, botId: bot.id });
+    const request = planned.find((frame) => frame.type === "tool_request") as
+      | { messageId: string; request: { label: string; status: string } }
+      | undefined;
+    console.log(
+      `Bot tool step: ${request ? `asked for ${request.request.label}` : "answered without a tool"}`,
+    );
+    expect(planned.at(-1)?.type).toBe("done");
+    if (request) {
+      const sessionId = String(planned[0]?.sessionId ?? "");
+      const decided = (await (
+        await send(page, "/api/chat/tool", {
+          sessionId,
+          messageId: request.messageId,
+          approve: true,
+        })
+      ).json()) as { request?: { status: string; error?: string | null } };
+      console.log(
+        `Tool call approved: ${decided.request?.status} ${decided.request?.error ?? ""}`,
+      );
+      expect(decided.request?.status).toBe("done");
+      const answered = await streamFrames({
+        sessionId,
+        message,
+        botId: bot.id,
+        regenerate: true,
+        toolMessageId: request.messageId,
+      });
+      const text = answered
+        .filter((frame) => frame.type === "text")
+        .map((frame) => frame.text)
+        .join("");
+      expect(answered.at(-1)?.type).toBe("done");
+      expect(text.trim().length).toBeGreaterThan(0);
+      // Approving twice does not run it twice.
+      const again = (await (
+        await send(page, "/api/chat/tool", {
+          sessionId,
+          messageId: request.messageId,
+          approve: true,
+        })
+      ).json()) as { request?: { status: string } };
+      expect(again.request?.status).toBe("done");
+    }
     const removed = await page.request.delete(`/api/mcp/servers/${body.id}`, {
       headers: { origin: base },
     });
@@ -356,5 +426,37 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     await page.getByRole("button", { name: "Anmelden", exact: true }).click();
     await page.waitForURL(/\/app(\/|$|\?)/, { timeout: 60_000 });
     await expect(page.locator(".sidebar")).toContainText(question.slice(0, 30));
+  });
+
+  await test.step("GDPR: the person downloads their data, then deletes the account", async () => {
+    const exported = await send(page, "/api/account/export");
+    expect(exported.status()).toBe(200);
+    expect(exported.headers()["content-disposition"] ?? "").toContain("attachment");
+    const copy = (await exported.json()) as {
+      format: string;
+      data: { profile: Array<{ email: string }>; messages: unknown[] };
+    };
+    expect(copy.format).toBe("osirus-account-export/1");
+    expect(copy.data.profile[0]?.email).toBe(email);
+    expect(copy.data.messages.length).toBeGreaterThan(0);
+    // Sealed connection tokens are never part of the copy.
+    expect(JSON.stringify(copy)).not.toContain("credential_reference");
+
+    const deleted = await page.request.fetch("/api/account", {
+      method: "DELETE",
+      headers: { origin: base, "content-type": "application/json" },
+      data: JSON.stringify({ confirm: "LÖSCHEN" }),
+    });
+    console.log(`Account delete: HTTP ${deleted.status()}`);
+    expect(deleted.status()).toBe(200);
+    await page.goto("/app");
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
+    // The sign-in itself is gone too.
+    await page.locator('input[name="email"]').fill(email);
+    await page.locator('input[name="password"]').fill(password);
+    await page.getByRole("button", { name: "Anmelden", exact: true }).click();
+    await page.waitForTimeout(5_000);
+    await expect(page).toHaveURL(/\/auth\/sign-in/);
+    console.log("Data exported, account and sign-in deleted");
   });
 });
