@@ -1,0 +1,111 @@
+// Pure parts of the bot tool step (no server-only imports, unit tested).
+
+export type BotToolRequest = {
+  id: string;
+  toolId: string;
+  /** "server: tool", shown on the card. */
+  label: string;
+  arguments: Record<string, unknown>;
+  /** One line from the planner: why this call helps. */
+  reason: string;
+  status: "pending" | "running" | "done" | "failed" | "denied";
+  /** Fenced, truncated tool output; only when done. */
+  result?: string;
+  error?: string;
+};
+
+export type PlannedCall = {
+  toolId: string;
+  arguments: Record<string, unknown>;
+  reason: string;
+};
+
+type CatalogEntry = { id: string; title: string; summary: string };
+
+const DESCRIPTION_CHARS = 240;
+
+/** The planner prompt: the tools by id, one decision as JSON. */
+export function toolPlanMessages(input: {
+  botName: string;
+  message: string;
+  tools: CatalogEntry[];
+}) {
+  const list = input.tools
+    .map(
+      (tool) =>
+        `- ${tool.id} (${tool.title}): ${tool.summary.replace(/\s+/g, " ").slice(0, DESCRIPTION_CHARS)}`,
+    )
+    .join("\n");
+  return [
+    {
+      role: "system" as const,
+      content: [
+        `You decide whether the bot "${input.botName}" needs one of the person's connected tools to answer their message.`,
+        "Use a tool only when the message asks for something only that tool can provide or do (data in that service, an action there). Small talk, opinions, writing and general knowledge need no tool.",
+        "Reply with one JSON object and nothing else:",
+        '{"tool": "<tool id from the list>" | null, "arguments": { ... }, "reason": "<one short German sentence: what the call does>"}',
+        "Arguments must be the tool's own parameters, filled from the message. When a required value is unknown, use null for tool.",
+        "Available tools:",
+        list,
+      ].join("\n"),
+    },
+    { role: "user" as const, content: input.message.slice(0, 4_000) },
+  ];
+}
+
+function firstJsonObject(text: string): unknown {
+  const start = text.indexOf("{");
+  if (start < 0) return undefined;
+  let depth = 0;
+  let inString = false;
+  let escaped = false;
+  for (let index = start; index < text.length; index += 1) {
+    const char = text[index]!;
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (char === "\\") escaped = true;
+      else if (char === '"') inString = false;
+      continue;
+    }
+    if (char === '"') inString = true;
+    else if (char === "{") depth += 1;
+    else if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        try {
+          return JSON.parse(text.slice(start, index + 1));
+        } catch {
+          return undefined;
+        }
+      }
+    }
+  }
+  return undefined;
+}
+
+/**
+ * The planner's decision, or null for "no tool". A tool id that is not in
+ * the catalog is null too: the model cannot name a tool into existence.
+ */
+export function parseToolPlan(
+  text: string,
+  toolIds: readonly string[],
+): PlannedCall | null {
+  const value = firstJsonObject(text);
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const row = value as Record<string, unknown>;
+  const toolId = typeof row.tool === "string" ? row.tool.trim() : "";
+  if (!toolId || !toolIds.includes(toolId)) return null;
+  const args =
+    row.arguments &&
+    typeof row.arguments === "object" &&
+    !Array.isArray(row.arguments)
+      ? (row.arguments as Record<string, unknown>)
+      : {};
+  if (JSON.stringify(args).length > 8_000) return null;
+  const reason =
+    typeof row.reason === "string" && row.reason.trim()
+      ? row.reason.trim().slice(0, 200)
+      : "Werkzeug nutzen, um die Frage zu beantworten.";
+  return { toolId, arguments: args, reason };
+}

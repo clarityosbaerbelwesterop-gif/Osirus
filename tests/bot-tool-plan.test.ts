@@ -1,0 +1,65 @@
+import { describe, expect, it, vi } from "vitest";
+import { parseToolPlan, toolPlanMessages } from "../src/lib/agents/bot-tool-plan";
+
+vi.mock("server-only", () => ({}));
+const { collapseRegenerations } = await import("../src/lib/gateway/threads");
+
+const tools = ["mcp.abc123.list_issues", "mcp.abc123.create_issue"];
+
+describe("bot tool planning", () => {
+  it("takes a tool from the catalog with its arguments", () => {
+    const plan = parseToolPlan(
+      'Klar. {"tool": "mcp.abc123.list_issues", "arguments": {"state": "open"}, "reason": "Offene Issues abrufen."}',
+      tools,
+    );
+    expect(plan).toEqual({
+      toolId: "mcp.abc123.list_issues",
+      arguments: { state: "open" },
+      reason: "Offene Issues abrufen.",
+    });
+  });
+
+  it("means no tool for null, unknown ids, broken JSON or oversized input", () => {
+    expect(parseToolPlan('{"tool": null}', tools)).toBeNull();
+    expect(parseToolPlan('{"tool": "mcp.other.delete_all", "arguments": {}}', tools)).toBeNull();
+    expect(parseToolPlan('{"tool": "mcp.abc123.list_issues", "arguments": ', tools)).toBeNull();
+    expect(parseToolPlan("Keine Werkzeuge nötig.", tools)).toBeNull();
+    expect(
+      parseToolPlan(
+        JSON.stringify({ tool: tools[0], arguments: { body: "x".repeat(9_000) } }),
+        tools,
+      ),
+    ).toBeNull();
+  });
+
+  it("reads braces inside strings without losing the object", () => {
+    const plan = parseToolPlan(
+      '{"tool": "mcp.abc123.create_issue", "arguments": {"title": "Fix {braces} in \\"parser\\""}, "reason": "Issue anlegen."}',
+      tools,
+    );
+    expect(plan?.arguments).toEqual({ title: 'Fix {braces} in "parser"' });
+  });
+
+  it("lists every tool by id for the planner and keeps the message as the user turn", () => {
+    const messages = toolPlanMessages({
+      botName: "Lena",
+      message: "Welche Issues sind offen?",
+      tools: tools.map((id) => ({ id, title: id, summary: "GitHub issues" })),
+    });
+    expect(messages[0]!.content).toContain("mcp.abc123.list_issues");
+    expect(messages[0]!.content).toContain('"tool"');
+    expect(messages[1]).toEqual({ role: "user", content: "Welche Issues sind offen?" });
+  });
+});
+
+describe("thread collapse", () => {
+  it("keeps a bot's tool request when its answer follows", () => {
+    const thread = [
+      { role: "user" },
+      { role: "assistant", toolRequest: { id: "t" } },
+      { role: "assistant" },
+    ];
+    expect(collapseRegenerations(thread)).toHaveLength(3);
+    expect(collapseRegenerations([{ role: "user" }, { role: "assistant" }, { role: "assistant" }])).toHaveLength(2);
+  });
+});

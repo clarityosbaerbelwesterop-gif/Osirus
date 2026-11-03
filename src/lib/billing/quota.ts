@@ -206,3 +206,47 @@ export function serializeQuota(status: QuotaStatus) {
     })),
   };
 }
+
+/**
+ * What a person reads when a window is spent: which one, and the exact local
+ * time (Berlin) it has budget again. Both windows are rolling, so this is the
+ * moment enough of the oldest spend ages out, not a calendar reset.
+ */
+export function quotaMessageDe(status: QuotaStatus): string {
+  if (status.reason === "no_subscription")
+    return "Für Modelle ist ein aktiver Plan nötig.";
+  if (status.allowed || !status.availableAt)
+    return "Dein Kontingent ist verfügbar.";
+  const spent = status.windows.filter((window) => window.exhausted);
+  const names = spent.map((window) =>
+    window.window === "fiveHour" ? "5-Stunden-Kontingent" : "Wochenkontingent",
+  );
+  const label =
+    names.length > 1 ? "5-Stunden- und Wochenkontingent" : (names[0] ?? "Kontingent");
+  const at = status.availableAt;
+  const sameDay =
+    status.retryAfterMs < 20 * 60 * 60 * 1000 &&
+    new Intl.DateTimeFormat("de-DE", {
+      timeZone: "Europe/Berlin",
+      day: "2-digit",
+    }).format(at) ===
+      new Intl.DateTimeFormat("de-DE", {
+        timeZone: "Europe/Berlin",
+        day: "2-digit",
+      }).format(new Date(at.getTime() - status.retryAfterMs));
+  const when = new Intl.DateTimeFormat("de-DE", {
+    timeZone: "Europe/Berlin",
+    ...(sameDay
+      ? { hour: "2-digit", minute: "2-digit" }
+      : {
+          weekday: "long",
+          day: "2-digit",
+          month: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+  }).format(at);
+  return `Dein ${label} ist aufgebraucht. Es füllt sich von selbst wieder auf: ab ${when} Uhr kannst du weiterarbeiten.${
+    status.upgradeAvailable ? " Mit einem größeren Plan geht es sofort weiter." : ""
+  }`;
+}

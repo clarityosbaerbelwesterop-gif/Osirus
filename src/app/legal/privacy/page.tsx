@@ -171,8 +171,12 @@ export default function PrivacyPage() {
       <p>
         Die Anbieter verarbeiten die Inhalte zur Beantwortung der Anfrage nach
         ihren eigenen Bedingungen; einige speichern Anfragen für eine begrenzte
-        Zeit zur Missbrauchsabwehr. Osirus selbst trainiert keine Modelle mit
-        deinen Inhalten. Gleiche Anfragen können für kurze Zeit
+        Zeit zur Missbrauchsabwehr. Bei kostenlos bereitgestellten Modellen
+        (vor allem im Free-Plan) können Anbieter Ein- und Ausgaben nach ihren
+        Bedingungen protokollieren und zur Verbesserung ihrer Dienste
+        verwenden. Gib deshalb keine besonderen Kategorien personenbezogener
+        Daten (Art. 9 DSGVO, etwa Gesundheitsdaten) und keine Geheimnisse
+        Dritter ein. Osirus selbst trainiert keine Modelle mit deinen Inhalten. Gleiche Anfragen können für kurze Zeit
         zwischengespeichert werden, damit eine wiederholte Frage nicht erneut
         abgerechnet wird; der Zwischenspeicher ist an deinen Workspace gebunden.
       </p>
@@ -249,8 +253,10 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>MCP-Server:</strong> Von dir eingetragene Server erhalten die
-          Eingaben der Werkzeugaufrufe, die du freigibst. Jeder Aufruf eines
-          MCP-Werkzeugs braucht deine Freigabe.
+          Eingaben der Werkzeugaufrufe, die du freigibst. Rouge Agent, Code und
+          deine Bots können einen Aufruf vorschlagen; jeder Aufruf eines
+          MCP-Werkzeugs braucht deine Freigabe für genau diese Eingabe. Das
+          Ergebnis geht als Material in die Antwort ein.
         </li>
       </ul>
       <p>
@@ -451,8 +457,11 @@ export default function PrivacyPage() {
       <ul>
         <li>
           Konto- und Workspace-Inhalte speichern wir, solange dein Konto
-          besteht. Einzelne Unterhaltungen kannst du archivieren; auf Anfrage
-          löschen wir einzelne Inhalte oder das gesamte Konto.
+          besteht. Einzelne Unterhaltungen kannst du archivieren. Unter
+          Einstellungen → Datenschutz löschst du dein Konto selbst, sofort und
+          endgültig: Anmeldung, Profil, Chats, Bots, Läufe, Gedächtnis,
+          Dateien, Verbindungen und Nutzungszähler werden dabei entfernt. Auf
+          Anfrage löschen wir auch einzelne Inhalte.
         </li>
         <li>
           Nach einer Löschanfrage löschen oder anonymisieren wir die Daten
@@ -498,6 +507,12 @@ export default function PrivacyPage() {
           DSGVO).
         </li>
       </ul>
+      <p>
+        Auskunft und Datenübertragbarkeit bekommst du jederzeit selbst: Unter
+        Einstellungen → Datenschutz lädst du alle zu dir gespeicherten Daten
+        als JSON-Datei herunter (gespeicherte Zugangsschlüssel nur verschlüsselt
+        und daher nicht enthalten). Dort löschst du auch dein Konto.
+      </p>
       <p>
         Wende dich dafür formlos an{" "}
         <a href={`mailto:${OPERATOR.email}`}>{OPERATOR.email}</a>. Wir antworten
@@ -550,7 +565,7 @@ export default function PrivacyPage() {
       </p>
 
       <h2>26. Stand und Änderungen</h2>
-      <p>Stand: 29. Oktober 2026.</p>
+      <p>Stand: 3. November 2026.</p>
       <p>
         Ändert sich die Verarbeitung, passen wir diese Erklärung an. Bei
         wesentlichen Änderungen bitten wir dich in der Anwendung, die neue

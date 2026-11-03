@@ -1,8 +1,14 @@
 import { z } from "zod";
-import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
-import { serializeQuota } from "@/lib/billing/quota";
+import { quotaMessageDe, serializeQuota } from "@/lib/billing/quota";
 import { botRecollectionTurns, getAgent } from "@/lib/agents/store";
 import { recollectionPrompt } from "@/lib/agents/recollection";
+import {
+  botToolCatalog,
+  loadToolRequest,
+  newToolRequest,
+  toolMaterial,
+} from "@/lib/agents/bot-tools";
+import { planBotToolCall, publicToolRequest } from "@/lib/agents/bot-tool-call";
 import { repositoryMaterial } from "@/lib/gateway/repo-material";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
 import { answerCacheKey, cachedAnswer, storeAnswer } from "@/lib/gateway/cache";
@@ -69,6 +75,8 @@ const schema = z.object({
   web: z.boolean().optional().default(false),
   /** Files uploaded for this message (POST /api/attachments). */
   attachmentIds: z.array(z.string().uuid()).max(8).optional().default([]),
+  /** A bot's decided tool request whose result this answer uses. */
+  toolMessageId: z.string().uuid().nullable().optional(),
 });
 
 function json(body: unknown, status: number, headers?: Record<string, string>) {
@@ -159,9 +167,7 @@ export async function POST(request: Request) {
     return json(
       {
         error: noPlan ? "subscription_required" : "quota_exhausted",
-        message: publicRuntimeErrorMessage({
-          code: noPlan ? "subscription_required" : "quota_exhausted",
-        }),
+        message: quotaMessageDe(access.quota),
         quota: serializeQuota(access.quota),
       },
       noPlan ? 402 : 429,
@@ -293,6 +299,65 @@ export async function POST(request: Request) {
     });
   }
 
+  // MCP for bots: a decided request feeds this answer; otherwise a bot with
+  // reviewed tools may ask for one call first, which the person approves.
+  const decided =
+    bot && body.toolMessageId
+      ? await loadToolRequest(identity, sessionId, body.toolMessageId).catch(
+          () => null,
+        )
+      : null;
+  if (bot && !body.regenerate && !body.toolMessageId) {
+    const catalog = await botToolCatalog(identity);
+    if (catalog.length) {
+      const planned = await planBotToolCall({
+        identity,
+        sessionId,
+        model: candidates[0],
+        botName: bot.name,
+        message: body.message,
+        catalog,
+        signal: request.signal,
+      });
+      if (planned) {
+        const tool = catalog.find((entry) => entry.id === planned.toolId)!;
+        const toolRequest = newToolRequest(planned, tool);
+        const saved = await saveChatMessage(identity, {
+          sessionId,
+          role: "assistant",
+          content: `Ich würde dafür „${toolRequest.label}“ nutzen: ${toolRequest.reason} Gibst du den Aufruf frei?`,
+          metadata: { surface: "ai", botId: bot.id, toolRequest },
+        });
+        const events = [
+          {
+            type: "start",
+            sessionId,
+            title:
+              existing?.title ??
+              body.message.replace(/\s+/g, " ").slice(0, 80),
+            created: !existing,
+            cached: false,
+          },
+          {
+            type: "tool_request",
+            messageId: saved.id,
+            request: publicToolRequest(toolRequest),
+          },
+          { type: "done", messageId: saved.id, latencyMs: 0 },
+        ];
+        return new Response(
+          events.map((event) => `data: ${JSON.stringify(event)}\n\n`).join(""),
+          {
+            headers: {
+              "Content-Type": "text/event-stream; charset=utf-8",
+              "Cache-Control": "no-store, no-transform",
+            },
+          },
+        );
+      }
+    }
+  }
+
   const messages: GatewayMessage[] = [
     {
       role: "system",
@@ -303,7 +368,8 @@ export async function POST(request: Request) {
         }) +
         (bot ? (recollectionPrompt(bot.name, recalled) ?? "") : "") +
         material.prompt +
-        repositories,
+        repositories +
+        toolMaterial(decided),
     },
     ...context,
     { role: "user", content: body.message },
