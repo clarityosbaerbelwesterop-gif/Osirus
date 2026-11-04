@@ -193,3 +193,20 @@ describe("run view: task list", () => {
     expect(latestTodos([])).toEqual([]);
   });
 });
+
+describe("failed steps keep their reason", () => {
+  it("adds a short reason only to failed steps", async () => {
+    const { failureDetail } = await import("../src/lib/arms/base");
+    expect(failureDetail({ outcome: "ok", detail: "x" })).toEqual({});
+    expect(failureDetail({ outcome: "error" })).toEqual({});
+    expect(
+      failureDetail({
+        outcome: "error",
+        detail: `invalid_input:\n url: Invalid URL ${"x".repeat(400)}`,
+      }).detail,
+    ).toMatch(/^invalid_input: url: Invalid URL x+$/);
+    expect(
+      failureDetail({ outcome: "error", detail: "y".repeat(500) }).detail,
+    ).toHaveLength(200);
+  });
+});
