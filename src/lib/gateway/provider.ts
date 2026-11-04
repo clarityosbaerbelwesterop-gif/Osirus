@@ -7,7 +7,6 @@ import type {
   Usage,
 } from "@/lib/models/provider";
 import { callCostUsd } from "./cost";
-import { extractJsonObject } from "./json";
 import {
   hideModel,
   listGatewayModels,
@@ -24,6 +23,7 @@ import {
   PROVIDER_WIDE_CODES,
   tierOf,
 } from "./routing";
+import { structuredWithRepair } from "./structured";
 import {
   completeGateway,
   streamGateway,
@@ -62,9 +62,6 @@ function asMessages(messages: unknown[]): GatewayMessage[] {
       typeof (message as GatewayMessage).role === "string",
   );
 }
-
-const JSON_REPAIR =
-  "Your previous reply could not be read as JSON. Reply again with exactly one JSON object and nothing else: no prose, no code fence.";
 
 export class GatewayProvider implements ModelProvider {
   private readonly controllers = new Map<string, AbortController>();
@@ -217,10 +214,12 @@ export class GatewayProvider implements ModelProvider {
     messages: unknown[];
     signal?: AbortSignal;
     sampling?: Sampling;
+    /** Only these models, in this order (structured output's retries). */
+    refs?: string[];
   }) {
     const { signal, done } = this.signalFor(input.requestId, input.signal);
     try {
-      const refs = await this.refsFor(input.role);
+      const refs = input.refs ?? (await this.refsFor(input.role));
       const skipped = new Set<string>();
       for (const [index, ref] of refs.entries()) {
         if (skipped.has(serviceOf(ref))) continue;
@@ -244,6 +243,8 @@ export class GatewayProvider implements ModelProvider {
           return {
             text: result.text,
             usage: toUsage(result.usage, await this.model(ref)),
+            /** The model that answered. */
+            ref,
           };
         } catch (error) {
           const code = codeOf(error);
@@ -264,8 +265,9 @@ export class GatewayProvider implements ModelProvider {
   }
 
   /**
-   * Structured output: the JSON object anywhere in the reply; when there is
-   * none, one repair turn asks for the object alone.
+   * Structured output (see ./structured): every object in the reply is
+   * tried; a bad reply gets one repair turn on the same model, then one fresh
+   * attempt on the next candidate model.
    */
   async structured<T>(input: {
     requestId: string;
@@ -275,40 +277,36 @@ export class GatewayProvider implements ModelProvider {
     signal?: AbortSignal;
     sampling?: Sampling;
   }) {
-    const first = await this.complete(input);
-    const parsed = extractJsonObject(first.text);
-    if (parsed !== undefined) {
-      return { value: input.validate(parsed), usage: first.usage };
-    }
-    const repaired = await this.complete({
-      ...input,
-      requestId: `${input.requestId}:repair`,
-      messages: [
-        ...input.messages,
-        { role: "assistant", content: first.text.slice(0, 4000) },
-        { role: "user", content: JSON_REPAIR },
-      ],
-    });
-    const second = extractJsonObject(repaired.text);
-    if (second === undefined) {
-      throw new ProviderError(
-        "Structured model response did not contain JSON",
-        "invalid_json",
-      );
-    }
-    return {
-      value: input.validate(second),
-      usage: {
-        inputTokens:
-          (first.usage.inputTokens ?? 0) + (repaired.usage.inputTokens ?? 0),
-        outputTokens:
-          (first.usage.outputTokens ?? 0) + (repaired.usage.outputTokens ?? 0),
-        cost:
-          first.usage.cost === undefined && repaired.usage.cost === undefined
-            ? undefined
-            : (first.usage.cost ?? 0) + (repaired.usage.cost ?? 0),
+    const refs = await this.refsFor(input.role);
+    let answered: string | undefined;
+    return structuredWithRepair({
+      requestId: input.requestId,
+      messages: input.messages,
+      validate: input.validate,
+      signal: input.signal,
+      onUnusable: () => {
+        if (answered) noteModelResult(answered, { ok: false, firstTokenMs: 0 });
       },
-    };
+      call: async (messages, requestId, attempt) => {
+        const pool =
+          attempt === 0
+            ? refs
+            : attempt === 1
+              ? answered
+                ? [answered]
+                : refs
+              : refs.slice(answered ? refs.indexOf(answered) + 1 : 1);
+        if (!pool.length) return null;
+        const result = await this.complete({
+          ...input,
+          messages,
+          requestId,
+          refs: pool,
+        });
+        if (attempt === 0) answered = result.ref;
+        return result;
+      },
+    });
   }
 
   async capabilities() {

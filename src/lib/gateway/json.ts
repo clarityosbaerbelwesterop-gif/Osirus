@@ -21,8 +21,8 @@ function tryParse(candidate: string): unknown {
 }
 
 /** Every balanced {...} span, string- and escape-aware, in order of appearance. */
-function balancedObjects(text: string): string[] {
-  const spans: string[] = [];
+function balancedObjects(text: string): Array<{ start: number; text: string }> {
+  const spans: Array<{ start: number; text: string }> = [];
   for (
     let start = text.indexOf("{");
     start >= 0;
@@ -44,7 +44,7 @@ function balancedObjects(text: string): string[] {
       else if (char === "}") {
         depth -= 1;
         if (depth === 0) {
-          spans.push(text.slice(start, index + 1));
+          spans.push({ start, text: text.slice(start, index + 1) });
           break;
         }
       }
@@ -55,6 +55,36 @@ function balancedObjects(text: string): string[] {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === "object" && !Array.isArray(value);
+
+/**
+ * Every top-level JSON object of a reply, in order: fenced ones (last fence
+ * first), then the objects written in the prose. Nested objects are left out:
+ * a tool input inside a decision is not a decision of its own.
+ */
+export function jsonObjectCandidates(text: string): Record<string, unknown>[] {
+  const clean = stripThinking(text);
+  const found: Record<string, unknown>[] = [];
+  const seen = new Set<string>();
+  const add = (value: unknown) => {
+    if (!isRecord(value)) return;
+    const key = JSON.stringify(value);
+    if (seen.has(key)) return;
+    seen.add(key);
+    found.push(value);
+  };
+  add(tryParse(clean));
+  for (const match of [
+    ...clean.matchAll(/```(?:json|JSON)?\s*\n?([\s\S]*?)```/g),
+  ].reverse())
+    add(tryParse(match[1] ?? ""));
+  let end = -1;
+  for (const span of balancedObjects(clean)) {
+    if (span.start <= end) continue;
+    end = span.start + span.text.length - 1;
+    add(tryParse(span.text));
+  }
+  return found;
+}
 
 /** The JSON object a reply carries, or undefined. */
 export function extractJsonObject(
@@ -73,7 +103,9 @@ export function extractJsonObject(
   }
 
   // Outermost objects first (they start earliest), then nested ones.
-  const spans = balancedObjects(clean).sort((a, b) => b.length - a.length);
+  const spans = balancedObjects(clean)
+    .map((span) => span.text)
+    .sort((a, b) => b.length - a.length);
   for (const span of spans) {
     const parsed = tryParse(span);
     if (isRecord(parsed)) return parsed;
