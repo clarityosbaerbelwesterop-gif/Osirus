@@ -902,6 +902,25 @@ export class RuntimeRepository {
     return mapEvent(rows[0]);
   }
 
+  /**
+   * Notes the person sent to a run (event type "user.note") after a
+   * sequence, oldest first. Read under the run's row-level security.
+   */
+  async userNotes(runId: string, afterSequence: number) {
+    const rows = await queryAs<{ sequence: string | number; summary: string }>(
+      this.actorId,
+      `select sequence, summary from osirus.run_events
+        where run_id = $1::uuid and type = 'user.note' and sequence > $2
+        order by sequence
+        limit 10`,
+      [runId, afterSequence],
+    );
+    return rows.map((row) => ({
+      sequence: Number(row.sequence),
+      text: row.summary,
+    }));
+  }
+
   async saveCheckpoint(input: {
     runId: string;
     stageId?: string | null;

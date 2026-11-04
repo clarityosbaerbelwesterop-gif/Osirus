@@ -54,7 +54,34 @@ export type RunView = {
   approvals: ApprovalView[];
   failure: { stage: string | null; message: string } | null;
   memoryCount: number | null;
+  /** The agent's own task list, as its latest step sent it. */
+  todos: Array<{ text: string; done: boolean }>;
+  /** Notes the person sent to the run while it worked, oldest first. */
+  notes: Array<{ id: string; text: string; at: string }>;
 };
+
+/** The task list of the latest agent step that carried one. */
+export function latestTodos(events: RunSnapshot["events"]) {
+  for (let index = events.length - 1; index >= 0; index -= 1) {
+    const event = events[index]!;
+    if (event.type !== "agent.step") continue;
+    const todos = event.data?.todos;
+    if (!Array.isArray(todos)) continue;
+    return todos
+      .filter(
+        (todo): todo is { text: string; done?: unknown } =>
+          Boolean(todo) &&
+          typeof todo === "object" &&
+          typeof (todo as { text?: unknown }).text === "string",
+      )
+      .slice(0, 12)
+      .map((todo) => ({
+        text: todo.text.slice(0, 160),
+        done: todo.done === true,
+      }));
+  }
+  return [];
+}
 
 function duration(stage: unknown, now: number) {
   const started = iso(stage, "started_at");
@@ -167,6 +194,10 @@ export function deriveRunView(
     approvals,
     failure,
     memoryCount: num(memoryEvent?.data, "count"),
+    todos: latestTodos(snapshot.events),
+    notes: snapshot.events
+      .filter((event) => event.type === "user.note")
+      .map((event) => ({ id: event.id, text: event.summary, at: event.at })),
   };
 }
 

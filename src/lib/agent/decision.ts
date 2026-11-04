@@ -33,6 +33,13 @@ export const AGENT_WAIT_KINDS = [
 
 export type AgentAction = (typeof AGENT_ACTIONS)[number];
 
+export const agentTodoSchema = z.object({
+  text: z.string().trim().min(1).max(160),
+  done: z.boolean().default(false),
+});
+
+export type AgentTodo = z.infer<typeof agentTodoSchema>;
+
 export const agentDecisionSchema = z.object({
   action: z.enum(AGENT_ACTIONS),
   /** One line, user-visible. What is being done, never why at length. */
@@ -81,6 +88,11 @@ export const agentDecisionSchema = z.object({
   /** The user-facing answer, required for RESPOND and FINISH. */
   answer: z.string().max(100_000).optional(),
   progress: z.number().min(0).max(1).optional(),
+  /**
+   * The agent's own task list, shown live to the person. A malformed list is
+   * dropped, never a reason to reject the decision.
+   */
+  todos: z.array(agentTodoSchema).max(12).optional().catch(undefined),
   /**
    * VERIFY only. Which hypotheses this evidence bears on. Absent means the
    * loop may match by statement or falsifier, and must not update every
@@ -223,10 +235,12 @@ export const DECISION_FORMAT = [
   '  "wait": { "kind": "ci|deployment|external_event|dependency|rate_limit|schedule|human", "reason": "", "until": "ISO time", "ref": "", "eventKey": "" },',
   '  "answer": "the complete user-facing answer, only for RESPOND or FINISH",',
   '  "progress": 0.0,',
+  '  "todos": [{ "text": "one task of your plan", "done": false }],',
   '  "hypothesisIds": ["only for VERIFY: hypothesis ids this evidence bears on"],',
   '  "evidenceRelation": "supports|contradicts|falsifies, only for VERIFY"',
   "}",
   "The summary is shown to the user as live activity: write it in the language of the objective (German for a German objective), state the action, do not narrate reasoning.",
   "Keep each reply short enough to arrive whole: put at most about 6,000 characters of file content in one tool call and write a long document as several files. A reply that is cut off is not valid JSON and is lost.",
   "Never repeat a call that already succeeded or failed with the same input; the observations hold its result.",
+  'For a task with more than two steps, keep a short task list in "todos" (at most 8 items, in the language of the objective): send it with your first decision and again whenever an item is done or the plan changes. Omit it when nothing changed.',
 ].join("\n");
