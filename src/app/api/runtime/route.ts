@@ -20,6 +20,8 @@ import {
   verifiedLead,
   resolveModelSelection,
 } from "@/lib/gateway/models";
+import { measuredPenalty, rankByMeasure } from "@/lib/gateway/measured";
+import { measuredModelStats } from "@/lib/gateway/measured-store";
 import { isGatewayRef } from "@/lib/gateway/providers";
 import {
   candidatesFor,
@@ -239,15 +241,36 @@ export async function POST(request: Request) {
       const pool = allowed.length
         ? allowed
         : listing.models.filter((model) => modelAllowed(model, access));
+      // What production measured for agent decisions (latency, failures):
+      // a model that is slow or failing steps back, even among verified ones.
+      const measured = await measuredModelStats();
       const best = candidatesFor(pool, tier, {
         coding: surface === "coding",
         limit: 1,
-        penalty: (ref) => modelPenalty(ref),
+        penalty: (ref) =>
+          modelPenalty(ref) + measuredPenalty(measured.get(ref)),
         // Measured models first: a ranked guess may be one the service no
         // longer serves, and a run pins its model for every step.
-        lead: [...verifiedLead(pool, tier), ...verifiedBackup(pool)],
+        lead: rankByMeasure(
+          [...verifiedLead(pool, tier), ...verifiedBackup(pool)],
+          measured,
+        ),
       })[0];
-      if (best) pinnedModel = best.ref;
+      if (best) {
+        pinnedModel = best.ref;
+        // Operator log: which model the run got and what was measured for it.
+        const stat = measured.get(best.ref);
+        console.info(
+          JSON.stringify({
+            event: "runtime.model_pick",
+            surface,
+            tier,
+            model: best.ref,
+            measuredCalls: stat?.calls ?? 0,
+            measuredP50Ms: stat ? Math.round(stat.p50Ms) : null,
+          }),
+        );
+      }
     }
   }
   let coding = parsed.data.coding;
