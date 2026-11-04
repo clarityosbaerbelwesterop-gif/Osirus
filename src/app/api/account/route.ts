@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import { z } from "zod";
+import { auth } from "@/lib/auth/server";
 import { guardWrite, json } from "@/lib/product/api";
 import { AccountDeletionBlocked, deleteAccount } from "@/lib/privacy/account";
 import { billingConfigured, stripe } from "@/lib/billing/stripe";
@@ -54,6 +56,14 @@ export async function DELETE(request: Request) {
       },
       500,
     );
+  }
+  // The sign-in is gone; end this browser's session now instead of when its
+  // cached session cookie expires.
+  await auth.signOut().catch(() => undefined);
+  const store = await cookies();
+  for (const cookie of store.getAll()) {
+    if (/neon-auth|better-auth/i.test(cookie.name))
+      store.delete({ name: cookie.name, path: "/", secure: true });
   }
   return json({ deleted: true }, 200);
 }

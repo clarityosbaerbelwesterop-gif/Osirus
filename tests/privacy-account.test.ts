@@ -124,3 +124,18 @@ describe("account deletion (Art. 17)", () => {
     expect(calls).toHaveLength(2);
   });
 });
+
+describe("a deleted sign-in", () => {
+  it("is recognised by the foreign-key violation, nothing else", async () => {
+    vi.doMock("next/navigation", () => ({ redirect: () => undefined }));
+    vi.doMock("../src/lib/auth/server", () => ({
+      auth: {},
+      requireAuthConfiguration: () => undefined,
+    }));
+    const { signInGone } = await import("../src/lib/product/session");
+    expect(signInGone({ code: "23503" })).toBe(true);
+    expect(signInGone({ code: "23505" })).toBe(false);
+    expect(signInGone(new Error("boom"))).toBe(false);
+    expect(signInGone(null)).toBe(false);
+  });
+});

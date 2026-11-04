@@ -43,13 +43,32 @@ export const loadProductSession = cache(
       id: user.id,
       email: user.email,
       name: user.name,
+    }).catch((error: unknown) => {
+      // The sign-in was deleted (the account was deleted) while a cached
+      // session cookie still names it: that person is signed out, and no
+      // new account may be created behind their back.
+      if (signInGone(error)) return null;
+      throw error;
     });
+    if (!identity) return null;
     return {
       user,
       identity,
     };
   },
 );
+
+/**
+ * osirus.users references neon_auth.user: writing the app user for a sign-in
+ * that no longer exists fails with a foreign-key violation (23503).
+ */
+export function signInGone(error: unknown) {
+  return (
+    Boolean(error) &&
+    typeof error === "object" &&
+    (error as { code?: unknown }).code === "23503"
+  );
+}
 
 /** For pages: the session, or a redirect to sign-in. */
 export async function requireProductSession(): Promise<ProductSession> {
