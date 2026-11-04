@@ -60,6 +60,17 @@ function modelErrorCode(error: unknown, fallback: string) {
     : fallback;
 }
 
+/**
+ * Why a step failed, on its event: without it a failed tool call reads only
+ * "error" and cannot be diagnosed after the fact. Short, and only the loop's
+ * or tool's own error text (never tool output).
+ */
+export function failureDetail(step: { outcome: string; detail?: string }) {
+  return step.outcome === "error" && step.detail
+    ? { detail: step.detail.replace(/\s+/g, " ").slice(0, 200) }
+    : {};
+}
+
 export const SYSTEM_CONTRACT = [
   "You are OSIRUS, an execution-focused AI agent.",
   "Return the user-facing answer only. Never expose private chain-of-thought.",
@@ -935,6 +946,7 @@ export abstract class BaseArm implements AgentArm {
                 outcome: step.outcome,
                 evidenceRefs: step.evidenceRefs ?? [],
                 ...(step.todos ? { todos: step.todos } : {}),
+                ...failureDetail(step),
               },
               "user",
             );
@@ -1381,6 +1393,7 @@ export abstract class BaseArm implements AgentArm {
             outcome: step.outcome,
             evidenceRefs: step.evidenceRefs ?? [],
             ...(step.todos ? { todos: step.todos } : {}),
+            ...failureDetail(step),
           },
           "user",
         );
