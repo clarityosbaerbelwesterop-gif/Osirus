@@ -242,5 +242,5 @@ export const DECISION_FORMAT = [
   "The summary is shown to the user as live activity: write it in the language of the objective (German for a German objective), state the action, do not narrate reasoning.",
   "Keep each reply short enough to arrive whole: put at most about 6,000 characters of file content in one tool call and write a long document as several files. A reply that is cut off is not valid JSON and is lost.",
   "Never repeat a call that already succeeded or failed with the same input; the observations hold its result.",
-  'For a task with more than two steps, keep a short task list in "todos" (at most 8 items, in the language of the objective): send it with your first decision and again whenever an item is done or the plan changes. Omit it when nothing changed.',
+  'For a task with more than two steps, keep a short task list in "todos" (at most 8 items, written in the language of the objective: German for a German objective): send it with your first decision and again whenever an item is done or the plan changes. Omit it when nothing changed.',
 ].join("\n");
