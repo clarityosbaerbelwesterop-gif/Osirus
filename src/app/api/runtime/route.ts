@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { after } from "next/server";
 import { auth, requireAuthConfiguration } from "@/lib/auth/server";
 import { bootstrapProductIdentity } from "@/lib/auth/bootstrap";
 import { quotaEnforced } from "@/lib/billing/enforce";
@@ -384,6 +385,28 @@ export async function POST(request: Request) {
   }
 
   const encoder = new TextEncoder();
+  // Settles when this request stops driving the run (finished, slice budget
+  // spent, or the browser went away).
+  let released: () => void = () => undefined;
+  const requestDone = new Promise<void>((resolve) => {
+    released = resolve;
+  });
+  // Work left after this request: ask for a tick at once instead of
+  // waiting for the next scheduled one (runtime/background.ts). Outside a
+  // request scope (unit tests) there is nothing to schedule after.
+  try {
+    after(async () => {
+      await requestDone;
+      const { continueInBackground } =
+        await import("@/lib/runtime/background-kick");
+      await continueInBackground({
+        userId: identity.userId,
+        runId: prepared.runId,
+      });
+    });
+  } catch {
+    // The scheduled ticks still pick the run up.
+  }
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       const emit = (packet: RuntimePacket) => {
@@ -409,7 +432,10 @@ export async function POST(request: Request) {
               message: publicRuntimeErrorMessage(error),
             });
           })
-          .finally(() => controller.close());
+          .finally(() => {
+            controller.close();
+            released();
+          });
         return;
       }
 
@@ -432,7 +458,10 @@ export async function POST(request: Request) {
             message: publicRuntimeErrorMessage(error),
           });
         })
-        .finally(() => controller.close());
+        .finally(() => {
+          controller.close();
+          released();
+        });
     },
   });
 

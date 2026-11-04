@@ -8,7 +8,9 @@ import {
   RateLimitError,
   RateLimitUnavailableError,
 } from "@/lib/security/rate-limit";
+import { chainDecision } from "@/lib/runtime/background";
 import { budgetStopReason } from "@/lib/runtime/settlement";
+import { policyOfStage } from "@/lib/strategy/runtime";
 import { driveSlices, finalizeRun } from "@/lib/runtime/worker";
 
 export const dynamic = "force-dynamic";
@@ -172,6 +174,8 @@ async function tick(request: Request) {
   let claimed = 0;
   let completed = 0;
   let failed = 0;
+  /** Stages of people's runs (not strategy trials) moved in this tick. */
+  let productMoved = 0;
 
   // One claim across all runs tells us both whether there is work and whose it
   // is. The run is then drained on its own, so a single busy run cannot starve
@@ -226,6 +230,7 @@ async function tick(request: Request) {
       identity,
       maxStages: MAX_STAGES_PER_TICK - claimed,
     });
+    if (!policyOfStage(probe.stageInput)) productMoved += 1 + slice.claimed;
     claimed += slice.claimed;
     completed += slice.completed;
     failed += slice.failed;
@@ -244,19 +249,26 @@ async function tick(request: Request) {
   // starts the next one.
   // The chain number is a hard backstop as well: even if the day's ledger
   // could not be charged, no chain outlives the largest daily envelope.
-  const chained =
-    chain < MAX_CHAIN &&
-    ((Boolean(foundry?.continueChain) &&
-      (claimed > 0 || (foundry?.step?.progressed ?? 0) > 0)) ||
-      Boolean(pulse?.continueChain) ||
-      Boolean(rsi?.continueChain));
+  // A person's run that moved keeps the chain going too (see
+  // runtime/background.ts): a closed tab must not park it until the next
+  // hourly tick. Only research work is charged to the daily envelope.
+  const { chained, charge } = chainDecision({
+    chain,
+    maxChain: MAX_CHAIN,
+    productMoved,
+    foundry:
+      Boolean(foundry?.continueChain) &&
+      (claimed > 0 || (foundry?.step?.progressed ?? 0) > 0),
+    pulse: Boolean(pulse?.continueChain),
+    rsi: Boolean(rsi?.continueChain),
+  });
   if (chained)
     after(async () => {
       const { chargeChainedTick } =
         await import("@/lib/intelligence/production/runner");
       const { triggerTick } =
         await import("@/lib/intelligence/production/operator");
-      await chargeChainedTick().catch(() => undefined);
+      if (charge) await chargeChainedTick().catch(() => undefined);
       await triggerTick(chain + 1);
     });
 
