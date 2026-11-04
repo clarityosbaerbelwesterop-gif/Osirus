@@ -9,7 +9,7 @@ import {
   type FailureCategory,
 } from "./free-registry";
 import { modelRuntime, type ModelRuntime } from "./model-runtime";
-import { extractJsonObject } from "../gateway/json";
+import { structuredWithRepair } from "../gateway/structured";
 import type {
   ModelProvider,
   ModelRole,
@@ -889,34 +889,17 @@ export class UnoRouterProvider implements ModelProvider {
     signal?: AbortSignal;
     sampling?: Sampling;
   }) {
-    const result = await this.complete(input);
-    const parsed = extractJsonObject(result.text);
-    if (parsed !== undefined) {
-      return { value: input.validate(parsed), usage: result.usage };
-    }
-    // One repair turn: the same model, asked for the object alone. Weak
-    // free models often answer in prose first.
-    const repaired = await this.complete({
-      ...input,
-      requestId: `${input.requestId}:repair`,
-      messages: [
-        ...input.messages,
-        { role: "assistant", content: result.text.slice(0, 4000) },
-        {
-          role: "user",
-          content:
-            "Your previous reply could not be read as JSON. Reply again with exactly one JSON object and nothing else: no prose, no code fence.",
-        },
-      ],
+    // Weak free models often answer in prose first, or in another shape:
+    // every object is tried, then one repair turn, then one fresh attempt
+    // (the router may serve it from another model).
+    return structuredWithRepair({
+      requestId: input.requestId,
+      messages: input.messages,
+      validate: input.validate,
+      signal: input.signal,
+      call: (messages, requestId) =>
+        this.complete({ ...input, messages, requestId }),
     });
-    const second = extractJsonObject(repaired.text);
-    if (second === undefined) {
-      throw new ProviderError(
-        "Structured model response did not contain JSON",
-        "invalid_json",
-      );
-    }
-    return { value: input.validate(second), usage: repaired.usage };
   }
 
   async capabilities() {
