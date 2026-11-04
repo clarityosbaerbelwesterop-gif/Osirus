@@ -934,10 +934,13 @@ export abstract class BaseArm implements AgentArm {
                 toolId: step.toolId ?? null,
                 outcome: step.outcome,
                 evidenceRefs: step.evidenceRefs ?? [],
+                ...(step.todos ? { todos: step.todos } : {}),
               },
               "user",
             );
           },
+          // Notes the person sends to the running run (the plan tab).
+          notes: (after) => runtime.repository.userNotes(work.runId, after),
           onToolResult: (entry) => toolbox.record(entry),
           // The running agent found its capability is not enough: add the
           // one the mission needs, after this stage, with the reason.
@@ -1377,6 +1380,7 @@ export abstract class BaseArm implements AgentArm {
             toolId: step.toolId ?? null,
             outcome: step.outcome,
             evidenceRefs: step.evidenceRefs ?? [],
+            ...(step.todos ? { todos: step.todos } : {}),
           },
           "user",
         );

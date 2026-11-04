@@ -53,6 +53,8 @@ function view(overrides: Partial<RunView> = {}): RunView {
     approvals: [],
     failure: null,
     memoryCount: null,
+    todos: [],
+    notes: [],
     ...overrides,
   };
 }

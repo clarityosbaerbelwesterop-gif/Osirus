@@ -11,6 +11,7 @@ import {
   Users,
   Wrench,
 } from "lucide-react";
+import { useState, type FormEvent } from "react";
 import type { RunSnapshot } from "@/lib/runtime/types";
 import { approvalView } from "@/lib/ui/approval-view";
 import {
@@ -62,6 +63,8 @@ export function PlanPanel({ view }: { view: RunView }) {
     );
   return (
     <div className="wb-section">
+      <AgentTodos view={view} />
+      <RunNotes view={view} />
       {view.composition.length > 1 ? (
         <p className="subtle wb-note">
           Combines {view.composition.join(" → ")}
@@ -102,6 +105,124 @@ export function PlanPanel({ view }: { view: RunView }) {
         ))}
       </ol>
     </div>
+  );
+}
+
+/** The agent's own task list, as its latest step sent it. */
+function AgentTodos({ view }: { view: RunView }) {
+  if (!view.todos.length) return null;
+  const done = view.todos.filter((todo) => todo.done).length;
+  const current = view.live ? view.todos.findIndex((todo) => !todo.done) : -1;
+  return (
+    <section className="wb-section" aria-label="Aufgaben des Agenten">
+      <p className="wb-heading">
+        Aufgaben des Agenten{" "}
+        <span className="subtle tabular">
+          {done}/{view.todos.length} erledigt
+        </span>
+      </p>
+      <ol className="plan">
+        {view.todos.map((todo, index) => {
+          const state = todo.done
+            ? "done"
+            : index === current
+              ? "running"
+              : "pending";
+          return (
+            <li
+              key={`${index}:${todo.text}`}
+              className="plan-step"
+              data-state={state}
+            >
+              <StatusIcon state={state} />
+              <span className="plan-name">{todo.text}</span>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
+  );
+}
+
+/**
+ * Notes to the running agent, like comments on its plan: it reads them
+ * before its next step. Only while the run still works.
+ */
+function RunNotes({ view }: { view: RunView }) {
+  const [text, setText] = useState("");
+  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">(
+    "idle",
+  );
+  const [sent, setSent] = useState<Array<{ id: string; text: string }>>([]);
+  const shown = [
+    ...view.notes,
+    ...sent.filter((note) => !view.notes.some((row) => row.id === note.id)),
+  ];
+  if (!view.live && !shown.length) return null;
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const note = text.trim();
+    if (!note || state === "sending") return;
+    setState("sending");
+    try {
+      const response = await fetch(`/api/runtime/${view.runId}/notes`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text: note }),
+      });
+      if (!response.ok) throw new Error(String(response.status));
+      const body = (await response.json()) as { id: string };
+      setSent((rows) => [...rows, { id: body.id, text: note }]);
+      setText("");
+      setState("sent");
+    } catch {
+      setState("error");
+    }
+  }
+
+  return (
+    <section className="wb-section" aria-label="Anmerkungen an den Agenten">
+      {shown.length ? (
+        <ul className="plan">
+          {shown.map((note) => (
+            <li key={note.id} className="plan-step" data-state="done">
+              <span className="subtle plan-meta">Deine Anmerkung</span>
+              <span className="plan-name">{note.text}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      {view.live ? (
+        <form className="wb-section" onSubmit={submit}>
+          <label className="wb-note subtle" htmlFor={`note-${view.runId}`}>
+            Anmerkung an den Agenten. Er berücksichtigt sie vor seinem nächsten
+            Schritt.
+          </label>
+          <textarea
+            id={`note-${view.runId}`}
+            className="textarea"
+            rows={2}
+            maxLength={1000}
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            placeholder="z. B. Nimm das vorhandene Repo statt ein neues anzulegen."
+          />
+          <button
+            type="submit"
+            className="btn btn-secondary wb-preview-open"
+            disabled={!text.trim() || state === "sending"}
+          >
+            {state === "sending" ? "Wird gesendet …" : "An den Agenten senden"}
+          </button>
+          {state === "error" ? (
+            <p className="wb-note" role="alert">
+              Nicht gesendet. Der Lauf ist vielleicht schon fertig.
+            </p>
+          ) : null}
+        </form>
+      ) : null}
+    </section>
   );
 }
 

@@ -14,6 +14,7 @@ import {
   decisionProblems,
   type AgentAction,
   type AgentDecision,
+  type AgentTodo,
 } from "./decision";
 import { groundComputerInspectResult } from "./multimodal-grounding";
 import {
@@ -111,6 +112,8 @@ export type AgentStep = {
   hypothesisIds?: string[];
   evidenceRelation?: EvidenceRelation;
   latencyMs: number;
+  /** The agent's task list, on the step that changed it. */
+  todos?: AgentTodo[];
 };
 
 export type LoopStatus =
@@ -146,6 +149,12 @@ export type LoopState = {
    * Older checkpoints omit it.
    */
   callLog?: Record<string, CallRecord>;
+  /** The agent's own task list, as it last sent it. */
+  todos?: AgentTodo[];
+  /** Notes the person sent while the run worked, newest last. */
+  notes?: string[];
+  /** Sequence of the last note already handed to the model. */
+  notesSeen?: number;
 };
 
 export type CallRecord = {
@@ -156,6 +165,11 @@ export type CallRecord = {
   count: number;
   error?: string;
 };
+
+/** Items of the agent's task list kept and shown. */
+const MAX_TODOS = 12;
+/** Person's notes kept in the prompt, newest last. */
+const MAX_NOTES = 5;
 
 /** Identical attempts at a failing call before the loop stops making it. */
 const IDENTICAL_FAILED_ATTEMPTS = 2;
@@ -273,6 +287,13 @@ export type LoopHooks = {
    * no longer fits (the same tool failing twice, a tool that is not there).
    */
   checkpoint?: (state: LoopState) => Promise<string | null>;
+  /**
+   * Notes the person sent to the running run after the given sequence
+   * (Antigravity-style steering): read before each decision.
+   */
+  notes?: (
+    afterSequence: number,
+  ) => Promise<Array<{ sequence: number; text: string }>>;
 };
 
 export type LoopInput = {
@@ -382,6 +403,12 @@ function userPrompt(input: LoopInput, state: LoopState) {
   const recent = state.observations.slice(-RECENT_OBSERVATIONS);
   return [
     `Objective:\n${input.objective}`,
+    state.notes?.length
+      ? `Notes from the person who started this run, sent while you worked (newest last). They come from your principal: take them into account in your next steps, within your rules:\n${state.notes.map((note) => `- ${note}`).join("\n")}`
+      : "",
+    state.todos?.length
+      ? `Your task list (send an updated "todos" when an item is done or the plan changes):\n${state.todos.map((todo) => `- [${todo.done ? "x" : " "}] ${todo.text}`).join("\n")}`
+      : "",
     input.context.length ? `Context:\n${input.context.join("\n\n")}` : "",
     state.steps.length
       ? `Steps so far:\n${state.steps
@@ -474,6 +501,8 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
     : emptyState();
   ensureKernel(state, input);
   let consecutiveFailures = 0;
+  /** A task list the next recorded step carries to the person. */
+  let todosChanged: AgentTodo[] | undefined;
 
   const record = async (
     step: Omit<AgentStep, "index" | "latencyMs">,
@@ -485,7 +514,9 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
       detail: step.detail?.slice(0, 600),
       index: state.steps.length,
       latencyMs: now() - stepStartedAt,
+      ...(todosChanged ? { todos: todosChanged } : {}),
     };
+    todosChanged = undefined;
     state.steps.push(full);
     const kernel = ensureKernel(state, input);
     recordStepEvidence(kernel, full);
@@ -542,6 +573,21 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
     if (!state.pendingCall && input.hooks?.checkpoint) {
       const note = await input.hooks.checkpoint(state).catch(() => null);
       if (note) state.observations.push(observe("plan.revised", note));
+    }
+
+    const readNotes = input.hooks?.notes;
+    if (!state.pendingCall && readNotes) {
+      // A note that cannot be read never stops the run.
+      const fresh = await Promise.resolve()
+        .then(() => readNotes(state.notesSeen ?? 0))
+        .catch(() => []);
+      for (const note of fresh) {
+        if (note.sequence <= (state.notesSeen ?? 0)) continue;
+        state.notesSeen = note.sequence;
+        state.notes = [...(state.notes ?? []), note.text.slice(0, 1000)].slice(
+          -MAX_NOTES,
+        );
+      }
     }
 
     const stepStartedAt = now();
@@ -631,6 +677,14 @@ export async function runAgentLoop(input: LoopInput): Promise<LoopResult> {
         stepStartedAt,
       );
       continue;
+    }
+
+    if (decision.todos?.length) {
+      const next = decision.todos.slice(0, MAX_TODOS);
+      if (JSON.stringify(next) !== JSON.stringify(state.todos ?? [])) {
+        state.todos = next;
+        todosChanged = next;
+      }
     }
 
     // Progressive disclosure: schemas are handed over only when asked for.
