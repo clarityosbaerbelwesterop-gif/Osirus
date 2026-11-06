@@ -216,6 +216,13 @@ export class ResearchArm extends BaseArm {
       (context.work.stageInput.worker as
         "official" | "independent" | "counter") ?? "official";
     const toolbox = await buildToolbox(context, { armId: this.id });
+    const toolContext = {
+      runId: context.work.runId,
+      stageId: context.work.stageId,
+      armId: this.id,
+      organizationId: context.identity.organizationId,
+      workspaceId: context.identity.workspaceId,
+    };
     try {
       const structured = this.structuredFor(context, "RESEARCH");
       const result = await gather({
@@ -228,25 +235,46 @@ export class ResearchArm extends BaseArm {
             ...input,
             validate: (raw) => agentDecisionSchema.parse(raw),
           }),
-        toolContext: {
-          runId: context.work.runId,
-          stageId: context.work.stageId,
-          armId: this.id,
-          organizationId: context.identity.organizationId,
-          workspaceId: context.identity.workspaceId,
-        },
+        toolContext,
         hooks: this.loopHooks(context, toolbox.record),
         signal: context.signal,
       });
-      const fetched = toolbox.evidence.filter(
-        (entry) => entry.toolId === "research.fetch" && entry.ok,
-      ).length;
+      const fetchedCount = () =>
+        toolbox.evidence.filter(
+          (entry) => entry.toolId === "research.fetch" && entry.ok,
+        ).length;
+      // A worker that spent its budget on searching still brings evidence:
+      // the best URLs from its own search results (research/fallback.ts).
+      let automatic = 0;
+      if (fetchedCount() === 0 && !context.signal?.aborted) {
+        const { fallbackFetchUrls } = await import("../research/fallback");
+        for (const url of fallbackFetchUrls(toolbox.evidence)) {
+          const fetchedDoc = await toolbox.registry
+            .invoke({
+              toolId: "research.fetch",
+              rawInput: { url },
+              context: { ...toolContext, signal: context.signal },
+            })
+            .catch(() => null);
+          if (!fetchedDoc) continue;
+          toolbox.record({
+            toolId: "research.fetch",
+            input: { url },
+            result: fetchedDoc,
+          });
+          if (fetchedDoc.ok) automatic += 1;
+        }
+      }
+      const fetched = fetchedCount();
       await context.runtime.activity(
         "research.gathered",
-        `${worker}: fetched ${fetched} document(s)`,
+        `${worker}: fetched ${fetched} document(s)${
+          automatic ? ` (${automatic} automatically from search results)` : ""
+        }`,
         {
           worker,
           fetched,
+          automaticFetches: automatic,
           loopStatus: result.status,
           steps: result.state.steps.length,
         },
