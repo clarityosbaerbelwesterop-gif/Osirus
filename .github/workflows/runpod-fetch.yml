@@ -12,7 +12,10 @@ permissions:
   contents: read
 
 concurrency:
-  group: runpod
+  # Eigene Gruppe: ein reiner Lese-Fetch darf weder hinter wartenden GPU-Jobs
+  # (runpod-job.yml, Gruppe "runpod") haengen noch deren wartenden Lauf
+  # verdraengen (GitHub ersetzt den pending-Lauf einer Gruppe durch den neuen).
+  group: runpod-fetch
   cancel-in-progress: false
 
 jobs:
