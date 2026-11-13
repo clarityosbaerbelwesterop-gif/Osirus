@@ -39,7 +39,11 @@ export function isSafeRelativePath(value: string) {
   // Control characters (NUL above all) truncate paths in the C tools that
   // later receive them, so a path that looked safe here could name another.
   if (/[\u0000-\u001f]/.test(value)) return false;
-  return !value.split("/").includes("..");
+  const segments = value.split("/");
+  if (segments.includes("..")) return false;
+  // Git's own directory is never a workspace file: a hook or config planted
+  // there runs, or redirects, the next git command with the user's token.
+  return !segments.some((segment) => segment.toLowerCase() === ".git");
 }
 
 export interface SandboxHandle {

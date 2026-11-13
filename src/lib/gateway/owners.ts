@@ -23,11 +23,21 @@ export async function isOwnerUser(userId: string, now = Date.now()) {
   if (cached && now - cached.at < TTL_MS) return cached.owner;
   let owner = false;
   try {
-    const rows = await querySystem<{ email: string | null }>(
-      "select email from osirus.users where id = $1::uuid",
+    // Only a verified address counts: anyone can register an owner address
+    // that is not taken yet, and an owner runs without quota.
+    const rows = await querySystem<{
+      email: string | null;
+      verified: boolean | null;
+    }>(
+      `select u.email, a."emailVerified" as verified
+         from osirus.users u
+         left join neon_auth."user" a on a.id = u.id
+        where u.id = $1::uuid`,
       [userId],
     );
-    owner = emails.includes((rows[0]?.email ?? "").trim().toLowerCase());
+    owner =
+      rows[0]?.verified === true &&
+      emails.includes((rows[0]?.email ?? "").trim().toLowerCase());
   } catch {
     owner = false;
   }

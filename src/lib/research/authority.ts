@@ -80,7 +80,8 @@ export function classifyAuthority(rawUrl: string): Authority {
   ) {
     return "official_docs";
   }
-  if (host.endsWith("wikipedia.org")) return "reference";
+  if (host === "wikipedia.org" || host.endsWith(".wikipedia.org"))
+    return "reference";
   if (NEWS.some((domain) => matches(host, domain))) return "news";
   if (COMMUNITY.some((domain) => matches(host, domain))) return "community";
   return "secondary";

@@ -118,19 +118,44 @@ function urlTransform(url: string) {
  * A dollar before an amount ("$5 and $10") stays a dollar sign. Code is
  * left untouched.
  */
+/**
+ * open...close becomes fence...fence, scanning once with indexOf. The
+ * former regex /\\\[([\s\S]+?)\\\]/ took quadratic time on many unclosed
+ * "\[" and froze the tab (also for anonymous share viewers).
+ */
+function wrapMath(text: string, open: string, close: string, fence: string) {
+  let out = "";
+  let at = 0;
+  for (;;) {
+    const start = text.indexOf(open, at);
+    if (start < 0) break;
+    const end = text.indexOf(close, start + open.length + 1);
+    if (end < 0) break;
+    out +=
+      text.slice(at, start) +
+      fence +
+      text.slice(start + open.length, end) +
+      fence;
+    at = end + close.length;
+  }
+  return out + text.slice(at);
+}
+
 export function prepareMath(source: string) {
   return source
     .split(/(```[\s\S]*?(?:```|$)|`[^`\n]*`)/g)
     .map((part, index) =>
       index % 2 === 1
         ? part
-        : part
-            .replace(/\\\[([\s\S]+?)\\\]/g, (_, math: string) => `$$${math}$$`)
-            .replace(/\\\(([\s\S]+?)\\\)/g, (_, math: string) => `$${math}$`)
-            .replace(
-              /(^|[^\\$])\$(\d[\d.,]*)(?=\s|$|[.,;:!?)\]/-])/gm,
-              "$1\\$$$2",
-            ),
+        : wrapMath(
+            wrapMath(part, "\\[", "\\]", "$$"),
+            "\\(",
+            "\\)",
+            "$",
+          ).replace(
+            /(^|[^\\$])\$(\d[\d.,]*)(?=\s|$|[.,;:!?)\]/-])/gm,
+            "$1\\$$$2",
+          ),
     )
     .join("");
 }

@@ -104,9 +104,14 @@ describe("cancellation page against Postgres", () => {
         data: [{ current_period_end: Math.floor(PERIOD_END.getTime() / 1000) }],
       },
     });
+    // Signed in: the owner's own declaration changes the contract at once.
     const receipt = await processCancellation(
       declaration(),
-      { signedInUserId: null, signedInEmail: null, networkHash: "abc" },
+      {
+        signedInUserId: customer.userId,
+        signedInEmail: null,
+        networkHash: "abc",
+      },
       deps(),
     );
     expect(stripeUpdate).toHaveBeenCalledWith("sub_erika", {
@@ -131,7 +136,7 @@ describe("cancellation page against Postgres", () => {
       status: "scheduled",
       confirmation_sent_at: null,
       network_hash: "abc",
-      signed_in: false,
+      signed_in: true,
     });
     expect(new Date(row!.effective_at).toISOString()).toBe(
       PERIOD_END.toISOString(),
