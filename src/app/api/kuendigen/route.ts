@@ -1,4 +1,4 @@
-import { createHash } from "node:crypto";
+import { privacyHash } from "@/app/auth/rate";
 import { OPERATOR } from "@/app/legal/operator";
 import { absoluteUrl } from "@/app/site-url";
 import { processCancellation } from "@/lib/cancellation/process";
@@ -22,7 +22,8 @@ export const runtime = "nodejs";
 function networkHash(request: Request) {
   const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0];
   const ip = forwarded?.trim() || request.headers.get("x-real-ip")?.trim();
-  return ip ? createHash("sha256").update(ip).digest("hex").slice(0, 32) : null;
+  // Keyed: an unkeyed hash of an IPv4 address can be reversed.
+  return ip ? privacyHash(ip) : null;
 }
 
 /** False only when a limit is reached; a store outage never blocks a cancellation. */
@@ -72,7 +73,11 @@ export async function POST(request: Request) {
       "cancellation.ip",
       10,
     )) ||
-    !(await allowed(`cancel:${declaration.email}`, "cancellation.email", 5))
+    !(await allowed(
+      `cancel:${privacyHash(declaration.email)}`,
+      "cancellation.email",
+      5,
+    ))
   )
     return json({ error: "rate_limited" }, 429);
 

@@ -123,19 +123,29 @@ export async function processCancellation(
         subscriptionId = subscription.id;
         const plan = planSubscriptionCancellation(declaration, subscription);
         let effectiveAt = plan.effectiveAt;
-        if (plan.action !== "none")
-          effectiveAt =
-            (await deps.applyPlan(subscription.id, plan)).effectiveAt ??
-            plan.effectiveAt;
-        outcome = {
-          status:
-            declaration.kind === "extraordinary"
-              ? "manual"
-              : plan.action === "none"
-                ? "already_ending"
-                : "scheduled",
-          effectiveAt,
-        };
+        // Without sign-in only the e-mail address links the declaration to
+        // a contract, and anyone can type anyone's address. The declaration
+        // is received and recorded (and the account owner is told), but the
+        // contract is changed in Stripe only for the signed-in owner; an
+        // anonymous one is matched by the operator.
+        if (!signedIn && plan.action !== "none") {
+          outcome = { status: "manual", effectiveAt };
+          note = "ohne Anmeldung eingegangen: Zuordnung vom Betreiber prüfen";
+        } else {
+          if (plan.action !== "none")
+            effectiveAt =
+              (await deps.applyPlan(subscription.id, plan)).effectiveAt ??
+              plan.effectiveAt;
+          outcome = {
+            status:
+              declaration.kind === "extraordinary"
+                ? "manual"
+                : plan.action === "none"
+                  ? "already_ending"
+                  : "scheduled",
+            effectiveAt,
+          };
+        }
       }
     }
   } catch (error) {

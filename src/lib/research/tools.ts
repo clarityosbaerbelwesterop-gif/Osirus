@@ -106,7 +106,7 @@ export function researchTools(
       let provider = "web";
       const host = new URL(url).hostname;
       if (
-        host.endsWith("wikipedia.org") &&
+        (host === "wikipedia.org" || host.endsWith(".wikipedia.org")) &&
         new URL(url).pathname.startsWith("/wiki/")
       ) {
         const extract = await wikipediaExtract(url, context.signal);

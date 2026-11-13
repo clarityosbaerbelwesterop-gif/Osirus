@@ -193,7 +193,10 @@ export function parseGithubRepository(url: string) {
   const match = url.match(
     /^https:\/\/github\.com\/([A-Za-z0-9-]{1,39})\/([A-Za-z0-9._-]{1,100}?)(?:\.git)?\/?$/,
   );
-  return match ? { owner: match[1]!, name: match[2]! } : null;
+  if (!match) return null;
+  // "." and ".." are not repository names; in a URL path they navigate.
+  if (match[2] === "." || match[2] === "..") return null;
+  return { owner: match[1]!, name: match[2]! };
 }
 
 export async function openPullRequest(input: {

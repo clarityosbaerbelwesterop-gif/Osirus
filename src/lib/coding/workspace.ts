@@ -123,6 +123,9 @@ export class CodingWorkspace {
     ) {
       throw new Error("path_escapes_repository");
     }
+    // A symlink into .git resolves inside the root, so check the real path too.
+    if (real !== root && !isSafeRelativePath(real.slice(root.length + 1)))
+      throw new Error("path_outside_repository");
     return relative;
   }
 

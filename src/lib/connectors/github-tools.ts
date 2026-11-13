@@ -41,13 +41,14 @@ export function repositoryRef(value: string) {
   return parsed;
 }
 
-function pathSegments(path: string) {
-  return path
-    .replace(/^\/+/, "")
-    .split("/")
-    .filter(Boolean)
-    .map(encodeURIComponent)
-    .join("/");
+export function pathSegments(path: string) {
+  const segments = path.replace(/^\/+/, "").split("/").filter(Boolean);
+  // "." and ".." survive encodeURIComponent and are resolved by the URL
+  // parser: "../collaborators/x" would leave the contents API and reach
+  // another endpoint with the user's token.
+  if (segments.some((segment) => segment === "." || segment === ".."))
+    throw new Error("github_path_invalid");
+  return segments.map(encodeURIComponent).join("/");
 }
 
 async function call(
