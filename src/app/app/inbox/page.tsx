@@ -12,7 +12,7 @@ import {
 } from "@/lib/product/surfaces";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Inbox" };
+export const metadata: Metadata = { title: "Posteingang" };
 
 type Tab = "needs-you" | "completed" | "failed" | "updates";
 
@@ -126,10 +126,10 @@ export default async function InboxPage({
 
   return (
     <PageFrame
-      title="Inbox"
+      title="Posteingang"
       lede="Nur, was auf dich wartet oder fertig wurde, während du weg warst. Der laufende Fortschritt bleibt in der jeweiligen Unterhaltung."
     >
-      <nav className="filter-tabs" aria-label="Bereiche der Inbox">
+      <nav className="filter-tabs" aria-label="Bereiche des Posteingangs">
         {TABS.map((item) => (
           <Link
             key={item.id}

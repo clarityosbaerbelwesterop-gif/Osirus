@@ -65,18 +65,18 @@ export function nextRunAt(
 }
 
 const WEEKDAY = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
+  "Sonntag",
+  "Montag",
+  "Dienstag",
+  "Mittwoch",
+  "Donnerstag",
+  "Freitag",
+  "Samstag",
 ];
 
 export function describeSchedule(schedule: Schedule) {
   const time = `${String(SCHEDULER_WINDOW_HOUR_UTC).padStart(2, "0")}:00 UTC`;
-  if (schedule.cadence === "daily") return `Every day, ${time}`;
-  if (schedule.cadence === "weekdays") return `Weekdays, ${time}`;
-  return `Every ${WEEKDAY[schedule.weekday ?? 1]}, ${time}`;
+  if (schedule.cadence === "daily") return `Jeden Tag, ${time}`;
+  if (schedule.cadence === "weekdays") return `Werktags, ${time}`;
+  return `Jeden ${WEEKDAY[schedule.weekday ?? 1]}, ${time}`;
 }

@@ -29,21 +29,21 @@ describe("honest AI mode labels", () => {
         model: "darus",
         interaction: "ai",
       }),
-    ).toBe("Not a native checkpoint.");
+    ).toBe("Kein nativer Checkpoint.");
     expect(
       activityCaption({
         activity: "thinking",
         model: "rouge",
         interaction: "ai",
       }),
-    ).toBe("Idle");
+    ).toBe("Bereit");
     expect(
       activityCaption({
         activity: "api_fallback",
         model: "darus",
         interaction: "agent",
       }),
-    ).toBe("Idle");
+    ).toBe("Bereit");
   });
 
   it("routes DARUS only in AI mode", () => {
@@ -67,8 +67,8 @@ describe("honest AI mode labels", () => {
     expect(html).not.toContain("DARUS");
     expect(html).not.toContain("ROUGE");
     expect(html).not.toContain("QUASNIR");
-    expect(html).toContain("Not a native checkpoint");
-    expect(html).toContain('aria-label="Model"');
+    expect(html).toContain("Kein nativer Checkpoint");
+    expect(html).toContain('aria-label="Modell"');
   });
 
   it("does not call the agent a model", () => {
@@ -81,8 +81,8 @@ describe("honest AI mode labels", () => {
         onInteractionChange: () => undefined,
       }),
     );
-    expect(html).toContain(">Idle<");
-    expect(html).toContain("not the agent");
+    expect(html).toContain(">Bereit<");
+    expect(html).toContain("nicht der Agent");
     expect(html).toContain("Bald verfügbar");
     expect(html).not.toContain("ROUGE");
   });

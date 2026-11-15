@@ -25,7 +25,7 @@ export function Resizer({
       className="resizer"
       role="separator"
       aria-orientation="vertical"
-      aria-label="Resize run details"
+      aria-label="Breite der Laufdetails ändern"
       aria-controls="workbench"
       aria-valuemin={WORKBENCH_MIN}
       aria-valuemax={WORKBENCH_MAX}

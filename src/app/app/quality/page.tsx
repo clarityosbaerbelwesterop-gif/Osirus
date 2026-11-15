@@ -27,7 +27,7 @@ import {
 } from "@/lib/ui/labels";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Quality" };
+export const metadata: Metadata = { title: "Qualität" };
 
 export default async function QualityPage({
   searchParams,
@@ -49,17 +49,17 @@ export default async function QualityPage({
 
   return (
     <PageFrame
-      title="Quality"
-      lede="How Osirus performed in this workspace, counted from what the runtime recorded. Small samples are shown as they are."
+      title="Qualität"
+      lede="Wie Osirus in diesem Arbeitsbereich abgeschnitten hat, gezählt aus dem, was die Laufzeit aufgezeichnet hat. Kleine Stichproben werden so gezeigt, wie sie sind."
       actions={
-        <nav className="filter-tabs" aria-label="Time window">
+        <nav className="filter-tabs" aria-label="Zeitraum">
           {[7, 30].map((window) => (
             <Link
               key={window}
               href={`/app/quality?days=${window}` as Route}
               aria-current={window === days ? "page" : undefined}
             >
-              Last {window} days
+              Letzte {window} Tage
             </Link>
           ))}
         </nav>
@@ -67,84 +67,84 @@ export default async function QualityPage({
     >
       <section className="section" aria-labelledby="runs-heading">
         <h2 className="section-title" id="runs-heading">
-          Runs
+          Läufe
         </h2>
         <div className="metric-grid">
           <Metric
-            label="Runs"
+            label="Läufe"
             value={formatCount(runs.runs)}
-            note={`${runs.completed} completed · ${runs.failed} failed`}
+            note={`${runs.completed} abgeschlossen · ${runs.failed} fehlgeschlagen`}
           />
           <Metric
-            label="Success"
+            label="Erfolg"
             value={rateText(runs.successRate, runs.runs)}
-            note="Completed runs"
+            note="Abgeschlossene Läufe"
           />
           <Metric
-            label="Verified success"
+            label="Bestätigter Erfolg"
             value={rateText(runs.verifiedRate, runs.runs)}
-            note="Every verdict verified"
+            note="Jedes Urteil bestätigt"
           />
           <Metric
-            label="False completions"
+            label="Falsche Abschlüsse"
             value={rateText(runs.falseCompletionRate, runs.completed)}
-            note={`${runs.falseCompletions} completed against a rejected verdict`}
+            note={`${runs.falseCompletions} trotz abgelehntem Urteil abgeschlossen`}
           />
           <Metric
-            label="Repair rate"
+            label="Nachbesserungsquote"
             value={rateText(runs.repairRate, runs.runs)}
-            note="Plan revised at least once"
+            note="Plan mindestens einmal überarbeitet"
           />
           <Metric
-            label="Resume rate"
+            label="Fortsetzungsquote"
             value={rateText(runs.resumeRate, runs.yielded)}
-            note={`${runs.resumed} of ${runs.yielded} paused runs finished`}
+            note={`${runs.resumed} von ${runs.yielded} pausierten Läufen beendet`}
           />
         </div>
       </section>
 
       <section className="section" aria-labelledby="models-heading">
         <h2 className="section-title" id="models-heading">
-          Models
+          Modelle
         </h2>
         <div className="metric-grid">
-          <Metric label="Model calls" value={formatCount(models.calls)} />
+          <Metric label="Modellaufrufe" value={formatCount(models.calls)} />
           <Metric
-            label="Model failure rate"
+            label="Fehlerquote der Modelle"
             value={rateText(models.failureRate, models.calls)}
-            note={`${models.failures} failed`}
+            note={`${models.failures} fehlgeschlagen`}
           />
           <Metric
-            label="Latency p50 / p95"
+            label="Latenz p50 / p95"
             value={`${formatDuration(models.p50LatencyMs) ?? "—"} / ${formatDuration(models.p95LatencyMs) ?? "—"}`}
           />
           <Metric
-            label="Cost"
+            label="Kosten"
             value={formatUsd(models.costUsd)}
-            note="As reported by the provider"
+            note="Laut Anbieter"
           />
         </div>
         {roles.length ? (
           <div className="table-wrap">
             <table className="table">
-              <caption className="sr-only">Model routing by role</caption>
+              <caption className="sr-only">Modell-Routing nach Rolle</caption>
               <thead>
                 <tr>
-                  <th scope="col">Role</th>
+                  <th scope="col">Rolle</th>
                   <th scope="col" className="num">
-                    Calls
+                    Aufrufe
                   </th>
                   <th scope="col" className="num">
-                    Cost
+                    Kosten
                   </th>
                   <th scope="col" className="num">
                     p50
                   </th>
                   <th scope="col" className="num">
-                    Failure rate
+                    Fehlerquote
                   </th>
                   <th scope="col" className="num">
-                    Runs verified
+                    Läufe bestätigt
                   </th>
                 </tr>
               </thead>
@@ -171,29 +171,29 @@ export default async function QualityPage({
 
       <section className="section" aria-labelledby="arms-heading">
         <h2 className="section-title" id="arms-heading">
-          Arms
+          Arme
         </h2>
         {arms.length ? (
           <div className="table-wrap">
             <table className="table">
-              <caption className="sr-only">Quality by arm</caption>
+              <caption className="sr-only">Qualität nach Arm</caption>
               <thead>
                 <tr>
                   <th scope="col">Arm</th>
                   <th scope="col" className="num">
-                    Runs
+                    Läufe
                   </th>
                   <th scope="col" className="num">
-                    Success
+                    Erfolg
                   </th>
                   <th scope="col" className="num">
-                    Verified
+                    Bestätigt
                   </th>
                   <th scope="col" className="num">
-                    False completions
+                    Falsche Abschlüsse
                   </th>
                   <th scope="col" className="num">
-                    Median duration
+                    Mittlere Dauer
                   </th>
                 </tr>
               </thead>
@@ -214,7 +214,7 @@ export default async function QualityPage({
             </table>
           </div>
         ) : (
-          <p className="subtle">No runs in this window.</p>
+          <p className="subtle">Keine Läufe in diesem Zeitraum.</p>
         )}
       </section>
 
@@ -224,26 +224,26 @@ export default async function QualityPage({
             Skills
           </h2>
           <p className="section-lede">
-            How often each skill was selected and how often those runs verified.
-            This is correlation: without an A/B comparison it does not show that
-            a skill caused a result.
+            Wie oft jeder Skill gewählt wurde und wie oft diese Läufe bestätigt
+            wurden. Das ist eine Korrelation: Ohne A/B-Vergleich zeigt sie
+            nicht, dass ein Skill ein Ergebnis verursacht hat.
           </p>
         </div>
         {skills.length ? (
           <div className="table-wrap">
             <table className="table">
-              <caption className="sr-only">Skill usage</caption>
+              <caption className="sr-only">Nutzung der Skills</caption>
               <thead>
                 <tr>
                   <th scope="col">Skill</th>
                   <th scope="col" className="num">
-                    Selections
+                    Auswahlen
                   </th>
                   <th scope="col" className="num">
-                    Verified share
+                    Anteil bestätigt
                   </th>
                   <th scope="col" className="num">
-                    Median latency
+                    Mittlere Latenz
                   </th>
                 </tr>
               </thead>
@@ -262,35 +262,37 @@ export default async function QualityPage({
             </table>
           </div>
         ) : (
-          <p className="subtle">No skill selections in this window.</p>
+          <p className="subtle">Keine Skill-Auswahl in diesem Zeitraum.</p>
         )}
       </section>
 
       <section className="section" aria-labelledby="tools-heading">
         <h2 className="section-title" id="tools-heading">
-          Tools and connections
+          Werkzeuge und Verbindungen
         </h2>
         {tools.length ? (
           <div className="table-wrap">
             <table className="table">
-              <caption className="sr-only">Tool reliability</caption>
+              <caption className="sr-only">
+                Zuverlässigkeit der Werkzeuge
+              </caption>
               <thead>
                 <tr>
-                  <th scope="col">Tool</th>
-                  <th scope="col">Source</th>
+                  <th scope="col">Werkzeug</th>
+                  <th scope="col">Quelle</th>
                   <th scope="col" className="num">
-                    Calls
+                    Aufrufe
                   </th>
                   <th scope="col" className="num">
-                    Success
+                    Erfolg
                   </th>
                   <th scope="col" className="num">
-                    Refused
+                    Abgelehnt
                   </th>
                   <th scope="col" className="num">
                     p50
                   </th>
-                  <th scope="col">Most common error</th>
+                  <th scope="col">Häufigster Fehler</th>
                 </tr>
               </thead>
               <tbody>
@@ -302,7 +304,7 @@ export default async function QualityPage({
                         ? "MCP"
                         : row.source === "github"
                           ? "GitHub"
-                          : "Built-in"}
+                          : "Eingebaut"}
                     </td>
                     <td className="num">{row.calls}</td>
                     <td className="num">{formatPercent(row.successRate)}</td>
@@ -317,7 +319,7 @@ export default async function QualityPage({
             </table>
           </div>
         ) : (
-          <p className="subtle">No tool calls in this window.</p>
+          <p className="subtle">Keine Werkzeugaufrufe in diesem Zeitraum.</p>
         )}
       </section>
 
@@ -327,21 +329,22 @@ export default async function QualityPage({
             Agent Arena
           </h2>
           <p className="section-lede">
-            Fixed tasks that run the real arms against a real model in CI (the
-            Live evals workflow). Results are CI artifacts with the model id and
-            time; none are stored or summarized here, and a few synthetic tasks
-            are not a benchmark. A regression gate compares each run with the
-            stored baseline for its model.
+            Feste Aufgaben, die die echten Arme in der CI gegen ein echtes
+            Modell laufen lassen (Workflow „Live evals“). Die Ergebnisse sind
+            CI-Artefakte mit Modell-ID und Zeitpunkt; hier wird nichts davon
+            gespeichert oder zusammengefasst, und ein paar synthetische Aufgaben
+            sind kein Benchmark. Ein Regressions-Gate vergleicht jeden Lauf mit
+            der gespeicherten Basislinie seines Modells.
           </p>
         </div>
         <div className="table-wrap">
           <table className="table">
-            <caption className="sr-only">Arena suites and tasks</caption>
+            <caption className="sr-only">Arena-Suites und Aufgaben</caption>
             <thead>
               <tr>
                 <th scope="col">Suite</th>
-                <th scope="col">Task</th>
-                <th scope="col">Checks</th>
+                <th scope="col">Aufgabe</th>
+                <th scope="col">Prüfungen</th>
               </tr>
             </thead>
             <tbody>
@@ -359,12 +362,12 @@ export default async function QualityPage({
                       <td className="subtle">
                         {[
                           task.expect.verdicts?.length
-                            ? `verdict: ${task.expect.verdicts.join(" or ")}`
+                            ? `Urteil: ${task.expect.verdicts.join(" oder ")}`
                             : null,
                           task.expect.answerIncludes?.length
-                            ? `answer mentions ${task.expect.answerIncludes.length} fact(s)`
+                            ? `Antwort nennt ${task.expect.answerIncludes.length} Fakt(en)`
                             : null,
-                          task.fault ? "injected tool failure" : null,
+                          task.fault ? "eingespeister Werkzeugfehler" : null,
                         ]
                           .filter(Boolean)
                           .join(" · ") || "—"}

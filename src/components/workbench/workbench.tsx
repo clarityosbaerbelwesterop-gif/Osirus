@@ -30,12 +30,16 @@ import { Resizer } from "./resizer";
 const WorkspacePanel = dynamic(
   () =>
     import("./panels/workspace-panel").then((module) => module.WorkspacePanel),
-  { loading: () => <div className="wb-loading">Loading workspace…</div> },
+  {
+    loading: () => (
+      <div className="wb-loading">Arbeitsbereich wird geladen…</div>
+    ),
+  },
 );
 const ResearchPanel = dynamic(
   () =>
     import("./panels/research-panel").then((module) => module.ResearchPanel),
-  { loading: () => <div className="wb-loading">Loading sources…</div> },
+  { loading: () => <div className="wb-loading">Quellen werden geladen…</div> },
 );
 
 const WIDE = "(min-width: 1280px)";
@@ -124,7 +128,10 @@ function WorkbenchBody({
           if (group) onTab(group.tabs[0]!.id);
         }}
       >
-        <BaseTabs.List className="wb-groups" aria-label="Workbench sections">
+        <BaseTabs.List
+          className="wb-groups"
+          aria-label="Bereiche der Laufdetails"
+        >
           {groups.map((group) => (
             <BaseTabs.Tab key={group.id} value={group.id} className="wb-group">
               {group.label}
@@ -140,7 +147,7 @@ function WorkbenchBody({
         {activeGroup && activeGroup.tabs.length > 1 ? (
           <BaseTabs.List
             className="wb-tabs"
-            aria-label={`${activeGroup.label} views`}
+            aria-label={`Ansichten: ${activeGroup.label}`}
           >
             {activeGroup.tabs.map((item) => (
               <BaseTabs.Tab key={item.id} value={item.id} className="wb-tab">
@@ -196,7 +203,7 @@ export function Workbench({
     screenshotLayout && view.live ? null : chatRunPresentation(view.status);
   const title: ReactNode = (
     <span className="wb-title">
-      Run details{" "}
+      Laufdetails{" "}
       <Badge tone={chat?.tone ?? view.tone}>
         {chat?.label ?? view.statusLabel}
       </Badge>
@@ -218,7 +225,7 @@ export function Workbench({
         open={open}
         onOpenChange={onOpenChange}
         side="right"
-        title="Run details"
+        title="Laufdetails"
       >
         {body}
       </Sheet>
@@ -230,13 +237,13 @@ export function Workbench({
       <aside
         className="workbench"
         id="workbench"
-        aria-label="Run details"
+        aria-label="Laufdetails"
         style={{ width }}
       >
         <div className="wb-header">
           <h2 className="wb-heading-main">{title}</h2>
           <IconButton
-            label="Close run details"
+            label="Laufdetails schließen"
             icon={X}
             size="sm"
             onClick={() => onOpenChange(false)}

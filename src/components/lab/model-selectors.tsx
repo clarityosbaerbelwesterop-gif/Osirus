@@ -35,14 +35,14 @@ export function ModelSelectors(props: {
   return (
     <div className="lab-selectors">
       <label>
-        Model
+        Modell
         <span id="lab-model-route" className="sr-only">
           {props.interaction === "agent"
-            ? "Agent mode runs Osirus. The selected model is not the agent."
-            : "UNOROUTER models appear when the key list is known."}
+            ? "Im Agent-Modus arbeitet Osirus. Das gewählte Modell ist nicht der Agent."
+            : "UNOROUTER-Modelle erscheinen, sobald die Schlüsselliste bekannt ist."}
         </span>
         <select
-          aria-label="Model"
+          aria-label="Modell"
           aria-describedby="lab-model-route"
           value=""
           disabled
@@ -50,7 +50,7 @@ export function ModelSelectors(props: {
           <option value="">Bald verfügbar</option>
         </select>
       </label>
-      <div role="radiogroup" aria-label="Interaction">
+      <div role="radiogroup" aria-label="Interaktion">
         <button
           type="button"
           role="radio"
@@ -59,7 +59,7 @@ export function ModelSelectors(props: {
           disabled={props.disabled}
           onClick={() => props.onInteractionChange("ai")}
         >
-          AI MODE
+          KI-MODUS
         </button>
         <button
           type="button"
@@ -69,7 +69,7 @@ export function ModelSelectors(props: {
           disabled={props.disabled}
           onClick={() => props.onInteractionChange("agent")}
         >
-          AGENT MODE
+          AGENT-MODUS
         </button>
       </div>
       <p
@@ -104,7 +104,7 @@ export function ModelSelectors(props: {
           {shownGrades
             .map(
               (grade) =>
-                `${withoutOwnModel(grade.phase ?? "")} · ${withoutOwnModel(grade.armId)}: ${grade.passed ? "pass" : "fail"}`,
+                `${withoutOwnModel(grade.phase ?? "")} · ${withoutOwnModel(grade.armId)}: ${grade.passed ? "bestanden" : "nicht bestanden"}`,
             )
             .join(" ")}
         </p>
@@ -114,7 +114,7 @@ export function ModelSelectors(props: {
           {pills
             .map((pill) =>
               pill.kind === "tool"
-                ? `Tool · ${pill.label}`
+                ? `Werkzeug · ${pill.label}`
                 : `Subagent · ${pill.label}`,
             )
             .join(" ")}

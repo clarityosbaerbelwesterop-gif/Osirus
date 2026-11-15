@@ -15,6 +15,7 @@ import { useState, type FormEvent } from "react";
 import type { RunSnapshot } from "@/lib/runtime/types";
 import { approvalView } from "@/lib/ui/approval-view";
 import {
+  activityLabel,
   formatDuration,
   relativeTime,
   stageState,
@@ -35,8 +36,8 @@ import { StatusIcon } from "../../ui/status-icon";
 export function ActivityPanel({ view }: { view: RunView }) {
   if (!view.evidence.length)
     return (
-      <EmptyState icon={Activity} title="No activity yet">
-        Steps appear as the run records them.
+      <EmptyState icon={Activity} title="Noch keine Aktivität">
+        Schritte erscheinen, sobald der Lauf sie aufzeichnet.
       </EmptyState>
     );
   return (
@@ -44,7 +45,7 @@ export function ActivityPanel({ view }: { view: RunView }) {
       {[...view.evidence].reverse().map((item) => (
         <li key={item.id}>
           <span className="timeline-dot" aria-hidden="true" />
-          <span className="timeline-label">{item.label}</span>
+          <span className="timeline-label">{activityLabel(item.label)}</span>
           <time className="subtle tabular" dateTime={item.at}>
             {relativeTime(item.at)}
           </time>
@@ -57,8 +58,8 @@ export function ActivityPanel({ view }: { view: RunView }) {
 export function PlanPanel({ view }: { view: RunView }) {
   if (!view.stages.length)
     return (
-      <EmptyState icon={ListChecks} title="No plan yet">
-        The plan appears when the run starts.
+      <EmptyState icon={ListChecks} title="Noch kein Plan">
+        Der Plan erscheint, sobald der Lauf startet.
       </EmptyState>
     );
   return (
@@ -67,7 +68,7 @@ export function PlanPanel({ view }: { view: RunView }) {
       <RunNotes view={view} />
       {view.composition.length > 1 ? (
         <p className="subtle wb-note">
-          Combines {view.composition.join(" → ")}
+          Kombiniert {view.composition.join(" → ")}
         </p>
       ) : null}
       <ol className="plan">
@@ -92,7 +93,7 @@ export function PlanPanel({ view }: { view: RunView }) {
                   ""
                 )}
                 {stage.waitsOn.length
-                  ? ` · after ${stage.waitsOn.join(", ")}`
+                  ? ` · nach ${stage.waitsOn.join(", ")}`
                   : ""}
               </span>
             </div>
@@ -226,6 +227,16 @@ function RunNotes({ view }: { view: RunView }) {
   );
 }
 
+const ATTEMPT_STATE_LABEL: Record<string, string> = {
+  created: "angelegt",
+  claimed: "übernommen",
+  running: "läuft",
+  completed: "abgeschlossen",
+  failed: "fehlgeschlagen",
+  cancelled: "abgebrochen",
+  "lease expired": "Zuteilung abgelaufen",
+};
+
 function leaseState(attempt: Record<string, unknown>, now = Date.now()) {
   const status = str(attempt, "status") ?? "created";
   if (status !== "claimed" && status !== "running") return status;
@@ -238,13 +249,13 @@ export function WorkersPanel({ snapshot }: { snapshot: RunSnapshot }) {
   const names = new Map(
     snapshot.stages.map((stage) => [
       str(stage, "id") ?? "",
-      str(stage, "name") ?? "Step",
+      str(stage, "name") ?? "Schritt",
     ]),
   );
   if (!snapshot.attempts.length)
     return (
-      <EmptyState icon={Users} title="No workers yet">
-        Each worker that takes a step appears here.
+      <EmptyState icon={Users} title="Noch keine Worker">
+        Jeder Worker, der einen Schritt übernimmt, erscheint hier.
       </EmptyState>
     );
   return (
@@ -266,9 +277,10 @@ export function WorkersPanel({ snapshot }: { snapshot: RunSnapshot }) {
               )}
             />
             <div>
-              <p>{names.get(str(attempt, "stage_id") ?? "") ?? "Step"}</p>
+              <p>{names.get(str(attempt, "stage_id") ?? "") ?? "Schritt"}</p>
               <p className="subtle">
-                Attempt {num(attempt, "attempt_number") ?? 1} · {state}
+                Versuch {num(attempt, "attempt_number") ?? 1} ·{" "}
+                {ATTEMPT_STATE_LABEL[state] ?? state.replace(/_/g, " ")}
                 {failure ? ` · ${failure.replace(/_/g, " ")}` : ""}
               </p>
             </div>
@@ -291,8 +303,8 @@ export function SkillsPanel({ snapshot }: { snapshot: RunSnapshot }) {
     );
   if (!skills.length)
     return (
-      <EmptyState icon={Puzzle} title="No skills selected">
-        Skills chosen for this run appear here.
+      <EmptyState icon={Puzzle} title="Keine Skills gewählt">
+        Für diesen Lauf gewählte Skills erscheinen hier.
       </EmptyState>
     );
   return (
@@ -318,8 +330,8 @@ export function ToolsPanel({ snapshot }: { snapshot: RunSnapshot }) {
   );
   if (!events.length)
     return (
-      <EmptyState icon={Wrench} title="No tools used">
-        Tool and sandbox activity for this run appears here.
+      <EmptyState icon={Wrench} title="Keine Werkzeuge genutzt">
+        Werkzeug- und Sandbox-Aktivität dieses Laufs erscheint hier.
       </EmptyState>
     );
   return (
@@ -350,8 +362,8 @@ export function VerificationPanel({ snapshot }: { snapshot: RunSnapshot }) {
   );
   if (!stages.length)
     return (
-      <EmptyState icon={ShieldCheck} title="No checks yet">
-        Verdicts and the evidence behind them appear here.
+      <EmptyState icon={ShieldCheck} title="Noch keine Prüfungen">
+        Urteile und die Belege dahinter erscheinen hier.
       </EmptyState>
     );
   return (
@@ -362,7 +374,7 @@ export function VerificationPanel({ snapshot }: { snapshot: RunSnapshot }) {
         return (
           <li key={str(stage, "id") ?? String(index)} className="check-group">
             <div className="check-head">
-              <p className="check-name">{str(stage, "name") ?? "Step"}</p>
+              <p className="check-name">{str(stage, "name") ?? "Schritt"}</p>
               <Badge tone={info.tone}>{info.label}</Badge>
             </div>
             {typeof verification?.summary === "string" ? (
@@ -380,7 +392,7 @@ export function VerificationPanel({ snapshot }: { snapshot: RunSnapshot }) {
                       size={14}
                     />
                     <span className="wrap-anywhere">
-                      {str(check, "detail") ?? str(check, "id") ?? "Check"}
+                      {str(check, "detail") ?? str(check, "id") ?? "Prüfung"}
                     </span>
                   </li>
                 );
@@ -405,15 +417,16 @@ export function MemoryPanel({ snapshot }: { snapshot: RunSnapshot }) {
   const count = num(event?.data, "count");
   if (!event || !count)
     return (
-      <EmptyState icon={Brain} title="No memory used">
-        Nothing from earlier work informed this run.
+      <EmptyState icon={Brain} title="Kein Gedächtnis genutzt">
+        Nichts aus früherer Arbeit ist in diesen Lauf eingeflossen.
       </EmptyState>
     );
   return (
     <div className="wb-section">
       <p className="subtle wb-note">
-        {count} item{count === 1 ? "" : "s"} from earlier work informed this
-        run.
+        {count === 1
+          ? "1 Eintrag aus früherer Arbeit ist in diesen Lauf eingeflossen."
+          : `${count} Einträge aus früherer Arbeit sind in diesen Lauf eingeflossen.`}
       </p>
       <ul className="rows">
         {items.map((item) => (
@@ -422,7 +435,7 @@ export function MemoryPanel({ snapshot }: { snapshot: RunSnapshot }) {
             <div>
               <p>{item.excerpt}</p>
               <p className="subtle">
-                {item.verification === "verified" ? "Verified" : "Not verified"}
+                {item.verification === "verified" ? "Geprüft" : "Nicht geprüft"}
               </p>
             </div>
           </li>
@@ -444,8 +457,8 @@ export function ArtifactsPanel({
   );
   if (!snapshot.artifacts.length && !approvals.length)
     return (
-      <EmptyState icon={FileText} title="No artifacts">
-        Files and documents this run saves appear here.
+      <EmptyState icon={FileText} title="Keine Artefakte">
+        Dateien und Dokumente, die dieser Lauf speichert, erscheinen hier.
       </EmptyState>
     );
   return (
@@ -464,7 +477,7 @@ export function ArtifactsPanel({
       {approvals.length ? (
         <section className="stack" aria-labelledby="run-approvals">
           <h3 className="wb-heading" id="run-approvals">
-            Approvals
+            Freigaben
           </h3>
           {approvals.map((approval) => (
             <ApprovalCard
@@ -489,7 +502,7 @@ function ArtifactRow({
   runId: string;
 }) {
   const id = str(artifact, "id");
-  const title = str(artifact, "title") ?? "Artifact";
+  const title = str(artifact, "title") ?? "Artefakt";
   const kind = str(artifact, "kind") ?? "artifact";
   const content = obj(artifact, "content");
   if (
@@ -505,7 +518,7 @@ function ArtifactRow({
           {/* eslint-disable-next-line @next/next/no-img-element -- private, auth-gated bytes */}
           <img
             src={src}
-            alt={`Screenshot of the app at ${viewport ?? "unknown"} width`}
+            alt={`Screenshot der App (Breite: ${viewport ?? "unbekannt"})`}
             loading="lazy"
             decoding="async"
           />
@@ -524,7 +537,7 @@ function ArtifactRow({
           <p>{title}</p>
           <p className="subtle">
             {(first && str(first, "detail")) ??
-              "The run could not take screenshots."}
+              "Der Lauf konnte keine Screenshots aufnehmen."}
           </p>
         </div>
       </li>

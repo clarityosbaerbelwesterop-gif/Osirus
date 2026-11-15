@@ -37,16 +37,16 @@ async function send(url: string, method: string, body?: unknown) {
 }
 
 const ADD_ERRORS: Record<string, string> = {
-  invalid_request: "Enter a name and an https:// URL.",
-  duplicate_name: "A server with this name already exists.",
-  not_https: "The URL must start with https://.",
-  private_host: "Osirus cannot reach local or internal hosts.",
-  private_address: "Osirus cannot reach private network addresses.",
-  credentials_in_url: "Put credentials in the token field, not the URL.",
-  invalid_url: "That is not a valid URL.",
-  port_not_allowed: "That port is not allowed.",
+  invalid_request: "Gib einen Namen und eine https://-URL ein.",
+  duplicate_name: "Ein Server mit diesem Namen existiert bereits.",
+  not_https: "Die URL muss mit https:// beginnen.",
+  private_host: "Osirus kann keine lokalen oder internen Hosts erreichen.",
+  private_address: "Osirus kann keine privaten Netzwerkadressen erreichen.",
+  credentials_in_url: "Zugangsdaten gehören ins Token-Feld, nicht in die URL.",
+  invalid_url: "Das ist keine gültige URL.",
+  port_not_allowed: "Dieser Port ist nicht erlaubt.",
   connector_key_not_configured:
-    "Connections are not set up on this deployment yet.",
+    "Verbindungen sind in dieser Installation noch nicht eingerichtet.",
 };
 
 type RegistryResult = {
@@ -147,7 +147,7 @@ function AddServerForm({
       servers?: RegistryResult[];
     };
     if (!response?.ok || !body.servers) {
-      setSearchError("The MCP Registry could not be searched right now.");
+      setSearchError("Die MCP Registry konnte gerade nicht durchsucht werden.");
       return;
     }
     setResults(body.servers);
@@ -166,7 +166,7 @@ function AddServerForm({
     if (result.ok) return onDone();
     setError(
       ADD_ERRORS[result.payload.error ?? ""] ??
-        "The server could not be added.",
+        "Der Server konnte nicht hinzugefügt werden.",
     );
   };
 
@@ -181,9 +181,10 @@ function AddServerForm({
       <div className="notice notice-warning">
         <ShieldAlert size={16} aria-hidden="true" />
         <span>
-          An MCP server can offer tools that act outside Osirus. Add only
-          servers you trust. Osirus treats every tool as high risk and asks you
-          before each call, whatever the server says about itself.
+          Ein MCP-Server kann Werkzeuge anbieten, die außerhalb von Osirus
+          wirken. Füge nur Server hinzu, denen du vertraust. Osirus behandelt
+          jedes Werkzeug als hohes Risiko und fragt dich vor jedem Aufruf, egal
+          was der Server über sich sagt.
         </span>
       </div>
       <div className="stack">
@@ -212,8 +213,8 @@ function AddServerForm({
         </div>
         <div className="row row-wrap">
           <Field
-            label="Find in the MCP Registry"
-            hint="The official registry. Only servers with a remote endpoint can be added here."
+            label="In der MCP Registry suchen"
+            hint="Die offizielle Registry. Hier lassen sich nur Server mit Remote-Endpunkt hinzufügen."
           >
             {(props) => (
               <input
@@ -238,13 +239,13 @@ function AddServerForm({
             disabled={searching || query.trim().length < 2}
             onClick={() => void search()}
           >
-            {searching ? "Searching…" : "Search"}
+            {searching ? "Sucht…" : "Suchen"}
           </button>
         </div>
         {searchError ? <p className="field-error">{searchError}</p> : null}
         {results ? (
           results.length ? (
-            <ul className="tool-list" aria-label="Registry results">
+            <ul className="tool-list" aria-label="Ergebnisse aus der Registry">
               {results.map((server) => (
                 <li key={server.name} className="tool-item">
                   <div className="tool-main">
@@ -252,13 +253,13 @@ function AddServerForm({
                       {server.title ?? server.name}
                     </p>
                     <p className="tool-desc">
-                      <span>{server.description || "No description."}</span>
+                      <span>{server.description || "Keine Beschreibung."}</span>
                     </p>
                     <p className="subtle wrap-anywhere">
                       {server.remoteUrl ??
                         (server.localOnly
-                          ? "Runs locally (stdio) only; cannot be added here."
-                          : "No remote endpoint published.")}
+                          ? "Läuft nur lokal (stdio); kann hier nicht hinzugefügt werden."
+                          : "Kein Remote-Endpunkt veröffentlicht.")}
                     </p>
                   </div>
                   {server.remoteUrl ? (
@@ -270,18 +271,18 @@ function AddServerForm({
                         setUrl(server.remoteUrl!);
                       }}
                     >
-                      Use
+                      Übernehmen
                     </button>
                   ) : null}
                 </li>
               ))}
             </ul>
           ) : (
-            <p className="subtle">Nothing in the registry matches.</p>
+            <p className="subtle">Nichts in der Registry passt.</p>
           )
         ) : null}
       </div>
-      <Field label="Name" hint="How this server appears in approvals.">
+      <Field label="Name" hint="So erscheint dieser Server in Freigaben.">
         {(props) => (
           <input
             {...props}
@@ -292,7 +293,7 @@ function AddServerForm({
           />
         )}
       </Field>
-      <Field label="Server URL" hint="Streamable HTTP endpoint, https only.">
+      <Field label="Server-URL" hint="Streamable-HTTP-Endpunkt, nur https.">
         {(props) => (
           <input
             {...props}
@@ -306,8 +307,8 @@ function AddServerForm({
         )}
       </Field>
       <Field
-        label={tokenHint ? `${tokenHint}` : "Bearer token (optional)"}
-        hint="Stored encrypted. Never shown again and never given to the model."
+        label={tokenHint ? `${tokenHint}` : "Bearer-Token (optional)"}
+        hint="Wird verschlüsselt gespeichert. Nie wieder angezeigt und nie an das Modell gegeben."
         error={error}
       >
         {(props) => (
@@ -327,10 +328,10 @@ function AddServerForm({
           className="btn btn-primary"
           disabled={busy || !name.trim() || !url.trim()}
         >
-          {busy ? "Adding and testing…" : "Add and test"}
+          {busy ? "Wird hinzugefügt und getestet…" : "Hinzufügen und testen"}
         </button>
         <button type="button" className="btn btn-ghost" onClick={onCancel}>
-          Cancel
+          Abbrechen
         </button>
       </div>
     </form>
@@ -344,7 +345,7 @@ function ServerCard({ server }: { server: McpServerView }) {
   const state = mcpState(server);
   const stateInfo = server.enabled
     ? STATE_LABEL[state]
-    : { label: "Disabled", tone: "neutral" as const };
+    : { label: "Deaktiviert", tone: "neutral" as const };
   const base = `/api/mcp/servers/${server.id}`;
 
   const run = async (key: string, action: () => Promise<{ ok: boolean }>) => {
@@ -352,7 +353,8 @@ function ServerCard({ server }: { server: McpServerView }) {
     setMessage(null);
     const result = await action();
     setBusy(null);
-    if (!result.ok) setMessage("That did not work. Try again.");
+    if (!result.ok)
+      setMessage("Das hat nicht geklappt. Versuch es noch einmal.");
     router.refresh();
   };
 
@@ -366,23 +368,23 @@ function ServerCard({ server }: { server: McpServerView }) {
       description={
         server.serverName ? (
           <p className="subtle">
-            Reports itself as “{server.serverName}
-            {server.serverVersion ? ` ${server.serverVersion}` : ""}” (claim
-            from the server)
+            Meldet sich als „{server.serverName}
+            {server.serverVersion ? ` ${server.serverVersion}` : ""}“ (Angabe
+            des Servers)
           </p>
         ) : null
       }
       capabilities={[
-        `${server.enabledToolCount} of ${server.toolCount} tools enabled`,
-        "Trust: untrusted · every call asks first",
+        `${server.enabledToolCount} von ${server.toolCount} Werkzeugen aktiviert`,
+        "Vertrauen: nicht vertrauenswürdig · jeder Aufruf fragt zuerst",
       ]}
       health={{
         healthLabel:
           server.status === "unchecked"
-            ? "Not checked yet"
+            ? "Noch nicht geprüft"
             : server.status === "healthy"
-              ? "Healthy"
-              : "Failing",
+              ? "Funktioniert"
+              : "Fehlerhaft",
         healthTone:
           server.status === "healthy"
             ? "success"
@@ -406,7 +408,9 @@ function ServerCard({ server }: { server: McpServerView }) {
             }
           >
             <RefreshCw size={14} aria-hidden="true" />
-            {busy === "check" ? "Testing…" : "Test and discover tools"}
+            {busy === "check"
+              ? "Wird getestet…"
+              : "Testen und Werkzeuge finden"}
           </button>
           <button
             type="button"
@@ -418,7 +422,7 @@ function ServerCard({ server }: { server: McpServerView }) {
               )
             }
           >
-            {server.enabled ? "Disable server" : "Enable server"}
+            {server.enabled ? "Server deaktivieren" : "Server aktivieren"}
           </button>
           <ConfirmDialog
             trigger={
@@ -428,12 +432,12 @@ function ServerCard({ server }: { server: McpServerView }) {
                 disabled={busy !== null}
               >
                 <Trash2 size={14} aria-hidden="true" />
-                Remove
+                Entfernen
               </button>
             }
-            title={`Remove ${server.name}?`}
-            description="Osirus deletes the server, its stored token and its tool list. Its tools stop being available to runs immediately."
-            confirmLabel="Remove server"
+            title={`${server.name} entfernen?`}
+            description="Osirus löscht den Server, sein gespeichertes Token und seine Werkzeugliste. Seine Werkzeuge stehen Läufen ab sofort nicht mehr zur Verfügung."
+            confirmLabel="Server entfernen"
             onConfirm={() => void run("remove", () => send(base, "DELETE"))}
           />
         </>
@@ -448,7 +452,7 @@ function ServerCard({ server }: { server: McpServerView }) {
         <details className="disclosure conn-tools">
           <summary>
             <ChevronRight size={14} aria-hidden="true" className="chevron" />
-            Review tools ({server.toolCount})
+            Werkzeuge prüfen ({server.toolCount})
           </summary>
           <ul className="tool-list">
             {server.tools.map((tool) => (
@@ -457,19 +461,19 @@ function ServerCard({ server }: { server: McpServerView }) {
                   <p className="tool-name mono">{tool.name}</p>
                   <p className="tool-desc">
                     <span className="overline">
-                      From the server · untrusted
+                      Vom Server · nicht vertrauenswürdig
                     </span>
                     <span>{tool.description}</span>
                   </p>
                   {tool.parameters.length ? (
                     <p className="subtle tool-params">
-                      Inputs: {tool.parameters.join(", ")}
+                      Eingaben: {tool.parameters.join(", ")}
                     </p>
                   ) : null}
-                  <Badge tone="danger">High risk · asks every time</Badge>
+                  <Badge tone="danger">Hohes Risiko · fragt jedes Mal</Badge>
                   {tool.flagged ? (
                     <Badge tone="warning">
-                      Description tried to instruct the agent
+                      Beschreibung wollte dem Agenten Anweisungen geben
                     </Badge>
                   ) : null}
                 </div>
@@ -479,7 +483,7 @@ function ServerCard({ server }: { server: McpServerView }) {
                     role="switch"
                     checked={tool.enabled}
                     disabled={busy !== null}
-                    aria-label={`Allow Osirus to use ${tool.name}`}
+                    aria-label={`Osirus darf ${tool.name} nutzen`}
                     onChange={(event) =>
                       void run(`tool:${tool.id}`, () =>
                         send(`${base}/tools/${tool.id}`, "PATCH", {
@@ -488,14 +492,14 @@ function ServerCard({ server }: { server: McpServerView }) {
                       )
                     }
                   />
-                  <span>{tool.enabled ? "Allowed" : "Off"}</span>
+                  <span>{tool.enabled ? "Erlaubt" : "Aus"}</span>
                 </label>
               </li>
             ))}
           </ul>
         </details>
       ) : server.status === "healthy" ? (
-        <p className="subtle">The server offers no tools.</p>
+        <p className="subtle">Der Server bietet keine Werkzeuge an.</p>
       ) : null}
     </ConnectionCard>
   );
@@ -512,8 +516,8 @@ export function McpManager({
   const [adding, setAdding] = useState(false);
   if (!available)
     return (
-      <EmptyState icon={Server} title="MCP servers are not available yet">
-        This deployment has not been upgraded for MCP servers.
+      <EmptyState icon={Server} title="MCP-Server sind noch nicht verfügbar">
+        Diese Installation ist noch nicht für MCP-Server aktualisiert.
       </EmptyState>
     );
   return (
@@ -537,13 +541,13 @@ export function McpManager({
             onClick={() => setAdding(true)}
           >
             <Plus size={16} aria-hidden="true" />
-            Add MCP server
+            MCP-Server hinzufügen
           </button>
         </div>
       ) : (
         <EmptyState
           icon={Server}
-          title="No MCP servers"
+          title="Keine MCP-Server"
           action={
             <button
               type="button"
@@ -551,12 +555,12 @@ export function McpManager({
               onClick={() => setAdding(true)}
             >
               <Plus size={16} aria-hidden="true" />
-              Add MCP server
+              MCP-Server hinzufügen
             </button>
           }
         >
-          Connect a Model Context Protocol server to give Osirus more tools. You
-          review each tool before Osirus may use it.
+          Verbinde einen Model-Context-Protocol-Server, um Osirus mehr Werkzeuge
+          zu geben. Du prüfst jedes Werkzeug, bevor Osirus es nutzen darf.
         </EmptyState>
       )}
     </div>

@@ -137,6 +137,8 @@ describe("runtime foundation", () => {
       publicRuntimeErrorMessage(
         new ProviderError("Bearer super-secret", "provider_error"),
       ),
-    ).toBe("The run could not be completed. Please try again.");
+    ).toBe(
+      "Der Lauf konnte nicht abgeschlossen werden. Bitte versuch es noch einmal.",
+    );
   });
 });

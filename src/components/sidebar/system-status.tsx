@@ -8,9 +8,9 @@ type Health = {
 };
 
 const CHECK_LABEL: Record<string, string> = {
-  auth: "sign-in",
-  database: "storage",
-  provider: "model provider",
+  auth: "Anmeldung",
+  database: "Speicher",
+  provider: "Modellanbieter",
 };
 
 /**
@@ -30,12 +30,12 @@ export function SystemStatus() {
   }, []);
 
   if (health === null)
-    return <span className="status-line subtle">Checking status…</span>;
+    return <span className="status-line subtle">Status wird geprüft…</span>;
   if (health === "unreachable")
     return (
       <span className="status-line">
         <span className="status-dot status-dot-warning" aria-hidden="true" />
-        Status unavailable
+        Status nicht verfügbar
       </span>
     );
   const failing = Object.entries(health.checks ?? {})
@@ -47,7 +47,7 @@ export function SystemStatus() {
         className={`status-dot ${failing.length ? "status-dot-warning" : "status-dot-ok"}`}
         aria-hidden="true"
       />
-      {failing.length ? `Degraded: ${failing.join(", ")}` : "Online"}
+      {failing.length ? `Eingeschränkt: ${failing.join(", ")}` : "Online"}
     </span>
   );
 }

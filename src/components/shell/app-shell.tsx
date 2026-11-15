@@ -27,7 +27,7 @@ function Frame({ children }: { children: ReactNode }) {
   return (
     <div className="app" data-sidebar={shell.sidebar}>
       <a className="skip-link" href="#main">
-        Skip to content
+        Zum Inhalt springen
       </a>
       <Sidebar />
       <MobileNav />

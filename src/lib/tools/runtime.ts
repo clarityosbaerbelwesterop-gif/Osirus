@@ -322,7 +322,7 @@ export function databaseApprovalGate(input: {
         },
         {
           kind: "approval_needed",
-          title: `Approval needed: ${toolLabel(tool.id, tool.title)}`,
+          title: `Freigabe nötig: ${toolLabel(tool.id, tool.title)}`,
           body: tool.summary,
           dedupeKey: `approval:${approvalId}`,
           runId: context.runId,

@@ -24,7 +24,7 @@ type Shot = {
 };
 
 const openRunDetails = async (page: Page) => {
-  const toggle = page.getByRole("button", { name: "Show run details" });
+  const toggle = page.getByRole("button", { name: "Laufdetails anzeigen" });
   if (await toggle.isVisible()) await toggle.click();
 };
 
@@ -48,8 +48,8 @@ const SHOTS: Shot[] = [
     theme: "light",
     prepare: async (page) => {
       await openRunDetails(page);
-      await page.getByRole("tab", { name: "Knowledge" }).click();
-      const sources = page.getByRole("tab", { name: "Sources" });
+      await page.getByRole("tab", { name: "Wissen" }).click();
+      const sources = page.getByRole("tab", { name: "Quellen" });
       if (await sources.count()) await sources.click();
       await expect(
         page.getByText("LanceDB documentation").first(),
@@ -63,8 +63,8 @@ const SHOTS: Shot[] = [
     theme: "dark",
     prepare: async (page) => {
       await openRunDetails(page);
-      await page.getByRole("tab", { name: "Build" }).click();
-      await page.getByRole("tab", { name: "Diff" }).click();
+      await page.getByRole("tab", { name: "Projekt" }).click();
+      await page.getByRole("tab", { name: "Änderungen" }).click();
       await expect(
         page.getByText("return sorted.length % 2 === 0").first(),
       ).toBeVisible();

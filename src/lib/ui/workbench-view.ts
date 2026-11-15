@@ -31,30 +31,30 @@ export type WorkbenchGroup = {
 export const WORKBENCH_GROUPS: WorkbenchGroup[] = [
   {
     id: "run",
-    label: "Run",
+    label: "Lauf",
     tabs: [
-      { id: "activity", label: "Activity" },
+      { id: "activity", label: "Aktivität" },
       { id: "plan", label: "Plan" },
-      { id: "workers", label: "Workers" },
+      { id: "workers", label: "Worker" },
     ],
   },
   {
     id: "build",
-    label: "Build",
+    label: "Projekt",
     tabs: [
-      { id: "files", label: "Files" },
-      { id: "diff", label: "Diff" },
+      { id: "files", label: "Dateien" },
+      { id: "diff", label: "Änderungen" },
       { id: "terminal", label: "Terminal" },
-      { id: "preview", label: "Preview" },
+      { id: "preview", label: "Vorschau" },
     ],
   },
   {
     id: "knowledge",
-    label: "Knowledge",
+    label: "Wissen",
     tabs: [
-      { id: "research", label: "Sources" },
-      { id: "memory", label: "Memory" },
-      { id: "artifacts", label: "Artifacts" },
+      { id: "research", label: "Quellen" },
+      { id: "memory", label: "Gedächtnis" },
+      { id: "artifacts", label: "Artefakte" },
     ],
   },
   {
@@ -62,8 +62,8 @@ export const WORKBENCH_GROUPS: WorkbenchGroup[] = [
     label: "System",
     tabs: [
       { id: "skills", label: "Skills" },
-      { id: "tools", label: "Tools" },
-      { id: "verification", label: "Checks" },
+      { id: "tools", label: "Werkzeuge" },
+      { id: "verification", label: "Prüfungen" },
     ],
   },
 ];

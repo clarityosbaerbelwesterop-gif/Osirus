@@ -26,10 +26,10 @@ for (const [name, viewport] of Object.entries(VIEWPORTS)) {
       await mockApis(page);
       await openSurface(page, "chat-empty");
       if (viewport.width < 1024) {
-        await page.getByRole("button", { name: "Open navigation" }).click();
+        await page.getByRole("button", { name: "Navigation öffnen" }).click();
       }
       await expect(
-        page.getByRole("link", { name: "Connections" }).first(),
+        page.getByRole("link", { name: "Verbindungen" }).first(),
       ).toBeVisible();
     });
   });

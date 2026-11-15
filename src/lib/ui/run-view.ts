@@ -100,7 +100,7 @@ export function deriveRunView(
   const names = new Map(
     snapshot.stages.map((stage) => [
       str(stage, "id") ?? "",
-      str(stage, "name") ?? "Step",
+      str(stage, "name") ?? "Schritt",
     ]),
   );
   const waits = new Map<string, string[]>();
@@ -110,7 +110,7 @@ export function deriveRunView(
     if (!stageId || !dependsOn) continue;
     waits.set(stageId, [
       ...(waits.get(stageId) ?? []),
-      names.get(dependsOn) ?? "an earlier step",
+      names.get(dependsOn) ?? "einem früheren Schritt",
     ]);
   }
 

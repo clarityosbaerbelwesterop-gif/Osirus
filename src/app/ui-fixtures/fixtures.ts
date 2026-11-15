@@ -787,8 +787,8 @@ export function inboxFixture() {
     {
       id: "i1",
       kind: "approval_pending" as const,
-      title: "Approve: Push a branch to GitHub",
-      body: "For “Fix the median bug in stats-lib and open a pull request”",
+      title: "Freigabe: Branch zu GitHub pushen",
+      body: "Für „Fix the median bug in stats-lib and open a pull request“",
       href: "/app/approvals",
       read: false,
       createdAt: minutes(1, now),
@@ -796,8 +796,8 @@ export function inboxFixture() {
     {
       id: "i2",
       kind: "connector_expired" as const,
-      title: "GitHub access expired",
-      body: "Reconnect GitHub so Osirus can read and push to your repositories again.",
+      title: "GitHub-Zugriff abgelaufen",
+      body: "Verbinde GitHub neu, damit Osirus deine Repositories wieder lesen und dorthin pushen kann.",
       href: "/app/connections",
       read: false,
       createdAt: minutes(60, now),
@@ -805,8 +805,8 @@ export function inboxFixture() {
     {
       id: "i3",
       kind: "automation_completed" as const,
-      title: "Automation finished: Weekday dependency check",
-      body: "No outdated dependencies with safe updates. Nothing was changed.",
+      title: "Abhängigkeiten werktags prüfen ist fertig",
+      body: "Keine veralteten Abhängigkeiten mit sicheren Updates. Nichts wurde geändert.",
       href: `/app?session=${FIXTURE_IDS.session}`,
       read: false,
       createdAt: minutes(600, now),
@@ -819,12 +819,12 @@ export function automationsFixture() {
   return [
     {
       id: "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
-      name: "Weekday dependency check",
+      name: "Abhängigkeiten werktags prüfen",
       objective:
-        "Check https://github.com/osirus-demo/stats-lib for outdated dependencies and open a pull request with safe updates.",
+        "Prüfe https://github.com/osirus-demo/stats-lib auf veraltete Abhängigkeiten und öffne einen Pull Request mit sicheren Updates.",
       trigger: "schedule" as const,
       schedule: { cadence: "weekdays" as const },
-      scheduleLabel: "Weekdays, 03:00 UTC",
+      scheduleLabel: "Werktags, 03:00 UTC",
       policyPreset: "cautious" as const,
       maxCostUsd: 2,
       maxTokens: 200_000,
@@ -839,9 +839,9 @@ export function automationsFixture() {
     },
     {
       id: "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
-      name: "Summarize finished research",
+      name: "Fertige Recherche zusammenfassen",
       objective:
-        "Summarize the findings of the run that just finished in five bullet points.",
+        "Fasse die Ergebnisse des gerade beendeten Laufs in fünf Stichpunkten zusammen.",
       trigger: "run_completed" as const,
       schedule: null,
       scheduleLabel: null,
@@ -865,9 +865,9 @@ export function modelStatusFixture(): RoleStatus[] {
   return [
     {
       role: "STRONG",
-      label: "Strong model",
+      label: "Starkes Modell",
       state: "unavailable",
-      message: "Temporarily unavailable.",
+      message: "Vorübergehend nicht verfügbar.",
       lastCallAt: new Date(now - 5 * 60_000).toISOString(),
       calls24h: 14,
       failures24h: 3,
@@ -882,9 +882,9 @@ export function modelStatusFixture(): RoleStatus[] {
     },
     {
       role: "FAST",
-      label: "Fast model",
+      label: "Schnelles Modell",
       state: "available",
-      message: "Answering normally.",
+      message: "Antwortet normal.",
       lastCallAt: new Date(now - 20 * 60_000).toISOString(),
       calls24h: 41,
       failures24h: 0,
@@ -899,9 +899,9 @@ export function modelStatusFixture(): RoleStatus[] {
     },
     {
       role: "THINKING",
-      label: "Thinking model",
+      label: "Denkmodell",
       state: "not_used",
-      message: "Not used in the last 24 hours.",
+      message: "In den letzten 24 Stunden nicht genutzt.",
       lastCallAt: null,
       calls24h: 0,
       failures24h: 0,
@@ -916,9 +916,9 @@ export function modelStatusFixture(): RoleStatus[] {
     },
     {
       role: "VERIFY",
-      label: "Verification model",
+      label: "Prüfmodell",
       state: "not_configured",
-      message: "Not set up on this deployment.",
+      message: "In dieser Installation nicht eingerichtet.",
       lastCallAt: null,
       calls24h: 0,
       failures24h: 0,

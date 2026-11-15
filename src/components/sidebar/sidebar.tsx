@@ -61,20 +61,30 @@ const SURFACES: NavItem[] = [
 // The workspace tools sit below the history, compact, so the conversations
 // stay in view on a phone.
 const PRIMARY: NavItem[] = [
-  { href: "/app/inbox" as Route, label: "Inbox", icon: Inbox, count: "inbox" },
+  {
+    href: "/app/inbox" as Route,
+    label: "Posteingang",
+    icon: Inbox,
+    count: "inbox",
+  },
   {
     href: "/app/approvals" as Route,
-    label: "Approvals",
+    label: "Freigaben",
     icon: ShieldCheck,
     count: "approvals",
   },
-  { href: "/app/automations" as Route, label: "Automations", icon: Timer },
+  { href: "/app/automations" as Route, label: "Automationen", icon: Timer },
 ];
 
 const CONFIGURE: NavItem[] = [
-  { href: "/app/connections" as Route, label: "Connections", icon: Plug },
-  { href: "/app/quality" as Route, label: "Quality", icon: Gauge, admin: true },
-  { href: "/app/settings" as Route, label: "Settings", icon: Settings },
+  { href: "/app/connections" as Route, label: "Verbindungen", icon: Plug },
+  {
+    href: "/app/quality" as Route,
+    label: "Qualität",
+    icon: Gauge,
+    admin: true,
+  },
+  { href: "/app/settings" as Route, label: "Einstellungen", icon: Settings },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -95,7 +105,7 @@ function NavLink({
 }) {
   const pathname = usePathname() ?? "";
   const active = isActive(pathname, item.href);
-  const label = count ? `${item.label}, ${count} waiting` : item.label;
+  const label = count ? `${item.label}, ${count} offen` : item.label;
   return (
     <Link
       href={item.href}
@@ -114,7 +124,7 @@ function NavLink({
         <>
           <span className="nav-label">{item.label}</span>
           {count ? (
-            <span className="count" aria-label={`${count} waiting`}>
+            <span className="count" aria-label={`${count} offen`}>
               {count > 99 ? "99+" : count}
             </span>
           ) : null}
@@ -193,7 +203,7 @@ function SessionLink({
           }}
           className="session-rename"
           value={draft}
-          aria-label={`Rename ${session.title}`}
+          aria-label={`${session.title} umbenennen`}
           maxLength={240}
           onChange={(event) => setDraft(event.target.value)}
           onBlur={() => {
@@ -224,7 +234,9 @@ function SessionLink({
         aria-current={active ? "page" : undefined}
         aria-disabled={locked || undefined}
         title={
-          locked ? "Finish or cancel the current run first" : session.title
+          locked
+            ? "Erst den aktuellen Lauf beenden oder abbrechen"
+            : session.title
         }
         onClick={(event) => {
           if (locked) {
@@ -243,14 +255,16 @@ function SessionLink({
       <span className="session-actions">
         <IconButton
           size="sm"
-          label={`Rename ${session.title}`}
+          label={`${session.title} umbenennen`}
           icon={Pencil}
           tooltip={false}
           onClick={startRename}
         />
         <IconButton
           size="sm"
-          label={pinned ? `Unpin ${session.title}` : `Pin ${session.title}`}
+          label={
+            pinned ? `${session.title} lösen` : `${session.title} anheften`
+          }
           icon={pinned ? PinOff : Pin}
           tooltip={false}
           disabled={pinBusy}
@@ -258,7 +272,7 @@ function SessionLink({
         />
         <IconButton
           size="sm"
-          label={`Archive ${session.title}`}
+          label={`${session.title} archivieren`}
           icon={Archive}
           tooltip={false}
           onClick={() => void archive()}
@@ -313,7 +327,7 @@ function ArchivedSessions({ area }: { area: NavArea | null }) {
         />
         <span className="nav-label">Archiviert</span>
         {visible?.length ? (
-          <span className="count" aria-label={`${visible.length} archived`}>
+          <span className="count" aria-label={`${visible.length} archiviert`}>
             {visible.length > 99 ? "99+" : visible.length}
           </span>
         ) : null}
@@ -329,7 +343,7 @@ function ArchivedSessions({ area }: { area: NavArea | null }) {
                 <span className="session-actions">
                   <IconButton
                     size="sm"
-                    label={`Restore ${session.title}`}
+                    label={`${session.title} wiederherstellen`}
                     icon={ArchiveRestore}
                     tooltip={false}
                     onClick={() => void unarchive(session)}
@@ -402,6 +416,13 @@ export function SidebarContent({
     }
   };
 
+  const newLabel =
+    area === "rouge"
+      ? "Neuer Auftrag"
+      : area === "code"
+        ? "Neue Code-Aufgabe"
+        : "Neuer Chat";
+
   const toggleCollapsed = () => {
     const next = collapsed ? "expanded" : "collapsed";
     shell.setSidebar(next);
@@ -420,7 +441,7 @@ export function SidebarContent({
         >
           <OsirusMark />
           {collapsed ? (
-            <span className="sr-only">Osirus home</span>
+            <span className="sr-only">Osirus Startseite</span>
           ) : (
             <span className="brand-text">
               <span className="brand-name">Osirus</span>
@@ -434,7 +455,9 @@ export function SidebarContent({
           <IconButton
             className="sidebar-collapse"
             size="sm"
-            label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            label={
+              collapsed ? "Seitenleiste ausklappen" : "Seitenleiste einklappen"
+            }
             icon={collapsed ? PanelLeftOpen : PanelLeftClose}
             onClick={toggleCollapsed}
           />
@@ -444,7 +467,7 @@ export function SidebarContent({
       {collapsed ? (
         <IconButton
           className="sidebar-new-icon"
-          label="New task"
+          label={newLabel}
           icon={Plus}
           disabled={shell.chat?.running}
           onClick={newTask}
@@ -458,11 +481,7 @@ export function SidebarContent({
             disabled={shell.chat?.running}
           >
             <Plus size={16} aria-hidden="true" />
-            {area === "rouge"
-              ? "Neuer Auftrag"
-              : area === "code"
-                ? "Neue Code-Aufgabe"
-                : "Neuer Chat"}
+            {newLabel}
           </button>
           <label className="sidebar-search">
             <Search size={15} aria-hidden="true" />
@@ -477,7 +496,7 @@ export function SidebarContent({
         </div>
       )}
 
-      <nav className="sidebar-nav" aria-label="Main">
+      <nav className="sidebar-nav" aria-label="Hauptnavigation">
         <ul>
           {SURFACES.map((item) => (
             <li key={item.href}>
@@ -564,7 +583,7 @@ export function SidebarContent({
 
       <nav
         className={cx("sidebar-tools", collapsed && "sidebar-tools-collapsed")}
-        aria-label="Workspace"
+        aria-label="Arbeitsbereich"
       >
         <ul>
           {[...PRIMARY, ...CONFIGURE]
@@ -588,7 +607,7 @@ export function SidebarContent({
           href={"/app/settings" as Route}
           className="account-link"
           onClick={onNavigate}
-          aria-label={collapsed ? "Account settings" : undefined}
+          aria-label={collapsed ? "Kontoeinstellungen" : undefined}
         >
           <span className="avatar" aria-hidden="true">
             {(shell.user.name ?? shell.user.email ?? "?")
@@ -598,7 +617,7 @@ export function SidebarContent({
           {collapsed ? null : (
             <span className="account-text">
               <span className="truncate">
-                {shell.user.name ?? shell.user.email ?? "Account"}
+                {shell.user.name ?? shell.user.email ?? "Konto"}
               </span>
               {shell.user.name && shell.user.email ? (
                 <span className="truncate account-email">
@@ -617,7 +636,7 @@ export function SidebarContent({
 export function Sidebar() {
   const shell = useShell();
   return (
-    <aside className="sidebar" aria-label="Sidebar">
+    <aside className="sidebar" aria-label="Seitenleiste">
       <SidebarContent collapsed={shell.sidebar === "collapsed"} />
     </aside>
   );

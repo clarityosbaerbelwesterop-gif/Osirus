@@ -152,10 +152,10 @@ describe("approval view", () => {
     const text = JSON.stringify(view.details);
     expect(text).not.toContain("ghp_should_never_be_shown");
     expect(view.details.find((d) => d.label === "Token")?.value).toBe(
-      "Withheld",
+      "Zurückgehalten",
     );
-    expect(view.details.find((d) => d.label === "Content")?.value).toBe(
-      "2 lines",
+    expect(view.details.find((d) => d.label === "Inhalt")?.value).toBe(
+      "2 Zeilen",
     );
   });
 
@@ -310,11 +310,11 @@ describe("workbench relevance", () => {
 
 describe("connection states", () => {
   it("never calls a connection healthy without a successful check", () => {
-    expect(healthLine(null).label).toBe("Not checked yet");
-    expect(healthLine({ last: null }).label).toBe("Not checked yet");
+    expect(healthLine(null).label).toBe("Noch nicht geprüft");
+    expect(healthLine({ last: null }).label).toBe("Noch nicht geprüft");
     expect(
       healthLine({ last: { ok: true, error: null, checkedAt: at(1) } }).label,
-    ).toBe("Healthy");
+    ).toBe("Funktioniert");
   });
 
   it("distinguishes expired credentials from other failures", () => {
@@ -417,7 +417,7 @@ describe("markdown rendering", () => {
     const html = render("![pixel](https://tracker.test/p.gif)");
     expect(html).not.toContain("<img");
     expect(html).toContain('rel="noopener noreferrer nofollow"');
-    expect(html).toContain("Image: pixel");
+    expect(html).toContain("Bild: pixel");
   });
 
   it("renders tables, code and footnote citations", () => {

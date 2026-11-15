@@ -51,19 +51,20 @@ export function LabRoutingPanel({ initial }: { initial: LabRoutingSnapshot }) {
   return (
     <section
       className="lab-routing"
-      aria-label="Model routing"
+      aria-label="Modell-Routing"
       data-training={String(snapshot.trainingStarted)}
       data-production={String(snapshot.production)}
     >
-      <h3>Model routes</h3>
+      <h3>Modellrouten</h3>
       <p className="subtle">
-        Live routing for UNOROUTER. The dot moves only while this process would
-        actually send inference to the shown provider. Own models are not
-        offered. Nothing here is a training animation. Training has not been
-        started. Observed {snapshot.observedAt}.
+        Live-Routing für UNOROUTER. Der Punkt bewegt sich nur, solange dieser
+        Prozess tatsächlich Anfragen an den gezeigten Anbieter senden würde.
+        Eigene Modelle werden nicht angeboten. Nichts hier ist eine
+        Trainingsanimation. Das Training wurde nicht gestartet. Beobachtet{" "}
+        {snapshot.observedAt}.
       </p>
       {snapshot.tracks.length === 0 ? (
-        <p>No track definitions are registered in this build.</p>
+        <p>In diesem Build sind keine Track-Definitionen registriert.</p>
       ) : (
         <ul className="lab-route-list">
           {snapshot.tracks.map((track) => (
@@ -81,8 +82,8 @@ export function LabRoutingPanel({ initial }: { initial: LabRoutingSnapshot }) {
                 <strong>{withoutOwnModel(track.displayName)}</strong>
                 <div>{withoutOwnModel(track.nativeSummary)}</div>
                 <div>
-                  {track.blocked ? "Not connected — API key missing. " : ""}
-                  Not a native checkpoint.
+                  {track.blocked ? "Nicht verbunden — API-Key fehlt. " : ""}
+                  Kein nativer Checkpoint.
                 </div>
               </div>
             </li>

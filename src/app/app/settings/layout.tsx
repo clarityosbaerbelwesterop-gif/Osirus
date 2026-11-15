@@ -4,7 +4,7 @@ import { PageFrame } from "@/components/shell/page-frame";
 
 export default function SettingsLayout({ children }: { children: ReactNode }) {
   return (
-    <PageFrame title="Settings">
+    <PageFrame title="Einstellungen">
       <div className="settings">
         <SettingsNav />
         <div className="settings-body">{children}</div>

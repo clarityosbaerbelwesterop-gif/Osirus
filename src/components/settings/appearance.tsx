@@ -16,8 +16,8 @@ export function AppearanceSettings() {
   const [theme, setTheme] = useState<ThemePreference>(shell.theme);
   return (
     <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
-      <legend className="field-label">Appearance</legend>
-      <div className="segmented" role="radiogroup" aria-label="Appearance">
+      <legend className="field-label">Darstellung</legend>
+      <div className="segmented" role="radiogroup" aria-label="Darstellung">
         {OPTIONS.map((option) => (
           <label key={option.id}>
             <input
@@ -36,8 +36,8 @@ export function AppearanceSettings() {
         ))}
       </div>
       <p className="field-hint">
-        System follows your device. Motion follows your device&apos;s reduced
-        motion setting.
+        System folgt deinem Gerät. Animationen folgen der Einstellung „Bewegung
+        reduzieren“ deines Geräts.
       </p>
     </fieldset>
   );

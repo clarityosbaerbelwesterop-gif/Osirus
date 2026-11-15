@@ -46,12 +46,20 @@ export type WorkspaceView = {
 
 export type WorkspaceTab = "files" | "diff" | "terminal" | "preview";
 
+const WORKSPACE_STATUS: Record<string, string> = {
+  creating: "Sandbox startet",
+  ready: "Sandbox bereit",
+  stopped: "Gestoppt",
+  destroyed: "Entfernt",
+  failed: "Fehlgeschlagen",
+};
+
 function Header({ workspace }: { workspace: WorkspaceView }) {
   return (
     <div className="wb-meta">
       <span className="wrap-anywhere mono">
         {workspace.repository?.replace(/^https:\/\/github\.com\//, "") ??
-          "New repository"}
+          "Neues Repository"}
       </span>
       {workspace.branch ? <Badge outline>{workspace.branch}</Badge> : null}
       <Badge
@@ -63,7 +71,7 @@ function Header({ workspace }: { workspace: WorkspaceView }) {
               : "neutral"
         }
       >
-        {workspace.status === "ready" ? "Sandbox ready" : workspace.status}
+        {WORKSPACE_STATUS[workspace.status] ?? workspace.status}
       </Badge>
     </div>
   );
@@ -116,29 +124,29 @@ export function WorkspacePanel({
         path,
         message:
           body.error === "file_too_large"
-            ? "This file is too large to show."
-            : "This file could not be opened. The sandbox may be stopped.",
+            ? "Diese Datei ist zu groß für die Anzeige."
+            : "Diese Datei konnte nicht geöffnet werden. Vielleicht ist die Sandbox gestoppt.",
       });
   };
 
-  if (!runId) return <EmptyState title="No run selected" />;
+  if (!runId) return <EmptyState title="Kein Lauf ausgewählt" />;
   if (loading && !data)
     return (
       <div className="wb-loading" aria-busy="true">
-        Loading workspace…
+        Arbeitsbereich wird geladen…
       </div>
     );
   if (error)
     return (
-      <EmptyState title="Workspace unavailable">
-        It could not be loaded right now.
+      <EmptyState title="Arbeitsbereich nicht verfügbar">
+        Er konnte gerade nicht geladen werden.
       </EmptyState>
     );
   const workspace = data?.workspace;
   if (!workspace)
     return (
-      <EmptyState icon={FileCode2} title="No coding workspace">
-        A sandbox opens when a coding or building run needs one.
+      <EmptyState icon={FileCode2} title="Kein Code-Arbeitsbereich">
+        Eine Sandbox öffnet sich, wenn ein Code- oder Bau-Lauf eine braucht.
       </EmptyState>
     );
 
@@ -163,7 +171,7 @@ export function WorkspacePanel({
               <span className="mono wrap-anywhere">{file.path}</span>
               <IconButton
                 size="sm"
-                label="Close file"
+                label="Datei schließen"
                 icon={X}
                 onClick={() => setFile(null)}
               />
@@ -171,7 +179,7 @@ export function WorkspacePanel({
             <pre
               className="code-view"
               tabIndex={0}
-              aria-label={`Contents of ${file.path}`}
+              aria-label={`Inhalt von ${file.path}`}
             >
               <code>{file.content}</code>
             </pre>
@@ -182,7 +190,7 @@ export function WorkspacePanel({
             {fileError.path}: {fileError.message}
           </p>
         ) : null}
-        <ul className="file-tree" aria-label="Files">
+        <ul className="file-tree" aria-label="Dateien">
           {workspace.fileTree.slice(0, 500).map((path) => (
             <li key={path}>
               <button
@@ -198,7 +206,7 @@ export function WorkspacePanel({
         </ul>
         {workspace.fileTree.length > 500 ? (
           <p className="subtle wb-note">
-            Showing the first 500 of {workspace.fileTree.length} files.
+            Zeigt die ersten 500 von {workspace.fileTree.length} Dateien.
           </p>
         ) : null}
       </div>
@@ -212,7 +220,7 @@ export function WorkspacePanel({
           <pre
             className="code-view diff-view"
             tabIndex={0}
-            aria-label="Changes"
+            aria-label="Änderungen"
           >
             <code>
               {workspace.diff.split("\n").map((line, index) => (
@@ -224,8 +232,8 @@ export function WorkspacePanel({
             </code>
           </pre>
         ) : (
-          <EmptyState title="No changes yet">
-            The diff appears once files change.
+          <EmptyState title="Noch keine Änderungen">
+            Die Änderungen erscheinen, sobald sich Dateien ändern.
           </EmptyState>
         )}
       </div>
@@ -237,14 +245,14 @@ export function WorkspacePanel({
         <Header workspace={workspace} />
         {workspace.commands.length ? (
           <p className="subtle wb-note">
-            Checks found in the repository:{" "}
+            Prüfungen im Repository:{" "}
             {workspace.commands
               .map((command) => `${command.phase}: ${command.command}`)
               .join(" · ")}
           </p>
         ) : (
           <p className="subtle wb-note">
-            The repository declares no check commands.
+            Das Repository legt keine Prüfbefehle fest.
           </p>
         )}
         {workspace.commandLog.length ? (
@@ -264,8 +272,8 @@ export function WorkspacePanel({
                     <code className="wrap-anywhere">$ {entry.command}</code>
                     <Badge tone={entry.exitCode === 0 ? "success" : "danger"}>
                       {entry.exitCode === 0
-                        ? "passed"
-                        : `exit ${entry.exitCode ?? "none"}`}
+                        ? "bestanden"
+                        : `Exit ${entry.exitCode ?? "–"}`}
                     </Badge>
                     <span className="subtle tabular">
                       {formatDuration(entry.durationMs)}
@@ -274,7 +282,7 @@ export function WorkspacePanel({
                   <pre
                     className="code-view"
                     tabIndex={0}
-                    aria-label={`Output of ${entry.command}`}
+                    aria-label={`Ausgabe von ${entry.command}`}
                   >
                     <code>
                       {entry.stdoutTail}
@@ -286,7 +294,10 @@ export function WorkspacePanel({
             ))}
           </ol>
         ) : (
-          <EmptyState icon={TerminalSquare} title="No commands have run" />
+          <EmptyState
+            icon={TerminalSquare}
+            title="Noch keine Befehle ausgeführt"
+          />
         )}
       </div>
     );
@@ -303,21 +314,21 @@ export function WorkspacePanel({
             rel="noreferrer"
           >
             <ExternalLink size={14} aria-hidden="true" />
-            Open preview in a new tab
+            Vorschau in neuem Tab öffnen
           </a>
           <iframe
             className="preview-frame"
             src={workspace.previewUrl}
-            title="Workspace preview"
+            title="Vorschau des Arbeitsbereichs"
             sandbox="allow-scripts allow-forms"
             referrerPolicy="no-referrer"
           />
         </>
       ) : (
-        <EmptyState title="Nothing to preview">
+        <EmptyState title="Keine Vorschau">
           {workspace.previewUrl
-            ? "The workspace is stopped, so its preview is not running."
-            : "No preview server was started in this workspace."}
+            ? "Der Arbeitsbereich ist gestoppt, deshalb läuft seine Vorschau nicht."
+            : "In diesem Arbeitsbereich wurde kein Vorschau-Server gestartet."}
         </EmptyState>
       )}
     </div>

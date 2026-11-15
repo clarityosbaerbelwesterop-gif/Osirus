@@ -38,7 +38,7 @@ const RUN_STATUS: Record<string, { label: string; tone: Tone }> = {
 export function runStatus(status: string | null | undefined) {
   return (
     RUN_STATUS[status ?? ""] ?? {
-      label: humanize(status ?? "unknown"),
+      label: status ? humanize(status) : "Unbekannt",
       tone: "neutral" as Tone,
     }
   );
@@ -145,16 +145,16 @@ export function stageLabel(name: string) {
 }
 
 const VERDICT: Record<string, { label: string; tone: Tone }> = {
-  verified: { label: "Verified", tone: "success" },
-  rejected: { label: "Rejected", tone: "danger" },
-  conflicted: { label: "Conflicting evidence", tone: "warning" },
-  unverified: { label: "Not verified", tone: "neutral" },
+  verified: { label: "Bestätigt", tone: "success" },
+  rejected: { label: "Abgelehnt", tone: "danger" },
+  conflicted: { label: "Widersprüchliche Belege", tone: "warning" },
+  unverified: { label: "Nicht geprüft", tone: "neutral" },
 };
 
 export function verdict(status: string | null | undefined) {
   return (
     VERDICT[status ?? ""] ?? {
-      label: humanize(status ?? "unknown"),
+      label: status ? humanize(status) : "Unbekannt",
       tone: "neutral" as Tone,
     }
   );
@@ -201,7 +201,7 @@ const TOOL_LABEL: Record<string, string> = {
 };
 
 export function toolLabel(toolId: string | null | undefined, title?: string) {
-  if (!toolId) return title ?? "Tool";
+  if (!toolId) return title ?? "Werkzeug";
   if (toolId.startsWith("mcp:")) {
     const [server, name] = toolId.slice(4).split("/");
     return `${humanize(name ?? toolId)} (MCP · ${server})`;

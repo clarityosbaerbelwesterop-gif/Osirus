@@ -10,35 +10,35 @@ export function runtimeErrorCode(error: unknown) {
 export function publicRuntimeErrorMessage(error: unknown) {
   switch (runtimeErrorCode(error)) {
     case "cancelled":
-      return "Run cancelled.";
+      return "Lauf abgebrochen.";
     case "rate_limited":
-      return "The model provider is busy. Please try again shortly.";
+      return "Der Modellanbieter ist gerade ausgelastet. Bitte versuch es gleich noch einmal.";
     case "capacity_deferred":
-      return "Model capacity is reserved for interactive requests right now. This work resumes automatically.";
+      return "Die Modellkapazität ist gerade für direkte Anfragen reserviert. Diese Arbeit geht automatisch weiter.";
     case "timeout":
-      return "The model request timed out. Please try again.";
+      return "Die Modellanfrage hat zu lange gedauert. Bitte versuch es noch einmal.";
     case "provider_not_configured":
     case "model_not_configured":
-      return "The model runtime is not configured.";
+      return "Die Modellumgebung ist nicht eingerichtet.";
     case "credential_rejected":
-      return "The model provider rejected the deployment's credentials. An operator needs to fix this.";
+      return "Der Modellanbieter hat die Zugangsdaten dieser Installation abgelehnt. Das muss der Betreiber beheben.";
     case "provider_unavailable":
-      return "The model provider is temporarily unavailable. Please try again later.";
+      return "Der Modellanbieter ist vorübergehend nicht erreichbar. Bitte versuch es später noch einmal.";
     case "insufficient_credit":
-      return "The model provider declined the request: the account's free quota or credit is exhausted.";
+      return "Der Modellanbieter hat die Anfrage abgelehnt: Das kostenlose Kontingent oder Guthaben des Kontos ist aufgebraucht.";
     case "quota_exhausted":
-      return "Your usage budget for this window is spent. It refills automatically; this work resumes when it does.";
+      return "Dein Nutzungsbudget für diesen Zeitraum ist verbraucht. Es füllt sich automatisch wieder auf; dann geht diese Arbeit weiter.";
     case "subscription_required":
-      return "An active subscription is required to run models.";
+      return "Für Modelle ist ein aktives Abo nötig.";
     case "model_not_in_plan":
-      return "This model is not included in the free plan. Upgrade to a paid plan to use it.";
+      return "Dieses Modell ist im Free-Plan nicht enthalten. Wechsle auf einen bezahlten Plan, um es zu nutzen.";
     case "subagent_limit":
-      return "The free plan allows fewer sub-agents. Upgrade to a paid plan for more.";
+      return "Der Free-Plan erlaubt weniger Subagents. Wechsle für mehr auf einen bezahlten Plan.";
     case "invalid_stream":
     case "invalid_json":
-      return "The model returned an unusable response. Please try again.";
+      return "Das Modell hat eine unbrauchbare Antwort geliefert. Bitte versuch es noch einmal.";
     default:
-      return "The run could not be completed. Please try again.";
+      return "Der Lauf konnte nicht abgeschlossen werden. Bitte versuch es noch einmal.";
   }
 }
 

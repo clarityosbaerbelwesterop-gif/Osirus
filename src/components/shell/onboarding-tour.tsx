@@ -78,7 +78,7 @@ function steps(name: string | null): Step[] {
       id: "rouge",
       icon: Zap,
       title: "Rouge Agent: erledigt Aufgaben",
-      body: "Gib ein Ziel statt einer Frage. Der Agent plant, recherchiert, nutzt Werkzeuge und arbeitet Schritt für Schritt. Vor riskanten Aktionen fragt er dich; du entscheidest unter Approvals.",
+      body: "Gib ein Ziel statt einer Frage. Der Agent plant, recherchiert, nutzt Werkzeuge und arbeitet Schritt für Schritt. Vor riskanten Aktionen fragt er dich; du entscheidest unter Freigaben.",
       action: { label: "Beispielaufgabe starten", href: agentHref(TASK) },
     },
     {
@@ -110,7 +110,7 @@ function steps(name: string | null): Step[] {
       id: "start",
       icon: Sparkles,
       title: "Leg los",
-      body: "Such dir einen ersten Schritt aus. Diese Einführung findest du jederzeit wieder unter Settings.",
+      body: "Such dir einen ersten Schritt aus. Diese Einführung findest du jederzeit wieder unter Einstellungen.",
     },
   ];
 }

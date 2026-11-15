@@ -29,7 +29,7 @@ test("skip link is first and moves focus to the main content", async ({
   // leaves focus where the browser puts it.
   await openSurface(page, "connections");
   await page.keyboard.press("Tab");
-  const skip = page.getByRole("link", { name: "Skip to content" });
+  const skip = page.getByRole("link", { name: "Zum Inhalt springen" });
   await expect(skip).toBeFocused();
   await expect(skip).toBeVisible();
   await page.keyboard.press("Enter");
@@ -69,7 +69,7 @@ test("composer: Enter sends, Shift+Enter adds a line", async ({ page }) => {
     }),
   );
   await openSurface(page, "chat-empty");
-  const composer = page.getByRole("textbox", { name: "Message Osirus" });
+  const composer = page.getByRole("textbox", { name: "Nachricht an Osirus" });
   await composer.click();
   await composer.pressSequentially("First line");
   await page.keyboard.press("Shift+Enter");
@@ -86,15 +86,19 @@ test("workbench tabs follow arrow keys and the splitter resizes", async ({
 }) => {
   await mockApis(page);
   await openSurface(page, "chat-coding");
-  const toggle = page.getByRole("button", { name: "Show run details" });
+  const toggle = page.getByRole("button", { name: "Laufdetails anzeigen" });
   if (await toggle.isVisible()) await toggle.click();
-  const groups = page.getByRole("tablist", { name: "Workbench sections" });
+  const groups = page.getByRole("tablist", {
+    name: "Bereiche der Laufdetails",
+  });
   const first = groups.getByRole("tab").first();
   await first.focus();
   await page.keyboard.press("ArrowRight");
   await expect(groups.getByRole("tab").nth(1)).toBeFocused();
 
-  const splitter = page.getByRole("separator", { name: "Resize run details" });
+  const splitter = page.getByRole("separator", {
+    name: "Breite der Laufdetails ändern",
+  });
   const before = Number(await splitter.getAttribute("aria-valuenow"));
   await splitter.focus();
   await page.keyboard.press("ArrowLeft");
@@ -109,9 +113,9 @@ test("run details sheet closes with Escape and returns focus", async ({
   await page.setViewportSize(VIEWPORTS.tablet);
   await mockApis(page);
   await openSurface(page, "chat-coding");
-  const toggle = page.getByRole("button", { name: "Show run details" });
+  const toggle = page.getByRole("button", { name: "Laufdetails anzeigen" });
   await toggle.click();
-  const sheet = page.getByRole("dialog", { name: "Run details" });
+  const sheet = page.getByRole("dialog", { name: "Laufdetails" });
   await expect(sheet).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(sheet).toBeHidden();

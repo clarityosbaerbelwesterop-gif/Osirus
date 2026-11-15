@@ -47,14 +47,14 @@ function CodeBlock(props: ComponentProps<"pre">) {
           type="button"
           className="md-code-copy"
           onClick={() => void copy()}
-          aria-label={copied ? "Copied" : "Copy code"}
+          aria-label={copied ? "Kopiert" : "Code kopieren"}
         >
           {copied ? (
             <Check size={13} aria-hidden="true" />
           ) : (
             <Copy size={13} aria-hidden="true" />
           )}
-          <span>{copied ? "Copied" : "Copy"}</span>
+          <span>{copied ? "Kopiert" : "Kopieren"}</span>
         </button>
       </div>
       <pre ref={ref}>{props.children}</pre>
@@ -93,7 +93,7 @@ const components: Components = {
     if (!url) return alt ? <span>{alt}</span> : null;
     return (
       <a href={url} target="_blank" rel="noopener noreferrer nofollow">
-        {alt ? `Image: ${alt}` : "Image"}
+        {alt ? `Bild: ${alt}` : "Bild"}
       </a>
     );
   },

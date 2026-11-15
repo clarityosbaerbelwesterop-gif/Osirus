@@ -33,16 +33,26 @@ import { formatCount, formatUsd, humanize } from "@/lib/ui/labels";
 export const dynamic = "force-dynamic";
 
 const TITLES: Record<string, string> = {
-  workspace: "Workspace",
-  connections: "Connections",
-  models: "Models",
-  memory: "Memory",
-  agent: "Agent behavior",
-  security: "Security",
+  workspace: "Arbeitsbereich",
+  connections: "Verbindungen",
+  models: "Modelle",
+  memory: "Gedächtnis",
+  agent: "Agentenverhalten",
+  security: "Sicherheit",
   privacy: "Datenschutz",
-  usage: "Usage",
-  appearance: "Appearance",
+  usage: "Verbrauch",
+  appearance: "Darstellung",
 };
+
+const ROLE_LABEL: Record<string, string> = {
+  owner: "Inhaber",
+  admin: "Admin",
+  member: "Mitglied",
+  editor: "Bearbeiter",
+  viewer: "Betrachter",
+};
+
+const roleLabel = (role: string) => ROLE_LABEL[role] ?? humanize(role);
 
 export async function generateMetadata({
   params,
@@ -50,7 +60,7 @@ export async function generateMetadata({
   params: Promise<{ section: string }>;
 }): Promise<Metadata> {
   const { section } = await params;
-  return { title: TITLES[section] ?? "Settings" };
+  return { title: TITLES[section] ?? "Einstellungen" };
 }
 
 function Group({
@@ -88,31 +98,33 @@ export default async function SettingsSection({
     case "workspace": {
       const info = await workspaceInfo(identity);
       return (
-        <Group id="workspace" title="Workspace">
+        <Group id="workspace" title="Arbeitsbereich">
           <dl className="settings-rows">
             <div>
               <dt>Name</dt>
               <dd>{info.name}</dd>
             </div>
             <div>
-              <dt>Your role</dt>
-              <dd>{info.workspaceRole ? humanize(info.workspaceRole) : "—"}</dd>
-            </div>
-            <div>
-              <dt>Organization role</dt>
+              <dt>Deine Rolle</dt>
               <dd>
-                {info.organizationRole ? humanize(info.organizationRole) : "—"}
+                {info.workspaceRole ? roleLabel(info.workspaceRole) : "—"}
               </dd>
             </div>
             <div>
-              <dt>Members</dt>
+              <dt>Rolle in der Organisation</dt>
+              <dd>
+                {info.organizationRole ? roleLabel(info.organizationRole) : "—"}
+              </dd>
+            </div>
+            <div>
+              <dt>Mitglieder</dt>
               <dd className="tabular">{info.members}</dd>
             </div>
             <div>
-              <dt>Data isolation</dt>
+              <dt>Datentrennung</dt>
               <dd>
-                Every query runs as you under row-level security. Other
-                workspaces cannot read or change anything here.
+                Jede Abfrage läuft unter Row-Level-Security in deinem Namen.
+                Andere Arbeitsbereiche können hier nichts lesen oder ändern.
               </dd>
             </div>
           </dl>
@@ -127,26 +139,26 @@ export default async function SettingsSection({
       return (
         <Group
           id="connections"
-          title="Connections"
-          lede="A summary. Manage connections and check their health on the Connections page."
+          title="Verbindungen"
+          lede="Eine Übersicht. Verbindungen verwaltest und prüfst du auf der Seite Verbindungen."
         >
           <dl className="settings-rows">
             <div>
               <dt>GitHub</dt>
               <dd>
                 {github?.status === "CONNECTED"
-                  ? `Connected as ${github.login}`
+                  ? `Verbunden als ${github.login}`
                   : github?.status === "NOT_CONFIGURED"
-                    ? "Not configured on this deployment"
-                    : "Not connected"}
+                    ? "In dieser Installation nicht eingerichtet"
+                    : "Nicht verbunden"}
               </dd>
             </div>
             <div>
-              <dt>MCP servers</dt>
+              <dt>MCP-Server</dt>
               <dd className="tabular">
                 {servers.length
-                  ? `${servers.length} server${servers.length === 1 ? "" : "s"}, ${servers.reduce((sum, server) => sum + server.enabledToolCount, 0)} tools enabled`
-                  : "None"}
+                  ? `${servers.length} Server, ${servers.reduce((sum, server) => sum + server.enabledToolCount, 0)} Werkzeuge aktiviert`
+                  : "Keine"}
               </dd>
             </div>
           </dl>
@@ -155,7 +167,7 @@ export default async function SettingsSection({
               className="btn btn-secondary"
               href={"/app/connections" as Route}
             >
-              Open Connections
+              Verbindungen öffnen
             </Link>
           </div>
         </Group>
@@ -172,7 +184,8 @@ export default async function SettingsSection({
             lede="Osirus wählt für Agents, Bots und den Rouge Agent automatisch das passende Modell: nach Schwierigkeit und Umfang der Aufgabe und nach der Rolle eines Bots. In Code wählst du das Modell selbst."
           >
             <p className="subtle">
-              Dein Verbrauch steht unter Usage und in der Seitenleiste.
+              Deinen Verbrauch siehst du unter Verbrauch und in der
+              Seitenleiste.
             </p>
           </Group>
         );
@@ -211,8 +224,8 @@ export default async function SettingsSection({
           </Group>
           <Group
             id="models"
-            title="Models"
-            lede="Status from the model calls this workspace made in the last 24 hours. Osirus does not switch to a different model when one fails."
+            title="Modellrollen"
+            lede="Status aus den Modellaufrufen dieses Arbeitsbereichs in den letzten 24 Stunden. Osirus wechselt nicht zu einem anderen Modell, wenn eines ausfällt."
           >
             <ModelStatusTable roles={roles} />
           </Group>
@@ -224,22 +237,22 @@ export default async function SettingsSection({
       return (
         <Group
           id="memory"
-          title="Memory"
-          lede="What Osirus learned from earlier work in this workspace. Verified items inform later runs. Suspected contradictions stay out of retrieval until you resolve them."
+          title="Gedächtnis"
+          lede="Was Osirus aus früherer Arbeit in diesem Arbeitsbereich gelernt hat. Geprüfte Einträge fließen in spätere Läufe ein. Vermutete Widersprüche bleiben aus der Suche ausgeschlossen, bis du sie auflöst."
         >
           <div className="row row-wrap">
-            <Badge>{memory.total} items</Badge>
-            <Badge tone="success">{memory.verified} verified</Badge>
+            <Badge>{memory.total} Einträge</Badge>
+            <Badge tone="success">{memory.verified} geprüft</Badge>
             {memory.contradictions ? (
-              <Badge tone="warning">{memory.contradictions} need review</Badge>
+              <Badge tone="warning">{memory.contradictions} zu prüfen</Badge>
             ) : null}
           </div>
           {memory.conflictQueue.length ? (
             <>
               <p className="subtle">
-                <strong>Contradictions.</strong> These memories disagree on the
-                same subject. Osirus excludes them from retrieval until you pick
-                the value to keep.
+                <strong>Widersprüche.</strong> Diese Einträge widersprechen sich
+                beim selben Thema. Osirus schließt sie aus der Suche aus, bis du
+                den Wert wählst, der bleiben soll.
               </p>
               <MemoryConflictList items={memory.conflictQueue} />
             </>
@@ -247,7 +260,7 @@ export default async function SettingsSection({
           {memory.items.length ? (
             <MemoryList items={memory.items} />
           ) : memory.conflictQueue.length ? null : (
-            <p className="subtle">Nothing has been remembered yet.</p>
+            <p className="subtle">Bisher ist nichts gespeichert.</p>
           )}
         </Group>
       );
@@ -257,8 +270,8 @@ export default async function SettingsSection({
       return (
         <Group
           id="agent"
-          title="Agent behavior"
-          lede="What Osirus may do on its own in this workspace, and what always needs your approval."
+          title="Agentenverhalten"
+          lede="Was Osirus in diesem Arbeitsbereich selbst tun darf und was immer deine Freigabe braucht."
         >
           <AgentBehaviorSettings policy={policy} />
         </Group>
@@ -269,21 +282,21 @@ export default async function SettingsSection({
       return (
         <Group
           id="security"
-          title="Security"
-          lede="What Osirus's guards stopped or changed. Nothing here needs action unless it says so."
+          title="Sicherheit"
+          lede="Was die Schutzmechanismen von Osirus gestoppt oder geändert haben. Hier musst du nur handeln, wenn es dasteht."
         >
           <div className="row row-wrap">
             <Link
               className="btn btn-secondary btn-sm"
               href={"/app/approvals" as Route}
             >
-              Approvals
+              Freigaben
             </Link>
             <Link
               className="btn btn-secondary btn-sm"
               href={"/app/audit" as Route}
             >
-              Audit log
+              Audit-Log
             </Link>
           </div>
           <SecurityEventList events={events} />
@@ -295,30 +308,30 @@ export default async function SettingsSection({
       return (
         <Group
           id="usage"
-          title="Usage"
-          lede="The last 30 days in this workspace."
+          title="Verbrauch"
+          lede="Die letzten 30 Tage in diesem Arbeitsbereich."
         >
           <div className="metric-grid">
             <div className="metric">
-              <span className="metric-label">Runs</span>
+              <span className="metric-label">Läufe</span>
               <span className="metric-value">{formatCount(usage.runs)}</span>
               <span className="metric-note">
-                {usage.completedRuns} completed
+                {usage.completedRuns} abgeschlossen
               </span>
             </div>
             <div className="metric">
-              <span className="metric-label">Model calls</span>
+              <span className="metric-label">Modellaufrufe</span>
               <span className="metric-value">
                 {formatCount(usage.modelCalls)}
               </span>
             </div>
             <div className="metric">
-              <span className="metric-label">Estimated cost</span>
+              <span className="metric-label">Geschätzte Kosten</span>
               <span className="metric-value">{formatUsd(usage.costUsd)}</span>
-              <span className="metric-note">As reported by the provider</span>
+              <span className="metric-note">Laut Anbieter</span>
             </div>
             <div className="metric">
-              <span className="metric-label">Tool calls</span>
+              <span className="metric-label">Werkzeugaufrufe</span>
               <span className="metric-value">
                 {formatCount(usage.toolCalls)}
               </span>
@@ -327,15 +340,17 @@ export default async function SettingsSection({
           {usage.byRole.length ? (
             <div className="table-wrap">
               <table className="table">
-                <caption className="sr-only">Usage by model role</caption>
+                <caption className="sr-only">
+                  Verbrauch nach Modellrolle
+                </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Model role</th>
+                    <th scope="col">Modellrolle</th>
                     <th scope="col" className="num">
-                      Calls
+                      Aufrufe
                     </th>
                     <th scope="col" className="num">
-                      Cost
+                      Kosten
                     </th>
                   </tr>
                 </thead>
@@ -370,7 +385,7 @@ export default async function SettingsSection({
       );
     case "appearance":
       return (
-        <Group id="appearance" title="Appearance">
+        <Group id="appearance" title="Darstellung">
           <AppearanceSettings />
         </Group>
       );

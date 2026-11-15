@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 export default function LegalLayout({ children }: { children: ReactNode }) {
   return (
     <main className="legal">
-      <nav className="legal-nav" aria-label="Legal">
+      <nav className="legal-nav" aria-label="Rechtliches">
         <Link className="legal-home" href="/">
           ← Osirus
         </Link>

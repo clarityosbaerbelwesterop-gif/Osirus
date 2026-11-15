@@ -41,9 +41,9 @@ const MODES = ["auto", "research", "coding", "reasoning", "agent"] as const;
 
 const MODE_LABELS: Record<ModePreference, string> = {
   auto: "Auto",
-  research: "Research",
-  coding: "Coding",
-  reasoning: "Reasoning",
+  research: "Recherche",
+  coding: "Code",
+  reasoning: "Denken",
   agent: "Agent",
 };
 
@@ -156,8 +156,8 @@ export const Composer = forwardRef<
       {props.approvalAnchor ? (
         <div className="composer-banner" role="status">
           <ShieldAlert size={15} aria-hidden="true" />
-          <span>Osirus is waiting for your approval.</span>
-          <a href={`#${props.approvalAnchor}`}>Review</a>
+          <span>Osirus wartet auf deine Freigabe.</span>
+          <a href={`#${props.approvalAnchor}`}>Prüfen</a>
         </div>
       ) : null}
       {props.error ? (
@@ -170,7 +170,7 @@ export const Composer = forwardRef<
               onClick={props.onRetry}
             >
               <RotateCcw size={14} aria-hidden="true" />
-              Retry
+              Erneut versuchen
             </button>
           ) : null}
         </div>
@@ -179,12 +179,13 @@ export const Composer = forwardRef<
         {chrome === "chat" ? (
           <div className="lab-selectors">
             <label>
-              Model
+              Modell
               <span id="lab-model-route" className="sr-only">
-                UNOROUTER models appear when the key list is known.
+                UNOROUTER-Modelle erscheinen, sobald die Schlüsselliste bekannt
+                ist.
               </span>
               <select
-                aria-label="Model"
+                aria-label="Modell"
                 aria-describedby="lab-model-route"
                 disabled
                 value=""
@@ -210,7 +211,7 @@ export const Composer = forwardRef<
           <div
             className="composer-modes"
             role="radiogroup"
-            aria-label="Working mode"
+            aria-label="Arbeitsmodus"
           >
             {MODES.map((mode, index) => (
               <button
@@ -233,7 +234,7 @@ export const Composer = forwardRef<
           </div>
         ) : null}
         <label htmlFor="composer-input" className="sr-only">
-          Message Osirus
+          Nachricht an Osirus
         </label>
         <textarea
           id="composer-input"
@@ -255,19 +256,19 @@ export const Composer = forwardRef<
             props.running
               ? chrome === "agent"
                 ? "Der Rouge Agent arbeitet …"
-                : "Osirus is working…"
+                : "Osirus arbeitet…"
               : chrome === "chat"
-                ? "Message"
+                ? "Nachricht"
                 : chrome === "agent"
                   ? "Beschreibe das Ziel – der Rouge Agent erledigt den Rest …"
-                  : "Describe what you want done…"
+                  : "Beschreibe, was erledigt werden soll…"
           }
           disabled={props.running}
           rows={1}
           aria-describedby="composer-hint"
         />
         {props.attachments?.length ? (
-          <ul className="composer-files" aria-label="Attached files">
+          <ul className="composer-files" aria-label="Angehängte Dateien">
             {props.attachments.map((file) => (
               <li
                 key={file.id}
@@ -283,7 +284,7 @@ export const Composer = forwardRef<
                   <button
                     type="button"
                     className="chip-remove"
-                    aria-label={`Remove ${file.filename}`}
+                    aria-label={`${file.filename} entfernen`}
                     onClick={() => props.onRemoveAttachment?.(file.id)}
                   >
                     <X size={12} aria-hidden="true" />
@@ -311,7 +312,9 @@ export const Composer = forwardRef<
                   }}
                 />
                 <IconButton
-                  label={props.uploading ? "Uploading…" : "Attach a file"}
+                  label={
+                    props.uploading ? "Wird hochgeladen…" : "Datei anhängen"
+                  }
                   icon={Paperclip}
                   size="sm"
                   disabled={props.running || props.uploading}
@@ -320,16 +323,16 @@ export const Composer = forwardRef<
               </>
             ) : null}
             {chrome === "full" ? (
-              <span className="chip" title="Workspace">
+              <span className="chip" title="Arbeitsbereich">
                 <Folder size={13} aria-hidden="true" />
                 <span className="truncate">{props.workspaceName}</span>
               </span>
             ) : null}
             {chrome === "full" && props.mode !== "auto" ? (
-              <span className="chip" title="Working mode">
+              <span className="chip" title="Arbeitsmodus">
                 <SlidersHorizontal size={13} aria-hidden="true" />
                 <span className="truncate">
-                  Mode: {MODE_LABELS[props.mode]}
+                  Modus: {MODE_LABELS[props.mode]}
                 </span>
               </span>
             ) : null}
@@ -354,7 +357,7 @@ export const Composer = forwardRef<
                   className="chip chip-warn"
                   href={"/app/connections" as Route}
                 >
-                  Connect GitHub for private repos
+                  GitHub für private Repos verbinden
                 </Link>
               )
             ) : null}
@@ -363,7 +366,7 @@ export const Composer = forwardRef<
             <span id="composer-hint" className="composer-hint">
               {chrome === "agent"
                 ? "Enter startet · Shift+Enter neue Zeile"
-                : "Enter to send · Shift+Enter for a new line"}
+                : "Enter sendet · Shift+Enter neue Zeile"}
             </span>
             {props.running ? (
               <button
@@ -371,16 +374,16 @@ export const Composer = forwardRef<
                 className="btn btn-sm btn-danger-quiet"
                 onClick={props.onCancel}
                 disabled={props.cancelling}
-                aria-label="Stop this run"
+                aria-label="Diesen Lauf stoppen"
               >
                 <Square size={12} aria-hidden="true" />
-                {props.cancelling ? "Stopping…" : "Stop"}
+                {props.cancelling ? "Wird gestoppt…" : "Stopp"}
               </button>
             ) : (
               <IconButton
                 type="submit"
                 tone="primary"
-                label="Send"
+                label="Senden"
                 icon={ArrowUp}
                 disabled={!props.value.trim()}
               />
@@ -396,13 +399,11 @@ export const Composer = forwardRef<
             onClick={props.onRegenerate}
           >
             <RefreshCw size={13} aria-hidden="true" />
-            Regenerate
+            Neu erzeugen
           </button>
         ) : null}
         <span className="composer-disclaimer">
-          {chrome === "agent"
-            ? "Osirus kann Fehler machen. Wichtige Ergebnisse prüfen."
-            : "Osirus can make mistakes. Check important results."}
+          Osirus kann Fehler machen. Wichtige Ergebnisse prüfen.
         </span>
       </div>
     </div>

@@ -31,12 +31,12 @@ describe("lab routing surface", () => {
         },
       }),
     );
-    expect(html).toContain("is a training animation");
-    expect(html).toContain("API key missing");
+    expect(html).toContain("ist eine Trainingsanimation");
+    expect(html).toContain("API-Key fehlt");
     expect(html).not.toContain("qwen");
     expect(html).not.toContain("UnoRouter");
-    expect(html).toContain("Not a native checkpoint.");
-    expect(html).toContain("API key missing");
+    expect(html).toContain("Kein nativer Checkpoint.");
+    expect(html).toContain("API-Key fehlt");
     expect(html).toContain('data-live="false"');
     expect(html).toContain('data-blocked="true"');
   });

@@ -35,7 +35,7 @@ export function MemoryList({ items }: { items: MemoryListItem[] }) {
     const response = await fetch(`/api/memory/${id}`, {
       method: "DELETE",
     }).catch(() => null);
-    if (!response?.ok) setError("That memory could not be removed.");
+    if (!response?.ok) setError("Dieser Eintrag konnte nicht entfernt werden.");
     router.refresh();
   };
   return (
@@ -58,7 +58,7 @@ export function MemoryList({ items }: { items: MemoryListItem[] }) {
             </div>
             <div className="item-side">
               <Badge tone={item.verified ? "success" : "neutral"}>
-                {item.verified ? "Verified" : "Not verified"}
+                {item.verified ? "Geprüft" : "Nicht geprüft"}
               </Badge>
               {item.own ? (
                 <ConfirmDialog
@@ -66,15 +66,15 @@ export function MemoryList({ items }: { items: MemoryListItem[] }) {
                     <button
                       type="button"
                       className="btn btn-ghost btn-sm"
-                      aria-label="Forget this memory"
+                      aria-label="Diesen Eintrag vergessen"
                     >
                       <Trash2 size={14} aria-hidden="true" />
-                      Forget
+                      Vergessen
                     </button>
                   }
-                  title="Forget this memory?"
-                  description="Osirus will no longer use it in future runs. This cannot be undone."
-                  confirmLabel="Forget"
+                  title="Diesen Eintrag vergessen?"
+                  description="Osirus nutzt ihn in künftigen Läufen nicht mehr. Das lässt sich nicht rückgängig machen."
+                  confirmLabel="Vergessen"
                   onConfirm={() => void forget(item.id)}
                 />
               ) : null}
@@ -103,7 +103,7 @@ export function MemoryConflictList({ items }: { items: MemoryConflictItem[] }) {
     }).catch(() => null);
     setBusyId(null);
     if (!response?.ok) {
-      setError("That contradiction could not be resolved.");
+      setError("Dieser Widerspruch konnte nicht aufgelöst werden.");
       return;
     }
     router.refresh();
@@ -123,19 +123,19 @@ export function MemoryConflictList({ items }: { items: MemoryConflictItem[] }) {
             <div className="item-body">
               <p className="wrap-anywhere">{item.content}</p>
               <p className="item-meta">
-                {item.subjectKey ?? "unknown subject"} ·{" "}
+                {item.subjectKey ?? "unbekanntes Thema"} ·{" "}
                 <RelativeTime value={item.updatedAt} />
               </p>
             </div>
             <div className="item-side">
-              <Badge tone="warning">Needs review</Badge>
+              <Badge tone="warning">Zu prüfen</Badge>
               <button
                 type="button"
                 className="btn btn-secondary btn-sm"
                 disabled={busyId === item.id}
                 onClick={() => void resolve(item)}
               >
-                Keep this value
+                Diesen Wert behalten
               </button>
             </div>
           </li>

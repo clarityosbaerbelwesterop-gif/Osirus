@@ -17,9 +17,9 @@ import {
 import { Badge } from "../ui/badge";
 
 const DECISION_LABEL: Record<Decision, string> = {
-  allow: "Allowed",
-  ask: "Asks you",
-  deny: "Never",
+  allow: "Erlaubt",
+  ask: "Fragt dich",
+  deny: "Nie",
 };
 
 export function AgentBehaviorSettings({ policy }: { policy: WorkspacePolicy }) {
@@ -49,10 +49,10 @@ export function AgentBehaviorSettings({ policy }: { policy: WorkspacePolicy }) {
     setSaving(false);
     setMessage(
       response?.ok
-        ? "Saved. It applies from the next step of any running task."
+        ? "Gespeichert. Gilt ab dem nächsten Schritt jeder laufenden Aufgabe."
         : response?.status === 403
-          ? "Only workspace owners and editors can change this."
-          : "The policy was not saved. Try again.",
+          ? "Nur Inhaber und Bearbeiter des Arbeitsbereichs können das ändern."
+          : "Die Richtlinie wurde nicht gespeichert. Versuch es noch einmal.",
     );
     router.refresh();
   };
@@ -60,11 +60,11 @@ export function AgentBehaviorSettings({ policy }: { policy: WorkspacePolicy }) {
   return (
     <div className="stack">
       <fieldset className="field" style={{ border: 0, padding: 0, margin: 0 }}>
-        <legend className="field-label">Autonomy level</legend>
+        <legend className="field-label">Autonomiestufe</legend>
         <div
           className="preset-grid"
           role="radiogroup"
-          aria-label="Autonomy level"
+          aria-label="Autonomiestufe"
         >
           {(["cautious", "balanced", "autonomous"] as Preset[]).map((id) => (
             <label key={id} className="preset">
@@ -90,19 +90,19 @@ export function AgentBehaviorSettings({ policy }: { policy: WorkspacePolicy }) {
                 setPreset("custom");
               }}
             />
-            <span className="preset-label">Custom</span>
-            <span className="preset-desc">Choose per action.</span>
+            <span className="preset-label">Eigene</span>
+            <span className="preset-desc">Pro Aktion wählen.</span>
           </label>
         </div>
       </fieldset>
 
       <div className="table-wrap">
         <table className="table policy-table">
-          <caption className="sr-only">What Osirus may do on its own</caption>
+          <caption className="sr-only">Was Osirus selbst tun darf</caption>
           <thead>
             <tr>
-              <th scope="col">Action</th>
-              <th scope="col">Decision</th>
+              <th scope="col">Aktion</th>
+              <th scope="col">Entscheidung</th>
             </tr>
           </thead>
           <tbody>
@@ -118,14 +118,14 @@ export function AgentBehaviorSettings({ policy }: { policy: WorkspacePolicy }) {
                     <div>{info.label}</div>
                     <div className="subtle">
                       {info.description}
-                      {info.inUse ? "" : " No tool uses this yet."}
+                      {info.inUse ? "" : " Noch nutzt kein Werkzeug das."}
                     </div>
                   </td>
                   <td>
                     {preset === "custom" ? (
                       <select
                         className="select"
-                        aria-label={`Decision for ${info.label}`}
+                        aria-label={`Entscheidung für ${info.label}`}
                         value={value}
                         onChange={(event) =>
                           setCustom({
@@ -155,8 +155,8 @@ export function AgentBehaviorSettings({ policy }: { policy: WorkspacePolicy }) {
                     )}
                     {info.floor ? (
                       <div className="subtle floor-note">
-                        <Lock size={12} aria-hidden="true" /> Never runs without
-                        asking
+                        <Lock size={12} aria-hidden="true" /> Läuft nie ohne
+                        Rückfrage
                       </div>
                     ) : null}
                   </td>
@@ -173,7 +173,7 @@ export function AgentBehaviorSettings({ policy }: { policy: WorkspacePolicy }) {
           disabled={!dirty || saving}
           onClick={() => void save()}
         >
-          {saving ? "Saving…" : "Save policy"}
+          {saving ? "Wird gespeichert…" : "Richtlinie speichern"}
         </button>
         {message ? (
           <p className="subtle" role="status">

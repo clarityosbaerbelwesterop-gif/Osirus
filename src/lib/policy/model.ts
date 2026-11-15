@@ -35,68 +35,70 @@ export const CLASS_INFO: Record<
   { label: string; description: string; floor: Decision | null; inUse: boolean }
 > = {
   read: {
-    label: "Read",
-    description: "Read files, search the web, look things up.",
+    label: "Lesen",
+    description: "Dateien lesen, im Web suchen, nachschlagen.",
     floor: null,
     inUse: true,
   },
   workspace_write: {
-    label: "Sandbox changes",
-    description: "Edit files and run commands inside the isolated sandbox.",
+    label: "Änderungen in der Sandbox",
+    description:
+      "Dateien bearbeiten und Befehle in der abgeschotteten Sandbox ausführen.",
     floor: null,
     inUse: true,
   },
   external_write: {
-    label: "External actions",
-    description: "Change something outside Osirus through a connection.",
+    label: "Externe Aktionen",
+    description: "Über eine Verbindung etwas außerhalb von Osirus ändern.",
     floor: null,
     inUse: true,
   },
   git_push: {
-    label: "Push branches",
-    description: "Push a new branch to a connected GitHub repository.",
+    label: "Branches pushen",
+    description:
+      "Einen neuen Branch in ein verbundenes GitHub-Repository pushen.",
     floor: null,
     inUse: true,
   },
   pr_create: {
-    label: "Open pull requests",
-    description: "Open a pull request for review.",
+    label: "Pull Requests öffnen",
+    description: "Einen Pull Request zur Prüfung öffnen.",
     floor: null,
     inUse: true,
   },
   deploy_preview: {
-    label: "Preview deploys",
-    description: "Deploy a preview that only you can see.",
+    label: "Vorschau-Deployments",
+    description: "Eine Vorschau deployen, die nur du sehen kannst.",
     floor: null,
     inUse: false,
   },
   deploy_production: {
-    label: "Production deploys",
-    description: "Deploy to production.",
+    label: "Produktions-Deployments",
+    description: "In die Produktion deployen.",
     floor: "ask",
     inUse: false,
   },
   db_change: {
-    label: "Database changes",
-    description: "Change the schema or data of a connected database.",
+    label: "Datenbankänderungen",
+    description: "Schema oder Daten einer verbundenen Datenbank ändern.",
     floor: "ask",
     inUse: false,
   },
   destructive: {
-    label: "Delete data",
-    description: "Delete data outside the sandbox.",
+    label: "Daten löschen",
+    description: "Daten außerhalb der Sandbox löschen.",
     floor: "ask",
     inUse: false,
   },
   financial: {
-    label: "Spend money",
-    description: "Buy, subscribe or pay for anything.",
+    label: "Geld ausgeben",
+    description: "Etwas kaufen, abonnieren oder bezahlen.",
     floor: "ask",
     inUse: false,
   },
   mcp_action: {
-    label: "MCP tools",
-    description: "Call a tool on a connected MCP server.",
+    label: "MCP-Werkzeuge",
+    description: "Ein Werkzeug auf einem verbundenen MCP-Server aufrufen.",
     floor: "ask",
     inUse: true,
   },
@@ -149,18 +151,18 @@ export const PRESET_INFO: Record<
   { label: string; description: string }
 > = {
   cautious: {
-    label: "Cautious",
-    description: "Asks before any change, even inside the sandbox.",
+    label: "Vorsichtig",
+    description: "Fragt vor jeder Änderung, auch in der Sandbox.",
   },
   balanced: {
-    label: "Balanced",
+    label: "Ausgewogen",
     description:
-      "Works freely in the sandbox; asks before pushing, opening pull requests or acting elsewhere.",
+      "Arbeitet frei in der Sandbox; fragt vor dem Pushen, vor Pull Requests und vor Aktionen anderswo.",
   },
   autonomous: {
-    label: "Autonomous",
+    label: "Autonom",
     description:
-      "Also pushes new branches and opens pull requests without asking. Everything else still asks.",
+      "Pusht auch neue Branches und öffnet Pull Requests ohne Rückfrage. Alles andere fragt weiterhin.",
   },
 };
 

@@ -53,6 +53,28 @@ const STATUS_LABEL: Record<ApprovalView["status"], string> = {
   cancelled: "Abgebrochen",
 };
 
+// Input keys the approval card names in German; other keys are humanized.
+const DETAIL_LABEL: Record<string, string> = {
+  repository: "Repository",
+  repo: "Repository",
+  branch: "Branch",
+  url: "URL",
+  path: "Pfad",
+  command: "Befehl",
+  title: "Titel",
+  target: "Ziel",
+  message: "Nachricht",
+  body: "Text",
+  name: "Name",
+  description: "Beschreibung",
+  query: "Suchanfrage",
+  owner: "Inhaber",
+};
+
+function detailLabel(key: string) {
+  return DETAIL_LABEL[key] ?? humanize(key);
+}
+
 function flatten(
   input: unknown,
   prefix = "",
@@ -63,7 +85,7 @@ function flatten(
   if (typeof input !== "object") {
     const value = String(input);
     out.push({
-      label: humanize(prefix || "value"),
+      label: detailLabel(prefix || "Wert"),
       value: value.length > 240 ? `${value.slice(0, 240)}…` : value,
     });
     return out;
@@ -75,26 +97,26 @@ function flatten(
     if (primitives.length === input.length) {
       const joined = primitives.map(String).join(", ");
       out.push({
-        label: humanize(prefix || "values"),
+        label: detailLabel(prefix || "Werte"),
         value: joined.length > 240 ? `${joined.slice(0, 240)}…` : joined,
       });
     } else {
       out.push({
-        label: humanize(prefix || "items"),
-        value: `${input.length} items`,
+        label: detailLabel(prefix || "Einträge"),
+        value: `${input.length} Einträge`,
       });
     }
     return out;
   }
   for (const [key, value] of Object.entries(input as Row)) {
     if (SECRET_KEY.test(key)) {
-      out.push({ label: humanize(key), value: "Withheld" });
+      out.push({ label: detailLabel(key), value: "Zurückgehalten" });
       continue;
     }
     if (key === "content" && typeof value === "string") {
       out.push({
-        label: "Content",
-        value: `${value.split("\n").length} lines`,
+        label: "Inhalt",
+        value: `${value.split("\n").length} Zeilen`,
       });
       continue;
     }

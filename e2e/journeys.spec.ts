@@ -97,7 +97,7 @@ test("1. sign in, new chat, normal question, streamed answer", async ({
 
   await openSurface(page, "chat-empty");
   await expect(page.getByText(/Wieder am Start/)).toBeVisible();
-  const composer = page.getByRole("textbox", { name: "Message Osirus" });
+  const composer = page.getByRole("textbox", { name: "Nachricht an Osirus" });
   await composer.fill(QUESTION);
   await composer.press("Enter");
 
@@ -109,9 +109,11 @@ test("1. sign in, new chat, normal question, streamed answer", async ({
     page.locator("strong", { hasText: "multi-version concurrency control" }),
   ).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`session=${SESSION}`));
-  await expect(page.getByRole("button", { name: "Regenerate" })).toBeVisible();
   await expect(
-    page.getByRole("textbox", { name: "Message Osirus" }),
+    page.getByRole("button", { name: "Neu erzeugen" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("textbox", { name: "Nachricht an Osirus" }),
   ).toBeEnabled();
 });
 
@@ -128,17 +130,17 @@ test("2. research run: activity, citations and the source panel", async ({
     page.getByText("pgvector README, HNSW indexing section."),
   ).toBeVisible();
 
-  const toggle = page.getByRole("button", { name: "Show run details" });
+  const toggle = page.getByRole("button", { name: "Laufdetails anzeigen" });
   if (await toggle.isVisible()) await toggle.click();
-  const details = page.getByRole("complementary", { name: "Run details" });
+  const details = page.getByRole("complementary", { name: "Laufdetails" });
 
-  await details.getByRole("tab", { name: "Run" }).click();
-  await details.getByRole("tab", { name: "Activity" }).click();
+  await details.getByRole("tab", { name: "Lauf" }).click();
+  await details.getByRole("tab", { name: "Aktivität" }).click();
   await expect(details.getByRole("listitem").first()).toBeVisible();
 
-  await details.getByRole("tab", { name: "Knowledge" }).click();
+  await details.getByRole("tab", { name: "Wissen" }).click();
   // A group with a single view shows no second row of tabs.
-  const sources = details.getByRole("tab", { name: "Sources" });
+  const sources = details.getByRole("tab", { name: "Quellen" });
   if (await sources.count()) await sources.click();
   const source = details.getByRole("link", {
     name: /pgvector: Open-source vector similarity search/,
@@ -160,7 +162,7 @@ test("3. coding: GitHub connection, workspace, files, diff, terminal, preview", 
   await mockApis(page);
   await openSurface(page, "chat-coding");
 
-  const composer = page.getByRole("textbox", { name: "Message Osirus" });
+  const composer = page.getByRole("textbox", { name: "Nachricht an Osirus" });
   const grantReads: string[] = [];
   page.on("request", (request) => {
     const path = new URL(request.url()).pathname;
@@ -173,19 +175,19 @@ test("3. coding: GitHub connection, workspace, files, diff, terminal, preview", 
   expect(grantReads).toEqual([]);
   await expect(page.getByText("GitHub: baerbel")).toHaveCount(0);
 
-  const toggle = page.getByRole("button", { name: "Show run details" });
+  const toggle = page.getByRole("button", { name: "Laufdetails anzeigen" });
   if (await toggle.isVisible()) await toggle.click();
-  const details = page.getByRole("complementary", { name: "Run details" });
-  await details.getByRole("tab", { name: "Build" }).click();
+  const details = page.getByRole("complementary", { name: "Laufdetails" });
+  await details.getByRole("tab", { name: "Projekt" }).click();
 
-  await details.getByRole("tab", { name: "Files" }).click();
+  await details.getByRole("tab", { name: "Dateien" }).click();
   await expect(details.getByText("osirus/fix-median").first()).toBeVisible();
   await details.getByRole("button", { name: "src/median.ts" }).click();
   await expect(
     details.getByText("export function median(values: number[])"),
   ).toBeVisible();
 
-  await details.getByRole("tab", { name: "Diff" }).click();
+  await details.getByRole("tab", { name: "Änderungen" }).click();
   await expect(
     details.getByText("+  return sorted.length % 2 === 0"),
   ).toBeVisible();
@@ -193,13 +195,15 @@ test("3. coding: GitHub connection, workspace, files, diff, terminal, preview", 
   await details.getByRole("tab", { name: "Terminal" }).click();
   await expect(details.getByText(/Tests\s+42 passed \(42\)/)).toBeVisible();
 
-  await details.getByRole("tab", { name: "Preview" }).click();
-  const preview = details.locator("iframe[title='Workspace preview']");
+  await details.getByRole("tab", { name: "Vorschau" }).click();
+  const preview = details.locator(
+    "iframe[title='Vorschau des Arbeitsbereichs']",
+  );
   await expect(preview).toHaveAttribute("src", PREVIEW_URL);
   await expect(preview).toHaveAttribute("sandbox", "allow-scripts allow-forms");
   await expect(
     page
-      .frameLocator("iframe[title='Workspace preview']")
+      .frameLocator("iframe[title='Vorschau des Arbeitsbereichs']")
       .getByRole("heading", {
         name: "stats-lib demo",
       }),
@@ -260,20 +264,20 @@ test("5. connect an MCP server, discover tools, inspect permissions", async ({
   });
   await openSurface(page, "connections");
 
-  await page.getByRole("button", { name: "Add MCP server" }).click();
+  await page.getByRole("button", { name: "MCP-Server hinzufügen" }).click();
   await page.getByRole("textbox", { name: "Name" }).fill("Team wiki");
-  const url = page.getByRole("textbox", { name: "Server URL" });
+  const url = page.getByRole("textbox", { name: "Server-URL" });
   await url.fill("http://wiki.example.com/mcp");
-  await page.getByRole("button", { name: "Add and test" }).click();
+  await page.getByRole("button", { name: "Hinzufügen und testen" }).click();
   await expect(
-    page.getByText("The URL must start with https://."),
+    page.getByText("Die URL muss mit https:// beginnen."),
   ).toBeVisible();
 
   await url.fill("https://wiki.example.com/mcp");
-  await page.getByRole("button", { name: "Add and test" }).click();
-  await expect(page.getByRole("button", { name: "Add and test" })).toHaveCount(
-    0,
-  );
+  await page.getByRole("button", { name: "Hinzufügen und testen" }).click();
+  await expect(
+    page.getByRole("button", { name: "Hinzufügen und testen" }),
+  ).toHaveCount(0);
   expect(
     log.filter((entry) => entry.path === "/api/mcp/servers").at(-1)?.body,
   ).toMatchObject({
@@ -282,7 +286,7 @@ test("5. connect an MCP server, discover tools, inspect permissions", async ({
   });
 
   await page
-    .getByRole("button", { name: "Test and discover tools" })
+    .getByRole("button", { name: "Testen und Werkzeuge finden" })
     .first()
     .click();
   await expect
@@ -290,17 +294,17 @@ test("5. connect an MCP server, discover tools, inspect permissions", async ({
     .toBe(true);
 
   await page
-    .getByText(/Review tools \(\d+\)/)
+    .getByText(/Werkzeuge prüfen \(\d+\)/)
     .first()
     .click();
   await expect(
-    page.getByText("From the server · untrusted").first(),
+    page.getByText("Vom Server · nicht vertrauenswürdig").first(),
   ).toBeVisible();
   await expect(
-    page.getByText("High risk · asks every time").first(),
+    page.getByText("Hohes Risiko · fragt jedes Mal").first(),
   ).toBeVisible();
   const toggle = page.getByRole("switch", {
-    name: "Allow Osirus to use create_page",
+    name: "Osirus darf create_page nutzen",
   });
   await expect(toggle).not.toBeChecked();
   await toggle.click();
@@ -315,14 +319,14 @@ test("6. create an automation, run it in the background, see the notification", 
   const log = await mockApis(page);
   await openSurface(page, "automations");
 
-  await page.getByRole("button", { name: "New automation" }).click();
+  await page.getByRole("button", { name: "Neue Automation" }).click();
   await page.getByRole("textbox", { name: "Name" }).fill("Morning brief");
   await page
-    .getByRole("textbox", { name: "Objective" })
+    .getByRole("textbox", { name: "Ziel" })
     .fill("Summarize yesterday's merged pull requests in stats-lib");
-  await page.getByRole("button", { name: "Create automation" }).click();
+  await page.getByRole("button", { name: "Automation anlegen" }).click();
   await expect(
-    page.getByRole("button", { name: "Create automation" }),
+    page.getByRole("button", { name: "Automation anlegen" }),
   ).toHaveCount(0);
   const created = log.find((entry) => entry.path === "/api/automations");
   expect(created?.body).toMatchObject({
@@ -333,9 +337,9 @@ test("6. create an automation, run it in the background, see the notification", 
     notifyOn: ["completed", "failed", "approval"],
   });
 
-  await page.getByRole("button", { name: "Run now" }).first().click();
+  await page.getByRole("button", { name: "Jetzt ausführen" }).first().click();
   await expect(
-    page.getByText("Started. It runs in the background"),
+    page.getByText("Gestartet. Sie läuft im Hintergrund"),
   ).toBeVisible();
   expect(
     log.some((entry) => /\/api\/automations\/[^/]+\/run$/.test(entry.path)),
@@ -343,10 +347,10 @@ test("6. create an automation, run it in the background, see the notification", 
 
   await openSurface(page, "inbox");
   const item = page.getByRole("listitem").filter({
-    hasText: "Automation finished: Weekday dependency check",
+    hasText: "Abhängigkeiten werktags prüfen ist fertig",
   });
   await expect(item).toBeVisible();
-  await item.getByRole("link", { name: "Open" }).click();
+  await item.getByRole("link", { name: "Öffnen" }).click();
   await expect
     .poll(() => log.find((entry) => entry.path === "/api/notifications")?.body)
     .toEqual({ read: ["i3"] });
@@ -408,10 +412,10 @@ test("7. attach a CSV, send it with the question, remove another file", async ({
     mimeType: "text/plain",
     buffer: Buffer.from("scratch"),
   });
-  await page.getByRole("button", { name: "Remove notes.txt" }).click();
+  await page.getByRole("button", { name: "notes.txt entfernen" }).click();
   await expect(page.getByText("notes.txt")).toHaveCount(0);
 
-  const composer = page.getByRole("textbox", { name: "Message Osirus" });
+  const composer = page.getByRole("textbox", { name: "Nachricht an Osirus" });
   await composer.fill("What was the revenue growth from January to February?");
   await composer.press("Enter");
   await expect.poll(() => sent.length).toBe(1);
@@ -419,9 +423,9 @@ test("7. attach a CSV, send it with the question, remove another file", async ({
     attachmentIds: ["7e1d4c2a-0b3f-4a5e-9c8d-1f2a3b4c5d6e"],
   });
   // Sent files leave the composer.
-  await expect(page.getByRole("list", { name: "Attached files" })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole("list", { name: "Angehängte Dateien" }),
+  ).toHaveCount(0);
 });
 
 test("8. a run that outlives its request is followed until it finishes", async ({
@@ -459,7 +463,7 @@ test("8. a run that outlives its request is followed until it finishes", async (
   );
 
   await openSurface(page, "chat-empty");
-  const composer = page.getByRole("textbox", { name: "Message Osirus" });
+  const composer = page.getByRole("textbox", { name: "Nachricht an Osirus" });
   await composer.fill(QUESTION);
   await composer.press("Enter");
 
@@ -704,7 +708,7 @@ test("rouge agent: a suggested task fills the composer and Osirus picks the mode
   await page
     .getByRole("button", { name: /Plane eine Datenbank-Migration/ })
     .click();
-  const composer = page.getByRole("textbox", { name: "Message Osirus" });
+  const composer = page.getByRole("textbox", { name: "Nachricht an Osirus" });
   await expect(composer).toHaveValue(/Plane eine Datenbank-Migration/);
   await composer.press("Enter");
   await expect

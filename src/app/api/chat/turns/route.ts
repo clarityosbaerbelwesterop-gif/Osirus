@@ -41,7 +41,7 @@ export async function POST(request: Request) {
       return json(
         {
           error: "surface_mismatch",
-          message: "That conversation belongs to another surface.",
+          message: "Diese Unterhaltung gehört zu einem anderen Bereich.",
         },
         409,
       );

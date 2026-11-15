@@ -9,7 +9,7 @@ import { requireProductSession } from "@/lib/product/session";
 import { formatDuration, relativeTime, toolLabel } from "@/lib/ui/labels";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Audit log" };
+export const metadata: Metadata = { title: "Audit-Log" };
 
 const UUID = /^[0-9a-f-]{36}$/i;
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -18,18 +18,25 @@ const STATUS: Record<
   string,
   { label: string; tone: "success" | "danger" | "warning" | "neutral" }
 > = {
-  completed: { label: "Ran", tone: "success" },
-  failed: { label: "Failed", tone: "danger" },
-  cancelled: { label: "Refused", tone: "warning" },
-  awaiting_approval: { label: "Waited for approval", tone: "neutral" },
+  completed: { label: "Ausgeführt", tone: "success" },
+  failed: { label: "Fehlgeschlagen", tone: "danger" },
+  cancelled: { label: "Abgelehnt", tone: "warning" },
+  awaiting_approval: { label: "Wartete auf Freigabe", tone: "neutral" },
 };
 
 const REASON: Record<string, string> = {
-  policy_denied: "Workspace policy",
-  arm_not_permitted: "Not allowed for this task",
-  approval_rejected: "Approval rejected",
-  invalid_input: "Invalid input",
-  tool_call_failed: "Tool error",
+  policy_denied: "Richtlinie des Arbeitsbereichs",
+  arm_not_permitted: "Für diese Aufgabe nicht erlaubt",
+  approval_rejected: "Freigabe abgelehnt",
+  invalid_input: "Ungültige Eingabe",
+  tool_call_failed: "Werkzeugfehler",
+};
+
+const RISK_LABEL: Record<string, string> = {
+  low: "Gering",
+  medium: "Mittel",
+  high: "Hoch",
+  critical: "Kritisch",
 };
 
 function pick<T extends string>(
@@ -77,13 +84,13 @@ export default async function AuditPage({
 
   return (
     <PageFrame
-      title="Audit log"
-      lede="Every tool call Osirus attempted in this workspace, including the ones it was not allowed to make. Inputs are never stored; only what ran, when and how it went."
+      title="Audit-Log"
+      lede="Jeder Werkzeugaufruf, den Osirus in diesem Arbeitsbereich versucht hat, auch die, die es nicht durfte. Eingaben werden nie gespeichert; nur was lief, wann und wie es ausging."
     >
-      <form className="filters" method="get" aria-label="Filter the audit log">
+      <form className="filters" method="get" aria-label="Audit-Log filtern">
         <div className="field">
           <label className="field-label" htmlFor="f-tool">
-            Tool
+            Werkzeug
           </label>
           <input
             id="f-tool"
@@ -94,7 +101,7 @@ export default async function AuditPage({
         </div>
         <div className="field">
           <label className="field-label" htmlFor="f-connector">
-            Connection
+            Verbindung
           </label>
           <select
             id="f-connector"
@@ -102,15 +109,15 @@ export default async function AuditPage({
             className="select"
             defaultValue={filters.connector ?? ""}
           >
-            <option value="">Any</option>
-            <option value="builtin">Built-in</option>
+            <option value="">Alle</option>
+            <option value="builtin">Eingebaut</option>
             <option value="github">GitHub</option>
             <option value="mcp">MCP</option>
           </select>
         </div>
         <div className="field">
           <label className="field-label" htmlFor="f-risk">
-            Risk
+            Risiko
           </label>
           <select
             id="f-risk"
@@ -118,15 +125,15 @@ export default async function AuditPage({
             className="select"
             defaultValue={filters.risk ?? ""}
           >
-            <option value="">Any</option>
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
+            <option value="">Alle</option>
+            <option value="low">Gering</option>
+            <option value="medium">Mittel</option>
+            <option value="high">Hoch</option>
           </select>
         </div>
         <div className="field">
           <label className="field-label" htmlFor="f-decision">
-            Outcome
+            Ergebnis
           </label>
           <select
             id="f-decision"
@@ -134,16 +141,16 @@ export default async function AuditPage({
             className="select"
             defaultValue={filters.decision ?? ""}
           >
-            <option value="">Any</option>
-            <option value="completed">Ran</option>
-            <option value="failed">Failed</option>
-            <option value="cancelled">Refused</option>
-            <option value="awaiting_approval">Waited for approval</option>
+            <option value="">Alle</option>
+            <option value="completed">Ausgeführt</option>
+            <option value="failed">Fehlgeschlagen</option>
+            <option value="cancelled">Abgelehnt</option>
+            <option value="awaiting_approval">Wartete auf Freigabe</option>
           </select>
         </div>
         <div className="field">
           <label className="field-label" htmlFor="f-from">
-            From
+            Von
           </label>
           <input
             id="f-from"
@@ -155,7 +162,7 @@ export default async function AuditPage({
         </div>
         <div className="field">
           <label className="field-label" htmlFor="f-to">
-            To
+            Bis
           </label>
           <input
             id="f-to"
@@ -167,7 +174,7 @@ export default async function AuditPage({
         </div>
         <div className="field">
           <label className="field-label" htmlFor="f-run">
-            Run id
+            Lauf-ID
           </label>
           <input
             id="f-run"
@@ -178,10 +185,10 @@ export default async function AuditPage({
         </div>
         <div className="row">
           <button type="submit" className="btn btn-primary">
-            Apply
+            Anwenden
           </button>
           <Link href={"/app/audit" as Route} className="btn btn-ghost">
-            Reset
+            Zurücksetzen
           </Link>
         </div>
       </form>
@@ -190,17 +197,17 @@ export default async function AuditPage({
         {rows.length ? (
           <div className="table-wrap">
             <table className="table">
-              <caption className="sr-only">Tool calls</caption>
+              <caption className="sr-only">Werkzeugaufrufe</caption>
               <thead>
                 <tr>
-                  <th scope="col">When</th>
-                  <th scope="col">Action</th>
-                  <th scope="col">Outcome</th>
-                  <th scope="col">Risk</th>
+                  <th scope="col">Wann</th>
+                  <th scope="col">Aktion</th>
+                  <th scope="col">Ergebnis</th>
+                  <th scope="col">Risiko</th>
                   <th scope="col" className="num">
-                    Time
+                    Dauer
                   </th>
-                  <th scope="col">Run</th>
+                  <th scope="col">Lauf</th>
                 </tr>
               </thead>
               <tbody>
@@ -226,14 +233,14 @@ export default async function AuditPage({
                           <div className="subtle">{REASON[row.errorCode]}</div>
                         ) : null}
                       </td>
-                      <td>{row.risk}</td>
+                      <td>{RISK_LABEL[row.risk] ?? row.risk}</td>
                       <td className="num">
                         {formatDuration(row.latencyMs) ?? "—"}
                       </td>
                       <td>
                         {row.sessionId ? (
                           <Link href={`/app?session=${row.sessionId}` as Route}>
-                            Open
+                            Öffnen
                           </Link>
                         ) : (
                           "—"
@@ -246,8 +253,8 @@ export default async function AuditPage({
             </table>
           </div>
         ) : (
-          <EmptyState icon={ScrollText} title="No tool calls match">
-            Change the filters, or start a task.
+          <EmptyState icon={ScrollText} title="Keine passenden Werkzeugaufrufe">
+            Ändere die Filter oder starte eine Aufgabe.
           </EmptyState>
         )}
         {next ? (
@@ -256,7 +263,7 @@ export default async function AuditPage({
               className="btn btn-secondary"
               href={`/app/audit?${query.toString()}` as Route}
             >
-              Older entries
+              Ältere Einträge
             </Link>
           </div>
         ) : null}

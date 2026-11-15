@@ -55,7 +55,7 @@ export function ConnectionCard({
       </header>
       {description ? <div className="conn-desc">{description}</div> : null}
       {capabilities?.length ? (
-        <ul className="conn-caps" aria-label="Capabilities">
+        <ul className="conn-caps" aria-label="Fähigkeiten">
           {capabilities.map((capability) => (
             <li key={capability}>{capability}</li>
           ))}
@@ -64,45 +64,45 @@ export function ConnectionCard({
       {health ? (
         <dl className="conn-health">
           <div>
-            <dt>Health</dt>
+            <dt>Zustand</dt>
             <dd>
               <Badge tone={health.healthTone}>{health.healthLabel}</Badge>
             </dd>
           </div>
           <div>
-            <dt>Last checked</dt>
+            <dt>Zuletzt geprüft</dt>
             <dd className="tabular">
               {health.lastCheckedAt ? (
                 <RelativeTime value={health.lastCheckedAt} />
               ) : (
-                "Never"
+                "Nie"
               )}
               {health.latencyMs !== null ? ` · ${health.latencyMs} ms` : ""}
             </dd>
           </div>
           <div>
-            <dt>Last success</dt>
+            <dt>Letzter Erfolg</dt>
             <dd className="tabular">
               {health.lastOkAt ? (
                 <RelativeTime value={health.lastOkAt} />
               ) : (
-                "None yet"
+                "Noch keiner"
               )}
             </dd>
           </div>
           <div>
-            <dt>Last tool call</dt>
+            <dt>Letzter Werkzeugaufruf</dt>
             <dd className="tabular">
               {health.lastToolCallAt ? (
                 <RelativeTime value={health.lastToolCallAt} />
               ) : (
-                "None yet"
+                "Noch keiner"
               )}
             </dd>
           </div>
           {health.lastError ? (
             <div className="conn-error">
-              <dt>Last error</dt>
+              <dt>Letzter Fehler</dt>
               <dd>{health.lastError}</dd>
             </div>
           ) : null}
