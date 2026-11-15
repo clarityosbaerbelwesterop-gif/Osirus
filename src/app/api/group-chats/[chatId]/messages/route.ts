@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { quotaEnforced, quotaStatusFor } from "@/lib/billing/enforce";
-import { serializeQuota } from "@/lib/billing/quota";
+import { quotaMessageDe, serializeQuota } from "@/lib/billing/quota";
 import { apiIdentity, guardWrite, json } from "@/lib/product/api";
 import { agentsMentioned, everyoneMentioned } from "@/lib/agents/mentions";
 import {
@@ -119,9 +119,8 @@ export async function POST(
       return Response.json(
         {
           error: noPlan ? "subscription_required" : "quota_exhausted",
-          message: publicRuntimeErrorMessage({
-            code: noPlan ? "subscription_required" : "quota_exhausted",
-          }),
+          // German, with the refill time, like the chat.
+          message: quotaMessageDe(quota),
           quota: serializeQuota(quota),
         },
         {

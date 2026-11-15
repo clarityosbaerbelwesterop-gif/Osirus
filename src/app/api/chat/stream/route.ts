@@ -554,6 +554,24 @@ export async function POST(request: Request) {
         }),
       );
       let messageId: string | null = null;
+      // Usage first and on its own: a message that cannot be saved (a
+      // database error, text Postgres rejects) must not make the call free.
+      await recordGatewayCall({
+        identity,
+        model: chosen,
+        surface: "ai",
+        sessionId,
+        status,
+        usage,
+        latencyMs,
+        errorCode,
+        cached: Boolean(hit),
+      }).catch((error: unknown) =>
+        console.error(
+          "chat.stream usage record failed",
+          error instanceof Error ? error.name : "unknown",
+        ),
+      );
       try {
         if (text.trim()) {
           const saved = await saveChatMessage(identity, {
@@ -574,19 +592,13 @@ export async function POST(request: Request) {
           });
           messageId = saved.id;
         }
-        await recordGatewayCall({
-          identity,
-          model: chosen,
-          surface: "ai",
-          sessionId,
-          status,
-          usage,
-          latencyMs,
-          errorCode,
-          cached: Boolean(hit),
-        });
       } catch (error) {
-        console.error("chat.stream persist failed", error);
+        // The error object can carry the row (incl. message text): log its
+        // kind only.
+        console.error(
+          "chat.stream persist failed",
+          error instanceof Error ? error.name : "unknown",
+        );
       }
       if (status === "completed") {
         send({

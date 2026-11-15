@@ -1392,10 +1392,16 @@ export class RuntimeRepository {
             and (expires_at is null or expires_at > now())
           returning id, stage_id
        ), released as (
+         -- Either decision hands the stage back to its loop: its next claim
+         -- asks the gate, which answers "approved" (the call runs) or
+         -- "rejected" with the person's adjustment (the agent continues
+         -- without it). Cancelling the stage on reject left every later
+         -- stage pending behind it and the run in waiting_for_approval
+         -- for good.
          update osirus.run_stages s
-            set status = case when $3 = 'approved' then 'blocked' else 'cancelled' end,
+            set status = 'blocked',
                 runnable_after = null,
-                completed_at = case when $3 = 'approved' then null else now() end
+                completed_at = null
            from decided d
           where s.id = d.stage_id
             and s.status = 'waiting'
@@ -1405,7 +1411,6 @@ export class RuntimeRepository {
             set status = 'running'
            from decided d
           where r.id = $2::uuid
-            and $3 = 'approved'
             and r.status = 'waiting_for_approval'
             and not exists (
               select 1

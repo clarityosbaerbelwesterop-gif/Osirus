@@ -176,3 +176,24 @@ describe("retries stop for a pause", () => {
     expect(attempts).toEqual([0, 1, 2]);
   });
 });
+
+describe("failed structured calls still count", () => {
+  it("carries the summed usage of all attempts on the error", async () => {
+    const error = await structuredWithRepair({
+      requestId: "u1",
+      messages: [],
+      validate: plan,
+      call: async () => ({
+        text: '{"plan": 1}',
+        usage: { inputTokens: 100, outputTokens: 10, cost: 0.001 },
+      }),
+    }).catch((caught: unknown) => caught);
+    const { usageOfFailure } = await import("@/lib/arms/base");
+    expect(usageOfFailure(error)).toEqual({
+      inputTokens: 300,
+      outputTokens: 30,
+      cost: 0.003,
+    });
+    expect(usageOfFailure(new Error("x"))).toEqual({});
+  });
+});

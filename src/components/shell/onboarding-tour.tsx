@@ -104,7 +104,7 @@ function steps(name: string | null): Step[] {
         "Deine Daten liegen in der EU (Frankfurt).",
         "Zugangsdaten zu deinen Diensten werden verschlüsselt gespeichert.",
       ],
-      action: { label: "Pläne ansehen", href: "/app/settings/usage" },
+      action: { label: "Pläne ansehen", href: "/app/settings" },
     },
     {
       id: "start",

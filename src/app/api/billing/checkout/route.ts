@@ -16,6 +16,16 @@ export const runtime = "nodejs";
 
 const schema = z.object({ plan: z.enum(PAID_PLANS) });
 
+/** Subscription states that still bill or can bill again. */
+const LIVE_STATUSES = new Set([
+  "active",
+  "trialing",
+  "past_due",
+  "unpaid",
+  "incomplete",
+  "paused",
+]);
+
 function origin(request: Request) {
   return env.OSIRUS_PUBLIC_URL ?? new URL(request.url).origin;
 }
@@ -71,17 +81,30 @@ export async function POST(request: Request) {
       });
   }
 
+  const earlier = existingCustomer
+    ? (
+        await client.subscriptions.list({
+          customer: existingCustomer,
+          status: "all",
+          limit: 20,
+        })
+      ).data
+    : [];
+  // A second checkout next to a running subscription starts a second
+  // subscription, and both bill. Upgrades and downgrades go through the
+  // portal, which changes the one subscription.
+  if (earlier.some((subscription) => LIVE_STATUSES.has(subscription.status)))
+    return json(
+      {
+        error: "subscription_exists",
+        message:
+          "Du hast schon ein Abo. Plan wechseln geht über „Abo verwalten“.",
+      },
+      409,
+    );
   // Pro starts with a free week, once per person: only a customer without
   // any earlier subscription (in any state) gets it.
-  const firstSubscription =
-    !existingCustomer ||
-    (
-      await client.subscriptions.list({
-        customer: existingCustomer,
-        status: "all",
-        limit: 1,
-      })
-    ).data.length === 0;
+  const firstSubscription = earlier.length === 0;
   const trialDays =
     guard.body.plan === "pro" && firstSubscription
       ? BILLING_CONFIG.proTrialDays

@@ -2,7 +2,16 @@ import "server-only";
 import type { ProductIdentity } from "../auth/bootstrap";
 import { queryAs } from "../db/client";
 import { currentSubscription } from "../billing/store";
-import { BILLING_CONFIG } from "../billing/config";
+
+/** Subscription states that still bill or can bill again. */
+export const LIVE_SUBSCRIPTION_STATUSES = new Set([
+  "active",
+  "trialing",
+  "past_due",
+  "unpaid",
+  "incomplete",
+  "paused",
+]);
 
 // GDPR self-service: a copy of everything Osirus holds about a person
 // (Art. 15, portable as JSON under Art. 20) and deleting the account
@@ -169,32 +178,41 @@ export class AccountDeletionBlocked extends Error {
 }
 
 /**
- * Delete the account. A running paid subscription is ended first, but only
- * when the person said so explicitly; otherwise the deletion stops and says
- * why, so nobody loses a paid plan by accident.
+ * Delete the account. Every subscription that still bills (or can bill
+ * again) is ended first, but only when the person said so explicitly;
+ * otherwise the deletion stops and says why, so nobody loses a paid plan by
+ * accident. When the subscriptions cannot be read, nothing is deleted: a
+ * deleted account with a subscription still charging in Stripe could not be
+ * stopped by its owner any more.
  */
 export async function deleteAccount(
   identity: ProductIdentity,
   options: { endSubscription: boolean },
   deps: {
     cancelSubscription?: (subscriptionId: string) => Promise<void>;
+    /** All of the customer's subscriptions that still bill, from Stripe. */
+    liveSubscriptions?: () => Promise<string[]>;
   } = {},
 ) {
-  const subscription = await currentSubscription(identity.userId).catch(
-    () => null,
-  );
-  const paid = Boolean(
-    subscription?.plan &&
-    BILLING_CONFIG.entitledStatuses.includes(subscription.status),
-  );
-  if (paid) {
+  let live: string[];
+  if (deps.liveSubscriptions) {
+    live = await deps.liveSubscriptions();
+  } else {
+    // Without Stripe: the stored subscription is all there is to go by.
+    const subscription = await currentSubscription(identity.userId);
+    live =
+      subscription && LIVE_SUBSCRIPTION_STATUSES.has(subscription.status)
+        ? [subscription.stripe_subscription_id]
+        : [];
+  }
+  if (live.length) {
     if (!options.endSubscription)
       throw new AccountDeletionBlocked(
         "subscription_active",
         "Du hast ein laufendes Abo. Bestätige, dass es mit dem Löschen sofort endet, oder kündige es zuerst.",
       );
     if (!deps.cancelSubscription) throw new Error("billing_not_configured");
-    await deps.cancelSubscription(subscription!.stripe_subscription_id);
+    for (const id of live) await deps.cancelSubscription(id);
   }
   // Workspace content first: organizations.created_by restricts the user row.
   await queryAs(

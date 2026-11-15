@@ -65,6 +65,21 @@ function modelErrorCode(error: unknown, fallback: string) {
  * "error" and cannot be diagnosed after the fact. Short, and only the loop's
  * or tool's own error text (never tool output).
  */
+/** Token usage a failed structured call carried (see gateway/structured.ts). */
+export function usageOfFailure(error: unknown) {
+  const usage = (error as { usage?: Record<string, unknown> } | null)?.usage;
+  if (!usage || typeof usage !== "object") return {};
+  const n = (value: unknown) =>
+    typeof value === "number" && Number.isFinite(value) && value >= 0
+      ? value
+      : undefined;
+  return {
+    inputTokens: n(usage.inputTokens),
+    outputTokens: n(usage.outputTokens),
+    cost: n(usage.cost),
+  };
+}
+
 export function failureDetail(step: { outcome: string; detail?: string }) {
   return step.outcome === "error" && step.detail
     ? { detail: step.detail.replace(/\s+/g, " ").slice(0, 200) }
@@ -674,6 +689,8 @@ export abstract class BaseArm implements AgentArm {
         await runtime.repository
           .finishModelCall(modelCallId, {
             status: "failed",
+            // Unusable replies still cost money; they count like any call.
+            ...usageOfFailure(error),
             latencyMs: Date.now() - startedAt,
             errorCode: modelErrorCode(error, "decision_failed"),
             responseMetadata: failureMetadata(error),

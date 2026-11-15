@@ -19,6 +19,16 @@ export type CurrentPlanInfo = {
   canManage: boolean;
 };
 
+/** Subscription states that still bill or can bill again. */
+const LIVE_STATUSES = new Set([
+  "active",
+  "trialing",
+  "past_due",
+  "unpaid",
+  "incomplete",
+  "paused",
+]);
+
 const dateDe = (iso: string) =>
   new Date(iso).toLocaleDateString("de-DE", {
     day: "numeric",
@@ -83,7 +93,15 @@ export function PlanSection({ current }: { current: CurrentPlanInfo }) {
       <h2 id="plan-heading">Plan</h2>
       <CurrentPlan current={current} />
       <QuotaBarsLive showNote />
-      <PlanCards proTrial={current.trialEligible} />
+      {current.status && LIVE_STATUSES.has(current.status) ? (
+        // A second checkout would start a second subscription next to the
+        // running one (both bill). Changes go through the portal.
+        <p className="plan-tax">
+          Planwechsel, Zahlungsart und Kündigung laufen über „Abo verwalten“.
+        </p>
+      ) : (
+        <PlanCards proTrial={current.trialEligible} />
+      )}
     </section>
   );
 }

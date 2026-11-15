@@ -133,5 +133,9 @@ export async function structuredWithRepair<T>(input: {
     read = readStructured(fresh.text, input.validate);
     if (read.ok) return { value: read.value, usage };
   }
+  // The attempts consumed tokens even though none was usable: the usage
+  // travels with the error so the caller can still charge it.
+  if (original && typeof original === "object")
+    Object.assign(original, { usage });
   throw original;
 }

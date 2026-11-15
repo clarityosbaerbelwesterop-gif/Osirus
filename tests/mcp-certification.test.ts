@@ -417,6 +417,50 @@ describe("MCP certification journey", () => {
     expect(mcp.calls().length).toBe(before);
   });
 
+  it("A REJECTION RESUMES the parked run: no run stuck waiting for approval", async () => {
+    const { registry, context } = await slice(run);
+    const input = {
+      toolId: toolIdOf(serverId, "echo"),
+      rawInput: { text: "parked then rejected" },
+      context,
+    };
+    await expect(registry.invoke(input)).rejects.toBeInstanceOf(
+      ToolApprovalRequired,
+    );
+    const pending = (await approvals(run.runId)).find(
+      (row) => row.status === "requested",
+    )!;
+    // The slice ended: the stage is parked and the run waits for the person.
+    await db.raw(
+      `update osirus.run_stages set status = 'waiting' where id = $1::uuid`,
+      [context.stageId],
+    );
+    await db.raw(
+      `update osirus.runs set status = 'waiting_for_approval' where id = $1::uuid`,
+      [run.runId],
+    );
+    await new RuntimeRepository(alice.userId).resolveApproval({
+      approvalId: pending.id,
+      runId: run.runId,
+      decision: "rejected",
+      adjustment: "Nicht löschen, nur lesen.",
+    });
+    const [stage] = await db.raw<{ status: string }>(
+      `select status from osirus.run_stages where id = $1::uuid`,
+      [context.stageId],
+    );
+    const [state] = await db.raw<{ status: string }>(
+      `select status from osirus.runs where id = $1::uuid`,
+      [run.runId],
+    );
+    // Back to its loop, which hears "rejected" with the adjustment.
+    expect(stage!.status).toBe("blocked");
+    expect(state!.status).toBe("running");
+    await expect(registry.invoke(input)).rejects.toMatchObject({
+      message: expect.stringContaining("approval_rejected"),
+    });
+  });
+
   it("A tool that reports isError is a failed call, not a success", async () => {
     await enable(serverId, "fail");
     const { registry, context } = await slice(run);

@@ -8,9 +8,8 @@ import {
   RateLimitError,
   RateLimitUnavailableError,
 } from "@/lib/security/rate-limit";
-import { chainDecision } from "@/lib/runtime/background";
+import { chainDecision, isProductStage } from "@/lib/runtime/background";
 import { budgetStopReason } from "@/lib/runtime/settlement";
-import { policyOfStage } from "@/lib/strategy/runtime";
 import { driveSlices, finalizeRun } from "@/lib/runtime/worker";
 
 export const dynamic = "force-dynamic";
@@ -230,7 +229,7 @@ async function tick(request: Request) {
       identity,
       maxStages: MAX_STAGES_PER_TICK - claimed,
     });
-    if (!policyOfStage(probe.stageInput)) productMoved += 1 + slice.claimed;
+    if (isProductStage(probe.stageInput)) productMoved += 1 + slice.claimed;
     claimed += slice.claimed;
     completed += slice.completed;
     failed += slice.failed;

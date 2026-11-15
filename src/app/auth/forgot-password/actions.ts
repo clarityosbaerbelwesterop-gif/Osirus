@@ -28,7 +28,7 @@ export async function requestReset(
   ) {
     return { error: "Zu viele Anfragen. Bitte eine Minute warten." };
   }
-  const base = env.OSIRUS_PUBLIC_URL ?? "https://osirus-ai.vercel.app";
+  const base = env.OSIRUS_PUBLIC_URL ?? "https://osirus-ai.com";
   await auth
     .requestPasswordReset({
       email,

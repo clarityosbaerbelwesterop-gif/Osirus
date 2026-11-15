@@ -85,7 +85,7 @@ describe("landing page", () => {
     const data = JSON.parse(match![1]);
     expect(data["@type"]).toBe("SoftwareApplication");
     expect(data.name).toBe("Osirus");
-    expect(data.url).toBe("https://osirus-ai.vercel.app/");
+    expect(data.url).toBe("https://osirus-ai.com/");
     expect(data.offers).toBeUndefined();
     expect(html).not.toContain('"price"');
   });
@@ -101,7 +101,7 @@ describe("seo surface", () => {
     expect(disallowed).toEqual(
       expect.arrayContaining(["/app", "/api", "/auth", "/internal"]),
     );
-    expect(robots().sitemap).toBe("https://osirus-ai.vercel.app/sitemap.xml");
+    expect(robots().sitemap).toBe("https://osirus-ai.com/sitemap.xml");
     expect(String(robots().sitemap)).not.toContain("osirus.vercel.app");
   });
 
@@ -117,14 +117,14 @@ describe("seo surface", () => {
   it("sitemap lists the landing page and the legal pages", () => {
     const urls = sitemap().map((entry) => entry.url);
     expect(urls).toEqual([
-      "https://osirus-ai.vercel.app/",
-      "https://osirus-ai.vercel.app/sicherheit",
-      "https://osirus-ai.vercel.app/legal/impressum",
-      "https://osirus-ai.vercel.app/legal/privacy",
-      "https://osirus-ai.vercel.app/legal/terms",
-      "https://osirus-ai.vercel.app/legal/eula",
-      "https://osirus-ai.vercel.app/legal/cookies",
-      "https://osirus-ai.vercel.app/kuendigen",
+      "https://osirus-ai.com/",
+      "https://osirus-ai.com/sicherheit",
+      "https://osirus-ai.com/legal/impressum",
+      "https://osirus-ai.com/legal/privacy",
+      "https://osirus-ai.com/legal/terms",
+      "https://osirus-ai.com/legal/eula",
+      "https://osirus-ai.com/legal/cookies",
+      "https://osirus-ai.com/kuendigen",
     ]);
     expect(urls.join("")).not.toContain("osirus.vercel.app");
   });
@@ -132,16 +132,14 @@ describe("seo surface", () => {
   it("root metadata is indexable with OpenGraph; auth stays noindex", () => {
     expect(rootMetadata.robots).toMatchObject({ index: true, follow: true });
     expect(rootMetadata.openGraph).toMatchObject({ siteName: "Osirus" });
-    expect((rootMetadata.metadataBase as URL).host).toBe(
-      "osirus-ai.vercel.app",
-    );
+    expect((rootMetadata.metadataBase as URL).host).toBe("osirus-ai.com");
     expect(authMetadata.robots).toMatchObject({ index: false, follow: false });
   });
 
   it("refuses the unrelated osirus.vercel.app host", async () => {
     vi.stubEnv("NEXT_PUBLIC_SITE_URL", "https://osirus.vercel.app");
     const { publicSiteUrl } = await import("../src/app/site-url");
-    expect(publicSiteUrl().host).toBe("osirus-ai.vercel.app");
+    expect(publicSiteUrl().host).toBe("osirus-ai.com");
     vi.unstubAllEnvs();
   });
 });

@@ -4,6 +4,8 @@ import { useState } from "react";
 
 function billingError(status: number) {
   if (status === 401) return "Bitte melde dich erneut an.";
+  if (status === 409)
+    return "Du hast schon ein Abo. Plan wechseln oder kündigen geht über „Abo verwalten“, so wird nichts doppelt berechnet.";
   if (status === 429) return "Zu viele Versuche. Bitte kurz warten.";
   if (status === 503)
     return "Die Buchung ist gerade nicht verfügbar. Bitte später erneut versuchen.";
