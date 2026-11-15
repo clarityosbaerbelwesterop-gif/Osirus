@@ -678,6 +678,24 @@
   text-align: center;
 }
 
+.mp-more {
+  width: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 0;
+  border-top: 1px solid var(--color-border);
+  background: transparent;
+  color: var(--color-accent-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+.mp-more:hover,
+.mp-more:focus-visible {
+  background: var(--color-surface-hover);
+}
+
 /* Thread */
 
 .ac-thread {

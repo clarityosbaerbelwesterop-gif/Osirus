@@ -7,11 +7,13 @@ import type { PickerModel } from "./model-picker";
 // this tab for ten minutes so pickers appear at once, and the remembered
 // choice per surface.
 
-const CACHE_KEY = "osirus.models.v3";
+const CACHE_KEY = "osirus.models.v4";
 const CACHE_MS = 10 * 60 * 1000;
 
 export type ModelsPayload = {
   models: PickerModel[];
+  /** The short list shown first (at most about ten). */
+  featuredIds?: string[];
   defaultId: string | null;
   freeOnly: boolean;
 };
@@ -53,6 +55,7 @@ function remembered(key: string) {
  */
 export function useGatewayModels(storageKey: string) {
   const [models, setModels] = useState<PickerModel[] | null>(null);
+  const [featured, setFeatured] = useState<string[]>([]);
   const [freeOnly, setFreeOnly] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
@@ -61,6 +64,7 @@ export function useGatewayModels(storageKey: string) {
     const controller = new AbortController();
     const apply = (payload: ModelsPayload) => {
       setModels(payload.models);
+      setFeatured(payload.featuredIds ?? []);
       setFreeOnly(payload.freeOnly);
       setError(payload.models.length ? null : "Gerade kein Modell erreichbar");
       setSelected((current) => {
@@ -101,5 +105,5 @@ export function useGatewayModels(storageKey: string) {
     [storageKey],
   );
 
-  return { models, freeOnly, error, selected, choose };
+  return { models, featured, freeOnly, error, selected, choose };
 }

@@ -1,6 +1,7 @@
 import { json } from "@/lib/product/api";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
 import {
+  curatedModels,
   listGatewayModels,
   publicModel,
   publicModelId,
@@ -29,9 +30,14 @@ export async function GET() {
     listGatewayModels(),
   ]);
   const allowed = listing.models.filter((model) => modelAllowed(model, access));
-  const best = candidatesFor(allowed, "top", { coding: true, limit: 1 })[0];
+  const models = uniqueByName(allowed);
+  // Chosen among the listed copies, so the default is always in the list.
+  const best = candidatesFor(models, "top", { coding: true, limit: 1 })[0];
+  const featured = curatedModels(models, { keep: best ? [best.ref] : [] });
   return json({
-    models: uniqueByName(allowed).map(publicModel),
+    models: models.map(publicModel),
+    // The short list the picker shows first; the rest stays searchable.
+    featuredIds: featured.map((model) => publicModelId(model.ref)),
     defaultId: best ? publicModelId(best.ref) : null,
     freeOnly: access.freeOnly,
   });

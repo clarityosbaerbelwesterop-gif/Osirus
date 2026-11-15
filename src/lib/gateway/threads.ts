@@ -138,7 +138,7 @@ export function collapseRegenerations<
   );
 }
 
-/** A whole chat thread for rendering, oldest first (at most 400 messages). */
+/** A chat thread for rendering: its newest 400 messages, oldest first. */
 export async function loadChatThread(
   identity: ProductIdentity,
   sessionId: string,
@@ -147,11 +147,14 @@ export async function loadChatThread(
   if (!session) return null;
   const rows = await queryAs<MessageRow>(
     identity.userId,
-    `select id, role, content, created_at, metadata
-       from osirus.messages
-      where session_id = $1::uuid
-      order by created_at, id
-      limit 400`,
+    // The newest 400, oldest first: a long chat opens on its latest turns.
+    `select * from (
+       select id, role, content, created_at, metadata
+         from osirus.messages
+        where session_id = $1::uuid
+        order by created_at desc, id desc
+        limit 400
+     ) recent order by created_at, id`,
     [session.id],
   );
   return {

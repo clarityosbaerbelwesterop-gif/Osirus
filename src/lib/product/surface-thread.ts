@@ -48,7 +48,13 @@ export async function loadSurfaceThread(input: {
     const recent = await repository
       .getRecentWorkspaceState(input.workspaceId, input.surface)
       .catch(() => null);
-    if (recent && recent.sessionId) {
+    // Code opens on an empty form unless a task is still working or paused
+    // there (Grok review 2026-11-15: a finished task above the form for a
+    // new one read as if it were still current). Older tasks stay in the
+    // sidebar.
+    const resumable =
+      input.surface !== "coding" || Boolean(recent?.activeRunId);
+    if (recent && recent.sessionId && resumable) {
       return { ...recent, surface: input.surface };
     }
     return blank;

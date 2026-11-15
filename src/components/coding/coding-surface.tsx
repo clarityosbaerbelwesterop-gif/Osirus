@@ -75,6 +75,7 @@ export function CodingSurface(props: {
   // Every model a configured key can call; the choice is remembered here.
   const {
     models: gatewayModels,
+    featured: featuredModels,
     freeOnly,
     error: modelsError,
     selected: model,
@@ -522,6 +523,7 @@ export function CodingSurface(props: {
                 <span className="coding-model-label">Modell</span>
                 <ModelPicker
                   models={gatewayModels}
+                  featured={featuredModels}
                   value={model}
                   onChange={setModel}
                   disabled={running || paused}

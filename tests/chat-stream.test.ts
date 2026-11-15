@@ -475,6 +475,37 @@ describe("POST /api/chat/stream", () => {
     expect(crossSite.status).toBe(403);
   });
 
+  it("drops the web sources an answer does not cite", async () => {
+    process.env.TAVILY_API_KEY = "tvly-test";
+    const plain = vi.mocked(fetch);
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        if (String(input).startsWith("https://api.tavily.com/"))
+          return Response.json({
+            results: [
+              {
+                url: "https://unrelated.example/x",
+                title: "Unpassend",
+                content: "Etwas anderes.",
+              },
+            ],
+          });
+        return plain(input, init);
+      },
+    );
+    try {
+      const events = await frames(
+        await post({ message: "Wie spät ist es in Tokio?", web: true }),
+      );
+      const shown = events.filter((e) => e.type === "sources");
+      // Listed while the answer is written, gone once it cites none.
+      expect(shown.at(-1)).toEqual({ type: "sources", sources: [] });
+    } finally {
+      delete process.env.TAVILY_API_KEY;
+    }
+  });
+
   it("reads attached files and web sources, cites them and keeps both on the thread", async () => {
     const { saveAttachment } = await import("../src/lib/attachments/store");
     const file = await saveAttachment(tenant, {
@@ -502,6 +533,7 @@ describe("POST /api/chat/stream", () => {
         return plain(input, init);
       },
     );
+    answer = "Berlin hat rund 3,88 Millionen Einwohner [1].";
     try {
       const response = await post({
         message: "Wie viele Einwohner hat Berlin laut Datei und Web?",

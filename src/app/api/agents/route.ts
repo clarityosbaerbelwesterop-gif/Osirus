@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { env, serverKeys } from "@/lib/env";
 import { apiIdentity, guardWrite, json } from "@/lib/product/api";
-import { createAgent, listAgents } from "@/lib/agents/store";
+import { BotNameTakenError, createAgent, listAgents } from "@/lib/agents/store";
 import { isRetiredProductModel } from "@/lib/models/catalog";
 import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
 import { resolveGatewayModel } from "@/lib/gateway/models";
@@ -60,6 +60,17 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  try {
+    return await createRoute(request);
+  } catch (error) {
+    // A taken name is the person's to fix: 409 with the reason, not a 500.
+    if (error instanceof BotNameTakenError)
+      return json({ error: error.code, message: error.message }, 409);
+    throw error;
+  }
+}
+
+async function createRoute(request: Request) {
   const guard = await guardWrite(request, {
     schema,
     route: "agents.create",

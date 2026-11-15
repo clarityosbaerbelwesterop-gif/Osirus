@@ -125,12 +125,14 @@ export async function sharedThread(token: string) {
     created_at: string;
     metadata: Record<string, unknown> | null;
   }>(
-    `select id, role, content, created_at, metadata
-       from osirus.messages
-      where session_id = $1::uuid and workspace_id = $3::uuid
-        and created_at <= $2
-      order by created_at, id
-      limit 400`,
+    `select * from (
+       select id, role, content, created_at, metadata
+         from osirus.messages
+        where session_id = $1::uuid and workspace_id = $3::uuid
+          and created_at <= $2
+        order by created_at desc, id desc
+        limit 400
+     ) recent order by created_at, id`,
     [share.session_id, share.shared_until, share.workspace_id],
   );
   const messages = collapseRegenerations(

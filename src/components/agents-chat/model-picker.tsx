@@ -32,6 +32,13 @@ const TIER_LABELS: Array<[PickerModel["tier"], string]> = [
 export function groupModels(
   models: readonly PickerModel[],
   query: string,
+  options: {
+    /** The short list shown first; the rest only through search or "all". */
+    featured?: readonly string[];
+    showAll?: boolean;
+    /** Kept in the short list so the current choice is always visible. */
+    selected?: string | null;
+  } = {},
 ): Group[] {
   const needle = query.trim().toLowerCase();
   const matches = needle
@@ -39,6 +46,23 @@ export function groupModels(
     : models;
   if (needle)
     return matches.length ? [{ label: "Treffer", models: [...matches] }] : [];
+  const featured = options.featured ?? [];
+  if (!options.showAll && featured.length > 0) {
+    const short = models.filter(
+      (model) => featured.includes(model.id) || model.id === options.selected,
+    );
+    const order = (model: PickerModel) => {
+      const at = featured.indexOf(model.id);
+      return at < 0 ? featured.length : at;
+    };
+    if (short.length > 0)
+      return [
+        {
+          label: "Empfohlen",
+          models: short.sort((a, b) => order(a) - order(b)),
+        },
+      ];
+  }
   return TIER_LABELS.map(([tier, label]) => ({
     label,
     models: matches.filter((model) => model.tier === tier),
@@ -53,6 +77,8 @@ function contextLabel(tokens: number | null) {
 
 export function ModelPicker(props: {
   models: readonly PickerModel[] | null;
+  /** Ids of the short list shown first (GET /api/models featuredIds). */
+  featured?: readonly string[];
   value: string | null;
   onChange: (id: string) => void;
   disabled?: boolean;
@@ -61,6 +87,7 @@ export function ModelPicker(props: {
 }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [showAll, setShowAll] = useState(false);
   const [cursor, setCursor] = useState(0);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
@@ -69,9 +96,17 @@ export function ModelPicker(props: {
   const selected =
     props.models?.find((model) => model.id === props.value) ?? null;
   const groups = useMemo(
-    () => groupModels(props.models ?? [], query),
-    [props.models, query],
+    () =>
+      groupModels(props.models ?? [], query, {
+        featured: props.featured,
+        showAll,
+        selected: props.value,
+      }),
+    [props.models, props.featured, props.value, query, showAll],
   );
+  const total = props.models?.length ?? 0;
+  const shown = groups.reduce((sum, group) => sum + group.models.length, 0);
+  const canExpand = !query.trim() && !showAll && shown < total;
   const flat = useMemo(() => groups.flatMap((group) => group.models), [groups]);
 
   useEffect(() => {
@@ -88,6 +123,7 @@ export function ModelPicker(props: {
     props.onChange(id);
     setOpen(false);
     setQuery("");
+    setShowAll(false);
   };
 
   const onKey = (event: KeyboardEvent) => {
@@ -154,7 +190,7 @@ export function ModelPicker(props: {
                 setQuery(event.target.value);
                 setCursor(0);
               }}
-              placeholder={`${props.models?.length ?? 0} Modelle durchsuchen`}
+              placeholder={`${total} Modelle durchsuchen`}
               aria-controls={listId}
               aria-activedescendant={
                 flat[cursor] ? `${listId}-${cursor}` : undefined
@@ -232,6 +268,19 @@ export function ModelPicker(props: {
               ))
             )}
           </div>
+          {canExpand ? (
+            <button
+              type="button"
+              className="mp-more"
+              onClick={() => {
+                setShowAll(true);
+                setCursor(0);
+                searchRef.current?.focus();
+              }}
+            >
+              Alle {total} Modelle anzeigen
+            </button>
+          ) : null}
         </div>
       ) : null}
     </div>
