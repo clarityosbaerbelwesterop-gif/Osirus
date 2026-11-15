@@ -75,6 +75,12 @@ const anonymous = {
   networkHash: "h",
 };
 
+const signedIn = {
+  signedInUserId: "user-1",
+  signedInEmail: "erika@example.com",
+  networkHash: "h",
+};
+
 describe("cancellation rules", () => {
   it("accepts a minimal declaration and normalises the address", () => {
     const value = declaration({
@@ -202,36 +208,53 @@ describe("cancellation rules", () => {
 });
 
 describe("processing a cancellation", () => {
-  it("anonymous: schedules the period end, mails the details, shows nothing account-specific", async () => {
-    const { deps, updates, mails, notes } = fakeDeps();
+  it("anonymous: records the declaration but leaves Stripe to the operator", async () => {
+    // Anyone can type anyone's address: without sign-in the e-mail alone must
+    // not end (or move) somebody's paid subscription.
+    const { deps, updates, mails } = fakeDeps();
     const receipt = await processCancellation(declaration(), anonymous, deps);
-    expect(deps.applyPlan).toHaveBeenCalledWith("sub_1", {
-      action: "period_end",
-      effectiveAt: PERIOD_END,
-    });
+    expect(deps.applyPlan).not.toHaveBeenCalled();
     expect(updates[0]).toMatchObject({
       userId: "user-1",
       subscriptionId: "sub_1",
-      status: "scheduled",
-      effectiveAt: PERIOD_END,
+      status: "manual",
     });
     expect(updates[1]).toHaveProperty("confirmationSentAt");
     // The page does not reveal that the address has a subscription.
     expect(receipt.outcome).not.toContain("20. November 2026");
-    expect(receipt.outcome).toContain("zum nächstmöglichen Zeitpunkt");
     expect(receipt.text).toContain("Eingang: 29. Oktober 2026 um 14:05:33 Uhr");
-    // The e-mail to the address carries the exact end.
+    // The declarant and the account owner both get the receipt.
     expect(mails[0]!.to).toEqual(["erika@example.com", "erika@example.com"]);
-    expect(mails[0]!.text).toContain(
-      "Dein Abonnement endet am 20. November 2026",
-    );
     expect(mails[0]!.subject).toContain("K-20261029-TEST01");
-    expect(notes[0]!.title).toContain("Abo-Ende in Stripe gesetzt");
     expect(receipt).toMatchObject({
       reference: "K-20261029-TEST01",
       receivedAt: RECEIVED.toISOString(),
       mailSent: true,
     });
+  });
+
+  it("never moves an existing cancellation later", async () => {
+    const { deps } = fakeDeps();
+    (
+      deps.subscriptionFor as unknown as {
+        mockResolvedValue: (v: unknown) => void;
+      }
+    ).mockResolvedValue({
+      id: "sub_1",
+      status: "active",
+      periodEnd: PERIOD_END,
+      cancelAtPeriodEnd: true,
+    });
+    await processCancellation(
+      declaration({ timing: "date", requestedEnd: "2099-12-31" }),
+      {
+        signedInUserId: "user-1",
+        signedInEmail: "erika@example.com",
+        networkHash: null,
+      },
+      deps,
+    );
+    expect(deps.applyPlan).not.toHaveBeenCalled();
   });
 
   it("signed in: shows the exact end and mails the account address too", async () => {
@@ -300,7 +323,7 @@ describe("processing a cancellation", () => {
         throw new Error("stripe down");
       }),
     });
-    const receipt = await processCancellation(declaration(), anonymous, deps);
+    const receipt = await processCancellation(declaration(), signedIn, deps);
     expect(updates[0]).toMatchObject({ status: "failed" });
     expect(notes[0]!.title).toContain("Stripe-Fehler");
     expect(mails).toHaveLength(1);
@@ -311,7 +334,7 @@ describe("processing a cancellation", () => {
     const { deps, updates, mails } = fakeDeps();
     await processCancellation(
       declaration({ kind: "extraordinary", reason: "Wichtiger Grund" }),
-      anonymous,
+      signedIn,
       deps,
     );
     expect(deps.applyPlan).toHaveBeenCalled();

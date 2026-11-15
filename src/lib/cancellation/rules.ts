@@ -163,13 +163,15 @@ export function planSubscriptionCancellation(
   input: { timing: CancellationInput["timing"]; requestedEnd?: string },
   subscription: SubscriptionState,
 ): SubscriptionPlan {
+  // An existing cancellation is never moved later or lifted: a later date
+  // would turn an ended subscription back into a renewing one.
+  if (subscription.cancelAtPeriodEnd)
+    return { action: "none", effectiveAt: subscription.periodEnd };
   if (input.timing === "date" && input.requestedEnd) {
     const at = endOfBerlinDay(input.requestedEnd);
     if (subscription.periodEnd && at > subscription.periodEnd)
       return { action: "at", at, effectiveAt: at };
   }
-  if (subscription.cancelAtPeriodEnd)
-    return { action: "none", effectiveAt: subscription.periodEnd };
   return { action: "period_end", effectiveAt: subscription.periodEnd };
 }
 

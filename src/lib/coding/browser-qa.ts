@@ -110,6 +110,23 @@ export function markupChecks(
   return checks;
 }
 
+async function readCapped(response: Response, limit: number) {
+  const reader = response.body?.getReader();
+  if (!reader) return "";
+  const decoder = new TextDecoder();
+  let text = "";
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    text += decoder.decode(value, { stream: true });
+    if (text.length >= limit) {
+      await reader.cancel().catch(() => undefined);
+      return text.slice(0, limit);
+    }
+  }
+  return text + decoder.decode();
+}
+
 /** Fetch-only preview check. Honest about being less than browser QA. */
 export class HttpPreviewCheck implements BrowserQa {
   readonly mode = "http" as const;
@@ -119,11 +136,14 @@ export class HttpPreviewCheck implements BrowserQa {
     expectations: { selectors?: string[]; texts?: string[] },
   ): Promise<QaReport> {
     try {
+      // The preview is served by code running in the sandbox: never follow
+      // its redirects (they could point anywhere, incl. internal hosts) and
+      // never buffer more than 2 MB of what it sends.
       const response = await fetch(url, {
         signal: AbortSignal.timeout(15_000),
-        redirect: "follow",
+        redirect: "manual",
       });
-      const html = (await response.text()).slice(0, 2_000_000);
+      const html = await readCapped(response, 2_000_000);
       const title = html.match(/<title>([^<]*)<\/title>/i)?.[1]?.trim() ?? null;
       return {
         mode: "http",

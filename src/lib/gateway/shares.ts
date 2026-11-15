@@ -106,10 +106,11 @@ export async function sharedThread(token: string) {
   if (!TOKEN.test(token)) return null;
   const [share] = await querySystem<{
     session_id: string;
+    workspace_id: string;
     shared_until: string;
     title: string;
   }>(
-    `select s.session_id, s.shared_until, sess.title
+    `select s.session_id, sess.workspace_id, s.shared_until, sess.title
        from osirus.chat_shares s
        join osirus.sessions sess on sess.id = s.session_id
       where s.token = $1 and s.revoked_at is null
@@ -126,10 +127,11 @@ export async function sharedThread(token: string) {
   }>(
     `select id, role, content, created_at, metadata
        from osirus.messages
-      where session_id = $1::uuid and created_at <= $2
+      where session_id = $1::uuid and workspace_id = $3::uuid
+        and created_at <= $2
       order by created_at, id
       limit 400`,
-    [share.session_id, share.shared_until],
+    [share.session_id, share.shared_until, share.workspace_id],
   );
   const messages = collapseRegenerations(
     rows

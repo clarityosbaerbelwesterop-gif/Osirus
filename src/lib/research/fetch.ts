@@ -179,13 +179,130 @@ const ENTITIES: Record<string, string> = {
 };
 
 export function decodeEntities(text: string) {
-  return text.replace(/&(#x?[0-9a-f]+|\w+);/gi, (whole, code: string) => {
-    if (code.startsWith("#x") || code.startsWith("#X"))
-      return String.fromCodePoint(parseInt(code.slice(2), 16) || 32);
-    if (code.startsWith("#"))
-      return String.fromCodePoint(Number(code.slice(1)) || 32);
-    return ENTITIES[code.toLowerCase()] ?? whole;
-  });
+  const point = (value: number) =>
+    Number.isInteger(value) && value > 0 && value <= 0x10ffff
+      ? String.fromCodePoint(value)
+      : " ";
+  return text.replace(
+    /&(#x?[0-9a-f]{1,8}|\w{1,32});/gi,
+    (whole, code: string) => {
+      if (code.startsWith("#x") || code.startsWith("#X"))
+        return point(parseInt(code.slice(2), 16));
+      if (code.startsWith("#")) return point(Number(code.slice(1)));
+      return ENTITIES[code.toLowerCase()] ?? whole;
+    },
+  );
+}
+
+// Everything below scans the page once with indexOf. Regexes such as
+// /<!--[\s\S]*?-->/ or /<[^>]+>/ take quadratic time on a page made of
+// thousands of unclosed "<!--" or "<" (measured: 512 KB took 34 s), and a
+// synchronous regex cannot be stopped by any timeout.
+
+const DROPPED_BLOCKS = [
+  "script",
+  "style",
+  "noscript",
+  "svg",
+  "nav",
+  "footer",
+  "header",
+  "form",
+  "iframe",
+  "template",
+];
+const BREAK_TAGS = new Set(["br", "/p", "/div", "/li", "/tr"]);
+
+function isNameChar(char: string | undefined) {
+  return char !== undefined && /[a-z0-9:-]/i.test(char);
+}
+
+/** Tag name right after "<" at `at` (lowercase, with a leading "/"), or "". */
+function tagNameAt(lower: string, at: number) {
+  let end = at + 1;
+  if (lower[end] === "/") end += 1;
+  while (end < lower.length && end - at < 40 && isNameChar(lower[end]))
+    end += 1;
+  return lower.slice(at + 1, end);
+}
+
+function stripMarkup(html: string) {
+  const lower = html.toLowerCase();
+  let out = "";
+  let at = 0;
+  while (at < html.length) {
+    const open = html.indexOf("<", at);
+    if (open < 0) {
+      out += html.slice(at);
+      break;
+    }
+    out += html.slice(at, open);
+    if (html.startsWith("<!--", open)) {
+      const close = html.indexOf("-->", open + 4);
+      out += " ";
+      if (close < 0) break;
+      at = close + 3;
+      continue;
+    }
+    const name = tagNameAt(lower, open);
+    if (!name.replace("/", "") && !/[!?]/.test(html[open + 1] ?? "")) {
+      // "<" not starting a tag ("a < b") is text.
+      out += "<";
+      at = open + 1;
+      continue;
+    }
+    if (DROPPED_BLOCKS.includes(name)) {
+      const close = lower.indexOf(`</${name}`, open + name.length + 1);
+      out += " ";
+      if (close < 0) break;
+      const end = html.indexOf(">", close);
+      if (end < 0) break;
+      at = end + 1;
+      continue;
+    }
+    const end = html.indexOf(">", open + 1);
+    if (end < 0) {
+      // A lone "<" in text: keep the rest as text.
+      out += html.slice(open);
+      break;
+    }
+    out += BREAK_TAGS.has(name) || /^\/h\d$/.test(name) ? "\n" : " ";
+    at = end + 1;
+  }
+  return out;
+}
+
+function attributes(tag: string) {
+  const found: Record<string, string> = {};
+  for (const match of tag.matchAll(/([\w:.-]{1,60})\s*=\s*("[^"]*"|'[^']*')/g))
+    found[match[1]!.toLowerCase()] = match[2]!.slice(1, -1);
+  return found;
+}
+
+/** Every <meta> tag's name/property → content, first one wins. */
+function metaTags(html: string, lower: string) {
+  const metas = new Map<string, string>();
+  let at = 0;
+  while (metas.size < 200) {
+    const open = lower.indexOf("<meta", at);
+    if (open < 0) break;
+    const end = html.indexOf(">", open);
+    if (end < 0) break;
+    const attrs = attributes(html.slice(open, end));
+    const key = (attrs.property ?? attrs.name ?? "").toLowerCase();
+    if (key && attrs.content && !metas.has(key)) metas.set(key, attrs.content);
+    at = end + 1;
+  }
+  return metas;
+}
+
+function titleOf(html: string, lower: string) {
+  const open = lower.indexOf("<title");
+  if (open < 0) return "";
+  const start = html.indexOf(">", open);
+  if (start < 0) return "";
+  const close = lower.indexOf("</title", start);
+  return html.slice(start + 1, close < 0 ? start + 1 : close).trim();
 }
 
 /**
@@ -194,33 +311,13 @@ export function decodeEntities(text: string) {
  * the model either.
  */
 export function htmlToText(html: string) {
-  const meta = (name: string) =>
-    html.match(
-      new RegExp(
-        `<meta[^>]+(?:property|name)=["']${name}["'][^>]*content=["']([^"']+)["']`,
-        "i",
-      ),
-    )?.[1] ??
-    html.match(
-      new RegExp(
-        `<meta[^>]+content=["']([^"']+)["'][^>]*(?:property|name)=["']${name}["']`,
-        "i",
-      ),
-    )?.[1];
-  const title = decodeEntities(
-    html.match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]?.trim() ?? "",
-  );
-  const cleaned = html
-    .replace(/<!--[\s\S]*?-->/g, " ")
-    .replace(
-      /<(script|style|noscript|svg|nav|footer|header|form|iframe|template)[\s\S]*?<\/\1>/gi,
-      " ",
-    )
-    .replace(/<(br|\/p|\/div|\/li|\/h\d|\/tr)[^>]*>/gi, "\n")
-    .replace(/<[^>]+>/g, " ");
-  const text = decodeEntities(cleaned)
+  const lower = html.toLowerCase();
+  const metas = metaTags(html, lower);
+  const meta = (name: string) => metas.get(name);
+  const title = decodeEntities(titleOf(html, lower));
+  const text = decodeEntities(stripMarkup(html))
     .replace(/[ \t\f\v]+/g, " ")
-    .replace(/\n\s*\n+/g, "\n\n")
+    .replace(/\n[ \t]*(?:\n[ \t]*)+/g, "\n\n")
     .trim();
   return {
     title: title || meta("og:title") || "",

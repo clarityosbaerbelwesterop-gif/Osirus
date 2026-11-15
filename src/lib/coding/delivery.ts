@@ -63,22 +63,51 @@ export async function commitAll(
  */
 export async function pushBranch(
   workspace: CodingWorkspace,
-  input: { branch: string; token?: string },
+  input: {
+    branch: string;
+    token?: string;
+    /** Pushed to this exact repository, never to whatever "origin" says. */
+    repository?: { owner: string; name: string };
+  },
 ) {
   if (input.token) workspace.addSecret(input.token);
+  if (input.token) {
+    // Code that ran in the workspace (a dependency's install script, a
+    // prompt-injected command) can edit the repository's config. A rewrite
+    // rule, proxy, credential or include there would hand the token to
+    // another host, so a config with any of them is refused outright.
+    const config = await workspace.exec(
+      "git",
+      ["config", "--local", "--list", "--name-only"],
+      { cwd: REPO_DIR, timeoutMs: 10_000, record: false },
+    );
+    const risky = config.stdout
+      .split("\n")
+      .map((line) => line.trim().toLowerCase())
+      .filter((key) => UNSAFE_PUSH_CONFIG.test(key));
+    if (risky.length)
+      throw new Error(`push_refused_repository_config:${risky.join(",")}`);
+  }
+  const target = input.repository
+    ? `https://github.com/${input.repository.owner}/${input.repository.name}.git`
+    : "origin";
   const result = await workspace.exec(
     "git",
     [
+      // Hooks never run with the token in the environment.
+      "-c",
+      "core.hooksPath=/dev/null",
       "-c",
       "credential.helper=",
       ...(input.token
         ? [
             "-c",
-            "credential.helper=!f() { echo username=x-access-token; echo password=$GIT_TOKEN; }; f",
+            "credential.https://github.com.helper=!f() { echo username=x-access-token; echo password=$GIT_TOKEN; }; f",
           ]
         : []),
       "push",
-      "origin",
+      "--no-verify",
+      target,
       `HEAD:refs/heads/${input.branch}`,
     ],
     {
@@ -91,6 +120,10 @@ export async function pushBranch(
     throw new Error(`push_failed:${result.stderr.slice(-200)}`);
   return result;
 }
+
+/** Repository config keys that could redirect or capture a push credential. */
+const UNSAFE_PUSH_CONFIG =
+  /^(url\.|http\.|credential\.|include\.|includeif\.|core\.(askpass|hookspath|sshcommand|gitproxy|fsmonitor)|remote\.[^.]+\.(pushurl|proxy))/;
 
 export type DeliveryDependencies = {
   workspace: () => Promise<CodingWorkspace>;
@@ -148,7 +181,11 @@ export function deliveryTool(deps: DeliveryDependencies): ToolDefinition {
         base,
         message: request.commitMessage,
       });
-      await pushBranch(workspace, { branch: request.branch, token });
+      await pushBranch(workspace, {
+        branch: request.branch,
+        token,
+        repository,
+      });
       const pr = await deps.openPullRequest({
         token,
         owner: repository.owner,

