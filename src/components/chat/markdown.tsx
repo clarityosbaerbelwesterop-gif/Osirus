@@ -1,12 +1,21 @@
 "use client";
 
-import { Check, Copy } from "lucide-react";
-import { memo, useEffect, useRef, useState, type ComponentProps } from "react";
+import { Check, Copy, LoaderCircle, Play } from "lucide-react";
+import {
+  createContext,
+  memo,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+  type ComponentProps,
+} from "react";
 import ReactMarkdown, {
   defaultUrlTransform,
   type Components,
 } from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { runnableLanguage } from "@/lib/chat/run-code";
 
 // Model output rendered as Markdown, safely.
 //
@@ -16,9 +25,67 @@ import remarkGfm from "remark-gfm";
 // shown as links: the page's CSP blocks remote images anyway, and a link does
 // not fetch anything (no tracking pixels).
 
+/** Whether code blocks here may offer "Ausführen" (signed-in surfaces only). */
+const RunnableContext = createContext(false);
+
+type RunResult = {
+  exitCode: number | null;
+  stdout: string;
+  stderr: string;
+  durationMs: number;
+  timedOut: boolean;
+};
+
+type RunState =
+  | { state: "idle" }
+  | { state: "running" }
+  | { state: "done"; result: RunResult }
+  | { state: "error"; message: string };
+
+function RunOutput({ run }: { run: RunState }) {
+  if (run.state === "idle") return null;
+  if (run.state === "running")
+    return (
+      <div className="md-run" role="status" aria-live="polite">
+        <p className="md-run-head">Läuft in der Sandbox…</p>
+      </div>
+    );
+  if (run.state === "error")
+    return (
+      <div className="md-run md-run-failed" role="status" aria-live="polite">
+        <p className="md-run-head">{run.message}</p>
+      </div>
+    );
+  const { result } = run;
+  const ok = result.exitCode === 0;
+  const head = result.timedOut
+    ? "Zeitlimit erreicht"
+    : ok
+      ? "Erfolgreich"
+      : `Fehlgeschlagen (Exit ${result.exitCode ?? "?"})`;
+  return (
+    <div
+      className={ok ? "md-run md-run-ok" : "md-run md-run-failed"}
+      role="status"
+      aria-live="polite"
+    >
+      <p className="md-run-head">
+        {head} · {(result.durationMs / 1000).toFixed(1)} s
+      </p>
+      {result.stdout ? <pre className="md-run-out">{result.stdout}</pre> : null}
+      {result.stderr ? <pre className="md-run-err">{result.stderr}</pre> : null}
+      {!result.stdout && !result.stderr ? (
+        <p className="md-run-empty">Keine Ausgabe.</p>
+      ) : null}
+    </div>
+  );
+}
+
 function CodeBlock(props: ComponentProps<"pre">) {
   const ref = useRef<HTMLPreElement | null>(null);
   const [copied, setCopied] = useState(false);
+  const [run, setRun] = useState<RunState>({ state: "idle" });
+  const runnable = useContext(RunnableContext);
   const child = Array.isArray(props.children)
     ? props.children[0]
     : props.children;
@@ -27,6 +94,7 @@ function CodeBlock(props: ComponentProps<"pre">) {
       ? String((child.props as { className?: string }).className ?? "")
       : "";
   const language = className.match(/language-([\w+#-]+)/)?.[1] ?? null;
+  const canRun = runnable && runnableLanguage(language) !== null;
 
   const copy = async () => {
     const text = ref.current?.textContent ?? "";
@@ -39,25 +107,71 @@ function CodeBlock(props: ComponentProps<"pre">) {
     }
   };
 
+  const execute = async () => {
+    if (run.state === "running") return;
+    setRun({ state: "running" });
+    const response = await fetch("/api/chat/run", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        language,
+        code: ref.current?.textContent ?? "",
+      }),
+    }).catch(() => null);
+    const body = (await response?.json().catch(() => null)) as
+      (RunResult & { ok?: boolean; message?: string; error?: string }) | null;
+    if (!response?.ok || !body?.ok) {
+      setRun({
+        state: "error",
+        message:
+          body?.message ??
+          (response?.status === 429
+            ? "Zu viele Ausführungen in kurzer Zeit. Bitte warte einen Moment."
+            : "Der Code konnte nicht ausgeführt werden."),
+      });
+      return;
+    }
+    setRun({ state: "done", result: body });
+  };
+
   return (
     <div className="md-code">
       <div className="md-code-bar">
         <span className="md-code-lang">{language ?? "text"}</span>
-        <button
-          type="button"
-          className="md-code-copy"
-          onClick={() => void copy()}
-          aria-label={copied ? "Kopiert" : "Code kopieren"}
-        >
-          {copied ? (
-            <Check size={13} aria-hidden="true" />
-          ) : (
-            <Copy size={13} aria-hidden="true" />
-          )}
-          <span>{copied ? "Kopiert" : "Kopieren"}</span>
-        </button>
+        <span className="md-code-actions">
+          {canRun ? (
+            <button
+              type="button"
+              className="md-code-copy"
+              onClick={() => void execute()}
+              disabled={run.state === "running"}
+              aria-label="Code in der Sandbox ausführen"
+            >
+              {run.state === "running" ? (
+                <LoaderCircle size={13} aria-hidden="true" className="spin" />
+              ) : (
+                <Play size={13} aria-hidden="true" />
+              )}
+              <span>Ausführen</span>
+            </button>
+          ) : null}
+          <button
+            type="button"
+            className="md-code-copy"
+            onClick={() => void copy()}
+            aria-label={copied ? "Kopiert" : "Code kopieren"}
+          >
+            {copied ? (
+              <Check size={13} aria-hidden="true" />
+            ) : (
+              <Copy size={13} aria-hidden="true" />
+            )}
+            <span>{copied ? "Kopiert" : "Kopieren"}</span>
+          </button>
+        </span>
       </div>
       <pre ref={ref}>{props.children}</pre>
+      <RunOutput run={run} />
     </div>
   );
 }
@@ -193,8 +307,11 @@ const plainPlugins = [remarkGfm];
 
 export const Markdown = memo(function Markdown({
   content,
+  runnable = false,
 }: {
   content: string;
+  /** Offer "Ausführen" on Python, JavaScript and TypeScript blocks. */
+  runnable?: boolean;
 }) {
   const wantsMath = hasMath(content);
   const [plugins, setPlugins] = useState<MathPlugins | null>(mathPlugins);
@@ -210,15 +327,17 @@ export const Markdown = memo(function Markdown({
   }, [plugins, wantsMath]);
   const math = wantsMath ? plugins : null;
   return (
-    <div className="md">
-      <ReactMarkdown
-        remarkPlugins={math ? math.remark : plainPlugins}
-        rehypePlugins={math ? math.rehype : undefined}
-        components={components}
-        urlTransform={urlTransform}
-      >
-        {math ? prepareMath(content) : content}
-      </ReactMarkdown>
-    </div>
+    <RunnableContext.Provider value={runnable}>
+      <div className="md">
+        <ReactMarkdown
+          remarkPlugins={math ? math.remark : plainPlugins}
+          rehypePlugins={math ? math.rehype : undefined}
+          components={components}
+          urlTransform={urlTransform}
+        >
+          {math ? prepareMath(content) : content}
+        </ReactMarkdown>
+      </div>
+    </RunnableContext.Provider>
   );
 });

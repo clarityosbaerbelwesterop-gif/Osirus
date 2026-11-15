@@ -234,6 +234,31 @@ export async function routeObjective(
     };
   }
 
+  // The mode's nudge must not manufacture a tie with a clear match on the
+  // words. Live 2026-11-15: "Rechne in Python: Summe 1 bis 100" in agent
+  // mode scored coding 0.5 against a boosted zero of 0.5, and the tie cost
+  // an 11 s model classification before anything visible happened. Without
+  // the boost the objective was unambiguous; that match wins at once.
+  if (boost && ambiguity === "close_contenders") {
+    const plain = scoreCandidates(objective);
+    const top = plain[0];
+    if (
+      top &&
+      top.armId !== boost.armId &&
+      top.score >= MODE_BOOST &&
+      !ambiguityOf(objective, plain)
+    ) {
+      return {
+        primary: top.armId,
+        composition: [top.armId],
+        capabilities: capabilitiesFor([top.armId]),
+        confidence: top.score,
+        escalated: false,
+        reason: `Clear match on ${top.armId} outranks the ${boost.mode} mode default.${note}`,
+      };
+    }
+  }
+
   if (!options.classify) {
     const ordered = composition.length > 0 ? composition : [heuristicPrimary];
     return {

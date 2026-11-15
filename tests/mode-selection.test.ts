@@ -237,3 +237,32 @@ describe("router-v2 mode bias", () => {
     expect(plain.reason).not.toContain("mode=");
   });
 });
+
+describe("a mode does not turn a clear match into a model call", () => {
+  it("routes a plain Python task in agent mode without classifying (live 2026-11-15)", async () => {
+    const { routeObjective } = await import("../src/lib/runtime/router-v2");
+    let classified = 0;
+    const decision = await routeObjective(
+      "Rechne in Python: Summe der Zahlen 1 bis 100, nur Ergebnis. Keine externen Pakete.",
+      {
+        mode: "agent",
+        classify: async () => {
+          classified += 1;
+          throw new Error("should not be asked");
+        },
+      },
+    );
+    expect(classified).toBe(0);
+    expect(decision.primary).toBe("coding");
+    expect(decision.escalated).toBe(false);
+    expect(decision.reason).toMatch(/outranks the agent mode default/);
+  });
+
+  it("keeps the mode for an objective without a clear match", async () => {
+    const { routeObjective } = await import("../src/lib/runtime/router-v2");
+    const decision = await routeObjective("Erstelle eine Todo App mit React", {
+      mode: "agent",
+    });
+    expect(decision.primary).toBe("building");
+  });
+});

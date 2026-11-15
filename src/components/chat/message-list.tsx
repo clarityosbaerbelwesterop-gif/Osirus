@@ -109,7 +109,12 @@ export function MessageList({
                   <span className="subtle message-streaming">Schreibt…</span>
                 ) : null}
               </div>
-              <Markdown content={message.content} />
+              <Markdown
+                content={message.content}
+                runnable={
+                  message.role === "assistant" && message.id !== streamingId
+                }
+              />
               {message.id === streamingId ? (
                 <span className="stream-caret" aria-hidden="true" />
               ) : null}

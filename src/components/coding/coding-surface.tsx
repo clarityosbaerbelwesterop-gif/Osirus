@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   codingSlash,
   passesOnAcceptEdits,
@@ -248,8 +248,24 @@ export function CodingSurface(props: {
     toolsNeeded: codingToolsNeeded(taskText),
   }).effort;
 
+  // Live 2026-11-13: one task started three times within 0.4 s (three
+  // sessions, three runs), because `running` only flips once the server
+  // answers. A ref blocks a second start synchronously.
+  const startingRef = useRef(false);
+  const [starting, setStarting] = useState(false);
   const start = async () => {
-    if (running || paused) return;
+    if (running || paused || startingRef.current) return;
+    startingRef.current = true;
+    setStarting(true);
+    try {
+      await startOnce();
+    } finally {
+      startingRef.current = false;
+      setStarting(false);
+    }
+  };
+
+  const startOnce = async () => {
     const repo = repos?.find(
       (item) => `${item.owner}/${item.name}` === repoKey,
     );
@@ -335,6 +351,7 @@ export function CodingSurface(props: {
     branches?.includes(branch) &&
     !failure &&
     !running &&
+    !starting &&
     !paused,
   );
 
@@ -585,8 +602,9 @@ export function CodingSurface(props: {
                 type="submit"
                 className="btn btn-sm btn-primary"
                 disabled={!canStart}
+                aria-busy={starting}
               >
-                Starten
+                {starting ? "Startet…" : "Starten"}
               </button>
             </div>
           </form>
