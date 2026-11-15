@@ -607,6 +607,13 @@
   margin: 0;
 }
 
+/* The exact input, line breaks kept; a long value scrolls, never hides. */
+.approval-details dd {
+  max-height: 12rem;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
 .approval-details {
   margin-top: var(--space-2);
   padding: var(--space-3);
