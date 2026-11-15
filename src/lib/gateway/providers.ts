@@ -113,7 +113,7 @@ function siteUrl() {
   return (
     process.env.NEXT_PUBLIC_SITE_URL ||
     env.OSIRUS_PUBLIC_URL ||
-    "https://osirus-ai.vercel.app"
+    "https://osirus-ai.com"
   );
 }
 

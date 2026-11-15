@@ -77,3 +77,23 @@ describe("background continuation", () => {
     ).toBe(false);
   });
 });
+
+describe("which runs keep the chain going", () => {
+  it("counts a person's run, with or without a stored baseline policy", async () => {
+    const { isProductStage } = await import("../src/lib/runtime/background");
+    expect(isProductStage(undefined)).toBe(true);
+    expect(isProductStage({})).toBe(true);
+    expect(isProductStage({ policy: { label: "baseline", genome: {} } })).toBe(
+      true,
+    );
+  });
+
+  it("does not count a Foundry trial with its own model", async () => {
+    const { isProductStage } = await import("../src/lib/runtime/background");
+    expect(
+      isProductStage({
+        policy: { label: "trial", genome: {}, model: "openrouter:a/b" },
+      }),
+    ).toBe(false);
+  });
+});

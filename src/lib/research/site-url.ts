@@ -3,7 +3,7 @@
  * NEXT_PUBLIC_SITE_URL overrides the default. osirus.vercel.app is rejected.
  */
 
-export const DEFAULT_SITE_URL = "https://osirus-ai.vercel.app";
+export const DEFAULT_SITE_URL = "https://osirus-ai.com";
 
 const FORBIDDEN_HOST = "osirus.vercel.app";
 

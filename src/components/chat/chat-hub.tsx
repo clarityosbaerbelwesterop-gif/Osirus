@@ -130,6 +130,24 @@ function serverInteraction(): InteractionPreference {
   return "agent";
 }
 
+const RUN_ERRORS: Record<string, string> = {
+  quota_exhausted:
+    "Dein Kontingent ist aufgebraucht. Es füllt sich von selbst wieder auf.",
+  subscription_required: "Für diese Aufgabe brauchst du einen Plan.",
+  rate_limited: "Zu viele Anfragen in kurzer Zeit. Bitte warte einen Moment.",
+  model_not_in_plan: "Dieses Modell ist in deinem Plan nicht enthalten.",
+  model_unavailable: "Dieses Modell ist gerade nicht verfügbar.",
+  unauthorized: "Bitte melde dich erneut an.",
+};
+
+/** A readable sentence for a failed start, never a raw code. */
+function runErrorText(status: number, code: unknown) {
+  if (typeof code === "string" && RUN_ERRORS[code]) return RUN_ERRORS[code]!;
+  if (status === 401) return RUN_ERRORS.unauthorized!;
+  if (status === 429) return RUN_ERRORS.rate_limited!;
+  return "Die Aufgabe konnte nicht gestartet werden. Bitte versuch es erneut.";
+}
+
 export function ChatHub(props: {
   workspaceName: string;
   initialSessionId: string | null;
@@ -554,8 +572,13 @@ export function ChatHub(props: {
         });
         if (!response.ok || !response.body) {
           const body = await response.json().catch(() => ({}));
+          // The server's own sentence ("Dein 5-Stunden-Kontingent ist
+          // aufgebraucht … ab 14:00 Uhr"), never a bare code like
+          // "quota_exhausted".
           throw new Error(
-            typeof body.error === "string" ? body.error : "Run request failed",
+            typeof body.message === "string" && body.message
+              ? body.message
+              : runErrorText(response.status, body.error),
           );
         }
         const headerSession = response.headers.get("X-Osirus-Session-Id");

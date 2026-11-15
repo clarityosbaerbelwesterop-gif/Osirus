@@ -2,7 +2,12 @@ import { cookies } from "next/headers";
 import { z } from "zod";
 import { auth } from "@/lib/auth/server";
 import { guardWrite, json } from "@/lib/product/api";
-import { AccountDeletionBlocked, deleteAccount } from "@/lib/privacy/account";
+import {
+  AccountDeletionBlocked,
+  deleteAccount,
+  LIVE_SUBSCRIPTION_STATUSES,
+} from "@/lib/privacy/account";
+import { customerIdFor } from "@/lib/billing/store";
 import { billingConfigured, stripe } from "@/lib/billing/stripe";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +42,22 @@ export async function DELETE(request: Request) {
                 invoice_now: false,
                 prorate: false,
               });
+            }
+          : undefined,
+        // Stripe, not the database: a checkout finished moments ago, or a
+        // second subscription, is only known there.
+        liveSubscriptions: billingConfigured()
+          ? async () => {
+              const customer = await customerIdFor(guard.identity.userId);
+              if (!customer) return [];
+              const { data } = await stripe().subscriptions.list({
+                customer,
+                status: "all",
+                limit: 100,
+              });
+              return data
+                .filter((row) => LIVE_SUBSCRIPTION_STATUSES.has(row.status))
+                .map((row) => row.id);
             }
           : undefined,
       },

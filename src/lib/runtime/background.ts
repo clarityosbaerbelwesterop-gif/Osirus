@@ -1,3 +1,5 @@
+import { policyOfStage } from "../strategy/runtime";
+
 // Runs keep working when nobody watches.
 //
 // The request that starts a run drives it while the browser stays connected;
@@ -19,6 +21,17 @@ const WORKING = new Set([
 
 export function needsBackground(status: string | null | undefined) {
   return WORKING.has(String(status ?? ""));
+}
+
+/**
+ * A person's run, not a strategy trial. policyOfStage always returns a
+ * policy (the baseline when none is stored), so it cannot tell them apart;
+ * only Foundry trials carry their own model.
+ */
+export function isProductStage(
+  stageInput: Record<string, unknown> | undefined,
+) {
+  return !policyOfStage(stageInput).model;
 }
 
 /** Product chains stop here (about four hours of ticks), before MAX_CHAIN. */

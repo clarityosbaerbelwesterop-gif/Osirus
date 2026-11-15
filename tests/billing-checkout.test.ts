@@ -197,8 +197,23 @@ describe("billing checkout (§ 19 UStG)", () => {
     ).not.toHaveProperty("trial_period_days");
     expect(holder.calls[1]).toEqual({
       method: "subscriptions.list",
-      args: [{ customer: "cus_existing", status: "all", limit: 1 }],
+      args: [{ customer: "cus_existing", status: "all", limit: 20 }],
     });
+  });
+
+  it("refuses a second subscription next to a running one (both would bill)", async () => {
+    holder.calls = [];
+    holder.customer = "cus_existing";
+    holder.footer = NOTE;
+    for (const status of ["active", "trialing", "past_due"]) {
+      holder.subscriptions = [{ id: "sub_live", status }];
+      const response = await checkout("developer");
+      expect(response.status).toBe(409);
+      await expect(response.json()).resolves.toMatchObject({
+        error: "subscription_exists",
+      });
+    }
+    expect(call("checkout.sessions.create")).toBeUndefined();
   });
 
   it("starts other plans without a trial", async () => {

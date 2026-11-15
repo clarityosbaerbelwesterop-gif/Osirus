@@ -9,6 +9,17 @@ import { driveSlices, finalizeRun } from "@/lib/runtime/worker";
 import type { RunSnapshot } from "@/lib/runtime/types";
 import { recordAccessRefused } from "@/lib/security/access";
 
+/**
+ * Still waiting for a person. An expired request keeps the status
+ * "requested" in its row but can no longer be decided (the buttons answer
+ * 404), so it must not keep the run parked.
+ */
+function openApproval(row: Record<string, unknown>, now = Date.now()) {
+  if (row.status !== "requested") return false;
+  const expires = row.expires_at ? Date.parse(String(row.expires_at)) : NaN;
+  return !Number.isFinite(expires) || expires > now;
+}
+
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 // The poll answers at once; the continuation it may start runs after the
@@ -66,7 +77,7 @@ export async function GET(
     snapshot.run.status === "waiting_for_approval" &&
     !snapshot.run.pausedAt &&
     !snapshot.run.cancelRequested &&
-    !snapshot.approvals.some((row) => row.status === "requested")
+    !snapshot.approvals.some((row) => openApproval(row))
   ) {
     // Waiting on an approval that is already decided (or expired): release
     // the stage so this poll drives it instead of showing "Needs you" with

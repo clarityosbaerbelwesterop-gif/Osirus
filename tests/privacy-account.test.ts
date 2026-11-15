@@ -114,6 +114,39 @@ describe("account deletion (Art. 17)", () => {
     expect(calls).toHaveLength(2);
   });
 
+  it("ends every subscription Stripe still bills, also past_due and a second one", async () => {
+    subscription = null;
+    calls.length = 0;
+    const cancelled: string[] = [];
+    await deleteAccount(
+      identity,
+      { endSubscription: true },
+      {
+        liveSubscriptions: async () => ["sub_pro", "sub_dev_past_due"],
+        cancelSubscription: async (id) => void cancelled.push(id),
+      },
+    );
+    expect(cancelled).toEqual(["sub_pro", "sub_dev_past_due"]);
+    expect(calls).toHaveLength(2);
+  });
+
+  it("deletes nothing when the subscriptions cannot be read", async () => {
+    calls.length = 0;
+    await expect(
+      deleteAccount(
+        identity,
+        { endSubscription: true },
+        {
+          liveSubscriptions: async () => {
+            throw new Error("stripe down");
+          },
+          cancelSubscription: async () => undefined,
+        },
+      ),
+    ).rejects.toThrow("stripe down");
+    expect(calls).toHaveLength(0);
+  });
+
   it("does not block on an ended plan", async () => {
     subscription = {
       plan: "pro",

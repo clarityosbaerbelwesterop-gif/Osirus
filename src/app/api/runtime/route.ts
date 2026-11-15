@@ -410,7 +410,13 @@ export async function POST(request: Request) {
   const stream = new ReadableStream<Uint8Array>({
     start(controller) {
       const emit = (packet: RuntimePacket) => {
-        controller.enqueue(encoder.encode(encodeSse(packet)));
+        // After the browser went away the stream is closed and enqueue
+        // throws; the run must not fail because nobody is listening.
+        try {
+          controller.enqueue(encoder.encode(encodeSse(packet)));
+        } catch {
+          // Viewer gone: the run continues and is read from the database.
+        }
       };
 
       if (!prepared.created) {
@@ -433,7 +439,11 @@ export async function POST(request: Request) {
             });
           })
           .finally(() => {
-            controller.close();
+            try {
+              controller.close();
+            } catch {
+              // Already closed by a disconnect.
+            }
             released();
           });
         return;
@@ -459,7 +469,11 @@ export async function POST(request: Request) {
           });
         })
         .finally(() => {
-          controller.close();
+          try {
+            controller.close();
+          } catch {
+            // Already closed by a disconnect.
+          }
           released();
         });
     },

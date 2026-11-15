@@ -1,4 +1,6 @@
-const DEFAULT_SITE_URL = "https://osirus-ai.vercel.app";
+// The custom domain everyone sees (and search engines index).
+// osirus-ai.vercel.app stays attached for webhooks and background calls.
+const DEFAULT_SITE_URL = "https://osirus-ai.com";
 const FORBIDDEN_HOSTS = new Set(["osirus.vercel.app"]);
 
 /** Public site origin. Override with NEXT_PUBLIC_SITE_URL. Never the other Osirus host. */
