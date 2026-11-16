@@ -8,6 +8,17 @@ let subscription: Record<string, unknown> | null = null;
 vi.mock("../src/lib/db/client", () => ({
   queryAs: async (_user: string, text: string, params: unknown[]) => {
     calls.push({ text, params });
+    if (text.includes("osirus.mcp_servers t"))
+      return [
+        {
+          rows: [
+            {
+              name: "Suche",
+              url: "https://user:pw@mcp.example.com/a1B2c3D4e5F6g7H8i9J0kLmN/sse?api_key=sk-live-123",
+            },
+          ],
+        },
+      ];
     if (text.includes("jsonb_agg")) return [{ rows: [{ ok: true }] }];
     return [];
   },
@@ -78,6 +89,20 @@ describe("data export (Art. 15/20)", () => {
     expect(byTable("users")).toBe(identity.userId);
     expect(byTable("messages")).toBe(identity.workspaceId);
     expect(byTable("billing_subscriptions")).toBe(identity.userId);
+  });
+
+  it("masks keys inside MCP server URLs, as the export note promises", async () => {
+    const result = await exportAccountData(identity);
+    const text = JSON.stringify(result.data.mcpServers);
+    expect(text).not.toContain("sk-live-123");
+    expect(text).not.toContain("a1B2c3D4e5F6g7H8i9J0kLmN");
+    expect(text).not.toContain("pw@");
+    expect(result.data.mcpServers).toEqual([
+      {
+        name: "Suche",
+        url: "https://***:***@mcp.example.com/***/sse?api_key=***",
+      },
+    ]);
   });
 });
 

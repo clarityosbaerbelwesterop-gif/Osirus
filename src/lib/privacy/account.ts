@@ -1,5 +1,6 @@
 import "server-only";
 import type { ProductIdentity } from "../auth/bootstrap";
+import { displayUrl } from "../connectors/mcp-store";
 import { queryAs } from "../db/client";
 import { currentSubscription } from "../billing/store";
 
@@ -136,6 +137,22 @@ export function exportStatement(entry: (typeof EXPORT_TABLES)[number]) {
                    limit ${ROW_LIMIT}) picked`;
 }
 
+/**
+ * MCP server URLs often carry the server's API key (query, user info or a
+ * path segment). The export promises no stored credentials, so they are
+ * masked exactly as the connections page shows them.
+ */
+function maskUrls(key: string, rows: unknown[]) {
+  if (key !== "mcpServers") return rows;
+  return rows.map((row) =>
+    row &&
+    typeof row === "object" &&
+    typeof (row as { url?: unknown }).url === "string"
+      ? { ...row, url: displayUrl((row as { url: string }).url) }
+      : row,
+  );
+}
+
 export async function exportAccountData(identity: ProductIdentity) {
   const data: Record<string, unknown> = {};
   const skipped: string[] = [];
@@ -146,7 +163,7 @@ export async function exportAccountData(identity: ProductIdentity) {
         exportStatement(entry),
         [entry.scope === "workspace" ? identity.workspaceId : identity.userId],
       );
-      data[entry.key] = rows[0]?.rows ?? [];
+      data[entry.key] = maskUrls(entry.key, rows[0]?.rows ?? []);
     } catch (error) {
       // A table this deployment does not have yet; say so instead of failing.
       console.warn(

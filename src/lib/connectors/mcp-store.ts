@@ -70,15 +70,33 @@ type ToolRow = {
   reviewed_at: Date | string | null;
 };
 
+/** A path segment that reads like a key rather than a word or an id. */
+function secretLooking(segment: string) {
+  return (
+    segment.length >= 20 &&
+    /^[A-Za-z0-9_\-.~]+$/.test(segment) &&
+    /[0-9]/.test(segment) &&
+    /[A-Za-z]/.test(segment)
+  );
+}
+
 /**
- * The URL as shown to people: query values masked, because MCP servers often
- * take an API key as a query parameter and the page must not echo it back.
+ * The URL as shown to people and written to the data export: query values,
+ * user and password masked, and path segments that look like keys, because
+ * MCP servers often take an API key in one of those places and nothing may
+ * echo it back.
  */
 export function displayUrl(raw: string) {
   try {
     const url = new URL(raw);
     for (const key of [...new Set(url.searchParams.keys())])
       url.searchParams.set(key, "***");
+    if (url.username) url.username = "***";
+    if (url.password) url.password = "***";
+    url.pathname = url.pathname
+      .split("/")
+      .map((segment) => (secretLooking(segment) ? "***" : segment))
+      .join("/");
     url.hash = "";
     return url.toString().replaceAll("%2A%2A%2A", "***");
   } catch {
