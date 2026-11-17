@@ -6,6 +6,11 @@ name: Stripe webhook check
 
 on:
   workflow_dispatch:
+    inputs:
+      probe:
+        description: "Also create and delete one example.com test customer and check its webhook delivery"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -18,6 +23,8 @@ jobs:
       - name: Endpoints and recent deliveries
         env:
           STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+          PROBE: ${{ inputs.probe }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           set -euo pipefail
           python3 - <<'PY'
@@ -44,4 +51,23 @@ jobs:
               print(f"  failed: {event['type']} at {time.strftime('%Y-%m-%d %H:%M', time.gmtime(event['created']))} UTC, pending_webhooks={event.get('pending_webhooks')}")
           for event in ok[:5]:
               print(f"  delivered: {event['type']} at {time.strftime('%Y-%m-%d %H:%M', time.gmtime(event['created']))} UTC")
+          if os.environ.get("PROBE") == "true":
+              def post(path, data=None, method="POST"):
+                  body = urllib.parse.urlencode(data or {}).encode()
+                  request = urllib.request.Request("https://api.stripe.com/v1/" + path, data=body if method == "POST" else None, method=method, headers={"Authorization": "Bearer " + key})
+                  with urllib.request.urlopen(request, timeout=30) as response:
+                      return json.load(response)
+              customer = post("customers", {"email": f"webhook-probe-{os.environ['RUN_ID']}@example.com", "description": "Osirus webhook delivery probe; deleted at once"})
+              try:
+                  event = None
+                  for _ in range(20):
+                      time.sleep(3)
+                      found = get("events", limit=10, type="customer.created")["data"]
+                      event = next((e for e in found if e["data"]["object"]["id"] == customer["id"]), None)
+                      if event and event.get("pending_webhooks") == 0:
+                          break
+                  print(f"Probe: customer.created pending_webhooks={event.get('pending_webhooks') if event else 'no event'} (0 = every endpoint answered 2xx)")
+              finally:
+                  post("customers/" + customer["id"], method="DELETE")
+                  print("Probe customer deleted")
           PY
