@@ -42,6 +42,12 @@
       "package": "source-map-js",
       "reason": "Build-time source map parsing (postcss under Next); no untrusted source maps are parsed at runtime.",
       "expires": "2027-01-31"
+    },
+    {
+      "id": "GHSA-fc5q-39xc-vjpf",
+      "package": "picomatch",
+      "reason": "ReDoS in glob matching. Only in the production tree through vitest (tinyglobby, vite), which better-auth declares as a dependency; never imported or bundled by the app, which matches no untrusted glob. No fixed picomatch exists yet (all versions affected).",
+      "expires": "2027-01-31"
     }
   ]
 }
