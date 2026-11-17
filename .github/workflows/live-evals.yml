@@ -58,7 +58,7 @@ jobs:
     env:
       UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -82,7 +82,7 @@ jobs:
       ARENA_MAX_TOKENS: ${{ inputs.max_tokens || '1500000' }}
       SANDBOX: ${{ inputs.sandbox || 'vercel' }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: actions/setup-node@v4
         with:
           node-version: 24

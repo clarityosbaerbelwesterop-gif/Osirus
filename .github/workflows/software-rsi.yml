@@ -40,7 +40,7 @@ jobs:
       # osirus.vercel.app is a different product: never send it an OIDC token.
       RSI_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}/api/rsi/software
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           # Patched, model-written code runs in this workspace: it must not

@@ -47,7 +47,7 @@ jobs:
       status: ${{ steps.plan.outputs.status }}
       execute: ${{ steps.plan.outputs.execute }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -74,7 +74,7 @@ jobs:
       PRM_URL: ${{ secrets.PRM_URL }}
       PRM_API_KEY: ${{ secrets.PRM_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4
@@ -157,7 +157,7 @@ jobs:
       MODAL_JOB_URL: ${{ secrets.MODAL_JOB_URL }}
       MODAL_JOB_TOKEN: ${{ secrets.MODAL_JOB_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4

@@ -65,7 +65,7 @@ jobs:
     # retries: it needs hours, not minutes.
     timeout-minutes: ${{ inputs.mode == 'capability' && 350 || 75 }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - uses: actions/setup-node@v4

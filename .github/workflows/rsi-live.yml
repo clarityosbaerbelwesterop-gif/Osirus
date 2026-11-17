@@ -34,7 +34,7 @@ jobs:
       # osirus.vercel.app is a different product: never send it an OIDC token.
       RSI_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}/api/rsi/live
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
       - name: Take the open live order
