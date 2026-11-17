@@ -225,11 +225,13 @@ export default function PrivacyPage() {
         Code klont das gewählte Repository in eine abgeschottete, kurzlebige
         Sandbox, ändert dort Dateien, führt Prüfungen aus und schreibt
         Änderungen erst nach deiner Freigabe zurück. Die Sandbox wird nach dem
-        Auftrag beendet. Der Rouge Agent kann deine Bots befragen und Aufgaben
-        an Code übergeben; die Antworten der Bots werden Teil des Auftrags.
-        Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO, für die Protokolle der
-        Freigaben zusätzlich Art. 6 Abs. 1 lit. f DSGVO (Nachvollziehbarkeit und
-        Sicherheit).
+        Auftrag beendet. Mit „Ausführen“ an einem Codeblock im Chat läuft dieser
+        Code einmal in einer eigenen Sandbox ohne Netzwerkzugang; die Ausgabe
+        wird dir angezeigt und nicht gespeichert, die Sandbox danach beendet.
+        Der Rouge Agent kann deine Bots befragen und Aufgaben an Code übergeben;
+        die Antworten der Bots werden Teil des Auftrags. Rechtsgrundlage ist
+        Art. 6 Abs. 1 lit. b DSGVO, für die Protokolle der Freigaben zusätzlich
+        Art. 6 Abs. 1 lit. f DSGVO (Nachvollziehbarkeit und Sicherheit).
       </p>
 
       <h2>9. Verbundene Dienste (GitHub, Vercel, Neon, Supabase, MCP)</h2>
@@ -278,7 +280,9 @@ export default function PrivacyPage() {
         <li>
           <strong>Websuche:</strong> Schaltest du sie ein, sendet Osirus aus
           deiner Nachricht abgeleitete Suchbegriffe an einen Suchdienst und ruft
-          die gefundenen Seiten ab.
+          die gefundenen Seiten ab. Bei Fragen zu aktuellen Ereignissen sind das
+          die Schlagzeilen von Google News. Der Suchdienst erhält nur die
+          Suchbegriffe, nicht deine IP-Adresse oder deine Kennung.
         </li>
         <li>
           <strong>Links:</strong> Links in deiner Nachricht werden abgerufen, um
@@ -399,9 +403,11 @@ export default function PrivacyPage() {
           Kundenportal.
         </li>
         <li>
-          <strong>E-Mail-Versanddienstleister:</strong> Versand von
+          <strong>Resend, Inc.</strong> (USA): Versand von
           Kündigungsbestätigungen und anderen Mitteilungen, die wir dir senden
-          müssen. Auftragsverarbeitung nach Art. 28 DSGVO.
+          müssen (E-Mail-Adresse und Inhalt der Mitteilung).
+          Auftragsverarbeitung nach Art. 28 DSGVO. E-Mails zur Anmeldung und zum
+          Zurücksetzen des Passworts versendet Neon Auth.
         </li>
         <li>
           <strong>Modellanbieter:</strong> Inhalte, die zur Beantwortung oder
@@ -419,9 +425,9 @@ export default function PrivacyPage() {
         </li>
         <li>
           <strong>Suchdienste:</strong> bei eingeschalteter Websuche Wikimedia
-          Foundation, Inc. (Wikipedia) und, soweit eingerichtet, Tavily, Exa
-          oder Firecrawl; bei Links in deiner Nachricht der Betreiber der
-          jeweiligen Seite.
+          Foundation, Inc. (Wikipedia), Google LLC (Google News, nur die
+          Suchbegriffe) und, soweit eingerichtet, Tavily, Exa oder Firecrawl;
+          bei Links in deiner Nachricht der Betreiber der jeweiligen Seite.
         </li>
         <li>
           <strong>Von dir verbundene Dienste</strong> (Vercel, Neon, Supabase,
@@ -566,7 +572,7 @@ export default function PrivacyPage() {
       </p>
 
       <h2>26. Stand und Änderungen</h2>
-      <p>Stand: 3. November 2026.</p>
+      <p>Stand: 17. November 2026.</p>
       <p>
         Ändert sich die Verarbeitung, passen wir diese Erklärung an. Bei
         wesentlichen Änderungen bitten wir dich in der Anwendung, die neue
