@@ -352,10 +352,12 @@ export function BotsHub(props: { bots: HubBot[]; groups: HubGroup[] }) {
                 <Link
                   href={`/app/agents/${bot.id}` as Route}
                   className="bot-card-main"
-                  aria-label={`Mit ${bot.name} chatten`}
                 >
                   <BotOrb seed={bot.id} size={56} />
+                  {/* The visible name leads the accessible name (WCAG 2.5.3),
+                      so "Ada" spoken by voice control hits this link. */}
                   <span className="bot-card-name">{bot.name}</span>
+                  <span className="sr-only">: Chat öffnen, </span>
                   <span className="bot-card-role">
                     {bot.role ?? "Eigene Rolle"}
                   </span>

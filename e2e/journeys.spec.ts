@@ -518,7 +518,7 @@ test("bots: the team shows each bot's role, never its model, and opens its room"
   await expect(page.getByText("Software Engineer")).toBeVisible();
   await expect(page.getByText("glm-5.3-flash")).toHaveCount(0);
   await expect(
-    page.getByRole("link", { name: "Mit Ada chatten" }),
+    page.getByRole("link", { name: /^Ada: Chat öffnen/ }),
   ).toHaveAttribute("href", "/app/agents/11111111-1111-4111-8111-111111111111");
   // A group chat stays and is listed with its last message.
   const group = page.getByRole("link", { name: /Launch-Team/ });
