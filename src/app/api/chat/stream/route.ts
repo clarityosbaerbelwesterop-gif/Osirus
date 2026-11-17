@@ -9,6 +9,7 @@ import {
   toolMaterial,
 } from "@/lib/agents/bot-tools";
 import { planBotToolCall, publicToolRequest } from "@/lib/agents/bot-tool-call";
+import { isSmallTalk } from "@/lib/runtime/small-talk";
 import { repositoryMaterial } from "@/lib/gateway/repo-material";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
 import { answerCacheKey, cachedAnswer, storeAnswer } from "@/lib/gateway/cache";
@@ -269,6 +270,31 @@ export async function POST(request: Request) {
   const context = reuseTurn
     ? turns.slice(0, turns.lastIndexOf(lastUser!))
     : turns;
+  // MCP for bots: planning a tool call is a model call of its own. It runs
+  // while the material is gathered instead of after it, and not at all for
+  // small talk, so it no longer delays every bot answer.
+  const planPending: Promise<{
+    catalog: Awaited<ReturnType<typeof botToolCatalog>>;
+    planned: Awaited<ReturnType<typeof planBotToolCall>>;
+  } | null> =
+    bot && !body.regenerate && !body.toolMessageId && !isSmallTalk(body.message)
+      ? botToolCatalog(identity)
+          .then(async (catalog) => ({
+            catalog,
+            planned: catalog.length
+              ? await planBotToolCall({
+                  identity,
+                  sessionId,
+                  models: candidates,
+                  botName: bot.name,
+                  message: body.message,
+                  catalog,
+                  signal: request.signal,
+                })
+              : null,
+          }))
+          .catch(() => null)
+      : Promise.resolve(null);
   const [web, files, recalled, repositories] = await Promise.all([
     webPending,
     fileMaterial(identity, {
@@ -308,18 +334,10 @@ export async function POST(request: Request) {
           () => null,
         )
       : null;
-  if (bot && !body.regenerate && !body.toolMessageId) {
-    const catalog = await botToolCatalog(identity);
+  const plan = await planPending;
+  if (bot && plan) {
+    const { catalog, planned } = plan;
     if (catalog.length) {
-      const planned = await planBotToolCall({
-        identity,
-        sessionId,
-        models: candidates,
-        botName: bot.name,
-        message: body.message,
-        catalog,
-        signal: request.signal,
-      });
       if (planned) {
         const tool = catalog.find((entry) => entry.id === planned.toolId)!;
         const toolRequest = newToolRequest(planned, tool);
