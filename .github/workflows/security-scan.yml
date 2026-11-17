@@ -62,9 +62,22 @@ jobs:
           risk = {"3": "High", "2": "Medium", "1": "Low", "0": "Info"}
           for alert in sorted(alerts, key=lambda a: -int(a.get("riskcode", 0))):
               print(f"{risk.get(alert.get('riskcode'), '?'):6} {alert.get('pluginid'):>6} {alert.get('name')} ({alert.get('count')})")
-          high = [a for a in alerts if a.get("riskcode") in ("3", "2")]
-          if high:
-              sys.exit(f"{len(high)} medium or high ZAP finding(s)")
+          import datetime
+          with open("security/zap-accepted.json") as handle:
+              accepted = {e["pluginId"]: e for e in json.load(handle)["accepted"]}
+          today = datetime.date.today().isoformat()
+          blocking = []
+          for alert in alerts:
+              if alert.get("riskcode") not in ("3", "2"):
+                  continue
+              entry = accepted.get(str(alert.get("pluginid")))
+              if not entry:
+                  blocking.append(f"{alert.get('pluginid')} {alert.get('name')}")
+              elif entry["expires"] < today:
+                  blocking.append(f"{alert.get('pluginid')} accepted until {entry['expires']}, expired")
+          if blocking:
+              sys.exit("Blocking ZAP findings: " + "; ".join(blocking))
+          print("No unaccepted medium or high findings.")
           PY
       - uses: actions/upload-artifact@v4
         if: always()

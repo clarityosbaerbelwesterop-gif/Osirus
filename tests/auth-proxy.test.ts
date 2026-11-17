@@ -100,3 +100,14 @@ describe("content security policy per page (audit 2026-11-17)", () => {
     );
   });
 });
+
+describe("style policy in production", () => {
+  it("needs the nonce for <style> elements and allows only style attributes inline", async () => {
+    const { pageContentSecurityPolicy } = await import("@/lib/security/csp");
+    const policy = pageContentSecurityPolicy("abc123", false);
+    expect(policy).toContain("style-src-elem 'self' 'nonce-abc123'");
+    expect(policy).toContain("style-src-attr 'unsafe-inline'");
+    expect(policy).toContain("script-src 'nonce-abc123' 'strict-dynamic'");
+    expect(policy).toContain("upgrade-insecure-requests");
+  });
+});

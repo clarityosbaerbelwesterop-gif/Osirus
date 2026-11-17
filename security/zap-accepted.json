@@ -1,0 +1,23 @@
+{
+  "$comment": "OWASP ZAP baseline findings (medium or high) accepted on purpose, each with the reason it is not a vulnerability here and an expiry. Checked by .github/workflows/security-scan.yml; anything else, or an expired entry, fails the scan.",
+  "accepted": [
+    {
+      "pluginId": "10202",
+      "name": "Absence of Anti-CSRF Tokens",
+      "reason": "The flagged forms (sign-in, sign-up, password reset) are Next.js Server Actions, which reject any request whose Origin does not match the host; session cookies are SameSite=Lax and every JSON write checks the origin (guardWrite). ZAP looks for a hidden token field only.",
+      "expires": "2027-05-31"
+    },
+    {
+      "pluginId": "10098",
+      "name": "Cross-Domain Misconfiguration",
+      "reason": "Access-Control-Allow-Origin: * appears only on public static files served by Vercel (stylesheets, icon, robots.txt, sitemap.xml), never on pages or API routes; those files carry no user data and the header never allows credentials.",
+      "expires": "2027-05-31"
+    },
+    {
+      "pluginId": "10055",
+      "name": "CSP: style-src unsafe-inline",
+      "reason": "style-src keeps 'unsafe-inline' only as the fallback for browsers without CSP level 3. Current browsers enforce style-src-elem with the per-request nonce (an injected <style> is refused, verified in Chromium) and allow inline styles only as attributes (style-src-attr), which React writes and which cannot run code.",
+      "expires": "2027-05-31"
+    }
+  ]
+}
