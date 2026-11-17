@@ -11,7 +11,12 @@ import { expect, test, type Page } from "@playwright/test";
 
 const base = process.env.PROD_BASE_URL ?? "https://osirus-ai.com";
 const runId = process.env.GITHUB_RUN_ID ?? `${Date.now()}`;
-const email = `journey-${runId}@example.com`;
+// A re-run keeps the run id; the attempt keeps its account apart from the
+// one an earlier attempt may have left behind.
+const attempt = process.env.GITHUB_RUN_ATTEMPT ?? "1";
+const email = `journey-${runId}-${attempt}@example.com`;
+let signedUp = false;
+let accountDeleted = false;
 
 /** Live (not deleted) Stripe customers with this e-mail; null without a key. */
 async function stripeCustomers(address: string): Promise<number | null> {
@@ -33,6 +38,23 @@ const redact = (url: string) => {
 };
 
 test.describe.configure({ mode: "serial" });
+
+// A journey that fails midway (an outside MCP server down, a timeout) must
+// not leave its account, data and Stripe customer behind in production.
+test.afterEach(async ({ page }) => {
+  if (!signedUp || accountDeleted) return;
+  const response = await page.request
+    .fetch("/api/account", {
+      method: "DELETE",
+      headers: { origin: base, "content-type": "application/json" },
+      data: JSON.stringify({ confirm: "LÖSCHEN" }),
+    })
+    .catch(() => null);
+  accountDeleted = response?.status() === 200;
+  console.log(
+    `Cleanup after failure: account delete ${response ? `HTTP ${response.status()}` : "unreachable"}`,
+  );
+});
 
 test("GitHub sign-in reaches GitHub (no GitHub account used)", async ({
   page,
@@ -99,6 +121,7 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     await page.locator("#accept-privacy").check();
     await page.getByRole("button", { name: "Konto erstellen" }).click();
     await page.waitForURL(/\/app(\/|$|\?)/, { timeout: 60_000 });
+    signedUp = true;
     console.log(`Signed up as ${email} and landed in /app`);
   });
 
@@ -509,6 +532,7 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     });
     console.log(`Account delete: HTTP ${deleted.status()}`);
     expect(deleted.status()).toBe(200);
+    accountDeleted = true;
     const after = await stripeCustomers(email);
     if (before !== null && after !== null) {
       console.log(
