@@ -437,6 +437,25 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     });
     expect(created.status()).toBe(201);
     const bot = ((await created.json()) as { agent: { id: string } }).agent;
+
+    // Speed with tools connected, for messages that need none: every bot
+    // message used to wait for a tool-planning model call first.
+    const timed = async (text: string) => {
+      const started = Date.now();
+      const frames = await streamFrames({ message: text, botId: bot.id });
+      expect(frames.at(-1)?.type).toBe("done");
+      const tool = frames.some((frame) => frame.type === "tool_request");
+      return `${((Date.now() - started) / 1000).toFixed(1)}${tool ? "(tool)" : ""}`;
+    };
+    const smallTalk = [await timed("Danke dir!"), await timed("Hallo!")];
+    const plain = [
+      await timed("In einem Satz: Was ist Photosynthese?"),
+      await timed("Wie viele Tage hat ein Schaltjahr? Nur die Zahl."),
+    ];
+    console.log(
+      `Bot with tools, no tool needed: small talk ${smallTalk.join(" / ")} s; question ${plain.join(" / ")} s`,
+    );
+
     const message =
       "Nutze DeepWiki und frag: Wofür ist das Repository sindresorhus/ky da? Ein Satz.";
     const planned = await streamFrames({ message, botId: bot.id });
