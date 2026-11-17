@@ -8,7 +8,11 @@ import {
   newToolRequest,
   toolMaterial,
 } from "@/lib/agents/bot-tools";
-import { planBotToolCall, publicToolRequest } from "@/lib/agents/bot-tool-call";
+import {
+  planBotToolCall,
+  publicToolRequest,
+  toolPlanWorthwhile,
+} from "@/lib/agents/bot-tool-call";
 import { isSmallTalk } from "@/lib/runtime/small-talk";
 import { repositoryMaterial } from "@/lib/gateway/repo-material";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
@@ -281,17 +285,18 @@ export async function POST(request: Request) {
       ? botToolCatalog(identity)
           .then(async (catalog) => ({
             catalog,
-            planned: catalog.length
-              ? await planBotToolCall({
-                  identity,
-                  sessionId,
-                  models: candidates,
-                  botName: bot.name,
-                  message: body.message,
-                  catalog,
-                  signal: request.signal,
-                })
-              : null,
+            planned:
+              catalog.length && toolPlanWorthwhile(body.message, catalog)
+                ? await planBotToolCall({
+                    identity,
+                    sessionId,
+                    models: candidates,
+                    botName: bot.name,
+                    message: body.message,
+                    catalog,
+                    signal: request.signal,
+                  })
+                : null,
           }))
           .catch(() => null)
       : Promise.resolve(null);
