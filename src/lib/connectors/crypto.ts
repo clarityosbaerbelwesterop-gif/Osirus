@@ -35,6 +35,7 @@ export type SecretPurpose =
   | "connector:neon"
   | "connector:supabase"
   | "mcp"
+  | "mcp-url"
   | "webhook";
 
 export type SecretContext = { purpose: SecretPurpose; workspaceId: string };

@@ -188,6 +188,7 @@ const WITHHELD = [
   // which grants read access to the chat: neither belongs in a file that
   // may travel further.
   "secret_sealed",
+  "url_sealed",
   "token",
   "embedding",
   "network_hash",

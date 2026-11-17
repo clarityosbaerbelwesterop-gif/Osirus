@@ -22,6 +22,7 @@ const { env } = await import("../src/lib/env");
 const { decryptSecret, needsReseal } =
   await import("../src/lib/connectors/crypto");
 const { resealLegacySecrets } = await import("../src/lib/connectors/reseal");
+const { addMcpServer } = await import("../src/lib/connectors/mcp-store");
 
 const KEY = "r".repeat(48);
 let db: TestDatabase;
@@ -105,5 +106,56 @@ describe("re-sealing legacy secrets", () => {
       `select credential_reference from osirus.mcp_servers where name = 'Kaputt'`,
     );
     expect(rows[0]!.credential_reference).toBe("v1.AAAA.BBBB.CCCC");
+  });
+
+  it("seals an MCP address that carries a key and keeps the masked one", async () => {
+    const tenant = await db.seedTenant("mcpurl");
+    const full = "https://mcp.example.test/sse?api_key=sk-live-abc123";
+    const [row] = await db.raw<{ id: string }>(
+      `insert into osirus.mcp_servers
+         (organization_id, workspace_id, name, url, created_by)
+       values ($1, $2, 'Mit Schlüssel', $3, $4) returning id`,
+      [tenant.organizationId, tenant.workspaceId, full, tenant.userId],
+    );
+    const result = await resealLegacySecrets();
+    expect(result.mcpUrlsPlain!.resealed).toBeGreaterThanOrEqual(1);
+    const [after] = await db.raw<{ url: string; url_sealed: string }>(
+      `select url, url_sealed from osirus.mcp_servers where id = $1`,
+      [row!.id],
+    );
+    expect(after!.url).toBe("https://mcp.example.test/sse?api_key=***");
+    expect(after!.url_sealed).toMatch(/^v2\./);
+    expect(
+      decryptSecret(after!.url_sealed, {
+        purpose: "mcp-url",
+        workspaceId: tenant.workspaceId,
+      }),
+    ).toBe(full);
+    const stored = await db.raw<{ dump: string }>(
+      `select string_agg(to_jsonb(m)::text, ' ') as dump from osirus.mcp_servers m`,
+    );
+    expect(stored[0]!.dump).not.toContain("sk-live-abc123");
+  });
+
+  it("never stores a new server's key in plain text", async () => {
+    const tenant = await db.seedTenant("mcpadd");
+    const id = await addMcpServer(tenant as never, {
+      name: "Neu",
+      url: "https://mcp.example.test/a1B2c3D4e5F6g7H8i9J0kLmN/sse?token=xyz987abc",
+    });
+    const [row] = await db.raw<{ url: string; url_sealed: string }>(
+      `select url, url_sealed from osirus.mcp_servers where id = $1`,
+      [id],
+    );
+    // (user:password@ is refused before this by checkOutboundUrl.)
+    expect(row!.url).toBe("https://mcp.example.test/***/sse?token=***");
+    expect(
+      decryptSecret(row!.url_sealed, {
+        purpose: "mcp-url",
+        workspaceId: tenant.workspaceId,
+      }),
+    ).toBe(
+      "https://mcp.example.test/a1B2c3D4e5F6g7H8i9J0kLmN/sse?token=xyz987abc",
+    );
   });
 });

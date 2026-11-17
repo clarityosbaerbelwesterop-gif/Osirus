@@ -1,5 +1,6 @@
 import "server-only";
 import { querySystem } from "../db/client";
+import { displayUrl } from "./mcp-store";
 import {
   connectorKeyConfigured,
   decryptSecret,
@@ -42,6 +43,12 @@ const SOURCES: Source[] = [
     purpose: () => "mcp",
   },
   {
+    name: "mcpUrls",
+    table: "mcp_servers",
+    column: "url_sealed",
+    purpose: () => "mcp-url",
+  },
+  {
     name: "webhooks",
     table: "webhook_endpoints",
     column: "secret_sealed",
@@ -49,9 +56,48 @@ const SOURCES: Source[] = [
   },
 ];
 
+/**
+ * MCP addresses stored before migration 032 with a key in plain text: the
+ * full address is sealed and the column keeps the masked one.
+ */
+async function sealPlainMcpUrls() {
+  let sealedCount = 0;
+  const rows = await querySystem<{
+    id: string;
+    workspace_id: string;
+    url: string;
+  }>(
+    `select id, workspace_id, url from osirus.mcp_servers
+      where url_sealed is null and url ~ '[?@]|/[A-Za-z0-9_.~-]{20,}'
+      limit ${BATCH}`,
+  ).catch(() => []);
+  for (const row of rows) {
+    const shown = displayUrl(row.url);
+    if (shown === row.url) continue;
+    const updated = await querySystem<{ id: string }>(
+      `update osirus.mcp_servers
+          set url = $2, url_sealed = $3
+        where id = $1::uuid and url = $4 and url_sealed is null
+        returning id`,
+      [
+        row.id,
+        shown,
+        encryptSecret(row.url, {
+          purpose: "mcp-url",
+          workspaceId: row.workspace_id,
+        }),
+        row.url,
+      ],
+    ).catch(() => []);
+    sealedCount += updated.length;
+  }
+  return sealedCount;
+}
+
 export async function resealLegacySecrets() {
   const result: Record<string, { resealed: number; unreadable: number }> = {};
   if (!connectorKeyConfigured()) return result;
+  result.mcpUrlsPlain = { resealed: await sealPlainMcpUrls(), unreadable: 0 };
   for (const source of SOURCES) {
     const counts = { resealed: 0, unreadable: 0 };
     result[source.name] = counts;
