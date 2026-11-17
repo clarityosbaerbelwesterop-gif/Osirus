@@ -134,8 +134,11 @@ async function tick(request: Request) {
 
   // Runs nothing else will close: a plan that died midway, or a run whose
   // stages all settled while its worker went away.
-  const { recoverStuckRuns } = await import("@/lib/runtime/recovery");
+  const { recoverStuckRuns, closeAbandonedWaits } =
+    await import("@/lib/runtime/recovery");
   const recovered = await recoverStuckRuns(10).catch(() => []);
+  // Runs waiting on an approval that expired a day ago, or paused for a week.
+  const abandoned = await closeAbandonedWaits(10).catch(() => []);
 
   const workerId = `scheduler:${randomUUID()}`;
   const deadlineAt = Date.now() + TICK_BUDGET_MS;
@@ -282,6 +285,7 @@ async function tick(request: Request) {
       failed,
       automationsStarted: automationsStarted.length,
       recovered: recovered.length,
+      abandonedClosed: abandoned.length,
       foundry: foundry
         ? {
             ran: foundry.ran,

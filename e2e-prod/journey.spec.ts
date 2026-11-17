@@ -9,7 +9,7 @@ import { expect, test, type Page } from "@playwright/test";
 // never logged, cookie values and query strings are never logged, and the
 // answer text is not stored -- only that it exists.
 
-const base = process.env.PROD_BASE_URL ?? "https://osirus-ai.vercel.app";
+const base = process.env.PROD_BASE_URL ?? "https://osirus-ai.com";
 const runId = process.env.GITHUB_RUN_ID ?? `${Date.now()}`;
 const email = `journey-${runId}@example.com`;
 const password = randomBytes(24).toString("base64url");
@@ -223,6 +223,43 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     );
     expect(frames.at(-1)?.type).toBe("done");
     expect(sources?.length ?? 0).toBeGreaterThan(0);
+  });
+
+  await test.step("a code block from an answer runs in the sandbox", async () => {
+    const started = Date.now();
+    const response = await page.request.post("/api/chat/run", {
+      headers: { origin: base, "content-type": "application/json" },
+      data: { language: "python", code: "print(sum(range(1, 101)))" },
+    });
+    const body = (await response.json()) as {
+      ok?: boolean;
+      exitCode?: number | null;
+      stdout?: string;
+    };
+    console.log(
+      `Sandbox run in ${Math.round((Date.now() - started) / 1000)} s: exit ${body.exitCode}`,
+    );
+    expect(response.status()).toBe(200);
+    expect(body.exitCode).toBe(0);
+    expect(body.stdout?.trim()).toBe("5050");
+  });
+
+  await test.step("Code offers a short list of recommended models", async () => {
+    const response = await page.request.get("/api/models");
+    expect(response.status()).toBe(200);
+    const body = (await response.json()) as {
+      models: Array<{ id: string; name: string }>;
+      featuredIds?: string[];
+      defaultId: string | null;
+    };
+    const ids = new Set(body.models.map((model) => model.id));
+    console.log(
+      `Models: ${body.models.length} listed, ${body.featuredIds?.length ?? 0} recommended`,
+    );
+    expect(body.featuredIds?.length ?? 0).toBeGreaterThan(0);
+    expect(body.featuredIds!.length).toBeLessThanOrEqual(10);
+    expect(body.featuredIds!.every((id) => ids.has(id))).toBe(true);
+    if (body.defaultId) expect(ids.has(body.defaultId)).toBe(true);
   });
 
   await test.step("a chat is shared read-only and the link can be ended", async () => {

@@ -29,6 +29,7 @@ import {
   type InteractionPreference,
 } from "@/lib/lab/choices";
 import { DEFAULT_PRODUCT_MODEL_ID } from "@/config/recommendations";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/attachments/limits";
 import { productModelOrDefault } from "@/lib/models/allowlist";
 import { isSessionId, shouldApplyRunSnapshot } from "@/lib/ui/snapshot-gate";
 import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
@@ -460,6 +461,11 @@ export function ChatHub(props: {
 
   const attachFile = useCallback(
     async (file: File) => {
+      // Checked before sending: a larger body never reaches the server.
+      if (file.size > MAX_UPLOAD_BYTES) {
+        setError(`Die Datei ist größer als ${MAX_UPLOAD_LABEL}.`);
+        return;
+      }
       setUploading(true);
       setError(null);
       try {
@@ -476,8 +482,8 @@ export function ChatHub(props: {
         };
         if (!response.ok || !body.attachment) {
           setError(
-            body.error === "too_large"
-              ? "Die Datei ist größer als 10 MB."
+            body.error === "too_large" || response.status === 413
+              ? `Die Datei ist größer als ${MAX_UPLOAD_LABEL}.`
               : body.error === "limit_reached"
                 ? "Das heutige Anhang-Limit für diesen Arbeitsbereich ist erreicht."
                 : body.error === "unsupported_type"
@@ -701,16 +707,21 @@ export function ChatHub(props: {
     async (next: SessionSummary) => {
       if (running || next.id === sessionId) return;
       advanceView();
+      // The newest choice wins: an answer for a thread the person has
+      // already left (another thread, a new task) is dropped.
+      const view = viewGeneration.current;
       setError(null);
       setFailedObjective(null);
       const response = await fetch(`/api/sessions/${next.id}`, {
         cache: "no-store",
-      });
-      if (!response.ok) {
+      }).catch(() => null);
+      if (view !== viewGeneration.current) return;
+      if (!response?.ok) {
         setError("Diese Unterhaltung konnte nicht geladen werden.");
         return;
       }
-      const state = (await response.json()) as SessionState;
+      const state = (await response.json().catch(() => ({}))) as SessionState;
+      if (view !== viewGeneration.current) return;
       if (!isSessionId(state.sessionId)) {
         setError("Diese Unterhaltung konnte nicht geladen werden.");
         return;

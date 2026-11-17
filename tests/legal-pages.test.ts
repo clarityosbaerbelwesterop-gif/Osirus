@@ -134,7 +134,9 @@ describe("legal pages", () => {
     const html = render(PrivacyPage);
     expect(html).toContain("Kündigungsseite");
     expect(html).toContain("§ 312k BGB");
-    expect(html).toContain("E-Mail-Versanddienstleister");
+    // The e-mail processor is named, not described (audit 2026-11-15).
+    expect(html).toContain("Resend, Inc.");
+    expect(html).toContain("Google News");
     expect(html).toContain("§§ 195, 199 BGB");
   });
 });

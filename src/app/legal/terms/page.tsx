@@ -67,7 +67,7 @@ export default function TermsPage() {
           nach Freigabe;
         </li>
         <li>
-          <strong>Automationen, Inbox und Verbindungen</strong> zu GitHub,
+          <strong>Automationen, Posteingang und Verbindungen</strong> zu GitHub,
           Vercel, Neon, Supabase und MCP-Servern.
         </li>
       </ul>

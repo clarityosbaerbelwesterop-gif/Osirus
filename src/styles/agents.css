@@ -209,6 +209,17 @@
   color: var(--color-text-subtle);
 }
 
+.ac-limit {
+  color: var(--color-text-subtle);
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.ac-limit-over {
+  color: var(--color-danger);
+}
+
 .ac-composer-bar {
   display: flex;
   align-items: center;

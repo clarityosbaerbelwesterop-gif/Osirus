@@ -44,7 +44,9 @@ jobs:
         env:
           # Public production origin. vars.NEXT_PUBLIC_SITE_URL overrides it.
           # osirus.vercel.app is a different product and must not be used.
-          PROD_BASE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}
+          # The domain people use (osirus-ai.com since 2026-11-15); the
+          # vercel.app address keeps serving API and webhooks in the background.
+          PROD_BASE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.com' }}
           JOURNEY_CHECKOUT: ${{ github.event_name == 'workflow_dispatch' && inputs.checkout && 'true' || 'false' }}
         run: npx playwright test --config playwright.prod.config.ts
       - uses: actions/upload-artifact@v4

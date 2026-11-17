@@ -127,8 +127,9 @@ export default async function HomePage() {
               <p>
                 Schreib einfach los. Für Kurzes nimmt Osirus ein schnelles
                 Modell, für Schweres ein Top-Modell; PDFs, Tabellen und Code
-                liest es mit, und Antworten aus dem Web tragen nummerierte
-                Quellen.
+                liest es mit, Antworten aus dem Web tragen nummerierte Quellen,
+                und Python- oder JavaScript-Code aus einer Antwort läuft auf
+                Knopfdruck in einer abgeschotteten Sandbox.
               </p>
             </li>
             <li id="bots">
