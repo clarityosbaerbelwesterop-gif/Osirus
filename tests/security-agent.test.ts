@@ -1,3 +1,4 @@
+import { createCipheriv, createHash, randomBytes } from "node:crypto";
 import { afterEach, describe, expect, it } from "vitest";
 import { z } from "zod";
 import { runAgentLoop, type Decider } from "../src/lib/agent/loop";
@@ -5,6 +6,7 @@ import {
   connectorKeyConfigured,
   decryptSecret,
   encryptSecret,
+  needsReseal,
 } from "../src/lib/connectors/crypto";
 import { env } from "../src/lib/env";
 import { WorkspaceSession } from "../src/lib/coding/session";
@@ -35,30 +37,83 @@ describe("connector credentials at rest", () => {
   afterEach(() => {
     if (original === undefined) delete env.OSIRUS_CONNECTOR_KEY;
     else env.OSIRUS_CONNECTOR_KEY = original;
+    delete env.OSIRUS_CONNECTOR_KEY_PREVIOUS;
   });
+
+  const here = {
+    purpose: "connector:github" as const,
+    workspaceId: "11111111-1111-4111-8111-111111111111",
+  };
 
   it("encrypts, decrypts, and detects tampering", () => {
     env.OSIRUS_CONNECTOR_KEY = "k".repeat(48);
     const token = "github_pat_" + "x".repeat(40);
-    const sealed = encryptSecret(token);
+    const sealed = encryptSecret(token, here);
     expect(sealed).not.toContain(token);
-    expect(sealed.startsWith("v1.")).toBe(true);
-    expect(decryptSecret(sealed)).toBe(token);
+    expect(sealed.startsWith("v2.")).toBe(true);
+    expect(decryptSecret(sealed, here)).toBe(token);
     // Two encryptions of the same token differ (random IV).
-    expect(encryptSecret(token)).not.toBe(sealed);
+    expect(encryptSecret(token, here)).not.toBe(sealed);
     const parts = sealed.split(".");
-    parts[3] = parts[3]!.slice(0, -2) + (parts[3]!.endsWith("A") ? "BB" : "AA");
-    expect(() => decryptSecret(parts.join("."))).toThrow();
+    parts[4] = parts[4]!.slice(0, -2) + (parts[4]!.endsWith("A") ? "BB" : "AA");
+    expect(() => decryptSecret(parts.join("."), here)).toThrow();
+  });
+
+  it("binds a sealed secret to its workspace and purpose", () => {
+    env.OSIRUS_CONNECTOR_KEY = "k".repeat(48);
+    const sealed = encryptSecret("ghp_" + "z".repeat(36), here);
+    expect(() =>
+      decryptSecret(sealed, {
+        ...here,
+        workspaceId: "22222222-2222-4222-8222-222222222222",
+      }),
+    ).toThrow();
+    expect(() => decryptSecret(sealed, { ...here, purpose: "mcp" })).toThrow();
   });
 
   it("refuses to work without a key, and with a different key", () => {
     env.OSIRUS_CONNECTOR_KEY = "a".repeat(48);
-    const sealed = encryptSecret("ghp_" + "y".repeat(36));
+    const sealed = encryptSecret("ghp_" + "y".repeat(36), here);
     env.OSIRUS_CONNECTOR_KEY = "b".repeat(48);
-    expect(() => decryptSecret(sealed)).toThrow();
+    expect(() => decryptSecret(sealed, here)).toThrow();
     delete env.OSIRUS_CONNECTOR_KEY;
     expect(connectorKeyConfigured()).toBe(false);
-    expect(() => encryptSecret("x")).toThrow("connector_key_not_configured");
+    expect(() => encryptSecret("x", here)).toThrow(
+      "connector_key_not_configured",
+    );
+  });
+
+  it("rotates keys: the previous key still opens, new seals use the new one", () => {
+    env.OSIRUS_CONNECTOR_KEY = "o".repeat(48);
+    const old = encryptSecret("ghp_" + "r".repeat(36), here);
+    env.OSIRUS_CONNECTOR_KEY = "n".repeat(48);
+    env.OSIRUS_CONNECTOR_KEY_PREVIOUS = "o".repeat(48);
+    expect(decryptSecret(old, here)).toBe("ghp_" + "r".repeat(36));
+    expect(needsReseal(old)).toBe(true);
+    const fresh = encryptSecret("ghp_" + "r".repeat(36), here);
+    expect(needsReseal(fresh)).toBe(false);
+    delete env.OSIRUS_CONNECTOR_KEY_PREVIOUS;
+    expect(() => decryptSecret(old, here)).toThrow("sealed_secret_unknown_key");
+  });
+
+  it("still opens v1 values sealed before the upgrade", () => {
+    env.OSIRUS_CONNECTOR_KEY = "k".repeat(48);
+    // A v1 value as the old code wrote it: SHA-256 of the key, no AAD.
+    const key = createHash("sha256").update("k".repeat(48), "utf8").digest();
+    const iv = randomBytes(12);
+    const cipher = createCipheriv("aes-256-gcm", key, iv);
+    const ciphertext = Buffer.concat([
+      cipher.update("ghp_legacy", "utf8"),
+      cipher.final(),
+    ]);
+    const v1 = [
+      "v1",
+      iv.toString("base64url"),
+      cipher.getAuthTag().toString("base64url"),
+      ciphertext.toString("base64url"),
+    ].join(".");
+    expect(decryptSecret(v1, here)).toBe("ghp_legacy");
+    expect(needsReseal(v1)).toBe(true);
   });
 });
 

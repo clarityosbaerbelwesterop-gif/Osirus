@@ -112,7 +112,10 @@ export async function connectGithub(
     throw new Error("connector_key_not_configured");
   if (!looksLikeGithubToken(input.token)) throw new Error("token_malformed");
   const verified = await verifyGithubToken(input.token);
-  const sealed = encryptSecret(input.token);
+  const sealed = encryptSecret(input.token, {
+    purpose: "connector:github",
+    workspaceId: identity.workspaceId,
+  });
   // One statement, so it is one transaction: the installation and its grant
   // land together or not at all. (Two statements used to leave an active
   // installation without a grant when the second one failed -- and it always
@@ -185,7 +188,10 @@ export async function githubCredential(identity: Identity, scope: GithubScope) {
   const row = await loadInstallation(identity);
   if (!row || row.status !== "active" || !row.credential_reference) return null;
   if (!(row.scopes ?? []).includes(scope)) return null;
-  return decryptSecret(row.credential_reference);
+  return decryptSecret(row.credential_reference, {
+    purpose: "connector:github",
+    workspaceId: identity.workspaceId,
+  });
 }
 
 /** owner/name from a github.com URL, or null. */

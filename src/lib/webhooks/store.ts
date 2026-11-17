@@ -83,7 +83,10 @@ export async function createEndpoint(
       identity.userId,
       input.name,
       input.source,
-      encryptSecret(secret),
+      encryptSecret(secret, {
+        purpose: "webhook",
+        workspaceId: identity.workspaceId,
+      }),
       input.events,
     ],
   );
@@ -118,7 +121,13 @@ export async function endpointForDelivery(id: string) {
     [id],
   );
   if (!row || !connectorKeyConfigured()) return null;
-  return { row, secret: decryptSecret(row.secret_sealed) };
+  return {
+    row,
+    secret: decryptSecret(row.secret_sealed, {
+      purpose: "webhook",
+      workspaceId: row.workspace_id,
+    }),
+  };
 }
 
 /** Record a delivery once; false when this delivery id was seen before. */

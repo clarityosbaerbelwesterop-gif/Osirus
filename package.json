@@ -12,7 +12,8 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "audit:gate": "node scripts/audit-gate.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

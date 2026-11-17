@@ -300,8 +300,13 @@ describe("GitHub repository connector (fine-grained PAT, separate from GitHub lo
         where workspace_id = $1 and connector_id = 'github'`,
       [alice.workspaceId],
     );
-    expect(row!.credential_reference).toMatch(/^v1\./);
-    expect(decryptSecret(row!.credential_reference)).toBe(token);
+    expect(row!.credential_reference).toMatch(/^v2\./);
+    expect(
+      decryptSecret(row!.credential_reference, {
+        purpose: "connector:github",
+        workspaceId: alice.workspaceId,
+      }),
+    ).toBe(token);
     expect(await everythingStored()).not.toContain(token);
 
     // RELOAD: a later request sees the connection, never the token.
@@ -513,8 +518,13 @@ describe.each(PLATFORMS)(
         where workspace_id = $1 and connector_id = $2`,
         [alice.workspaceId, platform.id],
       );
-      expect(row!.credential_reference).toMatch(/^v1\./);
-      expect(decryptSecret(row!.credential_reference)).toBe(token);
+      expect(row!.credential_reference).toMatch(/^v2\./);
+      expect(
+        decryptSecret(row!.credential_reference, {
+          purpose: `connector:${platform.id}` as "connector:vercel",
+          workspaceId: alice.workspaceId,
+        }),
+      ).toBe(token);
       expect(await everythingStored()).not.toContain(token);
 
       // RELOAD (and the whole Connections page payload carries no token)
@@ -664,7 +674,7 @@ describe("webhook endpoints", () => {
       `select secret_sealed from osirus.webhook_endpoints where id = $1`,
       [endpoint.id],
     );
-    expect(row!.secret_sealed).toMatch(/^v1\./);
+    expect(row!.secret_sealed).toMatch(/^v2\./);
     expect(await everythingStored()).not.toContain(secret);
 
     // RELOAD: listed without the secret; invisible to another tenant.

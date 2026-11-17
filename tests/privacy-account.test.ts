@@ -29,6 +29,7 @@ vi.mock("../src/lib/billing/store", () => ({
 }));
 
 const {
+  recentlySignedIn,
   deleteAccount,
   exportAccountData,
   exportStatement,
@@ -195,5 +196,48 @@ describe("a deleted sign-in", () => {
     expect(signInGone({ code: "23505" })).toBe(false);
     expect(signInGone(new Error("boom"))).toBe(false);
     expect(signInGone(null)).toBe(false);
+  });
+});
+
+describe("deleting needs a recent sign-in and removes the Stripe customer", () => {
+  it("accepts a session from the last 15 minutes only", () => {
+    const now = Date.parse("2026-11-17T12:00:00Z");
+    expect(recentlySignedIn("2026-11-17T11:50:00Z", now)).toBe(true);
+    expect(recentlySignedIn("2026-11-17T11:44:00Z", now)).toBe(false);
+    expect(recentlySignedIn(null, now)).toBe(false);
+    expect(recentlySignedIn("kein Datum", now)).toBe(false);
+    // A clock far in the future is not "recent".
+    expect(recentlySignedIn("2026-11-18T12:00:00Z", now)).toBe(false);
+  });
+
+  it("deletes the Stripe customer before the account, and stops if that fails", async () => {
+    calls.length = 0;
+    const order: string[] = [];
+    await deleteAccount(
+      identity,
+      { endSubscription: false },
+      {
+        liveSubscriptions: async () => [],
+        deleteCustomer: async () => void order.push("stripe"),
+      },
+    );
+    expect(order).toEqual(["stripe"]);
+    expect(calls).toHaveLength(2);
+
+    calls.length = 0;
+    await expect(
+      deleteAccount(
+        identity,
+        { endSubscription: false },
+        {
+          liveSubscriptions: async () => [],
+          deleteCustomer: async () => {
+            throw new Error("stripe down");
+          },
+        },
+      ),
+    ).rejects.toThrow("stripe down");
+    // Nothing was deleted in the database.
+    expect(calls).toHaveLength(0);
   });
 });

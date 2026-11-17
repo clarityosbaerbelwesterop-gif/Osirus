@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { NextRequest } from "next/server";
+import { NextRequest } from "next/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
 // Regression coverage for AUTH-1 (proxy fails closed) and AUTH-2 (the
@@ -25,7 +25,7 @@ vi.mock("@/lib/auth/server", () => ({
 }));
 
 const requestTo = (path: string, headers: Record<string, string> = {}) =>
-  ({ headers: new Headers(headers), url: path }) as unknown as NextRequest;
+  new NextRequest(new URL(path, "https://osirus-ai.com"), { headers });
 
 describe("proxy request boundary", () => {
   afterEach(() => {
@@ -51,7 +51,11 @@ describe("proxy request boundary", () => {
     expect(state.middleware).toHaveBeenCalledWith({
       loginUrl: "/auth/sign-in",
     });
-    expect(state.handler).toHaveBeenCalledWith(request);
+    // The middleware gets the request with this page's script nonce added.
+    expect(state.handler).toHaveBeenCalledTimes(1);
+    const handed = (state.handler.mock.calls[0] as unknown[])[0] as NextRequest;
+    expect(handed.nextUrl.pathname).toBe(request.nextUrl.pathname);
+    expect(handed.headers.get("x-nonce")).toBeTruthy();
   });
 
   it("echoes an incoming X-Request-Id header", async () => {
@@ -77,14 +81,13 @@ describe("proxy request boundary", () => {
   it("rewrites Stripe webhook POSTs on /app to /api/billing/webhook without invoking auth", async () => {
     state.configured = false;
     const { default: proxy } = await import("@/proxy");
-    const req = {
+    const req = new NextRequest("https://osirus-ai.vercel.app/app", {
       method: "POST",
-      url: "https://osirus-ai.vercel.app/app",
-      headers: new Headers({
+      headers: {
         "stripe-signature": "t=1700000000,v1=deadbeef",
         "x-request-id": "stripe-req-1",
-      }),
-    } as unknown as NextRequest;
+      },
+    });
     const response = await proxy(req);
     expect(response.status).toBe(200);
     expect(response.headers.get("x-middleware-rewrite")).toBe(

@@ -5,6 +5,7 @@ import { guardWrite, json } from "@/lib/product/api";
 import {
   AccountDeletionBlocked,
   deleteAccount,
+  recentlySignedIn,
   LIVE_SUBSCRIPTION_STATUSES,
 } from "@/lib/privacy/account";
 import { customerIdFor } from "@/lib/billing/store";
@@ -31,6 +32,23 @@ export async function DELETE(request: Request) {
     maxBytes: 1_000,
   });
   if (!guard.ok) return guard.response;
+  // A stolen or forgotten session must not be enough to erase everything:
+  // deleting needs a sign-in from the last 15 minutes.
+  const { data: session } = await auth
+    .getSession()
+    .catch(() => ({ data: null }));
+  const createdAt = (
+    session as { session?: { createdAt?: Date | string } } | null
+  )?.session?.createdAt;
+  if (!recentlySignedIn(createdAt))
+    return json(
+      {
+        error: "reauth_required",
+        message:
+          "Melde dich zur Sicherheit neu an und lösche dein Konto danach innerhalb von 15 Minuten.",
+      },
+      403,
+    );
   try {
     await deleteAccount(
       guard.identity,
@@ -58,6 +76,20 @@ export async function DELETE(request: Request) {
               return data
                 .filter((row) => LIVE_SUBSCRIPTION_STATUSES.has(row.status))
                 .map((row) => row.id);
+            }
+          : undefined,
+        deleteCustomer: billingConfigured()
+          ? async () => {
+              const customer = await customerIdFor(guard.identity.userId);
+              if (!customer) return;
+              await stripe()
+                .customers.del(customer)
+                .catch((error: unknown) => {
+                  // Already gone at Stripe: nothing left to delete.
+                  if ((error as { code?: string })?.code === "resource_missing")
+                    return;
+                  throw error;
+                });
             }
           : undefined,
       },

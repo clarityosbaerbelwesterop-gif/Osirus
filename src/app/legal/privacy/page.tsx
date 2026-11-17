@@ -348,9 +348,10 @@ export default function PrivacyPage() {
         ist die angegebene Adresse nicht die deines Kontos, geht die Bestätigung
         zusätzlich an die Kontoadresse. Zur Abwehr von Missbrauch speichern wir
         außerdem einen gekürzten Hashwert deiner IP-Adresse, aus dem sich die
-        Adresse nicht zurückrechnen lässt. Rechtsgrundlage ist Art. 6 Abs. 1
-        lit. b und c DSGVO in Verbindung mit § 312k BGB, für den Hashwert Art. 6
-        Abs. 1 lit. f DSGVO (Schutz vor missbräuchlichen Kündigungen).
+        Adresse nicht zurückrechnen lässt; er wird nach 30 Tagen gelöscht.
+        Rechtsgrundlage ist Art. 6 Abs. 1 lit. b und c DSGVO in Verbindung mit §
+        312k BGB, für den Hashwert Art. 6 Abs. 1 lit. f DSGVO (Schutz vor
+        missbräuchlichen Kündigungen).
       </p>
 
       <h2>15. Kontingente und Nutzungsdaten</h2>
@@ -467,8 +468,11 @@ export default function PrivacyPage() {
           besteht. Einzelne Unterhaltungen kannst du archivieren. Unter
           Einstellungen → Datenschutz löschst du dein Konto selbst, sofort und
           endgültig: Anmeldung, Profil, Chats, Bots, Läufe, Gedächtnis, Dateien,
-          Verbindungen und Nutzungszähler werden dabei entfernt. Auf Anfrage
-          löschen wir auch einzelne Inhalte.
+          Verbindungen und Nutzungszähler werden dabei entfernt, ebenso dein
+          Kundendatensatz bei Stripe (Rechnungen bewahrt Stripe nach § 147 AO
+          auf). Zum Schutz vor fremdem Zugriff verlangt das Löschen eine
+          Anmeldung aus den letzten 15 Minuten. Auf Anfrage löschen wir auch
+          einzelne Inhalte.
         </li>
         <li>
           Nach einer Löschanfrage löschen oder anonymisieren wir die Daten
@@ -488,9 +492,20 @@ export default function PrivacyPage() {
         <li>
           Kündigungserklärungen und ihre Bestätigungen bewahren wir als Nachweis
           bis zum Ablauf der regelmäßigen Verjährungsfrist auf, also drei Jahre
-          ab dem Ende des Jahres, in dem der Vertrag endet (§§ 195, 199 BGB).
+          ab dem Ende des Jahres, in dem der Vertrag endet (§§ 195, 199 BGB),
+          und löschen sie danach automatisch.
         </li>
-        <li>Sandboxes für Code bestehen nur für die Dauer eines Auftrags.</li>
+        <li>
+          Zähler für Anfragebegrenzungen (Kennung oder gekürzter Hashwert und
+          Anzahl je Minute) löschen wir automatisch nach 24 Stunden.
+        </li>
+        <li>
+          Den Arbeitsstand einer Code-Aufgabe bewahren wir höchstens sieben Tage
+          auf, damit du eine pausierte Aufgabe fortsetzen kannst; danach wird er
+          automatisch gelöscht. Die Sandbox für „Ausführen“ im Chat endet mit
+          der Ausführung. Eine Aufgabe, deren Freigabe 24 Stunden lang
+          abgelaufen ist, oder die seit sieben Tagen pausiert, wird beendet.
+        </li>
         <li>
           Datensicherungen der Datenbank werden im regulären Zyklus des
           Anbieters überschrieben.

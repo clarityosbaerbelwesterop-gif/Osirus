@@ -139,6 +139,13 @@ async function tick(request: Request) {
   const recovered = await recoverStuckRuns(10).catch(() => []);
   // Runs waiting on an approval that expired a day ago, or paused for a week.
   const abandoned = await closeAbandonedWaits(10).catch(() => []);
+  // Storage limitation (Art. 5(1)(e) GDPR): counters, hashes and proofs
+  // whose period is over are deleted.
+  const { applyRetention } = await import("@/lib/privacy/retention");
+  const retention = await applyRetention().catch(() => ({}));
+  // Stored credentials sealed before crypto v2, or under a rotated key.
+  const { resealLegacySecrets } = await import("@/lib/connectors/reseal");
+  const resealed = await resealLegacySecrets().catch(() => ({}));
 
   const workerId = `scheduler:${randomUUID()}`;
   const deadlineAt = Date.now() + TICK_BUDGET_MS;
@@ -286,6 +293,8 @@ async function tick(request: Request) {
       automationsStarted: automationsStarted.length,
       recovered: recovered.length,
       abandonedClosed: abandoned.length,
+      retention,
+      resealed,
       foundry: foundry
         ? {
             ran: foundry.ran,

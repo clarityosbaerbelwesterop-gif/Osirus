@@ -2,6 +2,7 @@
 
 import { Download, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { signOut } from "@/app/app/actions";
 
 // Art. 15/20 and Art. 17 DSGVO as two buttons: take a copy, or delete.
 
@@ -12,6 +13,7 @@ export function PrivacyControls() {
     useState(false);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  const [needsReauth, setNeedsReauth] = useState(false);
 
   const remove = async () => {
     setBusy(true);
@@ -33,6 +35,7 @@ export function PrivacyControls() {
       }
       if (body?.error === "subscription_active")
         setNeedsSubscriptionConsent(true);
+      setNeedsReauth(body?.error === "reauth_required");
       setMessage(
         body?.message ??
           "Das Konto konnte nicht gelöscht werden. Bitte später erneut versuchen.",
@@ -110,6 +113,13 @@ export function PrivacyControls() {
           <p className="field-error" role="alert">
             {message}
           </p>
+        ) : null}
+        {needsReauth ? (
+          <form action={signOut}>
+            <button type="submit" className="btn btn-secondary btn-sm">
+              Abmelden und neu anmelden
+            </button>
+          </form>
         ) : null}
       </div>
     </div>

@@ -1,0 +1,47 @@
+{
+  "$comment": "Production advisories accepted on purpose. Each entry needs a reason and an expiry; an expired entry fails CI again, so the decision is revisited. Checked by scripts/audit-gate.mjs.",
+  "accepted": [
+    {
+      "id": "GHSA-965c-763c-88jm",
+      "package": "better-auth",
+      "reason": "OAuth state used as magic link: a server feature. better-auth runs as Neon's hosted auth service; Osirus only imports @neondatabase/auth/next (session cookies and proxy). The fix (>=1.7.7) is not in any @neondatabase/auth release yet (0.7.0-beta pins 1.7.6).",
+      "expires": "2027-01-31"
+    },
+    {
+      "id": "GHSA-r4xp-prcw-77qf",
+      "package": "better-auth",
+      "reason": "OAuth Proxy plugin, server side; not used by Osirus. Same upstream pin as above.",
+      "expires": "2027-01-31"
+    },
+    {
+      "id": "GHSA-q84f-53jg-9ppm",
+      "package": "better-auth",
+      "reason": "Device authorization plugin, server side; not used by Osirus.",
+      "expires": "2027-01-31"
+    },
+    {
+      "id": "GHSA-5gmw-xhrv-c9v3",
+      "package": "tinypool",
+      "reason": "Test runner pulled into the production tree only because better-auth declares vitest as a dependency; never imported by the app or bundled.",
+      "expires": "2027-01-31"
+    },
+    {
+      "id": "GHSA-85c8-ppgw-ccpr",
+      "package": "tinypool",
+      "reason": "As above (vitest via better-auth), never imported at runtime.",
+      "expires": "2027-01-31"
+    },
+    {
+      "id": "GHSA-587h-7wmj-h5pm",
+      "package": "vite",
+      "reason": "Dev server (launch-editor, Windows) pulled in by vitest via better-auth; no dev server runs in production.",
+      "expires": "2027-01-31"
+    },
+    {
+      "id": "GHSA-68fv-2mgg-jv7q",
+      "package": "source-map-js",
+      "reason": "Build-time source map parsing (postcss under Next); no untrusted source maps are parsed at runtime.",
+      "expires": "2027-01-31"
+    }
+  ]
+}

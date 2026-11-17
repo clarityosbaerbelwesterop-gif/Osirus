@@ -45,6 +45,8 @@ type ServerRow = {
   id: string;
   name: string;
   url: string;
+  /** The full address when it carries a secret; url is then masked. */
+  url_sealed?: string | null;
   credential_reference: string | null;
   enabled: boolean;
   status: McpServerView["status"];
@@ -203,19 +205,37 @@ export async function addMcpServer(
   identity: ProductIdentity,
   input: { name: string; url: string; token?: string | null },
 ) {
-  const url = checkOutboundUrl(input.url).toString();
-  const sealed = input.token ? encryptSecret(input.token) : null;
+  const full = checkOutboundUrl(input.url).toString();
+  // A key in the address (query, user info, key-like path segment) is
+  // sealed; the database keeps the masked address for display.
+  const shown = displayUrl(full);
+  const url = shown === full ? full : shown;
+  const urlSealed =
+    shown === full
+      ? null
+      : encryptSecret(full, {
+          purpose: "mcp-url",
+          workspaceId: identity.workspaceId,
+        });
+  const sealed = input.token
+    ? encryptSecret(input.token, {
+        purpose: "mcp",
+        workspaceId: identity.workspaceId,
+      })
+    : null;
   const rows = await queryAs<{ id: string }>(
     identity.userId,
     `insert into osirus.mcp_servers
-       (organization_id, workspace_id, name, url, credential_reference, created_by)
-     values ($1::uuid, $2::uuid, $3, $4, $5, $6::uuid)
+       (organization_id, workspace_id, name, url, url_sealed,
+        credential_reference, created_by)
+     values ($1::uuid, $2::uuid, $3, $4, $5, $6, $7::uuid)
      returning id`,
     [
       identity.organizationId,
       identity.workspaceId,
       input.name.trim(),
       url,
+      urlSealed,
       sealed,
       identity.userId,
     ],
@@ -279,9 +299,9 @@ export async function setMcpToolEnabled(
 async function loadServer(identity: ProductIdentity, id: string) {
   const rows = await queryAs<ServerRow>(
     identity.userId,
-    `select id, name, url, credential_reference, enabled, status, server_name,
-            server_version, last_checked_at, last_ok_at, last_latency_ms,
-            last_error
+    `select id, name, url, url_sealed, credential_reference, enabled, status,
+            server_name, server_version, last_checked_at, last_ok_at,
+            last_latency_ms, last_error
        from osirus.mcp_servers
       where id = $1::uuid and workspace_id = $2::uuid`,
     [id, identity.workspaceId],
@@ -289,12 +309,14 @@ async function loadServer(identity: ProductIdentity, id: string) {
   return rows[0] ?? null;
 }
 
-function toServer(row: ServerRow): McpServer {
+function toServer(row: ServerRow, workspaceId: string): McpServer {
   return {
     id: serverSlug(row),
-    url: row.url,
+    url: row.url_sealed
+      ? decryptSecret(row.url_sealed, { purpose: "mcp-url", workspaceId })
+      : row.url,
     token: row.credential_reference
-      ? decryptSecret(row.credential_reference)
+      ? decryptSecret(row.credential_reference, { purpose: "mcp", workspaceId })
       : undefined,
   };
 }
@@ -306,7 +328,7 @@ function toServer(row: ServerRow): McpServer {
 export async function checkMcpServer(identity: ProductIdentity, id: string) {
   const row = await loadServer(identity, id);
   if (!row) return null;
-  const server = toServer(row);
+  const server = toServer(row, identity.workspaceId);
   const started = Date.now();
   try {
     const info = await mcpInitialize(server);
@@ -491,7 +513,7 @@ export async function mcpToolsForWorkspace(
     }
   >(
     identity.userId,
-    `select s.id, s.name, s.url, s.credential_reference, s.enabled, s.status,
+    `select s.id, s.name, s.url, s.url_sealed, s.credential_reference, s.enabled, s.status,
             s.server_name, s.server_version, s.last_checked_at, s.last_ok_at,
             s.last_latency_ms, s.last_error,
             t.name as tool_name, t.description as tool_description,
@@ -507,7 +529,7 @@ export async function mcpToolsForWorkspace(
   return rows
     .filter((row) => Boolean(row.fingerprint))
     .map((row) => {
-      const server = toServer(row);
+      const server = toServer(row, identity.workspaceId);
       const tool = toolFromDiscovery({
         tool: {
           id: namespacedId(server.id, row.tool_name),

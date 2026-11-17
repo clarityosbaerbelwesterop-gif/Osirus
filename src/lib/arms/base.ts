@@ -1,4 +1,5 @@
 import { failureMetadata } from "../models/failure-report";
+import { redact } from "../security/redact";
 import { buildFirstBrain } from "../context/builder";
 import {
   refusalDelaySeconds,
@@ -82,7 +83,9 @@ export function usageOfFailure(error: unknown) {
 
 export function failureDetail(step: { outcome: string; detail?: string }) {
   return step.outcome === "error" && step.detail
-    ? { detail: step.detail.replace(/\s+/g, " ").slice(0, 200) }
+    ? // A tool's error can echo the key it was given (an MCP server, a
+      // fetched URL with ?api_key=): redacted before it is stored or shown.
+      { detail: redact(step.detail.replace(/\s+/g, " ")).slice(0, 200) }
     : {};
 }
 
