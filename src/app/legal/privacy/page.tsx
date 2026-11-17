@@ -404,11 +404,13 @@ export default function PrivacyPage() {
           Kundenportal.
         </li>
         <li>
-          <strong>Resend, Inc.</strong> (USA): Versand von
-          Kündigungsbestätigungen und anderen Mitteilungen, die wir dir senden
-          müssen (E-Mail-Adresse und Inhalt der Mitteilung).
-          Auftragsverarbeitung nach Art. 28 DSGVO. E-Mails zur Anmeldung und zum
-          Zurücksetzen des Passworts versendet Neon Auth.
+          <strong>Zoho Corporation B.V.</strong> (Utrecht, Niederlande; Zoho
+          Mail mit Rechenzentren in der EU): Versand von Kündigungsbestätigungen
+          und anderen Mitteilungen, die wir dir senden müssen (E-Mail-Adresse
+          und Inhalt der Mitteilung), verschlüsselt per TLS.
+          Auftragsverarbeitung nach Art. 28 DSGVO; Unterauftragsverarbeiter
+          außerhalb der EU nur mit Standardvertragsklauseln. E-Mails zur
+          Anmeldung und zum Zurücksetzen des Passworts versendet Neon Auth.
         </li>
         <li>
           <strong>Modellanbieter:</strong> Inhalte, die zur Beantwortung oder

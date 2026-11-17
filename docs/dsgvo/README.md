@@ -22,10 +22,14 @@ Frist), aktualisiert im selben Pull Request:
 ## Offene Punkte der Betreiberin (nicht im Code lösbar)
 
 1. **Auftragsverarbeitungsverträge** (Art. 28) annehmen bzw. abschließen und
-   ablegen: Vercel (DPA im Dashboard), Neon/Databricks, Stripe, Resend,
+   ablegen: Vercel (DPA im Dashboard), Neon/Databricks, Stripe, Zoho (E-Mail),
    OpenRouter und die übrigen Modellanbieter.
-2. **E-Mail-Versand aktivieren** (Resend): ohne ihn gibt es keine
-   Kündigungsbestätigung per E-Mail (§ 312k BGB).
+2. **E-Mail-Versand aktivieren** (Zoho Mail EU, für osirus-ai.com bereits
+   eingerichtet): in Zoho ein Postfach oder einen Alias `kuendigung@` und ein
+   anwendungsspezifisches Passwort anlegen (SMTP braucht einen bezahlten Tarif,
+   z. B. Mail Lite), dann in Vercel `SMTP_URL=smtps://kuendigung%40osirus-ai.com:<App-Passwort>@smtp.zoho.eu:465`
+   und `OSIRUS_MAIL_FROM=Osirus <kuendigung@osirus-ai.com>` setzen. Ohne das
+   gibt es keine Kündigungsbestätigung per E-Mail (§ 312k BGB).
 3. **Datenschutz-Folgenabschätzung freigeben** (`dsfa.md`): durchgeführt,
    Ergebnis kein hohes Restrisiko; Unterschrift der Verantwortlichen fehlt.
 4. **AVV-Vorlage für Geschäftskunden prüfen lassen** (`avv-vorlage.md`) und ab

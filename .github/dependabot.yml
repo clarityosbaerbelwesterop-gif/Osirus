@@ -16,7 +16,8 @@ updates:
       # Each Stripe minor pins a newer API version, which changes webhook
       # and object shapes. That upgrade is a deliberate change, not a bump.
       - dependency-name: stripe
-        update-types: ["version-update:semver-minor", "version-update:semver-major"]
+        update-types:
+          ["version-update:semver-minor", "version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]

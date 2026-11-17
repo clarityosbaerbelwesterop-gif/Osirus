@@ -49,7 +49,7 @@ Konfiguration, an der sie geprüft werden kann, und den Test, der sie hält.
 ## 5. Organisatorisch (Betreiberin)
 
 - Auftragsverarbeitungsverträge abschließen bzw. annehmen: Vercel, Neon/Databricks,
-  Stripe, Resend, Modellanbieter (siehe `docs/LEGAL_STATUS.md`).
+  Stripe, Zoho (E-Mail), Modellanbieter (siehe `docs/LEGAL_STATUS.md`).
 - Schlüsselrotation `OSIRUS_CONNECTOR_KEY` mindestens jährlich und sofort bei
   Verdacht (alter Schlüssel nach `OSIRUS_CONNECTOR_KEY_PREVIOUS`).
 - Datenpannen: Bewertung und Meldung an die LDI NRW binnen 72 Stunden

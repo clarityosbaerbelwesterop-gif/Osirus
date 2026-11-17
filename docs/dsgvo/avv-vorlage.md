@@ -92,12 +92,12 @@ in Fragen des Datenschutzes vor.
 
 ## Anlage 2: Unterauftragsverarbeiter (Stand 17. November 2026)
 
-| Unternehmen                                                                                                                | Leistung                                                                                | Ort / Garantie                                  |
-| -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------- |
-| Vercel Inc., San Francisco                                                                                                 | Hosting (Region Frankfurt), Sandbox für Code                                            | USA / EU-US DPF                                 |
-| Neon, LLC (Databricks, Inc.)                                                                                               | Datenbank und Anmeldung, Region eu-central-1                                            | EU-Rechenzentrum; Konzern USA / DPF             |
-| Resend, Inc.                                                                                                               | Versand von Pflichtmitteilungen                                                         | USA / DPF bzw. SCC                              |
-| OpenRouter, Inc.; NVIDIA Corporation (NIM); UNOROUTER; Bytez, Inc.; Lightning AI, Inc.; Kunya AI; B.AI; AIHubMix; ShortAPI | Bereitstellung von Sprachmodellen, je nach gewähltem oder automatisch bestimmtem Modell | USA u. a. / DPF, SCC oder Art. 49 Abs. 1 lit. b |
+| Unternehmen                                                                                                                | Leistung                                                                                | Ort / Garantie                                            |
+| -------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| Vercel Inc., San Francisco                                                                                                 | Hosting (Region Frankfurt), Sandbox für Code                                            | USA / EU-US DPF                                           |
+| Neon, LLC (Databricks, Inc.)                                                                                               | Datenbank und Anmeldung, Region eu-central-1                                            | EU-Rechenzentrum; Konzern USA / DPF                       |
+| Zoho Corporation B.V. (Utrecht, NL)                                                                                        | Versand von Pflichtmitteilungen (Zoho Mail)                                             | EU; Unterauftragsverarbeiter außerhalb der EU nur mit SCC |
+| OpenRouter, Inc.; NVIDIA Corporation (NIM); UNOROUTER; Bytez, Inc.; Lightning AI, Inc.; Kunya AI; B.AI; AIHubMix; ShortAPI | Bereitstellung von Sprachmodellen, je nach gewähltem oder automatisch bestimmtem Modell | USA u. a. / DPF, SCC oder Art. 49 Abs. 1 lit. b           |
 
 Dienste, die Nutzer selbst verbinden (GitHub, Vercel, Neon, Supabase,
 MCP-Server), sowie Suchdienste (Wikimedia, Google News, ggf. Tavily, Exa,

@@ -135,7 +135,7 @@ describe("legal pages", () => {
     expect(html).toContain("Kündigungsseite");
     expect(html).toContain("§ 312k BGB");
     // The e-mail processor is named, not described (audit 2026-11-15).
-    expect(html).toContain("Resend, Inc.");
+    expect(html).toContain("Zoho Corporation B.V.");
     expect(html).toContain("Google News");
     expect(html).toContain("§§ 195, 199 BGB");
   });
