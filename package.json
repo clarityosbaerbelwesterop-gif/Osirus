@@ -28,7 +28,7 @@
     "katex": "^0.16.47",
     "lucide-react": "^1.47.0",
     "mathjs": "15.2.0",
-    "next": "^16.4.2",
+    "next": "^16.4.5",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
     "react-markdown": "^10.1.0",
@@ -49,7 +49,7 @@
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
     "eslint": "^9.0.0",
-    "eslint-config-next": "^16.4.2",
+    "eslint-config-next": "^16.4.5",
     "prettier": "^3.6.0",
     "typescript": "^5.9.0",
     "vitest": "^3.2.0"
