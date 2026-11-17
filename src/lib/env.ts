@@ -109,10 +109,14 @@ const schema = z.object({
   STRIPE_PRICE_ULTRA_200: z.string().min(1).optional(),
   // Public origin for Checkout/Portal return URLs. Unset: the request origin.
   OSIRUS_PUBLIC_URL: z.string().url().optional(),
-  // Transactional e-mail (cancellation confirmations) through Resend. Unset:
-  // no e-mail is sent and the confirmation page is the only copy.
+  // Transactional e-mail (cancellation confirmations). Preferred: SMTP over
+  // implicit TLS, e.g. smtps://kuendigung%40osirus-ai.com:APP-PASSWORD@smtp.zoho.eu:465
+  // (Zoho Mail EU, no third-country transfer). Alternative: Resend's API.
+  // Checked in lib/mail/send.ts, not here, so a typo disables mail instead of
+  // the whole app. Unset: no e-mail; the confirmation page is the only copy.
+  SMTP_URL: z.string().min(1).optional(),
   RESEND_API_KEY: z.string().min(1).optional(),
-  /** Sender, e.g. "Osirus <kuendigung@example.de>", on a domain verified at Resend. */
+  /** Sender, e.g. "Osirus <kuendigung@osirus-ai.com>"; the SMTP account must be allowed to send as it. */
   OSIRUS_MAIL_FROM: z.string().min(3).max(200).optional(),
 });
 

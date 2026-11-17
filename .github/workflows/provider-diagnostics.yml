@@ -43,8 +43,8 @@ jobs:
       SHORTAPI_API_KEY: ${{ secrets.SHORTAPI_API_KEY }}
       ANAKIN_API_KEY: ${{ secrets.ANAKIN_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - name: New providers (base URL, models, real question, streaming)
@@ -61,7 +61,7 @@ jobs:
         if: ${{ !inputs.new_providers }}
         continue-on-error: true
         run: node scripts/bytez-diagnostics.mjs
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: ${{ !inputs.only_bytez && !inputs.new_providers }}
         with:
           name: provider-diagnostics

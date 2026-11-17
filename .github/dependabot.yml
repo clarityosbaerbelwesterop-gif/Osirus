@@ -8,6 +8,16 @@ updates:
       interval: weekly
       day: monday
     open-pull-requests-limit: 5
+    ignore:
+      # Types must match the runtime (Node 24 on Vercel and in CI); newer
+      # majors describe APIs production does not have.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
+      # Each Stripe minor pins a newer API version, which changes webhook
+      # and object shapes. That upgrade is a deliberate change, not a bump.
+      - dependency-name: stripe
+        update-types:
+          ["version-update:semver-minor", "version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]

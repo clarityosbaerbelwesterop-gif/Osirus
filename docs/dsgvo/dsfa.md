@@ -44,7 +44,7 @@ sind (teilweise) erfüllt. **Eine DSFA ist durchzuführen.** Sie folgt.
   einen Modellanbieter (Abschnitt 18 der Datenschutzerklärung) → Antwort zurück.
   Wirkung nach außen (GitHub, MCP-Server, Webhooks) nur nach Freigabe der
   genauen Eingabe.
-- **Beteiligte:** Verantwortliche; Auftragsverarbeiter Vercel, Neon, Resend;
+- **Beteiligte:** Verantwortliche; Auftragsverarbeiter Vercel, Neon, Zoho (E-Mail);
   Modellanbieter; eigenständig verantwortliche Dienste, die die Person verbindet.
 
 ## 3. Notwendigkeit und Verhältnismäßigkeit (lit. b)

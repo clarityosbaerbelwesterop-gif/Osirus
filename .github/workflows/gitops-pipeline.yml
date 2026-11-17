@@ -47,10 +47,10 @@ jobs:
       status: ${{ steps.plan.outputs.status }}
       execute: ${{ steps.plan.outputs.execute }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
@@ -74,14 +74,14 @@ jobs:
       PRM_URL: ${{ secrets.PRM_URL }}
       PRM_API_KEY: ${{ secrets.PRM_API_KEY }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: npm ci
@@ -96,7 +96,7 @@ jobs:
         env:
           PIPELINE: ${{ steps.start.outputs.pipeline }}
         run: npx vite-node ai-lab/gitops/cli.ts synth "$PIPELINE" --out golden.jsonl
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: golden-tokens
           path: golden.jsonl
@@ -157,10 +157,10 @@ jobs:
       MODAL_JOB_URL: ${{ secrets.MODAL_JOB_URL }}
       MODAL_JOB_TOKEN: ${{ secrets.MODAL_JOB_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm

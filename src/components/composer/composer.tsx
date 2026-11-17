@@ -374,10 +374,13 @@ export const Composer = forwardRef<
                 className="btn btn-sm btn-danger-quiet"
                 onClick={props.onCancel}
                 disabled={props.cancelling}
-                aria-label="Diesen Lauf stoppen"
               >
                 <Square size={12} aria-hidden="true" />
                 {props.cancelling ? "Wird gestoppt…" : "Stopp"}
+                {/* Visible label first in the accessible name (WCAG 2.5.3). */}
+                {props.cancelling ? null : (
+                  <span className="sr-only"> – diesen Lauf beenden</span>
+                )}
               </button>
             ) : (
               <IconButton
