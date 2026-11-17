@@ -12,6 +12,19 @@ import { expect, test, type Page } from "@playwright/test";
 const base = process.env.PROD_BASE_URL ?? "https://osirus-ai.com";
 const runId = process.env.GITHUB_RUN_ID ?? `${Date.now()}`;
 const email = `journey-${runId}@example.com`;
+
+/** Live (not deleted) Stripe customers with this e-mail; null without a key. */
+async function stripeCustomers(address: string): Promise<number | null> {
+  const key = process.env.STRIPE_SECRET_KEY;
+  if (!key) return null;
+  const response = await fetch(
+    `https://api.stripe.com/v1/customers?email=${encodeURIComponent(address)}&limit=10`,
+    { headers: { authorization: `Bearer ${key}` } },
+  );
+  if (!response.ok) throw new Error(`stripe_list_${response.status}`);
+  const body = (await response.json()) as { data: unknown[] };
+  return body.data.length;
+}
 const password = randomBytes(24).toString("base64url");
 
 const redact = (url: string) => {
@@ -486,6 +499,9 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     // Sealed connection tokens are never part of the copy.
     expect(JSON.stringify(copy)).not.toContain("credential_reference");
 
+    // Art. 17: the customer record at Stripe goes with the account. Checked
+    // read-only at Stripe itself when the journey has the key.
+    const before = await stripeCustomers(email);
     const deleted = await page.request.fetch("/api/account", {
       method: "DELETE",
       headers: { origin: base, "content-type": "application/json" },
@@ -493,6 +509,15 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     });
     console.log(`Account delete: HTTP ${deleted.status()}`);
     expect(deleted.status()).toBe(200);
+    const after = await stripeCustomers(email);
+    if (before !== null && after !== null) {
+      console.log(
+        `Stripe customers for this e-mail: ${before} before, ${after} after deletion`,
+      );
+      expect(after).toBe(0);
+    } else {
+      console.log("Stripe check skipped (no key on this run)");
+    }
     await page.goto("/app");
     await expect(page).toHaveURL(/\/auth\/sign-in/);
     // The sign-in itself is gone too.
