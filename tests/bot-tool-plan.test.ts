@@ -112,3 +112,40 @@ describe("thread collapse", () => {
     ).toHaveLength(2);
   });
 });
+
+describe("tool planning only when a tool could be meant", () => {
+  const deepwiki = [
+    {
+      id: "deepwiki-1:ask_question",
+      title: "ask_question",
+      summary: "Ask any question about a GitHub repository and get an answer",
+    },
+    {
+      id: "deepwiki-1:read_wiki_structure",
+      title: "read_wiki_structure",
+      summary: "Get a list of documentation topics for a GitHub repository",
+    },
+  ];
+
+  it("skips questions no tool is about", async () => {
+    const { toolPlanWorthwhile } = await import("@/lib/agents/bot-tool-call");
+    for (const message of [
+      "In einem Satz: Was ist Photosynthese?",
+      "Wie viele Tage hat ein Schaltjahr? Nur die Zahl.",
+      "Schreib mir ein kurzes Gedicht über den Herbst.",
+    ])
+      expect(toolPlanWorthwhile(message, deepwiki), message).toBe(false);
+  });
+
+  it("plans when a tool is asked for, a repo or link is named, or a tool's topic comes up", async () => {
+    const { toolPlanWorthwhile } = await import("@/lib/agents/bot-tool-call");
+    for (const message of [
+      "Nutze DeepWiki und frag: Wofür ist das Repository sindresorhus/ky da?",
+      "Was macht vercel/next.js?",
+      "Lies https://github.com/sindresorhus/ky",
+      "Erkläre mir die Dokumentation dieses Repository",
+      "Kannst du das mit dem Tool nachschauen?",
+    ])
+      expect(toolPlanWorthwhile(message, deepwiki), message).toBe(true);
+  });
+});
