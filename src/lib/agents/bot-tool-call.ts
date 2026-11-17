@@ -11,7 +11,8 @@ import {
   type PlannedCall,
 } from "./bot-tool-plan";
 
-const PLAN_BUDGET_MS = 15_000;
+// A slow planner answers without a tool rather than holding the reply.
+const PLAN_BUDGET_MS = 8_000;
 /** Models tried in order before the bot answers without a tool. */
 const PLAN_MODELS = 3;
 
