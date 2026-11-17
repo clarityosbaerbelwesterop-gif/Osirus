@@ -1,11 +1,13 @@
 # Datenschutz-Dokumentation
 
-| Dokument                                                                             | Pflicht                       | Inhalt                                                                                  |
-| ------------------------------------------------------------------------------------ | ----------------------------- | --------------------------------------------------------------------------------------- |
-| [verzeichnis-verarbeitungstaetigkeiten.md](verzeichnis-verarbeitungstaetigkeiten.md) | Art. 30 DSGVO                 | 17 Verarbeitungstätigkeiten mit Zweck, Rechtsgrundlage, Empfängern, Drittland, Löschung |
-| [tom.md](tom.md)                                                                     | Art. 32 DSGVO                 | Maßnahmen mit Code-Stelle und Test                                                      |
-| [loeschkonzept.md](loeschkonzept.md)                                                 | Art. 5 Abs. 1 lit. e, Art. 17 | Fristen, Auslöser, Umsetzung                                                            |
-| `/legal/privacy`                                                                     | Art. 13, 14                   | Datenschutzerklärung (Quelle: `src/app/legal/privacy/page.tsx`)                         |
+| Dokument                                                                             | Pflicht                       | Inhalt                                                                                                                                                 |
+| ------------------------------------------------------------------------------------ | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| [verzeichnis-verarbeitungstaetigkeiten.md](verzeichnis-verarbeitungstaetigkeiten.md) | Art. 30 DSGVO                 | 17 Verarbeitungstätigkeiten mit Zweck, Rechtsgrundlage, Empfängern, Drittland, Löschung                                                                |
+| [tom.md](tom.md)                                                                     | Art. 32 DSGVO                 | Maßnahmen mit Code-Stelle und Test                                                                                                                     |
+| [loeschkonzept.md](loeschkonzept.md)                                                 | Art. 5 Abs. 1 lit. e, Art. 17 | Fristen, Auslöser, Umsetzung                                                                                                                           |
+| [dsfa.md](dsfa.md)                                                                   | Art. 35 DSGVO                 | Schwellwertanalyse (DSK-Muss-Liste Nr. 11 einschlägig) und Folgenabschätzung: Ergebnis kein hohes Restrisiko, Freigabe durch die Verantwortliche offen |
+| [avv-vorlage.md](avv-vorlage.md)                                                     | Art. 28 Abs. 3 DSGVO          | Vertrag zur Auftragsverarbeitung für Geschäftskunden mit Liste der Unterauftragsverarbeiter (Vorlage)                                                  |
+| `/legal/privacy`                                                                     | Art. 13, 14                   | Datenschutzerklärung (Quelle: `src/app/legal/privacy/page.tsx`)                                                                                        |
 
 ## Pflege
 
@@ -24,11 +26,9 @@ Frist), aktualisiert im selben Pull Request:
    OpenRouter und die übrigen Modellanbieter.
 2. **E-Mail-Versand aktivieren** (Resend): ohne ihn gibt es keine
    Kündigungsbestätigung per E-Mail (§ 312k BGB).
-3. **Schwellwertanalyse zur Datenschutz-Folgenabschätzung** (Art. 35):
-   dokumentieren, ob die KI-Verarbeitung von Kundeninhalten ein hohes Risiko
-   darstellt (Muss-Liste der DSK prüfen).
-4. **AV-Vertrag für Geschäftskunden**: Für Unternehmen, die Osirus mit
-   personenbezogenen Daten Dritter nutzen, ist Osirus Auftragsverarbeiter;
-   eine AVV-Vorlage muss juristisch erstellt werden.
+3. **Datenschutz-Folgenabschätzung freigeben** (`dsfa.md`): durchgeführt,
+   Ergebnis kein hohes Restrisiko; Unterschrift der Verantwortlichen fehlt.
+4. **AVV-Vorlage für Geschäftskunden prüfen lassen** (`avv-vorlage.md`) und ab
+   dem ersten Geschäftskunden verwenden.
 5. **Juristische Prüfung** der Rechtstexte vor dem Entfernen der Entwurfshinweise
    (`docs/LEGAL_STATUS.md`).
