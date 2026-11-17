@@ -22,8 +22,32 @@ export type ProductSession = {
  * The signed-in person and their workspace, once per request: the layout and
  * the page share the result instead of bootstrapping twice.
  */
+/**
+ * Whether the request carries a Neon Auth session cookie at all. Without one
+ * there is no session to look up: anonymous traffic (and floods of it) is
+ * answered without a call to the auth service or the database. Outside a
+ * request scope (tests, scripts) the lookup decides as before.
+ */
+export async function mayHaveSession() {
+  try {
+    const { cookies } = await import("next/headers");
+    const jar = await cookies();
+    return jar
+      .getAll()
+      .some(
+        (cookie) =>
+          cookie.name.includes("neon-auth") &&
+          cookie.name.endsWith("session_token") &&
+          cookie.value.length > 0,
+      );
+  } catch {
+    return true;
+  }
+}
+
 export const loadAuthUser = cache(async () => {
   requireAuthConfiguration();
+  if (!(await mayHaveSession())) return null;
   const { data: session } = await auth.getSession();
   if (!session?.user) return null;
   const verified = (session.user as { emailVerified?: unknown }).emailVerified;
