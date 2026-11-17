@@ -236,7 +236,7 @@ export default function PrivacyPage() {
 
       <h2>9. Verbundene Dienste (GitHub, Vercel, Neon, Supabase, MCP)</h2>
       <p>
-        Verbindest du unter „Connections“ einen Dienst, speichern wir den dafür
+        Verbindest du unter „Verbindungen“ einen Dienst, speichern wir den dafür
         hinterlegten Zugangsschlüssel verschlüsselt und nutzen ihn nur, wenn ein
         Auftrag ihn braucht. Er wird nie angezeigt, nie in eine Modellanfrage
         geschrieben und nicht in Protokolle aufgenommen.
@@ -321,8 +321,8 @@ export default function PrivacyPage() {
       <p>
         Legst du eine Automation an, speichern wir ihren Zeitplan oder Auslöser
         und führen den Auftrag zu diesem Zeitpunkt in deinem Namen aus.
-        Ergebnisse und Hinweise erscheinen in deiner Inbox. Rechtsgrundlage ist
-        Art. 6 Abs. 1 lit. b DSGVO.
+        Ergebnisse und Hinweise erscheinen in deinem Posteingang.
+        Rechtsgrundlage ist Art. 6 Abs. 1 lit. b DSGVO.
       </p>
 
       <h2>14. Abonnements, Testphase, Zahlung und Kündigung</h2>
