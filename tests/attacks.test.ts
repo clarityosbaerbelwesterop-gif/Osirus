@@ -102,8 +102,10 @@ describe("attack: iframe and clickjacking", () => {
   it("forbids framing Osirus and frames only sandbox previews", () => {
     const config = source("next.config.ts");
     expect(config).toContain('"X-Frame-Options", value: "DENY"');
-    expect(config).toContain("frame-ancestors 'none'");
-    expect(config).toContain("frame-src https://*.vercel.run");
+    // One policy source for pages (proxy, with nonce) and everything else.
+    const csp = source("src/lib/security/csp.ts");
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).toContain("frame-src https://*.vercel.run");
   });
 
   it("renders previews in a sandboxed frame without same-origin rights", () => {
