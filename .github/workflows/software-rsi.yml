@@ -40,7 +40,7 @@ jobs:
       # osirus.vercel.app is a different product: never send it an OIDC token.
       RSI_URL: ${{ vars.NEXT_PUBLIC_SITE_URL != '' && vars.NEXT_PUBLIC_SITE_URL || 'https://osirus-ai.vercel.app' }}/api/rsi/software
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           ref: main
           # Patched, model-written code runs in this workspace: it must not
@@ -57,12 +57,12 @@ jobs:
             -H "x-osirus-github-oidc: ${token}" "${RSI_URL}")
           echo "HTTP ${status}"
           echo "status=${status}" >> "${GITHUB_OUTPUT}"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.take.outputs.status == '200'
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         if: steps.take.outputs.status == '200'
         with:
           python-version: "3.12"

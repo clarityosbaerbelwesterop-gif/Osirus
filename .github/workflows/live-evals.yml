@@ -58,8 +58,8 @@ jobs:
     env:
       UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - run: node scripts/list-unorouter-models.mjs
@@ -82,12 +82,12 @@ jobs:
       ARENA_MAX_TOKENS: ${{ inputs.max_tokens || '1500000' }}
       SANDBOX: ${{ inputs.sandbox || 'vercel' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
       - run: npm ci
@@ -121,7 +121,7 @@ jobs:
             OSIRUS_MODEL_VERIFY="$MODEL"
           if [ "$MODEL" = "grok-4.6" ]; then export OSIRUS_REASONING_EFFORT=high; fi
           npx vitest run --config vitest.arena.config.ts
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: arena-results

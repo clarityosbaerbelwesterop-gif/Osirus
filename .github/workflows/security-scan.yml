@@ -23,6 +23,27 @@ env:
   TARGET_HOST: osirus-ai.com
 
 jobs:
+  # Same scanner, same algorithm, run against the sites we measure ourselves
+  # against. Informational: it never fails the build, it makes the
+  # comparison reproducible instead of a claim.
+  benchmark:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - name: Observatory comparison
+        run: |
+          set -uo pipefail
+          echo "| Host | Grade | Score | Tests passed |" >> "$GITHUB_STEP_SUMMARY"
+          echo "| --- | --- | --- | --- |" >> "$GITHUB_STEP_SUMMARY"
+          for host in "${TARGET_HOST}" openai.com chatgpt.com oracle.com cloud.oracle.com; do
+            result=$(curl -fsS -X POST "https://observatory-api.mdn.mozilla.net/api/v2/scan?host=${host}" || echo '{}')
+            line=$(printf '%s' "$result" | python3 -c 'import json,sys; r=json.load(sys.stdin); print("| %s | %s | %s | %s/%s |" % (sys.argv[1], r.get("grade") or r.get("error") or "n/a", r.get("score","-"), r.get("tests_passed","-"), r.get("tests_quantity","-")))' "$host")
+            echo "$line"
+            echo "$line" >> "$GITHUB_STEP_SUMMARY"
+            sleep 2
+          done
+
   observatory:
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -46,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: OWASP ZAP baseline (passive)
         run: |
           mkdir -p zap && chmod 777 zap
@@ -79,7 +100,7 @@ jobs:
               sys.exit("Blocking ZAP findings: " + "; ".join(blocking))
           print("No unaccepted medium or high findings.")
           PY
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: zap-baseline

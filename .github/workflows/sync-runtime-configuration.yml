@@ -117,8 +117,8 @@ jobs:
       OSIRUS_SYNC_GIT_BRANCH: ${{ github.ref_name }}
       OSIRUS_ROTATE_AUTH_COOKIE_SECRET: ${{ inputs.rotate_auth_cookie_secret || 'false' }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm
