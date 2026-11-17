@@ -170,6 +170,7 @@ export class RuntimeRepository {
         messages: [],
         modelCalls: {},
         activeRunId: null,
+        activeRunLive: false,
         recentRunId: null,
       };
     }
@@ -194,9 +195,16 @@ export class RuntimeRepository {
          ) recent order by created_at, id`,
         [sessionId],
       ),
-      queryAs<{ id: string }>(
+      queryAs<{ id: string; live: boolean }>(
         this.actorId,
-        `select id from osirus.runs
+        // "live": working right now, not parked on a person. A run that
+        // waits for an approval or is paused is active, but it is not what
+        // someone opening the page expects to land in.
+        `select id,
+                (paused_at is null
+                 and status <> 'waiting_for_approval'
+                 and updated_at > now() - interval '30 minutes') as live
+           from osirus.runs
           where session_id = $1::uuid
             and status not in ('completed','failed','cancelled')
           order by created_at desc
@@ -226,6 +234,7 @@ export class RuntimeRepository {
       })),
       modelCalls,
       activeRunId: activeRuns[0]?.id ?? null,
+      activeRunLive: Boolean(activeRuns[0]?.live),
       recentRunId: recentRuns[0]?.id ?? null,
     };
   }
@@ -1445,6 +1454,21 @@ export class RuntimeRepository {
       ],
     );
     return rows[0] ?? null;
+  }
+
+  /** Close this run's requests whose window ended undecided. */
+  async expireOpenApprovals(runId: string) {
+    const rows = await queryAs<{ id: string }>(
+      this.actorId,
+      `update osirus.approvals
+          set status = 'expired'
+        where run_id = $1::uuid
+          and status = 'requested'
+          and expires_at is not null and expires_at <= now()
+        returning id`,
+      [runId],
+    );
+    return rows.length;
   }
 
   /**

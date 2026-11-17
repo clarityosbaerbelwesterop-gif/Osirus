@@ -162,8 +162,13 @@ function AddServerForm({
       token: token.trim() || null,
     });
     setBusy(false);
-    setToken("");
-    if (result.ok) return onDone();
+    // The token leaves the page once it is stored; after a refused add
+    // (a typo in the URL) it stays, so the person corrects one field
+    // instead of pasting the secret again.
+    if (result.ok) {
+      setToken("");
+      return onDone();
+    }
     setError(
       ADD_ERRORS[result.payload.error ?? ""] ??
         "Der Server konnte nicht hinzugefügt werden.",

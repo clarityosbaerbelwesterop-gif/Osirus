@@ -78,3 +78,87 @@ export async function recoverStuckRuns(limit = 10) {
   }
   return recovered;
 }
+
+// Runs that wait on a person who will not come.
+//
+// Live 2026-11-16: three runs sat in "waiting_for_approval" for days (two
+// since 2026-10-04). Their only approval had expired after its hour, so
+// nobody could decide it; the stage is released only when someone opens the
+// run, and then it works again and files the next request. A paused run
+// keeps its workspace snapshot for seven days and cannot resume after that.
+// Both are closed here, with the reason on the run, so the person sees
+// "abgebrochen, Freigabe abgelaufen" instead of a task that waits forever.
+
+const APPROVAL_ABANDONED_HOURS = 24;
+const PAUSE_ABANDONED_DAYS = 7;
+
+type Abandoned = { id: string; requested_by: string; reason: string };
+
+export async function closeAbandonedWaits(limit = 10) {
+  const rows = await querySystem<Abandoned>(
+    `select r.id, r.requested_by,
+            case when r.paused_at is not null then 'pause' else 'approval' end as reason
+       from osirus.runs r
+      where r.status not in ('completed', 'failed', 'cancelled')
+        and (
+          (
+            r.status = 'waiting_for_approval'
+            and r.paused_at is null
+            and r.updated_at < now() - make_interval(hours => $1)
+            -- An approval existed and its window closed ...
+            and exists (
+              select 1 from osirus.approvals a
+               where a.run_id = r.id
+                 and a.status in ('requested', 'expired')
+                 and a.expires_at is not null and a.expires_at <= now()
+            )
+            -- ... nothing is left that a person could still decide ...
+            and not exists (
+              select 1 from osirus.approvals a
+               where a.run_id = r.id
+                 and a.status = 'requested'
+                 and (a.expires_at is null or a.expires_at > now())
+            )
+            -- ... and the run does not wait on an answer to a question.
+            and not exists (
+              select 1 from osirus.run_stages s
+               where s.run_id = r.id
+                 and s.status = 'waiting'
+                 and s.output->>'waitingOn' = 'human'
+            )
+          )
+          or r.paused_at < now() - make_interval(days => $2)
+        )
+      order by r.updated_at
+      limit $3`,
+    [APPROVAL_ABANDONED_HOURS, PAUSE_ABANDONED_DAYS, limit],
+  );
+  const closed: Array<{ runId: string; reason: string }> = [];
+  for (const row of rows) {
+    const repository = new RuntimeRepository(row.requested_by);
+    try {
+      await repository.expireOpenApprovals(row.id);
+      await repository
+        .appendEvent({
+          runId: row.id,
+          type: "run.abandoned",
+          visibility: "user",
+          summary:
+            row.reason === "pause"
+              ? "Beendet: seit sieben Tagen pausiert, der Arbeitsstand ist abgelaufen."
+              : "Beendet: die Freigabe ist abgelaufen und wurde 24 Stunden lang nicht entschieden. Es wurde nichts ausgeführt.",
+          data: { reason: row.reason },
+        })
+        .catch(() => undefined);
+      const run = await repository.requestCancellation(row.id);
+      if (
+        run?.status === "cancelling" &&
+        (await repository.settleCancellationWithoutWorker(row.id))
+      )
+        closed.push({ runId: row.id, reason: row.reason });
+    } catch {
+      // Left for the next tick; one bad row never blocks the others.
+    }
+  }
+  return closed;
+}

@@ -37,6 +37,7 @@ import {
 import { sessionHref } from "@/lib/product/surfaces";
 import { BotOrb, type OrbState } from "../bots/bot-orb";
 import { useVoice } from "../bots/use-voice";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/attachments/limits";
 import { Markdown } from "../chat/markdown";
 import { useShell, type SessionSummary } from "../shell/shell-context";
 import { notifyUsage } from "../motion/quota-bars";
@@ -139,12 +140,15 @@ type PendingFile = {
   note: string | null;
 };
 
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_FILE_BYTES = MAX_UPLOAD_BYTES;
+/** The server's limit for one message (api/chat/stream). */
+const MAX_MESSAGE_CHARS = 32_000;
 const FILE_TYPES =
   ".pdf,.txt,.md,.markdown,.csv,.json,.log,.yaml,.yml,.xml,.html,.js,.jsx,.ts,.tsx,.py,.go,.rs,.java,.rb,.php,.c,.cpp,.h,.cs,.swift,.kt,.sql,.sh";
 
 function uploadError(status: number, code: string | undefined) {
-  if (status === 413 || code === "too_large") return "Größer als 10 MB.";
+  if (status === 413 || code === "too_large")
+    return `Größer als ${MAX_UPLOAD_LABEL}.`;
   if (status === 415 || code === "unsupported_type")
     return "Dateityp wird nicht unterstützt.";
   if (status === 402) return "Speicher deines Plans ist voll.";
@@ -547,7 +551,15 @@ export function AgentsChat(props: {
     element.style.height = `${Math.min(element.scrollHeight, 240)}px`;
   }, [input]);
 
+  // The newest thread request wins. Without this, opening chat A and then
+  // chat B could show A's messages under B when A's answer arrived last,
+  // and "new chat" during a load filled the empty chat with the old thread.
+  const openSeqRef = useRef(0);
+  const openAbortRef = useRef<AbortController | null>(null);
+
   const resetThread = useCallback(() => {
+    openSeqRef.current += 1;
+    openAbortRef.current?.abort();
     abortRef.current?.abort();
     setSessionId(null);
     setMessages([]);
@@ -593,9 +605,16 @@ export function AgentsChat(props: {
         "",
         `${basePath}?session=${session.id}`,
       );
+      const seq = (openSeqRef.current += 1);
+      openAbortRef.current?.abort();
+      const loading = new AbortController();
+      openAbortRef.current = loading;
       const response = await fetch(`/api/chat/threads/${session.id}`, {
         cache: "no-store",
+        signal: loading.signal,
       }).catch(() => null);
+      // Another chat (or a new one) was opened meanwhile: this answer is old.
+      if (seq !== openSeqRef.current) return;
       if (!response?.ok) {
         setMessages([
           {
@@ -607,9 +626,28 @@ export function AgentsChat(props: {
         ]);
         return;
       }
-      const thread = (await response.json()) as Thread;
+      const thread = (await response.json().catch(() => null)) as Thread | null;
+      if (seq !== openSeqRef.current) return;
+      if (!thread) {
+        setMessages([
+          {
+            id: "missing",
+            role: "assistant",
+            content: "",
+            error: "Dieser Chat konnte nicht geladen werden.",
+          },
+        ]);
+        return;
+      }
       stickRef.current = true;
-      setMessages(thread.messages);
+      // A message sent while the thread was still loading stays below it.
+      setMessages((current) => [
+        ...thread.messages,
+        ...current.filter(
+          (message) =>
+            message.id.startsWith("user-") || message.id.startsWith("pending-"),
+        ),
+      ]);
     },
     [basePath, room, router],
   );
@@ -709,6 +747,8 @@ export function AgentsChat(props: {
     ) => {
       const trimmed = text.trim();
       if (!trimmed || busy || uploading) return;
+      // The composer shows why; the server would only answer "invalid".
+      if (trimmed.length > MAX_MESSAGE_CHARS) return;
       const ready = options.regenerate
         ? []
         : files.filter((file) => file.state === "ready" && file.id);
@@ -1041,6 +1081,7 @@ export function AgentsChat(props: {
   const empty = messages.length === 0;
   const lastIndex = messages.length - 1;
 
+  const tooLong = input.trim().length > MAX_MESSAGE_CHARS;
   const composer = (
     <form
       className={cx(
@@ -1216,12 +1257,25 @@ export function AgentsChat(props: {
           </span>
         )}
         <span className="ac-composer-spacer" />
+        {input.length > MAX_MESSAGE_CHARS * 0.9 ? (
+          <span
+            className={cx("ac-limit", tooLong && "ac-limit-over")}
+            role="status"
+          >
+            {tooLong
+              ? "Zu lang: kürze den Text oder hänge ihn als Datei an. "
+              : null}
+            {input.length.toLocaleString("de-DE")} /{" "}
+            {MAX_MESSAGE_CHARS.toLocaleString("de-DE")}
+          </span>
+        ) : null}
         {busy ? (
           <button
             type="button"
             className="ac-send ac-send-stop"
             onClick={stop}
             aria-label="Antwort stoppen"
+            title="Antwort stoppen (Esc)"
           >
             <Square size={14} aria-hidden="true" />
           </button>
@@ -1229,7 +1283,7 @@ export function AgentsChat(props: {
           <button
             type="submit"
             className="ac-send"
-            disabled={!input.trim() || uploading}
+            disabled={!input.trim() || uploading || tooLong}
             aria-label="Senden"
           >
             <ArrowUp size={18} aria-hidden="true" />
