@@ -136,7 +136,7 @@ export function CancelForm({
         <p className="field-hint">
           {receipt.mailSent
             ? "Die Bestätigung haben wir dir gerade per E-Mail geschickt."
-            : "Speichere diese Bestätigung. Die Bestätigung per E-Mail folgt."}
+            : "Die E-Mail konnte gerade nicht versandt werden. Speichere oder drucke diese Bestätigung jetzt: Sie ist dein Nachweis über den Eingang deiner Kündigung. Wir melden uns zusätzlich per E-Mail."}
         </p>
         <pre className="cancel-receipt" aria-label="Bestätigung zum Speichern">
           {receipt.text}
