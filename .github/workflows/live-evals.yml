@@ -59,7 +59,7 @@ jobs:
       UNOROUTER_API_KEY_1: ${{ secrets.UNOROUTER_API_KEY_1 }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
       - run: node scripts/list-unorouter-models.mjs
@@ -83,7 +83,7 @@ jobs:
       SANDBOX: ${{ inputs.sandbox || 'vercel' }}
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 24
           cache: npm

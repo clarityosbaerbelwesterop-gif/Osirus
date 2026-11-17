@@ -48,7 +48,7 @@ jobs:
             -H "x-osirus-github-oidc: ${token}" "${RSI_URL}")
           echo "HTTP ${status}"
           echo "status=${status}" >> "${GITHUB_OUTPUT}"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: steps.take.outputs.status == '200'
         with:
           node-version: 24
