@@ -42,45 +42,47 @@ const INFO: Record<
 > = {
   vercel: {
     icon: <Cloud size={20} />,
-    text: "Lets Osirus see your deployments: which project, which commit, whether it is ready or failed.",
-    capability: "List deployments (read only)",
-    tokenHint: "Create one at vercel.com → Account Settings → Tokens.",
+    text: "Osirus sieht deine Deployments: welches Projekt, welcher Commit, ob es bereit oder fehlgeschlagen ist.",
+    capability: "Deployments auflisten (nur lesen)",
+    tokenHint: "Erstelle eines unter vercel.com → Account Settings → Tokens.",
     rejected:
-      "Vercel did not accept this token. Create a new one under Account Settings → Tokens and paste it whole.",
+      "Vercel hat dieses Token nicht akzeptiert. Erstelle unter Account Settings → Tokens ein neues und füge es vollständig ein.",
   },
   neon: {
     icon: <Database size={20} />,
-    text: "Lets Osirus see your Neon projects and branches. It runs no query against your databases.",
-    capability: "List projects and branches (read only)",
+    text: "Osirus sieht deine Neon-Projekte und Branches. Es führt keine Abfrage gegen deine Datenbanken aus.",
+    capability: "Projekte und Branches auflisten (nur lesen)",
     tokenHint:
-      "A Neon API key (starts with napi_): console.neon.tech → Account settings → API keys, or your organization's Settings → API keys.",
+      "Ein Neon API Key (beginnt mit napi_): console.neon.tech → Account settings → API keys oder Settings → API keys deiner Organisation.",
     rejected:
-      "Neon did not accept this key. Paste an API key from Account settings → API keys or your organization's Settings → API keys, not a database password or connection string.",
+      "Neon hat diesen Key nicht akzeptiert. Füge einen API Key aus Account settings → API keys oder Settings → API keys deiner Organisation ein, kein Datenbankpasswort und keinen Connection String.",
   },
   supabase: {
     icon: <Layers size={20} />,
-    text: "Lets Osirus see your Supabase projects, their region and status.",
-    capability: "List projects (read only)",
+    text: "Osirus sieht deine Supabase-Projekte, ihre Region und ihren Status.",
+    capability: "Projekte auflisten (nur lesen)",
     tokenHint:
-      "A personal access token (starts with sbp_): supabase.com/dashboard/account/tokens.",
+      "Ein Personal Access Token (beginnt mit sbp_): supabase.com/dashboard/account/tokens.",
     rejected:
-      "Supabase did not accept this token. Create a personal access token at supabase.com/dashboard/account/tokens.",
+      "Supabase hat dieses Token nicht akzeptiert. Erstelle ein Personal Access Token unter supabase.com/dashboard/account/tokens.",
   },
 };
 
 const WRONG_KIND: Record<string, string> = {
   supabase_project_key:
-    "This is a project API key (anon, service_role or sb_ key). Osirus needs a personal access token (starts with sbp_) from supabase.com/dashboard/account/tokens.",
+    "Das ist ein Projekt-API-Key (anon, service_role oder sb_-Key). Osirus braucht ein Personal Access Token (beginnt mit sbp_) von supabase.com/dashboard/account/tokens.",
   neon_connection_string:
-    "This is a database connection string. Osirus needs a Neon API key (starts with napi_) from Account settings → API keys; it never connects to your database.",
+    "Das ist ein Connection String einer Datenbank. Osirus braucht einen Neon API Key (beginnt mit napi_) aus Account settings → API keys; es verbindet sich nie mit deiner Datenbank.",
 };
 
 const ERRORS: Record<string, string> = {
-  token_rejected: "The provider did not accept this token.",
-  not_configured: "Connections are not set up on this deployment yet.",
-  provider_unreachable: "The provider could not be reached. Try again.",
-  rate_limited: "Too many attempts. Wait a minute and try again.",
-  not_connected: "This connection is no longer active. Reload the page.",
+  token_rejected: "Der Anbieter hat dieses Token nicht akzeptiert.",
+  not_configured:
+    "Verbindungen sind in dieser Installation noch nicht eingerichtet.",
+  provider_unreachable:
+    "Der Anbieter war nicht erreichbar. Versuch es noch einmal.",
+  rate_limited: "Zu viele Versuche. Warte eine Minute und versuch es erneut.",
+  not_connected: "Diese Verbindung ist nicht mehr aktiv. Lade die Seite neu.",
 };
 
 export function PlatformCard({ data }: { data: PlatformCardData }) {
@@ -115,7 +117,7 @@ export function PlatformCard({ data }: { data: PlatformCardData }) {
           ? (WRONG_KIND[result.kind ?? ""] ?? info.rejected)
           : result?.error === "token_rejected"
             ? info.rejected
-            : (ERRORS[result?.error ?? ""] ?? "That did not work."),
+            : (ERRORS[result?.error ?? ""] ?? "Das hat nicht geklappt."),
       );
       return false;
     }
@@ -129,7 +131,7 @@ export function PlatformCard({ data }: { data: PlatformCardData }) {
       name={data.name}
       stateLabel={stateInfo.label}
       stateTone={stateInfo.tone}
-      identity={data.account ? `Account: ${data.account}` : undefined}
+      identity={data.account ? `Konto: ${data.account}` : undefined}
       description={<p>{info.text}</p>}
       capabilities={[info.capability]}
       health={
@@ -151,8 +153,8 @@ export function PlatformCard({ data }: { data: PlatformCardData }) {
         data.status === "NOT_CONFIGURED" ? (
           <p className="subtle">
             {shell.isAdmin
-              ? "Set OSIRUS_CONNECTOR_KEY for this deployment to enable connections."
-              : "Connections are not set up on this deployment yet."}
+              ? "Setze OSIRUS_CONNECTOR_KEY für diese Installation, um Verbindungen zu aktivieren."
+              : "Verbindungen sind in dieser Installation noch nicht eingerichtet."}
           </p>
         ) : data.status === "CONNECTED" ? (
           <div className="row row-wrap">
@@ -163,12 +165,12 @@ export function PlatformCard({ data }: { data: PlatformCardData }) {
               onClick={() => void post({ action: "check" }, "check")}
             >
               <RefreshCw size={14} aria-hidden="true" />
-              {busy === "check" ? "Checking…" : "Check now"}
+              {busy === "check" ? "Prüft…" : "Jetzt prüfen"}
             </button>
             <ConfirmDialog
-              title={`Disconnect ${data.name}?`}
-              description="Osirus forgets the token. Runs lose these read tools."
-              confirmLabel="Disconnect"
+              title={`${data.name} trennen?`}
+              description="Osirus vergisst das Token. Läufe verlieren diese Lesewerkzeuge."
+              confirmLabel="Trennen"
               onConfirm={async () => {
                 setBusy("disconnect");
                 await fetch(base, { method: "DELETE" }).catch(() => null);
@@ -182,7 +184,7 @@ export function PlatformCard({ data }: { data: PlatformCardData }) {
                   disabled={busy !== null}
                 >
                   <Unplug size={14} aria-hidden="true" />
-                  Disconnect
+                  Trennen
                 </button>
               }
             />
@@ -198,7 +200,7 @@ export function PlatformCard({ data }: { data: PlatformCardData }) {
               if (ok) setFormOpen(false);
             }}
           >
-            <Field label="Access token" hint={info.tokenHint} error={error}>
+            <Field label="Zugangstoken" hint={info.tokenHint} error={error}>
               {(props) => (
                 <input
                   {...props}
@@ -218,15 +220,15 @@ export function PlatformCard({ data }: { data: PlatformCardData }) {
                 disabled={busy !== null || token.trim().length < 20}
               >
                 {busy === "connect"
-                  ? "Checking the token…"
-                  : `Connect ${data.name}`}
+                  ? "Token wird geprüft…"
+                  : `${data.name} verbinden`}
               </button>
               <button
                 type="button"
                 className="btn btn-ghost"
                 onClick={() => setFormOpen(false)}
               >
-                Cancel
+                Abbrechen
               </button>
             </div>
           </form>
@@ -236,7 +238,7 @@ export function PlatformCard({ data }: { data: PlatformCardData }) {
             className="btn btn-sm btn-secondary"
             onClick={() => setFormOpen(true)}
           >
-            Connect {data.name}
+            {data.name} verbinden
           </button>
         )
       }

@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { env, serverKeys } from "@/lib/env";
 import { guardAction, guardWrite, json } from "@/lib/product/api";
-import { deleteAgent, updateAgent } from "@/lib/agents/store";
+import {
+  BotNameTakenError,
+  deleteAgent,
+  updateAgent,
+} from "@/lib/agents/store";
 import { isRetiredProductModel } from "@/lib/models/catalog";
 import { listKeyModels, listNvidiaTopModels } from "@/lib/models/key-models";
 import { resolveGatewayModel } from "@/lib/gateway/models";
@@ -68,14 +72,21 @@ export async function PATCH(
       return json({ error: "model_not_on_key" }, 400);
     }
   }
-  const agent = await updateAgent({
-    identity: guard.identity,
-    id: agentId,
-    name: guard.body.name,
-    systemPrompt: guard.body.systemPrompt,
-    modelId: guard.body.modelId,
-    status: guard.body.status,
-  });
+  let agent;
+  try {
+    agent = await updateAgent({
+      identity: guard.identity,
+      id: agentId,
+      name: guard.body.name,
+      systemPrompt: guard.body.systemPrompt,
+      modelId: guard.body.modelId,
+      status: guard.body.status,
+    });
+  } catch (error) {
+    if (error instanceof BotNameTakenError)
+      return json({ error: error.code, message: error.message }, 409);
+    throw error;
+  }
   if (!agent) return json({ error: "not_found" }, 404);
   return json({
     agent: {

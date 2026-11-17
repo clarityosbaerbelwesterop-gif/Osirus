@@ -98,9 +98,21 @@
 
 .sidebar-tools .nav-link {
   min-height: 34px;
-  gap: var(--space-2);
-  padding: 0 var(--space-2);
-  font-size: var(--text-sm);
+  gap: var(--space-1-5);
+  padding: 0 var(--space-1-5);
+  font-size: var(--text-xs);
+}
+
+/* Two columns leave little room for the labels: a waiting count sits on the
+   icon's corner instead of taking width from the label. */
+.sidebar-tools .nav-link .count {
+  position: absolute;
+  top: 2px;
+  left: calc(var(--space-1-5) + 7px);
+  min-width: 15px;
+  height: 15px;
+  padding: 0 4px;
+  box-shadow: 0 0 0 2px var(--color-surface);
 }
 
 .sidebar-tools .nav-label {

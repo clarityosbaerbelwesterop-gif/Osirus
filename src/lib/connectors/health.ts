@@ -116,8 +116,8 @@ export async function checkGithubHealth(identity: ProductIdentity) {
   if (expired)
     await notify(identity, {
       kind: "connector_expired",
-      title: "GitHub access expired",
-      body: "Reconnect GitHub so Osirus can read and push to your repositories again.",
+      title: "GitHub-Zugriff abgelaufen",
+      body: "Verbinde GitHub neu, damit Osirus deine Repositories wieder lesen und dorthin pushen kann.",
       dedupeKey: `connector_expired:github:${new Date().toISOString().slice(0, 10)}`,
     });
   return result;

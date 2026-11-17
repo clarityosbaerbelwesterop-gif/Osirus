@@ -48,7 +48,7 @@ function CopyButton({ text }: { text: string }) {
       ) : (
         <Copy size={13} aria-hidden="true" />
       )}
-      {copied ? "Copied" : "Copy"}
+      {copied ? "Kopiert" : "Kopieren"}
     </button>
   );
 }
@@ -92,12 +92,12 @@ export function MessageList({
   }
 
   return (
-    <ol className="messages" aria-label="Conversation">
+    <ol className="messages" aria-label="Unterhaltung">
       {visible.map((message, index) => (
         <li key={message.id} className="message-item">
           {message.role === "user" ? (
             <div className="message message-user">
-              <h3 className="sr-only">You</h3>
+              <h3 className="sr-only">Du</h3>
               <p className="message-user-text">{message.content}</p>
             </div>
           ) : (
@@ -106,10 +106,15 @@ export function MessageList({
                 <OsirusMark size={22} />
                 <h3>Osirus</h3>
                 {message.id === streamingId ? (
-                  <span className="subtle message-streaming">Writing…</span>
+                  <span className="subtle message-streaming">Schreibt…</span>
                 ) : null}
               </div>
-              <Markdown content={message.content} />
+              <Markdown
+                content={message.content}
+                runnable={
+                  message.role === "assistant" && message.id !== streamingId
+                }
+              />
               {message.id === streamingId ? (
                 <span className="stream-caret" aria-hidden="true" />
               ) : null}

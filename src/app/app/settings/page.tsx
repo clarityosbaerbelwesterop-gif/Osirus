@@ -12,7 +12,7 @@ import { requireProductSession } from "@/lib/product/session";
 import { signOut } from "../actions";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Account" };
+export const metadata: Metadata = { title: "Konto" };
 
 export default async function AccountSettings() {
   const { user } = await requireProductSession();
@@ -37,7 +37,7 @@ export default async function AccountSettings() {
         className="card settings-group"
         aria-labelledby="account-heading"
       >
-        <h2 id="account-heading">Account</h2>
+        <h2 id="account-heading">Konto</h2>
         <dl className="settings-rows">
           <div>
             <dt>Name</dt>

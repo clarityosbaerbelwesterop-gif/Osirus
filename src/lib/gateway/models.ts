@@ -708,6 +708,64 @@ export function verifiedBackup(models: readonly GatewayModel[]) {
   );
 }
 
+/** Index of the model's family in FAMILY_RANK; null for an unknown family. */
+export function familyOf(id: string) {
+  const index = FAMILY_RANK.findIndex(([pattern]) => pattern.test(id));
+  return index < 0 ? null : index;
+}
+
+/** Families ranked at or after this are old or small: never featured. */
+const FEATURED_RANK_LIMIT = 50;
+
+/**
+ * The short list a picker shows first (Grok review 2026-11-15: 143 models,
+ * some with unknown names, is a wall). The models the runtime sync measured
+ * answering, then the best-ranked model of each known family, at most
+ * `limit`. Unknown families ("Darksoul") and old ones ("Llama2 70B") stay
+ * out; they remain reachable through search and "Alle Modelle".
+ */
+export function curatedModels(
+  models: readonly GatewayModel[],
+  options: { limit?: number; keep?: readonly string[] } = {},
+): GatewayModel[] {
+  const limit = options.limit ?? 10;
+  const out: GatewayModel[] = [];
+  const names = new Set<string>();
+  const families = new Set<number>();
+  const key = (name: string) => name.toLowerCase().replace(/[^a-z0-9.]+/g, "");
+  const add = (model: GatewayModel) => {
+    if (out.length >= limit || names.has(key(model.name))) return;
+    out.push(model);
+    names.add(key(model.name));
+    const family = familyOf(model.id);
+    if (family !== null) families.add(family);
+  };
+  for (const ref of options.keep ?? []) {
+    const model = models.find((candidate) => candidate.ref === ref);
+    if (model) add(model);
+  }
+  for (const model of verifiedBackup(models)) add(model);
+  const known = models
+    .filter(
+      (model) =>
+        familyOf(model.id) !== null &&
+        model.rank < FEATURED_RANK_LIMIT &&
+        modelPenalty(model.ref) === 0,
+    )
+    .sort(
+      (a, b) =>
+        a.rank - b.rank ||
+        Number(a.reasoning) - Number(b.reasoning) ||
+        a.ref.localeCompare(b.ref),
+    );
+  for (const model of known) {
+    if (!families.has(familyOf(model.id)!)) add(model);
+  }
+  // Few families on offer (the free plan): fill with the next best known.
+  for (const model of known) add(model);
+  return out;
+}
+
 /** One entry per model name (the best-ranked copy), as Code's picker lists them. */
 export function uniqueByName<T extends { name: string }>(models: readonly T[]) {
   const seen = new Set<string>();

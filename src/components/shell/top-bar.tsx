@@ -30,7 +30,7 @@ export function TopBar({
     <header className="topbar">
       <IconButton
         className="topbar-nav"
-        label="Open navigation"
+        label="Navigation öffnen"
         icon={MenuIcon}
         tooltip={false}
         aria-expanded={shell.navOpen}
@@ -49,11 +49,7 @@ export function TopBar({
         <Link
           href={"/app/inbox" as Route}
           className="icon-btn topbar-inbox"
-          aria-label={
-            inbox
-              ? `Inbox, ${inbox} need${inbox === 1 ? "s" : ""} you`
-              : "Inbox"
-          }
+          aria-label={inbox ? `Posteingang, ${inbox} offen` : "Posteingang"}
         >
           <Inbox size={17} aria-hidden="true" />
           {inbox ? <span className="topbar-dot" aria-hidden="true" /> : null}

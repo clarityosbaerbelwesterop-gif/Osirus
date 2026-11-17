@@ -36,6 +36,22 @@ const CLAIM_TONE: Record<string, Tone> = {
   unsupported: "danger",
 };
 
+const CLAIM_LABEL: Record<string, string> = {
+  supported: "belegt",
+  contested: "umstritten",
+  stale: "veraltet",
+  unsupported: "unbelegt",
+};
+
+const AUTHORITY_LABEL: Record<string, string> = {
+  primary: "Primärquelle",
+  official_docs: "offizielle Doku",
+  reference: "Nachschlagewerk",
+  news: "Nachrichten",
+  secondary: "Sekundärquelle",
+  community: "Community",
+};
+
 function host(url: string) {
   try {
     return new URL(url).hostname.replace(/^www\./, "");
@@ -55,23 +71,23 @@ export function ResearchPanel({
     runId ? `/api/research/${runId}` : null,
     live ? 5_000 : null,
   );
-  if (!runId) return <EmptyState title="No run selected" />;
+  if (!runId) return <EmptyState title="Kein Lauf ausgewählt" />;
   if (loading && !data)
     return (
       <div className="wb-loading" aria-busy="true">
-        Loading sources…
+        Quellen werden geladen…
       </div>
     );
   if (error)
     return (
-      <EmptyState title="Sources unavailable">
-        They could not be loaded right now.
+      <EmptyState title="Quellen nicht verfügbar">
+        Sie konnten gerade nicht geladen werden.
       </EmptyState>
     );
   if (!data || (data.documents.length === 0 && data.claims.length === 0))
     return (
-      <EmptyState icon={BookOpen} title="No sources yet">
-        Sources appear here as research finds and reads them.
+      <EmptyState icon={BookOpen} title="Noch keine Quellen">
+        Quellen erscheinen hier, sobald die Recherche sie findet und liest.
       </EmptyState>
     );
   const byId = new Map(data.documents.map((doc) => [doc.id, doc]));
@@ -80,7 +96,8 @@ export function ResearchPanel({
       {data.claims.length ? (
         <section aria-labelledby="claims-heading" className="stack">
           <h3 className="wb-heading" id="claims-heading">
-            Claims <span className="subtle tabular">{data.claims.length}</span>
+            Aussagen{" "}
+            <span className="subtle tabular">{data.claims.length}</span>
           </h3>
           <ol className="claims">
             {data.claims.map((claim) => (
@@ -89,7 +106,8 @@ export function ResearchPanel({
                   <Badge
                     tone={CLAIM_TONE[claim.status.toLowerCase()] ?? "neutral"}
                   >
-                    {claim.status.toLowerCase()}
+                    {CLAIM_LABEL[claim.status.toLowerCase()] ??
+                      claim.status.toLowerCase()}
                   </Badge>
                   <p>{claim.statement}</p>
                 </div>
@@ -103,8 +121,8 @@ export function ResearchPanel({
                       <p>“{link.excerpt}”</p>
                       <footer className="subtle">
                         {link.relation === "contradicts"
-                          ? "Contradicted by "
-                          : "Supported by "}
+                          ? "Widerlegt durch "
+                          : "Belegt durch "}
                         {doc ? (
                           <a
                             href={doc.url}
@@ -114,7 +132,7 @@ export function ResearchPanel({
                             {doc.publisher ?? host(doc.url)}
                           </a>
                         ) : (
-                          "a retrieved document"
+                          "ein abgerufenes Dokument"
                         )}
                       </footer>
                     </blockquote>
@@ -127,7 +145,7 @@ export function ResearchPanel({
       ) : null}
       <section aria-labelledby="sources-heading" className="stack">
         <h3 className="wb-heading" id="sources-heading">
-          Sources{" "}
+          Quellen{" "}
           <span className="subtle tabular">{data.documents.length}</span>
         </h3>
         <ol className="sources">
@@ -147,7 +165,8 @@ export function ResearchPanel({
                   <ExternalLink size={12} aria-hidden="true" />
                 </a>
                 <span className="subtle source-meta">
-                  {doc.publisher ?? host(doc.url)} · {doc.authority}
+                  {doc.publisher ?? host(doc.url)} ·{" "}
+                  {AUTHORITY_LABEL[doc.authority] ?? doc.authority}
                   {doc.published_at
                     ? ` · ${doc.published_at.slice(0, 10)}`
                     : ""}

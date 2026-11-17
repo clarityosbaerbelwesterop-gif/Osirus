@@ -20,13 +20,13 @@ export const MODEL_ROLES = [
 export type ModelRoleId = (typeof MODEL_ROLES)[number];
 
 const ROLE_LABEL: Record<ModelRoleId, string> = {
-  STRONG: "Strong model",
-  FAST: "Fast model",
-  THINKING: "Thinking model",
-  CODING: "Coding model",
-  RESEARCH: "Research model",
-  MATH: "Math model",
-  VERIFY: "Verification model",
+  STRONG: "Starkes Modell",
+  FAST: "Schnelles Modell",
+  THINKING: "Denkmodell",
+  CODING: "Code-Modell",
+  RESEARCH: "Recherche-Modell",
+  MATH: "Mathematik-Modell",
+  VERIFY: "Prüfmodell",
 };
 
 export type RoleState =
@@ -124,16 +124,20 @@ export function roleState(
   if (!configured)
     return {
       state: "not_configured",
-      message: "Not set up on this deployment.",
+      message: "In dieser Installation nicht eingerichtet.",
     };
   if (!row || !row.calls)
-    return { state: "not_used", message: "Not used in the last 24 hours." };
+    return {
+      state: "not_used",
+      message: "In den letzten 24 Stunden nicht genutzt.",
+    };
   if (row.last_status === "completed")
-    return { state: "available", message: "Answering normally." };
+    return { state: "available", message: "Antwortet normal." };
   if (row.last_error === "rate_limited")
     return {
       state: "busy",
-      message: "The provider is limiting requests. Runs wait and retry.",
+      message:
+        "Der Anbieter drosselt Anfragen. Läufe warten und versuchen es erneut.",
     };
   // A permanent refusal is a state of the account, not an outage: say so
   // instead of promising a recovery that will not happen on its own.
@@ -141,7 +145,7 @@ export function roleState(
     return {
       state: "quota_exhausted",
       message:
-        "Provider quota or credit exhausted. Retries keep failing until provider access is restored.",
+        "Kontingent oder Guthaben beim Anbieter aufgebraucht. Neue Versuche scheitern, bis der Zugang wieder besteht.",
     };
   if (
     row.last_error === "credential_rejected" ||
@@ -151,11 +155,11 @@ export function roleState(
     return {
       state: "configuration_error",
       message:
-        "Configuration problem (credentials or model setup). Retrying will not help.",
+        "Konfigurationsproblem (Zugangsdaten oder Modell-Einrichtung). Ein neuer Versuch hilft nicht.",
     };
   if (row.last_error && UNAVAILABLE.has(row.last_error))
-    return { state: "unavailable", message: "Temporarily unavailable." };
-  return { state: "available", message: "Recent requests had errors." };
+    return { state: "unavailable", message: "Vorübergehend nicht verfügbar." };
+  return { state: "available", message: "Letzte Anfragen hatten Fehler." };
 }
 
 export async function modelStatus(

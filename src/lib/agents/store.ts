@@ -22,26 +22,54 @@ export async function listAgents(identity: ProductIdentity) {
   );
 }
 
+/** Two bots of one workspace cannot share a name (agents_workspace_name_key). */
+export class BotNameTakenError extends Error {
+  readonly code = "name_taken";
+  constructor() {
+    super("Es gibt in diesem Workspace schon einen Bot mit diesem Namen.");
+  }
+}
+
+function nameTaken(error: unknown) {
+  const row = error as { code?: unknown; constraint?: unknown } | null;
+  return (
+    row?.code === "23505" &&
+    (row.constraint === undefined ||
+      row.constraint === "agents_workspace_name_key")
+  );
+}
+
+async function guardName<T>(work: () => Promise<T>): Promise<T> {
+  try {
+    return await work();
+  } catch (error) {
+    if (nameTaken(error)) throw new BotNameTakenError();
+    throw error;
+  }
+}
+
 export async function createAgent(input: {
   identity: ProductIdentity;
   name: string;
   systemPrompt: string;
   modelId: string;
 }) {
-  const rows = await queryAs<AgentRow>(
-    input.identity.userId,
-    `insert into osirus.agents
+  const rows = await guardName(() =>
+    queryAs<AgentRow>(
+      input.identity.userId,
+      `insert into osirus.agents
        (organization_id, workspace_id, name, system_prompt, model_id, created_by)
      values ($1::uuid, $2::uuid, $3, $4, $5, $6::uuid)
      returning id, name, system_prompt, model_id, status, created_at`,
-    [
-      input.identity.organizationId,
-      input.identity.workspaceId,
-      input.name,
-      input.systemPrompt,
-      input.modelId,
-      input.identity.userId,
-    ],
+      [
+        input.identity.organizationId,
+        input.identity.workspaceId,
+        input.name,
+        input.systemPrompt,
+        input.modelId,
+        input.identity.userId,
+      ],
+    ),
   );
   return rows[0] ?? null;
 }
@@ -67,9 +95,10 @@ export async function updateAgent(input: {
 }) {
   const current = await getAgent(input.identity, input.id);
   if (!current) return null;
-  const rows = await queryAs<AgentRow>(
-    input.identity.userId,
-    `update osirus.agents
+  const rows = await guardName(() =>
+    queryAs<AgentRow>(
+      input.identity.userId,
+      `update osirus.agents
         set name = $3,
             system_prompt = $4,
             model_id = $5,
@@ -77,14 +106,15 @@ export async function updateAgent(input: {
             updated_at = now()
       where id = $1::uuid and workspace_id = $2::uuid
       returning id, name, system_prompt, model_id, status, created_at`,
-    [
-      input.id,
-      input.identity.workspaceId,
-      input.name ?? current.name,
-      input.systemPrompt ?? current.system_prompt,
-      input.modelId ?? current.model_id,
-      input.status ?? current.status,
-    ],
+      [
+        input.id,
+        input.identity.workspaceId,
+        input.name ?? current.name,
+        input.systemPrompt ?? current.system_prompt,
+        input.modelId ?? current.model_id,
+        input.status ?? current.status,
+      ],
+    ),
   );
   return rows[0] ?? null;
 }

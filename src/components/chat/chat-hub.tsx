@@ -477,12 +477,12 @@ export function ChatHub(props: {
         if (!response.ok || !body.attachment) {
           setError(
             body.error === "too_large"
-              ? "That file is larger than 10 MB."
+              ? "Die Datei ist größer als 10 MB."
               : body.error === "limit_reached"
-                ? "Today's attachment limit for this workspace is reached."
+                ? "Das heutige Anhang-Limit für diesen Arbeitsbereich ist erreicht."
                 : body.error === "unsupported_type"
-                  ? "That file type cannot be read. Try PDF, text, Markdown, CSV, JSON, code or an image."
-                  : "The file could not be uploaded.",
+                  ? "Dieser Dateityp kann nicht gelesen werden. Versuch es mit PDF, Text, Markdown, CSV, JSON, Code oder einem Bild."
+                  : "Die Datei konnte nicht hochgeladen werden.",
           );
           return;
         }
@@ -638,7 +638,7 @@ export function ChatHub(props: {
           setError(
             requestError instanceof Error
               ? requestError.message
-              : "Run request failed",
+              : "Der Lauf konnte nicht gestartet werden.",
           );
           setFailedObjective(regenerate ? null : trimmed);
           setRunning(false);
@@ -675,7 +675,7 @@ export function ChatHub(props: {
     streamAbort.current?.abort();
     setActivities((current) => [
       ...current,
-      { id: `cancel:${runId}`, label: "Cancelling" },
+      { id: `cancel:${runId}`, label: "Wird abgebrochen" },
     ]);
     window.setTimeout(() => void refreshRun(runId), 500);
   }, [activeRunId, refreshRun]);
@@ -707,16 +707,16 @@ export function ChatHub(props: {
         cache: "no-store",
       });
       if (!response.ok) {
-        setError("Could not load that conversation.");
+        setError("Diese Unterhaltung konnte nicht geladen werden.");
         return;
       }
       const state = (await response.json()) as SessionState;
       if (!isSessionId(state.sessionId)) {
-        setError("Could not load that conversation.");
+        setError("Diese Unterhaltung konnte nicht geladen werden.");
         return;
       }
       if (state.surface && state.surface !== surface) {
-        setError("That conversation belongs to another surface.");
+        setError("Diese Unterhaltung gehört zu einem anderen Bereich.");
         return;
       }
       sessionRef.current = state.sessionId;
@@ -776,14 +776,14 @@ export function ChatHub(props: {
   const title =
     shell.sessions.find((item) => item.id === sessionId)?.title ??
     (messages.length
-      ? "Conversation"
+      ? "Unterhaltung"
       : props.kind === "agent"
         ? (props.titleFallback ?? "Agent")
         : props.kind === "bot"
           ? "Bot"
           : props.kind === "ai"
             ? "Chat"
-            : "New task");
+            : "Neue Aufgabe");
   const empty = messages.length === 0 && !running;
   const pendingApproval = liveView?.pendingApprovals[0];
   const productStatus = !(props.screenshotLayout && liveView?.live);
@@ -815,7 +815,7 @@ export function ChatHub(props: {
           actions={
             snapshot ? (
               <IconButton
-                label={open ? "Hide run details" : "Show run details"}
+                label={open ? "Laufdetails ausblenden" : "Laufdetails anzeigen"}
                 icon={PanelRight}
                 aria-pressed={open}
                 onClick={() => setWorkbenchOpen(!open)}
@@ -882,7 +882,7 @@ export function ChatHub(props: {
               return;
             }
             if (slash === "unknown") {
-              setError("That is not a command.");
+              setError("Das ist kein Befehl.");
               setObjective("");
               return;
             }

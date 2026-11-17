@@ -4,28 +4,29 @@ import { Badge } from "../ui/badge";
 import { RelativeTime } from "../ui/relative-time";
 
 const TONE: Record<RoleStatus["state"], { label: string; tone: Tone }> = {
-  available: { label: "Available", tone: "success" },
-  busy: { label: "Busy", tone: "warning" },
-  unavailable: { label: "Temporarily unavailable", tone: "danger" },
-  quota_exhausted: { label: "Quota exhausted", tone: "warning" },
-  configuration_error: { label: "Configuration problem", tone: "danger" },
-  not_used: { label: "No recent use", tone: "neutral" },
-  not_configured: { label: "Not configured", tone: "neutral" },
+  available: { label: "Verfügbar", tone: "success" },
+  busy: { label: "Ausgelastet", tone: "warning" },
+  unavailable: { label: "Vorübergehend nicht verfügbar", tone: "danger" },
+  quota_exhausted: { label: "Kontingent aufgebraucht", tone: "warning" },
+  configuration_error: { label: "Konfigurationsproblem", tone: "danger" },
+  not_used: { label: "Zuletzt nicht genutzt", tone: "neutral" },
+  not_configured: { label: "Nicht eingerichtet", tone: "neutral" },
 };
 
 const CATEGORY: Record<string, string> = {
-  insufficient_credit: "Provider declined: no credit or quota",
-  provider_unavailable: "Provider unavailable (5xx or upstream failure)",
-  credential_rejected: "Provider rejected the credentials",
-  rate_limited: "Rate limited",
-  capacity_deferred: "Deferred to keep capacity for user requests",
-  timeout: "Timed out",
-  model_not_configured: "Model role not configured",
-  invalid_json: "Unusable response (invalid JSON)",
-  invalid_stream: "Unusable response (stream)",
-  decision_failed: "Response did not match the expected structure",
-  structured_call_failed: "Response did not match the expected structure",
-  model_call_failed: "Call failed",
+  insufficient_credit: "Anbieter hat abgelehnt: kein Guthaben oder Kontingent",
+  provider_unavailable: "Anbieter nicht erreichbar (5xx oder Upstream-Fehler)",
+  credential_rejected: "Anbieter hat die Zugangsdaten abgelehnt",
+  rate_limited: "Gedrosselt",
+  capacity_deferred:
+    "Zurückgestellt, um Kapazität für direkte Anfragen zu halten",
+  timeout: "Zeitüberschreitung",
+  model_not_configured: "Modellrolle nicht eingerichtet",
+  invalid_json: "Unbrauchbare Antwort (ungültiges JSON)",
+  invalid_stream: "Unbrauchbare Antwort (Stream)",
+  decision_failed: "Antwort passte nicht zur erwarteten Struktur",
+  structured_call_failed: "Antwort passte nicht zur erwarteten Struktur",
+  model_call_failed: "Aufruf fehlgeschlagen",
 };
 
 export function ModelStatusTable({ roles }: { roles: RoleStatus[] }) {
@@ -35,13 +36,13 @@ export function ModelStatusTable({ roles }: { roles: RoleStatus[] }) {
       <table className="table">
         <thead>
           <tr>
-            <th scope="col">Role</th>
+            <th scope="col">Rolle</th>
             <th scope="col">Status</th>
             <th scope="col" className="num">
-              Calls (24h)
+              Aufrufe (24 Std.)
             </th>
-            <th scope="col">Last used</th>
-            {admin ? <th scope="col">Diagnostics (admin)</th> : null}
+            <th scope="col">Zuletzt genutzt</th>
+            {admin ? <th scope="col">Diagnose (Admin)</th> : null}
           </tr>
         </thead>
         <tbody>
@@ -57,7 +58,9 @@ export function ModelStatusTable({ roles }: { roles: RoleStatus[] }) {
                 <td className="num">
                   {role.calls24h}
                   {role.failures24h ? (
-                    <div className="subtle">{role.failures24h} failed</div>
+                    <div className="subtle">
+                      {role.failures24h} fehlgeschlagen
+                    </div>
                   ) : null}
                 </td>
                 <td className="tabular">
@@ -73,9 +76,9 @@ export function ModelStatusTable({ roles }: { roles: RoleStatus[] }) {
                       <div className="subtle">
                         {role.admin.failureCategory ? (
                           <div>
-                            Last failure:{" "}
+                            Letzter Fehler:{" "}
                             {CATEGORY[role.admin.failureCategory] ??
-                              "The provider declined the request."}
+                              "Der Anbieter hat die Anfrage abgelehnt."}
                             {role.admin.lastFailureAt ? (
                               <>
                                 ,{" "}
@@ -86,7 +89,7 @@ export function ModelStatusTable({ roles }: { roles: RoleStatus[] }) {
                             ) : null}
                           </div>
                         ) : (
-                          <div>No failure in the last 24 hours.</div>
+                          <div>Kein Fehler in den letzten 24 Stunden.</div>
                         )}
                       </div>
                     ) : null}

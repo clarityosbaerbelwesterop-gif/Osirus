@@ -78,7 +78,7 @@ function CreateBot({ onCancel }: { onCancel: () => void }) {
 
   return (
     <form
-      className="card hub-form"
+      className="card card-pad hub-form"
       aria-label="Neuer Bot"
       onSubmit={(event) => {
         event.preventDefault();
@@ -88,9 +88,10 @@ function CreateBot({ onCancel }: { onCancel: () => void }) {
       <div className="hub-form-preview" aria-hidden="true">
         <BotOrb seed={name.trim() || "neu"} size={52} state="idle" />
       </div>
-      <label>
-        Name
+      <label className="field">
+        <span className="field-label">Name</span>
         <input
+          className="input"
           aria-label="Name des Bots"
           value={name}
           maxLength={80}
@@ -98,9 +99,10 @@ function CreateBot({ onCancel }: { onCancel: () => void }) {
           onChange={(event) => setName(event.target.value)}
         />
       </label>
-      <label>
-        Rolle
+      <label className="field">
+        <span className="field-label">Rolle</span>
         <select
+          className="select"
           aria-label="Rolle des Bots"
           value={role}
           onChange={(event) => setRole(event.target.value as BotRoleId)}
@@ -112,9 +114,14 @@ function CreateBot({ onCancel }: { onCancel: () => void }) {
           ))}
         </select>
       </label>
-      <label>
-        {role === "custom" ? "Anweisungen" : "Zusätzliche Anweisungen"}
+      <label className="field">
+        <span className="field-label">
+          {role === "custom" ? "Anweisungen" : "Zusätzliche Anweisungen"}
+        </span>
         <textarea
+          className="textarea"
+          rows={4}
+          maxLength={4000}
           aria-label="Anweisungen"
           value={prompt}
           placeholder={
@@ -125,7 +132,7 @@ function CreateBot({ onCancel }: { onCancel: () => void }) {
           onChange={(event) => setPrompt(event.target.value)}
         />
       </label>
-      <p className="subtle">
+      <p className="field-hint">
         Osirus wählt das Modell passend zur Rolle: Experten-Rollen bekommen ein
         Top-Modell.
       </p>
@@ -191,16 +198,17 @@ function CreateGroup({
 
   return (
     <form
-      className="card hub-form"
+      className="card card-pad hub-form"
       aria-label="Neuer Gruppenchat"
       onSubmit={(event) => {
         event.preventDefault();
         void create();
       }}
     >
-      <label>
-        Titel
+      <label className="field">
+        <span className="field-label">Titel</span>
         <input
+          className="input"
           aria-label="Titel des Gruppenchats"
           value={title}
           maxLength={120}

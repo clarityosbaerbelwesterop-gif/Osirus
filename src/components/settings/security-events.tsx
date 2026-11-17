@@ -14,16 +14,22 @@ import { RelativeTime } from "../ui/relative-time";
 
 const KIND: Record<string, { label: string; icon: LucideIcon }> = {
   prompt_injection_neutralized: {
-    label: "Injection neutralized",
+    label: "Injection entschärft",
     icon: ShieldAlert,
   },
-  unsafe_path_blocked: { label: "Unsafe path blocked", icon: FolderX },
-  access_refused: { label: "Access refused", icon: Ban },
-  secret_redacted: { label: "Secret redacted", icon: EyeOff },
-  tool_denied: { label: "Tool call refused", icon: Ban },
-  approval_expired: { label: "Approval expired", icon: Clock },
-  outbound_blocked: { label: "Request blocked", icon: Globe },
-  policy_denied: { label: "Blocked by policy", icon: Ban },
+  unsafe_path_blocked: { label: "Unsicherer Pfad blockiert", icon: FolderX },
+  access_refused: { label: "Zugriff verweigert", icon: Ban },
+  secret_redacted: { label: "Geheimnis geschwärzt", icon: EyeOff },
+  tool_denied: { label: "Werkzeugaufruf abgelehnt", icon: Ban },
+  approval_expired: { label: "Freigabe abgelaufen", icon: Clock },
+  outbound_blocked: { label: "Anfrage blockiert", icon: Globe },
+  policy_denied: { label: "Durch Richtlinie blockiert", icon: Ban },
+};
+
+const SEVERITY_LABEL: Record<string, string> = {
+  info: "Info",
+  warning: "Warnung",
+  critical: "Kritisch",
 };
 
 export function SecurityEventList({ events }: { events: SecurityEventView[] }) {
@@ -31,7 +37,9 @@ export function SecurityEventList({ events }: { events: SecurityEventView[] }) {
     return (
       <div className="notice">
         <ShieldCheck size={16} aria-hidden="true" />
-        <span>No security events recorded in this workspace.</span>
+        <span>
+          In diesem Arbeitsbereich sind keine Sicherheitsereignisse erfasst.
+        </span>
       </div>
     );
   return (
@@ -73,7 +81,7 @@ export function SecurityEventList({ events }: { events: SecurityEventView[] }) {
                       : "neutral"
                 }
               >
-                {event.severity}
+                {SEVERITY_LABEL[event.severity] ?? event.severity}
               </Badge>
             </div>
           </li>

@@ -25,7 +25,9 @@ export function ThemeMenu() {
     <Menu.Root>
       <Menu.Trigger
         className="icon-btn topbar-theme"
-        aria-label={`Theme: ${theme}`}
+        aria-label={`Farbschema: ${
+          OPTIONS.find((option) => option.id === theme)?.label ?? theme
+        }`}
       >
         <Active size={17} aria-hidden="true" />
       </Menu.Trigger>

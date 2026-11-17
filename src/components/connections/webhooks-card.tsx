@@ -20,20 +20,26 @@ export type WebhookEndpointData = {
 
 const EVENTS = [
   { id: "push", label: "Push" },
-  { id: "pull_request", label: "Pull request" },
-  { id: "ci_failure", label: "CI failure" },
+  { id: "pull_request", label: "Pull Request" },
+  { id: "ci_failure", label: "CI-Fehler" },
   { id: "deployment", label: "Deployment" },
-  { id: "db_event", label: "Database event" },
-  { id: "generic", label: "Other" },
+  { id: "db_event", label: "Datenbank-Ereignis" },
+  { id: "generic", label: "Sonstiges" },
 ];
+
+const SOURCE_LABEL: Record<WebhookEndpointData["source"], string> = {
+  github: "GitHub",
+  vercel: "Vercel",
+  generic: "Beliebiger signierter Absender",
+};
 
 const SOURCE_HINT: Record<WebhookEndpointData["source"], string> = {
   github:
-    "Signed with X-Hub-Signature-256. Add it to a repository below, or paste the URL and secret under Settings → Webhooks (content type application/json).",
+    "Signiert mit X-Hub-Signature-256. Füge ihn unten einem Repository hinzu oder trage URL und Secret unter Settings → Webhooks ein (Content type application/json).",
   vercel:
-    "Signed with x-vercel-signature. Paste the URL and secret under Vercel → Settings → Webhooks.",
+    "Signiert mit x-vercel-signature. Trage URL und Secret unter Vercel → Settings → Webhooks ein.",
   generic:
-    "Send JSON with x-osirus-timestamp (Unix seconds) and x-osirus-signature: sha256=HMAC(secret, timestamp + '.' + body). Name the event in x-osirus-event, e.g. db.row_inserted.",
+    "Sende JSON mit x-osirus-timestamp (Unix-Sekunden) und x-osirus-signature: sha256=HMAC(secret, timestamp + '.' + body). Nenne das Ereignis in x-osirus-event, z. B. db.row_inserted.",
 };
 
 export function WebhooksCard({
@@ -64,8 +70,8 @@ export function WebhooksCard({
     return (
       <p className="subtle">
         {shell.isAdmin
-          ? "Webhooks need OSIRUS_CONNECTOR_KEY and the latest database upgrade on this deployment."
-          : "Webhooks are not set up on this deployment yet."}
+          ? "Webhooks brauchen OSIRUS_CONNECTOR_KEY und das neueste Datenbank-Upgrade in dieser Installation."
+          : "Webhooks sind in dieser Installation noch nicht eingerichtet."}
       </p>
     );
 
@@ -87,10 +93,10 @@ export function WebhooksCard({
     if (!response?.ok || !body.endpoint || !body.url || !body.secret) {
       setMessage(
         body?.error === "not_configured"
-          ? "Webhooks are not set up on this deployment yet."
+          ? "Webhooks sind in dieser Installation noch nicht eingerichtet."
           : body?.error === "limit_reached"
-            ? "This workspace reached its plan's webhook limit."
-            : "The endpoint was not created.",
+            ? "Dieser Arbeitsbereich hat das Webhook-Limit seines Plans erreicht."
+            : "Der Endpunkt wurde nicht angelegt.",
       );
       return;
     }
@@ -115,12 +121,12 @@ export function WebhooksCard({
     };
     setMessage(
       response?.ok
-        ? `Added to ${repository}. GitHub sends a ping first.`
+        ? `Zu ${repository} hinzugefügt. GitHub sendet zuerst einen Ping.`
         : body?.error === "github_permission"
-          ? "GitHub refused: the token needs the Webhooks permission (fine-grained) or admin:repo_hook (classic)."
+          ? "GitHub hat abgelehnt: Das Token braucht die Berechtigung Webhooks (fine-grained) oder admin:repo_hook (classic)."
           : body?.error === "github_not_connected"
-            ? "Connect GitHub with write access first."
-            : "The webhook could not be added on GitHub.",
+            ? "Verbinde GitHub zuerst mit Schreibzugriff."
+            : "Der Webhook konnte auf GitHub nicht hinzugefügt werden.",
     );
   };
 
@@ -129,7 +135,9 @@ export function WebhooksCard({
       {created ? (
         <div className="notice notice-info" role="status">
           <div className="stack">
-            <p>Copy the secret now; it is not shown again.</p>
+            <p>
+              Kopiere das Secret jetzt; es wird nicht noch einmal angezeigt.
+            </p>
             <p className="mono">URL: {created.url}</p>
             <p className="mono">Secret: {created.secret}</p>
             <div className="row row-wrap">
@@ -141,14 +149,14 @@ export function WebhooksCard({
                 }
               >
                 <Copy size={14} aria-hidden="true" />
-                Copy secret
+                Secret kopieren
               </button>
               <button
                 type="button"
                 className="btn btn-sm btn-ghost"
                 onClick={() => setCreated(null)}
               >
-                Done
+                Fertig
               </button>
             </div>
             {githubWritable ? (
@@ -159,7 +167,7 @@ export function WebhooksCard({
                   void installOnGithub();
                 }}
               >
-                <Field label="Add to GitHub repository (owner/name)">
+                <Field label="Zu GitHub-Repository hinzufügen (owner/name)">
                   {(props) => (
                     <input
                       {...props}
@@ -175,7 +183,7 @@ export function WebhooksCard({
                   className="btn btn-sm btn-secondary"
                   disabled={busy || !/^[\w.-]+\/[\w.-]+$/.test(repository)}
                 >
-                  Add webhook on GitHub
+                  Webhook auf GitHub hinzufügen
                 </button>
               </form>
             ) : null}
@@ -195,26 +203,32 @@ export function WebhooksCard({
               <div className="item-body">
                 <p className="item-title">{endpoint.name}</p>
                 <p className="item-meta">
-                  {endpoint.source} ·{" "}
+                  {SOURCE_LABEL[endpoint.source] ?? endpoint.source} ·{" "}
                   {endpoint.events.length
-                    ? endpoint.events.join(", ").replaceAll("_", " ")
-                    : "all events"}
+                    ? endpoint.events
+                        .map(
+                          (id) =>
+                            EVENTS.find((event) => event.id === id)?.label ??
+                            id.replaceAll("_", " "),
+                        )
+                        .join(", ")
+                    : "alle Ereignisse"}
                   {endpoint.lastDeliveryAt ? (
                     <>
                       {" "}
-                      · last delivery{" "}
+                      · letzte Zustellung{" "}
                       <RelativeTime value={endpoint.lastDeliveryAt} /> (
                       {endpoint.lastStatus})
                     </>
                   ) : (
-                    " · no delivery yet"
+                    " · noch keine Zustellung"
                   )}
                 </p>
               </div>
               <ConfirmDialog
-                title={`Delete ${endpoint.name}?`}
-                description="Deliveries to this URL will be refused. Automations that listen to it stop starting."
-                confirmLabel="Delete"
+                title={`${endpoint.name} löschen?`}
+                description="Zustellungen an diese URL werden abgelehnt. Automationen, die darauf hören, starten nicht mehr."
+                confirmLabel="Löschen"
                 onConfirm={async () => {
                   await fetch(`/api/webhooks/${endpoint.id}`, {
                     method: "DELETE",
@@ -225,7 +239,7 @@ export function WebhooksCard({
                   <button
                     type="button"
                     className="icon-btn icon-btn-sm"
-                    aria-label={`Delete ${endpoint.name}`}
+                    aria-label={`${endpoint.name} löschen`}
                   >
                     <Trash2 size={15} aria-hidden="true" />
                   </button>
@@ -254,7 +268,7 @@ export function WebhooksCard({
               />
             )}
           </Field>
-          <Field label="Sender" hint={SOURCE_HINT[source]}>
+          <Field label="Absender" hint={SOURCE_HINT[source]}>
             {(props) => (
               <select
                 {...props}
@@ -266,12 +280,12 @@ export function WebhooksCard({
               >
                 <option value="github">GitHub</option>
                 <option value="vercel">Vercel</option>
-                <option value="generic">Any signed sender</option>
+                <option value="generic">Beliebiger signierter Absender</option>
               </select>
             )}
           </Field>
           <fieldset className="field fieldset">
-            <legend className="field-label">Events it accepts</legend>
+            <legend className="field-label">Angenommene Ereignisse</legend>
             <div className="tool-checks">
               {EVENTS.map((event) => (
                 <label key={event.id} className="check">
@@ -297,14 +311,14 @@ export function WebhooksCard({
               className="btn btn-primary"
               disabled={busy || !name.trim()}
             >
-              Create endpoint
+              Endpunkt anlegen
             </button>
             <button
               type="button"
               className="btn btn-ghost"
               onClick={() => setCreating(false)}
             >
-              Cancel
+              Abbrechen
             </button>
           </div>
         </form>
@@ -315,7 +329,7 @@ export function WebhooksCard({
             className="btn btn-sm btn-secondary"
             onClick={() => setCreating(true)}
           >
-            New webhook endpoint
+            Neuer Webhook-Endpunkt
           </button>
         </div>
       )}

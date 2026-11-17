@@ -13,20 +13,20 @@ import { requireProductSession } from "@/lib/product/session";
 import { approvalView } from "@/lib/ui/approval-view";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Approvals" };
+export const metadata: Metadata = { title: "Freigaben" };
 
 const FILTERS: Array<{ id: ApprovalFilter; label: string }> = [
-  { id: "pending", label: "Pending" },
-  { id: "approved", label: "Approved" },
-  { id: "rejected", label: "Rejected" },
-  { id: "expired", label: "Expired" },
+  { id: "pending", label: "Offen" },
+  { id: "approved", label: "Freigegeben" },
+  { id: "rejected", label: "Abgelehnt" },
+  { id: "expired", label: "Abgelaufen" },
 ];
 
 const EMPTY: Record<ApprovalFilter, string> = {
-  pending: "Nothing is waiting for you.",
-  approved: "No approved requests yet.",
-  rejected: "No rejected requests.",
-  expired: "No expired requests.",
+  pending: "Gerade wartet nichts auf dich.",
+  approved: "Noch keine freigegebenen Anfragen.",
+  rejected: "Keine abgelehnten Anfragen.",
+  expired: "Keine abgelaufenen Anfragen.",
 };
 
 export default async function ApprovalsPage({
@@ -51,10 +51,10 @@ export default async function ApprovalsPage({
   }));
   return (
     <PageFrame
-      title="Approvals"
-      lede="Every action Osirus asked you to decide, with what it would do and where. Each approval covers one exact call."
+      title="Freigaben"
+      lede="Jede Aktion, über die Osirus dich entscheiden ließ, mit dem, was sie tun würde und wo. Jede Freigabe gilt für genau einen Aufruf."
     >
-      <nav className="filter-tabs" aria-label="Approval status">
+      <nav className="filter-tabs" aria-label="Status der Freigaben">
         {FILTERS.map((item) => (
           <Link
             key={item.id}

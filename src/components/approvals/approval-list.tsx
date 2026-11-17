@@ -23,7 +23,7 @@ export function ApprovalList({ items }: { items: ApprovalListItem[] }) {
         <li key={item.view.id} className="approval-row">
           <div className="approval-context subtle">
             <span className="wrap-anywhere">
-              {item.objective ? `“${item.objective}”` : "A run"}
+              {item.objective ? `“${item.objective}”` : "Ein Lauf"}
             </span>
             <span>
               {item.view.createdAt ? (
@@ -36,7 +36,7 @@ export function ApprovalList({ items }: { items: ApprovalListItem[] }) {
                 className="row"
               >
                 <MessageSquare size={13} aria-hidden="true" />
-                Open conversation
+                Unterhaltung öffnen
               </Link>
             ) : null}
           </div>

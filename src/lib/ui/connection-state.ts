@@ -39,18 +39,18 @@ export const STATE_LABEL: Record<
   ConnectionState,
   { label: string; tone: Tone }
 > = {
-  CONNECTED: { label: "Connected", tone: "success" },
-  DEGRADED: { label: "Degraded", tone: "warning" },
-  EXPIRED: { label: "Expired", tone: "danger" },
-  NOT_CONNECTED: { label: "Not connected", tone: "neutral" },
-  NOT_CONFIGURED: { label: "Not configured", tone: "neutral" },
+  CONNECTED: { label: "Verbunden", tone: "success" },
+  DEGRADED: { label: "Eingeschränkt", tone: "warning" },
+  EXPIRED: { label: "Abgelaufen", tone: "danger" },
+  NOT_CONNECTED: { label: "Nicht verbunden", tone: "neutral" },
+  NOT_CONFIGURED: { label: "Nicht eingerichtet", tone: "neutral" },
 };
 
 /** The health line: never green without a successful check. */
 export function healthLine(health: HealthLike | null) {
   const last = health?.last;
-  if (!last) return { label: "Not checked yet", tone: "neutral" as Tone };
+  if (!last) return { label: "Noch nicht geprüft", tone: "neutral" as Tone };
   return last.ok
-    ? { label: "Healthy", tone: "success" as Tone }
-    : { label: "Failing", tone: "danger" as Tone };
+    ? { label: "Funktioniert", tone: "success" as Tone }
+    : { label: "Fehlerhaft", tone: "danger" as Tone };
 }

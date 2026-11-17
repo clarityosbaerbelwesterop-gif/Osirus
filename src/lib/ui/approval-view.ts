@@ -6,8 +6,14 @@ import { iso, obj, str, type Row } from "./records";
 //
 // The request carries the tool, its declared effect and the exact input that
 // will run (inside the fingerprint). None of it is shown as JSON: the input is
-// flattened into labelled values, secrets are withheld, and long values are
-// cut. Nothing here decides anything; decisions go through the API.
+// flattened into labelled values and secrets are withheld. Nothing here
+// decides anything; decisions go through the API.
+//
+// A tool call can come from text the model read (a web page, a file), so the
+// card must not let anything slip past the person: a long value shows its
+// end too (where an appended "; curl … | sh" would sit), more fields than fit
+// are announced, not dropped, and only secret-looking strings are withheld
+// (a "private: false" on a new repository is the decision itself).
 
 export type ApprovalView = {
   id: string;
@@ -33,7 +39,13 @@ export type ApprovalView = {
 };
 
 const SECRET_KEY =
-  /token|secret|password|passwd|authorization|api[_-]?key|credential|cookie|private/i;
+  /token|secret|password|passwd|authorization|api[_-]?key|credential|cookie|private[_-]?key/i;
+
+/** Fields shown before the card says how many more there are. */
+const MAX_DETAILS = 24;
+/** Values up to this length are shown whole; longer ones keep both ends. */
+const FULL_VALUE = 600;
+const VALUE_END = 280;
 const TARGET_KEYS = [
   "repository",
   "repo",
@@ -53,55 +65,103 @@ const STATUS_LABEL: Record<ApprovalView["status"], string> = {
   cancelled: "Abgebrochen",
 };
 
-function flatten(
-  input: unknown,
-  prefix = "",
-  out: Array<{ label: string; value: string }> = [],
-) {
-  if (out.length >= 8) return out;
-  if (input === null || input === undefined) return out;
+// Input keys the approval card names in German; other keys are humanized.
+const DETAIL_LABEL: Record<string, string> = {
+  repository: "Repository",
+  repo: "Repository",
+  branch: "Branch",
+  url: "URL",
+  path: "Pfad",
+  command: "Befehl",
+  title: "Titel",
+  target: "Ziel",
+  message: "Nachricht",
+  body: "Text",
+  name: "Name",
+  description: "Beschreibung",
+  query: "Suchanfrage",
+  owner: "Inhaber",
+};
+
+function detailLabel(key: string) {
+  return DETAIL_LABEL[key] ?? humanize(key);
+}
+
+/** A long value keeps its start and its end; the middle is counted. */
+export function clip(value: string) {
+  if (value.length <= FULL_VALUE) return value;
+  const skipped = value.length - 2 * VALUE_END;
+  return `${value.slice(0, VALUE_END)} … (${skipped} Zeichen ausgelassen) … ${value.slice(-VALUE_END)}`;
+}
+
+/** Withheld only when the key names a secret and the value looks like one. */
+function isSecret(key: string, value: unknown) {
+  return (
+    SECRET_KEY.test(key) &&
+    typeof value === "string" &&
+    value.length >= 8 &&
+    !/\s/.test(value)
+  );
+}
+
+type Detail = { label: string; value: string };
+
+function collect(input: unknown, prefix: string, out: Detail[]) {
+  if (input === null || input === undefined) return;
   if (typeof input !== "object") {
-    const value = String(input);
     out.push({
-      label: humanize(prefix || "value"),
-      value: value.length > 240 ? `${value.slice(0, 240)}…` : value,
+      label: detailLabel(prefix || "Wert"),
+      value: clip(String(input)),
     });
-    return out;
+    return;
   }
   if (Array.isArray(input)) {
     const primitives = input.filter(
       (item) => typeof item !== "object" || item === null,
     );
     if (primitives.length === input.length) {
-      const joined = primitives.map(String).join(", ");
       out.push({
-        label: humanize(prefix || "values"),
-        value: joined.length > 240 ? `${joined.slice(0, 240)}…` : joined,
+        label: detailLabel(prefix || "Werte"),
+        value: clip(primitives.map(String).join(", ")),
       });
     } else {
-      out.push({
-        label: humanize(prefix || "items"),
-        value: `${input.length} items`,
-      });
+      input.forEach((item, index) =>
+        collect(item, `${prefix || "Eintrag"} ${index + 1}`, out),
+      );
     }
-    return out;
+    return;
   }
   for (const [key, value] of Object.entries(input as Row)) {
-    if (SECRET_KEY.test(key)) {
-      out.push({ label: humanize(key), value: "Withheld" });
+    const label = prefix ? `${prefix} ${key}` : key;
+    if (isSecret(key, value)) {
+      out.push({ label: detailLabel(label), value: "Zurückgehalten" });
       continue;
     }
     if (key === "content" && typeof value === "string") {
       out.push({
-        label: "Content",
-        value: `${value.split("\n").length} lines`,
+        label: prefix ? detailLabel(label) : "Inhalt",
+        value: `${value.split("\n").length} Zeilen: ${clip(value)}`,
       });
       continue;
     }
-    flatten(value, prefix ? `${prefix} ${key}` : key, out);
-    if (out.length >= 8) break;
+    collect(value, label, out);
   }
-  return out;
+}
+
+/**
+ * Every value of the input, labelled. When there are more than fit, the
+ * last entry says how many were left out, so nothing disappears unseen.
+ */
+function flatten(input: unknown): Detail[] {
+  const all: Detail[] = [];
+  collect(input, "", all);
+  if (all.length <= MAX_DETAILS) return all;
+  const shown = all.slice(0, MAX_DETAILS - 1);
+  shown.push({
+    label: "Achtung",
+    value: `${all.length - shown.length} weitere Angaben nicht angezeigt. Lehne ab, wenn du nicht alles prüfen kannst.`,
+  });
+  return shown;
 }
 
 function parseInput(request: Row | null): unknown {

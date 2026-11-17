@@ -281,7 +281,7 @@ export async function POST(request: Request) {
       return Response.json(
         {
           error: "invalid_request",
-          message: "Choose one of Leicht, Mittel, Hoch, Super, or Ultra.",
+          message: "Wähle Leicht, Mittel, Hoch, Super oder Ultra.",
         },
         { status: 400 },
       );
@@ -302,7 +302,7 @@ export async function POST(request: Request) {
     return Response.json(
       {
         error: "coding_selection_required",
-        message: "Choose a repository and a branch before starting.",
+        message: "Wähle vor dem Start ein Repository und einen Branch.",
       },
       { status: 400 },
     );
@@ -354,7 +354,7 @@ export async function POST(request: Request) {
       return Response.json(
         {
           error: "surface_mismatch",
-          message: "That conversation belongs to another surface.",
+          message: "Diese Unterhaltung gehört zu einem anderen Bereich.",
         },
         { status: 409 },
       );

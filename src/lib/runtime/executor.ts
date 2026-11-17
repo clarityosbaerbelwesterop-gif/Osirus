@@ -29,6 +29,9 @@ import type { Capability, RuntimePacket } from "./types";
 import { driveSlices, finalizeRun } from "./worker";
 import { forUser } from "../billing/enforce";
 
+/** Longest a model classification may hold up the route. */
+const ROUTING_BUDGET_MS = 6_000;
+
 export type { RuntimeIdentity };
 
 export type PreparedRun = {
@@ -304,7 +307,12 @@ export async function planRuntimeRun(input: {
             }),
             requestId: `${input.runId}:routing`,
             objective,
-            signal: input.signal,
+            // Routing is worth a few seconds, not a reasoning model's
+            // minute: past the budget the heuristic route is used.
+            signal: AbortSignal.any([
+              AbortSignal.timeout(ROUTING_BUDGET_MS),
+              ...(input.signal ? [input.signal] : []),
+            ]),
           }),
       });
 

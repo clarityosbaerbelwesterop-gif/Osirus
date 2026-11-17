@@ -34,7 +34,9 @@ export function Sheet({
             <div className="row">
               {headerActions}
               <Dialog.Close
-                render={<IconButton label="Close" icon={X} tooltip={false} />}
+                render={
+                  <IconButton label="Schließen" icon={X} tooltip={false} />
+                }
               />
             </div>
           </div>

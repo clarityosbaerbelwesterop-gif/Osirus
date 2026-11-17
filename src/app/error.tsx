@@ -17,10 +17,10 @@ export default function ErrorBoundary({
     <main className="status-page">
       <section className="status-card">
         <p className="overline">Osirus</p>
-        <h1>That request could not be completed.</h1>
-        <p>No private diagnostic information is displayed here.</p>
+        <h1>Diese Anfrage konnte nicht abgeschlossen werden.</h1>
+        <p>Hier werden keine privaten Diagnosedaten angezeigt.</p>
         <button type="button" className="btn btn-secondary" onClick={reset}>
-          Try again
+          Erneut versuchen
         </button>
       </section>
     </main>

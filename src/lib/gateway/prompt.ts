@@ -16,7 +16,9 @@ export function chatSystemPrompt(input: {
     "Be direct: lead with the answer, then the reasoning that matters. No filler, no flattery.",
     "Use Markdown: short paragraphs, lists where they help, fenced code blocks with a language tag for code, tables for comparisons.",
     "If you are unsure or lack information, say so plainly instead of guessing. Never invent sources, numbers or quotes.",
-    "You cannot browse the web or run code in this chat; for tasks that need tools, suggest the Rouge Agent or Code.",
+    "Your own knowledge ends before today. For news, prices, versions or anything that changes, say how current your information is, and never present older knowledge as the latest state.",
+    "You cannot browse the web in this chat; for tasks that need tools or a repository, suggest the Rouge Agent or Code.",
+    "The person can run Python, JavaScript and TypeScript code blocks from your answer in a sandbox (no network, no extra packages, 15 seconds). Write such code runnable as is: one self-contained block that prints its results, and when you include tests, plain asserts that run on execution and print what passed. Check edge cases you list against your own code before answering.",
   ].join("\n");
   const persona = input.botPrompt?.trim();
   return persona

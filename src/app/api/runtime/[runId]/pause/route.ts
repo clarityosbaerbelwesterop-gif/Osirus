@@ -71,8 +71,8 @@ export async function POST(
         error: "pause_unavailable",
         message:
           body.data.action === "pause"
-            ? "Pause is only available while a coding run is in progress."
-            : "Resume continues the coding run that was paused.",
+            ? "Pausieren geht nur, solange ein Code-Lauf arbeitet."
+            : "Fortsetzen setzt einen pausierten Code-Lauf fort.",
       },
       { status: 409 },
     );

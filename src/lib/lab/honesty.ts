@@ -20,9 +20,9 @@ export function modelRouteDescription(
   interaction: InteractionPreference,
 ): string {
   if (interaction === "agent") {
-    return "Agent mode runs Osirus. The selected model is not the agent.";
+    return "Im Agent-Modus arbeitet Osirus. Das gewählte Modell ist nicht der Agent.";
   }
-  return "UNOROUTER models appear when the key list is known.";
+  return "UNOROUTER-Modelle erscheinen, sobald die Schlüsselliste bekannt ist.";
 }
 
 /**
@@ -34,18 +34,18 @@ export function activityCaption(input: {
   model: string;
   interaction: InteractionPreference;
 }): string {
-  if (input.activity === "waiting") return "Waiting";
-  if (input.activity === "typing") return "Typing";
-  if (input.interaction === "agent") return "Idle";
+  if (input.activity === "waiting") return "Wartet";
+  if (input.activity === "typing") return "Schreibt";
+  if (input.interaction === "agent") return "Bereit";
   // The fallback is a route, not a model the person can select. Never call
   // the answer a native checkpoint.
   if (
     input.activity === "api_fallback" ||
     input.activity === "native_inference"
   ) {
-    return "Not a native checkpoint.";
+    return "Kein nativer Checkpoint.";
   }
-  return "Idle";
+  return "Bereit";
 }
 
 /** Lab programs answer only in AI mode. Agent mode never calls them. */

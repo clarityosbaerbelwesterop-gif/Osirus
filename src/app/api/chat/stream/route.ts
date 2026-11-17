@@ -48,6 +48,7 @@ import {
 import {
   fileMaterial,
   materialPrompt,
+  citedSources,
   webMaterial,
 } from "@/lib/gateway/material";
 import { loadProductSession } from "@/lib/product/session";
@@ -572,6 +573,11 @@ export async function POST(request: Request) {
           error instanceof Error ? error.name : "unknown",
         ),
       );
+      // Only the sources the answer cites stay with it: one it did not use
+      // is not a source (Grok review 2026-11-15).
+      const shownSources = citedSources(text, material.sources);
+      if (shownSources.length !== material.sources.length)
+        send({ type: "sources", sources: shownSources });
       try {
         if (text.trim()) {
           const saved = await saveChatMessage(identity, {
@@ -587,7 +593,7 @@ export async function POST(request: Request) {
               partial: status !== "completed",
               latencyMs,
               cached: Boolean(hit),
-              sources: material.sources.length ? material.sources : undefined,
+              sources: shownSources.length ? shownSources : undefined,
             },
           });
           messageId = saved.id;

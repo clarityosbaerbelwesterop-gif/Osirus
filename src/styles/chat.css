@@ -312,6 +312,58 @@
   color: var(--color-text);
 }
 
+.md-code-copy:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.md-code-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-0-5, 2px);
+}
+
+/* Output of a block run in the sandbox (Ausführen). */
+.md-run {
+  border-top: 1px solid var(--color-border);
+  background: var(--color-surface);
+  font-size: var(--text-xs);
+}
+
+.md-run-head {
+  margin: 0;
+  padding: var(--space-1-5) var(--space-3);
+  color: var(--color-text-muted);
+  font-weight: var(--weight-medium);
+}
+
+.md-run-ok .md-run-head {
+  color: var(--color-success, var(--color-text));
+}
+
+.md-run-failed .md-run-head {
+  color: var(--color-danger);
+}
+
+.md .md-run pre {
+  max-height: 320px;
+  padding: var(--space-2) var(--space-3);
+  overflow: auto;
+  font-size: var(--text-xs);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.md .md-run .md-run-err {
+  color: var(--color-danger);
+}
+
+.md-run-empty {
+  margin: 0;
+  padding: 0 var(--space-3) var(--space-2);
+  color: var(--color-text-subtle);
+}
+
 .md pre {
   margin: 0;
   padding: var(--space-3);
@@ -553,6 +605,13 @@
 .approval-facts dd,
 .approval-details dd {
   margin: 0;
+}
+
+/* The exact input, line breaks kept; a long value scrolls, never hides. */
+.approval-details dd {
+  max-height: 12rem;
+  overflow: auto;
+  white-space: pre-wrap;
 }
 
 .approval-details {

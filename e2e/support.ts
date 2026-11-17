@@ -291,7 +291,7 @@ export async function openSurface(page: Page, surface: Surface) {
   await page.evaluate(() => document.fonts.ready);
   await page
     .locator(".status-line")
-    .filter({ hasText: /Online|Degraded|unavailable/ })
+    .filter({ hasText: /Online|Eingeschränkt|nicht verfügbar/ })
     .first()
     .waitFor({ state: "attached", timeout: 5_000 })
     .catch(() => undefined);

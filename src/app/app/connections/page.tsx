@@ -5,15 +5,15 @@ import { loadConnections } from "@/lib/product/connections";
 import { requireProductSession } from "@/lib/product/session";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Connections" };
+export const metadata: Metadata = { title: "Verbindungen" };
 
 export default async function ConnectionsPage() {
   const { identity } = await requireProductSession();
   const data = await loadConnections(identity);
   return (
     <PageFrame
-      title="Connections"
-      lede="What Osirus can reach on your behalf, and whether each connection works right now."
+      title="Verbindungen"
+      lede="Was Osirus in deinem Namen erreichen kann und ob jede Verbindung gerade funktioniert."
     >
       <ConnectionsView
         github={data.github}

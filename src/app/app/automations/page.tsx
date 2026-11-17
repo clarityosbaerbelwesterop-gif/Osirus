@@ -8,7 +8,7 @@ import { requireProductSession } from "@/lib/product/session";
 import { listEndpoints } from "@/lib/webhooks/store";
 
 export const dynamic = "force-dynamic";
-export const metadata: Metadata = { title: "Automations" };
+export const metadata: Metadata = { title: "Automationen" };
 
 export default async function AutomationsPage() {
   const { identity } = await requireProductSession();
@@ -22,14 +22,14 @@ export default async function AutomationsPage() {
   const endpoints = await listEndpoints(identity).catch(() => []);
   return (
     <PageFrame
-      title="Automations"
-      lede="Objectives that run on their own: on a schedule or when something happens. Each run is an ordinary task with the same approvals and audit."
+      title="Automationen"
+      lede="Ziele, die von selbst laufen: nach Zeitplan oder wenn etwas passiert. Jeder Lauf ist eine normale Aufgabe mit denselben Freigaben und demselben Audit."
     >
       {available ? (
         <AutomationList automations={automations} endpoints={endpoints} />
       ) : (
-        <EmptyState title="Automations are not available yet">
-          This deployment has not been upgraded for automations.
+        <EmptyState title="Automationen sind noch nicht verfügbar">
+          Diese Installation ist noch nicht für Automationen aktualisiert.
         </EmptyState>
       )}
     </PageFrame>

@@ -26,11 +26,11 @@ export function ConnectionsView({
       <section className="section" aria-labelledby="mcp-heading">
         <div>
           <h2 className="section-title" id="mcp-heading">
-            MCP servers
+            MCP-Server
           </h2>
           <p className="section-lede">
-            Tools from servers you add. You decide which tools Osirus may use,
-            and it asks before every call.
+            Werkzeuge von Servern, die du hinzufügst. Du entscheidest, welche
+            Werkzeuge Osirus nutzen darf, und es fragt vor jedem Aufruf.
           </p>
         </div>
         <McpManager servers={mcp.servers} available={mcp.available} />
@@ -38,12 +38,12 @@ export function ConnectionsView({
       <section className="section" aria-labelledby="platforms-heading">
         <div>
           <h2 className="section-title" id="platforms-heading">
-            Platforms
+            Plattformen
           </h2>
           <p className="section-lede">
-            Read-only access to your hosting and databases, by a token you add.
-            Osirus lists what is there; it does not deploy or change anything on
-            these platforms.
+            Lesezugriff auf dein Hosting und deine Datenbanken, über ein Token,
+            das du hinzufügst. Osirus listet auf, was dort ist; es deployt
+            nichts und ändert nichts auf diesen Plattformen.
           </p>
         </div>
         <div className="conn-grid">
@@ -58,9 +58,10 @@ export function ConnectionsView({
             Webhooks
           </h2>
           <p className="section-lede">
-            Signed events from GitHub, Vercel or your own systems that start
-            automations: a push, a failed CI run, a deployment, a database
-            event. Unsigned or replayed deliveries are refused.
+            Signierte Ereignisse von GitHub, Vercel oder deinen eigenen
+            Systemen, die Automationen starten: ein Push, ein fehlgeschlagener
+            CI-Lauf, ein Deployment, ein Datenbank-Ereignis. Unsignierte oder
+            wiederholte Zustellungen werden abgelehnt.
           </p>
         </div>
         <WebhooksCard

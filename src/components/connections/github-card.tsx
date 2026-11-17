@@ -33,12 +33,12 @@ export type GithubCardData = {
 
 const ERRORS: Record<string, string> = {
   token_malformed:
-    "That does not look like a GitHub token. Fine-grained tokens start with github_pat_.",
+    "Das sieht nicht nach einem GitHub-Token aus. Fine-grained Tokens beginnen mit github_pat_.",
   github_rejected_token:
-    "GitHub did not accept this token. Check that it has not expired.",
+    "GitHub hat dieses Token nicht akzeptiert. Prüfe, ob es abgelaufen ist.",
   connector_key_not_configured:
-    "Connections are not set up on this deployment yet.",
-  rate_limited: "Too many attempts. Wait a minute and try again.",
+    "Verbindungen sind in dieser Installation noch nicht eingerichtet.",
+  rate_limited: "Zu viele Versuche. Warte eine Minute und versuch es erneut.",
 };
 
 function ConnectForm({ onDone }: { onDone: () => void }) {
@@ -61,7 +61,9 @@ function ConnectForm({ onDone }: { onDone: () => void }) {
     const body = (await response?.json().catch(() => ({}))) as {
       error?: string;
     };
-    setError(ERRORS[body?.error ?? ""] ?? "GitHub could not be connected.");
+    setError(
+      ERRORS[body?.error ?? ""] ?? "GitHub konnte nicht verbunden werden.",
+    );
   };
 
   return (
@@ -73,12 +75,12 @@ function ConnectForm({ onDone }: { onDone: () => void }) {
       }}
     >
       <Field
-        label="Fine-grained personal access token"
+        label="Fine-grained Personal Access Token"
         hint={
           <>
-            Create one at github.com → Settings → Developer settings →
-            Fine-grained tokens. Choose only the repositories Osirus should see.
-            Contents: read (and write, if Osirus may push).
+            Erstelle eines unter github.com → Settings → Developer settings →
+            Fine-grained tokens. Wähle nur die Repositories, die Osirus sehen
+            soll. Contents: read (und write, falls Osirus pushen darf).
           </>
         }
         error={error}
@@ -102,8 +104,8 @@ function ConnectForm({ onDone }: { onDone: () => void }) {
           onChange={(event) => setAllowWrite(event.target.checked)}
         />
         <span>
-          Allow pushing branches and opening pull requests. Each push still
-          waits for your approval.
+          Pushen von Branches und Öffnen von Pull Requests erlauben. Jeder Push
+          wartet trotzdem auf deine Freigabe.
         </span>
       </label>
       <div className="row">
@@ -112,7 +114,7 @@ function ConnectForm({ onDone }: { onDone: () => void }) {
           className="btn btn-primary"
           disabled={busy || token.trim().length < 20}
         >
-          {busy ? "Connecting…" : "Connect GitHub"}
+          {busy ? "Verbindet…" : "GitHub verbinden"}
         </button>
       </div>
     </form>
@@ -136,7 +138,8 @@ export function GithubCard({ data }: { data: GithubCardData }) {
       method: "POST",
     }).catch(() => null);
     setBusy(null);
-    if (!response?.ok) setMessage("The check could not be run.");
+    if (!response?.ok)
+      setMessage("Die Prüfung konnte nicht ausgeführt werden.");
     router.refresh();
   };
 
@@ -154,27 +157,28 @@ export function GithubCard({ data }: { data: GithubCardData }) {
   return (
     <ConnectionCard
       icon={<GithubMark size={20} />}
-      name="GitHub repositories"
+      name="GitHub-Repositories"
       stateLabel={stateInfo.label}
       stateTone={stateInfo.tone}
-      identity={data.login ? `Acting as ${data.login}` : undefined}
+      identity={data.login ? `Handelt als ${data.login}` : undefined}
       description={
         <p>
-          Separate from signing in with GitHub: signing in proves who you are
-          and gives Osirus nothing. This connection lets Osirus clone your
-          repositories and, if you allow it, push branches and open pull
-          requests — each push only after you approve it.
+          Getrennt von der Anmeldung mit GitHub: Die Anmeldung zeigt, wer du
+          bist, und gibt Osirus keinen Zugriff. Mit dieser Verbindung kann
+          Osirus deine Repositories klonen und, wenn du es erlaubst, Branches
+          pushen und Pull Requests öffnen — jeden Push erst nach deiner
+          Freigabe.
         </p>
       }
       capabilities={
         data.status === "CONNECTED"
           ? [
-              "Read repositories",
+              "Repositories lesen",
               writable
-                ? "Push branches and open pull requests (asks every time)"
-                : "No write access",
+                ? "Branches pushen und Pull Requests öffnen (fragt jedes Mal)"
+                : "Kein Schreibzugriff",
             ]
-          : ["Read repositories", "Push and open pull requests (optional)"]
+          : ["Repositories lesen", "Pushen und Pull Requests öffnen (optional)"]
       }
       health={
         health
@@ -195,8 +199,8 @@ export function GithubCard({ data }: { data: GithubCardData }) {
         data.status === "NOT_CONFIGURED" ? (
           <p className="subtle">
             {shell.isAdmin
-              ? "Set OSIRUS_CONNECTOR_KEY for this deployment to enable connections."
-              : "Connections are not set up on this deployment yet."}
+              ? "Setze OSIRUS_CONNECTOR_KEY für diese Installation, um Verbindungen zu aktivieren."
+              : "Verbindungen sind in dieser Installation noch nicht eingerichtet."}
           </p>
         ) : data.status === "NOT_CONNECTED" ? (
           formOpen ? null : (
@@ -205,7 +209,7 @@ export function GithubCard({ data }: { data: GithubCardData }) {
               className="btn btn-primary"
               onClick={() => setFormOpen(true)}
             >
-              Connect GitHub
+              GitHub verbinden
             </button>
           )
         ) : (
@@ -217,7 +221,7 @@ export function GithubCard({ data }: { data: GithubCardData }) {
               disabled={busy !== null}
             >
               <RefreshCw size={14} aria-hidden="true" />
-              {busy === "check" ? "Checking…" : "Check now"}
+              {busy === "check" ? "Prüft…" : "Jetzt prüfen"}
             </button>
             <button
               type="button"
@@ -225,7 +229,7 @@ export function GithubCard({ data }: { data: GithubCardData }) {
               onClick={() => setFormOpen((open) => !open)}
               aria-expanded={formOpen}
             >
-              {state === "EXPIRED" ? "Reconnect" : "Change access"}
+              {state === "EXPIRED" ? "Neu verbinden" : "Zugriff ändern"}
             </button>
             <ConfirmDialog
               trigger={
@@ -235,12 +239,12 @@ export function GithubCard({ data }: { data: GithubCardData }) {
                   disabled={busy !== null}
                 >
                   <Unplug size={14} aria-hidden="true" />
-                  Disconnect
+                  Trennen
                 </button>
               }
-              title="Disconnect GitHub?"
-              description="Osirus deletes the stored token and can no longer read or push to your repositories. Running tasks that need GitHub will stop at that step."
-              confirmLabel="Disconnect"
+              title="GitHub trennen?"
+              description="Osirus löscht das gespeicherte Token und kann deine Repositories danach weder lesen noch dorthin pushen. Laufende Aufgaben, die GitHub brauchen, halten an diesem Schritt an."
+              confirmLabel="Trennen"
               onConfirm={() => void disconnect()}
             />
           </>

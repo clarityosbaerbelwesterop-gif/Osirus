@@ -46,7 +46,7 @@ test("phone layout with navigation open has no serious violations", async ({
   await page.setViewportSize(VIEWPORTS.phone);
   await mockApis(page);
   await openSurface(page, "chat-active");
-  await page.getByRole("button", { name: "Open navigation" }).click();
+  await page.getByRole("button", { name: "Navigation öffnen" }).click();
   const results = await new AxeBuilder({ page }).withTags(TAGS).analyze();
   expect(
     results.violations

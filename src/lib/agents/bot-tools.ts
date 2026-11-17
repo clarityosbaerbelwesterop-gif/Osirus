@@ -95,12 +95,36 @@ async function saveToolRequest(
   );
 }
 
+/**
+ * Move a request from "pending" to `next` in one statement. Two approvals
+ * that arrive together (a double click, two tabs) both read "pending"; only
+ * the one whose update matched runs the call. True when this caller won.
+ */
+async function claimToolRequest(
+  identity: ProductIdentity,
+  messageId: string,
+  requestId: string,
+  next: BotToolRequest,
+) {
+  const rows = await queryAs<{ id: string }>(
+    identity.userId,
+    `update osirus.messages
+        set metadata = metadata || jsonb_build_object('toolRequest', $2::jsonb)
+      where id = $1::uuid and workspace_id = $3::uuid
+        and metadata->'toolRequest'->>'id' = $4
+        and metadata->'toolRequest'->>'status' = 'pending'
+      returning id`,
+    [messageId, JSON.stringify(next), identity.workspaceId, requestId],
+  );
+  return rows.length === 1;
+}
+
 const RESULT_CHARS = 12_000;
 
 /**
  * Decide a pending request. Approve runs the exact stored call once; a
- * request that is not pending any more is returned as it is, so a double
- * click cannot run it twice.
+ * request that is not pending any more, or that another click claimed a
+ * moment earlier, is returned as it is now, so it never runs twice.
  */
 export async function decideToolRequest(
   identity: ProductIdentity,
@@ -113,16 +137,22 @@ export async function decideToolRequest(
   );
   if (!request) return null;
   if (request.status !== "pending") return request;
+  const settled = async () =>
+    (await loadToolRequest(identity, input.sessionId, input.messageId)) ??
+    request;
   if (!input.approve) {
     const denied = { ...request, status: "denied" as const };
-    await saveToolRequest(identity, input.messageId, denied);
+    if (
+      !(await claimToolRequest(identity, input.messageId, request.id, denied))
+    )
+      return settled();
     return denied;
   }
-  // Claim it first: a second approval of the same request finds it running.
-  await saveToolRequest(identity, input.messageId, {
-    ...request,
-    status: "running",
-  });
+  // Claim it first, atomically: a second approval of the same request finds
+  // it running and does not call the tool again.
+  const running = { ...request, status: "running" as const };
+  if (!(await claimToolRequest(identity, input.messageId, request.id, running)))
+    return settled();
   const tool = (await botToolCatalog(identity)).find(
     (entry) => entry.id === request.toolId,
   );

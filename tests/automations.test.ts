@@ -67,7 +67,7 @@ describe("automation schedules", () => {
       weekday: 1,
     });
     expect(describeSchedule({ cadence: "weekdays" })).toBe(
-      "Weekdays, 03:00 UTC",
+      "Werktags, 03:00 UTC",
     );
   });
 });

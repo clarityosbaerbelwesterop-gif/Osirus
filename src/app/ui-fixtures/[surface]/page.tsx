@@ -129,7 +129,7 @@ export default async function FixturePage({
       return (
         <AppShell data={shell}>
           <PageFrame
-            title="Work"
+            title="Auftrag"
             lede="Zuerst die Aufgabe. Danach empfiehlt Osirus Modell, Prüfer und Subagents."
           >
             <WorkStudio
@@ -322,8 +322,8 @@ export default async function FixturePage({
       return (
         <AppShell data={shell}>
           <PageFrame
-            title="Connections"
-            lede="What Osirus can reach on your behalf, and whether each connection works right now."
+            title="Verbindungen"
+            lede="Was Osirus in deinem Namen erreichen kann und ob jede Verbindung gerade funktioniert."
           >
             <ConnectionsView
               github={data.github}
@@ -346,7 +346,7 @@ export default async function FixturePage({
     case "settings":
       return (
         <AppShell data={shell}>
-          <PageFrame title="Settings">
+          <PageFrame title="Einstellungen">
             <div className="settings">
               <SettingsNav />
               <div className="settings-body">
@@ -355,10 +355,10 @@ export default async function FixturePage({
                   aria-labelledby="agent-heading"
                 >
                   <div>
-                    <h2 id="agent-heading">Agent behavior</h2>
+                    <h2 id="agent-heading">Agentenverhalten</h2>
                     <p className="section-lede">
-                      What Osirus may do on its own in this workspace, and what
-                      always needs your approval.
+                      Was Osirus in diesem Arbeitsbereich selbst tun darf und
+                      was immer deine Freigabe braucht.
                     </p>
                   </div>
                   <AgentBehaviorSettings policy={resolvePolicy("balanced")} />
@@ -368,11 +368,11 @@ export default async function FixturePage({
                   aria-labelledby="models-heading"
                 >
                   <div>
-                    <h2 id="models-heading">Models</h2>
+                    <h2 id="models-heading">Modellrollen</h2>
                     <p className="section-lede">
-                      Status from the model calls this workspace made in the
-                      last 24 hours. Osirus never switches to a different model
-                      when one fails.
+                      Status aus den Modellaufrufen dieses Arbeitsbereichs in
+                      den letzten 24 Stunden. Osirus wechselt nie zu einem
+                      anderen Modell, wenn eines ausfällt.
                     </p>
                   </div>
                   <ModelStatusTable roles={modelStatusFixture()} />
@@ -382,7 +382,7 @@ export default async function FixturePage({
                   aria-labelledby="appearance-heading"
                 >
                   <div>
-                    <h2 id="appearance-heading">Appearance</h2>
+                    <h2 id="appearance-heading">Darstellung</h2>
                   </div>
                   <AppearanceSettings />
                 </section>
@@ -395,8 +395,8 @@ export default async function FixturePage({
       return (
         <AppShell data={shell}>
           <PageFrame
-            title="Approvals"
-            lede="Every action Osirus asked you to decide, with what it would do and where. Each approval covers one exact call."
+            title="Freigaben"
+            lede="Jede Aktion, über die Osirus dich entscheiden ließ, mit dem, was sie tun würde und wo. Jede Freigabe gilt für genau einen Aufruf."
           >
             <ApprovalList
               items={approvalsFixture().map((item) => ({
@@ -424,13 +424,13 @@ export default async function FixturePage({
       return (
         <AppShell data={shell}>
           <PageFrame
-            title="Inbox"
-            lede="Only what needs you or finished while you were away."
+            title="Posteingang"
+            lede="Nur, was auf dich wartet oder fertig wurde, während du weg warst."
           >
             <InboxView
               items={inboxFixture()}
               unreadIds={["i2", "i3"]}
-              emptyTitle="Nothing needs you right now."
+              emptyTitle="Gerade wartet nichts auf dich."
             />
           </PageFrame>
         </AppShell>
@@ -439,8 +439,8 @@ export default async function FixturePage({
       return (
         <AppShell data={shell}>
           <PageFrame
-            title="Automations"
-            lede="Objectives that run on their own: on a schedule or when something happens."
+            title="Automationen"
+            lede="Ziele, die von selbst laufen: nach Zeitplan oder wenn etwas passiert."
           >
             <AutomationList automations={automationsFixture()} />
           </PageFrame>

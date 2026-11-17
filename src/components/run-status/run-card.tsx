@@ -2,7 +2,7 @@
 
 import { ChevronRight, PanelRightOpen } from "lucide-react";
 import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
-import { formatDuration, relativeTime } from "@/lib/ui/labels";
+import { activityLabel, formatDuration, relativeTime } from "@/lib/ui/labels";
 import type { RunView } from "@/lib/ui/run-view";
 import { resumeSummary } from "@/lib/ui/run-view";
 import { ApprovalCard } from "../approvals/approval-card";
@@ -41,7 +41,7 @@ export function RunCard({
   return (
     <section
       className="run"
-      aria-label={`Run: ${legacyLive ? view.statusLabel : chat.label}`}
+      aria-label={`Lauf: ${legacyLive ? view.statusLabel : chat.label}`}
     >
       <header className="run-head">
         <div className="run-title">
@@ -196,7 +196,7 @@ export function RunCard({
           <ol className="run-evidence">
             {view.evidence.map((item) => (
               <li key={item.id}>
-                <span>{item.label}</span>
+                <span>{activityLabel(item.label)}</span>
                 <time className="subtle tabular" dateTime={item.at}>
                   {relativeTime(item.at)}
                 </time>

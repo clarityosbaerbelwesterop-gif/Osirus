@@ -18,30 +18,32 @@ const ACTION_TOOLS = [
 ];
 
 const WEEKDAYS = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
+  "Sonntag",
+  "Montag",
+  "Dienstag",
+  "Mittwoch",
+  "Donnerstag",
+  "Freitag",
+  "Samstag",
 ];
 
 const ERRORS: Record<string, string> = {
   invalid_request:
-    "Check the fields: a name, an objective of at least a sentence, and a schedule.",
-  forbidden: "Only workspace owners and editors can create automations.",
-  rate_limited: "Too many changes at once. Wait a minute.",
-  limit_reached: "This workspace reached its plan's automation limit.",
+    "Prüfe die Felder: ein Name, ein Ziel von mindestens einem Satz und ein Zeitplan.",
+  forbidden:
+    "Nur Inhaber und Bearbeiter des Arbeitsbereichs können Automationen anlegen.",
+  rate_limited: "Zu viele Änderungen auf einmal. Warte eine Minute.",
+  limit_reached:
+    "Dieser Arbeitsbereich hat das Automationen-Limit seines Plans erreicht.",
 };
 
 const WEBHOOK_EVENTS = [
   { id: "push", label: "Push" },
-  { id: "pull_request", label: "Pull request" },
-  { id: "ci_failure", label: "CI failure" },
+  { id: "pull_request", label: "Pull Request" },
+  { id: "ci_failure", label: "CI-Fehler" },
   { id: "deployment", label: "Deployment" },
-  { id: "db_event", label: "Database event" },
-  { id: "generic", label: "Other signed event" },
+  { id: "db_event", label: "Datenbank-Ereignis" },
+  { id: "generic", label: "Anderes signiertes Ereignis" },
 ] as const;
 
 export function AutomationForm({
@@ -106,7 +108,9 @@ export function AutomationForm({
     const body = (await response?.json().catch(() => ({}))) as {
       error?: string;
     };
-    setError(ERRORS[body?.error ?? ""] ?? "The automation was not created.");
+    setError(
+      ERRORS[body?.error ?? ""] ?? "Die Automation wurde nicht angelegt.",
+    );
   };
 
   return (
@@ -129,8 +133,8 @@ export function AutomationForm({
         )}
       </Field>
       <Field
-        label="Objective"
-        hint="What Osirus should do each time, as you would type it in a chat."
+        label="Ziel"
+        hint="Was Osirus jedes Mal tun soll, so wie du es in einen Chat tippen würdest."
       >
         {(props) => (
           <textarea
@@ -144,7 +148,7 @@ export function AutomationForm({
         )}
       </Field>
       <fieldset className="field fieldset">
-        <legend className="field-label">When</legend>
+        <legend className="field-label">Wann</legend>
         <label className="check">
           <input
             type="radio"
@@ -152,26 +156,26 @@ export function AutomationForm({
             checked={trigger === "schedule"}
             onChange={() => setTrigger("schedule")}
           />
-          <span>On a schedule</span>
+          <span>Nach Zeitplan</span>
         </label>
         {trigger === "schedule" ? (
           <div className="row row-wrap indent">
             <select
               className="select"
-              aria-label="Cadence"
+              aria-label="Rhythmus"
               value={cadence}
               onChange={(event) =>
                 setCadence(event.target.value as typeof cadence)
               }
             >
-              <option value="daily">Every day</option>
-              <option value="weekdays">Weekdays</option>
-              <option value="weekly">Once a week</option>
+              <option value="daily">Jeden Tag</option>
+              <option value="weekdays">Werktags</option>
+              <option value="weekly">Einmal pro Woche</option>
             </select>
             {cadence === "weekly" ? (
               <select
                 className="select"
-                aria-label="Day of the week"
+                aria-label="Wochentag"
                 value={weekday}
                 onChange={(event) => setWeekday(Number(event.target.value))}
               >
@@ -183,7 +187,7 @@ export function AutomationForm({
               </select>
             ) : null}
             <span className="field-hint">
-              Runs in the daily scheduler window at{" "}
+              Läuft im täglichen Zeitfenster um{" "}
               {String(SCHEDULER_WINDOW_HOUR_UTC).padStart(2, "0")}:00 UTC.
             </span>
           </div>
@@ -195,7 +199,7 @@ export function AutomationForm({
             checked={trigger === "run_completed"}
             onChange={() => setTrigger("run_completed")}
           />
-          <span>When one of your runs completes</span>
+          <span>Wenn einer deiner Läufe fertig ist</span>
         </label>
         <label className="check">
           <input
@@ -205,7 +209,7 @@ export function AutomationForm({
             onChange={() => setTrigger("connector_changed")}
           />
           <span>
-            When a connection changes (GitHub connected or disconnected)
+            Wenn sich eine Verbindung ändert (GitHub verbunden oder getrennt)
           </span>
         </label>
         <label className="check">
@@ -217,28 +221,28 @@ export function AutomationForm({
             onChange={() => setTrigger("webhook")}
           />
           <span>
-            When a signed webhook arrives
+            Wenn ein signierter Webhook eintrifft
             {endpoints.length
               ? ""
-              : " (add a webhook endpoint under Connections first)"}
+              : " (lege zuerst unter Verbindungen einen Webhook-Endpunkt an)"}
           </span>
         </label>
         {trigger === "webhook" ? (
           <div className="indent stack">
             <select
               className="select"
-              aria-label="Webhook endpoint"
+              aria-label="Webhook-Endpunkt"
               value={endpointId}
               onChange={(event) => setEndpointId(event.target.value)}
             >
-              <option value="">Any endpoint in this workspace</option>
+              <option value="">Jeder Endpunkt in diesem Arbeitsbereich</option>
               {endpoints.map((endpoint) => (
                 <option key={endpoint.id} value={endpoint.id}>
                   {endpoint.name} ({endpoint.source})
                 </option>
               ))}
             </select>
-            <div className="tool-checks" role="group" aria-label="Events">
+            <div className="tool-checks" role="group" aria-label="Ereignisse">
               {WEBHOOK_EVENTS.map((event) => (
                 <label key={event.id} className="check">
                   <input
@@ -257,15 +261,15 @@ export function AutomationForm({
               ))}
             </div>
             <span className="field-hint">
-              Only verified deliveries start it; the run is told what happened
-              (event, repository, branch, commit), never the sender&apos;s free
-              text.
+              Nur geprüfte Zustellungen starten sie; der Lauf erfährt, was
+              passiert ist (Ereignis, Repository, Branch, Commit), nie den
+              freien Text des Absenders.
             </span>
           </div>
         ) : null}
       </fieldset>
       <fieldset className="field fieldset">
-        <legend className="field-label">What it may do on its own</legend>
+        <legend className="field-label">Was sie selbst tun darf</legend>
         <label className="check">
           <input
             type="radio"
@@ -273,7 +277,7 @@ export function AutomationForm({
             checked={preset === "cautious"}
             onChange={() => setPreset("cautious")}
           />
-          <span>Cautious: asks before any change</span>
+          <span>Vorsichtig: fragt vor jeder Änderung</span>
         </label>
         <label className="check">
           <input
@@ -283,17 +287,18 @@ export function AutomationForm({
             onChange={() => setPreset("balanced")}
           />
           <span>
-            Balanced: works in the sandbox, asks before acting elsewhere
+            Ausgewogen: arbeitet in der Sandbox, fragt, bevor sie anderswo
+            handelt
           </span>
         </label>
         <p className="field-hint">
-          Never looser than the workspace policy. Approvals arrive in your
-          inbox.
+          Nie lockerer als die Richtlinie des Arbeitsbereichs. Freigaben landen
+          in deinem Posteingang.
         </p>
       </fieldset>
       <fieldset className="field fieldset">
         <legend className="field-label">
-          Limit actions to these tools (optional)
+          Aktionen auf diese Werkzeuge beschränken (optional)
         </legend>
         <div className="tool-checks">
           {ACTION_TOOLS.map((tool) => (
@@ -314,7 +319,8 @@ export function AutomationForm({
           ))}
         </div>
         <p className="field-hint">
-          Reading is always allowed. With none selected, the policy decides.
+          Lesen ist immer erlaubt. Ist nichts ausgewählt, entscheidet die
+          Richtlinie.
         </p>
       </fieldset>
       <div className="row row-wrap">
@@ -332,7 +338,7 @@ export function AutomationForm({
             />
           )}
         </Field>
-        <Field label="Token limit (optional)">
+        <Field label="Token-Limit (optional)">
           {(props) => (
             <input
               {...props}
@@ -354,7 +360,8 @@ export function AutomationForm({
           onChange={(event) => setNotifyCompleted(event.target.checked)}
         />
         <span>
-          Notify me when it completes (failures and approvals always notify)
+          Benachrichtige mich, wenn sie fertig ist (bei Fehlern und Freigaben
+          immer)
         </span>
       </label>
       {error ? (
@@ -368,10 +375,10 @@ export function AutomationForm({
           className="btn btn-primary"
           disabled={busy || !name.trim() || objective.trim().length < 8}
         >
-          {busy ? "Creating…" : "Create automation"}
+          {busy ? "Wird angelegt…" : "Automation anlegen"}
         </button>
         <button type="button" className="btn btn-ghost" onClick={onDone}>
-          Cancel
+          Abbrechen
         </button>
       </div>
     </form>

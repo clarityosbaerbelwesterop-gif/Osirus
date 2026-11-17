@@ -71,7 +71,7 @@ export function InboxView({
             disabled={busy}
             onClick={() => void markRead("all")}
           >
-            Mark all as read
+            Alle als gelesen markieren
           </button>
         </div>
       ) : null}
@@ -88,7 +88,7 @@ export function InboxView({
                 <div className="item-body">
                   <p className="item-title">
                     {!item.read ? (
-                      <span className="sr-only">Unread: </span>
+                      <span className="sr-only">Ungelesen: </span>
                     ) : null}
                     {item.title}
                   </p>
@@ -111,7 +111,7 @@ export function InboxView({
                           void markRead([item.id]);
                       }}
                     >
-                      Open
+                      Öffnen
                     </Link>
                   ) : null}
                 </div>

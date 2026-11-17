@@ -132,7 +132,7 @@ export function WorkStudio(props: {
   return (
     <div className="recommend-grid">
       <PromptInput
-        label="Work"
+        label="Auftrag"
         onSubmit={() => {
           if (prompt.trim()) void recommend();
         }}
@@ -256,9 +256,9 @@ export function WorkStudio(props: {
               onClick={() => void start()}
             >
               {busy === "run" ? (
-                <span className="text-shimmer">Start</span>
+                <span className="text-shimmer">Starten</span>
               ) : (
-                "Start"
+                "Starten"
               )}
             </button>
           </div>

@@ -371,7 +371,8 @@ const MessageView = memo(function MessageView(props: {
               message.streaming && "ac-answer-streaming",
             )}
           >
-            <Markdown content={message.content} />
+            {/* Finished answers can run their code blocks in a sandbox. */}
+            <Markdown content={message.content} runnable={!message.streaming} />
           </div>
         ) : null}
         {message.sources?.length ? (

@@ -39,7 +39,7 @@ export function ConfirmDialog({
           </AlertDialog.Description>
           <div className="dialog-actions">
             <AlertDialog.Close className="btn btn-secondary">
-              Cancel
+              Abbrechen
             </AlertDialog.Close>
             <AlertDialog.Close
               className={`btn ${tone === "danger" ? "btn-danger" : "btn-primary"}`}

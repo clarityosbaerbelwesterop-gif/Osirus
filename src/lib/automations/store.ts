@@ -386,8 +386,8 @@ export async function onRunSettled(
       if (run.status === "completed" && wants.includes("completed"))
         await notify(identity, {
           kind: "automation_completed",
-          title: `${automation.name} finished`,
-          body: "The automation completed. Open it to see the result.",
+          title: `${automation.name} ist fertig`,
+          body: "Die Automation ist abgeschlossen. Öffne sie, um das Ergebnis zu sehen.",
           dedupeKey: `automation:${run.id}:completed`,
           runId: run.id,
           automationId: run.automationId,
@@ -395,8 +395,8 @@ export async function onRunSettled(
       if (run.status === "failed" && wants.includes("failed"))
         await notify(identity, {
           kind: "automation_failed",
-          title: `${automation.name} failed`,
-          body: "The automation did not finish. Open it to see where it stopped.",
+          title: `${automation.name} ist fehlgeschlagen`,
+          body: "Die Automation wurde nicht fertig. Öffne sie, um zu sehen, wo sie angehalten hat.",
           dedupeKey: `automation:${run.id}:failed`,
           runId: run.id,
           automationId: run.automationId,
@@ -418,7 +418,7 @@ export async function notifyRunBlocked(
 ) {
   await notify(identity, {
     kind: "run_blocked",
-    title: "A run stopped and needs you",
+    title: "Ein Lauf hat angehalten und braucht dich",
     body: `${run.objective.slice(0, 120)}: ${run.reason}`,
     dedupeKey: `blocked:${run.id}`,
     runId: run.id,

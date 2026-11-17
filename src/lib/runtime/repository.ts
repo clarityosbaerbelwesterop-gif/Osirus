@@ -183,11 +183,15 @@ export class RuntimeRepository {
         run_id: string | null;
       }>(
         this.actorId,
-        `select id, role, content, created_at, run_id
-           from osirus.messages
-          where session_id = $1::uuid
-          order by created_at
-          limit 200`,
+        // The newest 200, shown oldest first: a long thread opens on its
+        // latest turns, not on its first ones.
+        `select * from (
+           select id, role, content, created_at, run_id
+             from osirus.messages
+            where session_id = $1::uuid
+            order by created_at desc, id desc
+            limit 200
+         ) recent order by created_at, id`,
         [sessionId],
       ),
       queryAs<{ id: string }>(
@@ -358,11 +362,15 @@ export class RuntimeRepository {
         run_id: string | null;
       }>(
         this.actorId,
-        `select id, role, content, created_at, run_id
-           from osirus.messages
-          where session_id = $1::uuid
-          order by created_at
-          limit 200`,
+        // The newest 200, shown oldest first: a long thread opens on its
+        // latest turns, not on its first ones.
+        `select * from (
+           select id, role, content, created_at, run_id
+             from osirus.messages
+            where session_id = $1::uuid
+            order by created_at desc, id desc
+            limit 200
+         ) recent order by created_at, id`,
         [resolved],
       ),
       queryAs<{ id: string }>(
@@ -1081,10 +1089,14 @@ export class RuntimeRepository {
         run_id: string | null;
       }>(
         this.actorId,
-        `select id, role, content, created_at, run_id
-           from osirus.messages
-          where session_id = $1::uuid
-          order by created_at`,
+        // Polled every two seconds while a run works: the newest 200 only.
+        `select * from (
+           select id, role, content, created_at, run_id
+             from osirus.messages
+            where session_id = $1::uuid
+            order by created_at desc, id desc
+            limit 200
+         ) recent order by created_at, id`,
         [run.session_id],
       ),
       queryAs<Record<string, unknown>>(
