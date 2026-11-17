@@ -42,6 +42,14 @@ export function staticContentSecurityPolicy(development: boolean) {
  * browser that supports it (CSP level 3).
  */
 export function pageContentSecurityPolicy(nonce: string, development: boolean) {
+  // CSP level 3 splits styles: <style> elements and stylesheets need this
+  // request's nonce (an injected <style> block is refused), while style
+  // attributes, which React writes and which cannot run code, stay allowed.
+  // Browsers without level 3 fall back to style-src from COMMON.
+  const styles = [
+    `style-src-elem 'self' 'nonce-${nonce}'`,
+    "style-src-attr 'unsafe-inline'",
+  ];
   const script = [
     "script-src",
     `'nonce-${nonce}'`,
@@ -53,6 +61,7 @@ export function pageContentSecurityPolicy(nonce: string, development: boolean) {
   ].join(" ");
   return [
     ...COMMON,
+    ...(development ? [] : styles),
     script,
     ...(development ? [] : ["upgrade-insecure-requests"]),
   ].join("; ");
