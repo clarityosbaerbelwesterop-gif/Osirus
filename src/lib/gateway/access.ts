@@ -12,12 +12,16 @@ import { ownerEmailList } from "./owners";
 // - Free plan: free models (":free", zero-priced, NVIDIA trial credits) and
 //   the free plan's allowed ids, within the free windows.
 
-/** An owner sign-in: listed in OSIRUS_OWNER_EMAILS and not unconfirmed. */
+/**
+ * An owner sign-in: listed in OSIRUS_OWNER_EMAILS and confirmed. Fails
+ * closed: a session that does not say the address is verified is not an
+ * owner (an unverified sign-up with an owner's address proves nothing).
+ */
 export function isOwnerEmail(
   email: string | null | undefined,
   emailVerified?: boolean,
 ) {
-  if (!email || emailVerified === false) return false;
+  if (!email || emailVerified !== true) return false;
   return ownerEmailList().includes(email.trim().toLowerCase());
 }
 

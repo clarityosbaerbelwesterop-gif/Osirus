@@ -13,7 +13,6 @@ import { botAnswer } from "@/lib/gateway/answer";
 import { repositoryMaterial } from "@/lib/gateway/repo-material";
 import { chatErrorMessage } from "@/lib/gateway/prompt";
 import { loadProductSession } from "@/lib/product/session";
-import { publicRuntimeErrorMessage } from "@/lib/runtime/errors";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";

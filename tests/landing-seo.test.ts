@@ -9,6 +9,11 @@ const redirect = vi.hoisted(() =>
 );
 
 vi.mock("next/navigation", () => ({ redirect }));
+const requestHost = vi.hoisted(() => ({ value: "osirus-ai.com" }));
+vi.mock("next/headers", async (original) => ({
+  ...(await original<typeof import("next/headers")>()),
+  headers: async () => new Headers({ host: requestHost.value }),
+}));
 vi.mock("next/link", () => ({
   default: (props: {
     href: string;
@@ -92,17 +97,31 @@ describe("landing page", () => {
 });
 
 describe("seo surface", () => {
-  it("robots.txt allows the public site and keeps app/api/auth out", () => {
-    const rules = robots().rules;
+  it("robots.txt allows the public site and keeps app/api/auth out", async () => {
+    requestHost.value = "osirus-ai.com";
+    const file = await robots();
+    const rules = file.rules;
     const rule = Array.isArray(rules) ? rules[0] : rules;
     expect(rule).toMatchObject({ userAgent: "*", allow: "/" });
     const disallowed =
       rule && "disallow" in rule ? [rule.disallow].flat() : ([] as string[]);
     expect(disallowed).toEqual(
-      expect.arrayContaining(["/app", "/api", "/auth", "/internal"]),
+      expect.arrayContaining(["/app", "/api", "/auth", "/internal", "/s/"]),
     );
-    expect(robots().sitemap).toBe("https://osirus-ai.com/sitemap.xml");
-    expect(String(robots().sitemap)).not.toContain("osirus.vercel.app");
+    expect(file.sitemap).toBe("https://osirus-ai.com/sitemap.xml");
+    expect(String(file.sitemap)).not.toContain("osirus.vercel.app");
+  });
+
+  it("keeps the vercel.app host and deployment URLs out of search", async () => {
+    for (const host of [
+      "osirus-ai.vercel.app",
+      "osirus-abc123-team.vercel.app",
+    ]) {
+      requestHost.value = host;
+      const file = await robots();
+      expect(file.rules).toEqual([{ userAgent: "*", disallow: "/" }]);
+      expect(file.sitemap).toBeUndefined();
+    }
   });
 
   it("adds the Search Console tag only for a well-formed token", () => {

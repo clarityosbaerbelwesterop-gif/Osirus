@@ -325,6 +325,7 @@ describe("POST /api/chat/stream", () => {
     expect(JSON.stringify(listed)).not.toMatch(/openrouter|qwen\/|provider/i);
 
     process.env.OSIRUS_OWNER_EMAILS = "Chat@Example.test";
+    state.user = { ...state.user!, emailVerified: true };
     const allowed = await post({ message: hard });
     expect(allowed.status).toBe(200);
     expect((await frames(allowed)).at(-1)).toMatchObject({ type: "done" });
@@ -340,6 +341,12 @@ describe("POST /api/chat/stream", () => {
     const hard =
       "Analysiere die Architektur und Sicherheit dieser Migration Schritt für Schritt.";
     state.user = { ...state.user!, emailVerified: false };
+    await (await post({ message: hard })).text();
+    expect(chatCalls().at(-1)?.body).toMatchObject({
+      model: "qwen/qwen3-235b-a22b:free",
+    });
+    // A session that does not state the address is verified fails closed.
+    state.user = { ...state.user!, emailVerified: undefined };
     await (await post({ message: hard })).text();
     expect(chatCalls().at(-1)?.body).toMatchObject({
       model: "qwen/qwen3-235b-a22b:free",

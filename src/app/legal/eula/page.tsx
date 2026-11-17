@@ -2,6 +2,7 @@ import Link from "next/link";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
+  alternates: { canonical: "/legal/eula" },
   title: "EULA",
   description:
     "Endnutzer-Lizenz für Osirus: Nutzungsrecht, Schranken, Rechte an Ergebnissen, Modelle Dritter und geistiges Eigentum.",

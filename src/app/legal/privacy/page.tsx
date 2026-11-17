@@ -2,6 +2,7 @@ import Link from "next/link";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
+  alternates: { canonical: "/legal/privacy" },
   title: "Datenschutz",
   description:
     "Datenschutzerklärung von Osirus: Verantwortliche, Zwecke, Rechtsgrundlagen, Empfänger, Drittländer, Speicherdauer, Rechte und Cookies.",
@@ -134,6 +135,14 @@ export default function PrivacyPage() {
           <strong>Dienstleister:</strong> Neon (Datenbank und Anmeldung), bei
           GitHub-Anmeldung GitHub, für E-Mails zur Bestätigung und zum
           Zurücksetzen des Passworts der E-Mail-Versand von Neon Auth.
+        </li>
+        <li>
+          <strong>Schutz vor geleakten Passwörtern:</strong> Ein neues Passwort
+          prüfen wir gegen Passwörter aus bekannten Datenlecks (Have I Been
+          Pwned). Dabei verlassen nur die ersten fünf Zeichen eines Hashwerts
+          unseren Server, nie das Passwort, nie der vollständige Hash und keine
+          E-Mail-Adresse; daraus lässt sich nicht auf dich schließen.
+          Rechtsgrundlage: Art. 6 Abs. 1 lit. f DSGVO und Art. 32 DSGVO.
         </li>
       </ul>
 

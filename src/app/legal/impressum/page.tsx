@@ -3,6 +3,7 @@ import { PRICE_TAX_NOTE } from "@/components/marketing/plans";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
+  alternates: { canonical: "/legal/impressum" },
   title: "Impressum",
 };
 

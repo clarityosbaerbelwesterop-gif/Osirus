@@ -2,6 +2,7 @@ import Link from "next/link";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
+  alternates: { canonical: "/legal/cookies" },
   title: "Cookies",
   description:
     "Cookie-Hinweis für Osirus nach § 25 TDDDG: technisch notwendige Speicherungen.",

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth, authConfigured } from "@/lib/auth/server";
+import { publicSiteUrl } from "@/app/site-url";
 import { pageContentSecurityPolicy } from "@/lib/security/csp";
 
 /**
@@ -30,8 +31,35 @@ function isProtected(pathname: string) {
   return pathname === "/app" || pathname.startsWith("/app/");
 }
 
+/**
+ * Paths only vulnerability scanners ask for (WordPress, PHP, dotfiles,
+ * version control). Osirus serves none of them: answered here with a
+ * cacheable empty 404 instead of rendering the not-found page per probe.
+ */
+export const SCANNER_PROBE =
+  /^\/(?:wp-admin|wp-login\.php|wp-content|wp-includes|wp-json|xmlrpc\.php|phpmyadmin|pma|myadmin|cgi-bin|\.env|\.git|\.svn|\.hg|\.ds_store|\.aws|\.ssh|\.htaccess|\.htpasswd|config\.php|server-status|actuator|vendor\/phpunit|boaform|hnap1|owa|ecp|autodiscover|solr|jenkins|manager\/html)(?:[/.?]|$)/i;
+
+/** Hosts other than the public one serve the same pages: keep them out of search. */
+export function indexableHost(host: string | null) {
+  if (!host) return true;
+  const name = host.split(":")[0]!.toLowerCase();
+  if (name === "localhost" || name === "127.0.0.1") return true;
+  return name === publicSiteUrl().hostname.toLowerCase();
+}
+
 export default async function proxy(request: NextRequest) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
+
+  if (SCANNER_PROBE.test(request.nextUrl.pathname)) {
+    return new Response(null, {
+      status: 404,
+      headers: {
+        "Cache-Control": "public, max-age=86400",
+        "X-Robots-Tag": "noindex",
+        "X-Request-Id": requestId,
+      },
+    });
+  }
 
   if (
     request.method === "POST" &&
@@ -72,6 +100,10 @@ export default async function proxy(request: NextRequest) {
     response = NextResponse.next({ request: { headers } });
   }
   response.headers.set("Content-Security-Policy", policy);
+  // osirus-ai.vercel.app stays for webhooks and background calls; only the
+  // custom domain is indexed, so search shows one site, not two copies.
+  if (!indexableHost(request.headers.get("host")))
+    response.headers.set("X-Robots-Tag", "noindex, nofollow");
   // Propagate the caller's correlation id, or mint one, so request logs can
   // be tied together across the boundary.
   response.headers.set("X-Request-Id", requestId);

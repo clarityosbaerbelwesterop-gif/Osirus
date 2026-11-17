@@ -3,6 +3,7 @@ import { PRICE_TAX_NOTE } from "@/components/marketing/plans";
 import { OPERATOR } from "../operator";
 
 export const metadata = {
+  alternates: { canonical: "/legal/terms" },
   title: "AGB",
   description:
     "Allgemeine Geschäftsbedingungen für Osirus: Leistungen, KI-Hinweise, Freigaben, Abos, Testphase, Kontingente, Kündigung, Widerruf, Haftung.",

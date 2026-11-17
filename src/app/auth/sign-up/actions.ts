@@ -97,6 +97,11 @@ export async function signUpWithEmail(
 
   requireAuthConfiguration();
 
+  const { passwordIsBreached, BREACHED_PASSWORD_ERROR } =
+    await import("@/lib/security/breached-password");
+  if (await passwordIsBreached(password))
+    return { error: BREACHED_PASSWORD_ERROR, values };
+
   if (
     !(await authAttemptAllowed({
       route: "auth.signup",

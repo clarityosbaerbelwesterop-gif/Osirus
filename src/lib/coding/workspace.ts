@@ -23,10 +23,42 @@ const SECRET_ENV_NAMES = ["GIT_TOKEN", "GITHUB_TOKEN", "GH_TOKEN"];
 
 export type CommandRecord = CommandResult & { cwd: string; at: string };
 
+/**
+ * Dependency installs run in the background (they took 60-90 s and held the
+ * whole answer back). Markers live next to the repository, never in it, so
+ * they show up in no diff.
+ */
+const INSTALL_DIR = "../.osirus-install";
+const INSTALL_TIMEOUT_S = 600;
+/** Commands that read the tree and never need installed dependencies. */
+const NEEDS_NO_INSTALL = new Set([
+  "git",
+  "ls",
+  "cat",
+  "head",
+  "tail",
+  "wc",
+  "grep",
+  "rg",
+  "find",
+  "pwd",
+  "realpath",
+  "stat",
+  "test",
+  "echo",
+]);
+
+/** POSIX single-quote a word for sh -c. */
+export function shellQuote(word: string) {
+  return `'${word.replace(/'/g, `'\\''`)}'`;
+}
+
 export class CodingWorkspace {
   /** Every command run, in order: the Terminal tab and the evidence for tests. */
   readonly log: CommandRecord[] = [];
   private rootAbsolute: string | null = null;
+  /** True once no background install can still be running. */
+  private installSettled = false;
 
   constructor(
     readonly handle: SandboxHandle,
@@ -69,6 +101,7 @@ export class CodingWorkspace {
   ): Promise<CommandRecord> {
     const cwd = options.cwd ?? REPO_DIR;
     if (!isSafeRelativePath(cwd)) throw new Error("cwd_outside_workspace");
+    if (!NEEDS_NO_INSTALL.has(cmd)) await this.awaitInstall(options.signal);
     const result = await this.handle.runCommand({
       cmd,
       args,
@@ -87,6 +120,73 @@ export class CodingWorkspace {
     };
     if (options.record !== false) this.log.push(record);
     return record;
+  }
+
+  /**
+   * Start the dependency install without waiting for it. Returns false when
+   * the driver cannot run a background process; the caller installs inline.
+   */
+  async startInstall(cmd: string, args: string[]) {
+    if (!this.handle.startBackground) return false;
+    const command = [cmd, ...args].map(shellQuote).join(" ");
+    // The marker is set before the background process starts, so a command
+    // issued a moment later can never miss a running install.
+    await this.handle.runCommand({
+      cmd: "sh",
+      args: [
+        "-c",
+        `mkdir -p ${INSTALL_DIR} && rm -f ${INSTALL_DIR}/exit ${INSTALL_DIR}/log && touch ${INSTALL_DIR}/started`,
+      ],
+      cwd: REPO_DIR,
+      timeoutMs: 15_000,
+    });
+    await this.handle.startBackground({
+      cmd: "sh",
+      args: [
+        "-c",
+        `timeout ${INSTALL_TIMEOUT_S} ${command} > ${INSTALL_DIR}/log 2>&1; echo $? > ${INSTALL_DIR}/exit`,
+      ],
+      cwd: REPO_DIR,
+    });
+    this.installSettled = false;
+    return true;
+  }
+
+  /**
+   * Wait for a background install before a command that may need its
+   * dependencies. One check per workspace object; the install's own output
+   * lands in the log like any other command.
+   */
+  async awaitInstall(signal?: AbortSignal) {
+    if (this.installSettled) return;
+    const started = Date.now();
+    const result = await this.handle.runCommand({
+      cmd: "sh",
+      args: [
+        "-c",
+        `[ -f ${INSTALL_DIR}/started ] || { echo none; exit 0; }; ` +
+          `i=0; while [ ! -f ${INSTALL_DIR}/exit ] && [ $i -lt ${INSTALL_TIMEOUT_S + 30} ]; do sleep 1; i=$((i+1)); done; ` +
+          `echo "exit=$(cat ${INSTALL_DIR}/exit 2>/dev/null || echo timeout)"; tail -c 4000 ${INSTALL_DIR}/log 2>/dev/null; ` +
+          // Reported once: a reattached workspace does not log it again.
+          `[ -f ${INSTALL_DIR}/exit ] && rm -f ${INSTALL_DIR}/started; true`,
+      ],
+      cwd: REPO_DIR,
+      timeoutMs: (INSTALL_TIMEOUT_S + 60) * 1000,
+      signal,
+    });
+    this.installSettled = true;
+    const output = result.stdout ?? "";
+    if (result.exitCode !== 0 || output.startsWith("none")) return;
+    const exit = /^exit=(\d+)/.exec(output)?.[1];
+    this.log.push({
+      command: "dependency install (background)",
+      exitCode: exit === undefined ? null : Number(exit),
+      stdout: this.redact(output.replace(/^exit=\S+\n?/, "")).slice(-20_000),
+      stderr: "",
+      durationMs: Date.now() - started,
+      cwd: REPO_DIR,
+      at: new Date().toISOString(),
+    } as CommandRecord);
   }
 
   private async root() {

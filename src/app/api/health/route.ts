@@ -6,19 +6,31 @@ import { logger } from "@/lib/telemetry/logger";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+// Anonymous and public: a flood of health probes must not turn into a flood
+// of database queries. One check per instance every 15 seconds.
+const DATABASE_CHECK_TTL_MS = 15_000;
+let lastDatabaseCheck: { at: number; ok: Promise<boolean> } | null = null;
+
+function databaseReachable(requestId: string) {
+  const now = Date.now();
+  if (lastDatabaseCheck && now - lastDatabaseCheck.at < DATABASE_CHECK_TTL_MS)
+    return lastDatabaseCheck.ok;
+  const ok = db()
+    .query("select 1 as ok")
+    .then(() => true)
+    .catch(() => {
+      logger.warn("health.database_unreachable", { requestId });
+      return false;
+    });
+  lastDatabaseCheck = { at: now, ok };
+  return ok;
+}
+
 export async function GET(request: Request) {
   const requestId = request.headers.get("x-request-id") ?? crypto.randomUUID();
-  let database = false;
-  if (env.DATABASE_URL) {
-    try {
-      const sql = db();
-      await sql.query("select 1 as ok");
-      database = true;
-    } catch {
-      database = false;
-      logger.warn("health.database_unreachable", { requestId });
-    }
-  }
+  const database = env.DATABASE_URL
+    ? await databaseReachable(requestId)
+    : false;
 
   // Configuration only (M49: free-model-first, so no model role is
   // required). Not a readiness probe: see /api/readiness for evidence.
