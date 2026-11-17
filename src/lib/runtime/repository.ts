@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+import { redact } from "../security/redact";
 import { queryAs } from "../db/client";
 import { assertRunTransition, assertStageTransition } from "./state-machine";
 import type {
@@ -909,7 +910,9 @@ export class RuntimeRepository {
         input.stageId ?? null,
         input.type,
         input.visibility ?? "user",
-        input.summary,
+        // Summaries are shown and kept for the run's lifetime: no key that a
+        // tool or provider echoed may reach them.
+        redact(input.summary),
         JSON.stringify(input.data ?? {}),
         input.parentEventId ?? null,
         input.correlationId ?? null,

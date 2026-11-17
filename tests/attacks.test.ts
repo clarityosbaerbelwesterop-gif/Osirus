@@ -175,3 +175,51 @@ describe("attack: cross-tenant access", () => {
     );
   });
 });
+
+describe("redaction covers every key format Osirus handles (audit 2026-11-17)", () => {
+  const cases: Array<[string, string]> = [
+    ["Stripe secret", "sk_live_51HxYzAbCdEfGhIjKlMn"],
+    ["Stripe restricted", "rk_test_51HxYzAbCdEfGhIj"],
+    ["Stripe webhook", "whsec_abcdefghijklmnop1234"],
+    ["NVIDIA", "nvapi-AbCdEfGhIjKlMnOpQrStUvWx"],
+    ["Neon", "napi_abcdefghijklmnopqrstuv"],
+    ["Supabase", "sbp_0123456789abcdef0123456789abcdef"],
+    ["Resend", "re_AbCd1234_EfGh5678IjKl"],
+    ["Hugging Face", "hf_AbCdEfGhIjKlMnOpQrStUv"],
+    ["Google", "AIzaSyA1234567890abcdefghijklmnopqrstu"],
+    ["AWS", "AKIAIOSFODNN7EXAMPLE"],
+    [
+      "JWT",
+      "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dozjgNryP4J3jVmNHl0w5N_XgL0n3I9PlFUP0THsR8U",
+    ],
+  ];
+  for (const [name, key] of cases)
+    it(`redacts a ${name} key`, () => {
+      const out = redact(`upstream said: invalid key ${key} (401)`);
+      expect(out).not.toContain(key);
+      expect(out).toContain("[REDACTED]");
+      expect(out).toContain("upstream said: invalid key");
+    });
+
+  it("redacts credentials in URLs and named pairs, keeping the names", () => {
+    const out = redact(
+      'GET https://mcp.example.com/sse?api_key=abc123secret&x=1 failed; {"client_secret": "s3cr3tvalue"}; redis://default:hunter22@cache:6379',
+    );
+    expect(out).not.toMatch(/abc123secret|s3cr3tvalue|hunter22/);
+    expect(out).toContain("api_key=[REDACTED]");
+    expect(out).toContain('"client_secret": "[REDACTED]');
+  });
+
+  it("removes a whole private key block", () => {
+    const out = redact(
+      "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASC\n-----END PRIVATE KEY-----",
+    );
+    expect(out).toBe("[REDACTED]");
+  });
+
+  it("leaves ordinary text alone", () => {
+    const text =
+      "Das Modell hat in 3 Sekunden geantwortet; skip-list und re_try bleiben.";
+    expect(redact(text)).toBe(text);
+  });
+});
