@@ -1,0 +1,53 @@
+name: Clean up journey test customers
+
+# The production journey signs up journey-<run>@example.com, pays nothing,
+# and deletes the account at the end. Runs that stopped midway (before the
+# journey cleaned up after itself) left Stripe customers behind. This
+# deletes Stripe customers whose e-mail is exactly such a test address on
+# the reserved example.com domain; no real customer can match.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * 0"
+
+permissions:
+  contents: read
+
+jobs:
+  stripe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Delete leftover test customers
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, re, urllib.parse, urllib.request
+          key = os.environ["STRIPE_SECRET_KEY"]
+          pattern = re.compile(r"^journey-\d+(-\d+)?@example\.com$")
+          def call(method, path, params=None):
+              url = "https://api.stripe.com/v1/" + path
+              if params:
+                  url += "?" + urllib.parse.urlencode(params)
+              request = urllib.request.Request(url, method=method, headers={"Authorization": "Bearer " + key})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+          deleted, page = 0, None
+          while True:
+              params = {"query": 'email~"journey-"', "limit": 100}
+              if page:
+                  params["page"] = page
+              result = call("GET", "customers/search", params)
+              for customer in result["data"]:
+                  email = (customer.get("email") or "").lower()
+                  if pattern.match(email):
+                      call("DELETE", "customers/" + customer["id"])
+                      deleted += 1
+              if not result.get("has_more"):
+                  break
+              page = result.get("next_page")
+          print(f"Deleted {deleted} leftover test customer(s)")
+          PY

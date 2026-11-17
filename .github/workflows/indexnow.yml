@@ -1,0 +1,35 @@
+name: IndexNow
+
+# Tells Bing, Yandex, Seznam, Naver and the other IndexNow engines about the
+# public pages (from the live sitemap) so new and changed pages are crawled
+# within hours. Google does not take part; it finds the site through the
+# sitemap in robots.txt and Search Console. The key is public by design: it
+# only proves the ping comes from the owner of the host serving it.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  HOST: osirus-ai.com
+  KEY: d19c8a857c4615b0f1a31a55c07325cb
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Submit the sitemap's URLs
+        run: |
+          set -euo pipefail
+          curl -fsS "https://${HOST}/${KEY}.txt" | grep -qx "${KEY}"
+          urls=$(curl -fsS "https://${HOST}/sitemap.xml" | grep -o '<loc>[^<]*</loc>' | sed 's#</\?loc>##g')
+          echo "$urls"
+          body=$(printf '%s\n' "$urls" | python3 -c 'import json,os,sys; print(json.dumps({"host": os.environ["HOST"], "key": os.environ["KEY"], "keyLocation": "https://%s/%s.txt" % (os.environ["HOST"], os.environ["KEY"]), "urlList": [u for u in sys.stdin.read().split() if u]}))')
+          status=$(curl -sS -o /dev/stderr -w '%{http_code}' -X POST https://api.indexnow.org/indexnow -H 'content-type: application/json; charset=utf-8' --data "$body")
+          echo "IndexNow: HTTP $status"
+          case "$status" in 200|202) ;; *) exit 1;; esac

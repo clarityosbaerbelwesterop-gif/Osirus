@@ -21,6 +21,10 @@ export async function resetPassword(
     return { error: "Das Passwort braucht mindestens 8 Zeichen." };
   if (password !== repeat)
     return { error: "Die beiden Passwörter stimmen nicht überein." };
+  const { passwordIsBreached, BREACHED_PASSWORD_ERROR } =
+    await import("@/lib/security/breached-password");
+  if (await passwordIsBreached(password))
+    return { error: BREACHED_PASSWORD_ERROR };
   const result = await auth
     .resetPassword({ newPassword: password, token })
     .catch(() => ({ error: { message: "failed" } }));

@@ -192,7 +192,13 @@ export class WorkspaceSession {
         const install = record.commands.find(
           (command) => command.phase === "install",
         );
-        if (install)
+        // In the background where the driver allows it: the model starts
+        // reading and planning at once, and the first command that needs
+        // the dependencies waits for them (CodingWorkspace.awaitInstall).
+        if (
+          install &&
+          !(await workspace.startInstall(install.cmd, install.args))
+        )
           await workspace.exec(install.cmd, install.args, {
             timeoutMs: 600_000,
             signal: input.signal,

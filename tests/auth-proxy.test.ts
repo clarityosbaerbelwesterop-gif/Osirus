@@ -111,3 +111,48 @@ describe("style policy in production", () => {
     expect(policy).toContain("upgrade-insecure-requests");
   });
 });
+
+describe("scanner probes and duplicate hosts (hardening 2026-11-17)", () => {
+  it("answers vulnerability-scanner paths with a cacheable empty 404", async () => {
+    seen.requests.length = 0;
+    for (const path of [
+      "/wp-login.php",
+      "/wp-admin/install.php",
+      "/.env",
+      "/.git/config",
+      "/phpmyadmin/",
+      "/xmlrpc.php",
+      "/vendor/phpunit/phpunit/src/Util/PHP/eval-stdin.php",
+      "/cgi-bin/luci",
+    ]) {
+      const response = await proxy(page(path));
+      expect(response.status, path).toBe(404);
+      expect(response.headers.get("cache-control")).toContain("max-age");
+      expect(await response.text()).toBe("");
+    }
+    // Never reached the auth middleware or a page render.
+    expect(seen.requests).toHaveLength(0);
+  });
+
+  it("leaves real pages alone", async () => {
+    for (const path of ["/", "/legal/privacy", "/sicherheit", "/s/abc"]) {
+      const response = await proxy(page(path));
+      expect(response.status, path).not.toBe(404);
+    }
+  });
+
+  it("marks pages on any host but the public one as noindex", async () => {
+    const onVercel = await proxy(
+      new NextRequest("https://osirus-ai.vercel.app/", {
+        headers: { host: "osirus-ai.vercel.app" },
+      }),
+    );
+    expect(onVercel.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    const onDomain = await proxy(
+      new NextRequest("https://osirus-ai.com/", {
+        headers: { host: "osirus-ai.com" },
+      }),
+    );
+    expect(onDomain.headers.get("x-robots-tag")).toBeNull();
+  });
+});

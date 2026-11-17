@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     url: "/",
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "Osirus — Dein KI-Team mit Freigabeknopf",
     description:
       "Antworten mit Quellen, autonome Aufgaben und Code in einem Workspace, mit Freigabe vor jeder Aktion nach außen. Gehostet in der EU.",
