@@ -23,7 +23,7 @@
     "@neondatabase/auth": "0.5.0-beta",
     "@neondatabase/serverless": "^1.0.2",
     "@vercel/oidc": "3.2.0",
-    "@vercel/sandbox": "^3.3.0",
+    "@vercel/sandbox": "^4.0.0",
     "acorn": "^8.18.0",
     "jose": "^6.1.0",
     "katex": "^0.16.47",
