@@ -121,7 +121,7 @@ jobs:
             OSIRUS_MODEL_VERIFY="$MODEL"
           if [ "$MODEL" = "grok-4.6" ]; then export OSIRUS_REASONING_EFFORT=high; fi
           npx vitest run --config vitest.arena.config.ts
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: arena-results
