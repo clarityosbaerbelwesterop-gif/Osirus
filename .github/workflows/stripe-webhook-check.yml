@@ -1,0 +1,47 @@
+name: Stripe webhook check
+
+# Read-only release check: which webhook endpoints Stripe has for this
+# account, what they listen to, and whether recent events reached them.
+# Prints no secrets and changes nothing at Stripe.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Endpoints and recent deliveries
+        env:
+          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json, os, time, urllib.parse, urllib.request
+          key = os.environ["STRIPE_SECRET_KEY"]
+          def get(path, **params):
+              url = "https://api.stripe.com/v1/" + path
+              if params:
+                  url += "?" + urllib.parse.urlencode(params)
+              request = urllib.request.Request(url, headers={"Authorization": "Bearer " + key})
+              with urllib.request.urlopen(request, timeout=30) as response:
+                  return json.load(response)
+          print("Live mode:", key.startswith("sk_live") or key.startswith("rk_live"))
+          endpoints = get("webhook_endpoints", limit=20)["data"]
+          print(f"Webhook endpoints: {len(endpoints)}")
+          for endpoint in endpoints:
+              events = endpoint.get("enabled_events") or []
+              print(f"- {endpoint['url']} status={endpoint['status']} events={len(events)}: {', '.join(events[:12])}")
+          since = int(time.time()) - 7 * 24 * 3600
+          failed = get("events", limit=100, delivery_success="false", **{"created[gte]": since})["data"]
+          ok = get("events", limit=100, delivery_success="true", **{"created[gte]": since})["data"]
+          print(f"Events last 7 days: delivered={len(ok)} failed={len(failed)}")
+          for event in failed[:10]:
+              print(f"  failed: {event['type']} at {time.strftime('%Y-%m-%d %H:%M', time.gmtime(event['created']))} UTC, pending_webhooks={event.get('pending_webhooks')}")
+          for event in ok[:5]:
+              print(f"  delivered: {event['type']} at {time.strftime('%Y-%m-%d %H:%M', time.gmtime(event['created']))} UTC")
+          PY
