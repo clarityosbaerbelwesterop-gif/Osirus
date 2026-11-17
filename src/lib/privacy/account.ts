@@ -21,13 +21,20 @@ export const LIVE_SUBSCRIPTION_STATUSES = new Set([
 // embeddings) are left out: they are not personal data in readable form and
 // handing out a sealed credential helps no one.
 
-type Scope = "workspace" | "user" | "self";
+/**
+ * How a table's rows are found: by the person's id ("self", "user"), by
+ * their workspace ("workspace"), or through the workspace's runs ("run",
+ * for tables keyed only by run_id).
+ */
+type Scope = "workspace" | "user" | "self" | "run";
 
 const EXPORT_TABLES: Array<{
   key: string;
   table: string;
   scope: Scope;
   order?: string;
+  /** Extra condition on the table's own columns (constant SQL). */
+  filter?: string;
 }> = [
   { key: "profile", table: "users", scope: "self" },
   {
@@ -99,6 +106,75 @@ const EXPORT_TABLES: Array<{
     scope: "user",
     order: "created_at",
   },
+  // Audit 2026-11-17: the work itself (steps, their results, tool calls)
+  // and the records about the person (security log, usage, memberships)
+  // were missing from the copy.
+  {
+    key: "runSteps",
+    table: "run_stages",
+    scope: "run",
+    order: "created_at",
+  },
+  {
+    key: "runEvents",
+    table: "run_events",
+    scope: "run",
+    order: "created_at",
+    // What the person saw while the run worked; internal scheduling events
+    // carry no personal data of their own.
+    filter: "t.visibility = 'user'",
+  },
+  {
+    key: "toolCalls",
+    table: "tool_calls",
+    scope: "workspace",
+    order: "created_at",
+  },
+  { key: "reviews", table: "reviews", scope: "workspace", order: "created_at" },
+  {
+    key: "memoryRelations",
+    table: "memory_relations",
+    scope: "workspace",
+  },
+  {
+    key: "groupChatMembers",
+    table: "group_chat_members",
+    scope: "workspace",
+  },
+  {
+    key: "webhooks",
+    table: "webhook_endpoints",
+    scope: "workspace",
+    order: "created_at",
+  },
+  {
+    key: "webhookDeliveries",
+    table: "webhook_deliveries",
+    scope: "workspace",
+    order: "received_at",
+  },
+  {
+    key: "usageLedger",
+    table: "usage_ledger",
+    scope: "workspace",
+    order: "occurred_at",
+  },
+  {
+    key: "securityLog",
+    table: "security_events",
+    scope: "workspace",
+    order: "created_at",
+  },
+  {
+    key: "workspaceMemberships",
+    table: "workspace_memberships",
+    scope: "user",
+  },
+  {
+    key: "organizationMemberships",
+    table: "organization_memberships",
+    scope: "user",
+  },
   { key: "legalAcceptances", table: "legal_acceptances", scope: "user" },
   { key: "subscriptions", table: "billing_subscriptions", scope: "user" },
   { key: "billingCustomer", table: "billing_customers", scope: "user" },
@@ -108,6 +184,11 @@ const EXPORT_TABLES: Array<{
 /** Columns that hold sealed secrets or vectors, never part of the copy. */
 const WITHHELD = [
   "credential_reference",
+  // The signing secret of a webhook, sealed; and a share link's token,
+  // which grants read access to the chat: neither belongs in a file that
+  // may travel further.
+  "secret_sealed",
+  "token",
   "embedding",
   "network_hash",
   "token_hash",
@@ -122,12 +203,15 @@ const ROW_LIMIT = 20_000;
  * a statement that is handed a parameter it never uses.)
  */
 export function exportStatement(entry: (typeof EXPORT_TABLES)[number]) {
-  const where =
+  const scoped =
     entry.scope === "self"
       ? "t.id = $1::uuid"
       : entry.scope === "user"
         ? "t.user_id = $1::uuid"
-        : "t.workspace_id = $1::uuid";
+        : entry.scope === "run"
+          ? "t.run_id in (select r.id from osirus.runs r where r.workspace_id = $1::uuid)"
+          : "t.workspace_id = $1::uuid";
+  const where = entry.filter ? `${scoped} and ${entry.filter}` : scoped;
   const strip = WITHHELD.map((column) => ` - '${column}'`).join("");
   return `select coalesce(jsonb_agg(row_json), '[]'::jsonb) as rows
             from (select to_jsonb(t)${strip} as row_json
@@ -161,7 +245,11 @@ export async function exportAccountData(identity: ProductIdentity) {
       const rows = await queryAs<{ rows: unknown[] }>(
         identity.userId,
         exportStatement(entry),
-        [entry.scope === "workspace" ? identity.workspaceId : identity.userId],
+        [
+          entry.scope === "workspace" || entry.scope === "run"
+            ? identity.workspaceId
+            : identity.userId,
+        ],
       );
       data[entry.key] = maskUrls(entry.key, rows[0]?.rows ?? []);
     } catch (error) {
@@ -202,6 +290,24 @@ export class AccountDeletionBlocked extends Error {
  * deleted account with a subscription still charging in Stripe could not be
  * stopped by its owner any more.
  */
+/** Deleting needs a sign-in this recent (GitHub's "sudo mode", 15 min). */
+export const REAUTH_WINDOW_MS = 15 * 60 * 1000;
+
+/**
+ * True when the session was opened recently enough to delete the account.
+ * A session of unknown age counts as old: the person signs in again.
+ */
+export function recentlySignedIn(
+  sessionCreatedAt: Date | string | null | undefined,
+  now = Date.now(),
+) {
+  if (!sessionCreatedAt) return false;
+  const at = new Date(sessionCreatedAt).getTime();
+  return (
+    Number.isFinite(at) && now - at <= REAUTH_WINDOW_MS && at <= now + 60_000
+  );
+}
+
 export async function deleteAccount(
   identity: ProductIdentity,
   options: { endSubscription: boolean },
@@ -209,6 +315,11 @@ export async function deleteAccount(
     cancelSubscription?: (subscriptionId: string) => Promise<void>;
     /** All of the customer's subscriptions that still bill, from Stripe. */
     liveSubscriptions?: () => Promise<string[]>;
+    /**
+     * Removes the person's customer record at Stripe (name, e-mail, saved
+     * payment methods). Invoices stay with Stripe under § 147 AO.
+     */
+    deleteCustomer?: () => Promise<void>;
   } = {},
 ) {
   let live: string[];
@@ -231,6 +342,9 @@ export async function deleteAccount(
     if (!deps.cancelSubscription) throw new Error("billing_not_configured");
     for (const id of live) await deps.cancelSubscription(id);
   }
+  // Before the database rows go: the customer id is read from them. A
+  // failure stops the deletion, so nothing is left half done.
+  if (deps.deleteCustomer) await deps.deleteCustomer();
   // Workspace content first: organizations.created_by restricts the user row.
   await queryAs(
     identity.userId,

@@ -84,7 +84,10 @@ export async function POST(
         config: {
           url: expected,
           content_type: "json",
-          secret: decryptSecret(endpoint.secret_sealed),
+          secret: decryptSecret(endpoint.secret_sealed, {
+            purpose: "webhook",
+            workspaceId: guard.identity.workspaceId,
+          }),
           insecure_ssl: "0",
         },
       }),

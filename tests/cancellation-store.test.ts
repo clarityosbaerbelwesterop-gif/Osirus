@@ -202,9 +202,19 @@ describe("cancellation page against Postgres", () => {
          values ('K-X', 'X', 'x@example.test', 'free', 'ordinary', 'earliest')`,
       ),
     ).rejects.toThrow();
-    await expect(
-      holder.db!.querySystem("delete from osirus.contract_cancellations"),
-    ).rejects.toThrow();
+    // Even the system deletes only declarations past their period (three
+    // years after the end of the contract's year); these are all recent.
+    const before = await holder.db!.querySystem<{ n: number }>(
+      "select count(*)::int as n from osirus.contract_cancellations",
+    );
+    const deleted = await holder.db!.querySystem(
+      "delete from osirus.contract_cancellations returning 1",
+    );
+    expect(deleted).toHaveLength(0);
+    const after = await holder.db!.querySystem<{ n: number }>(
+      "select count(*)::int as n from osirus.contract_cancellations",
+    );
+    expect(after[0]!.n).toBe(before[0]!.n);
   });
 
   it("rejects an extraordinary cancellation without reason at the database too", async () => {

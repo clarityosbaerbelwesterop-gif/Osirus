@@ -381,7 +381,10 @@ export async function connectPlatform(
       identity.workspaceId,
       id,
       JSON.stringify({ account: verified.account }),
-      encryptSecret(token),
+      encryptSecret(token, {
+        purpose: `connector:${id}`,
+        workspaceId: identity.workspaceId,
+      }),
       identity.userId,
     ],
   );
@@ -414,7 +417,10 @@ async function credential(identity: ProductIdentity, id: PlatformId) {
       entry.credential_reference,
   );
   if (!row?.credential_reference) throw new Error(`${id}_not_connected`);
-  return decryptSecret(row.credential_reference);
+  return decryptSecret(row.credential_reference, {
+    purpose: `connector:${id}`,
+    workspaceId: identity.workspaceId,
+  });
 }
 
 /** A health error a person can read. Never derived from the token. */

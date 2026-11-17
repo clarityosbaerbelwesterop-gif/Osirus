@@ -204,7 +204,12 @@ export async function addMcpServer(
   input: { name: string; url: string; token?: string | null },
 ) {
   const url = checkOutboundUrl(input.url).toString();
-  const sealed = input.token ? encryptSecret(input.token) : null;
+  const sealed = input.token
+    ? encryptSecret(input.token, {
+        purpose: "mcp",
+        workspaceId: identity.workspaceId,
+      })
+    : null;
   const rows = await queryAs<{ id: string }>(
     identity.userId,
     `insert into osirus.mcp_servers
@@ -289,12 +294,12 @@ async function loadServer(identity: ProductIdentity, id: string) {
   return rows[0] ?? null;
 }
 
-function toServer(row: ServerRow): McpServer {
+function toServer(row: ServerRow, workspaceId: string): McpServer {
   return {
     id: serverSlug(row),
     url: row.url,
     token: row.credential_reference
-      ? decryptSecret(row.credential_reference)
+      ? decryptSecret(row.credential_reference, { purpose: "mcp", workspaceId })
       : undefined,
   };
 }
@@ -306,7 +311,7 @@ function toServer(row: ServerRow): McpServer {
 export async function checkMcpServer(identity: ProductIdentity, id: string) {
   const row = await loadServer(identity, id);
   if (!row) return null;
-  const server = toServer(row);
+  const server = toServer(row, identity.workspaceId);
   const started = Date.now();
   try {
     const info = await mcpInitialize(server);
@@ -507,7 +512,7 @@ export async function mcpToolsForWorkspace(
   return rows
     .filter((row) => Boolean(row.fingerprint))
     .map((row) => {
-      const server = toServer(row);
+      const server = toServer(row, identity.workspaceId);
       const tool = toolFromDiscovery({
         tool: {
           id: namespacedId(server.id, row.tool_name),

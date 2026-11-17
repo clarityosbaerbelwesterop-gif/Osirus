@@ -29,6 +29,9 @@ jobs:
         with:
           python-version: "3.12"
       - run: npm ci
+      # Supply chain: no new high or critical advisory in production
+      # dependencies (accepted ones: security/audit-allowlist.json).
+      - run: node scripts/audit-gate.mjs
       - run: npm run format:check
       - run: npm run lint
       - run: npm run typecheck

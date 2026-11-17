@@ -225,9 +225,27 @@ describe("MCP certification journey", () => {
       `select credential_reference, url from osirus.mcp_servers where id = $1`,
       [serverId],
     );
-    expect(row!.credential_reference).toMatch(/^v1\./);
+    expect(row!.credential_reference).toMatch(/^v2\./);
     expect(row!.credential_reference).not.toContain(MCP_TOKEN);
-    expect(decryptSecret(row!.credential_reference)).toBe(MCP_TOKEN);
+    expect(
+      decryptSecret(row!.credential_reference, {
+        purpose: "mcp",
+        workspaceId: alice.workspaceId,
+      }),
+    ).toBe(MCP_TOKEN);
+    // Bound to its workspace and purpose: elsewhere it does not open.
+    expect(() =>
+      decryptSecret(row!.credential_reference, {
+        purpose: "mcp",
+        workspaceId: mallory.workspaceId,
+      }),
+    ).toThrow();
+    expect(() =>
+      decryptSecret(row!.credential_reference, {
+        purpose: "connector:github",
+        workspaceId: alice.workspaceId,
+      }),
+    ).toThrow();
     const shown = await view(serverId);
     expect(shown).toMatchObject({
       hasToken: true,
