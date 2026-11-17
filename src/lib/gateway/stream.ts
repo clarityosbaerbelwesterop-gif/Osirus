@@ -189,6 +189,11 @@ function requestBody(
     max_tokens: options.maxTokens,
     temperature: options.temperature,
     top_p: options.topP,
+    // GDPR: OpenRouter may only route to endpoints that neither store nor
+    // train on prompts. Kept on the minimal retry too: it is not optional.
+    ...(provider.id === "openrouter"
+      ? { provider: { data_collection: "deny" } }
+      : {}),
     ...(minimal
       ? {}
       : {

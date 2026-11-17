@@ -360,6 +360,35 @@ describe("streaming", () => {
     expect(calls[1].body).not.toHaveProperty("stream_options");
   });
 
+  it("tells OpenRouter never to route to endpoints that keep or train on prompts", async () => {
+    process.env.OPENROUTER_API_KEY = "or-key";
+    process.env.NVIDIA_API_KEY = "nv";
+    const { impl, calls } = fakeFetch((_call, index) =>
+      index === 0
+        ? new Response('{"error":"unrecognized field stream_options"}', {
+            status: 400,
+          })
+        : sse([{ choices: [{ delta: { content: "ok" } }] }]),
+    );
+    await completeGateway({
+      ref: "openrouter:openai/gpt-5",
+      messages: [],
+      fetchImpl: impl,
+    });
+    // On the first request and on the minimal retry alike.
+    expect(calls[0].body?.provider).toEqual({ data_collection: "deny" });
+    expect(calls[1].body?.provider).toEqual({ data_collection: "deny" });
+    const other = fakeFetch(() =>
+      sse([{ choices: [{ delta: { content: "ok" } }] }]),
+    );
+    await completeGateway({
+      ref: "nvidia:meta/llama-3.3-70b-instruct",
+      messages: [],
+      fetchImpl: other.impl,
+    });
+    expect(other.calls[0].body).not.toHaveProperty("provider");
+  });
+
   it("hides a model the provider does not serve", async () => {
     process.env.OPENROUTER_API_KEY = "or-key";
     const listing = fakeFetch(() =>
