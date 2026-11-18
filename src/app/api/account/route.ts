@@ -1,4 +1,5 @@
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { z } from "zod";
 import { auth } from "@/lib/auth/server";
 import { guardWrite, json } from "@/lib/product/api";
@@ -49,6 +50,12 @@ export async function DELETE(request: Request) {
       },
       403,
     );
+  // Bots' cloud computers are deleted with the account (Art. 17): their
+  // names derive from the bots, so they are listed before the rows go.
+  const { listAgents } = await import("@/lib/agents/store");
+  const botIds = await listAgents(guard.identity)
+    .then((bots) => bots.map((bot) => bot.id))
+    .catch(() => [] as string[]);
   try {
     await deleteAccount(
       guard.identity,
@@ -117,6 +124,21 @@ export async function DELETE(request: Request) {
   for (const cookie of store.getAll()) {
     if (/neon-auth|better-auth/i.test(cookie.name))
       store.delete({ name: cookie.name, path: "/", secure: true });
+  }
+  if (botIds.length) {
+    const { resolveSandbox } = await import("@/lib/sandbox");
+    const driver = await resolveSandbox();
+    const workspaceId = guard.identity.workspaceId;
+    const removeComputers = async () => {
+      const { deleteComputers } = await import("@/lib/agents/bot-computer");
+      await deleteComputers(driver, workspaceId, botIds).catch(() => undefined);
+    };
+    try {
+      after(removeComputers);
+    } catch {
+      // Outside a request scope (scripts, tests): run it right away.
+      void removeComputers();
+    }
   }
   return json({ deleted: true }, 200);
 }

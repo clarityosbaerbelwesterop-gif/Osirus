@@ -1,5 +1,14 @@
 // Reads the Agents chat stream: "data: {json}" frames separated by a blank line.
 
+/** One command the bot ran on its own cloud computer. */
+export type ComputerStepView = {
+  command: string;
+  reason: string;
+  exitCode: number | null;
+  output: string;
+  durationMs: number;
+};
+
 export type ChatStreamEvent =
   | {
       type: "start";
@@ -30,6 +39,9 @@ export type ChatStreamEvent =
       };
     }
   | { type: "reasoning"; text: string }
+  /** The bot's cloud computer: starting up, then each command it ran. */
+  | { type: "computer"; phase: "open" }
+  | { type: "computer"; step: ComputerStepView }
   | {
       type: "done";
       messageId: string | null;

@@ -392,6 +392,44 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     expect(body.trialDays).toBe(7);
   });
 
+  await test.step("a bot runs code on its own cloud computer", async () => {
+    const created = await send(page, "/api/agents", {
+      name: `Rechner ${runId}`.slice(0, 80),
+      systemPrompt: "Du rechnest exakt und nutzt dafür deinen Computer.",
+    });
+    expect(created.status()).toBe(201);
+    const bot = ((await created.json()) as { agent: { id: string } }).agent;
+    const started = Date.now();
+    const events = await streamFrames({
+      message:
+        "Rechne mit Python auf deinem Computer 2 hoch 64 aus und nenne nur die Zahl.",
+      botId: bot.id,
+    });
+    const steps = events
+      .filter((frame) => frame.type === "computer" && "step" in frame)
+      .map(
+        (frame) =>
+          frame.step as {
+            command: string;
+            exitCode: number | null;
+            output: string;
+          },
+      );
+    const text = events
+      .filter((frame) => frame.type === "text")
+      .map((frame) => frame.text)
+      .join("");
+    console.log(
+      `Bot computer: ${steps.length} step(s), exit ${steps.map((step) => step.exitCode).join(",")}, ${Math.round((Date.now() - started) / 1000)} s`,
+    );
+    expect(events.at(-1)?.type).toBe("done");
+    expect(steps.length).toBeGreaterThan(0);
+    expect(
+      steps.some((step) => step.output.includes("18446744073709551616")),
+    ).toBe(true);
+    expect(text.replace(/[.,\s]/g, "")).toContain("18446744073709551616");
+  });
+
   await test.step("an MCP server can be added, checked and removed", async () => {
     const added = await send(page, "/api/mcp/servers", {
       name: `DeepWiki ${runId}`,

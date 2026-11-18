@@ -54,6 +54,13 @@ vi.mock("@/lib/auth/bootstrap", () => ({
   bootstrapProductIdentity: async () => state.identity,
 }));
 
+// Bots' cloud computers run on the local driver in tests: a real shell.
+vi.mock("@/lib/sandbox", async () => {
+  const { LocalWorkspaceDriver } = await import("../src/lib/sandbox/local");
+  const driver = new LocalWorkspaceDriver();
+  return { resolveSandbox: async () => driver };
+});
+
 const { POST } = await import("../src/app/api/chat/stream/route");
 const { GET: getThread } =
   await import("../src/app/api/chat/threads/[sessionId]/route");
@@ -159,6 +166,109 @@ async function frames(response: Response) {
 
 const chatCalls = () =>
   providerCalls.filter((call) => call.url.endsWith("/chat/completions"));
+
+describe("a bot's cloud computer in the chat", () => {
+  it("runs the command, streams it and answers from the real output", async () => {
+    const { createAgent } = await import("../src/lib/agents/store");
+    const bot = await createAgent({
+      identity: tenant,
+      name: "Rechner",
+      systemPrompt: "Du rechnest genau.",
+      modelId: "openrouter:qwen/qwen3-235b-a22b:free",
+    });
+    let plans = 0;
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        const body = init?.body ? JSON.parse(String(init.body)) : null;
+        providerCalls.push({ url, body });
+        if (url.endsWith("/models")) return Response.json(MODELS);
+        const system = String(body?.messages?.[0]?.content ?? "");
+        if (system.includes("personal Linux cloud computer")) {
+          plans += 1;
+          const reply =
+            plans === 1
+              ? '{"command": "python3 -c \\"print(2**10)\\"", "reason": "Rechnet 2 hoch 10"}'
+              : '{"command": null, "reason": "fertig"}';
+          return sse([{ choices: [{ delta: { content: reply } }] }]);
+        }
+        return sse([
+          { choices: [{ delta: { content: "2 hoch 10 ist 1024." } }] },
+          { choices: [], usage: { prompt_tokens: 40, completion_tokens: 8 } },
+        ]);
+      },
+    );
+    const response = await post({
+      message: "Rechne 2 hoch 10 aus",
+      botId: bot.id,
+      model: "openrouter:qwen/qwen3-235b-a22b:free",
+    });
+    expect(response.status).toBe(200);
+    const events = await frames(response);
+    expect(
+      events.some((e) => e.type === "computer" && e.phase === "open"),
+    ).toBe(true);
+    const steps = events
+      .filter((e) => e.type === "computer" && "step" in e)
+      .map((e) => e.step);
+    expect(steps).toEqual([
+      expect.objectContaining({
+        command: 'python3 -c "print(2**10)"',
+        exitCode: 0,
+        output: "1024",
+        reason: "Rechnet 2 hoch 10",
+      }),
+    ]);
+    expect(plans).toBe(2);
+    // The answering model was given the real output.
+    const answerCall = chatCalls()
+      .filter(
+        (call) =>
+          !JSON.stringify(call.body?.messages ?? "").includes(
+            "personal Linux cloud computer",
+          ),
+      )
+      .at(-1);
+    expect(JSON.stringify(answerCall?.body?.messages)).toContain("1024");
+    expect(events.at(-1)).toMatchObject({ type: "done" });
+
+    // The steps stay with the answer in the thread.
+    const sessionId = String(events[0]!.sessionId);
+    const thread = await getThread(new Request("https://osirus.test"), {
+      params: Promise.resolve({ sessionId }),
+    });
+    const stored = (await thread.json()) as {
+      messages: Array<{ role: string; computer?: Array<{ output: string }> }>;
+    };
+    expect(stored.messages.at(-1)?.computer?.[0]?.output).toBe("1024");
+  });
+
+  it("leaves small talk alone: no planner call, no machine", async () => {
+    const { createAgent } = await import("../src/lib/agents/store");
+    const bot = await createAgent({
+      identity: tenant,
+      name: "Plauder",
+      systemPrompt: "Du plauderst.",
+      modelId: "openrouter:qwen/qwen3-235b-a22b:free",
+    });
+    const events = await frames(
+      await post({
+        message: "Hallo, wie geht's?",
+        botId: bot.id,
+        model: "openrouter:qwen/qwen3-235b-a22b:free",
+      }),
+    );
+    expect(events.some((e) => e.type === "computer")).toBe(false);
+    expect(
+      chatCalls().some((call) =>
+        JSON.stringify(call.body?.messages ?? "").includes(
+          "personal Linux cloud computer",
+        ),
+      ),
+    ).toBe(false);
+  });
+});
 
 describe("POST /api/chat/stream", () => {
   it("streams one answer from one model call and stores the thread", async () => {

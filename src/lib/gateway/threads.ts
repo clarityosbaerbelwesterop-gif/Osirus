@@ -23,6 +23,14 @@ export type ChatMessage = {
   sources?: Array<{ n: number; title: string; url: string; domain: string }>;
   /** Files sent with a question. */
   attachments?: Array<{ id: string; filename: string }>;
+  /** Commands the bot ran on its own cloud computer for this answer. */
+  computer?: Array<{
+    command: string;
+    reason: string;
+    exitCode: number | null;
+    output: string;
+    durationMs: number;
+  }>;
   /** A bot's request to use one MCP tool, and what became of it. */
   toolRequest?: {
     id: string;
@@ -94,6 +102,9 @@ export function toChatMessage(row: MessageRow): ChatMessage | null {
             ChatMessage["attachments"]
           >,
         }
+      : {}),
+    ...(Array.isArray(meta.computer) && meta.computer.length
+      ? { computer: meta.computer as NonNullable<ChatMessage["computer"]> }
       : {}),
     ...(meta.toolRequest && typeof meta.toolRequest === "object"
       ? { toolRequest: toolRequestView(meta.toolRequest) }

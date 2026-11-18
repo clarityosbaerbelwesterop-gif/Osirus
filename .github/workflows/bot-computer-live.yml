@@ -1,0 +1,30 @@
+name: Bot computer live
+
+# Every bot's cloud computer in the real Vercel Sandbox: shell, python, pip,
+# node, network policy, and files kept across a stop and resume. No model
+# calls; it costs a few sandbox minutes.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Bot computer against Vercel Sandbox
+        env:
+          OSIRUS_SANDBOX_CREDENTIALS: ci
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ vars.VERCEL_TEAM_ID }}
+          VERCEL_PROJECT_ID: ${{ vars.VERCEL_PROJECT_ID }}
+        run: npx vitest run --config vitest.bot-computer.config.ts

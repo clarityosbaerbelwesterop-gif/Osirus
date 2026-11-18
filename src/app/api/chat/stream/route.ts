@@ -14,6 +14,13 @@ import {
   toolPlanWorthwhile,
 } from "@/lib/agents/bot-tool-call";
 import { isSmallTalk } from "@/lib/runtime/small-talk";
+import {
+  computerMaterial,
+  computerWorthwhile,
+  publicStep,
+  type ComputerStep,
+} from "@/lib/agents/bot-computer-plan";
+import { after } from "next/server";
 import { repositoryMaterial } from "@/lib/gateway/repo-material";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
 import { answerCacheKey, cachedAnswer, storeAnswer } from "@/lib/gateway/cache";
@@ -397,12 +404,20 @@ export async function POST(request: Request) {
     ...context,
     { role: "user", content: body.message },
   ];
+  // Every bot has its own cloud computer (files, shell, packages), like
+  // Grok's code runner: considered when the message plausibly needs it and
+  // no MCP tool was proposed. Such answers are never served from cache.
+  const computerWanted =
+    Boolean(bot) &&
+    !body.regenerate &&
+    !body.toolMessageId &&
+    computerWorthwhile(body.message);
   const cacheKey = answerCacheKey({
     scope: identity.workspaceId,
     ref: candidates[0].ref,
     messages,
   });
-  const hit = body.regenerate ? null : cachedAnswer(cacheKey);
+  const hit = body.regenerate || computerWanted ? null : cachedAnswer(cacheKey);
   let chosen = candidates[0];
   const started = Date.now();
   const attempts: Array<{
@@ -436,6 +451,51 @@ export async function POST(request: Request) {
       });
       if (material.sources.length)
         send({ type: "sources", sources: material.sources });
+
+      let computerSteps: ComputerStep[] = [];
+      if (computerWanted && bot) {
+        try {
+          const [{ runComputer, modelPlanner }, { resolveSandbox }] =
+            await Promise.all([
+              import("@/lib/agents/bot-computer"),
+              import("@/lib/sandbox"),
+            ]);
+          const run = await runComputer({
+            driver: await resolveSandbox(),
+            workspaceId: identity.workspaceId,
+            botId: bot.id,
+            plan: modelPlanner({
+              identity,
+              sessionId,
+              models: candidates,
+              botName: bot.name,
+              message: body.message,
+              signal: request.signal,
+            }),
+            onOpen: () => send({ type: "computer", phase: "open" }),
+            onStep: (step) =>
+              send({ type: "computer", step: publicStep(step) }),
+            signal: request.signal,
+          });
+          computerSteps = run.steps;
+          // The machine stops (files kept) after the answer, not before it.
+          try {
+            after(() => run.release());
+          } catch {
+            void run.release();
+          }
+          if (run.steps.length)
+            messages.splice(1, 0, {
+              role: "system",
+              content: computerMaterial(run.steps),
+            });
+        } catch (error) {
+          console.error(
+            "chat.stream computer failed",
+            error instanceof Error ? error.name : "unknown",
+          );
+        }
+      }
 
       let status: "completed" | "failed" | "cancelled" = "completed";
       let errorCode: string | null = null;
@@ -534,7 +594,7 @@ export async function POST(request: Request) {
               usage = {};
             }
           }
-          storeAnswer(cacheKey, { text, reasoning });
+          if (!computerWanted) storeAnswer(cacheKey, { text, reasoning });
         }
       } catch (error) {
         errorCode = refusalCode(error);
@@ -617,6 +677,9 @@ export async function POST(request: Request) {
               latencyMs,
               cached: Boolean(hit),
               sources: shownSources.length ? shownSources : undefined,
+              computer: computerSteps.length
+                ? computerSteps.map(publicStep)
+                : undefined,
             },
           });
           messageId = saved.id;
