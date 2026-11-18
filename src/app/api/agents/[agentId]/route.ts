@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { z } from "zod";
 import { env, serverKeys } from "@/lib/env";
 import { guardAction, guardWrite, json } from "@/lib/product/api";
@@ -113,5 +114,21 @@ export async function DELETE(
   if (!guard.ok) return guard.response;
   const removed = await deleteAgent(guard.identity, agentId);
   if (!removed) return json({ error: "not_found" }, 404);
+  // The bot's cloud computer and its files go with it.
+  const { resolveSandbox } = await import("@/lib/sandbox");
+  const driver = await resolveSandbox();
+  const workspaceId = guard.identity.workspaceId;
+  const removeComputers = async () => {
+    const { deleteComputers } = await import("@/lib/agents/bot-computer");
+    await deleteComputers(driver, workspaceId, [agentId]).catch(
+      () => undefined,
+    );
+  };
+  try {
+    after(removeComputers);
+  } catch {
+    // Outside a request scope (scripts, tests): run it right away.
+    void removeComputers();
+  }
   return json({ ok: true });
 }

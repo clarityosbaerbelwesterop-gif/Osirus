@@ -15,6 +15,7 @@ import {
   RotateCcw,
   Sparkles,
   Square,
+  Terminal,
   Volume2,
   VolumeX,
   Wrench,
@@ -45,7 +46,7 @@ import { OsirusMark } from "../shell/osirus-mark";
 import { TopBar } from "../shell/top-bar";
 import { cx } from "../ui/cx";
 import { ShareDialog } from "./share-dialog";
-import { readChatStream } from "./sse";
+import { readChatStream, type ComputerStepView } from "./sse";
 
 export type AgentsChatMessage = {
   id: string;
@@ -61,6 +62,8 @@ export type AgentsChatMessage = {
   attachments?: Array<{ id: string; filename: string }>;
   /** A bot asks to use one of the person's MCP tools. */
   toolRequest?: ToolRequestView;
+  /** Commands the bot ran on its own cloud computer for this answer. */
+  computer?: ComputerStepView[];
 };
 
 export type ToolRequestView = {
@@ -163,6 +166,8 @@ type UiMessage = AgentsChatMessage & {
   thinkingMs?: number | null;
   /** Reading the web before the answer starts. */
   searching?: boolean;
+  /** The bot's cloud computer is starting. */
+  computerOpening?: boolean;
 };
 
 export type AgentsBot = { id: string; name: string };
@@ -361,6 +366,12 @@ const MessageView = memo(function MessageView(props: {
               <span className="ac-searching">Sucht im Web …</span>
             ) : null}
           </div>
+        ) : null}
+        {message.computer?.length || message.computerOpening ? (
+          <ComputerPanel
+            steps={message.computer ?? []}
+            opening={Boolean(message.computerOpening && message.streaming)}
+          />
         ) : null}
         {message.toolRequest ? (
           <ToolRequestCard
@@ -888,6 +899,17 @@ export function AgentsChat(props: {
           } else if (event.type === "tool_request") {
             const request = event.request;
             patch((message) => ({ ...message, toolRequest: request }));
+          } else if (event.type === "computer") {
+            if ("step" in event) {
+              const step = event.step;
+              patch((message) => ({
+                ...message,
+                computerOpening: false,
+                computer: [...(message.computer ?? []), step],
+              }));
+            } else {
+              patch((message) => ({ ...message, computerOpening: true }));
+            }
           } else if (event.type === "sources") {
             const sources = event.sources;
             patch((message) => ({ ...message, sources, searching: false }));
@@ -1468,5 +1490,59 @@ export function AgentsChat(props: {
         </div>
       )}
     </div>
+  );
+}
+
+/** The bot's own cloud computer: each command it ran, with its output. */
+function ComputerPanel(props: { steps: ComputerStepView[]; opening: boolean }) {
+  return (
+    <section className="ac-computer" aria-label="Cloud-Computer">
+      <p className="ac-computer-title">
+        <Terminal size={14} aria-hidden="true" /> Cloud-Computer
+        {props.opening ? (
+          <span className="ac-computer-status">
+            <Loader2
+              size={12}
+              className="ac-computer-spin"
+              aria-hidden="true"
+            />
+            startet …
+          </span>
+        ) : null}
+      </p>
+      {props.steps.map((step, index) => (
+        <details
+          key={index}
+          className="ac-computer-step"
+          open={index === props.steps.length - 1}
+        >
+          <summary>
+            <code className="ac-computer-cmd">
+              $ {step.command.split("\n")[0]}
+              {step.command.includes("\n") ? " …" : ""}
+            </code>
+            <span
+              className={cx(
+                "ac-computer-exit",
+                step.exitCode === 0 ? "ac-computer-ok" : "ac-computer-fail",
+              )}
+            >
+              {step.exitCode === null
+                ? "Zeitlimit"
+                : step.exitCode === 0
+                  ? "ok"
+                  : `Exit ${step.exitCode}`}
+            </span>
+          </summary>
+          {step.reason ? (
+            <p className="ac-computer-reason">{step.reason}</p>
+          ) : null}
+          <pre className="ac-computer-out">
+            {step.command.includes("\n") ? `$ ${step.command}\n\n` : ""}
+            {step.output || "(keine Ausgabe)"}
+          </pre>
+        </details>
+      ))}
+    </section>
   );
 }
