@@ -22,6 +22,13 @@ import type {
 
 const DEFAULT_TIMEOUT_MS = 5 * 60 * 1000;
 
+/**
+ * Frankfurt, like the app's functions and database: code, files and
+ * outputs of every sandbox (bots' computers, Code workspaces, "Ausführen")
+ * stay in the EU. The SDK's own default is iad1 (USA).
+ */
+export const SANDBOX_REGION = "fra1";
+
 export type SandboxCredentials = {
   token: string;
   teamId: string;
@@ -186,6 +193,7 @@ export class VercelSandboxDriver implements SandboxDriver {
       ...(input.persistent
         ? { persistent: true, snapshotExpiration: 7 * 24 * 60 * 60 * 1000 }
         : {}),
+      region: SANDBOX_REGION,
       signal: input.signal,
       timeout: input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
       ports: input.ports,
