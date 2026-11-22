@@ -478,6 +478,10 @@
   color: var(--ln-subtle);
 }
 
+.ln-footer a.ln-footer-credit:hover {
+  color: var(--ln-ink);
+}
+
 /* ---------- motion ---------- */
 
 @keyframes ln-rise {
