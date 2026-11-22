@@ -45,7 +45,8 @@ describe("public content pages", () => {
     expect(html).toContain("Moers");
     expect(html).toContain("Nordrhein-Westfalen");
     expect(html).toContain("Bärbel Westerop");
-    expect(html).toContain("Mark Quasnitza");
+    expect(html).not.toContain("Mark Quasnitza");
+    expect(html).not.toContain("Mitgründer");
     expect(html).toContain("eigenfinanziert");
     expect(html).toContain("Frankfurt");
     expect(html).toContain('href="/legal/impressum"');

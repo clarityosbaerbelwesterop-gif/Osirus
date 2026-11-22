@@ -23,7 +23,7 @@ export default function AboutPage() {
       <p>
         {OPERATOR.name} wurde am 2. Januar 2025 gegründet und hat seinen Sitz in
         Moers, Nordrhein-Westfalen. Inhaberin und Geschäftsführerin ist{" "}
-        {OPERATOR.owner}. Mitgründer ist Mark Quasnitza.
+        {OPERATOR.owner}.
       </p>
       <p>
         ClarityCompassAI ist eigenfinanziert – aus eigener Entscheidung. Die
