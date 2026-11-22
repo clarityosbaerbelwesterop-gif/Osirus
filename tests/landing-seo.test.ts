@@ -91,8 +91,41 @@ describe("landing page", () => {
     expect(data["@type"]).toBe("SoftwareApplication");
     expect(data.name).toBe("Osirus");
     expect(data.url).toBe("https://osirus-ai.com/");
+    expect(data.publisher).toMatchObject({
+      "@type": "Organization",
+      name: "ClarityCompassAI",
+    });
     expect(data.offers).toBeUndefined();
     expect(html).not.toContain('"price"');
+  });
+
+  it("ships Organization and WebSite JSON-LD with the logo", async () => {
+    const html = renderToStaticMarkup(
+      (await HomePage()) as ReturnType<typeof createElement>,
+    );
+    const scripts = [
+      ...html.matchAll(/<script type="application\/ld\+json">(.*?)<\/script>/g),
+    ].map((m) => JSON.parse(m[1]));
+    const orgBlock = scripts.find((d) => Array.isArray(d["@graph"]));
+    expect(orgBlock).toBeDefined();
+    const nodes = orgBlock["@graph"] as Array<{
+      "@type": string;
+      name?: string;
+      url?: string;
+      logo?: string;
+    }>;
+    const org = nodes.find((n) => n["@type"] === "Organization");
+    const site = nodes.find((n) => n["@type"] === "WebSite");
+    expect(org).toMatchObject({
+      name: "ClarityCompassAI",
+      url: "https://osirus-ai.com",
+      logo: "https://osirus-ai.com/icon-512.png",
+    });
+    expect(site).toMatchObject({
+      name: "Osirus",
+      url: "https://osirus-ai.com/",
+      alternateName: ["Osirus AI", "ClarityCompassAI", "osirus-ai.com"],
+    });
   });
 });
 
