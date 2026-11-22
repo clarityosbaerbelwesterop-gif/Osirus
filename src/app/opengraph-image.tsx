@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 // The preview Google, WhatsApp, LinkedIn, Slack and X show for a shared link.
-export const alt = "Osirus: Dein KI-Team mit Freigabeknopf";
+export const alt = "Osirus AI: Dein KI-Team mit Freigabeknopf | ClarityCompassAI";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -21,15 +21,43 @@ export default function OpenGraphImage() {
         fontFamily: "sans-serif",
       }}
     >
-      <div style={{ fontSize: 40, color: "#8fb3ff", letterSpacing: 2 }}>
-        OSIRUS
+      <div style={{ display: "flex", alignItems: "center" }}>
+        <svg
+          width="64"
+          height="64"
+          viewBox="0 0 32 32"
+          fill="none"
+          style={{ marginRight: 18 }}
+        >
+          <rect x="0.5" y="0.5" width="31" height="31" rx="8" fill="#0B1220" />
+          <path
+            d="M22.8 9.15a10 10 0 1 0 2.15 10.15"
+            stroke="#8FB3FF"
+            strokeWidth="2.5"
+            strokeLinecap="round"
+          />
+          <path
+            d="M16 10.4 L18.35 16 L16 21.6 L13.65 16 Z"
+            fill="#F6F7F9"
+          />
+        </svg>
+        <div
+          style={{
+            fontSize: 40,
+            color: "#f6f7f9",
+            letterSpacing: -0.4,
+            fontWeight: 600,
+          }}
+        >
+          Osirus
+        </div>
       </div>
       <div
         style={{
           fontSize: 76,
           fontWeight: 700,
           lineHeight: 1.08,
-          marginTop: 24,
+          marginTop: 28,
           maxWidth: 980,
         }}
       >
@@ -48,7 +76,7 @@ export default function OpenGraphImage() {
         Gehostet in der EU.
       </div>
       <div style={{ fontSize: 28, color: "#8fb3ff", marginTop: 48 }}>
-        osirus-ai.com
+        ClarityCompassAI  ·  osirus-ai.com
       </div>
     </div>,
     size,

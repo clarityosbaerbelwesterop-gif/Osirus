@@ -7,24 +7,34 @@ import { publicSiteUrl, searchVerification } from "./site-url";
 
 export const metadata: Metadata = {
   metadataBase: publicSiteUrl(),
-  title: { default: "Osirus", template: "%s · Osirus" },
+  title: {
+    default: "Osirus AI — Dein KI-Team mit Freigabeknopf | ClarityCompassAI",
+    template: "%s · Osirus AI",
+  },
   description:
-    "Osirus: dein KI-Team für Chat, autonome Aufgaben und Code. Jede Aktion nach außen wartet auf deine Freigabe.",
+    "Osirus von ClarityCompassAI ist dein KI-Team für Chat, Aufgaben und Code. Antworten mit Quellen, das passende Modell wählt Osirus selbst, jede Aktion nach außen erst nach deiner Freigabe. Gehostet in der EU.",
   robots: { index: true, follow: true },
   verification: searchVerification(),
+  icons: {
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.svg", type: "image/svg+xml" },
+    ],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180" }],
+  },
   openGraph: {
     type: "website",
-    siteName: "Osirus",
-    title: "Osirus — Dein KI-Team mit Freigabeknopf",
+    siteName: "Osirus AI",
+    title: "Osirus AI — Dein KI-Team mit Freigabeknopf | ClarityCompassAI",
     description:
-      "Antworten mit Quellen, autonome Aufgaben und Code in einem Workspace, mit Freigabe vor jeder Aktion nach außen. Gehostet in der EU.",
+      "Antworten mit Quellen, autonome Aufgaben und Code in einem Workspace, mit Freigabe vor jeder Aktion nach außen. Von ClarityCompassAI, gehostet in der EU.",
     url: "/",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Osirus — Dein KI-Team mit Freigabeknopf",
+    title: "Osirus AI — Dein KI-Team mit Freigabeknopf | ClarityCompassAI",
     description:
-      "Antworten mit Quellen, autonome Aufgaben und Code in einem Workspace, mit Freigabe vor jeder Aktion nach außen. Gehostet in der EU.",
+      "Antworten mit Quellen, autonome Aufgaben und Code in einem Workspace, mit Freigabe vor jeder Aktion nach außen. Von ClarityCompassAI, gehostet in der EU.",
   },
 };
 

@@ -12,9 +12,9 @@ import { absoluteUrl } from "./site-url";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Osirus — Dein KI-Team mit Freigabeknopf",
+  title: "Osirus AI — Dein KI-Team mit Freigabeknopf | ClarityCompassAI",
   description:
-    "Osirus antwortet mit Quellen, erledigt Aufgaben selbstständig und arbeitet in deinen Repositories. Das passende Modell wählt Osirus selbst; alles, was nach außen wirkt, wartet auf deine Freigabe. Gehostet in der EU.",
+    "Osirus von ClarityCompassAI ist dein KI-Team für Chat, Aufgaben und Code. Antworten mit Quellen, das passende Modell wählt Osirus selbst, jede Aktion nach außen erst nach deiner Freigabe. Gehostet in der EU.",
   alternates: { canonical: "/" },
 };
 
@@ -26,7 +26,7 @@ export default async function HomePage() {
   const startLabel = startAccountLabel();
   const freeTier = isFreeTierEnabled();
 
-  const jsonLd = {
+  const jsonLdSoftware = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "Osirus",
@@ -35,13 +35,40 @@ export default async function HomePage() {
     url: absoluteUrl("/"),
     description:
       "KI-Team für Chat, autonome Aufgaben und Code, mit Freigabe vor jeder Aktion nach außen.",
+    publisher: { "@type": "Organization", name: "ClarityCompassAI" },
+  };
+
+  const jsonLdOrg = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://osirus-ai.com/#organization",
+        name: "ClarityCompassAI",
+        url: "https://osirus-ai.com",
+        logo: "https://osirus-ai.com/icon-512.png",
+        brand: { "@type": "Brand", name: "Osirus" },
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://osirus-ai.com/#website",
+        name: "Osirus AI",
+        url: "https://osirus-ai.com",
+        inLanguage: "de",
+        publisher: { "@id": "https://osirus-ai.com/#organization" },
+      },
+    ],
   };
 
   return (
     <main className="ln" lang="de">
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdSoftware) }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
       />
       <a className="skip-link" href="#inhalt">
         Zum Inhalt
@@ -221,6 +248,7 @@ export default async function HomePage() {
       </div>
 
       <footer className="ln-wrap ln-footer">
+        <span className="ln-footer-credit">Ein Produkt von ClarityCompassAI</span>
         <Link href="/legal/impressum">Impressum</Link>
         <Link href="/legal/privacy">Datenschutz</Link>
         <Link href="/legal/terms">AGB</Link>
