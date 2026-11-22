@@ -12,7 +12,7 @@ import { absoluteUrl } from "./site-url";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Osirus AI — Dein KI-Team mit Freigabeknopf | ClarityCompassAI",
+  title: "Osirus – Dein KI-Team mit Freigabeknopf",
   description:
     "Osirus von ClarityCompassAI ist dein KI-Team für Chat, Aufgaben und Code. Antworten mit Quellen, das passende Modell wählt Osirus selbst, jede Aktion nach außen erst nach deiner Freigabe. Gehostet in der EU.",
   alternates: { canonical: "/" },
@@ -52,8 +52,9 @@ export default async function HomePage() {
       {
         "@type": "WebSite",
         "@id": "https://osirus-ai.com/#website",
-        name: "Osirus AI",
-        url: "https://osirus-ai.com",
+        name: "Osirus",
+        alternateName: ["Osirus AI", "ClarityCompassAI", "osirus-ai.com"],
+        url: "https://osirus-ai.com/",
         inLanguage: "de",
         publisher: { "@id": "https://osirus-ai.com/#organization" },
       },
@@ -248,7 +249,9 @@ export default async function HomePage() {
       </div>
 
       <footer className="ln-wrap ln-footer">
-        <span className="ln-footer-credit">Ein Produkt von ClarityCompassAI</span>
+        <span className="ln-footer-credit">
+          Ein Produkt von ClarityCompassAI
+        </span>
         <Link href="/legal/impressum">Impressum</Link>
         <Link href="/legal/privacy">Datenschutz</Link>
         <Link href="/legal/terms">AGB</Link>

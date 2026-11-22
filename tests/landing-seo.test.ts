@@ -122,8 +122,9 @@ describe("landing page", () => {
       logo: "https://osirus-ai.com/icon-512.png",
     });
     expect(site).toMatchObject({
-      name: "Osirus AI",
-      url: "https://osirus-ai.com",
+      name: "Osirus",
+      url: "https://osirus-ai.com/",
+      alternateName: ["Osirus AI", "ClarityCompassAI", "osirus-ai.com"],
     });
   });
 });
@@ -182,7 +183,7 @@ describe("seo surface", () => {
 
   it("root metadata is indexable with OpenGraph; auth stays noindex", () => {
     expect(rootMetadata.robots).toMatchObject({ index: true, follow: true });
-    expect(rootMetadata.openGraph).toMatchObject({ siteName: "Osirus AI" });
+    expect(rootMetadata.openGraph).toMatchObject({ siteName: "Osirus" });
     expect((rootMetadata.metadataBase as URL).host).toBe("osirus-ai.com");
     expect(authMetadata.robots).toMatchObject({ index: false, follow: false });
   });
