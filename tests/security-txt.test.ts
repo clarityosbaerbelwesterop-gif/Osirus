@@ -7,7 +7,9 @@ describe("security.txt", () => {
   it("names a contact, a policy and an expiry under a year ahead", () => {
     const now = new Date("2026-11-17T10:00:00Z");
     const text = securityTxt(now);
-    expect(text).toMatch(/^Contact: mailto:\S+@\S+$/m);
+    expect(text).toMatch(/^Contact: mailto:company@osirus-ai\.com$/m);
+    expect(text).not.toContain("clarityos.baerbelwesterop@gmail.com");
+    expect(text).not.toContain("gmail.com");
     expect(text).toMatch(/^Policy: https:\/\/osirus-ai\.com\/sicherheit$/m);
     expect(text).toMatch(
       /^Canonical: https:\/\/osirus-ai\.com\/\.well-known\/security\.txt$/m,

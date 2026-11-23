@@ -4,7 +4,7 @@ Stand: 17. November 2026 · Pflege: bei jeder Änderung an Datenflüssen mit dem
 Pull Request aktualisieren (siehe `docs/dsgvo/README.md`).
 
 **Verantwortliche:** ClarityCompassAI, Inhaberin Bärbel Westerop,
-Drinhausstraße 22, 47447 Moers-Kapellen, clarityos.baerbelwesterop@gmail.com.
+Drinhausstraße 22, 47447 Moers-Kapellen, company@osirus-ai.com.
 Ein Datenschutzbeauftragter ist nicht benannt (keine Pflicht nach Art. 37
 DSGVO, § 38 BDSG).
 

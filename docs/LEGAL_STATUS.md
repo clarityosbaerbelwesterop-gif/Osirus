@@ -27,7 +27,7 @@ Scope: German/EU compliance for the Osirus service operated by ClarityCompassAI 
 
 1. Street and house number (ladungsfähige Anschrift) — Impressum + privacy controller.
 2. Second fast contact channel (usually telephone) — required by § 5 DDG in addition to email.
-3. Confirm `clarityos.baerbelwesterop@gmail.com` as the public contact address (drafted from the repository identity, not yet confirmed).
+3. Public contact address confirmed as `company@osirus-ai.com` (owner decision 2026-11-23). The private Gmail address must not appear on public pages.
 4. Legal form (e.g. Einzelunternehmen) — do not publish a form that is not registered.
 5. Commercial register entry (court + number) or the statement that none exists.
 6. VAT ID (§ 27a UStG) and/or Wirtschafts-Identifikationsnummer (§ 139c AO), or the statement that none has been issued.
