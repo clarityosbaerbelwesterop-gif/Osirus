@@ -94,7 +94,6 @@ describe("legal pages", () => {
     expect(html).not.toContain("noch nicht verfügbar");
   });
 
-
   it("legal pages use the company email and do not name anyone but Bärbel Westerop", () => {
     for (const Page of [
       ImpressumPage,
