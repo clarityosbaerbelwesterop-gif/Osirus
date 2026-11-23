@@ -38,7 +38,7 @@ describe("legal pages", () => {
     expect(html).toContain("Drinhausstraße 22");
     expect(html).toContain("47447 Moers");
     expect(html).toContain('href="tel:+4916094486598"');
-    expect(html).toContain("mailto:clarityos.baerbelwesterop@gmail.com");
+    expect(html).toContain("mailto:company@osirus-ai.com");
     expect(html).toContain("§ 18 Abs. 2 MStV");
     expect(html).toContain("§ 36 VSBG");
     // The EU ODR platform was discontinued on 20 July 2025; never link it.
@@ -92,6 +92,23 @@ describe("legal pages", () => {
     expect(html).not.toContain("osirus.vercel.app");
     expect(html).not.toContain("Entwurf:");
     expect(html).not.toContain("noch nicht verfügbar");
+  });
+
+  it("legal pages use the company email and do not name anyone but Bärbel Westerop", () => {
+    for (const Page of [
+      ImpressumPage,
+      PrivacyPage,
+      TermsPage,
+      CookiesPage,
+      EulaPage,
+    ]) {
+      const html = render(Page);
+      expect(html).toContain("company@osirus-ai.com");
+      expect(html).toContain("mailto:company@osirus-ai.com");
+      expect(html).not.toContain("clarityos.baerbelwesterop@gmail.com");
+      expect(html).not.toContain("Quasnitza");
+      expect(html).not.toContain("Mitgründer");
+    }
   });
 
   it("all legal pages render without draft or warning banners", () => {

@@ -4,7 +4,7 @@ export const OPERATOR = {
   street: "Drinhausstraße 22",
   city: "47447 Moers-Kapellen",
   country: "Deutschland",
-  email: "clarityos.baerbelwesterop@gmail.com",
+  email: "company@osirus-ai.com",
   phoneDisplay: "+49 160 94486598",
   phoneHref: "tel:+4916094486598",
 } as const;
