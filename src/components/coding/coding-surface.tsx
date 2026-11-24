@@ -79,12 +79,24 @@ export function CodingSurface(props: {
     freeOnly,
     error: modelsError,
     selected: model,
-    choose: setModel,
+    choose: chooseModel,
+    reload: reloadModels,
   } = useGatewayModels("osirus.code.model");
   const [chosen, setChosen] = useState<EffortId | null>(
     props.initialEffortChosen ? props.initialEffort : null,
   );
+  // What keeps Code from starting (repository, branch): blocks the start.
   const [failure, setFailure] = useState<string | null>(null);
+  // Why the last start did not go through: shown, never blocking. Live
+  // 2026-11: a refused model pick sat in `failure` and Code could not start
+  // again with any model until the page was reloaded.
+  const [startFailure, setStartFailure] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const setModel = (id: string) => {
+    setStartFailure(null);
+    setNotice(null);
+    chooseModel(id);
+  };
   const [paused, setPaused] = useState(Boolean(props.initialPaused));
   const [permission, setPermissionState] = useState<CodingPermission>(
     props.initialPermission === "accept-edits" ? "accept-edits" : "ask",
@@ -270,7 +282,8 @@ export function CodingSurface(props: {
       (item) => `${item.owner}/${item.name}` === repoKey,
     );
     if (!repo || !branch || failure || !branches?.includes(branch)) {
-      setFailure(failure ?? "Wähle zuerst ein Repository und einen Branch.");
+      if (!failure)
+        setStartFailure("Wähle zuerst ein Repository und einen Branch.");
       setRunning(false);
       setActiveEffort(null);
       return;
@@ -282,7 +295,8 @@ export function CodingSurface(props: {
       repository,
       branch,
     ].join("\n");
-    setFailure(null);
+    setStartFailure(null);
+    setNotice(null);
     const response = await fetch("/api/runtime", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -304,17 +318,30 @@ export function CodingSurface(props: {
     }).catch(() => null);
     if (!response?.ok) {
       const body = (await response?.json().catch(() => ({}))) as {
+        error?: string;
         message?: string;
       };
-      setFailure(body.message ?? "Die Code-Aufgabe konnte nicht starten.");
+      setStartFailure(body.message ?? "Die Code-Aufgabe konnte nicht starten.");
+      // The server refused the model: read the list again without it.
+      if (
+        body.error === "model_unavailable" ||
+        body.error === "model_not_in_plan"
+      )
+        reloadModels(model);
       setRunning(false);
       setActiveEffort(null);
       return;
     }
     const started = response.headers.get("X-Osirus-Run-Id");
     const startedSession = response.headers.get("X-Osirus-Session-Id");
+    if (response.headers.get("X-Osirus-Model-Fallback")) {
+      setNotice(
+        "Das gewählte Modell war gerade nicht verfügbar. Osirus arbeitet mit dem besten verfügbaren Modell.",
+      );
+      reloadModels(model);
+    }
     if (!started) {
-      setFailure("Die Code-Aufgabe konnte nicht starten.");
+      setStartFailure("Die Code-Aufgabe konnte nicht starten.");
       setRunning(false);
       setActiveEffort(null);
       return;
@@ -487,9 +514,13 @@ export function CodingSurface(props: {
               void start();
             }}
           >
-            {failure ? (
+            {failure || startFailure ? (
               <p className="composer-error" role="alert">
-                {failure}
+                {failure ?? startFailure}
+              </p>
+            ) : notice ? (
+              <p className="composer-banner" role="status">
+                {notice}
               </p>
             ) : null}
             <div className="coding-picks">

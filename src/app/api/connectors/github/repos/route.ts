@@ -1,4 +1,4 @@
-import { apiIdentity, json } from "@/lib/product/api";
+import { guardRead, json } from "@/lib/product/api";
 import {
   githubListMessage,
   listGrantedRepositories,
@@ -9,8 +9,9 @@ export const runtime = "nodejs";
 
 // Coding only. Chat, agent, and bot do not call this route.
 export async function GET() {
-  const identity = await apiIdentity();
-  if (!identity) return json({ error: "unauthorized" }, 401);
+  const guard = await guardRead({ route: "github.repos", limit: 30 });
+  if (!guard.ok) return guard.response;
+  const identity = guard.identity;
   const listed = await listGrantedRepositories(identity);
   if (!listed.ok) {
     return json(
