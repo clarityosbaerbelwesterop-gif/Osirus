@@ -195,3 +195,43 @@ describe("a bot's cloud computer", () => {
     await run.release();
   });
 });
+
+describe("when the plan's snapshot storage is full", () => {
+  it("still gives the bot a computer, without keeping files", async () => {
+    const { openComputer } = await import("../src/lib/agents/bot-computer");
+    const calls: Array<{ name?: string; persistent?: boolean }> = [];
+    const full = Object.assign(new Error("Status code 402 is not ok"), {
+      response: { status: 402 },
+    });
+    const driver = {
+      id: "test",
+      availability: () => ({ configured: true, driver: "test", reason: "" }),
+      reattach: async () => null,
+      create: async (input: { name?: string; persistent?: boolean }) => {
+        calls.push({ name: input.name, persistent: input.persistent });
+        if (input.persistent) throw full;
+        return { sandboxId: "throwaway" };
+      },
+    } as unknown as SandboxDriver;
+    const machine = await openComputer(driver, "osirus-pc-x");
+    expect(machine.sandboxId).toBe("throwaway");
+    expect(calls).toEqual([
+      { name: "osirus-pc-x", persistent: true },
+      { name: undefined, persistent: undefined },
+    ]);
+  });
+
+  it("does not hide other failures", async () => {
+    const { openComputer } = await import("../src/lib/agents/bot-computer");
+    const driver = {
+      id: "test",
+      availability: () => ({ configured: true, driver: "test", reason: "" }),
+      create: async () => {
+        throw new Error("network down");
+      },
+    } as unknown as SandboxDriver;
+    await expect(openComputer(driver, "osirus-pc-y")).rejects.toThrow(
+      "network down",
+    );
+  });
+});
