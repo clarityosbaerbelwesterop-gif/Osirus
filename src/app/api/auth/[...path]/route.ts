@@ -19,6 +19,36 @@ const LIMITED: Record<
     perNetwork: 10,
   },
   "forget-password": { route: "auth.reset", perAddress: 3, perNetwork: 10 },
+  // Every endpoint that sends an e-mail: without a limit, anyone could send
+  // our verification mails to any address in a loop (spam in our name, a
+  // damaged sender reputation). Reset links are long random tokens; the
+  // network limit still stops a scripted run against them.
+  "send-verification-email": {
+    route: "auth.verify-mail",
+    perAddress: 3,
+    perNetwork: 10,
+  },
+  "change-email": { route: "auth.change-email", perAddress: 3, perNetwork: 10 },
+  "sign-in/magic-link": {
+    route: "auth.magic-link",
+    perAddress: 3,
+    perNetwork: 10,
+  },
+  "email-otp/send-verification-otp": {
+    route: "auth.otp",
+    perAddress: 3,
+    perNetwork: 10,
+  },
+  "reset-password": {
+    route: "auth.reset-token",
+    perAddress: 10,
+    perNetwork: 20,
+  },
+  "change-password": {
+    route: "auth.change-password",
+    perAddress: 10,
+    perNetwork: 20,
+  },
 };
 
 export async function GET(request: Request, context: AuthRouteContext) {
@@ -35,7 +65,14 @@ export async function POST(request: Request, context: AuthRouteContext) {
       .clone()
       .json()
       .catch(() => null)) as { email?: unknown } | null;
-    const email = typeof body?.email === "string" ? body.email : "";
+    // Requests without an address (a reset token, a signed-in change) are
+    // counted under their path, so the network limit carries them.
+    const email =
+      typeof body?.email === "string"
+        ? body.email
+        : typeof (body as { newEmail?: unknown } | null)?.newEmail === "string"
+          ? String((body as { newEmail: string }).newEmail)
+          : "";
     if (!(await authAttemptAllowed({ ...limit, email })))
       return Response.json(
         {

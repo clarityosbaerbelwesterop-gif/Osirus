@@ -4,6 +4,7 @@ import type { GatewayModel } from "../gateway/models";
 import { completeGateway } from "../gateway/stream";
 import { estimateTokens, recordGatewayCall } from "../gateway/usage";
 import type { SandboxDriver, SandboxHandle } from "../sandbox/driver";
+import { sandboxErrorSummary } from "../sandbox/error-summary";
 import {
   COMPUTER_ALLOWED_DOMAINS,
   COMPUTER_BUDGET_MS,
@@ -172,8 +173,12 @@ export async function runComputer(input: {
     return { steps, error: null, release };
   } catch (error) {
     if (input.signal?.aborted) return { steps, error: "cancelled", release };
-    const message = error instanceof Error ? error.message : "computer_failed";
-    return { steps, error: message.slice(0, 200), release };
+    // The cause for the operator (credentials removed); a code for callers.
+    console.error(
+      "bot.computer failed",
+      JSON.stringify(sandboxErrorSummary(error)),
+    );
+    return { steps, error: "computer_failed", release };
   }
 }
 

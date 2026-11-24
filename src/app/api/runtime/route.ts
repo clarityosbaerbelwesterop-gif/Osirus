@@ -156,33 +156,21 @@ export async function POST(request: Request) {
     }
   }
   let pinnedModel: string | undefined;
+  let modelFallback: "unavailable" | "not_in_plan" | null = null;
   const requestedModel = parsed.data.coding?.model ?? parsed.data.modelId ?? "";
   if (
     requestedModel &&
     (requestedModel.startsWith("m_") || isGatewayRef(requestedModel))
   ) {
     // A model picked in Code (public id) or named by server code (reference).
+    // One that is gone (hidden after a failure, stale browser list) or not
+    // in the plan (stale list after a downgrade) does not stop the start:
+    // the run takes the automatic choice within the plan, and the response
+    // says so (X-Osirus-Model-Fallback), so the page can refresh its list.
+    // Production 2026-11: a refused pick left Code unable to start at all.
     const model = await resolveModelSelection(requestedModel);
-    if (!model) {
-      return Response.json(
-        {
-          error: "model_unavailable",
-          message:
-            "Dieses Modell ist gerade nicht verfügbar. Bitte ein anderes wählen.",
-        },
-        { status: 400 },
-      );
-    }
-    if (!modelAllowed(model, access)) {
-      return Response.json(
-        {
-          error: "model_not_in_plan",
-          message: publicRuntimeErrorMessage({ code: "model_not_in_plan" }),
-        },
-        { status: 403 },
-      );
-    }
-    pinnedModel = model.ref;
+    if (model && modelAllowed(model, access)) pinnedModel = model.ref;
+    else modelFallback = model ? "not_in_plan" : "unavailable";
   } else if (requestedModel) {
     const requested = requestedModel;
     if (!isAllowedProductModel(requested)) {
@@ -489,6 +477,7 @@ export async function POST(request: Request) {
       "X-Osirus-Run-Id": prepared.runId,
       "X-Osirus-Session-Id": prepared.sessionId,
       "X-Request-Id": correlationId,
+      ...(modelFallback ? { "X-Osirus-Model-Fallback": modelFallback } : {}),
     },
   });
 }

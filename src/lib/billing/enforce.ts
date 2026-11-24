@@ -12,6 +12,7 @@ import {
 import { effectivePlan, quotaStatus, type QuotaStatus } from "./quota";
 import { currentSubscription, usageSince } from "./store";
 import { isOwnerUser } from "../gateway/owners";
+import { isGatewayRef } from "../gateway/providers";
 
 // Server-side quota enforcement. Every model call made for a user goes
 // through quotaGuardedProvider, which checks the user's 5-hour and weekly
@@ -135,8 +136,24 @@ export function assertFreePlanAllowed(
     );
 }
 
+/**
+ * A gateway model the free plan may call: the same rule as the pickers
+ * (gateway/access modelAllowed), so a model listed as "Free" also runs.
+ * Production 2026-11: Code listed zero-priced models (a Haiku among them) as
+ * Free, this lock only knew ":free" and "nvidia:", and every such run ended
+ * with "not in your plan".
+ */
+async function freeGatewayModel(id: string, limits: FreePlanLimits) {
+  if (!isGatewayRef(id)) return false;
+  const { resolveGatewayModel } = await import("../gateway/models");
+  const model = await resolveGatewayModel(id).catch(() => null);
+  return Boolean(
+    model && (model.free || limits.allowedModels.includes(model.id)),
+  );
+}
+
 /** VERIFY is the reviewer/checker role; every other role is a main model. */
-function assertFreeModel(
+async function assertFreeModel(
   provider: ModelProvider,
   role: ModelRole,
   limits: FreePlanLimits,
@@ -151,6 +168,7 @@ function assertFreeModel(
   if (limits === BILLING_CONFIG.freePlanLimits && isNvidiaTopModelId(id)) {
     return;
   }
+  if (await freeGatewayModel(id, limits)) return;
   assertFreePlanAllowed(
     role === "VERIFY" ? { reviewerModel: id } : { model: id },
     limits,
@@ -181,7 +199,7 @@ export function quotaGuardedProvider(
     // The operator's own sign-ins (OSIRUS_OWNER_EMAILS) are not metered.
     if (await isOwnerUser(userId)) return;
     const status = await assertQuota(userId, check);
-    if (status.plan === "free") assertFreeModel(provider, role, limits);
+    if (status.plan === "free") await assertFreeModel(provider, role, limits);
   };
   return {
     async *stream(input) {

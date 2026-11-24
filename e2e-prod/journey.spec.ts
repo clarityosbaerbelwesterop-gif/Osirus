@@ -327,6 +327,55 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     );
   });
 
+  // Production 2026-11: on the free plan a model with the Free badge (a
+  // Haiku) was listed but refused when it ran, and the page could not start
+  // again. A picked Free model now runs; the next step runs on another.
+  await test.step("a model with the Free badge runs on the free plan", async () => {
+    const listed = (await (await send(page, "/api/models")).json()) as {
+      models: Array<{ id: string; name: string; free: boolean }>;
+      defaultId: string | null;
+      freeOnly: boolean;
+    };
+    const free = listed.models.filter((model) => model.free);
+    const pick =
+      free.find((model) => /haiku/i.test(model.name)) ??
+      free.find((model) => model.id !== listed.defaultId) ??
+      free[0];
+    console.log(
+      `Free plan: ${listed.freeOnly}; ${free.length} Free model(s); picked ${pick?.name ?? "none"}`,
+    );
+    expect(listed.freeOnly).toBe(true);
+    expect(pick).toBeTruthy();
+    const started = Date.now();
+    const response = await send(page, "/api/runtime", {
+      objective: "Antworte nur mit dem Wort OK.",
+      requestId: randomUUID(),
+      surface: "agent",
+      modelId: pick!.id,
+    });
+    expect(response.status()).toBe(200);
+    const runIdHeader = response.headers()["x-osirus-run-id"];
+    const fallback = response.headers()["x-osirus-model-fallback"];
+    await response.text();
+    let run: { status?: string; errorCode?: string | null } = {};
+    for (let tries = 0; tries < 90; tries += 1) {
+      run =
+        (
+          (await (await send(page, `/api/runtime/${runIdHeader}`)).json()) as {
+            run?: typeof run;
+          }
+        ).run ?? {};
+      if (["completed", "failed", "cancelled"].includes(run.status ?? ""))
+        break;
+      await page.waitForTimeout(2_000);
+    }
+    console.log(
+      `Free model run ${run.status} in ${Math.round((Date.now() - started) / 1000)} s${fallback ? ` (fallback: ${fallback})` : ""}${run.errorCode ? `; cause ${run.errorCode}` : ""}`,
+    );
+    expect(run.errorCode ?? null).not.toBe("model_not_in_plan");
+    expect(run.status).toBe("completed");
+  });
+
   await test.step('the Rouge Agent answers "Hallo"', async () => {
     const started = Date.now();
     const response = await send(page, "/api/runtime", {

@@ -109,3 +109,36 @@ export async function guardAction(
   }
   return { ok: true, identity };
 }
+
+/**
+ * For reads that reach outside services (GitHub, model providers): the
+ * signed-in identity and a per-user rate limit, so one account cannot
+ * spend the shared upstream quota for everyone.
+ */
+export async function guardRead(input: {
+  route: string;
+  limit: number;
+}): Promise<
+  { ok: true; identity: ProductIdentity } | { ok: false; response: Response }
+> {
+  const identity = await apiIdentity();
+  if (!identity)
+    return { ok: false, response: json({ error: "unauthorized" }, 401) };
+  try {
+    await enforceRateLimit({
+      subject: `user:${identity.userId}`,
+      route: input.route,
+      limit: input.limit,
+    });
+  } catch (error) {
+    if (error instanceof RateLimitError)
+      return { ok: false, response: json({ error: "rate_limited" }, 429) };
+    if (error instanceof RateLimitUnavailableError)
+      return {
+        ok: false,
+        response: json({ error: "service_unavailable" }, 503),
+      };
+    throw error;
+  }
+  return { ok: true, identity };
+}

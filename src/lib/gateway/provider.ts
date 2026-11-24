@@ -1,3 +1,4 @@
+import { BILLING_CONFIG } from "@/lib/billing/config";
 import { ProviderError } from "@/lib/models/unorouter";
 import type {
   ModelProvider,
@@ -122,8 +123,16 @@ export class GatewayProvider implements ModelProvider {
         const { models } = await listGatewayModels({
           fetchImpl: this.options.fetchImpl,
         });
+        // The free plan's own allowed ids are not free per call: a pin on
+        // one falls back to free models or those ids, never to paid ones.
+        const allowed = BILLING_CONFIG.freePlanLimits.allowedModels;
+        const freePlanPin = !pinned.free && allowed.includes(pinned.id);
         const pool = models.filter(
-          (model) => model.free === pinned.free && model.ref !== pinned.ref,
+          (model) =>
+            model.ref !== pinned.ref &&
+            (freePlanPin
+              ? model.free || allowed.includes(model.id)
+              : model.free === pinned.free),
         );
         return candidatesFor(pool, tierOf(pinned), {
           limit: 3,

@@ -6,6 +6,7 @@ import {
 } from "@/lib/chat/run-code";
 import { guardWrite, json } from "@/lib/product/api";
 import { resolveSandbox } from "@/lib/sandbox";
+import { sandboxErrorSummary } from "@/lib/sandbox/error-summary";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -59,7 +60,7 @@ export async function POST(request: Request) {
     if (request.signal.aborted) return json({ error: "cancelled" }, 499);
     console.error(
       "chat.run failed",
-      error instanceof Error ? error.name : "unknown",
+      JSON.stringify(sandboxErrorSummary(error)),
     );
     return json(
       {

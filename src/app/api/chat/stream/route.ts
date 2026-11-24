@@ -20,6 +20,7 @@ import {
   publicStep,
   type ComputerStep,
 } from "@/lib/agents/bot-computer-plan";
+import { sandboxErrorSummary } from "@/lib/sandbox/error-summary";
 import { after } from "next/server";
 import { repositoryMaterial } from "@/lib/gateway/repo-material";
 import { modelAccessFor, modelAllowed } from "@/lib/gateway/access";
@@ -492,7 +493,7 @@ export async function POST(request: Request) {
         } catch (error) {
           console.error(
             "chat.stream computer failed",
-            error instanceof Error ? error.name : "unknown",
+            JSON.stringify(sandboxErrorSummary(error)),
           );
         }
       }

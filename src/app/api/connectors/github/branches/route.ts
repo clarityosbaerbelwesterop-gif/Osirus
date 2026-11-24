@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { apiIdentity, json } from "@/lib/product/api";
+import { guardRead, json } from "@/lib/product/api";
 import {
   githubListMessage,
   listGrantedBranches,
@@ -14,8 +14,9 @@ const querySchema = z.object({
 });
 
 export async function GET(request: Request) {
-  const identity = await apiIdentity();
-  if (!identity) return json({ error: "unauthorized" }, 401);
+  const guard = await guardRead({ route: "github.branches", limit: 60 });
+  if (!guard.ok) return guard.response;
+  const identity = guard.identity;
   const url = new URL(request.url);
   const parsed = querySchema.safeParse({
     owner: url.searchParams.get("owner"),
