@@ -103,6 +103,7 @@ export function computerPlanMessages(input: {
         "It has bash, python3, node and npm, pip, the usual Unix tools and a working directory (~/work) whose files stay between conversations.",
         "Outbound network: only the package registries (pip, npm). No other websites.",
         "Decide the single next shell command (a short bash script is fine) that brings the person's request closer to a correct answer, or null when the steps so far are enough or the request needs no computer at all (small talk, opinions, plain knowledge, writing).",
+        "When the person asks you to use the computer, to run or write code, to compute something exactly, or to work with files, and no step has done it yet, you must give a command: do not answer from memory.",
         "Prefer one command that does the whole job; print the result. Never print secrets, never loop forever, keep output short.",
         'Reply with one JSON object and nothing else: {"command": "<bash>" | null, "reason": "<one short German sentence: what it does>"}',
       ].join("\n"),
