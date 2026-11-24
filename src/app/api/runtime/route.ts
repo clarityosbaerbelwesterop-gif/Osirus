@@ -54,6 +54,8 @@ const inputSchema = z.object({
   mode: z.enum(["auto", "research", "coding", "reasoning", "agent"]).optional(),
   surface: z.enum(["ai", "agent", "bot", "coding"]).optional(),
   modelId: z.string().trim().min(1).max(200).optional(),
+  /** Rouge Agent: approve the task as a whole ("task") or every step ("ask"). */
+  autonomy: z.enum(["task", "ask"]).optional(),
   coding: z
     .object({
       repository: z.string().trim().max(300),
@@ -321,6 +323,10 @@ export async function POST(request: Request) {
       mode: surface === "coding" ? "coding" : parsed.data.mode,
       surface,
       pinnedModel,
+      // The Rouge Agent works on its own within a task unless asked not to.
+      ...(surface === "agent"
+        ? { autonomy: parsed.data.autonomy === "ask" ? "ask" : "task" }
+        : {}),
       coding:
         surface === "coding" && coding && coding.effort
           ? {

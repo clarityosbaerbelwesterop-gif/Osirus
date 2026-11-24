@@ -8,7 +8,7 @@ import {
   Users,
   Zap,
 } from "lucide-react";
-import { useState, type ComponentProps } from "react";
+import { useState, useSyncExternalStore, type ComponentProps } from "react";
 import { ChatHub } from "../chat/chat-hub";
 
 const CAPABILITIES = [
@@ -83,10 +83,38 @@ function RougeHero(props: { onPick: (task: string) => void }) {
   );
 }
 
+const AUTONOMY_KEY = "osirus.rouge.autonomy";
+const autonomyListeners = new Set<() => void>();
+
+function readAutonomy(): "task" | "ask" {
+  try {
+    return window.localStorage.getItem(AUTONOMY_KEY) === "ask" ? "ask" : "task";
+  } catch {
+    return "task";
+  }
+}
+
+function subscribeAutonomy(listener: () => void) {
+  autonomyListeners.add(listener);
+  return () => {
+    autonomyListeners.delete(listener);
+  };
+}
+
+function writeAutonomy(value: "task" | "ask") {
+  try {
+    window.localStorage.setItem(AUTONOMY_KEY, value);
+  } catch {
+    // private mode
+  }
+  for (const listener of autonomyListeners) listener();
+}
+
 type HubProps = Omit<
   ComponentProps<typeof ChatHub>,
   | "kind"
   | "agentModelRef"
+  | "agentAutonomy"
   | "accessory"
   | "emptySlot"
   | "prefill"
@@ -104,12 +132,20 @@ export function RougeAgentSurface(
   const [prefill, setPrefill] = useState(
     initialPrompt ? { text: initialPrompt, nonce: 1 } : null,
   );
+  // On by default: the task is approved as a whole and only what matters
+  // (main branch, deleting, database, production, money, new outside tools)
+  // is asked. Remembered in this browser.
+  const autonomous =
+    useSyncExternalStore(subscribeAutonomy, readAutonomy, () => "task") ===
+    "task";
+  const toggleAutonomy = () => writeAutonomy(autonomous ? "ask" : "task");
   return (
     <ChatHub
       {...hub}
       kind="agent"
       titleFallback="Rouge Agent"
       agentModelRef={null}
+      agentAutonomy={autonomous ? "task" : "ask"}
       prefill={prefill}
       emptySlot={
         <RougeHero
@@ -125,6 +161,23 @@ export function RougeAgentSurface(
             <Sparkles size={13} aria-hidden="true" /> Auto · ein Modell je
             Auftrag
           </span>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={autonomous}
+            className={autonomous ? "ac-auto ra-autonomy-on" : "ac-auto"}
+            onClick={toggleAutonomy}
+            title={
+              autonomous
+                ? "Arbeitet die Aufgabe selbstständig ab und fragt nur bei Wichtigem: Haupt-Branch, Löschen, Datenbank, Produktion, Geld, neue fremde Werkzeuge"
+                : "Fragt vor jeder Aktion außerhalb von Osirus"
+            }
+          >
+            <ShieldCheck size={13} aria-hidden="true" />
+            {autonomous
+              ? "Selbstständig · fragt nur Wichtiges"
+              : "Fragt jeden Schritt"}
+          </button>
         </div>
       }
     />

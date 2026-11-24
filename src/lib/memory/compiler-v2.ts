@@ -189,5 +189,80 @@ export function memoryCandidates(outcome: RunOutcome): MemoryCandidate[] {
       authoritative: false,
     });
   }
+
+  // A procedure the agent carried out to a finished answer: a skill the
+  // next similar task starts from (Hermes-style learning loop). Built from
+  // the steps the run recorded, never from the model's prose about itself.
+  const skill = learnedSkill(outcome);
+  if (skill)
+    candidates.push({
+      ...base,
+      // A completed task with real tool steps is evidence the procedure
+      // works; the verifier's verdict raises the confidence, not the gate.
+      requireVerified: false,
+      kind: "pattern",
+      source: { ...source, memory: "experience.skill" },
+      content: skill.content,
+      subjectKey: skill.subjectKey,
+      canonicalValue: skill.procedure,
+      confidence: verified ? 0.85 : 0.65,
+      importance: 0.7,
+      recurring: true,
+      authoritative: false,
+    });
   return candidates;
+}
+
+type StepLike = {
+  action?: string;
+  summary?: string;
+  toolId?: string;
+  outcome?: string;
+};
+
+const SKILL_MIN_TOOL_STEPS = 2;
+const SKILL_MAX_STEPS = 8;
+
+/**
+ * The reusable procedure in a finished agent run, or null when there is
+ * none (no answer, fewer than two successful tool steps). Same tools in the
+ * same order for a similar task share a subject, so a repeat confirms the
+ * skill instead of piling up copies.
+ */
+export function learnedSkill(outcome: RunOutcome) {
+  if (!outcome.answer.trim()) return null;
+  const steps = (
+    (outcome.state.agentSteps as StepLike[] | undefined) ?? []
+  ).filter(
+    (step) =>
+      step.action === "USE_TOOL" &&
+      step.outcome === "ok" &&
+      typeof step.toolId === "string" &&
+      typeof step.summary === "string" &&
+      step.summary.trim(),
+  );
+  if (steps.length < SKILL_MIN_TOOL_STEPS) return null;
+  const kept = steps.slice(0, SKILL_MAX_STEPS);
+  const procedure = kept.map((step) => step.toolId).join(" > ");
+  const topic = outcome.objective
+    .toLowerCase()
+    .replace(/https?:\/\/\S+/g, " ")
+    .split(/[^\p{L}\p{N}]+/u)
+    .filter((word) => word.length > 3)
+    .slice(0, 8)
+    .sort()
+    .join(" ");
+  const lines = kept.map(
+    (step, index) =>
+      `${index + 1}. ${step.summary!.trim().slice(0, 240)} [${step.toolId}]`,
+  );
+  return {
+    subjectKey: `skill:${key(`${procedure}|${topic}`)}`,
+    procedure,
+    content: [
+      `Bewährtes Vorgehen (gelernt aus einem erledigten Auftrag) für Aufgaben wie: „${outcome.objective.replace(/\s+/g, " ").slice(0, 240)}“`,
+      ...lines,
+      "Bei einer ähnlichen Aufgabe so beginnen und die Schritte an die neue Lage anpassen.",
+    ].join("\n"),
+  };
 }

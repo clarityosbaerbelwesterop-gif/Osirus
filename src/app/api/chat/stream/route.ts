@@ -479,6 +479,13 @@ export async function POST(request: Request) {
             signal: request.signal,
           });
           computerSteps = run.steps;
+          console.info(
+            JSON.stringify({
+              event: "bot.computer.run",
+              steps: run.steps.length,
+              error: run.error,
+            }),
+          );
           // The machine stops (files kept) after the answer, not before it.
           try {
             after(() => run.release());

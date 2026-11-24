@@ -73,13 +73,46 @@ export function modelPlanner(input: {
           },
           latencyMs: Date.now() - started,
         }).catch(() => undefined);
-        return parseComputerStep(result.text);
-      } catch {
-        continue;
+        const next = parseComputerStep(result.text);
+        if (next) {
+          logPlan(model.ref, "command");
+          return next;
+        }
+        // A clear "no command" is the planner's answer; anything else (prose,
+        // broken JSON) is a planner that did not follow the format, so the
+        // next model gets the question.
+        if (declinesComputer(result.text)) {
+          logPlan(model.ref, "declined");
+          return null;
+        }
+        logPlan(model.ref, "unparsable");
+      } catch (error) {
+        logPlan(
+          model.ref,
+          "error",
+          (error as { code?: unknown } | null)?.code ?? "provider_error",
+        );
       }
     }
     return null;
   };
+}
+
+/** The planner said in its own format that no command is needed. */
+export function declinesComputer(text: string) {
+  return /"command"\s*:\s*null/.test(text);
+}
+
+/** Operator log: which model planned and how it answered (no content). */
+function logPlan(model: string, outcome: string, code?: unknown) {
+  console.info(
+    JSON.stringify({
+      event: "bot.computer.plan",
+      model,
+      outcome,
+      ...(typeof code === "string" ? { code } : {}),
+    }),
+  );
 }
 
 /** The bot's machine, resumed with its files, or created on first use. */

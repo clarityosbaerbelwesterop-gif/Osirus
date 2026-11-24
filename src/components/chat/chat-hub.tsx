@@ -173,6 +173,8 @@ export function ChatHub(props: {
   freeQuotaAvailableAt?: string | null;
   /** Rouge Agent: the gateway model ("provider:model") the run is pinned to. */
   agentModelRef?: string | null;
+  /** Rouge Agent: approve the task as a whole ("task") or every step. */
+  agentAutonomy?: "task" | "ask";
   /** Shown above the composer (the Rouge Agent's model and options). */
   accessory?: ReactNode;
   /** Replaces the empty-state home. */
@@ -562,6 +564,7 @@ export function ChatHub(props: {
                         ...(props.agentModelRef
                           ? { modelId: props.agentModelRef }
                           : {}),
+                        autonomy: props.agentAutonomy ?? "task",
                       }
                     : props.kind === "ai"
                       ? { surface: "ai" as const }
@@ -666,6 +669,7 @@ export function ChatHub(props: {
       upsertSession,
       props.kind,
       props.agentModelRef,
+      props.agentAutonomy,
       surface,
       threadPath,
     ],

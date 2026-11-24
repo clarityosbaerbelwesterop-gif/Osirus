@@ -87,6 +87,7 @@ export async function prepareRuntimeRun(input: {
     permission?: "ask" | "accept-edits";
   };
   pinnedModel?: string;
+  autonomy?: "task" | "ask";
 }): Promise<PreparedRun> {
   const repository = new RuntimeRepository(input.identity.userId);
   const existing = await repository.findRunByRequestId(
@@ -141,6 +142,7 @@ export async function prepareRuntimeRun(input: {
     surface: input.surface,
     coding: input.surface === "coding" ? input.coding : undefined,
     pinnedModel: input.pinnedModel,
+    autonomy: input.surface === "agent" ? input.autonomy : undefined,
   });
 
   if (created.created && !input.regenerate) {
