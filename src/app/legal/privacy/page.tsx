@@ -215,7 +215,11 @@ export default function PrivacyPage() {
           <strong>Workspace-Gedächtnis:</strong> Aus abgeschlossenen und
           geprüften Aufträgen kann Osirus Erkenntnisse übernehmen (etwa die
           Testumgebung eines Repositorys), um spätere Aufträge im selben
-          Workspace zu verbessern.
+          Workspace zu verbessern. Aus jedem erledigten Auftrag des Rouge Agent
+          mit mehreren Werkzeugschritten merkt sich Osirus außerdem das Vorgehen
+          (die Arbeitsschritte in Kurzform), damit ähnliche Aufträge schneller
+          gelingen. Diese Einträge siehst und löschst du unter Einstellungen →
+          Gedächtnis.
         </li>
         <li>
           <strong>Gruppenchats:</strong> Nachrichten und Antworten werden im

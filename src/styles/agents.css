@@ -1972,3 +1972,16 @@
 .bc-process .bc-icon {
   margin-left: 0;
 }
+
+/* Rouge Agent: the task's autonomy switch, styled like the model chip. */
+button.ac-auto {
+  border: 0;
+  font: inherit;
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+}
+.ra-autonomy-on {
+  color: var(--color-accent-text);
+  background: color-mix(in srgb, var(--color-accent-text) 10%, transparent);
+}

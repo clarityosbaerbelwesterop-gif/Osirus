@@ -131,6 +131,8 @@ export type ToolPolicy = (input: {
   tool: ToolDefinition;
   context: ToolContext;
   builtinRequiresApproval: boolean;
+  /** The call's validated input (a task's autonomy looks at the target). */
+  input?: unknown;
 }) => Promise<"allow" | "ask" | "deny">;
 
 export type ApprovalGateResult =
@@ -316,6 +318,7 @@ export class ToolRegistry {
           tool,
           context: input.context,
           builtinRequiresApproval,
+          input: parsed.data,
         });
       } catch {
         // A policy that cannot be read falls back to the built-in rule; it

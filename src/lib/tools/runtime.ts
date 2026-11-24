@@ -9,6 +9,11 @@ import {
   type CodingPermission,
 } from "../coding/intent";
 import { decide, type ActionClass, type Decision } from "../policy/model";
+import {
+  taskAutonomyDecision,
+  taskAutonomyFromInput,
+  type TaskAutonomy,
+} from "../policy/task-autonomy";
 import { combine, loadWorkspacePolicy, runRestrictions } from "../policy/store";
 import { notify } from "../product/notifications";
 import { recordSecurityEvent } from "../security/events";
@@ -161,6 +166,7 @@ export function databasePolicy(actorId: string): ToolPolicy {
       decisions: Record<ActionClass, Decision>;
       allowedTools: string[] | null;
       permission: CodingPermission | null;
+      autonomy: TaskAutonomy | null;
     }>
   >();
   const load = (context: ToolContext) => {
@@ -182,12 +188,13 @@ export function databasePolicy(actorId: string): ToolPolicy {
         decisions: combine(workspace.decisions, run),
         allowedTools: run.allowedTools,
         permission: codingPermissionFromInput(rows[0]?.input ?? null),
+        autonomy: taskAutonomyFromInput(rows[0]?.input ?? null),
       }));
       cache.set(key, entry);
     }
     return entry;
   };
-  return async ({ tool, context, builtinRequiresApproval }) => {
+  return async ({ tool, context, builtinRequiresApproval, input }) => {
     const policy = await load(context);
     if (
       policy.allowedTools &&
@@ -195,13 +202,21 @@ export function databasePolicy(actorId: string): ToolPolicy {
       tool.effect !== "read"
     )
       return "deny";
-    return applyCodingIntent(
+    const base = applyCodingIntent(
       decide(policy.decisions, tool, builtinRequiresApproval),
       codingIntentDecision({
         permission: policy.permission,
         toolId: tool.id,
       }),
     );
+    // A Rouge Agent task the person approved as a whole: only what matters
+    // is asked about (src/lib/policy/task-autonomy.ts).
+    return taskAutonomyDecision({
+      autonomy: policy.autonomy,
+      tool,
+      callInput: input,
+      base,
+    });
   };
 }
 
@@ -227,6 +242,50 @@ function adjustmentOf(request: unknown) {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed ? trimmed.slice(0, 400) : null;
+}
+
+/** The run's task autonomy (Rouge Agent runs), read once per call. */
+async function runAutonomy(actorId: string, runId: string) {
+  const rows = await queryAs<{ input: unknown }>(
+    actorId,
+    "select input from osirus.runs where id = $1::uuid",
+    [runId],
+  ).catch(() => []);
+  return taskAutonomyFromInput(rows[0]?.input ?? null);
+}
+
+/** Whether a person approved this tool, in this version, earlier in the task. */
+async function approvedInTask(
+  actorId: string,
+  input: { runId: string; toolId: string; definition: unknown },
+) {
+  const rows = await queryAs<{ request: unknown }>(
+    actorId,
+    `select request
+       from osirus.approvals
+      where run_id = $1::uuid
+        and action = $2
+        and status = 'approved'
+      order by created_at desc
+      limit 20`,
+    [input.runId, `tool:${input.toolId}`],
+  ).catch(() => []);
+  const wanted = JSON.stringify(input.definition ?? null);
+  return rows.some((row) => {
+    let request = row.request;
+    if (typeof request === "string") {
+      try {
+        request = JSON.parse(request) as unknown;
+      } catch {
+        return false;
+      }
+    }
+    const definition =
+      request && typeof request === "object"
+        ? ((request as { definition?: unknown }).definition ?? null)
+        : null;
+    return JSON.stringify(definition) === wanted;
+  });
 }
 
 export function databaseApprovalGate(input: {
@@ -258,6 +317,21 @@ export function databaseApprovalGate(input: {
 
     const status = existing[0]?.status;
     if (status === "approved") return "approved";
+    // A task approved as a whole: once a person allowed this reviewed tool
+    // in the task, its later calls in the same task go through.
+    const taskScope =
+      tool.trust === "mcp" &&
+      (await runAutonomy(input.actorId, context.runId)) === "task";
+    if (
+      taskScope &&
+      status !== "rejected" &&
+      (await approvedInTask(input.actorId, {
+        runId: context.runId,
+        toolId: tool.id,
+        definition: request.definition ?? null,
+      }))
+    )
+      return "approved";
     if (status === "rejected") {
       const adjustment = adjustmentOf(existing[0]?.request);
       return adjustment ? { status: "rejected", adjustment } : "rejected";
@@ -307,7 +381,10 @@ export function databaseApprovalGate(input: {
           toolId: tool.id,
           title: tool.title,
           effect: tool.effect,
-          summary: tool.summary,
+          summary: taskScope
+            ? `Für diese Aufgabe erlauben: ${tool.summary}`
+            : tool.summary,
+          ...(taskScope ? { scope: "task" } : {}),
           ...(request.definition ? { definition: request.definition } : {}),
         },
         expiresInSeconds: 60 * 60,

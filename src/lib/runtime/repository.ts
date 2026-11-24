@@ -560,6 +560,7 @@ export class RuntimeRepository {
       permission?: "ask" | "accept-edits";
     };
     pinnedModel?: string;
+    autonomy?: "task" | "ask";
   }): Promise<{ run: RunRow; created: boolean }> {
     const id = randomUUID();
     const rows = await queryAs<RunRow & { created: boolean }>(
@@ -600,6 +601,7 @@ export class RuntimeRepository {
             ? { coding: input.coding }
             : {}),
           ...(input.pinnedModel ? { pinnedModel: input.pinnedModel } : {}),
+          ...(input.autonomy ? { autonomy: input.autonomy } : {}),
         }),
         input.requestId,
       ],
