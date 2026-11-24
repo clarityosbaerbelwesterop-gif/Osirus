@@ -213,6 +213,7 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
   };
 
   let fileSession = "";
+  let computerBotId: string | null = null;
   await test.step("an attached file is read for the answer", async () => {
     const upload = await page.request.post("/api/attachments", {
       headers: { origin: base },
@@ -477,6 +478,43 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
       steps.some((step) => step.output.includes("18446744073709551616")),
     ).toBe(true);
     expect(text.replace(/[.,\s]/g, "")).toContain("18446744073709551616");
+    computerBotId = bot.id;
+  });
+
+  await test.step("the bot's computer opens in Open Terminal: shell, files, processes", async () => {
+    expect(computerBotId).toBeTruthy();
+    const path = `/api/agents/${computerBotId}/computer`;
+    const started = Date.now();
+    const run = await send(page, path, {
+      action: "run",
+      command: "python3 -c 'print(6 * 7)' && echo open-terminal > ot.txt",
+    });
+    const ran = (await run.json()) as {
+      ok?: boolean;
+      error?: string;
+      result?: {
+        status?: string;
+        exit_code?: number | null;
+        output?: Array<{ data: string }>;
+      };
+    };
+    console.log(
+      `Open Terminal run: HTTP ${run.status()} ${ran.error ?? ran.result?.status ?? ""} in ${Math.round((Date.now() - started) / 1000)} s`,
+    );
+    expect(run.status()).toBe(200);
+    expect(ran.result?.exit_code).toBe(0);
+    expect(
+      (ran.result?.output ?? []).map((chunk) => chunk.data).join(""),
+    ).toContain("42");
+    const files = (await (
+      await send(page, path, { action: "files", path: "." })
+    ).json()) as { result?: { entries?: Array<{ name: string }> } };
+    expect(files.result?.entries?.map((entry) => entry.name)).toContain(
+      "ot.txt",
+    );
+    const processes = await send(page, path, { action: "processes" });
+    expect(processes.status()).toBe(200);
+    expect(await processes.text()).not.toContain("log_path");
   });
 
   await test.step("an MCP server can be added, checked and removed", async () => {

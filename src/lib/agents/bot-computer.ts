@@ -92,13 +92,31 @@ export async function openComputer(
     ? await driver.reattach(name).catch(() => null)
     : null;
   if (existing) return existing;
-  return driver.create({
-    name,
-    persistent: true,
+  const machine = {
     timeoutMs: MACHINE_TIMEOUT_MS,
     allowedDomains: COMPUTER_ALLOWED_DOMAINS,
     signal,
-  });
+  };
+  try {
+    return await driver.create({ ...machine, name, persistent: true });
+  } catch (error) {
+    // The plan's snapshot storage is full (402): the bot still gets a
+    // computer for this answer, its files are just not kept this time.
+    if (!storageFull(error)) throw error;
+    console.warn("bot.computer without files: snapshot storage full");
+    return driver.create(machine);
+  }
+}
+
+/** Vercel's answer when the plan's sandbox or snapshot quota is used up. */
+export function storageFull(error: unknown) {
+  const status = (error as { response?: { status?: unknown } } | null)?.response
+    ?.status;
+  return (
+    status === 402 ||
+    (error instanceof Error &&
+      /payment_required|Snapshots Storage/i.test(error.message))
+  );
 }
 
 /** Run one step: the script goes in as a file, never into the shell line. */
