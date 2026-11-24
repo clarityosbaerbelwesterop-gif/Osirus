@@ -33,7 +33,9 @@ export const metadata: Metadata = {
     title: "Osirus – Dein KI-Team mit Freigabeknopf",
     description:
       "Antworten mit Quellen, autonome Aufgaben und Code in einem Workspace, mit Freigabe vor jeder Aktion nach außen. Von ClarityCompassAI, gehostet in der EU.",
-    url: "/",
+    // No og:url here: set in the root layout it named the home page as the
+    // address of every page (a shared /sicherheit link previewed as "/").
+    // Each page's canonical link carries its own address.
   },
   twitter: {
     card: "summary_large_image",
