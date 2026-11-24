@@ -45,6 +45,7 @@ import { notifyUsage } from "../motion/quota-bars";
 import { OsirusMark } from "../shell/osirus-mark";
 import { TopBar } from "../shell/top-bar";
 import { cx } from "../ui/cx";
+import { BotComputerDrawer } from "./bot-computer-drawer";
 import { ShareDialog } from "./share-dialog";
 import { readChatStream, type ComputerStepView } from "./sse";
 
@@ -491,6 +492,7 @@ export function AgentsChat(props: {
     props.initialThread?.title ?? null,
   );
   const [input, setInput] = useState(props.initialPrompt ?? "");
+  const [computerOpen, setComputerOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [botId, setBotId] = useState<string | null>(
     room
@@ -1321,11 +1323,30 @@ export function AgentsChat(props: {
         title={title ?? (room ? room.bot.name : "Agents")}
         titleAs="p"
         actions={
-          sessionId && !busy && messages.length ? (
-            <ShareDialog sessionId={sessionId} />
-          ) : null
+          <>
+            {room ? (
+              <button
+                type="button"
+                className="btn btn-secondary btn-sm"
+                aria-expanded={computerOpen}
+                onClick={() => setComputerOpen((open) => !open)}
+              >
+                <Terminal size={14} aria-hidden="true" /> Computer
+              </button>
+            ) : null}
+            {sessionId && !busy && messages.length ? (
+              <ShareDialog sessionId={sessionId} />
+            ) : null}
+          </>
         }
       />
+      {room && computerOpen ? (
+        <BotComputerDrawer
+          botId={room.bot.id}
+          botName={room.bot.name}
+          onClose={() => setComputerOpen(false)}
+        />
+      ) : null}
       <div className="ac-scroll" ref={scrollRef} onScroll={onScroll}>
         {empty && room ? (
           <div className="ac-hero room-hero">

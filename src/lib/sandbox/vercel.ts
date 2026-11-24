@@ -36,7 +36,11 @@ export type SandboxCredentials = {
 };
 
 class VercelSandboxHandle implements SandboxHandle {
-  constructor(private readonly sandbox: Sandbox) {}
+  constructor(
+    private readonly sandbox: Sandbox,
+    /** Created for one use: stopping it deletes it, nothing is kept. */
+    private readonly throwaway = false,
+  ) {}
 
   /** The sandbox's unique name within the project. */
   get sandboxId() {
@@ -107,6 +111,12 @@ class VercelSandboxHandle implements SandboxHandle {
   }
 
   async stop() {
+    // A throwaway sandbox (a chat code run, a check) is deleted, not stopped:
+    // a stopped one keeps its name, and before 2026-11-24 a snapshot too.
+    if (this.throwaway) {
+      await this.destroy().catch(() => this.sandbox.stop());
+      return;
+    }
     await this.sandbox.stop().catch(() => undefined);
   }
 
@@ -190,9 +200,13 @@ export class VercelSandboxDriver implements SandboxDriver {
       ...(input.name ? { name: input.name } : {}),
       // A persistent workspace keeps its filesystem as a snapshot between
       // sessions; those snapshots expire after a week rather than accruing.
+      // Everything else says so explicitly: since SDK 4 the API's default
+      // is persistent, and every throwaway code run left an 830 MB snapshot
+      // for 30 days until the Hobby snapshot storage was full and no
+      // sandbox could start (production, 2026-11-20 to 2026-11-24).
       ...(input.persistent
         ? { persistent: true, snapshotExpiration: 7 * 24 * 60 * 60 * 1000 }
-        : {}),
+        : { persistent: false }),
       region: SANDBOX_REGION,
       signal: input.signal,
       timeout: input.timeoutMs ?? DEFAULT_TIMEOUT_MS,
@@ -204,7 +218,7 @@ export class VercelSandboxDriver implements SandboxDriver {
         ? { allow: input.allowedDomains }
         : "deny-all",
     });
-    return new VercelSandboxHandle(sandbox);
+    return new VercelSandboxHandle(sandbox, !input.persistent);
   }
 
   reattach(name: string) {

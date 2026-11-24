@@ -236,18 +236,21 @@ export default function PrivacyPage() {
         Änderungen erst nach deiner Freigabe zurück. Die Sandbox wird nach dem
         Auftrag beendet. Mit „Ausführen“ an einem Codeblock im Chat läuft dieser
         Code einmal in einer eigenen Sandbox ohne Netzwerkzugang; die Ausgabe
-        wird dir angezeigt und nicht gespeichert, die Sandbox danach beendet.
+        wird dir angezeigt und nicht gespeichert, die Sandbox danach gelöscht.
         Jeder Bot hat außerdem einen eigenen Cloud-Computer: eine abgeschottete
         Linux-Umgebung (Vercel Sandbox in Frankfurt), in der er für deine
         Anfrage Befehle ausführt, rechnet und Dateien anlegt. Die Befehle und
         ihre Ausgaben speichern wir mit der Antwort im Chatverlauf. Die Dateien
         bleiben bis sieben Tage nach der letzten Nutzung erhalten und werden mit
         dem Bot oder deinem Konto gelöscht. Der Cloud-Computer erreicht im
-        Internet nur die Paketverzeichnisse PyPI und npm. Der Rouge Agent kann
-        deine Bots befragen und Aufgaben an Code übergeben; die Antworten der
-        Bots werden Teil des Auftrags. Rechtsgrundlage ist Art. 6 Abs. 1 lit. b
-        DSGVO, für die Protokolle der Freigaben zusätzlich Art. 6 Abs. 1 lit. f
-        DSGVO (Nachvollziehbarkeit und Sicherheit).
+        Internet nur die Paketverzeichnisse PyPI und npm. Über „Computer“ im
+        Bot-Chat siehst du seine Dateien, ein Terminal und die laufenden
+        Prozesse; dafür läuft auf dem Computer die quelloffene Software Open
+        Terminal, die nur innerhalb des Computers erreichbar ist. Der Rouge
+        Agent kann deine Bots befragen und Aufgaben an Code übergeben; die
+        Antworten der Bots werden Teil des Auftrags. Rechtsgrundlage ist Art. 6
+        Abs. 1 lit. b DSGVO, für die Protokolle der Freigaben zusätzlich Art. 6
+        Abs. 1 lit. f DSGVO (Nachvollziehbarkeit und Sicherheit).
       </p>
 
       <h2>9. Verbundene Dienste (GitHub, Vercel, Neon, Supabase, MCP)</h2>
