@@ -1,5 +1,7 @@
 "use client";
 
+import type { Route } from "next";
+import Link from "next/link";
 import {
   Globe,
   ShieldCheck,
@@ -125,10 +127,36 @@ type HubProps = Omit<
  * The Rouge Agent: the agent runtime. Osirus picks one model per task, by how
  * hard and how large it is, and keeps it for the whole run.
  */
+/**
+ * The free plan's Rouge Agent: it runs on premium models and is part of the
+ * paid plans (owner's decision 2026-11-25). Past tasks stay readable.
+ */
+function RougeLocked(props: { trialEligible: boolean }) {
+  return (
+    <div className="ra-locked" role="region" aria-label="Rouge Agent ab Pro">
+      <p>
+        <strong>Der Rouge Agent ist ab Pro enthalten.</strong> Er arbeitet mit
+        Premium-Modellen und erledigt Aufgaben in mehreren Schritten
+        selbstständig.
+      </p>
+      <Link
+        className="btn btn-primary"
+        href={"/app/settings#plan-heading" as Route}
+      >
+        {props.trialEligible ? "Pro 7 Tage kostenlos testen" : "Plan wählen"}
+      </Link>
+    </div>
+  );
+}
+
 export function RougeAgentSurface(
-  props: HubProps & { initialPrompt?: string | null },
+  props: HubProps & {
+    initialPrompt?: string | null;
+    /** Set on the free plan: the composer gives way to the plan offer. */
+    planLocked?: { trialEligible: boolean } | null;
+  },
 ) {
-  const { initialPrompt, ...hub } = props;
+  const { initialPrompt, planLocked, ...hub } = props;
   const [prefill, setPrefill] = useState(
     initialPrompt ? { text: initialPrompt, nonce: 1 } : null,
   );
@@ -144,6 +172,11 @@ export function RougeAgentSurface(
       {...hub}
       kind="agent"
       titleFallback="Rouge Agent"
+      locked={
+        planLocked ? (
+          <RougeLocked trialEligible={planLocked.trialEligible} />
+        ) : undefined
+      }
       agentModelRef={null}
       agentAutonomy={autonomous ? "task" : "ask"}
       prefill={prefill}

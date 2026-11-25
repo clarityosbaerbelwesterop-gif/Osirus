@@ -52,6 +52,11 @@ export function PlanCards({ proTrial = false }: { proTrial?: boolean }) {
             {proTrial && plan.id === "pro" ? (
               <p className="price-trial">Die ersten 7 Tage kostenlos</p>
             ) : null}
+            {/* The free plan has Chat, Bots and Code; the Rouge Agent runs
+                on premium models and comes with every paid plan. */}
+            <p className="price-feature">
+              Mit Rouge Agent auf Premium-Modellen
+            </p>
             <PlanCheckoutButton planId={plan.id} planName={plan.name} />
           </li>
         ))}

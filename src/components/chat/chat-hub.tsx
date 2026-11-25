@@ -179,6 +179,11 @@ export function ChatHub(props: {
   accessory?: ReactNode;
   /** Replaces the empty-state home. */
   emptySlot?: ReactNode;
+  /**
+   * Shown instead of the composer when the plan does not include this
+   * surface (the Rouge Agent on the free plan): past tasks stay readable.
+   */
+  locked?: ReactNode;
   /** Puts text into the composer; a new nonce applies it again. */
   prefill?: { text: string; nonce: number } | null;
   /** The page title before the conversation has one. */
@@ -884,89 +889,91 @@ export function ChatHub(props: {
             <div ref={streamEnd} />
           </div>
         </div>
-        {props.accessory}
-        <Composer
-          ref={composer}
-          value={objective}
-          onChange={setObjective}
-          onSubmit={() => {
-            const slash = chatSlash(objective);
-            if (slash === "stop") {
-              if (running) void cancel();
-              setObjective("");
-              return;
+        {props.locked ?? props.accessory}
+        {props.locked ? null : (
+          <Composer
+            ref={composer}
+            value={objective}
+            onChange={setObjective}
+            onSubmit={() => {
+              const slash = chatSlash(objective);
+              if (slash === "stop") {
+                if (running) void cancel();
+                setObjective("");
+                return;
+              }
+              if (slash === "unknown") {
+                setError("Das ist kein Befehl.");
+                setObjective("");
+                return;
+              }
+              void runObjective(objective);
+            }}
+            attachments={attachments}
+            uploading={uploading}
+            onAttach={(file) => void attachFile(file)}
+            onRemoveAttachment={(id) => void removeAttachment(id)}
+            onCancel={() => void cancel()}
+            onRetry={
+              failedObjective
+                ? () => {
+                    const value = failedObjective;
+                    setMessages((current) =>
+                      current.filter(
+                        (message) =>
+                          !(
+                            message.id.startsWith("pending:") &&
+                            message.content === value
+                          ),
+                      ),
+                    );
+                    void runObjective(value);
+                  }
+                : null
             }
-            if (slash === "unknown") {
-              setError("Das ist kein Befehl.");
-              setObjective("");
-              return;
+            onRegenerate={
+              props.kind === "ai" || !lastObjective || empty
+                ? null
+                : () => void runObjective(lastObjective, true)
             }
-            void runObjective(objective);
-          }}
-          attachments={attachments}
-          uploading={uploading}
-          onAttach={(file) => void attachFile(file)}
-          onRemoveAttachment={(id) => void removeAttachment(id)}
-          onCancel={() => void cancel()}
-          onRetry={
-            failedObjective
-              ? () => {
-                  const value = failedObjective;
-                  setMessages((current) =>
-                    current.filter(
-                      (message) =>
-                        !(
-                          message.id.startsWith("pending:") &&
-                          message.content === value
-                        ),
-                    ),
-                  );
-                  void runObjective(value);
-                }
-              : null
-          }
-          onRegenerate={
-            props.kind === "ai" || !lastObjective || empty
-              ? null
-              : () => void runObjective(lastObjective, true)
-          }
-          running={running}
-          cancelling={cancelling}
-          error={error}
-          workspaceName={props.workspaceName}
-          mode={mode}
-          onModeChange={selectMode}
-          labModel={labModel}
-          interaction={interaction}
-          labActivity={
-            interaction === "agent" && streaming ? "typing" : labActivity
-          }
-          labPhases={labPhases}
-          labGrades={labGrades}
-          livePills={livePills}
-          onLabModelChange={(next) => {
-            writePreference(LAB_MODEL_COOKIE, next);
-            for (const listener of labListeners) listener();
-          }}
-          onInteractionChange={(next) => {
-            writePreference(INTERACTION_COOKIE, next);
-            setLabActivity(null);
-            setLabPhases([]);
-            setLabGrades([]);
-            for (const listener of labListeners) listener();
-          }}
-          chrome={
-            props.kind === "ai"
-              ? "chat"
-              : props.kind === "agent" || props.kind === "bot"
-                ? "agent"
-                : "full"
-          }
-          github={props.kind ? null : undefined}
-          approvalAnchor={
-            pendingApproval ? `approval-${pendingApproval.id}` : null
-          }
-        />
+            running={running}
+            cancelling={cancelling}
+            error={error}
+            workspaceName={props.workspaceName}
+            mode={mode}
+            onModeChange={selectMode}
+            labModel={labModel}
+            interaction={interaction}
+            labActivity={
+              interaction === "agent" && streaming ? "typing" : labActivity
+            }
+            labPhases={labPhases}
+            labGrades={labGrades}
+            livePills={livePills}
+            onLabModelChange={(next) => {
+              writePreference(LAB_MODEL_COOKIE, next);
+              for (const listener of labListeners) listener();
+            }}
+            onInteractionChange={(next) => {
+              writePreference(INTERACTION_COOKIE, next);
+              setLabActivity(null);
+              setLabPhases([]);
+              setLabGrades([]);
+              for (const listener of labListeners) listener();
+            }}
+            chrome={
+              props.kind === "ai"
+                ? "chat"
+                : props.kind === "agent" || props.kind === "bot"
+                  ? "agent"
+                  : "full"
+            }
+            github={props.kind ? null : undefined}
+            approvalAnchor={
+              pendingApproval ? `approval-${pendingApproval.id}` : null
+            }
+          />
+        )}
         <p className="sr-only" role="status" aria-live="polite">
           {liveStatus}
         </p>

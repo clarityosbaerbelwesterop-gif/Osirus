@@ -157,6 +157,18 @@ export async function POST(request: Request) {
       );
     }
   }
+  // The Rouge Agent runs on premium models and is part of the paid plans
+  // (owner's decision 2026-11-25: on free models it stalled and erred).
+  // The page shows the plan offer instead of the composer; this is the lock.
+  if (parsed.data.surface === "agent" && access.freeOnly) {
+    return Response.json(
+      {
+        error: "plan_required",
+        message: publicRuntimeErrorMessage({ code: "plan_required" }),
+      },
+      { status: 402 },
+    );
+  }
   let pinnedModel: string | undefined;
   let modelFallback: "unavailable" | "not_in_plan" | null = null;
   const requestedModel = parsed.data.coding?.model ?? parsed.data.modelId ?? "";
@@ -219,8 +231,9 @@ export async function POST(request: Request) {
         (model) =>
           modelAllowed(model, access) && model.provider !== "unorouter",
       );
+      // A paid plan's Rouge Agent and Code start on the strongest class.
       const tier =
-        surface === "coding"
+        surface === "coding" || surface === "agent"
           ? "top"
           : higherTier(
               "balanced",
@@ -229,9 +242,15 @@ export async function POST(request: Request) {
                 attachments: parsed.data.attachmentIds?.length ?? 0,
               }).tier,
             );
-      const pool = allowed.length
-        ? allowed
-        : listing.models.filter((model) => modelAllowed(model, access));
+      // The Rouge Agent takes premium models only (paid per call); free ones
+      // only when the gateway lists no premium model at all.
+      const premium =
+        surface === "agent" ? allowed.filter((model) => !model.free) : [];
+      const pool = premium.length
+        ? premium
+        : allowed.length
+          ? allowed
+          : listing.models.filter((model) => modelAllowed(model, access));
       // What production measured for agent decisions (latency, failures):
       // a model that is slow or failing steps back, even among verified ones.
       const measured = await measuredModelStats();

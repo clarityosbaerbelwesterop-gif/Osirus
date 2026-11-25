@@ -1260,6 +1260,32 @@
   text-align: left;
 }
 
+/* The free plan's Rouge Agent: the plan offer in the composer's place. */
+.ra-locked {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin: var(--space-2) auto var(--space-4);
+  width: min(100%, 48rem);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface-raised);
+}
+
+.ra-locked p {
+  margin: 0;
+  flex: 1 1 18rem;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.ra-locked p strong {
+  color: var(--color-text);
+}
+
 .ra-bar {
   display: flex;
   width: 100%;
