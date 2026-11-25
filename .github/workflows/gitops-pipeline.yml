@@ -96,7 +96,7 @@ jobs:
         env:
           PIPELINE: ${{ steps.start.outputs.pipeline }}
         run: npx vite-node ai-lab/gitops/cli.ts synth "$PIPELINE" --out golden.jsonl
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         with:
           name: golden-tokens
           path: golden.jsonl
