@@ -21,6 +21,14 @@ const PROVIDERS = [
     key: process.env.KUNYA_API_KEY,
     bases: ["https://kunya.ai/api/v1", "https://api.kunya.ai/v1"],
   },
+  // UnoRouter's free models, one at a time through DISCOVERY_PLAN (e.g. its
+  // "claude-haiku-5-5:free", which the runtime sync of 2026-11-17 measured
+  // as HTTP 403).
+  {
+    name: "unorouter",
+    key: process.env.UNOROUTER_API_KEY_1,
+    bases: ["https://api.unorouter.com/v1"],
+  },
   {
     name: "shortapi",
     key: process.env.SHORTAPI_API_KEY,
