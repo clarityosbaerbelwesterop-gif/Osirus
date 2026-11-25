@@ -71,16 +71,20 @@ export async function POST(
       },
       503,
     );
-  const [{ openComputer }, { computerName }, terminal] = await Promise.all([
-    import("@/lib/agents/bot-computer"),
-    import("@/lib/agents/bot-computer-plan"),
-    import("@/lib/agents/open-terminal"),
-  ]);
+  const [{ openComputer, saveFolder }, { computerName }, terminal, stored] =
+    await Promise.all([
+      import("@/lib/agents/bot-computer"),
+      import("@/lib/agents/bot-computer-plan"),
+      import("@/lib/agents/open-terminal"),
+      import("@/lib/agents/bot-computer-files"),
+    ]);
+  const files = stored.databaseComputerFiles(guard.identity, bot.id);
   try {
     const machine = await openComputer(
       driver,
       computerName(guard.identity.workspaceId, bot.id),
       request.signal,
+      files,
     );
     await terminal.ensureOpenTerminal(machine, request.signal);
     await machine.keepAlive?.(10 * 60 * 1000).catch(() => undefined);
@@ -125,6 +129,14 @@ export async function POST(
                       method: "DELETE",
                       path: `/execute/${body.id}`,
                     });
+    // The machine stops on its own after a while; what a command changed
+    // is kept now, not only when the chat releases the machine.
+    if (
+      body.action === "run" ||
+      body.action === "input" ||
+      body.action === "kill"
+    )
+      await saveFolder(machine, files).catch(() => false);
     if (result.status < 200 || result.status >= 300)
       return json(
         {

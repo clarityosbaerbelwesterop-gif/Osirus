@@ -98,11 +98,20 @@ describe("when a bot uses its computer", () => {
 describe("a bot's cloud computer", () => {
   it("runs commands, keeps files for the next conversation and keeps bots apart", async () => {
     const driver = new LocalWorkspaceDriver();
+    const kept = new Map<string, string>();
+    const files = (bot: string) => ({
+      load: async () => kept.get(bot) ?? null,
+      save: async (archive: string) => {
+        kept.set(bot, archive);
+        return true;
+      },
+    });
     const steps: string[] = [];
     const first = await runComputer({
       driver,
       workspaceId: "ws-test",
       botId: "bot-a",
+      files: files("bot-a"),
       plan: scripted([
         'echo "Hallo aus dem Cloud-Computer" > notiz.txt && python3 -c "print(6 * 7)"',
       ]),
@@ -113,23 +122,27 @@ describe("a bot's cloud computer", () => {
     expect(first.steps[0]!.exitCode).toBe(0);
     expect(first.steps[0]!.output).toContain("42");
     expect(steps).toEqual([first.steps[0]!.output]);
+    // Releasing packs the folder and deletes the machine (no snapshot).
     await first.release();
+    expect(kept.get("bot-a")?.length ?? 0).toBeGreaterThan(0);
 
-    // Next conversation, same bot: the file is still there.
+    // Next conversation, same bot, a fresh machine: the file is back.
     const second = await runComputer({
       driver,
       workspaceId: "ws-test",
       botId: "bot-a",
+      files: files("bot-a"),
       plan: scripted(["cat notiz.txt && ls"]),
     });
     expect(second.steps[0]!.output).toContain("Hallo aus dem Cloud-Computer");
     await second.release();
 
-    // Another bot has its own machine and does not see it.
+    // Another bot has its own folder and does not see it.
     const other = await runComputer({
       driver,
       workspaceId: "ws-test",
       botId: "bot-b",
+      files: files("bot-b"),
       plan: scripted(["cat notiz.txt"]),
     });
     expect(other.steps[0]!.exitCode).not.toBe(0);
@@ -196,32 +209,33 @@ describe("a bot's cloud computer", () => {
   });
 });
 
-describe("when the plan's snapshot storage is full", () => {
-  it("still gives the bot a computer, without keeping files", async () => {
+describe("a bot computer's machine", () => {
+  it("is never persistent: Osirus keeps the folder, not a VM snapshot", async () => {
     const { openComputer } = await import("../src/lib/agents/bot-computer");
     const calls: Array<{ name?: string; persistent?: boolean }> = [];
-    const full = Object.assign(new Error("Status code 402 is not ok"), {
-      response: { status: 402 },
-    });
     const driver = {
       id: "test",
       availability: () => ({ configured: true, driver: "test", reason: "" }),
       reattach: async () => null,
       create: async (input: { name?: string; persistent?: boolean }) => {
         calls.push({ name: input.name, persistent: input.persistent });
-        if (input.persistent) throw full;
-        return { sandboxId: "throwaway" };
+        return {
+          sandboxId: "fresh",
+          readFile: async () => null,
+          writeFiles: async () => undefined,
+          runCommand: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+        };
       },
     } as unknown as SandboxDriver;
-    const machine = await openComputer(driver, "osirus-pc-x");
-    expect(machine.sandboxId).toBe("throwaway");
-    expect(calls).toEqual([
-      { name: "osirus-pc-x", persistent: true },
-      { name: undefined, persistent: undefined },
-    ]);
+    const machine = await openComputer(driver, "osirus-pc-x", undefined, {
+      load: async () => null,
+      save: async () => true,
+    });
+    expect(machine.sandboxId).toBe("fresh");
+    expect(calls).toEqual([{ name: "osirus-pc-x", persistent: undefined }]);
   });
 
-  it("does not hide other failures", async () => {
+  it("does not hide failures to start", async () => {
     const { openComputer } = await import("../src/lib/agents/bot-computer");
     const driver = {
       id: "test",

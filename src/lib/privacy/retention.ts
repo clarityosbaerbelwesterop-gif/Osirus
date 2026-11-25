@@ -22,6 +22,9 @@ export const CANCELLATION_KEEP_YEARS = 3;
 
 const BATCH = 5_000;
 
+/** A bot computer's saved working folder, after its last use. */
+export const BOT_COMPUTER_FILES_KEEP_DAYS = 7;
+
 export type RetentionResult = Record<string, number>;
 
 export const RETENTION_RULES: Array<{ name: string; sql: string }> = [
@@ -39,6 +42,11 @@ export const RETENTION_RULES: Array<{ name: string; sql: string }> = [
              set network_hash = null
            where network_hash is not null
              and received_at < now() - make_interval(days => ${CANCELLATION_HASH_KEEP_DAYS})`,
+  },
+  {
+    name: "botComputerFiles",
+    sql: `delete from osirus.bot_computer_files
+           where updated_at < now() - make_interval(days => ${BOT_COMPUTER_FILES_KEEP_DAYS})`,
   },
   {
     name: "cancellations",

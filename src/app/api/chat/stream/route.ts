@@ -456,11 +456,15 @@ export async function POST(request: Request) {
       let computerSteps: ComputerStep[] = [];
       if (computerWanted && bot) {
         try {
-          const [{ runComputer, modelPlanner }, { resolveSandbox }] =
-            await Promise.all([
-              import("@/lib/agents/bot-computer"),
-              import("@/lib/sandbox"),
-            ]);
+          const [
+            { runComputer, modelPlanner },
+            { resolveSandbox },
+            { databaseComputerFiles },
+          ] = await Promise.all([
+            import("@/lib/agents/bot-computer"),
+            import("@/lib/sandbox"),
+            import("@/lib/agents/bot-computer-files"),
+          ]);
           const run = await runComputer({
             driver: await resolveSandbox(),
             workspaceId: identity.workspaceId,
@@ -474,6 +478,7 @@ export async function POST(request: Request) {
               signal: request.signal,
             }),
             onOpen: () => send({ type: "computer", phase: "open" }),
+            files: databaseComputerFiles(identity, bot.id),
             onStep: (step) =>
               send({ type: "computer", step: publicStep(step) }),
             signal: request.signal,
