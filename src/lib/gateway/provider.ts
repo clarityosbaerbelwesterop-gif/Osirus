@@ -1,5 +1,6 @@
 import { BILLING_CONFIG } from "@/lib/billing/config";
 import { ProviderError } from "@/lib/models/unorouter";
+import { providerRefusalOf } from "@/lib/models/provider";
 import type {
   ModelProvider,
   ModelRole,
@@ -9,6 +10,7 @@ import type {
 } from "@/lib/models/provider";
 import { callCostUsd } from "./cost";
 import {
+  describeModelRef,
   hideModel,
   listGatewayModels,
   modelPenalty,
@@ -61,6 +63,21 @@ function asMessages(messages: unknown[]): GatewayMessage[] {
       Boolean(message) &&
       typeof message === "object" &&
       typeof (message as GatewayMessage).role === "string",
+  );
+}
+
+/**
+ * The error that ends a chain in which no model answered. The last model's
+ * own refusal (behind a plan, gone: permanent for that model) says nothing
+ * about the request when an earlier model was only busy: then the run is
+ * worth trying again later, not failed for good. Production 2026-11-25: a
+ * free-plan run failed "model_not_configured" while the free models before
+ * the last one were rate limited.
+ */
+function chainError(failures: unknown[]) {
+  return (
+    failures.find((error) => providerRefusalOf(error)?.transient) ??
+    failures.at(-1)
   );
 }
 
@@ -135,21 +152,27 @@ export class GatewayProvider implements ModelProvider {
     const primary = this.modelId(role);
     if (!this.options.fallbackRefs && this.options.autoFallback) {
       this.fallbacks ??= (async () => {
-        const pinned = await this.model(this.options.ref);
+        const listed = await this.model(this.options.ref);
+        // A pin the list no longer has (hidden for an hour after a 404) still
+        // gets fallbacks. Production 2026-11-25: such a pin got none, and
+        // every run on it failed at once. Its price is unknown then, so it
+        // falls back to free models only, never to paid ones.
+        const pinned = listed ?? describeModelRef(this.options.ref);
         if (!pinned) return [];
+        const pinnedFree = listed ? listed.free : true;
         const { models } = await listGatewayModels({
           fetchImpl: this.options.fetchImpl,
         });
         // The free plan's own allowed ids are not free per call: a pin on
         // one falls back to free models or those ids, never to paid ones.
         const allowed = BILLING_CONFIG.freePlanLimits.allowedModels;
-        const freePlanPin = !pinned.free && allowed.includes(pinned.id);
+        const freePlanPin = !pinnedFree && allowed.includes(pinned.id);
         const pool = models.filter(
           (model) =>
             model.ref !== pinned.ref &&
             (freePlanPin
               ? model.free || allowed.includes(model.id)
-              : model.free === pinned.free),
+              : model.free === pinnedFree),
         );
         return candidatesFor(pool, tierOf(pinned), {
           limit: 3,
@@ -193,6 +216,7 @@ export class GatewayProvider implements ModelProvider {
     try {
       const refs = await this.refsFor(input.role);
       const skipped = new Set<string>();
+      const failures: unknown[] = [];
       for (const [index, ref] of refs.entries()) {
         if (skipped.has(serviceOf(ref))) continue;
         let produced = false;
@@ -223,11 +247,13 @@ export class GatewayProvider implements ModelProvider {
           if (code === "model_not_configured") hideModel(ref);
           if (PROVIDER_WIDE_CODES.has(code)) skipped.add(serviceOf(ref));
           logAttempt(ref, code, index, refs.length);
+          failures.push(error);
           const last = !refs
             .slice(index + 1)
             .some((next) => !skipped.has(serviceOf(next)));
-          if (produced || last || signal.aborted || !FALLBACK_CODES.has(code))
+          if (produced || signal.aborted || !FALLBACK_CODES.has(code))
             throw error;
+          if (last) throw chainError(failures);
         }
       }
     } finally {
@@ -248,6 +274,7 @@ export class GatewayProvider implements ModelProvider {
     try {
       const refs = input.refs ?? (await this.refsFor(input.role));
       const skipped = new Set<string>();
+      const failures: unknown[] = [];
       for (const [index, ref] of refs.entries()) {
         if (skipped.has(serviceOf(ref))) continue;
         try {
@@ -280,13 +307,17 @@ export class GatewayProvider implements ModelProvider {
           if (code === "model_not_configured") hideModel(ref);
           if (PROVIDER_WIDE_CODES.has(code)) skipped.add(serviceOf(ref));
           logAttempt(ref, code, index, refs.length);
+          failures.push(error);
           const last = !refs
             .slice(index + 1)
             .some((next) => !skipped.has(serviceOf(next)));
-          if (last || signal.aborted || !FALLBACK_CODES.has(code)) throw error;
+          if (signal.aborted || !FALLBACK_CODES.has(code)) throw error;
+          if (last) throw chainError(failures);
         }
       }
-      throw new ProviderError("No model answered", "provider_error");
+      throw failures.length
+        ? chainError(failures)
+        : new ProviderError("No model answered", "provider_error");
     } finally {
       done();
     }
