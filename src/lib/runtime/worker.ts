@@ -437,7 +437,7 @@ export async function executeClaimedStage(input: {
     .activity(
       outcome.kind === "FAILED" ? "stage.failed" : "stage.completed",
       outcome.kind === "FAILED"
-        ? "This step could not be finished"
+        ? "Dieser Schritt konnte nicht abgeschlossen werden"
         : `${work.stageName} complete`,
       { armId, outcome: outcome.kind, stage: work.stageName },
       outcome.kind === "FAILED" ? "user" : "internal",

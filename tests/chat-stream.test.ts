@@ -62,6 +62,7 @@ vi.mock("@/lib/sandbox", async () => {
 });
 
 const { POST } = await import("../src/app/api/chat/stream/route");
+const { POST: stopChat } = await import("../src/app/api/chat/stop/route");
 const { GET: getThread } =
   await import("../src/app/api/chat/threads/[sessionId]/route");
 const { GET: getModels } = await import("../src/app/api/models/route");
@@ -728,5 +729,142 @@ describe("POST /api/chat/stream", () => {
       chatCalls()[0].body as { messages: Array<{ content: string }> }
     ).messages[0].content;
     expect(system).not.toContain("4242");
+  });
+});
+
+// Reported 2026-11-25: "bin kurz aus Safari raus, er bricht ab und
+// verbraucht Limit". Safari in the background drops the connection; the
+// answer must run to its end and be saved. Only the stop button ends it.
+describe("an answer when the page goes away", () => {
+  function heldProvider() {
+    let release: () => void = () => undefined;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    vi.stubGlobal(
+      "fetch",
+      async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        providerCalls.push({
+          url,
+          body: init?.body ? JSON.parse(String(init.body)) : null,
+        });
+        if (url.endsWith("/models")) return Response.json(MODELS);
+        // The model answers only after the page went away; a call the
+        // server aborts fails here, as a real provider's would.
+        await new Promise<void>((resolve, reject) => {
+          const signal = init?.signal;
+          const abort = () =>
+            reject(new DOMException("The operation was aborted", "AbortError"));
+          if (signal?.aborted) return abort();
+          signal?.addEventListener("abort", abort, { once: true });
+          void gate.then(resolve);
+        });
+        return sse([
+          { choices: [{ delta: { content: answer } }] },
+          { choices: [], usage: { prompt_tokens: 40, completion_tokens: 8 } },
+        ]);
+      },
+    );
+    return { release };
+  }
+
+  async function open(body: unknown) {
+    const page = new AbortController();
+    const response = await POST(
+      new Request("https://osirus.test/api/chat/stream", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://osirus.test",
+        },
+        body: JSON.stringify(body),
+        signal: page.signal,
+      }),
+    );
+    const reader = response.body!.getReader();
+    const first = new TextDecoder().decode((await reader.read()).value);
+    const start = JSON.parse(first.split("\n\n")[0]!.slice(6)) as {
+      sessionId: string;
+    };
+    return { page, sessionId: start.sessionId };
+  }
+
+  async function assistantMessages(sessionId: string, waitMs: number) {
+    const until = Date.now() + waitMs;
+    for (;;) {
+      const rows = await db.raw<{
+        content: string;
+        partial: boolean | null;
+      }>(
+        `select content, (metadata->>'partial')::boolean as partial
+           from osirus.messages
+          where session_id = $1 and role = 'assistant'`,
+        [sessionId],
+      );
+      if (rows.length || Date.now() > until) return rows;
+      await new Promise((resolve) => setTimeout(resolve, 50));
+    }
+  }
+
+  it("writes the answer to its end and saves it after a dropped connection", async () => {
+    answer = "Die ganze Antwort, auch ohne offene Seite.";
+    const provider = heldProvider();
+    const { page, sessionId } = await open({ message: "Erzähl mir etwas." });
+    page.abort(); // Safari goes to the background
+    await new Promise((resolve) => setTimeout(resolve, 100));
+    provider.release();
+    const saved = await assistantMessages(sessionId, 5_000);
+    expect(saved).toEqual([
+      { content: "Die ganze Antwort, auch ohne offene Seite.", partial: false },
+    ]);
+    // The quota pays for an answer the person gets.
+    const usage = await db.raw<{ status: string }>(
+      `select status from osirus.model_calls
+        where request_metadata->>'sessionId' = $1`,
+      [sessionId],
+    );
+    expect(usage.map((row) => row.status)).toEqual(["completed"]);
+  }, 15_000);
+
+  it("ends the answer when the stop button was pressed", async () => {
+    answer = "Diese Antwort wollte niemand mehr.";
+    const provider = heldProvider();
+    const { page, sessionId } = await open({ message: "Erzähl mir etwas." });
+    const stopped = await stopChat(
+      new Request("https://osirus.test/api/chat/stop", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://osirus.test",
+        },
+        body: JSON.stringify({ sessionId }),
+      }),
+    );
+    expect(stopped.status).toBe(200);
+    page.abort(); // the button closes the connection after recording
+    await new Promise((resolve) => setTimeout(resolve, 2_500));
+    provider.release();
+    expect(await assistantMessages(sessionId, 1_000)).toEqual([]);
+  }, 15_000);
+
+  it("refuses a stop for a session of another workspace", async () => {
+    const stranger = await db.seedTenant("chat-stop-stranger");
+    const own = await db.raw<{ id: string }>(
+      `insert into osirus.sessions (organization_id, workspace_id, title, created_by, surface)
+       values ($1, $2, 'Fremd', $3, 'ai') returning id`,
+      [stranger.organizationId, stranger.workspaceId, stranger.userId],
+    );
+    const response = await stopChat(
+      new Request("https://osirus.test/api/chat/stop", {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: "https://osirus.test",
+        },
+        body: JSON.stringify({ sessionId: own[0]!.id }),
+      }),
+    );
+    expect(response.status).toBe(404);
   });
 });

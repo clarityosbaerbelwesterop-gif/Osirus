@@ -266,3 +266,93 @@ export async function saveChatMessage(
     createdAt: new Date(rows[0].created_at).toISOString(),
   };
 }
+
+/**
+ * The stop button: recorded on the session first, so the instance writing
+ * the answer sees it even when another instance took the click. A dropped
+ * connection (Safari in the background) records nothing, and the answer is
+ * written to its end and saved.
+ */
+export async function requestChatStop(
+  identity: ProductIdentity,
+  sessionId: string,
+) {
+  const rows = await queryAs<{ id: string }>(
+    identity.userId,
+    `update osirus.sessions set stop_requested_at = now()
+      where id = $1::uuid and workspace_id = $2::uuid
+      returning id`,
+    [sessionId, identity.workspaceId],
+  );
+  return rows.length > 0;
+}
+
+/** Whether the stop button was pressed for the answer being written. */
+export async function chatStopRequested(
+  identity: ProductIdentity,
+  sessionId: string,
+) {
+  const rows = await queryAs<{ stopped: boolean }>(
+    identity.userId,
+    `select stop_requested_at is not null as stopped
+       from osirus.sessions
+      where id = $1::uuid and workspace_id = $2::uuid`,
+    [sessionId, identity.workspaceId],
+  );
+  return Boolean(rows[0]?.stopped);
+}
+
+/**
+ * A new answer starts without a stop: one pressed for an earlier answer
+ * must not end it. Database time only, so no clock is compared.
+ */
+export async function clearChatStop(
+  identity: ProductIdentity,
+  sessionId: string,
+) {
+  await queryAs(
+    identity.userId,
+    `update osirus.sessions set stop_requested_at = null
+      where id = $1::uuid and workspace_id = $2::uuid
+        and stop_requested_at is not null`,
+    [sessionId, identity.workspaceId],
+  );
+}
+
+/**
+ * Ends `work` once the stop button was pressed, checking only after the
+ * page went away (while it is connected, the button closes the connection
+ * after recording the stop, so the check starts then too). A dropped
+ * connection alone never ends the answer.
+ */
+export function watchChatStop(input: {
+  disconnected: AbortSignal;
+  work: AbortController;
+  isStopped: () => Promise<boolean>;
+  everyMs?: number;
+}) {
+  let timer: ReturnType<typeof setInterval> | null = null;
+  const halt = () => {
+    if (timer) clearInterval(timer);
+    timer = null;
+  };
+  const check = async () => {
+    if (input.work.signal.aborted) return halt();
+    if (await input.isStopped().catch(() => false)) {
+      input.work.abort(new DOMException("Stopped by the person", "AbortError"));
+      halt();
+    }
+  };
+  const begin = () => {
+    void check();
+    timer = setInterval(() => void check(), input.everyMs ?? 1_500);
+  };
+  if (input.disconnected.aborted) begin();
+  else input.disconnected.addEventListener("abort", begin, { once: true });
+  return {
+    stop() {
+      halt();
+      input.disconnected.removeEventListener("abort", begin);
+    },
+  };
+}
