@@ -1,5 +1,6 @@
 "use client";
 
+import { normalizeImage } from "@/lib/attachments/client-image";
 import { PanelRight } from "lucide-react";
 import {
   useCallback,
@@ -467,7 +468,9 @@ export function ChatHub(props: {
   );
 
   const attachFile = useCallback(
-    async (file: File) => {
+    async (chosen: File) => {
+      // Photos are made upload-sized first (a phone photo is 4–6 MB).
+      const file = await normalizeImage(chosen);
       // Checked before sending: a larger body never reaches the server.
       if (file.size > MAX_UPLOAD_BYTES) {
         setError(`Die Datei ist größer als ${MAX_UPLOAD_LABEL}.`);

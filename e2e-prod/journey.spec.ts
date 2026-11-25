@@ -247,6 +247,55 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     fileSession = String(frames[0]?.sessionId ?? "");
   });
 
+  // Photos in every surface (2026-11-25): a model that sees images reads
+  // the photo at upload; the answer then knows what is in it.
+  await test.step("a photo is read for the answer", async () => {
+    const dataUrl = await page.evaluate(() => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 720;
+      canvas.height = 240;
+      const context = canvas.getContext("2d")!;
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "#111111";
+      context.font = "bold 72px sans-serif";
+      context.fillText("RECHNUNG 4711", 40, 150);
+      return canvas.toDataURL("image/png");
+    });
+    const started = Date.now();
+    const upload = await page.request.post("/api/attachments", {
+      headers: { origin: base },
+      multipart: {
+        file: {
+          name: "rechnung.png",
+          mimeType: "image/png",
+          buffer: Buffer.from(dataUrl.split(",")[1]!, "base64"),
+        },
+      },
+    });
+    expect(upload.status()).toBe(201);
+    const { attachment } = (await upload.json()) as {
+      attachment: { id: string; status: string };
+    };
+    console.log(
+      `Photo upload: ${attachment.status} in ${Math.round((Date.now() - started) / 1000)} s`,
+    );
+    expect(attachment.status).toBe("parsed");
+    const frames = await streamFrames({
+      message: "Welche Nummer steht auf der Rechnung im Bild? Nur die Zahl.",
+      attachmentIds: [attachment.id],
+    });
+    const text = frames
+      .filter((f) => f.type === "text")
+      .map((f) => f.text)
+      .join("");
+    console.log(
+      `Photo answer: ${text.includes("4711") ? "reads 4711" : text.slice(0, 80)}`,
+    );
+    expect(frames.at(-1)?.type).toBe("done");
+    expect(text).toContain("4711");
+  });
+
   await test.step("web search answers with numbered sources", async () => {
     const started = Date.now();
     const frames = await streamFrames({

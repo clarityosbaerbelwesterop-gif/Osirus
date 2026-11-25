@@ -1,5 +1,6 @@
 "use client";
 
+import { IMAGE_ACCEPT } from "@/lib/attachments/client-image";
 import {
   ArrowUp,
   FileText,
@@ -296,7 +297,7 @@ export const Composer = forwardRef<
         ) : null}
         <div className="composer-bar">
           <div className="composer-chips">
-            {chrome === "full" && props.onAttach ? (
+            {(chrome === "full" || chrome === "agent") && props.onAttach ? (
               <>
                 <input
                   ref={picker}
@@ -304,7 +305,7 @@ export const Composer = forwardRef<
                   className="sr-only"
                   tabIndex={-1}
                   aria-hidden="true"
-                  accept=".pdf,.txt,.md,.markdown,.csv,.tsv,.json,.png,.jpg,.jpeg,.gif,.webp,.ts,.tsx,.js,.jsx,.py,.go,.rs,.java,.sql,.yaml,.yml,.html,.css"
+                  accept={`${IMAGE_ACCEPT},.pdf,.txt,.md,.markdown,.csv,.tsv,.json,.ts,.tsx,.js,.jsx,.py,.go,.rs,.java,.sql,.yaml,.yml,.html,.css`}
                   onChange={(event) => {
                     const file = event.target.files?.[0];
                     if (file) props.onAttach?.(file);
@@ -313,7 +314,9 @@ export const Composer = forwardRef<
                 />
                 <IconButton
                   label={
-                    props.uploading ? "Wird hochgeladen…" : "Datei anhängen"
+                    props.uploading
+                      ? "Wird hochgeladen…"
+                      : "Foto oder Datei anhängen"
                   }
                   icon={Paperclip}
                   size="sm"
