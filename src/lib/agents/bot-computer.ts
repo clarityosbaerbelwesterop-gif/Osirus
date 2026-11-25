@@ -137,9 +137,19 @@ export async function openComputer(
   signal?: AbortSignal,
   files?: ComputerFiles,
 ): Promise<SandboxHandle> {
-  const existing = driver.reattach
+  const found = driver.reattach
     ? await driver.reattach(name).catch(() => null)
     : null;
+  // A machine deleted a moment ago (the end of a chat answer) can still be
+  // found under its name; the probe tells, and a fresh one takes its place.
+  const existing =
+    found &&
+    (await found.readFile(RESTORED_MARK).then(
+      () => true,
+      (error: unknown) => !machineGone(error),
+    ))
+      ? found
+      : null;
   const machine =
     existing ??
     (await driver.create({
@@ -153,6 +163,16 @@ export async function openComputer(
 }
 
 const RESTORED_MARK = ".osirus/restored";
+
+/** The sandbox no longer exists (deleted or expired). */
+export function machineGone(error: unknown) {
+  const summary = sandboxErrorSummary(error);
+  return (
+    summary.status === 404 ||
+    summary.code === "not_found" ||
+    /sandbox not found/i.test(summary.message ?? "")
+  );
+}
 const ARCHIVE_IN = ".osirus/restore.b64";
 const ARCHIVE_OUT = ".osirus/save.tgz";
 
