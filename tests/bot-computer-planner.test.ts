@@ -23,12 +23,20 @@ const models = [
   { ref: "b:strong", provider: "b" },
 ] as never;
 
-async function plan() {
+// Production 2026-11-25: two free models of one provider, both rate limited.
+const limited = [
+  { ref: "uno:beam", provider: "uno" },
+  { ref: "uno:agnes", provider: "uno" },
+  { ref: "uno:third", provider: "uno" },
+  { ref: "nv:llama", provider: "nv" },
+] as never;
+
+async function plan(list: never = models) {
   const { modelPlanner } = await import("../src/lib/agents/bot-computer");
   return modelPlanner({
     identity: {} as never,
     sessionId: "s",
-    models,
+    models: list,
     botName: "Rechner",
     message: "Rechne mit Python auf deinem Computer 2 hoch 64 aus",
   })([]);
@@ -57,6 +65,16 @@ describe("the bot computer's planner", () => {
       '{"command": "echo 1", "reason": ""}',
     ];
     expect((await plan())?.command).toBe("echo 1");
+  });
+
+  it("leaves a rate-limited provider and asks another one", async () => {
+    replies.queue = [
+      Object.assign(new Error("429"), { code: "rate_limited" }),
+      '{"command": "python3 -c \\"print(2**64)\\"", "reason": ""}',
+    ];
+    // The second reply comes from nv:llama; uno's other models are skipped.
+    expect((await plan(limited))?.command).toBe('python3 -c "print(2**64)"');
+    expect(replies.queue).toEqual([]);
   });
 
   it("respects a clear decline", async () => {
