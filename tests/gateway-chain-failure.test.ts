@@ -14,9 +14,11 @@ import { providerRefusalOf } from "@/lib/models/provider";
 
 const OR_MODELS = "https://openrouter.ai/api/v1/models";
 const NV_MODELS = "https://integrate.api.nvidia.com/v1/models";
+const UNO_MODELS = "https://api.unorouter.com/v1/models";
 const saved = {
   or: process.env.OPENROUTER_API_KEY,
   nv: process.env.NVIDIA_API_KEY,
+  uno: process.env.UNOROUTER_API_KEY,
 };
 
 beforeEach(() => {
@@ -28,6 +30,7 @@ afterEach(() => {
   for (const [name, value] of [
     ["OPENROUTER_API_KEY", saved.or],
     ["NVIDIA_API_KEY", saved.nv],
+    ["UNOROUTER_API_KEY", saved.uno],
   ] as const)
     if (value === undefined) delete process.env[name];
     else process.env[name] = value;
@@ -47,6 +50,10 @@ function gateway(reply: (model: string) => Response) {
     if (String(url) === OR_MODELS)
       return Response.json({
         data: [{ id: "acme/gratis-70b:free" }, { id: "acme/gated-70b:free" }],
+      });
+    if (String(url) === UNO_MODELS)
+      return Response.json({
+        data: [{ id: "claude-haiku-5-5:free" }, { id: "agnes-3.0-flash:free" }],
       });
     if (String(url) === NV_MODELS)
       return Response.json({
@@ -115,4 +122,27 @@ describe("a pinned model hidden after a 404", () => {
     expect(result).toMatchObject({ text: expect.stringMatching(/^from /) });
     expect(tried.at(-1)).not.toBe("nvidia/nemotron-3-ultra-550b-a55b");
   });
+});
+
+// The runtime sync of 2026-11-17 measured "Chat probe claude-haiku-5-5:free:
+// HTTP 403 rejected": UnoRouter lists the Haiku as free and refuses every
+// call. A person on the free plan who picks it (the reported case) gets an
+// answer from another free model instead of a failed run.
+describe("the Haiku with the Free badge, refused by its provider", () => {
+  for (const [label, body] of [
+    ["behind a plan", "This model requires Starter or higher."],
+    ["refused", "Forbidden"],
+  ] as const)
+    it(`still answers from another free model (${label})`, async () => {
+      process.env.UNOROUTER_API_KEY = "uno-key";
+      const { impl, tried } = gateway((model) =>
+        model === "claude-haiku-5-5:free"
+          ? new Response(body, { status: 403 })
+          : answer(`from ${model}`),
+      );
+      const result = await run("unorouter:claude-haiku-5-5:free", impl);
+      expect(tried[0]).toBe("claude-haiku-5-5:free");
+      expect(result).toMatchObject({ text: expect.stringMatching(/^from /) });
+      expect(tried.at(-1)).not.toBe("claude-haiku-5-5:free");
+    });
 });
