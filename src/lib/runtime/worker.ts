@@ -26,6 +26,7 @@ import {
   type ClaimedWork,
 } from "./dispatch";
 import { runtimeErrorCode } from "./errors";
+import { sandboxErrorSummary } from "../sandbox/error-summary";
 import { RuntimeRepository } from "./repository";
 import { SkillRepository } from "../skills/repository";
 import {
@@ -349,6 +350,22 @@ export async function executeClaimedStage(input: {
   } finally {
     guard.stop();
   }
+
+  // Production 2026-11-25: a free-plan run ended "stage_failed" in 9 s and
+  // nothing said why; its rows went with the deleted test account. A failed
+  // stage now leaves its class and a short, redacted cause in the log.
+  if (outcome.kind === "FAILED")
+    console.warn(
+      JSON.stringify({
+        event: "runtime.stage_failed",
+        armId,
+        stageKind: work.stageInput.stageKind ?? null,
+        attempt: work.attemptNumber,
+        failureClass: outcome.failureClass,
+        retryable: outcome.retryable,
+        cause: sandboxErrorSummary(new Error(outcome.error)).message,
+      }),
+    );
 
   // Rule 1: the lease is gone, so nothing this slice produced may be written.
   if (guard.leaseLost) {
