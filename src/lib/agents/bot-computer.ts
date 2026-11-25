@@ -1,6 +1,7 @@
 import "server-only";
 import type { ProductIdentity } from "../auth/bootstrap";
 import type { GatewayModel } from "../gateway/models";
+import { PROVIDER_WIDE_CODES } from "../gateway/routing";
 import { completeGateway } from "../gateway/stream";
 import { estimateTokens, recordGatewayCall } from "../gateway/usage";
 import type { SandboxDriver, SandboxHandle } from "../sandbox/driver";
@@ -22,7 +23,11 @@ import {
 // (filesystem kept) when the answer is done.
 
 const MACHINE_TIMEOUT_MS = 10 * 60 * 1000;
-const PLAN_MODELS = 2;
+// Models asked per planning step, at most. A provider that is rate limited
+// (or out of credit) is skipped for the rest of the step: production
+// 2026-11-25, both candidates were free models of one provider, both rate
+// limited, and the bot answered without its computer.
+const PLAN_MODELS = 5;
 
 export type ComputerPlanner = (steps: ComputerStep[]) => Promise<{
   command: string;
@@ -44,8 +49,10 @@ export function modelPlanner(input: {
       message: input.message,
       steps,
     });
+    const skipped = new Set<string>();
     for (const model of input.models.slice(0, PLAN_MODELS)) {
       if (input.signal?.aborted) return null;
+      if (skipped.has(model.provider)) continue;
       const started = Date.now();
       try {
         const result = await completeGateway({
@@ -87,11 +94,10 @@ export function modelPlanner(input: {
         }
         logPlan(model.ref, "unparsable");
       } catch (error) {
-        logPlan(
-          model.ref,
-          "error",
-          (error as { code?: unknown } | null)?.code ?? "provider_error",
-        );
+        const code = (error as { code?: unknown } | null)?.code;
+        if (typeof code === "string" && PROVIDER_WIDE_CODES.has(code))
+          skipped.add(model.provider);
+        logPlan(model.ref, "error", code ?? "provider_error");
       }
     }
     return null;
