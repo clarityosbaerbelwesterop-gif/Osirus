@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import "@fontsource-variable/geist";
 import "@fontsource-variable/geist-mono";
 import { ProductFrame } from "@/components/marketing/product-frame";
+import { SiteFooterLinks } from "@/components/marketing/site-footer-links";
 import { OsirusMark } from "@/components/shell/osirus-mark";
 import { auth } from "@/lib/auth/server";
 import { isFreeTierEnabled, startAccountLabel } from "./free-tier";
@@ -88,6 +89,9 @@ export default async function HomePage() {
           </a>
           <Link className="ln-nav-section" href="/sicherheit">
             Sicherheit
+          </Link>
+          <Link className="ln-nav-section" href="/ueber-uns">
+            Über uns
           </Link>
           <Link className="ln-nav-login" href="/auth/sign-in">
             Anmelden
@@ -249,16 +253,10 @@ export default async function HomePage() {
       </div>
 
       <footer className="ln-wrap ln-footer">
-        <span className="ln-footer-credit">
+        <Link href="/ueber-uns" className="ln-footer-credit">
           Ein Produkt von ClarityCompassAI
-        </span>
-        <Link href="/legal/impressum">Impressum</Link>
-        <Link href="/legal/privacy">Datenschutz</Link>
-        <Link href="/legal/terms">AGB</Link>
-        <Link href="/legal/eula">EULA</Link>
-        <Link href="/legal/cookies">Cookies</Link>
-        <Link href="/sicherheit">Sicherheit</Link>
-        <Link href="/kuendigen">Verträge hier kündigen</Link>
+        </Link>
+        <SiteFooterLinks />
       </footer>
     </main>
   );

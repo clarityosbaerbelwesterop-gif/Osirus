@@ -67,6 +67,9 @@ describe("landing page", () => {
     expect(html).toContain('href="/kuendigen"');
     expect(html).toContain('href="/legal/eula"');
     expect(html).toContain('href="/legal/cookies"');
+    expect(html).toContain('href="/ueber-uns"');
+    expect(html).toContain('href="/osirus-ki"');
+    expect(html).toContain('href="/ki-team-freigabe"');
     expect(html).not.toContain('href="#preise"');
     expect(html).not.toContain('id="faq"');
     expect(html).not.toContain("Fragen");
@@ -170,6 +173,9 @@ describe("seo surface", () => {
     const urls = sitemap().map((entry) => entry.url);
     expect(urls).toEqual([
       "https://osirus-ai.com/",
+      "https://osirus-ai.com/ueber-uns",
+      "https://osirus-ai.com/osirus-ki",
+      "https://osirus-ai.com/ki-team-freigabe",
       "https://osirus-ai.com/sicherheit",
       "https://osirus-ai.com/legal/impressum",
       "https://osirus-ai.com/legal/privacy",

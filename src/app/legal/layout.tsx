@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import { SiteFooterLinks } from "@/components/marketing/site-footer-links";
 
 export default function LegalLayout({ children }: { children: ReactNode }) {
   return (
@@ -11,13 +12,7 @@ export default function LegalLayout({ children }: { children: ReactNode }) {
       </nav>
       {children}
       <footer className="legal-footer">
-        <Link href="/legal/impressum">Impressum</Link>
-        <Link href="/legal/privacy">Datenschutz</Link>
-        <Link href="/legal/terms">AGB</Link>
-        <Link href="/legal/eula">EULA</Link>
-        <Link href="/legal/cookies">Cookies</Link>
-        <Link href="/sicherheit">Sicherheit</Link>
-        <Link href="/kuendigen">Verträge hier kündigen</Link>
+        <SiteFooterLinks />
       </footer>
     </main>
   );
