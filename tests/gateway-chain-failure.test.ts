@@ -146,3 +146,42 @@ describe("the Haiku with the Free badge, refused by its provider", () => {
       expect(tried.at(-1)).not.toBe("claude-haiku-5-5:free");
     });
 });
+
+// Provider diagnostics 2026-11-25: the Kunya key was rejected (HTTP 401)
+// while the Rouge Agent pins its premium models (Kunya's) for paid plans.
+// A paid pin whose service refuses still answers: free models last, at no
+// extra cost, instead of a failed run.
+describe("a paid pin whose service refuses", () => {
+  it("falls back to a free model as the last resort", async () => {
+    const tried: string[] = [];
+    const impl = (async (url: RequestInfo | URL, init?: RequestInit) => {
+      if (String(url) === OR_MODELS)
+        return Response.json({
+          data: [
+            {
+              id: "acme/premium-70b",
+              pricing: { prompt: "0.000002", completion: "0.000006" },
+            },
+            {
+              id: "acme/premium-405b",
+              pricing: { prompt: "0.000003", completion: "0.000009" },
+            },
+          ],
+        });
+      if (String(url) === NV_MODELS)
+        return Response.json({ data: [{ id: "meta/llama-3.3-70b-instruct" }] });
+      const model = String(JSON.parse(String(init?.body)).model);
+      tried.push(model);
+      if (model.startsWith("acme/"))
+        return new Response('{"error":"Invalid or missing API key"}', {
+          status: 401,
+        });
+      return answer(`from ${model}`);
+    }) as typeof fetch;
+    const result = await run("openrouter:acme/premium-70b", impl);
+    expect(result).toMatchObject({
+      text: "from meta/llama-3.3-70b-instruct",
+    });
+    expect(tried[0]).toBe("acme/premium-70b");
+  });
+});
