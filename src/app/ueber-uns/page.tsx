@@ -22,7 +22,7 @@ export default function AboutPage() {
       <h2>Das Unternehmen</h2>
       <p>
         {OPERATOR.name} wurde am 2. Januar 2025 gegründet und hat seinen Sitz in
-        Moers, Nordrhein-Westfalen. Inhaberin und Geschäftsführerin ist{" "}
+        Moers, Nordrhein-Westfalen. Inhaberin des Einzelunternehmens ist{" "}
         {OPERATOR.owner}.
       </p>
       <p>
