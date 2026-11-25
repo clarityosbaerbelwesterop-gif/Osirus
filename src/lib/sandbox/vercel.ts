@@ -160,7 +160,8 @@ export async function reattachVercelSandbox(
       resume: true,
       ...(credentials ?? {}),
     } as never);
-    return new VercelSandboxHandle(sandbox);
+    // A non-persistent one is deleted when it stops, as when it was made.
+    return new VercelSandboxHandle(sandbox, sandbox.persistent === false);
   } catch {
     return null;
   }

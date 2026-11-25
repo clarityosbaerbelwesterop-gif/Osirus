@@ -16,6 +16,7 @@ const state = vi.hoisted(() => ({
     body?: unknown;
   }>,
   opened: [] as string[],
+  saved: 0,
 }));
 
 vi.mock("@/lib/product/api", () => ({
@@ -45,6 +46,16 @@ vi.mock("@/lib/agents/bot-computer", () => ({
     state.opened.push(name);
     return { keepAlive: async () => undefined };
   },
+  saveFolder: async () => {
+    state.saved += 1;
+    return true;
+  },
+}));
+vi.mock("@/lib/agents/bot-computer-files", () => ({
+  databaseComputerFiles: () => ({
+    load: async () => null,
+    save: async () => true,
+  }),
 }));
 vi.mock("@/lib/agents/open-terminal", () => ({
   ensureOpenTerminal: async () => undefined,
@@ -64,6 +75,7 @@ beforeEach(() => {
   state.bot = { id: "8a6f3c1e-1d2b-4c3d-9e4f-5a6b7c8d9e0f", name: "Rechner" };
   state.calls = [];
   state.opened = [];
+  state.saved = 0;
 });
 
 async function post(body: unknown, agentId = state.bot?.id ?? "x") {
@@ -92,6 +104,8 @@ describe("a bot's computer API", () => {
         body: { command: "python3 -V" },
       },
     ]);
+    // What the command changed is kept at once.
+    expect(state.saved).toBe(1);
     // Paths on the machine are not handed to the browser.
     expect(JSON.stringify(await response.json())).not.toContain("log_path");
   });

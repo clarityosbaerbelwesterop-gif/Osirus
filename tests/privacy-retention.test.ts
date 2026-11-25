@@ -57,12 +57,27 @@ describe("retention", () => {
       null,
     );
     await cancellation("K-FRESH", new Date().toISOString(), null);
+    // A bot computer's folder goes seven days after its last use.
+    const owner = await db.seedTenant("computer");
+    const bots = await db.raw<{ id: string }>(
+      `insert into osirus.agents (organization_id, workspace_id, name, model_id, created_by)
+       values ($1, $2, 'Alt', 'openai/gpt-4o-mini', $3), ($1, $2, 'Neu', 'openai/gpt-4o-mini', $3)
+       returning id`,
+      [owner.organizationId, owner.workspaceId, owner.userId],
+    );
+    await db.raw(
+      `insert into osirus.bot_computer_files (workspace_id, agent_id, archive, size_bytes, updated_at)
+       values ($1, $2, '\\x00'::bytea, 1, now() - interval '8 days'),
+              ($1, $3, '\\x00'::bytea, 1, now() - interval '6 days')`,
+      [owner.workspaceId, bots[0]!.id, bots[1]!.id],
+    );
 
     const result = await applyRetention();
     expect(result).toEqual({
       rateLimitCounters: 1,
       // K-NEW and K-OLD (whose row then goes as a whole).
       cancellationNetworkHashes: 2,
+      botComputerFiles: 1,
       cancellations: 1,
     });
 
@@ -80,12 +95,28 @@ describe("retention", () => {
       { reference: "K-FRESH", network_hash: "abc123" },
       { reference: "K-NEW", network_hash: null },
     ]);
+    const folders = await db.raw<{ agent_id: string }>(
+      `select agent_id from osirus.bot_computer_files`,
+    );
+    expect(folders).toEqual([{ agent_id: bots[1]!.id }]);
     // A second pass finds nothing left to do.
     expect(await applyRetention()).toEqual({
       rateLimitCounters: 0,
       cancellationNetworkHashes: 0,
+      botComputerFiles: 0,
       cancellations: 0,
     });
+    // Another person's workspace never sees the folder.
+    const stranger = await db.seedTenant("stranger");
+    expect(
+      await db.queryAs(
+        stranger.userId,
+        `select 1 from osirus.bot_computer_files`,
+      ),
+    ).toHaveLength(0);
+    expect(
+      await db.queryAs(owner.userId, `select 1 from osirus.bot_computer_files`),
+    ).toHaveLength(1);
   });
 
   it("never lets a person delete a cancellation themselves", async () => {
