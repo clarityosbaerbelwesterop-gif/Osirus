@@ -13,6 +13,9 @@ export default defineConfig({
     },
   },
   test: {
+    // Vitest 5 clears mock calls before each test by default; these tests
+    // assert calls made while a module loads, as Vitest 3 kept them.
+    clearMocks: false,
     environment: "node",
     include: ["evals/**/*.probe.ts"],
     testTimeout: 15 * 60 * 1000,

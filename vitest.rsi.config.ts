@@ -13,8 +13,11 @@ export default defineConfig({
       ),
     },
   },
-  esbuild: { jsx: "automatic" },
+  oxc: { jsx: { runtime: "automatic" } },
   test: {
+    // Vitest 5 clears mock calls before each test by default; these tests
+    // assert calls made while a module loads, as Vitest 3 kept them.
+    clearMocks: false,
     environment: "node",
     include: [process.env.RSI_EVAL ?? "evals/rsi-measure.eval.ts"],
     testTimeout: 5 * 60 * 60 * 1000,
