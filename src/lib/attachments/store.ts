@@ -2,9 +2,11 @@ import "server-only";
 import { createHash } from "node:crypto";
 import { queryAs } from "../db/client";
 import {
+  chunkText,
   inspectAttachment,
   parseAttachment,
   type AttachmentKind,
+  type Parsed,
 } from "./parse";
 
 // Attachments in the tenant's own rows, under workspace RLS. Upload stores
@@ -73,6 +75,36 @@ export function safeFilename(raw: string) {
   return clean || "file";
 }
 
+/**
+ * A photo becomes text once, at upload: a model that sees images writes
+ * down its text and what it shows (./vision). Every surface reads that.
+ */
+async function imageParsed(
+  identity: Identity,
+  bytes: Uint8Array,
+  mediaType: string,
+): Promise<Parsed> {
+  const { readImage } = await import("./vision");
+  const reading = await readImage({ identity, bytes, mediaType }).catch(
+    () => null,
+  );
+  if (!reading)
+    return {
+      status: "unsupported",
+      text: null,
+      structure: {},
+      chunks: [],
+      error: "Das Bild konnte gerade nicht gelesen werden.",
+    };
+  const text = `[Inhalt des Bildes, automatisch gelesen]\n\n${reading.text}`;
+  return {
+    status: "parsed",
+    text,
+    structure: { vision: reading.model },
+    chunks: chunkText(text, () => "Bild"),
+  };
+}
+
 export async function saveAttachment(
   identity: Identity,
   input: { filename: string; bytes: Uint8Array; sessionId?: string | null },
@@ -92,7 +124,10 @@ export async function saveAttachment(
     if (!sessionRow) throw new Error("session_not_accessible");
     resolvedSessionId = sessionRow.id;
   }
-  const parsed = await parseAttachment(inspection.kind, input.bytes);
+  const parsed =
+    inspection.kind === "image"
+      ? await imageParsed(identity, input.bytes, inspection.mediaType)
+      : await parseAttachment(inspection.kind, input.bytes);
   const [row] = await queryAs<Row>(
     identity.userId,
     `insert into osirus.attachments

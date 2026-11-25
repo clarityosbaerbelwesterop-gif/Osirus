@@ -128,6 +128,11 @@ const ACTIVITY_LABEL: Record<string, string> = {
   Failed: "Fehlgeschlagen",
   Cancelled: "Abgebrochen",
   "Waiting for approval": "Wartet auf Freigabe",
+  // Stored on runs before 2026-11-25; newer ones are written in German.
+  "This step could not be finished":
+    "Dieser Schritt konnte nicht abgeschlossen werden",
+  "No readable part of the attached files matched":
+    "Keine passende Stelle in den Anhängen gefunden",
 };
 
 /** A runtime activity line in the person's language; free text stays. */
@@ -136,6 +141,13 @@ export function activityLabel(summary: string) {
   if (known) return known;
   const workspace = summary.match(/^Workspace ready with (.+)$/);
   if (workspace) return `Arbeitsumgebung bereit: ${workspace[1]}`;
+  const files = summary.match(
+    /^Read (\d+) relevant part\(s\) of the attached files$/,
+  );
+  if (files)
+    return files[1] === "1"
+      ? "1 passende Stelle der Anhänge gelesen"
+      : `${files[1]} passende Stellen der Anhänge gelesen`;
   return summary;
 }
 

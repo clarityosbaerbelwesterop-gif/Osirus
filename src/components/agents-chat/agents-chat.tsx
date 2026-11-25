@@ -35,6 +35,7 @@ import {
   useState,
   useSyncExternalStore,
 } from "react";
+import { IMAGE_ACCEPT, normalizeImage } from "@/lib/attachments/client-image";
 import { sessionHref } from "@/lib/product/surfaces";
 import { BotOrb, type OrbState } from "../bots/bot-orb";
 import { useVoice } from "../bots/use-voice";
@@ -147,8 +148,7 @@ type PendingFile = {
 const MAX_FILE_BYTES = MAX_UPLOAD_BYTES;
 /** The server's limit for one message (api/chat/stream). */
 const MAX_MESSAGE_CHARS = 32_000;
-const FILE_TYPES =
-  ".pdf,.txt,.md,.markdown,.csv,.json,.log,.yaml,.yml,.xml,.html,.js,.jsx,.ts,.tsx,.py,.go,.rs,.java,.rb,.php,.c,.cpp,.h,.cs,.swift,.kt,.sql,.sh";
+const FILE_TYPES = `${IMAGE_ACCEPT},.pdf,.txt,.md,.markdown,.csv,.json,.log,.yaml,.yml,.xml,.html,.js,.jsx,.ts,.tsx,.py,.go,.rs,.java,.rb,.php,.c,.cpp,.h,.cs,.swift,.kt,.sql,.sh`;
 
 function uploadError(status: number, code: string | undefined) {
   if (status === 413 || code === "too_large")
@@ -741,8 +741,10 @@ export function AgentsChat(props: {
   }, [props.initialThread]);
 
   const upload = useCallback(
-    async (picked: File[]) => {
-      const entries = picked.slice(0, 8).map((file, index) => ({
+    async (chosen: File[]) => {
+      // Photos are made upload-sized first (a phone photo is 4–6 MB).
+      const picked = await Promise.all(chosen.slice(0, 8).map(normalizeImage));
+      const entries = picked.map((file, index) => ({
         file,
         key: `${Date.now()}-${index}-${file.name}`,
       }));

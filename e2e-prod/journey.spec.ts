@@ -247,6 +247,55 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     fileSession = String(frames[0]?.sessionId ?? "");
   });
 
+  // Photos in every surface (2026-11-25): a model that sees images reads
+  // the photo at upload; the answer then knows what is in it.
+  await test.step("a photo is read for the answer", async () => {
+    const dataUrl = await page.evaluate(() => {
+      const canvas = document.createElement("canvas");
+      canvas.width = 720;
+      canvas.height = 240;
+      const context = canvas.getContext("2d")!;
+      context.fillStyle = "#ffffff";
+      context.fillRect(0, 0, canvas.width, canvas.height);
+      context.fillStyle = "#111111";
+      context.font = "bold 72px sans-serif";
+      context.fillText("RECHNUNG 4711", 40, 150);
+      return canvas.toDataURL("image/png");
+    });
+    const started = Date.now();
+    const upload = await page.request.post("/api/attachments", {
+      headers: { origin: base },
+      multipart: {
+        file: {
+          name: "rechnung.png",
+          mimeType: "image/png",
+          buffer: Buffer.from(dataUrl.split(",")[1]!, "base64"),
+        },
+      },
+    });
+    expect(upload.status()).toBe(201);
+    const { attachment } = (await upload.json()) as {
+      attachment: { id: string; status: string };
+    };
+    console.log(
+      `Photo upload: ${attachment.status} in ${Math.round((Date.now() - started) / 1000)} s`,
+    );
+    expect(attachment.status).toBe("parsed");
+    const frames = await streamFrames({
+      message: "Welche Nummer steht auf der Rechnung im Bild? Nur die Zahl.",
+      attachmentIds: [attachment.id],
+    });
+    const text = frames
+      .filter((f) => f.type === "text")
+      .map((f) => f.text)
+      .join("");
+    console.log(
+      `Photo answer: ${text.includes("4711") ? "reads 4711" : text.slice(0, 80)}`,
+    );
+    expect(frames.at(-1)?.type).toBe("done");
+    expect(text).toContain("4711");
+  });
+
   await test.step("web search answers with numbered sources", async () => {
     const started = Date.now();
     const frames = await streamFrames({
@@ -348,10 +397,12 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     expect(listed.freeOnly).toBe(true);
     expect(pick).toBeTruthy();
     const started = Date.now();
+    // The runtime's own free-plan lock (Code's path; the Rouge Agent is a
+    // paid plan's since 2026-11-25, so the "ai" surface carries the run).
     const response = await send(page, "/api/runtime", {
       objective: "Antworte nur mit dem Wort OK.",
       requestId: randomUUID(),
-      surface: "agent",
+      surface: "ai",
       modelId: pick!.id,
     });
     expect(response.status()).toBe(200);
@@ -377,46 +428,27 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     expect(run.status).toBe("completed");
   });
 
-  await test.step('the Rouge Agent answers "Hallo"', async () => {
-    const started = Date.now();
+  // Owner's decision 2026-11-25: the Rouge Agent runs on premium models and
+  // is part of the paid plans. A free account gets the plan offer, no run.
+  await test.step("the Rouge Agent offers Pro to a free account", async () => {
     const response = await send(page, "/api/runtime", {
       objective: "Hallo",
       requestId: randomUUID(),
       surface: "agent",
     });
-    expect(response.status()).toBe(200);
-    const runIdHeader = response.headers()["x-osirus-run-id"];
-    await response.text();
-    type Snapshot = {
-      run?: {
-        status?: string;
-        errorCode?: string | null;
-        errorMessage?: string | null;
-      };
-      messages?: Array<{ role: string; content: string }>;
+    const body = (await response.json()) as {
+      error?: string;
+      message?: string;
     };
-    const terminal = new Set(["completed", "failed", "cancelled", "blocked"]);
-    let snapshot: Snapshot = {};
-    for (let tries = 0; tries < 90; tries += 1) {
-      snapshot = (await (
-        await send(page, `/api/runtime/${runIdHeader}`)
-      ).json()) as Snapshot;
-      if (terminal.has(snapshot.run?.status ?? "")) break;
-      await page.waitForTimeout(2_000);
-    }
-    const answers = (snapshot.messages ?? []).filter(
-      (message) => message.role === "assistant",
-    );
     console.log(
-      `Rouge run ${snapshot.run?.status}; ${answers.length} answer(s); ${Math.round((Date.now() - started) / 1000)} s`,
+      `Rouge on the free plan: HTTP ${response.status()} ${body.error}`,
     );
-    // The cause, when it did not finish (the public code and message).
-    if (snapshot.run?.status !== "completed")
-      console.log(
-        `Rouge cause: ${snapshot.run?.errorCode ?? "none"}: ${snapshot.run?.errorMessage ?? ""}`,
-      );
-    expect(snapshot.run?.status).toBe("completed");
-    expect(answers[0]?.content?.trim().length ?? 0).toBeGreaterThan(0);
+    expect(response.status()).toBe(402);
+    expect(body.error).toBe("plan_required");
+    await page.goto(`${base}/app/agent`);
+    await expect(
+      page.getByText("Der Rouge Agent ist ab Pro enthalten."),
+    ).toBeVisible();
   });
 
   // Scheduled runs skip it: every checkout creates a live Stripe customer.

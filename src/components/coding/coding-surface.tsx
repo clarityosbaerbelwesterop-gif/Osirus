@@ -23,7 +23,17 @@ import { useShell } from "../shell/shell-context";
 import { TopBar } from "../shell/top-bar";
 import { Badge } from "../ui/badge";
 import { EffortField } from "./effort-field";
-import { Code2, GitBranch, ShieldCheck, Wand2 } from "lucide-react";
+import {
+  Code2,
+  FileText,
+  GitBranch,
+  Paperclip,
+  ShieldCheck,
+  Wand2,
+  X,
+} from "lucide-react";
+import { IMAGE_ACCEPT, normalizeImage } from "@/lib/attachments/client-image";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/attachments/limits";
 import { ModelPicker } from "../agents-chat/model-picker";
 import { useGatewayModels } from "../agents-chat/use-models";
 
@@ -66,6 +76,54 @@ export function CodingSurface(props: {
     props.initialMessages,
   );
   const [task, setTask] = useState(props.handoff?.task ?? "");
+  // Photos and files for the task (a screenshot of a bug, a mock-up, a
+  // spec): read at upload, sent with the start as attachmentIds.
+  const [files, setFiles] = useState<
+    Array<{ id: string; filename: string; ready: boolean; note: string | null }>
+  >([]);
+  const [uploading, setUploading] = useState(false);
+  const picker = useRef<HTMLInputElement | null>(null);
+  const attach = async (chosen: File) => {
+    const file = await normalizeImage(chosen);
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setStartFailure(`Die Datei ist größer als ${MAX_UPLOAD_LABEL}.`);
+      return;
+    }
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      if (sessionId) form.append("sessionId", sessionId);
+      const response = await fetch("/api/attachments", {
+        method: "POST",
+        body: form,
+      }).catch(() => null);
+      const body = (await response?.json().catch(() => null)) as {
+        attachment?: { id: string; filename: string; status: string };
+      } | null;
+      if (!response?.ok || !body?.attachment) {
+        setStartFailure("Die Datei konnte nicht hochgeladen werden.");
+        return;
+      }
+      const attachment = body.attachment;
+      setFiles((current) =>
+        [
+          ...current,
+          {
+            id: attachment.id,
+            filename: attachment.filename,
+            ready: attachment.status === "parsed",
+            note:
+              attachment.status === "parsed"
+                ? null
+                : "Inhalt konnte nicht gelesen werden.",
+          },
+        ].slice(-8),
+      );
+    } finally {
+      setUploading(false);
+    }
+  };
   const [repos, setRepos] = useState<Repo[] | null>(null);
   const [repoKey, setRepoKey] = useState("");
   const [branches, setBranches] = useState<string[] | null>(null);
@@ -306,6 +364,13 @@ export function CodingSurface(props: {
         sessionId,
         surface: "coding",
         mode: "coding",
+        ...(files.some((file) => file.ready)
+          ? {
+              attachmentIds: files
+                .filter((file) => file.ready)
+                .map((file) => file.id),
+            }
+          : {}),
         coding: {
           repository,
           branch,
@@ -352,6 +417,7 @@ export function CodingSurface(props: {
     setRunId(started);
     // The task now lives in the thread above; the field is free for the next.
     setTask("");
+    setFiles([]);
     if (startedSession) {
       setSessionId(startedSession);
       shell.upsertSession({
@@ -587,6 +653,35 @@ export function CodingSurface(props: {
                 />
               )}
             </div>
+            {files.length ? (
+              <ul className="composer-files" aria-label="Angehängte Dateien">
+                {files.map((file) => (
+                  <li
+                    key={file.id}
+                    className={file.ready ? "chip" : "chip chip-warn"}
+                    title={file.note ?? file.filename}
+                  >
+                    <FileText size={13} aria-hidden="true" />
+                    <span className="truncate">{file.filename}</span>
+                    <button
+                      type="button"
+                      className="chip-remove"
+                      aria-label={`${file.filename} entfernen`}
+                      onClick={() => {
+                        setFiles((current) =>
+                          current.filter((item) => item.id !== file.id),
+                        );
+                        void fetch(`/api/attachments/${file.id}`, {
+                          method: "DELETE",
+                        }).catch(() => undefined);
+                      }}
+                    >
+                      <X size={12} aria-hidden="true" />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
             <label className="sr-only" htmlFor="coding-task">
               Aufgabe
             </label>
@@ -599,6 +694,31 @@ export function CodingSurface(props: {
               onChange={(event) => setTask(event.target.value)}
             />
             <div className="composer-bar">
+              <input
+                ref={picker}
+                type="file"
+                className="sr-only"
+                tabIndex={-1}
+                aria-hidden="true"
+                accept={`${IMAGE_ACCEPT},.pdf,.txt,.md,.csv,.json,.ts,.tsx,.js,.jsx,.py,.go,.rs,.java,.sql,.yaml,.yml,.html,.css`}
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  event.target.value = "";
+                  if (file) void attach(file);
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn-sm"
+                aria-label={
+                  uploading ? "Wird hochgeladen…" : "Foto oder Datei anhängen"
+                }
+                title="Foto oder Datei anhängen"
+                disabled={uploading}
+                onClick={() => picker.current?.click()}
+              >
+                <Paperclip size={14} aria-hidden="true" />
+              </button>
               <button
                 type="button"
                 className="btn btn-sm"

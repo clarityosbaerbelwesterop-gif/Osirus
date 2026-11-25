@@ -303,6 +303,15 @@ export default function PrivacyPage() {
           antwortende Modell.
         </li>
         <li>
+          <strong>Fotos und Bilder:</strong> Beim Hochladen liest ein
+          bildfähiges Modell eines der in Abschnitt 18 genannten Modellanbieter
+          das Bild einmal aus: den sichtbaren Text und was zu sehen ist. Das
+          Bild und der gelesene Text bleiben in deinem Workspace gespeichert;
+          danach gehen nur passende Auszüge dieses Textes an das antwortende
+          Modell. Fotos von Personen oder Dokumenten lädst du nur hoch, wenn du
+          dazu berechtigt bist.
+        </li>
+        <li>
           <strong>Websuche:</strong> Schaltest du sie ein, sendet Osirus aus
           deiner Nachricht abgeleitete Suchbegriffe an einen Suchdienst und ruft
           die gefundenen Seiten ab. Bei Fragen zu aktuellen Ereignissen sind das

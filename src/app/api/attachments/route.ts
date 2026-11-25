@@ -9,6 +9,8 @@ import { apiIdentity, guardAction, json } from "@/lib/product/api";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
+// A photo is read by a model at upload (attachments/vision): up to ~50 s.
+export const maxDuration = 60;
 
 const ERROR_STATUS = { empty: 400, too_large: 413, unsupported_type: 415 };
 

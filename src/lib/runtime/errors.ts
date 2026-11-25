@@ -30,6 +30,8 @@ export function publicRuntimeErrorMessage(error: unknown) {
       return "Dein Nutzungsbudget für diesen Zeitraum ist verbraucht. Es füllt sich automatisch wieder auf; dann geht diese Arbeit weiter.";
     case "subscription_required":
       return "Für Modelle ist ein aktives Abo nötig.";
+    case "plan_required":
+      return "Der Rouge Agent ist ab Pro enthalten: Er arbeitet mit Premium-Modellen.";
     case "model_not_in_plan":
       return "Dieses Modell ist im Free-Plan nicht enthalten. Wechsle auf einen bezahlten Plan, um es zu nutzen.";
     case "subagent_limit":
