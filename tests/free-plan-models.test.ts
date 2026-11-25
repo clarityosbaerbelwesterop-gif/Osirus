@@ -67,6 +67,26 @@ describe("the free plan's run lock", () => {
     expect(complete).toHaveBeenCalledTimes(3);
   });
 
+  it("lets every kind of Free model run: :free, zero-priced, NVIDIA trial", async () => {
+    store.listed.set("openrouter:anthropic/claude-haiku-4.5:free", {
+      id: "anthropic/claude-haiku-4.5:free",
+      free: true,
+    });
+    const { quotaGuardedProvider } = await import("../src/lib/billing/enforce");
+    for (const ref of [
+      "openrouter:anthropic/claude-haiku-4.5:free",
+      "kunya:claude-haiku-5-5",
+      "nvidia:meta/llama-3.3-70b-instruct",
+    ]) {
+      const { provider, complete } = pinned(ref);
+      await expect(
+        quotaGuardedProvider(provider, "free-user").complete(input("VERIFY")),
+        ref,
+      ).resolves.toMatchObject({ text: "ok" });
+      expect(complete, ref).toHaveBeenCalledTimes(1);
+    }
+  });
+
   it("still refuses a paid model and an unknown reference", async () => {
     const { quotaGuardedProvider } = await import("../src/lib/billing/enforce");
     for (const ref of ["kunya:claude-sonnet-5-5", "kunya:not-listed"]) {

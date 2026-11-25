@@ -18,6 +18,12 @@ updates:
       - dependency-name: stripe
         update-types:
           ["version-update:semver-minor", "version-update:semver-major"]
+      # Only its stylesheet is ours; rehype-katex renders with its own
+      # KaTeX 0.16. A newer 0.x is a breaking release whose CSS would no
+      # longer match the rendered formulas. Moves together with rehype-katex.
+      - dependency-name: katex
+        update-types:
+          ["version-update:semver-minor", "version-update:semver-major"]
     groups:
       minor-and-patch:
         update-types: [minor, patch]
