@@ -504,6 +504,17 @@ export async function resolveGatewayModel(
 }
 
 /**
+ * A reference described without its listing: a model hidden for an hour
+ * after a 404, or one the list no longer has. Prices are unknown.
+ */
+export function describeModelRef(ref: string): GatewayModel | null {
+  const parsed = parseModelRef(ref);
+  const spec = parsed ? providerById(parsed.provider) : undefined;
+  if (!parsed || !spec) return null;
+  return parseProviderModels(spec, [{ id: parsed.model }])[0] ?? null;
+}
+
+/**
  * Where the runtime sync's probe starts on the gated gateways: the models
  * measured answering on 2026-10-27 (Kunya) and the strongest ones the other
  * accounts list but need a deposit or plan for. The probe tries these first,
