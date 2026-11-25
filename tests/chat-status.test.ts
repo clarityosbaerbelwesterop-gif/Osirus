@@ -55,6 +55,7 @@ function view(overrides: Partial<RunView> = {}): RunView {
     memoryCount: null,
     todos: [],
     notes: [],
+    results: [],
     ...overrides,
   };
 }

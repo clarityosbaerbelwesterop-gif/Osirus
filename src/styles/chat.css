@@ -465,6 +465,49 @@
   font-size: var(--text-sm);
 }
 
+/* What a finished run produced: reports, code, files. */
+.run-results {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.run-results ul {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.run-result {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  max-width: 100%;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--text-sm);
+  text-align: left;
+}
+
+button.run-result {
+  cursor: pointer;
+}
+
+button.run-result:hover {
+  background: var(--color-surface-sunken);
+}
+
+.run-result span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .run-steps {
   display: grid;
   gap: var(--space-0-5);

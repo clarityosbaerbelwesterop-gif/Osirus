@@ -58,7 +58,26 @@ export type RunView = {
   todos: Array<{ text: string; done: boolean }>;
   /** Notes the person sent to the run while it worked, oldest first. */
   notes: Array<{ id: string; text: string; at: string }>;
+  /** What the run produced for the person (reports, code, files), oldest first. */
+  results: Array<{ id: string; title: string; kind: string }>;
 };
+
+/** Artifacts the runtime keeps for itself, not results for the person. */
+const INTERNAL_ARTIFACTS = new Set(["verification", "task_analysis"]);
+
+/** The run's results: every artifact except the runtime's own records. */
+export function runResults(artifacts: RunSnapshot["artifacts"] | undefined) {
+  return (artifacts ?? [])
+    .map((artifact) => ({
+      id: str(artifact, "id") ?? "",
+      title: (str(artifact, "title") ?? "").trim(),
+      kind: str(artifact, "kind") ?? "artifact",
+    }))
+    .filter(
+      (artifact) =>
+        artifact.id && artifact.title && !INTERNAL_ARTIFACTS.has(artifact.kind),
+    );
+}
 
 /** The task list of the latest agent step that carried one. */
 export function latestTodos(events: RunSnapshot["events"]) {
@@ -198,6 +217,7 @@ export function deriveRunView(
     notes: snapshot.events
       .filter((event) => event.type === "user.note")
       .map((event) => ({ id: event.id, text: event.summary, at: event.at })),
+    results: runResults(snapshot.artifacts),
   };
 }
 
