@@ -64,6 +64,23 @@ function asMessages(messages: unknown[]): GatewayMessage[] {
   );
 }
 
+/**
+ * A failed model attempt in a run (the chat logs its attempts itself).
+ * Production 2026-11-25: free-plan runs ended "model_not_configured" and
+ * nothing showed which models were tried. Model references only.
+ */
+function logAttempt(ref: string, code: string, index: number, total: number) {
+  console.warn(
+    JSON.stringify({
+      event: "gateway.attempt_failed",
+      ref,
+      code,
+      attempt: index + 1,
+      of: total,
+    }),
+  );
+}
+
 export class GatewayProvider implements ModelProvider {
   private readonly controllers = new Map<string, AbortController>();
 
@@ -205,6 +222,7 @@ export class GatewayProvider implements ModelProvider {
             noteModelResult(ref, { ok: false, firstTokenMs: 0 });
           if (code === "model_not_configured") hideModel(ref);
           if (PROVIDER_WIDE_CODES.has(code)) skipped.add(serviceOf(ref));
+          logAttempt(ref, code, index, refs.length);
           const last = !refs
             .slice(index + 1)
             .some((next) => !skipped.has(serviceOf(next)));
@@ -261,6 +279,7 @@ export class GatewayProvider implements ModelProvider {
             noteModelResult(ref, { ok: false, firstTokenMs: 0 });
           if (code === "model_not_configured") hideModel(ref);
           if (PROVIDER_WIDE_CODES.has(code)) skipped.add(serviceOf(ref));
+          logAttempt(ref, code, index, refs.length);
           const last = !refs
             .slice(index + 1)
             .some((next) => !skipped.has(serviceOf(next)));
