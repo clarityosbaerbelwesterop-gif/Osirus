@@ -487,7 +487,9 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     const started = Date.now();
     const run = await send(page, path, {
       action: "run",
-      command: "python3 -c 'print(6 * 7)' && echo open-terminal > ot.txt",
+      // /tmp is outside the kept folder: it marks this very machine.
+      command:
+        "python3 -c 'print(6 * 7)' && echo open-terminal > ot.txt && touch /tmp/osirus-machine-b",
     });
     const ran = (await run.json()) as {
       ok?: boolean;
@@ -515,6 +517,41 @@ test("email journey: account, chat saved, quota, MCP, sign out and in", async ({
     const processes = await send(page, path, { action: "processes" });
     expect(processes.status()).toBe(200);
     expect(await processes.text()).not.toContain("log_path");
+  });
+
+  // Machines are throwaway (no VM snapshot): only the working folder is
+  // kept. A chat answer that uses the computer ends by saving the folder and
+  // deleting the machine; the next Open Terminal action gets a fresh machine
+  // with the folder unpacked, so ot.txt is back and the /tmp mark is not.
+  await test.step("the bot's files survive a fresh machine", async () => {
+    expect(computerBotId).toBeTruthy();
+    const events = await streamFrames({
+      message:
+        "Lies mit deinem Computer die Datei ot.txt in deinem Arbeitsordner und nenne nur ihren Inhalt.",
+      botId: computerBotId!,
+    });
+    const used = events.filter(
+      (frame) => frame.type === "computer" && "step" in frame,
+    ).length;
+    expect(events.at(-1)?.type).toBe("done");
+    const path = `/api/agents/${computerBotId}/computer`;
+    const check = await send(page, path, {
+      action: "run",
+      command:
+        "cat ot.txt && if [ -e /tmp/osirus-machine-b ]; then echo same-machine; else echo fresh-machine; fi",
+    });
+    const checked = (await check.json()) as {
+      result?: { exit_code?: number | null; output?: Array<{ data: string }> };
+    };
+    const output = (checked.result?.output ?? [])
+      .map((chunk) => chunk.data)
+      .join("");
+    console.log(
+      `Files across machines: ${used} chat step(s); ${output.replace(/\s+/g, " ").trim()}`,
+    );
+    expect(check.status()).toBe(200);
+    expect(output).toContain("open-terminal");
+    expect(output).toContain("fresh-machine");
   });
 
   await test.step("an MCP server can be added, checked and removed", async () => {
