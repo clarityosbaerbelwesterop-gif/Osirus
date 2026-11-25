@@ -14,8 +14,11 @@ export default defineConfig({
   },
   // UI view models and the Markdown renderer are tested in node with
   // react-dom/server; JSX compiles with the automatic runtime.
-  esbuild: { jsx: "automatic" },
+  oxc: { jsx: { runtime: "automatic" } },
   test: {
+    // Vitest 5 clears mock calls before each test by default; these tests
+    // assert calls made while a module loads, as Vitest 3 kept them.
+    clearMocks: false,
     environment: "node",
     include: ["tests/**/*.test.ts", "ai-lab/tests/**/*.test.ts"],
   },

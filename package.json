@@ -23,7 +23,7 @@
     "@fontsource-variable/geist": "^5.3.0",
     "@fontsource-variable/geist-mono": "^5.3.0",
     "@fontsource-variable/inter": "^5.3.0",
-    "@neondatabase/auth": "0.5.0-beta",
+    "@neondatabase/auth": "^0.7.0-beta",
     "@neondatabase/serverless": "^1.2.1",
     "@vercel/oidc": "^4.0.9",
     "@vercel/sandbox": "^4.1.0",
@@ -58,9 +58,14 @@
     "eslint-config-next": "^16.4.6",
     "prettier": "^3.10.1",
     "typescript": "^5.9.0",
-    "vitest": "^3.2.0"
+    "vitest": "^5.1.1"
   },
   "overrides": {
-    "zod": "$zod"
+    "zod": "^4.6.7",
+    "better-auth": "1.7.28",
+    "@better-auth/core": "1.7.28",
+    "@better-auth/drizzle-adapter": "1.7.28",
+    "@better-auth/oauth-provider": "1.7.28",
+    "@better-auth/passkey": "1.7.28"
   }
 }
