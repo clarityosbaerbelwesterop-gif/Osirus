@@ -11,7 +11,7 @@ vi.mock("../src/lib/db/client", () => ({
   querySystem: async () => [],
 }));
 
-const { readImage, visionCandidates } =
+const { blindReading, readImage, visionCandidates } =
   await import("../src/lib/attachments/vision");
 const { activityLabel } = await import("../src/lib/ui/labels");
 
@@ -56,6 +56,28 @@ describe("the models that read a photo", () => {
       "nvidia:nvidia/nemotron-3.5-super-vl-120b-a12b",
       "unorouter:gemini-3.1-flash-lite:free",
     ]);
+  });
+});
+
+describe("a reading that saw no image", () => {
+  it("is never taken for the photo's content", () => {
+    for (const text of [
+      // Production 2026-11-25, a router that dropped the picture:
+      "Kein Bild angehängt. Bitte lade die Rechnung hoch, damit ich die Nummer lesen kann.",
+      "I'm sorry, but I can't see images.",
+      "I don't see any image attached to your message.",
+      "There is no image provided. Please upload the image.",
+      "Leider kann ich das Bild nicht öffnen.",
+      "Es wurde kein Bild übermittelt.",
+    ])
+      expect(blindReading(text), text).toBe(true);
+    for (const text of [
+      "Text im Bild: RECHNUNG 4711\nEine Rechnung auf weißem Papier.",
+      "Sichtbarer Text: keiner. Das Foto zeigt einen Hund auf einer Wiese.",
+      "| Monat | Umsatz |\n| Jan | 100 |\nEin Balkendiagramm mit zwei Achsen.",
+      "Text: Man kann das Bild in zwei Hälften teilen. Ein Poster mit Anleitung.",
+    ])
+      expect(blindReading(text), text).toBe(false);
   });
 });
 
