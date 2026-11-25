@@ -463,3 +463,22 @@ describe("markdown rendering", () => {
     expect(html).toContain("data-footnote-ref");
   });
 });
+
+describe("a finished run's results", () => {
+  it("lists what the run produced, without the runtime's own records", async () => {
+    const { runResults } = await import("../src/lib/ui/run-view");
+    expect(
+      runResults([
+        { id: "a1", kind: "task_analysis", title: "Analyse" },
+        { id: "a2", kind: "report", title: "Preisvergleich Cloud-Anbieter" },
+        { id: "a3", kind: "verification", title: "Prüfung" },
+        { id: "a4", kind: "code", title: "  " },
+        { id: "a5", kind: "code", title: "scrape.py" },
+      ]),
+    ).toEqual([
+      { id: "a2", title: "Preisvergleich Cloud-Anbieter", kind: "report" },
+      { id: "a5", title: "scrape.py", kind: "code" },
+    ]);
+    expect(runResults(undefined)).toEqual([]);
+  });
+});

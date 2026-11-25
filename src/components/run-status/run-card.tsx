@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, PanelRightOpen } from "lucide-react";
+import { ChevronRight, FileText, PanelRightOpen } from "lucide-react";
 import { chatRunPresentation, chatStatusLine } from "@/lib/ui/chat-status";
 import { activityLabel, formatDuration, relativeTime } from "@/lib/ui/labels";
 import type { RunView } from "@/lib/ui/run-view";
@@ -175,6 +175,33 @@ export function RunCard({
             ) : null}
             {view.failure.message}
           </span>
+        </div>
+      ) : null}
+
+      {!view.live && view.results.length ? (
+        <div className="run-results" aria-label="Ergebnisse">
+          <p className="overline">Ergebnisse ({view.results.length})</p>
+          <ul>
+            {view.results.map((result) => (
+              <li key={result.id}>
+                {onOpenWorkbench ? (
+                  <button
+                    type="button"
+                    className="run-result"
+                    onClick={onOpenWorkbench}
+                  >
+                    <FileText size={14} aria-hidden="true" />
+                    <span>{result.title}</span>
+                  </button>
+                ) : (
+                  <span className="run-result">
+                    <FileText size={14} aria-hidden="true" />
+                    <span>{result.title}</span>
+                  </span>
+                )}
+              </li>
+            ))}
+          </ul>
         </div>
       ) : null}
 
