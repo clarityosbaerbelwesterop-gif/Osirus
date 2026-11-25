@@ -18,9 +18,35 @@ type Identity = { userId: string; organizationId: string; workspaceId: string };
 const SEES_IMAGES =
   /(^|[\/:._-])(vl|vision)([._-]|$)|gemini|gpt-4o|gpt-4\.1|gpt-5|gpt-6|claude|grok-4|pixtral|llava|qwen[\w.-]*vl|llama-4|nemotron[\w.-]*-vl/i;
 
-/** A model that answered without seeing the image. */
-const BLIND =
-  /(can(?:not|'t)|unable to|not able to)\s+(see|view|process|read|access|analy[sz]e|open)\s+(the\s+|this\s+|any\s+|your\s+)?(image|picture|photo|attachment)|(kann|können)\s+(das|dieses|keine|kein)\s+(bild|foto)|keine\s+bilder\s+(sehen|lesen|verarbeiten)/i;
+/**
+ * A model that answered without seeing the image: it apologises, says
+ * there is none, or asks for it. Production 2026-11-25: a router passed the
+ * text but not the picture, the model wrote "Kein Bild angehängt. Bitte lade
+ * die Rechnung hoch", and that was stored as the photo's content.
+ */
+const BLIND = [
+  /(can(?:not|'t)|unable to|not able to)\s+(see|view|process|read|access|analy[sz]e|open)\s+(the\s+|this\s+|any\s+|your\s+)?(image|picture|photo|attachment)/i,
+  /\b(no|not any|without an?)\s+(image|picture|photo|attachment)s?\b/i,
+  /\b(don'?t|do not|didn'?t|did not)\s+(see|have|find|receive)\s+(an?|any|the)\s+(image|picture|photo|attachment)/i,
+  /\b(please|kindly)\s+(upload|provide|share|attach|send)\b/i,
+  /(kann|können)\s+(ich\s+|wir\s+)?(keine|kein)\s+(bild|foto)/i,
+  /(kann|können)\s+(ich\s+|wir\s+)?(das|dieses|die|den)\s+(bild|foto)\w*\s+(leider\s+)?nicht\b/i,
+  /\bkein(e|en)?\s+(bild|foto|anhang)\b/i,
+  /\b(lade|lad|sende|schick)\w*\s+(bitte\s+)?(das|ein|die|den)\s+\w*\s*(bild|foto|anhang|rechnung|dokument|datei)/i,
+];
+
+/** Whether a reading is a model's "I see no image" instead of the image. */
+export function blindReading(text: string) {
+  const head = text.slice(0, 400);
+  return BLIND.some((pattern) => pattern.test(head));
+}
+
+/**
+ * Services that host the model themselves pass the image to it; a router
+ * may drop the picture and keep the text. Among equally free models, the
+ * hosts go first.
+ */
+const HOSTS_IMAGES = new Set(["nvidia"]);
 
 const PROMPT = [
   "Lies dieses Bild für jemanden, der es nicht sehen kann und danach Fragen dazu stellt.",
@@ -42,6 +68,8 @@ export function visionCandidates(
     .sort(
       (a, b) =>
         Number(b.free) - Number(a.free) ||
+        Number(HOSTS_IMAGES.has(b.provider)) -
+          Number(HOSTS_IMAGES.has(a.provider)) ||
         a.rank - b.rank ||
         a.ref.localeCompare(b.ref),
     )
@@ -91,7 +119,7 @@ export async function readImage(input: {
         signal: AbortSignal.timeout(Math.min(left, 40_000)),
       });
       const text = result.text.trim();
-      const usable = text.length >= 20 && !BLIND.test(text.slice(0, 400));
+      const usable = text.length >= 20 && !blindReading(text);
       await recordGatewayCall({
         identity: input.identity as ProductIdentity,
         model,
@@ -107,6 +135,7 @@ export async function readImage(input: {
           event: "attachment.vision",
           model: model.ref,
           outcome: usable ? "read" : "blind",
+          chars: text.length,
           ms: Date.now() - started,
         }),
       );
