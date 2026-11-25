@@ -169,7 +169,62 @@ type UiMessage = AgentsChatMessage & {
   searching?: boolean;
   /** The bot's cloud computer is starting. */
   computerOpening?: boolean;
+  /** A calm note while the answer is fetched after a dropped connection. */
+  notice?: string | null;
 };
+
+/**
+ * Waits `ms`, or less: returns at once when the page comes back to the
+ * front (Safari reopened), so a finished answer shows without delay.
+ */
+function pauseOrReturn(ms: number) {
+  return new Promise<void>((resolve) => {
+    const done = () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisible);
+      resolve();
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") done();
+    };
+    const timer = setTimeout(done, ms);
+    document.addEventListener("visibilitychange", onVisible);
+  });
+}
+
+/** The saved answer to a turn in a thread, once the server has written it. */
+export function savedAnswer(
+  messages: AgentsChatMessage[],
+  turn: { sent: string; regenerate: boolean; sentAt: number },
+) {
+  if (turn.regenerate)
+    return (
+      [...messages]
+        .reverse()
+        .find(
+          (message) =>
+            message.role === "assistant" &&
+            Boolean(message.content) &&
+            message.createdAt !== undefined &&
+            Date.parse(message.createdAt) >= turn.sentAt - 2_000,
+        ) ?? null
+    );
+  let user = -1;
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index]!;
+    if (message.role === "user" && message.content === turn.sent) {
+      user = index;
+      break;
+    }
+  }
+  if (user < 0) return null;
+  return (
+    messages
+      .slice(user + 1)
+      .find((message) => message.role === "assistant" && message.content) ??
+    null
+  );
+}
 
 export type AgentsBot = { id: string; name: string };
 
@@ -409,6 +464,11 @@ const MessageView = memo(function MessageView(props: {
               ))}
             </ol>
           </section>
+        ) : null}
+        {message.notice ? (
+          <p className="ac-notice" role="status">
+            {message.notice}
+          </p>
         ) : null}
         {message.error ? (
           <div className="ac-error" role="alert">
@@ -853,6 +913,46 @@ export function AgentsChat(props: {
       };
 
       let settled = false;
+      // Safari in the background drops the connection; the server writes
+      // the answer to its end and saves it (reported 2026-11-25). The page
+      // then fetches it instead of asking to send again.
+      let turnSession: string | null = sessionId;
+      const turn = {
+        sent: content,
+        regenerate: Boolean(options.regenerate),
+        sentAt: Date.now(),
+      };
+      const recover = async (sessionForTurn: string) => {
+        patch((message) => ({
+          ...message,
+          streaming: false,
+          error: null,
+          notice:
+            "Die Verbindung war kurz weg. Die Antwort wird im Hintergrund fertig geschrieben …",
+        }));
+        const deadline = Date.now() + 4 * 60_000;
+        while (Date.now() < deadline) {
+          await pauseOrReturn(3_000);
+          if (document.visibilityState === "hidden") continue;
+          const response = await fetch(`/api/chat/threads/${sessionForTurn}`, {
+            cache: "no-store",
+          }).catch(() => null);
+          const thread = response?.ok
+            ? ((await response.json().catch(() => null)) as Thread | null)
+            : null;
+          const reply = thread ? savedAnswer(thread.messages, turn) : null;
+          if (reply) {
+            patch(() => ({ ...reply, streaming: false, notice: null }));
+            notifyUsage();
+            return;
+          }
+        }
+        patch((message) => ({
+          ...message,
+          notice: null,
+          error: "Die Antwort ist nicht angekommen. Bitte noch einmal senden.",
+        }));
+      };
       try {
         const response = await fetch("/api/chat/stream", {
           method: "POST",
@@ -882,6 +982,7 @@ export function AgentsChat(props: {
         }
         for await (const event of readChatStream(response)) {
           if (event.type === "start") {
+            turnSession = event.sessionId;
             setSessionId(event.sessionId);
             setTitle(event.title);
             if (event.created) {
@@ -962,24 +1063,30 @@ export function AgentsChat(props: {
         if (!settled && !controller.signal.aborted) {
           if (frame) window.cancelAnimationFrame(frame);
           flush();
-          patch((message) => ({
-            ...message,
-            streaming: false,
-            partial: Boolean(message.content),
-            error: "Die Antwort brach vorzeitig ab. Bitte noch einmal senden.",
-          }));
+          if (turnSession) void recover(turnSession);
+          else
+            patch((message) => ({
+              ...message,
+              streaming: false,
+              partial: Boolean(message.content),
+              error:
+                "Die Antwort brach vorzeitig ab. Bitte noch einmal senden.",
+            }));
         }
       } catch {
         if (frame) window.cancelAnimationFrame(frame);
         flush();
-        patch((message) => ({
-          ...message,
-          streaming: false,
-          partial: controller.signal.aborted ? true : message.partial,
-          error: controller.signal.aborted
-            ? null
-            : "Die Verbindung wurde unterbrochen. Bitte noch einmal senden.",
-        }));
+        if (!controller.signal.aborted && turnSession)
+          void recover(turnSession);
+        else
+          patch((message) => ({
+            ...message,
+            streaming: false,
+            partial: controller.signal.aborted ? true : message.partial,
+            error: controller.signal.aborted
+              ? null
+              : "Die Verbindung wurde unterbrochen. Bitte noch einmal senden.",
+          }));
       } finally {
         patch((message) =>
           message.streaming ? { ...message, streaming: false } : message,
@@ -1026,7 +1133,19 @@ export function AgentsChat(props: {
         ? "thinking"
         : "idle";
 
-  const stop = () => abortRef.current?.abort();
+  // The stop button is the only thing that ends an answer: it tells the
+  // server first, then closes the connection (a dropped connection alone
+  // lets the answer finish and be saved).
+  const stop = () => {
+    if (sessionId)
+      void fetch("/api/chat/stop", {
+        method: "POST",
+        keepalive: true,
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ sessionId }),
+      }).catch(() => undefined);
+    abortRef.current?.abort();
+  };
 
   const regenerate = () => {
     const lastUser = [...messages]

@@ -55,8 +55,11 @@ import {
 import {
   chatContext,
   chatSession,
+  chatStopRequested,
+  clearChatStop,
   createChatSession,
   saveChatMessage,
+  watchChatStop,
 } from "@/lib/gateway/threads";
 import {
   fileMaterial,
@@ -223,11 +226,17 @@ export async function POST(request: Request) {
     );
   }
 
+  // The answer is the person's whether or not the page stays open: Safari in
+  // the background drops the connection, and an answer cut off there was
+  // charged and lost (reported 2026-11-25). Everything below runs on `work`,
+  // which only the stop button ends (watchChatStop); a dropped connection
+  // lets the answer run to its end and be saved for the page's return.
+  const work = new AbortController();
   // The web lookup runs while the thread loads; it has its own time budget.
   const webPending = webMaterial({
     message: body.message,
     search: body.web,
-    signal: request.signal,
+    signal: work.signal,
   });
   const history = existing
     ? await chatContext(identity, existing.id, 24)
@@ -275,6 +284,12 @@ export async function POST(request: Request) {
       title: body.message.replace(/\s+/g, " ").slice(0, 80),
       surface: bot ? "bot" : "ai",
     }));
+  await clearChatStop(identity, sessionId).catch(() => undefined);
+  const stopWatch = watchChatStop({
+    disconnected: request.signal,
+    work,
+    isStopped: () => chatStopRequested(identity, sessionId),
+  });
   // Regenerate answers the last user turn again; the turn itself is not repeated.
   const turns = history.turns;
   const lastUser = [...turns].reverse().find((turn) => turn.role === "user");
@@ -302,7 +317,7 @@ export async function POST(request: Request) {
                     botName: bot.name,
                     message: body.message,
                     catalog,
-                    signal: request.signal,
+                    signal: work.signal,
                   })
                 : null,
           }))
@@ -428,304 +443,322 @@ export async function POST(request: Request) {
     code: string;
   }> = [];
 
+  // The function stays alive until the answer is written and saved, also
+  // when nobody is reading the stream any more.
+  let finish: () => void = () => undefined;
+  const finished = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  try {
+    after(() => finished);
+  } catch {
+    // Outside a request scope (unit tests) nothing is kept alive.
+  }
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
-      let text = "";
-      let reasoning = "";
-      let usage: GatewayUsage = {};
-      let closed = false;
-      const send = (event: Record<string, unknown>) => {
-        if (closed) return;
-        try {
-          controller.enqueue(frame(event));
-        } catch {
-          closed = true;
-        }
-      };
-      send({
-        type: "start",
-        sessionId,
-        title:
-          existing?.title ?? body.message.replace(/\s+/g, " ").slice(0, 80),
-        created: !existing,
-        cached: Boolean(hit),
-      });
-      if (material.sources.length)
-        send({ type: "sources", sources: material.sources });
-
-      let computerSteps: ComputerStep[] = [];
-      if (computerWanted && bot) {
-        try {
-          const [
-            { runComputer, modelPlanner },
-            { resolveSandbox },
-            { databaseComputerFiles },
-          ] = await Promise.all([
-            import("@/lib/agents/bot-computer"),
-            import("@/lib/sandbox"),
-            import("@/lib/agents/bot-computer-files"),
-          ]);
-          const run = await runComputer({
-            driver: await resolveSandbox(),
-            workspaceId: identity.workspaceId,
-            botId: bot.id,
-            plan: modelPlanner({
-              identity,
-              sessionId,
-              models: candidates,
-              botName: bot.name,
-              message: body.message,
-              signal: request.signal,
-            }),
-            onOpen: () => send({ type: "computer", phase: "open" }),
-            files: databaseComputerFiles(identity, bot.id),
-            onStep: (step) =>
-              send({ type: "computer", step: publicStep(step) }),
-            signal: request.signal,
-          });
-          computerSteps = run.steps;
-          console.info(
-            JSON.stringify({
-              event: "bot.computer.run",
-              steps: run.steps.length,
-              error: run.error,
-            }),
-          );
-          // The machine stops (files kept) after the answer, not before it.
-          try {
-            after(() => run.release());
-          } catch {
-            void run.release();
-          }
-          if (run.steps.length)
-            messages.splice(1, 0, {
-              role: "system",
-              content: computerMaterial(run.steps),
-            });
-        } catch (error) {
-          console.error(
-            "chat.stream computer failed",
-            JSON.stringify(sandboxErrorSummary(error)),
-          );
-        }
-      }
-
-      let status: "completed" | "failed" | "cancelled" = "completed";
-      let errorCode: string | null = null;
       try {
-        if (hit) {
-          reasoning = hit.reasoning;
-          text = hit.text;
-          if (reasoning) send({ type: "reasoning", text: reasoning });
-          // Delivered in slices so it reads like an answer, not a jump.
-          for (let index = 0; index < text.length; index += 48) {
-            send({ type: "text", text: text.slice(index, index + 48) });
-          }
-        } else {
-          // Next candidate when one fails before writing anything. A failure
-          // that holds for the whole service skips its other models, and all
-          // attempts together wait at most FIRST_TOKEN_BUDGET_MS for a word.
-          const deadline = Date.now() + FIRST_TOKEN_BUDGET_MS;
-          let queue = [...candidates];
-          while (queue.length) {
-            const model = queue.shift() as GatewayModel;
-            chosen = model;
-            let produced = false;
-            const attemptStarted = Date.now();
-            let firstTokenMs = 0;
-            const last = queue.length === 0;
-            // A slow model gives way to the next one quickly; the last
-            // candidate gets what is left of the budget.
-            const patience = last ? 45_000 : model.reasoning ? 20_000 : 12_000;
-            try {
-              for await (const event of streamGateway({
-                ref: model.ref,
-                messages,
-                signal: request.signal,
-                firstByteTimeoutMs: Math.max(
-                  3_000,
-                  Math.min(patience, deadline - attemptStarted),
-                ),
-              })) {
-                if (!firstTokenMs && event.type !== "usage")
-                  firstTokenMs = Date.now() - attemptStarted;
-                if (event.type === "text") {
-                  produced = true;
-                  text += event.text;
-                  send(event);
-                } else if (event.type === "reasoning") {
-                  produced = true;
-                  reasoning += event.text;
-                  send(event);
-                } else {
-                  usage = { ...usage, ...event.usage };
-                }
-              }
-              if (!text.trim()) {
-                throw Object.assign(
-                  new Error("The model returned an empty answer"),
-                  { code: "empty_response" },
-                );
-              }
-              noteModelResult(model.ref, { ok: true, firstTokenMs });
-              attempts.push({
-                model: model.ref,
-                ms: Date.now() - attemptStarted,
-                firstTokenMs,
-                code: "ok",
-              });
-              break;
-            } catch (error) {
-              const code = refusalCode(error);
-              attempts.push({
-                model: model.ref,
-                ms: Date.now() - attemptStarted,
-                firstTokenMs,
-                code,
-              });
-              if (!request.signal.aborted)
-                noteModelResult(model.ref, {
-                  ok: false,
-                  firstTokenMs: Date.now() - attemptStarted,
-                });
-              if (PROVIDER_WIDE_CODES.has(code))
-                queue = queue.filter(
-                  (next) => next.provider !== model.provider,
-                );
-              const another =
-                queue.length > 0 &&
-                Date.now() < deadline - 1_000 &&
-                !request.signal.aborted &&
-                FALLBACK_CODES.has(code) &&
-                (!produced || !text.trim());
-              if (!another) throw error;
-              if (code === "model_not_configured") hideModel(model.ref);
-              if (reasoning && !text) {
-                reasoning = "";
-                send({ type: "reset" });
-              }
-              usage = {};
-            }
-          }
-          if (!computerWanted) storeAnswer(cacheKey, { text, reasoning });
-        }
-      } catch (error) {
-        errorCode = refusalCode(error);
-        status =
-          request.signal.aborted || errorCode === "cancelled"
-            ? "cancelled"
-            : "failed";
-        if (status === "failed") {
-          send({
-            type: "error",
-            code: errorCode,
-            message: chatErrorMessage(errorCode),
-            retryAfterMs: retryAfterOf(error),
-          });
-        }
-      }
-
-      usage = {
-        inputTokens:
-          usage.inputTokens ??
-          estimateTokens(
-            messages
-              .map((m) => (typeof m.content === "string" ? m.content : ""))
-              .join("\n"),
-          ),
-        outputTokens: usage.outputTokens ?? estimateTokens(text + reasoning),
-        costUsd: usage.costUsd,
-      };
-      const latencyMs = Date.now() - started;
-      // Operator log (Vercel only, never sent to the browser): which models
-      // were tried and how long each took, to tune routing from evidence.
-      console.info(
-        JSON.stringify({
-          event: "chat.answer",
-          tier,
-          bot: Boolean(bot),
-          cached: Boolean(hit),
-          status,
-          latencyMs,
-          attempts,
-        }),
-      );
-      let messageId: string | null = null;
-      // Usage first and on its own: a message that cannot be saved (a
-      // database error, text Postgres rejects) must not make the call free.
-      await recordGatewayCall({
-        identity,
-        model: chosen,
-        surface: "ai",
-        sessionId,
-        status,
-        usage,
-        latencyMs,
-        errorCode,
-        cached: Boolean(hit),
-      }).catch((error: unknown) =>
-        console.error(
-          "chat.stream usage record failed",
-          error instanceof Error ? error.name : "unknown",
-        ),
-      );
-      // Only the sources the answer cites stay with it: one it did not use
-      // is not a source (Grok review 2026-11-15).
-      const shownSources = citedSources(text, material.sources);
-      if (shownSources.length !== material.sources.length)
-        send({ type: "sources", sources: shownSources });
-      try {
-        if (text.trim()) {
-          const saved = await saveChatMessage(identity, {
-            sessionId,
-            role: "assistant",
-            content: text,
-            metadata: {
-              surface: "ai",
-              model: chosen.ref,
-              tier: tierOf(chosen),
-              botId: bot?.id ?? null,
-              reasoning: reasoning ? reasoning.slice(0, 60_000) : null,
-              partial: status !== "completed",
-              latencyMs,
-              cached: Boolean(hit),
-              sources: shownSources.length ? shownSources : undefined,
-              computer: computerSteps.length
-                ? computerSteps.map(publicStep)
-                : undefined,
-            },
-          });
-          messageId = saved.id;
-        }
-      } catch (error) {
-        // The error object can carry the row (incl. message text): log its
-        // kind only.
-        console.error(
-          "chat.stream persist failed",
-          error instanceof Error ? error.name : "unknown",
-        );
-      }
-      if (status === "completed") {
-        send({
-          type: "done",
-          messageId,
-          latencyMs,
-          usage: {
-            inputTokens: usage.inputTokens,
-            outputTokens: usage.outputTokens,
-          },
-        });
-      }
-      if (!closed) {
-        closed = true;
-        try {
-          controller.close();
-        } catch {
-          // client gone
-        }
+        await answer(controller);
+      } finally {
+        stopWatch.stop();
+        finish();
       }
     },
   });
+
+  async function answer(
+    controller: ReadableStreamDefaultController<Uint8Array>,
+  ) {
+    let text = "";
+    let reasoning = "";
+    let usage: GatewayUsage = {};
+    let closed = false;
+    const send = (event: Record<string, unknown>) => {
+      if (closed) return;
+      try {
+        controller.enqueue(frame(event));
+      } catch {
+        closed = true;
+      }
+    };
+    send({
+      type: "start",
+      sessionId,
+      title: existing?.title ?? body.message.replace(/\s+/g, " ").slice(0, 80),
+      created: !existing,
+      cached: Boolean(hit),
+    });
+    if (material.sources.length)
+      send({ type: "sources", sources: material.sources });
+
+    let computerSteps: ComputerStep[] = [];
+    if (computerWanted && bot) {
+      try {
+        const [
+          { runComputer, modelPlanner },
+          { resolveSandbox },
+          { databaseComputerFiles },
+        ] = await Promise.all([
+          import("@/lib/agents/bot-computer"),
+          import("@/lib/sandbox"),
+          import("@/lib/agents/bot-computer-files"),
+        ]);
+        const run = await runComputer({
+          driver: await resolveSandbox(),
+          workspaceId: identity.workspaceId,
+          botId: bot.id,
+          plan: modelPlanner({
+            identity,
+            sessionId,
+            models: candidates,
+            botName: bot.name,
+            message: body.message,
+            signal: work.signal,
+          }),
+          onOpen: () => send({ type: "computer", phase: "open" }),
+          files: databaseComputerFiles(identity, bot.id),
+          onStep: (step) => send({ type: "computer", step: publicStep(step) }),
+          signal: work.signal,
+        });
+        computerSteps = run.steps;
+        console.info(
+          JSON.stringify({
+            event: "bot.computer.run",
+            steps: run.steps.length,
+            error: run.error,
+          }),
+        );
+        // The machine stops (files kept) after the answer, not before it.
+        try {
+          after(() => run.release());
+        } catch {
+          void run.release();
+        }
+        if (run.steps.length)
+          messages.splice(1, 0, {
+            role: "system",
+            content: computerMaterial(run.steps),
+          });
+      } catch (error) {
+        console.error(
+          "chat.stream computer failed",
+          JSON.stringify(sandboxErrorSummary(error)),
+        );
+      }
+    }
+
+    let status: "completed" | "failed" | "cancelled" = "completed";
+    let errorCode: string | null = null;
+    try {
+      if (hit) {
+        reasoning = hit.reasoning;
+        text = hit.text;
+        if (reasoning) send({ type: "reasoning", text: reasoning });
+        // Delivered in slices so it reads like an answer, not a jump.
+        for (let index = 0; index < text.length; index += 48) {
+          send({ type: "text", text: text.slice(index, index + 48) });
+        }
+      } else {
+        // Next candidate when one fails before writing anything. A failure
+        // that holds for the whole service skips its other models, and all
+        // attempts together wait at most FIRST_TOKEN_BUDGET_MS for a word.
+        const deadline = Date.now() + FIRST_TOKEN_BUDGET_MS;
+        let queue = [...candidates];
+        while (queue.length) {
+          const model = queue.shift() as GatewayModel;
+          chosen = model;
+          let produced = false;
+          const attemptStarted = Date.now();
+          let firstTokenMs = 0;
+          const last = queue.length === 0;
+          // A slow model gives way to the next one quickly; the last
+          // candidate gets what is left of the budget.
+          const patience = last ? 45_000 : model.reasoning ? 20_000 : 12_000;
+          try {
+            for await (const event of streamGateway({
+              ref: model.ref,
+              messages,
+              signal: work.signal,
+              firstByteTimeoutMs: Math.max(
+                3_000,
+                Math.min(patience, deadline - attemptStarted),
+              ),
+            })) {
+              if (!firstTokenMs && event.type !== "usage")
+                firstTokenMs = Date.now() - attemptStarted;
+              if (event.type === "text") {
+                produced = true;
+                text += event.text;
+                send(event);
+              } else if (event.type === "reasoning") {
+                produced = true;
+                reasoning += event.text;
+                send(event);
+              } else {
+                usage = { ...usage, ...event.usage };
+              }
+            }
+            if (!text.trim()) {
+              throw Object.assign(
+                new Error("The model returned an empty answer"),
+                { code: "empty_response" },
+              );
+            }
+            noteModelResult(model.ref, { ok: true, firstTokenMs });
+            attempts.push({
+              model: model.ref,
+              ms: Date.now() - attemptStarted,
+              firstTokenMs,
+              code: "ok",
+            });
+            break;
+          } catch (error) {
+            const code = refusalCode(error);
+            attempts.push({
+              model: model.ref,
+              ms: Date.now() - attemptStarted,
+              firstTokenMs,
+              code,
+            });
+            if (!work.signal.aborted)
+              noteModelResult(model.ref, {
+                ok: false,
+                firstTokenMs: Date.now() - attemptStarted,
+              });
+            if (PROVIDER_WIDE_CODES.has(code))
+              queue = queue.filter((next) => next.provider !== model.provider);
+            const another =
+              queue.length > 0 &&
+              Date.now() < deadline - 1_000 &&
+              !work.signal.aborted &&
+              FALLBACK_CODES.has(code) &&
+              (!produced || !text.trim());
+            if (!another) throw error;
+            if (code === "model_not_configured") hideModel(model.ref);
+            if (reasoning && !text) {
+              reasoning = "";
+              send({ type: "reset" });
+            }
+            usage = {};
+          }
+        }
+        if (!computerWanted) storeAnswer(cacheKey, { text, reasoning });
+      }
+    } catch (error) {
+      errorCode = refusalCode(error);
+      status =
+        work.signal.aborted || errorCode === "cancelled"
+          ? "cancelled"
+          : "failed";
+      if (status === "failed") {
+        send({
+          type: "error",
+          code: errorCode,
+          message: chatErrorMessage(errorCode),
+          retryAfterMs: retryAfterOf(error),
+        });
+      }
+    }
+
+    usage = {
+      inputTokens:
+        usage.inputTokens ??
+        estimateTokens(
+          messages
+            .map((m) => (typeof m.content === "string" ? m.content : ""))
+            .join("\n"),
+        ),
+      outputTokens: usage.outputTokens ?? estimateTokens(text + reasoning),
+      costUsd: usage.costUsd,
+    };
+    const latencyMs = Date.now() - started;
+    // Operator log (Vercel only, never sent to the browser): which models
+    // were tried and how long each took, to tune routing from evidence.
+    console.info(
+      JSON.stringify({
+        event: "chat.answer",
+        tier,
+        bot: Boolean(bot),
+        cached: Boolean(hit),
+        status,
+        latencyMs,
+        attempts,
+      }),
+    );
+    let messageId: string | null = null;
+    // Usage first and on its own: a message that cannot be saved (a
+    // database error, text Postgres rejects) must not make the call free.
+    await recordGatewayCall({
+      identity,
+      model: chosen,
+      surface: "ai",
+      sessionId,
+      status,
+      usage,
+      latencyMs,
+      errorCode,
+      cached: Boolean(hit),
+    }).catch((error: unknown) =>
+      console.error(
+        "chat.stream usage record failed",
+        error instanceof Error ? error.name : "unknown",
+      ),
+    );
+    // Only the sources the answer cites stay with it: one it did not use
+    // is not a source (Grok review 2026-11-15).
+    const shownSources = citedSources(text, material.sources);
+    if (shownSources.length !== material.sources.length)
+      send({ type: "sources", sources: shownSources });
+    try {
+      if (text.trim()) {
+        const saved = await saveChatMessage(identity, {
+          sessionId,
+          role: "assistant",
+          content: text,
+          metadata: {
+            surface: "ai",
+            model: chosen.ref,
+            tier: tierOf(chosen),
+            botId: bot?.id ?? null,
+            reasoning: reasoning ? reasoning.slice(0, 60_000) : null,
+            partial: status !== "completed",
+            latencyMs,
+            cached: Boolean(hit),
+            sources: shownSources.length ? shownSources : undefined,
+            computer: computerSteps.length
+              ? computerSteps.map(publicStep)
+              : undefined,
+          },
+        });
+        messageId = saved.id;
+      }
+    } catch (error) {
+      // The error object can carry the row (incl. message text): log its
+      // kind only.
+      console.error(
+        "chat.stream persist failed",
+        error instanceof Error ? error.name : "unknown",
+      );
+    }
+    if (status === "completed") {
+      send({
+        type: "done",
+        messageId,
+        latencyMs,
+        usage: {
+          inputTokens: usage.inputTokens,
+          outputTokens: usage.outputTokens,
+        },
+      });
+    }
+    if (!closed) {
+      closed = true;
+      try {
+        controller.close();
+      } catch {
+        // client gone
+      }
+    }
+  }
 
   return new Response(stream, {
     headers: {
