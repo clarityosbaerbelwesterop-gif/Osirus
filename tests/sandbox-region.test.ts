@@ -5,8 +5,15 @@ import { describe, expect, it, vi } from "vitest";
 
 const created = vi.hoisted(() => [] as Array<Record<string, unknown>>);
 const events = vi.hoisted(() => [] as string[]);
+const found = vi.hoisted(() => ({
+  sandbox: null as { persistent: boolean; status: string } | null,
+}));
 vi.mock("@vercel/sandbox", () => ({
   Sandbox: {
+    get: vi.fn(async () => {
+      if (!found.sandbox) throw new Error("Status code 404 is not ok");
+      return { name: "osirus-pc-r", ...found.sandbox };
+    }),
     create: vi.fn(async (options: Record<string, unknown>) => {
       created.push(options);
       return {
@@ -19,7 +26,7 @@ vi.mock("@vercel/sandbox", () => ({
   },
 }));
 
-const { VercelSandboxDriver, SANDBOX_REGION } =
+const { VercelSandboxDriver, SANDBOX_REGION, reattachVercelSandbox } =
   await import("../src/lib/sandbox/vercel");
 const { COMPUTER_ALLOWED_DOMAINS } =
   await import("../src/lib/agents/bot-computer-plan");
@@ -60,5 +67,23 @@ describe("sandbox region and network", () => {
       await driver.create({ name: "osirus-pc-keep", persistent: true })
     ).stop();
     expect(events).toEqual(["delete:sbx", "stop:osirus-pc-keep"]);
+  });
+
+  it("reattaches only a throwaway machine that is still running", async () => {
+    for (const [sandbox, usable] of [
+      [{ persistent: false, status: "running" }, true],
+      [{ persistent: false, status: "pending" }, true],
+      // Production 2026-11-25: a chat answer had just deleted it.
+      [{ persistent: false, status: "stopping" }, false],
+      [{ persistent: false, status: "stopped" }, false],
+      [{ persistent: false, status: "failed" }, false],
+      // An older persistent machine resumes from its snapshot.
+      [{ persistent: true, status: "stopped" }, true],
+      [null, false],
+    ] as const) {
+      found.sandbox = sandbox ? { ...sandbox } : null;
+      const handle = await reattachVercelSandbox("osirus-pc-r");
+      expect(handle !== null, JSON.stringify(sandbox)).toBe(usable);
+    }
   });
 });

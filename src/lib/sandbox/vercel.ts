@@ -143,6 +143,9 @@ class VercelSandboxHandle implements SandboxHandle {
   }
 }
 
+/** Session states a throwaway sandbox can still be used in. */
+const LIVE = new Set(["pending", "running"]);
+
 /**
  * Reattach to a sandbox a previous stage created, by its name.
  *
@@ -161,6 +164,11 @@ export async function reattachVercelSandbox(
       ...(credentials ?? {}),
     } as never);
     // A non-persistent one is deleted when it stops, as when it was made.
+    // One that is stopping (being deleted) is gone already: production
+    // 2026-11-25 reattached a machine a chat answer had just deleted, and
+    // the next command failed with "Vercel Sandbox not found".
+    if (sandbox.persistent === false && !LIVE.has(String(sandbox.status)))
+      return null;
     return new VercelSandboxHandle(sandbox, sandbox.persistent === false);
   } catch {
     return null;

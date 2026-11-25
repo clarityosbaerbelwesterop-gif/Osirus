@@ -71,15 +71,19 @@ export async function POST(
       },
       503,
     );
-  const [{ openComputer, saveFolder }, { computerName }, terminal, stored] =
-    await Promise.all([
-      import("@/lib/agents/bot-computer"),
-      import("@/lib/agents/bot-computer-plan"),
-      import("@/lib/agents/open-terminal"),
-      import("@/lib/agents/bot-computer-files"),
-    ]);
+  const [
+    { openComputer, saveFolder, machineGone },
+    { computerName },
+    terminal,
+    stored,
+  ] = await Promise.all([
+    import("@/lib/agents/bot-computer"),
+    import("@/lib/agents/bot-computer-plan"),
+    import("@/lib/agents/open-terminal"),
+    import("@/lib/agents/bot-computer-files"),
+  ]);
   const files = stored.databaseComputerFiles(guard.identity, bot.id);
-  try {
+  const attempt = async () => {
     const machine = await openComputer(
       driver,
       computerName(guard.identity.workspaceId, bot.id),
@@ -137,6 +141,16 @@ export async function POST(
       body.action === "kill"
     )
       await saveFolder(machine, files).catch(() => false);
+    return result;
+  };
+  try {
+    // A chat answer deletes its machine when it ends; an action that lands
+    // in that moment finds the machine gone and runs once on a fresh one,
+    // which unpacks the folder the answer just saved.
+    const result = await attempt().catch((error: unknown) => {
+      if (request.signal.aborted || !machineGone(error)) throw error;
+      return attempt();
+    });
     if (result.status < 200 || result.status >= 300)
       return json(
         {

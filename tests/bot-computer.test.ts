@@ -235,6 +235,40 @@ describe("a bot computer's machine", () => {
     expect(calls).toEqual([{ name: "osirus-pc-x", persistent: undefined }]);
   });
 
+  it("takes a fresh machine when the one found under its name is gone", async () => {
+    const { openComputer, machineGone } =
+      await import("../src/lib/agents/bot-computer");
+    const gone = Object.assign(
+      new Error("Status code 404 is not ok: Vercel Sandbox not found."),
+      { response: { status: 404 } },
+    );
+    expect(machineGone(gone)).toBe(true);
+    expect(machineGone(new Error("network down"))).toBe(false);
+    const created: string[] = [];
+    const driver = {
+      id: "test",
+      availability: () => ({ configured: true, driver: "test", reason: "" }),
+      reattach: async () => ({
+        sandboxId: "deleted",
+        readFile: async () => {
+          throw gone;
+        },
+      }),
+      create: async (input: { name?: string }) => {
+        created.push(input.name ?? "");
+        return {
+          sandboxId: "fresh",
+          readFile: async () => null,
+          writeFiles: async () => undefined,
+          runCommand: async () => ({ exitCode: 0, stdout: "", stderr: "" }),
+        };
+      },
+    } as unknown as SandboxDriver;
+    const machine = await openComputer(driver, "osirus-pc-z");
+    expect(machine.sandboxId).toBe("fresh");
+    expect(created).toEqual(["osirus-pc-z"]);
+  });
+
   it("does not hide failures to start", async () => {
     const { openComputer } = await import("../src/lib/agents/bot-computer");
     const driver = {

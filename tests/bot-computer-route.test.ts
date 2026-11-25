@@ -17,6 +17,7 @@ const state = vi.hoisted(() => ({
   }>,
   opened: [] as string[],
   saved: 0,
+  vanishOnce: false,
 }));
 
 vi.mock("@/lib/product/api", () => ({
@@ -46,6 +47,8 @@ vi.mock("@/lib/agents/bot-computer", () => ({
     state.opened.push(name);
     return { keepAlive: async () => undefined };
   },
+  machineGone: (error: unknown) =>
+    error instanceof Error && /Sandbox not found/.test(error.message),
   saveFolder: async () => {
     state.saved += 1;
     return true;
@@ -64,6 +67,10 @@ vi.mock("@/lib/agents/open-terminal", () => ({
     request: { method: string; path: string; query?: unknown; body?: unknown },
   ) => {
     state.calls.push(request);
+    if (state.vanishOnce) {
+      state.vanishOnce = false;
+      throw new Error("Status code 404 is not ok: Vercel Sandbox not found.");
+    }
     return {
       status: 200,
       body: { id: "p1", status: "done", log_path: "/home/x/.local/p1.jsonl" },
@@ -76,6 +83,7 @@ beforeEach(() => {
   state.calls = [];
   state.opened = [];
   state.saved = 0;
+  state.vanishOnce = false;
 });
 
 async function post(body: unknown, agentId = state.bot?.id ?? "x") {
@@ -108,6 +116,15 @@ describe("a bot's computer API", () => {
     expect(state.saved).toBe(1);
     // Paths on the machine are not handed to the browser.
     expect(JSON.stringify(await response.json())).not.toContain("log_path");
+  });
+
+  it("runs once more on a fresh machine when the found one vanished", async () => {
+    state.vanishOnce = true;
+    const response = await post({ action: "run", command: "cat ot.txt" });
+    expect(response.status).toBe(200);
+    expect(state.opened).toHaveLength(2);
+    expect(state.calls).toHaveLength(2);
+    expect(state.saved).toBe(1);
   });
 
   it("maps files, processes and kill to Open Terminal", async () => {
