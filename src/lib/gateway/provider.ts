@@ -174,12 +174,29 @@ export class GatewayProvider implements ModelProvider {
               ? model.free || allowed.includes(model.id)
               : model.free === pinnedFree),
         );
-        return candidatesFor(pool, tierOf(pinned), {
+        const same = candidatesFor(pool, tierOf(pinned), {
           limit: 3,
           perProvider: 2,
           penalty: (ref) => modelPenalty(ref),
           lead: verifiedBackup(pool),
         }).map((model) => model.ref);
+        if (pinnedFree || freePlanPin) return same;
+        // A paid pin (the Rouge Agent's premium model) whose service refuses
+        // (a rejected key, no credit) still answers: free models last, at no
+        // extra cost. Provider diagnostics 2026-11-25: Kunya, the premium
+        // models' service, rejected its key with HTTP 401.
+        const free = models.filter(
+          (model) => model.free && model.ref !== pinned.ref,
+        );
+        return [
+          ...same,
+          ...candidatesFor(free, tierOf(pinned), {
+            limit: 2,
+            perProvider: 1,
+            penalty: (ref) => modelPenalty(ref),
+            lead: verifiedBackup(free),
+          }).map((model) => model.ref),
+        ];
       })().catch(() => []);
     }
     const extra = this.options.fallbackRefs ?? (await this.fallbacks) ?? [];
