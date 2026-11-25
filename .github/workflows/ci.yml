@@ -47,7 +47,7 @@ jobs:
       # The compared baselines, the HTML report and, on failure, the actual
       # and diff images and traces.
       - if: always()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@v7.0.2
         with:
           name: playwright-evidence
           path: |

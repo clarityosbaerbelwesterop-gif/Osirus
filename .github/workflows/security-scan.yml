@@ -100,7 +100,7 @@ jobs:
               sys.exit("Blocking ZAP findings: " + "; ".join(blocking))
           print("No unaccepted medium or high findings.")
           PY
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@v7.0.2
         if: always()
         with:
           name: zap-baseline

@@ -67,6 +67,28 @@ describe("the free plan's run lock", () => {
     expect(complete).toHaveBeenCalledTimes(3);
   });
 
+  it("logs once that a model listed as Free (the Haiku path) was let through", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    store.listed.set("kunya:gpt-6-luna", { id: "gpt-6-luna", free: true });
+    const { quotaGuardedProvider } = await import("../src/lib/billing/enforce");
+    const { provider } = pinned("kunya:gpt-6-luna");
+    const guarded = quotaGuardedProvider(provider, "free-user");
+    await guarded.complete(input("STRONG"));
+    await guarded.complete(input("VERIFY"));
+    const admitted = info.mock.calls.filter((call) =>
+      String(call[0]).includes("billing.free_model_admitted"),
+    );
+    expect(admitted).toEqual([
+      [
+        JSON.stringify({
+          event: "billing.free_model_admitted",
+          model: "kunya:gpt-6-luna",
+        }),
+      ],
+    ]);
+    info.mockRestore();
+  });
+
   it("lets every kind of Free model run: :free, zero-priced, NVIDIA trial", async () => {
     store.listed.set("openrouter:anthropic/claude-haiku-4.5:free", {
       id: "anthropic/claude-haiku-4.5:free",

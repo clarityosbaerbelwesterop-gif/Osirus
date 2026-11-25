@@ -152,6 +152,20 @@ async function freeGatewayModel(id: string, limits: FreePlanLimits) {
   );
 }
 
+const admitted = new Set<string>();
+/**
+ * The path the Haiku took (a model listed as Free without ":free" or
+ * "nvidia:"), logged once per model and instance: production shows that the
+ * lock lets such a model run, not only the tests.
+ */
+function logFreeAdmission(id: string) {
+  if (admitted.has(id) || admitted.size > 200) return;
+  admitted.add(id);
+  console.info(
+    JSON.stringify({ event: "billing.free_model_admitted", model: id }),
+  );
+}
+
 /** VERIFY is the reviewer/checker role; every other role is a main model. */
 async function assertFreeModel(
   provider: ModelProvider,
@@ -168,7 +182,10 @@ async function assertFreeModel(
   if (limits === BILLING_CONFIG.freePlanLimits && isNvidiaTopModelId(id)) {
     return;
   }
-  if (await freeGatewayModel(id, limits)) return;
+  if (await freeGatewayModel(id, limits)) {
+    logFreeAdmission(id);
+    return;
+  }
   assertFreePlanAllowed(
     role === "VERIFY" ? { reviewerModel: id } : { model: id },
     limits,
